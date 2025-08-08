@@ -426,11 +426,11 @@ class ChatModelUnitTests(ChatModelTests):
 
         from typing import Type
 
-        from langchain_tests.unit_tests import ChatModelV1UnitTests
-        from my_package.chat_models import MyChatModel
+        from langchain_tests.v1.unit_tests import ChatModelUnitTests
+        from my_package.v1.chat_models import MyChatModel
 
 
-        class TestMyChatModelUnit(ChatModelV1UnitTests):
+        class TestMyChatModelUnit(ChatModelUnitTests):
             @property
             def chat_model_class(self) -> Type[MyChatModel]:
                 # Return the chat model class to test here

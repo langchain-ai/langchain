@@ -14,10 +14,10 @@ The standard tests v1 package provides comprehensive testing for chat models tha
 ### Basic Unit Tests
 
 ```python
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests
 from your_package import YourChatModel
 
-class TestYourChatModelV1(ChatModelV1UnitTests):
+class TestYourChatModelV1(ChatModelUnitTests):
     @property
     def chat_model_class(self):
         return YourChatModel
@@ -43,10 +43,10 @@ class TestYourChatModelV1(ChatModelV1UnitTests):
 ### Integration Tests
 
 ```python
-from langchain_tests.integration_tests.chat_models_v1 import ChatModelV1IntegrationTests
+from langchain_tests.v1.integration_tests.chat_models import ChatModelIntegrationTests
 from your_package import YourChatModel
 
-class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
+class TestYourChatModelV1Integration(ChatModelIntegrationTests):
     @property
     def chat_model_class(self):
         return YourChatModel
@@ -99,7 +99,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
 
 ## Test Categories
 
-### Unit Tests (`ChatModelV1Tests`)
+### Unit Tests (`ChatModelTests`)
 
 - Content block format validation
 - Ser/deserialization
@@ -108,7 +108,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
 - Error handling for invalid blocks
 - Backward compatibility with string content
 
-### Integration Tests (`ChatModelV1IntegrationTests`)
+### Integration Tests (`ChatModelIntegrationTests`)
 
 - Real multimodal content processing
 - Advanced reasoning with content blocks
@@ -130,7 +130,7 @@ class TestYourChatModelV1Integration(ChatModelV1IntegrationTests):
    from langchain_tests.unit_tests.chat_models import ChatModelUnitTests
 
    # v1
-   from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+   from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests ChatModelV1UnitTests
    ```
 
 2. **Configure content blocks support**:

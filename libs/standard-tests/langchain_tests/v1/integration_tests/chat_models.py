@@ -219,11 +219,11 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         from typing import Type
 
-        from langchain_tests.integration_tests import ChatModelV1IntegrationTests
-        from my_package.chat_models import MyChatModel
+        from langchain_tests.v1.integration_tests import ChatModelIntegrationTests
+        from my_package.v1.chat_models import MyChatModel
 
 
-        class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+        class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
             @property
             def chat_model_class(self) -> Type[MyV1ChatModel]:
                 # Return the chat model class to test here
@@ -489,7 +489,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``ainvoke`` has a default implementation that calls ``invoke`` in an
             async context.
 
@@ -512,7 +512,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``stream`` has a default implementation that calls ``invoke`` and
             yields the result as a single chunk.
 
@@ -538,9 +538,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_stream`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
             and
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_ainvoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
             because ``astream`` has a default implementation that calls ``_stream`` in
             an async context if it is implemented, or ``ainvoke`` and yields the result
             as a single ``AIMessageChunk`` chunk if not.
@@ -571,7 +571,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because ``batch`` has a default implementation that calls ``invoke`` for
             each message in the batch.
 
@@ -607,9 +607,9 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_batch`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
             and
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_ainvoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
             because ``abatch`` has a default implementation that calls ``ainvoke`` for
             each message in the batch.
 
@@ -640,7 +640,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             If that test passes but not this one, you should verify that:
@@ -672,11 +672,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             Second, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_conversation`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
@@ -718,7 +718,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
                         return False
@@ -732,7 +732,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supported_usage_metadata_details(self) -> dict:
                         return {
@@ -860,7 +860,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
                         return False
@@ -874,7 +874,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supported_usage_metadata_details(self) -> dict:
                         return {
@@ -1003,7 +1003,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1022,7 +1022,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling(self, model: BaseChatModelV1) -> None:
+                def test_tool_calling(self, model: BaseChatModel) -> None:
                     super().test_tool_calling(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1062,7 +1062,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1081,7 +1081,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                async def test_tool_calling_async(self, model: BaseChatModelV1) -> None:
+                async def test_tool_calling_async(self, model: BaseChatModel) -> None:
                     await super().test_tool_calling_async(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1121,7 +1121,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1140,7 +1140,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_bind_runnables_as_tools(self, model: BaseChatModelV1) -> None:
+                def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
                     super().test_bind_runnables_as_tools(model)
 
             Otherwise, ensure that the ``tool_choice_value`` property is correctly
@@ -1209,7 +1209,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1288,7 +1288,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_choice(self) -> bool:
                         return False
@@ -1341,7 +1341,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1361,7 +1361,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling_with_no_arguments(self, model: BaseChatModelV1) -> None:
+                def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1415,7 +1415,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1468,7 +1468,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1527,7 +1527,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1608,7 +1608,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1686,7 +1686,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1758,7 +1758,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_json_mode(self) -> bool:
                         return False
@@ -1833,7 +1833,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
 
                     @property
                     def supports_pdf_inputs(self) -> bool:
@@ -1912,7 +1912,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
 
                     @property
                     def supports_audio_content_blocks(self) -> bool:
@@ -1996,7 +1996,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_image_content_blocks(self) -> bool:
                         return False
@@ -2108,7 +2108,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_image_tool_message(self) -> bool:
                         return False
@@ -2232,7 +2232,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_anthropic_inputs(self) -> bool:
                         return False
@@ -2392,7 +2392,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -2450,7 +2450,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
-        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelV1IntegrationTests>`
+        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelIntegrationTests>`
         for more information.
 
         .. dropdown:: Configuration
@@ -2468,7 +2468,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. See ``enable_vcr_tests`` dropdown
-                :class:`above <ChatModelV1IntegrationTests>` for how to configure what
+                :class:`above <ChatModelIntegrationTests>` for how to configure what
                 information is recorded in cassettes.
 
         """

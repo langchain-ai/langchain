@@ -13,7 +13,7 @@ New imports:
 from langchain_tests.unit_tests.chat_models import ChatModelUnitTests
 
 # v1
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests as ChatModelV1UnitTests
 ```
 
 ### 2. Minimal Configuration
@@ -163,7 +163,7 @@ for testing chat models that support the enhanced content blocks system.
 
 from typing import Any
 
-from langchain_core.language_models.v1.chat_models import BaseChatModelV1
+from langchain_core.v1.language_models.chat_models import BaseChatModelV1
 from langchain_core.language_models import GenericFakeChatModel
 from langchain_core.messages import BaseMessage
 from langchain_core.messages.content_blocks import TextContentBlock
@@ -276,7 +276,7 @@ from typing import Any
 import pytest
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 
-from langchain_tests.integration_tests.chat_models_v1 import ChatModelV1IntegrationTests
+from langchain_tests.v1.integration_tests.chat_models import ChatModelIntegrationTests as ChatModelV1IntegrationTests
 
 
 # Example fake model for demonstration (replace with real model in practice)
