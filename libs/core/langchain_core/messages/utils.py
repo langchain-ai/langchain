@@ -656,22 +656,23 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
-       by a `HumanMessage`. To achieve this, set `start_on="human"`.
-       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage`` followed
+       by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
-       To achieve this set the `strategy="last"`.
-    3. Usually, the new chat history should include the `SystemMessage` if it
-       was present in the original chat history since the `SystemMessage` includes
-       special instructions to the chat model. The `SystemMessage` is almost always
+       To achieve this set the ``strategy="last"``.
+    3. Usually, the new chat history should include the ``SystemMessage`` if it
+       was present in the original chat history since the ``SystemMessage`` includes
+       special instructions to the chat model. The ``SystemMessage`` is almost always
        the first message in the history if present. To achieve this set the
-       `include_system=True`.
+       ``include_system=True``.
 
-    **Note** The examples below show how to configure `trim_messages` to achieve
-        a behavior consistent with the above properties.
+    .. note::
+        The examples below show how to configure ``trim_messages`` to achieve a behavior
+        consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
@@ -1580,26 +1581,26 @@ def count_tokens_approximately(
         chars_per_token: Number of characters per token to use for the approximation.
             Default is 4 (one token corresponds to ~4 chars for common English text).
             You can also specify float values for more fine-grained control.
-            See more here: https://platform.openai.com/tokenizer
+            `See more here. <https://platform.openai.com/tokenizer>`__
         extra_tokens_per_message: Number of extra tokens to add per message.
             Default is 3 (special tokens, including beginning/end of message).
             You can also specify float values for more fine-grained control.
-            See more here:
-            https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+            `See more here. <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>`__
         count_name: Whether to include message names in the count.
             Enabled by default.
 
     Returns:
         Approximate number of tokens in the messages.
 
-    Note:
-        This is a simple approximation that may not match the exact token count
-        used by specific models. For accurate counts, use model-specific tokenizers.
+    .. note::
+        This is a simple approximation that may not match the exact token count used by
+        specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
     .. versionadded:: 0.3.46
+
     """
     token_count = 0.0
     for message in convert_to_messages(messages):
