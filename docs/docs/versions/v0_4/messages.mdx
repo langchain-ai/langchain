@@ -60,6 +60,216 @@ inter-operability of messages across models.
 | Get `response_metadata` | `message.response_metadata`  | `message.response_metadata`|
 | Get `tool_calls`        | `message.tool_calls`         | `message.tool_calls`       |
 
+### Changes in content blocks
+
+For providers that generate `list[dict]` content, the dict elements have changed to
+conform to the new content block types. Refer to the
+[API reference](https://python.langchain.com/api_reference/core/messages.html) for
+details. Below we show some examples.
+
+Importantly:
+- Where provider-specific fields map to fields on standard types, LangChain manages
+the translation.
+- Where provider-specific fields do not map to fields on standard types, LangChain
+stores them in an `"extras"` key (see below for examples).
+
+#### Reasoning
+
+<details Before>
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    output_version="responses/v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": [
+      {
+        "text": "The user is asking about...",
+        "type": "summary_text"
+      },
+      {
+        "text": "We should consider...",
+        "type": "summary_text"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
+    "id": "msg_abc123"
+  }
+]
+```
+</details>
+
+<details After>
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    message_version="v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "reasoning": "The user is asking about...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "reasoning",
+    "reasoning": "We should consider...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
+    "id": "msg_abc123"
+  }
+]
+```
+</details>
+
+#### Citations and web search
+
+<details Before>
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model("openai:gpt-5-mini", output_version="responses/v1")
+llm_with_tools = llm.bind_tools([{"type": "web_search_preview"}])
+
+response = llm_with_tools.invoke("What was a positive news story from today?")
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": []
+  },
+  {
+    "type": "web_search_call",
+    "id": "ws_abc123",
+    "action": {
+      "query": "positive news today August 8 2025 'good news' 'Aug 8 2025' 'today' ",
+      "type": "search"
+    },
+    "status": "completed"
+  },
+  {
+    "type": "text",
+    "text": "Here are two positive news items from today...",
+    "annotations": [
+      {
+        "type": "url_citation",
+        "end_index": 455,
+        "start_index": 196,
+        "title": "Document title",
+        "url": "<document url>"
+      },
+      {
+        "type": "url_citation",
+        "end_index": 1022,
+        "start_index": 707,
+        "title": "Another Document",
+        "url": "<another document url>"
+      },
+    ],
+    "id": "msg_abc123"
+  }
+]
+```
+</details>
+
+<details After>
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model("openai:gpt-5-mini", message_version="v1")
+llm_with_tools = llm.bind_tools([{"type": "web_search_preview"}])
+
+response = llm_with_tools.invoke("What was a positive news story from today?")
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "web_search_call",
+    "id": "ws_abc123",
+    "query": "positive news August 8 2025 'good news' 'today' ",
+    "extras": {
+      "action": {"type": "search"},
+      "status": "completed",
+    }
+  },
+  {
+    "type": "web_search_result",
+    "id": "ws_abc123"
+  },
+  {
+    "type": "text",
+    "text": "Here are two positive news items from today...",
+    "annotations": [
+      {
+        "type": "citation",
+        "end_index": 455,
+        "start_index": 196,
+        "title": "Document title",
+        "url": "<document url>"
+      },
+      {
+        "type": "citation",
+        "end_index": 1022,
+        "start_index": 707,
+        "title": "Another Document",
+        "url": "<another document url>"
+      }
+    ],
+    "id": "msg_abc123"
+  }
+]
+```
+</details>
+
+#### Non-standard blocks
+
+Where content blocks from specific providers do not map to a standard type, they are
+structured into a `"non_standard"` block:
+```python
+{
+    "type": "non_standard",
+    "value": original_block,
+}
+```
+<details Before>
+...
+</details>
+
 
 ## Feature gaps
 
