@@ -1,3 +1,7 @@
+---
+sidebar_position: 2
+---
+
 # LangChain v1.0 message types
 
 *Last updated: 08.08.25*
@@ -75,8 +79,8 @@ stores them in an `"extras"` key (see below for examples).
 
 #### Reasoning
 
-<div style={{ display: "flex", gap: "1rem" }}>
-  <div style={{ flex: 1 }}>
+<div className="row">
+  <div className="col col--6" style={{minWidth: 0}}>
     **Before**
 ```python
 from langchain.chat_models import init_chat_model
@@ -116,7 +120,7 @@ response.content
 ```
   </div>
 
-  <div style={{ flex: 1 }}>
+  <div className="col col--6" style={{minWidth: 0}}>
     **After**
 ```python
 from langchain.chat_models import init_chat_model
@@ -345,7 +349,132 @@ structured into a `"non_standard"` block:
 }
 ```
 <details Before>
-...
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model("openai:gpt-5-mini", output_version="responses/v1")
+llm_with_tools = llm.bind_tools(
+    [
+        {
+            "type": "file_search",
+            "vector_store_ids": ["vs_67d0baa0544c8191be194a85e19cbf92"],
+        }
+    ]
+)
+
+response = llm_with_tools.invoke("What is deep research by OpenAI?")
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": []
+  },
+  {
+    "type": "file_search_call",
+    "id": "fs_abc123",
+    "queries": [
+      "What is deep research by OpenAI?",
+      "deep research OpenAI definition"
+    ],
+    "status": "completed"
+  },
+  {
+    "type": "reasoning",
+    "id": "rs_def456",
+    "summary": []
+  },
+  {
+    "type": "text",
+    "text": "Deep research is...",
+    "annotations": [
+      {
+        "type": "file_citation",
+        "file_id": "file-abc123",
+        "filename": "sample_file.pdf",
+        "index": 305
+      },
+      {
+        "type": "file_citation",
+        "file_id": "file-abc123",
+        "filename": "sample_file.pdf",
+        "index": 675
+      },
+    ],
+    "id": "msg_abc123"
+  }
+]
+```
+</details>
+
+<details After>
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model("openai:gpt-5-mini", message_version="v1")
+llm_with_tools = llm.bind_tools(
+    [
+        {
+            "type": "file_search",
+            "vector_store_ids": ["vs_67d0baa0544c8191be194a85e19cbf92"],
+        }
+    ]
+)
+
+response = llm_with_tools.invoke("What is deep research by OpenAI?")
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": []
+  },
+  {
+    "type": "non_standard",
+    "value": {
+      "type": "file_search_call",
+      "id": "fs_abc123",
+      "queries": [
+        "What is deep research by OpenAI?",
+        "deep research OpenAI definition"
+      ],
+      "status": "completed"
+    }
+  },
+  {
+    "type": "reasoning",
+    "id": "rs_def456",
+    "summary": []
+  },
+  {
+    "type": "text",
+    "text": "Deep research is...",
+    "annotations": [
+      {
+        "type": "citation",
+        "title": "sample_file.pdf",
+        "extras": {
+          "file_id": "file-abc123",
+          "index": 305
+        }
+      },
+      {
+        "type": "citation",
+        "title": "sample_file.pdf",
+        "extras": {
+          "file_id": "file-abc123",
+          "index": 675
+        }
+      },
+    ],
+    "id": "msg_abc123"
+  }
+]
+```
 </details>
 
 
