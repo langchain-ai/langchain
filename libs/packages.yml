@@ -699,3 +699,6 @@ packages:
 - name: langchain-gradient
   path: .
   repo: digitalocean/langchain-gradient
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi
