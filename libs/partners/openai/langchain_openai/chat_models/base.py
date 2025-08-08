@@ -1211,12 +1211,6 @@ class BaseChatOpenAI(BaseChatModel):
 
         payload = {**self._default_params, **kwargs}
 
-        if self.model_name.startswith("gpt-5"):
-            # gpt-5 models don't support these parameters
-            payload.pop("audio", None)
-            payload.pop("modalities", None)
-            payload.pop("prediction", None)
-
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
