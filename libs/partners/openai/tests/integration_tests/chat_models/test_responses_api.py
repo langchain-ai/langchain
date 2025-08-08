@@ -435,9 +435,7 @@ def test_stream_reasoning_summary(
 
 @pytest.mark.vcr
 def test_code_interpreter() -> None:
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
     )
@@ -476,9 +474,7 @@ def test_code_interpreter() -> None:
 
 @pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
 
     llm_with_tools = llm.bind_tools(
         [
@@ -567,9 +563,7 @@ def test_mcp_builtin_zdr() -> None:
 @pytest.mark.vcr()
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
-    llm = ChatOpenAI(
-        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
@@ -624,9 +618,7 @@ def test_image_generation_streaming() -> None:
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
-    llm = ChatOpenAI(
-        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
     # Test invocation
     tool = {
         "type": "image_generation",
