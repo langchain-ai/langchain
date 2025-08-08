@@ -674,28 +674,17 @@ def test_image_generation_multi_turn() -> None:
     assert set(tool_output2.keys()).issubset(expected_keys)
 
 
-@pytest.mark.xfail(
-    reason="verbosity parameter not yet supported by OpenAI Responses API"
-)
 def test_verbosity_parameter() -> None:
     """Test verbosity parameter with Responses API.
 
-    TODO: This test is expected to fail until OpenAI enables verbosity support
-    in the Responses API for available models. The parameter is properly implemented
-    in the codebase but the API currently returns 'Unknown parameter: verbosity'.
-    Remove @pytest.mark.xfail when OpenAI adds support.
+    Tests that the verbosity parameter works correctly with the OpenAI Responses API.
+
     """
-    llm = ChatOpenAI(
-        model=MODEL_NAME,
-        verbosity="medium",
-        use_responses_api=True,
-        output_version="responses/v1",
-    )
+    llm = ChatOpenAI(model=MODEL_NAME, verbosity="medium", use_responses_api=True)
     response = llm.invoke([HumanMessage(content="Hello, explain quantum computing.")])
 
     assert isinstance(response, AIMessage)
     assert response.content
-    # When verbosity works, we expect the response to respect the verbosity level
 
 
 @pytest.mark.vcr()
