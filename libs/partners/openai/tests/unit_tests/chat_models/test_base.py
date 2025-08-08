@@ -876,24 +876,10 @@ def test_get_num_tokens_from_messages() -> None:
     ]
     expected = 431  # Updated to match token count with mocked 100x100 image
 
-    # Mock httpx.get to avoid network calls in unit tests
-    with patch("httpx.get") as mock_get:
-        # Create a mock response that simulates a small image (100x100 pixels)
-        mock_response = MagicMock()
-        # Fake PNG header for 100x100 image
-        mock_response.content = (
-            b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00d\x00\x00\x00d"
-        )
-        mock_response.raise_for_status.return_value = None
-        mock_get.return_value = mock_response
-
-        # Mock PIL Image.open to return a known size
-        with patch("PIL.Image.open") as mock_image_open:
-            mock_image = MagicMock()
-            mock_image.size = (100, 100)  # 100x100 pixel image
-            mock_image_open.return_value = mock_image
-
-            actual = llm.get_num_tokens_from_messages(messages)
+    # Mock _url_to_size to avoid PIL dependency in unit tests
+    with patch("langchain_openai.chat_models.base._url_to_size") as mock_url_to_size:
+        mock_url_to_size.return_value = (100, 100)  # 100x100 pixel image
+        actual = llm.get_num_tokens_from_messages(messages)
 
     assert expected == actual
 
