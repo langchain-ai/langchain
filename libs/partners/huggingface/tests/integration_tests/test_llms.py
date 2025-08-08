@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 
 from langchain_huggingface.llms import HuggingFacePipeline
 
@@ -17,4 +17,21 @@ def test_huggingface_pipeline_streaming() -> None:
     for chunk in generator:
         assert isinstance(chunk, str)
         stream_results_string = chunk
+    assert len(stream_results_string.strip()) > 0
+
+
+async def test_huggingface_pipeline_astreaming() -> None:
+    """Test streaming tokens from huggingface_pipeline using astream."""
+    llm = HuggingFacePipeline.from_model_id(
+        model_id="openai-community/gpt2",
+        task="text-generation",
+        pipeline_kwargs={"max_new_tokens": 10},
+    )
+    agenerator = llm.astream("Q: How do you say 'hello' in German? A:'", stop=["."])
+    stream_results_string = ""
+    assert isinstance(agenerator, AsyncGenerator)
+
+    async for chunk in agenerator:
+        assert isinstance(chunk, str)
+        stream_results_string += chunk
     assert len(stream_results_string.strip()) > 0
