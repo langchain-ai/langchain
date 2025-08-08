@@ -67,22 +67,25 @@ async def test_ainvoke_uses_async_response_completed() -> None:
     mock_run.status = "completed"
 
     # await_for_run returns a completed run
-    assistant._await_for_run = AsyncMock(return_value=mock_run)  # type: ignore[attr-defined]
-
+    await_for_run_mock = AsyncMock(return_value=mock_run)
     # async messages list returns messages belonging to run
     msg = MagicMock()
     msg.run_id = "run-id"
     msg.content = []
-    assistant.async_client.beta.threads.messages.list = AsyncMock(  # type: ignore[attr-defined]
-        return_value=[msg]
-    )
+    list_mock = AsyncMock(return_value=[msg])
 
-    # Act
-    result = await assistant.ainvoke({"content": "hi"})
+    with patch.object(assistant, "_await_for_run", await_for_run_mock):
+        with patch.object(
+            assistant.async_client.beta.threads.messages,
+            "list",
+            list_mock,
+        ):
+            # Act
+            result = await assistant.ainvoke({"content": "hi"})
 
     # Assert: returns messages list (non-agent path) and did not block
     assert isinstance(result, list)
-    assistant.async_client.beta.threads.messages.list.assert_awaited()  # type: ignore[attr-defined]
+    list_mock.assert_awaited()
 
 
 @pytest.mark.requires("openai")
@@ -110,10 +113,11 @@ async def test_ainvoke_uses_async_response_requires_action_agent() -> None:
     tool_call.function.arguments = '{\n  "x": 1\n}'
     mock_run.required_action.submit_tool_outputs.tool_calls = [tool_call]
 
-    assistant._await_for_run = AsyncMock(return_value=mock_run)  # type: ignore[attr-defined]
+    await_for_run_mock = AsyncMock(return_value=mock_run)
 
     # Act
-    result = await assistant.ainvoke({"content": "hi"})
+    with patch.object(assistant, "_await_for_run", await_for_run_mock):
+        result = await assistant.ainvoke({"content": "hi"})
 
     # Assert: returns list of OpenAIAssistantAction
     assert isinstance(result, list)
