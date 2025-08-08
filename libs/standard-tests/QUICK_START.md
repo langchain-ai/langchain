@@ -264,8 +264,10 @@ class TestFakeChatModelV1(ChatModelV1UnitTests):
 This file demonstrates how to use the new content blocks v1 integration test suite
 for testing real chat models that support the enhanced content blocks system.
 
-Note: This is a template/example. Real implementations should replace
-FakeChatModelV1 with actual chat model classes.
+.. note::
+  This is a template/example. Real implementations should replace ``FakeChatModelV1``
+  with actual chat model classes.
+
 """
 
 import os

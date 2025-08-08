@@ -2729,10 +2729,10 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     streaming will only begin after this component is run. If there are
     multiple blocking components, streaming begins after the last one.
 
-    Please note: ``RunnableLambdas`` do not support ``transform`` by default! So if
-        you need to use a ``RunnableLambdas`` be careful about where you place them in a
-        ``RunnableSequence`` (if you need to use the ``stream``/``astream``
-        methods).
+    .. note::
+        ``RunnableLambdas`` do not support ``transform`` by default! So if you need to
+        use a ``RunnableLambdas`` be careful about where you place them in a
+        ``RunnableSequence`` (if you need to use the ``stream``/``astream`` methods).
 
         If you need arbitrary logic and need streaming, you can subclass
         Runnable, and implement ``transform`` for whatever logic you need.
