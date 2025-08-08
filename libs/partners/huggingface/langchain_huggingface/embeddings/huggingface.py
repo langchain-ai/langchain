@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from typing import Any, Optional
 
 from langchain_core.embeddings import Embeddings
@@ -19,6 +20,11 @@ _MIN_OPTIMUM_VERSION = "1.22"
 
 class HuggingFaceEmbeddings(BaseModel, Embeddings):
     """HuggingFace sentence_transformers embedding models.
+
+    .. deprecated:: 0.3.1
+        HuggingFaceEmbeddings depends on sentence-transformers which requires
+        heavy dependencies (torch, pillow). Use TransformersEmbeddings instead
+        which provides the same functionality with lighter dependencies.
 
     To use, you should have the ``sentence_transformers`` python package installed.
 
@@ -64,6 +70,13 @@ class HuggingFaceEmbeddings(BaseModel, Embeddings):
 
     def __init__(self, **kwargs: Any):
         """Initialize the sentence_transformer."""
+        warnings.warn(
+            "HuggingFaceEmbeddings depends on sentence-transformers which requires "
+            "heavy dependencies (torch, pillow). Use TransformersEmbeddings instead "
+            "which provides the same functionality with lighter dependencies.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         super().__init__(**kwargs)
         try:
             import sentence_transformers  # type: ignore[import]
