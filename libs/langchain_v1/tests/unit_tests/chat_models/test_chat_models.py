@@ -222,7 +222,7 @@ def test_configurable_with_default() -> None:
             config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
         )
 
-    """
+    """  # noqa: E501
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
         "invoke",
