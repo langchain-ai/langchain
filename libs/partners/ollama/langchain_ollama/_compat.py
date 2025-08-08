@@ -181,12 +181,6 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessage:
     """Convert Ollama API response to AIMessage."""
     content: list[types.ContentBlock] = []
 
-    # Handle text content
-    if "message" in response and "content" in response["message"]:
-        text_content = response["message"]["content"]
-        if text_content:
-            content.append(TextContentBlock(type="text", text=text_content))
-
     # Handle reasoning content first (should come before main response)
     if "message" in response and "thinking" in response["message"]:
         thinking_content = response["message"]["thinking"]
@@ -197,6 +191,12 @@ def _convert_to_v1_from_ollama_format(response: dict[str, Any]) -> AIMessage:
                     reasoning=thinking_content,
                 )
             )
+
+    # Handle text content
+    if "message" in response and "content" in response["message"]:
+        text_content = response["message"]["content"]
+        if text_content:
+            content.append(TextContentBlock(type="text", text=text_content))
 
     # Handle tool calls
     if "message" in response and "tool_calls" in response["message"]:
