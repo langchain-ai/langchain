@@ -939,7 +939,7 @@ def test_prediction_tokens() -> None:
     """
     )
 
-    llm = ChatOpenAI(model="gpt-5-nano")
+    llm = ChatOpenAI(model="gpt-4.1-nano")
     query = (
         "Replace the Username property with an Email property. "
         "Respond only with code, and with no markdown formatting."
