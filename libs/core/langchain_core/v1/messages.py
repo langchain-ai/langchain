@@ -720,7 +720,7 @@ class SystemMessage:
     custom_role: Optional[str] = None
     """If provided, a custom role for the system message.
 
-    Example: ``'developer'``.
+    Example: ``'developer'``, ``'control'``.
 
     Integration packages may use this field to assign the system message role if it
     contains a recognized value.
