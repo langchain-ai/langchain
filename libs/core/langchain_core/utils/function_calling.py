@@ -277,7 +277,7 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
-            if get_origin(arg_type) is Annotated:
+            if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     annotated_args[0], depth=depth + 1, visited=visited
@@ -575,12 +575,23 @@ def convert_to_openai_tool(
 
         Added support for OpenAI's image generation built-in tool.
     """
+    from langchain_core.tools import Tool
+
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
             return tool
+    if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
+        oai_tool = {
+            "type": "custom",
+            "name": tool.name,
+            "description": tool.description,
+        }
+        if tool.metadata is not None and "format" in tool.metadata:
+            oai_tool["format"] = tool.metadata["format"]
+        return oai_tool
     oai_function = convert_to_openai_function(tool, strict=strict)
     return {"type": "function", "function": oai_function}
 
@@ -629,15 +640,16 @@ def tool_example_to_messages(
 
     The list of messages per example by default corresponds to:
 
-    1) HumanMessage: contains the content from which content should be extracted.
-    2) AIMessage: contains the extracted information from the model
-    3) ToolMessage: contains confirmation to the model that the model requested a tool
-       correctly.
+    1. ``HumanMessage``: contains the content from which content should be extracted.
+    2. ``AIMessage``: contains the extracted information from the model
+    3. ``ToolMessage``: contains confirmation to the model that the model requested a
+       tool correctly.
 
-    If `ai_response` is specified, there will be a final AIMessage with that response.
+    If ``ai_response`` is specified, there will be a final ``AIMessage`` with that
+    response.
 
-    The ToolMessage is required because some chat models are hyper-optimized for agents
-    rather than for an extraction use case.
+    The ``ToolMessage`` is required because some chat models are hyper-optimized for
+    agents rather than for an extraction use case.
 
     Arguments:
         input: string, the user input
@@ -646,7 +658,7 @@ def tool_example_to_messages(
         tool_outputs: Optional[list[str]], a list of tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
-        ai_response: Optional[str], if provided, content for a final AIMessage.
+        ai_response: Optional[str], if provided, content for a final ``AIMessage``.
 
     Returns:
         A list of messages
@@ -728,6 +740,7 @@ def _parse_google_docstring(
     """Parse the function and argument descriptions from the docstring of a function.
 
     Assumes the function docstring follows Google Python style guide.
+
     """
     if docstring:
         docstring_blocks = docstring.split("\n\n")

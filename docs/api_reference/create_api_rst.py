@@ -97,7 +97,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
-                kind: ClassKind = "TypedDict"
+                kind = "TypedDict"
             elif (
                 issubclass(type_, Runnable)
                 and issubclass(type_, BaseModel)
@@ -189,7 +189,7 @@ def _load_package_modules(
         if isinstance(package_directory, str)
         else package_directory
     )
-    modules_by_namespace = {}
+    modules_by_namespace: Dict[str, ModuleMembers] = {}
 
     # Get the high level package name
     package_name = package_path.name
@@ -217,8 +217,8 @@ def _load_package_modules(
         # Get the full namespace of the module
         namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
         # Keep only the top level namespace
-        # (but make special exception for content_blocks and messages.v1)
-        if namespace == "messages.content_blocks" or namespace == "messages.v1":
+        # (but make special exception for content_blocks and v1.messages)
+        if namespace == "messages.content_blocks" or namespace == "v1.messages":
             top_namespace = namespace  # Keep full namespace for content_blocks
         else:
             top_namespace = namespace.split(".")[0]

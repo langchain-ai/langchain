@@ -1,11 +1,14 @@
 """Dump objects to json."""
 
+import dataclasses
+import inspect
 import json
 from typing import Any
 
 from pydantic import BaseModel
 
 from langchain_core.load.serializable import Serializable, to_json_not_implemented
+from langchain_core.v1.messages import MessageV1Types
 
 
 def default(obj: Any) -> Any:
@@ -19,6 +22,24 @@ def default(obj: Any) -> Any:
     """
     if isinstance(obj, Serializable):
         return obj.to_json()
+
+    # Handle v1 message classes
+    if type(obj) in MessageV1Types:
+        # Get the constructor signature to only include valid parameters
+        init_sig = inspect.signature(type(obj).__init__)
+        valid_params = set(init_sig.parameters.keys()) - {"self"}
+
+        # Filter dataclass fields to only include constructor params
+        all_fields = dataclasses.asdict(obj)
+        kwargs = {k: v for k, v in all_fields.items() if k in valid_params}
+
+        return {
+            "lc": 1,
+            "type": "constructor",
+            "id": ["langchain_core", "v1", "messages", type(obj).__name__],
+            "kwargs": kwargs,
+        }
+
     return to_json_not_implemented(obj)
 
 
@@ -73,10 +94,9 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    Note:
-        Unfortunately this function is not as efficient as it could be
-        because it first dumps the object to a json string and then loads it
-        back into a dictionary.
+    .. note::
+        Unfortunately this function is not as efficient as it could be because it first
+        dumps the object to a json string and then loads it back into a dictionary.
 
     Args:
         obj: The object to dump.

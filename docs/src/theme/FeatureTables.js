@@ -321,7 +321,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "VertexAILLM",
-                link: "google_vertexai",
+                link: "google_vertex_ai_palm",
                 package: "langchain-google-vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
@@ -776,7 +776,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Reddit",
-                link: "RedditPostsLoader",
+                link: "reddit",
                 loaderName: "RedditPostsLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.reddit.RedditPostsLoader.html"
             },
