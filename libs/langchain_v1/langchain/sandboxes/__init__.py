@@ -11,8 +11,10 @@ from typing import (
     TypedDict,
 )
 
-from langchain_core.tools import BaseTool, StructuredTool
+from daytona import Daytona
 from pydantic import BaseModel, Field
+
+from langchain_core.tools import BaseTool, StructuredTool
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -41,6 +43,9 @@ class SandboxCapabilities(TypedDict):
     can_list_files: bool
     can_run_code: bool
     supported_languages: list[str]
+    support_repl: bool
+    can_exec: bool
+    can_exec_session: bool
 
 
 class ExecuteResponse(TypedDict):
@@ -53,19 +58,59 @@ class ExecuteResponse(TypedDict):
     """
     exit_code: NotRequired[int]
     """The exit code of the executed code, if applicable."""
-    session_id: NotRequired[str]
-    """The ID of the session in which the code was executed."""
+
+
+class SandboxManager:
+    def __init__(self, daytona_client: Daytona) -> None:
+        """Initialize the SandboxManager with a Daytona client."""
+        self.daytona_client = daytona_client
+
+    def list(self) -> list[id]:
+        """List available sandboxes."""
+        return self.daytona_client.list()
+
+    def delete(self, id: str) -> None:
+        """Delete a sandbox by its ID."""
+        # This could be optimized by using the API directly or by accessing
+        # private attributes, for now we'll keep it simple and restrict to the
+        # public API.
+        sandbox = self.daytona_client.get(id)
+        self.daytona_client.delete(sandbox)
+
+    def get(self, id: str) -> DaytonaSandboxToolkit:
+        """Get a toolkit for a given ID."""
+        sandbox = self.daytona_client.get(id)
+        return DaytonaSandboxToolkit(sandbox)
+
+    def create(self, **kwargs) -> DaytonaSandboxToolkit:
+        """Create and return a new sandbox ID."""
+        sandbox = self.daytona_client.create(**kwargs)
+        # For now, we'll only support a single session ID for execution. It's simple!
+        session_id = "main-exec-session"
+        sandbox.process.create_session(session_id)
+        return DaytonaSandboxToolkit(
+            sandbox,
+        )
 
 
 class DaytonaSandboxToolkit:
     """A toolkit for interacting with sandboxes."""
 
     def __init__(
-        self, sandbox: Sandbox, *, default_language: str | None = None
+        self,
+        sandbox: Sandbox,
+        *,
+        default_language: str | None = None,
     ) -> None:
         """Initialize the SandboxToolkit with a DaytonSandbox instance."""
         self.sandbox = sandbox
         self._default_language = default_language
+        self.exec_session_id = "main-exec-session"
+
+    @property
+    def id(self) -> str:
+        """Get the ID of the sandbox."""
+        return self.sandbox.id
 
     def list_files(self, path: str) -> list[FileInfo]:
         """List files in the specified path."""
@@ -113,6 +158,13 @@ class DaytonaSandboxToolkit:
             exit_code=execute_response.exit_code,
         )
 
+    def exec_session(self, command: str) -> ExecuteResponse:
+        """Execute a shell in the `main` session."""
+        execute_response = self.sandbox.process.execute_session_command(
+            self.exec_session_id, {"command": command}
+        )
+        return execute_response
+
     @property
     def default_language(self) -> str | None:
         """Get the default language for code execution."""
@@ -125,6 +177,8 @@ class DaytonaSandboxToolkit:
             "can_download": True,
             "can_list_files": True,
             "can_run_code": True,
+            "support_repl": False,
+            "can_exec": True,
             "supported_languages": ["python"],
         }
 
