@@ -74,14 +74,13 @@ async def test_ainvoke_uses_async_response_completed() -> None:
     msg.content = []
     list_mock = AsyncMock(return_value=[msg])
 
-    with patch.object(assistant, "_await_for_run", await_for_run_mock):
-        with patch.object(
-            assistant.async_client.beta.threads.messages,
-            "list",
-            list_mock,
-        ):
-            # Act
-            result = await assistant.ainvoke({"content": "hi"})
+    with patch.object(assistant, "_await_for_run", await_for_run_mock), patch.object(
+        assistant.async_client.beta.threads.messages,
+        "list",
+        list_mock,
+    ):
+        # Act
+        result = await assistant.ainvoke({"content": "hi"})
 
     # Assert: returns messages list (non-agent path) and did not block
     assert isinstance(result, list)
