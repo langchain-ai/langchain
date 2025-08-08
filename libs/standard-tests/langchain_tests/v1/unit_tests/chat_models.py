@@ -72,7 +72,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
     TEST_PYDANTIC_MODELS.append(generate_schema_pydantic_v1_from_2())
 
 
-class ChatModelV1Tests(BaseStandardTests):
+class ChatModelTests(BaseStandardTests):
     """Test suite for v1 chat models.
 
     This class provides comprehensive testing for the new message system introduced in
@@ -411,7 +411,7 @@ class ChatModelV1Tests(BaseStandardTests):
         return {"invoke": [], "stream": []}
 
 
-class ChatModelV1UnitTests(ChatModelV1Tests):
+class ChatModelUnitTests(ChatModelTests):
     """Base class for chat model v1 unit tests.
 
     These tests run in isolation without external dependencies.

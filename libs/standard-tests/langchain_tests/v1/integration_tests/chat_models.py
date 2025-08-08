@@ -64,7 +64,7 @@ from pydantic import BaseModel, Field
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from vcr.cassette import Cassette
 
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1Tests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelTests
 
 # Content block type definitions for testing
 ContentBlock = Union[
@@ -204,7 +204,7 @@ def unicode_customer(customer_name: str, description: str) -> str:
     return f"Created customer: {customer_name} - {description}"
 
 
-class ChatModelV1IntegrationTests(ChatModelV1Tests):
+class ChatModelIntegrationTests(ChatModelTests):
     """Base class for v1 chat model integration tests.
 
     TODO: verify this entire docstring!

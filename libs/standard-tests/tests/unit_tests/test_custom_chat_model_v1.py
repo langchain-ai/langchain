@@ -2,12 +2,12 @@
 
 import pytest
 
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests
 
 from .custom_chat_model_v1 import ChatParrotLinkV1
 
 
-class TestChatParrotLinkV1Unit(ChatModelV1UnitTests):
+class TestChatParrotLinkV1Unit(ChatModelUnitTests):
     """Unit tests for ``ChatParrotLinkV1`` using the standard v1 test suite."""
 
     @property
