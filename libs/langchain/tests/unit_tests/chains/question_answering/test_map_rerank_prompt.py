@@ -1,4 +1,4 @@
-"""Test map_rerank parser"""
+"""Test map_rerank parser."""
 
 import pytest
 

@@ -159,7 +159,6 @@ class SQLRecordManager(RecordManager):
 
     async def acreate_schema(self) -> None:
         """Create the database schema."""
-
         if not isinstance(self.engine, AsyncEngine):
             msg = "This method is not supported for sync engines."
             raise AssertionError(msg)  # noqa: TRY004
@@ -170,7 +169,6 @@ class SQLRecordManager(RecordManager):
     @contextlib.contextmanager
     def _make_session(self) -> Generator[Session, None, None]:
         """Create a session and close it after use."""
-
         if isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for async engines."
             raise AssertionError(msg)  # noqa: TRY004
@@ -184,7 +182,6 @@ class SQLRecordManager(RecordManager):
     @contextlib.asynccontextmanager
     async def _amake_session(self) -> AsyncGenerator[AsyncSession, None]:
         """Create a session and close it after use."""
-
         if not isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for sync engines."
             raise AssertionError(msg)  # noqa: TRY004

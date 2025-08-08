@@ -92,8 +92,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         context limit.
 
         Args:
-            docs: List[Document], a list of documents to use to calculate the
-                total prompt length.
+            docs: a list of documents to use to calculate the total prompt length.
+            **kwargs: additional parameters that may be needed to calculate the
+                prompt length.
 
         Returns:
             Returns None if the method does not depend on the prompt length,

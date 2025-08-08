@@ -20,16 +20,15 @@ class MergerRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Get the relevant documents for a given query.
+        """Get the relevant documents for a given query.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of relevant documents.
         """
-
         # Merge the results of the retrievers.
         return self.merge_documents(query, run_manager)
 
@@ -39,16 +38,15 @@ class MergerRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Asynchronously get the relevant documents for a given query.
+        """Asynchronously get the relevant documents for a given query.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of relevant documents.
         """
-
         # Merge the results of the retrievers.
         return await self.amerge_documents(query, run_manager)
 
@@ -57,16 +55,15 @@ class MergerRetriever(BaseRetriever):
         query: str,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Merge the results of the retrievers.
+        """Merge the results of the retrievers.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of merged documents.
         """
-
         # Get the results of all retrievers.
         retriever_docs = [
             retriever.invoke(
@@ -91,16 +88,15 @@ class MergerRetriever(BaseRetriever):
         query: str,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Asynchronously merge the results of the retrievers.
+        """Asynchronously merge the results of the retrievers.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of merged documents.
         """
-
         # Get the results of all retrievers.
         retriever_docs = await asyncio.gather(
             *(

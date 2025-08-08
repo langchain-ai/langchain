@@ -78,6 +78,7 @@ def create_openai_fn_chain(
             passed in and they are not pydantic.BaseModels, the chain output will
             include both the name of the function that was returned and the arguments
             to pass to the function.
+        **kwargs: Additional keyword arguments to pass to LLMChain.
 
     Returns:
         An LLMChain that will pass in the given functions to the model when run.
@@ -171,6 +172,7 @@ def create_structured_output_chain(
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
             model outputs will simply be parsed as JSON.
+        **kwargs: Additional keyword arguments to pass to LLMChain.
 
     Returns:
         An LLMChain that will pass the given function to the model.
