@@ -1,8 +1,14 @@
 # LangChain v0.4
 
-*Last updated: 08.06.25*
+*Last updated: 08.08.25*
 
 ## What's changed
+
+LangChain v0.4 allows developers to opt-in to new message types that will become default
+in LangChain v1.0. LangChain v1.0 will be released this fall. These messages provide
+fully typed, provider-agnostic content, introducing standard content blocks for
+reasoning, citations, server-side tool calls, and other LLM features. They also offer
+performance benefits over existing message classes.
 
 New message types have been added to a `v1` namespace in `langchain-core`. Select
 integration packages now also expose a `v1` namespace containing chat models that
@@ -14,29 +20,56 @@ not conform to the new interface. This is the only breaking change.
 
 ## What's new
 
-...
+You can access the new chat models through [init_chat_model](/docs/how_to/chat_models_universal_init/):
+
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model("openai:gpt-5", message_version="v1")
+
+input_message = {"role": "user", "content": "Hello, world!"}
+llm.invoke([input_message])
+```
+
+You can also access the `v1` namespaces directly:
+```python
+from langchain_core.v1.messages import HumanMessage
+from langchain_openai.v1 import ChatOpenAI
+
+input_message = HumanMessage("Hello, world!")
+llm.invoke([input_message])
+```
+
+:::info New message details
+
+See our guide on the [new message types](/docs/versions/v0_4/messages) for details.
+
+:::
 
 ## How to update your code
 
-...
+If you maintain custom callbacks or output parsers, type checkers may raise errors if
+they do not accept the new message types as inputs. Refer to
+[this guide](/docs/versions/v0_4/how_to_update) for how to address those issues.
+
+If you do not maintain custom callbacks or output parsers, there are no breaking
+changes. See our guide on the [new message types](/docs/versions/v0_4/messages) to learn
+about new features introduced in v0.4.
+
 
 
 ### Base packages
 
-...
+| Package                  | Latest | Recommended constraint |
+|--------------------------|--------|------------------------|
+| langchain                | 0.4.0  | >=0.4,&lt;1.0             |
+| langchain-community      | 0.4.0  | >=0.4,&lt;1.0             |
+| langchain-text-splitters | 0.4.0  | >=0.4,&lt;1.0             |
+| langchain-core           | 0.4.0  | >=0.4,&lt;1.0             |
+| langchain-experimental   | 0.4.0  | >=0.4,&lt;1.0             |
 
-### Downstream packages
-
-...
 
 ### Integration packages
 
 ...
 
-## Common issues
-
-...
-
-## Migrate using langchain-cli
-
-...

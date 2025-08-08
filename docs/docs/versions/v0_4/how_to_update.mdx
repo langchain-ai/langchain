@@ -1,0 +1,98 @@
+# How to update your code
+
+If you maintain custom callbacks or output parsers, type checkers may raise errors if
+they do not accept the new message types as inputs. This guide describes how to
+address those issues.
+
+If you do not maintain custom callbacks or output parsers, there are no breaking
+changes. See our guide on the [new message types](/docs/versions/v0_4/messages) to learn
+about new features introduced in v0.4.
+
+## Custom callbacks
+
+[BaseCallbackHandler](https://python.langchain.com/api_reference/core/callbacks/langchain_core.callbacks.base.BaseCallbackHandler.html)
+now includes an attribute `accepts_new_messages` that defaults to False. When this
+attribute is False, the callback system in langchain-core will automatically convert
+new message types to old, so there should be no runtime errors. You can update callback
+signatures as below to fix type-checking errors:
+
+```
+from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
+
+def on_chat_model_start(
+    self,
+    serialized: dict[str, Any],
+    # highlight-next-line
+    messages: Union[list[list[BaseMessage]], list[MessageV1]],
+    *,
+    run_id: UUID,
+    parent_run_id: Optional[UUID] = None,
+    tags: Optional[list[str]] = None,
+    metadata: Optional[dict[str, Any]] = None,
+    **kwargs: Any,
+) -> Any:
+
+def on_llm_new_token(
+    self,
+    token: str,
+    *,
+    chunk: Optional[
+        # highlight-next-line
+        Union[GenerationChunk, ChatGenerationChunk, AIMessageChunk]
+    ] = None,
+    run_id: UUID,
+    parent_run_id: Optional[UUID] = None,
+    **kwargs: Any,
+) -> Any:
+
+def on_llm_end(
+    self,
+    # highlight-next-line
+    response: Union[LLMResult, AIMessage],
+    *,
+    run_id: UUID,
+    parent_run_id: Optional[UUID] = None,
+    **kwargs: Any,
+) -> Any:
+```
+You can also safely type-ignore mypy `override` errors here unless you switch
+`accepts_new_messages` to True.
+
+
+## Custom output parsers
+
+All output parsers in `langchain-core` have been updated to accept the new message
+types.
+
+If you maintain a custom output parser, `langchain-core` exposes a
+`convert_from_v1_message` function so that your parser can easily operate on the new
+message types:
+
+```python
+from langchain_core.messages.utils import convert_from_v1_message
+from langchain_core.v1.messages import AIMessage
+
+def parse_result(
+    self,
+    # highlight-next-line
+    result: Union[list[Generation], AIMessage],
+    *,
+    partial: bool = False,
+) -> Union[list[AgentAction], AgentFinish]:
+    # highlight-start
+    if isinstance(result, AIMessage):
+        result = [ChatGeneration(message=convert_from_v1_message(result))]
+    # highlight-end
+    ...
+
+def _transform(
+    # higlight-next-line
+    self, input: Iterator[Union[str, BaseMessage, AIMessage]]
+) -> Iterator[AddableDict]:
+    for chunk in input:
+        # higlight-start
+        if isinstance(chunk, AIMessage):
+            chunk = convert_from_v1_message(chunk)
+        # higlight-end
+        ...
+```
