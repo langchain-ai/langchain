@@ -140,15 +140,6 @@ class ChatModelV1Tests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
-        """(None or str) To use for tool choice when used in tests.
-
-        Not required.
-
-        """
-        return None
-
-    @property
     def has_tool_choice(self) -> bool:
         """Whether the model supports forcing tool calling via ``tool_choice``."""
         bind_tools_params = inspect.signature(
@@ -180,6 +171,35 @@ class ChatModelV1Tests(BaseStandardTests):
         TODO: clarify what this means exactly.
 
         Defaults to False.
+
+        """
+        return False
+
+    @property
+    def supports_image_inputs(self) -> bool:
+        """(bool) whether the chat model supports image inputs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_image_urls(self) -> bool:
+        """(bool) whether the chat model supports image inputs from URLs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        """(bool) whether the chat model supports PDF inputs, defaults to ``False``."""
+        return False
+
+    @property
+    def supports_audio_inputs(self) -> bool:
+        """(bool) whether the chat model supports audio inputs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        """(bool) whether the chat model supports video inputs, defaults to ``False``.
+
+        No current tests are written for this feature.
 
         """
         return False
