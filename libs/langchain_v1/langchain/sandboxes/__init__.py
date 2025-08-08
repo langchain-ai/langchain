@@ -1,4 +1,5 @@
 """Temporary wrapper for sandbox integrations."""
+
 from __future__ import annotations
 
 from typing import (
@@ -11,6 +12,7 @@ from typing import (
 )
 
 from langchain_core.tools import BaseTool, StructuredTool
+from pydantic import BaseModel, Field
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -58,7 +60,9 @@ class ExecuteResponse(TypedDict):
 class DaytonaSandboxToolkit:
     """A toolkit for interacting with sandboxes."""
 
-    def __init__(self, sandbox: Sandbox, *, default_language: str | None) -> None:
+    def __init__(
+        self, sandbox: Sandbox, *, default_language: str | None = None
+    ) -> None:
         """Initialize the SandboxToolkit with a DaytonSandbox instance."""
         self.sandbox = sandbox
         self._default_language = default_language
@@ -93,7 +97,6 @@ class DaytonaSandboxToolkit:
         return ExecuteResponse(
             result=execute_response.result,
             exit_code=execute_response.exit_code,
-            session_id=execute_response.session_id,
         )
 
     def repl(self, code: str, timeout: int = 30 * 60) -> ExecuteResponse:
@@ -108,7 +111,6 @@ class DaytonaSandboxToolkit:
         return ExecuteResponse(
             result=execute_response.result,
             exit_code=execute_response.exit_code,
-            session_id=execute_response.session_id,
         )
 
     @property
@@ -130,8 +132,7 @@ class DaytonaSandboxToolkit:
 class Adapter:
     """An adapter to integrate responses from a sandbox toolkit to an LLM."""
 
-    @staticmethod
-    def format_response(response: ExecuteResponse) -> str:
+    def format_response(self, response: ExecuteResponse) -> str:
         """Format the response for code execution."""
         result = f"<execute_result>\n<output>{response['result']}</output>"
 
@@ -141,8 +142,7 @@ class Adapter:
         result += "\n</execute_result>"
         return result
 
-    @staticmethod
-    def format_list_files(files: list[FileInfo]) -> str:
+    def format_list_files(self, files: list[FileInfo]) -> str:
         """Format the response for a list of files."""
         if not files:
             return "<file_list>\n<message>No files found</message>\n</file_list>"
@@ -167,8 +167,7 @@ class Adapter:
         result += "</file_list>"
         return result
 
-    @staticmethod
-    def format_upload_file() -> str:
+    def format_upload_file(self) -> str:
         """Format the response for an uploaded file."""
         return (
             "<upload_result>\n"
@@ -177,8 +176,7 @@ class Adapter:
             "</upload_result>"
         )
 
-    @staticmethod
-    def format_download_file(size: int) -> str:
+    def format_download_file(self, size: int) -> str:
         """Format the response for a downloaded file."""
         return (
             "<download_result>\n"
@@ -189,11 +187,6 @@ class Adapter:
             "</download_result>"
         )
 
-    @staticmethod
-    def format_default(obj: object) -> str:
-        """Default formatter for objects."""
-        return f"<result>\n<content>{obj!s}</content>\n</result>"
-
 
 def _wrap_tool(func, formatter, *, no_return: bool = False) -> Callable:
     def wrapped(*args, **kwargs):
@@ -203,6 +196,26 @@ def _wrap_tool(func, formatter, *, no_return: bool = False) -> Callable:
         return formatter(raw)
 
     return wrapped
+
+
+class CodeExecutionInput(BaseModel):
+    """Input schema for code execution tools."""
+
+    code: str = Field(
+        description="The code to execute in the sandbox.",
+    )
+
+
+class ExecutionInput(BaseModel):
+    """Input schema for command execution tools."""
+
+    command: str = Field(
+        description="The command to execute in the sandbox.",
+    )
+    cwd: Optional[str] = Field(
+        default=None,
+        description="The working directory to execute the command in.",
+    )
 
 
 def create_tools(
@@ -217,12 +230,12 @@ def create_tools(
         toolkit: The SandboxToolkit to use for creating tools.
         tool_selection: A sequence of tool names to create.
     """
-    requested_tools = set(tool_selection)
     capabilities = toolkit.get_capabilities()
+    formatter = Adapter()
 
     # Let's create each tool now
     tools: list[BaseTool] = []
-    for tool_name in requested_tools:
+    for tool_name in tool_selection:
         if tool_name == "run_code":
             if not capabilities["can_run_code"]:
                 msg = "Sandbox does not support running code."
@@ -231,7 +244,8 @@ def create_tools(
                 StructuredTool(
                     description="Run code in the sandbox.",
                     name="run_code",
-                    func=_wrap_tool(toolkit.run_code, Adapter.format_response),
+                    func=_wrap_tool(toolkit.run_code, formatter.format_response),
+                    args_schema=CodeExecutionInput,
                 )
             )
         elif tool_name == "list_files":
@@ -242,7 +256,7 @@ def create_tools(
                 StructuredTool(
                     description="List files in the sandbox.",
                     name="list_files",
-                    func=_wrap_tool(toolkit.list_files, Adapter.format_list_files),
+                    func=_wrap_tool(toolkit.list_files, formatter.format_list_files),
                 )
             )
         elif tool_name == "upload_file":
@@ -254,7 +268,9 @@ def create_tools(
                     description="Upload a file to the sandbox.",
                     name="upload_file",
                     func=_wrap_tool(
-                        toolkit.upload_file, Adapter.format_upload_file, no_return=True
+                        toolkit.upload_file,
+                        formatter.format_upload_file,
+                        no_return=True,
                     ),
                 )
             )
@@ -267,7 +283,7 @@ def create_tools(
                     description="Download a file from the sandbox.",
                     name="download_file",
                     func=_wrap_tool(
-                        toolkit.download_file, Adapter.format_download_file
+                        toolkit.download_file, formatter.format_download_file
                     ),
                 )
             )
@@ -279,7 +295,7 @@ def create_tools(
                 StructuredTool(
                     description="Run code in a REPL environment in the sandbox.",
                     name="repl",
-                    func=_wrap_tool(toolkit.repl, Adapter.format_response),
+                    func=_wrap_tool(toolkit.repl, formatter.format_response),
                 )
             )
         elif tool_name == "exec":
@@ -290,7 +306,8 @@ def create_tools(
                 StructuredTool(
                     description="Execute a command in the sandbox.",
                     name="exec",
-                    func=_wrap_tool(toolkit.exec, Adapter.format_response),
+                    args_schema=ExecutionInput,
+                    func=_wrap_tool(toolkit.exec, formatter.format_response),
                 )
             )
         else:
@@ -304,6 +321,6 @@ def create_tools(
                 f"Unsupported tool: {tool_name}. "
                 f"Supported tools are: {', '.join(known_tools)}."
             )
-            raise NotImplementedError(msg)
+            raise ValueError(msg)
 
     return tools
