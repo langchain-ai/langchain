@@ -4,10 +4,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from httpx import ConnectError
-from langchain_core.messages.content_blocks import ToolCallChunk, is_reasoning_block
+from langchain_core.messages.content_blocks import ToolCallChunk
 from langchain_core.tools import tool
 from langchain_core.v1.chat_models import BaseChatModel
-from langchain_core.v1.messages import AIMessage, AIMessageChunk, HumanMessage
+from langchain_core.v1.messages import AIMessageChunk, HumanMessage
 from langchain_tests.v1.integration_tests.chat_models import ChatModelIntegrationTests
 from ollama import ResponseError
 from pydantic import ValidationError
@@ -195,39 +195,39 @@ class TestChatOllamaV1(ChatModelIntegrationTests):
     #         "reasoning."
     #     )
 
-    @pytest.mark.xfail(
-        reason=(
-            f"{DEFAULT_MODEL_NAME} does not support reasoning. Override uses "
-            "reasoning-capable model with `reasoning=True` enabled."
-        ),
-        strict=False,
-    )
-    def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``ReasoningContentBlock``.
+    # @pytest.mark.xfail(
+    #     reason=(
+    #         f"{DEFAULT_MODEL_NAME} does not support reasoning. Override uses "
+    #         "reasoning-capable model with `reasoning=True` enabled."
+    #     ),
+    #     strict=False,
+    # )
+    # def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
+    #     """Test that the model can generate ``ReasoningContentBlock``.
 
-        This test overrides the default model to use a reasoning-capable model
-        with reasoning mode explicitly enabled.
-        """
-        if not self.supports_reasoning_content_blocks:
-            pytest.skip("Model does not support ReasoningContentBlock.")
+    #     This test overrides the default model to use a reasoning-capable model
+    #     with reasoning mode explicitly enabled.
+    #     """
+    #     if not self.supports_reasoning_content_blocks:
+    #         pytest.skip("Model does not support ReasoningContentBlock.")
 
-        reasoning_enabled_model = ChatOllama(
-            model=REASONING_MODEL_NAME, reasoning=True, validate_model_on_init=True
-        )
+    #     reasoning_enabled_model = ChatOllama(
+    #         model=REASONING_MODEL_NAME, reasoning=True, validate_model_on_init=True
+    #     )
 
-        message = HumanMessage("Think step by step: What is 2 + 2?")
-        result = reasoning_enabled_model.invoke([message])
-        assert isinstance(result, AIMessage)
-        if isinstance(result.content, list):
-            reasoning_blocks = [
-                block
-                for block in result.content
-                if isinstance(block, dict) and is_reasoning_block(block)
-            ]
-            assert len(reasoning_blocks) > 0, (
-                "Expected reasoning content blocks but found none. "
-                f"Content blocks: {[block.get('type') for block in result.content]}"
-            )
+    #     message = HumanMessage("Think step by step: What is 2 + 2?")
+    #     result = reasoning_enabled_model.invoke([message])
+    #     assert isinstance(result, AIMessage)
+    #     if isinstance(result.content, list):
+    #         reasoning_blocks = [
+    #             block
+    #             for block in result.content
+    #             if isinstance(block, dict) and is_reasoning_block(block)
+    #         ]
+    #         assert len(reasoning_blocks) > 0, (
+    #             "Expected reasoning content blocks but found none. "
+    #             f"Content blocks: {[block.get('type') for block in result.content]}"
+    #         )
 
     # Additional Ollama reasoning tests in v1/chat_models/test_chat_models_v1.py
 
