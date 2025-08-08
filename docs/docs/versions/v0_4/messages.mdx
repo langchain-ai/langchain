@@ -81,7 +81,7 @@ stores them in an `"extras"` key (see below for examples).
 
 <div className="row">
   <div className="col col--6" style={{minWidth: 0}}>
-    **Before**
+    **Old content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -121,7 +121,7 @@ response.content
   </div>
 
   <div className="col col--6" style={{minWidth: 0}}>
-    **After**
+    **New content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -157,83 +157,11 @@ response.content
   </div>
 </div>
 
-<details Before>
-```python
-from langchain.chat_models import init_chat_model
-
-llm = init_chat_model(
-    "openai:gpt-5",
-    reasoning={"effort": "medium", "summary": "auto"},
-    output_version="responses/v1",
-)
-response = llm.invoke(
-    "What was the third tallest building in the world in the year 2000?"
-)
-response.content
-```
-```
-[
-  {
-    "type": "reasoning",
-    "id": "rs_abc123",
-    "summary": [
-      {
-        "text": "The user is asking about...",
-        "type": "summary_text"
-      },
-      {
-        "text": "We should consider...",
-        "type": "summary_text"
-      }
-    ]
-  },
-  {
-    "type": "text",
-    "text": "In the year 2000 the third-tallest building in the world was...",
-    "id": "msg_abc123"
-  }
-]
-```
-</details>
-
-<details After>
-```python
-from langchain.chat_models import init_chat_model
-
-llm = init_chat_model(
-    "openai:gpt-5",
-    reasoning={"effort": "medium", "summary": "auto"},
-    message_version="v1",
-)
-response = llm.invoke(
-    "What was the third tallest building in the world in the year 2000?"
-)
-response.content
-```
-```
-[
-  {
-    "type": "reasoning",
-    "reasoning": "The user is asking about...",
-    "id": "rs_abc123"
-  },
-  {
-    "type": "reasoning",
-    "reasoning": "We should consider...",
-    "id": "rs_abc123"
-  },
-  {
-    "type": "text",
-    "text": "In the year 2000 the third-tallest building in the world was...",
-    "id": "msg_abc123"
-  }
-]
-```
-</details>
-
 #### Citations and web search
 
-<details Before>
+<div className="row">
+  <div className="col col--6" style={{minWidth: 0}}>
+    **Old content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -282,9 +210,10 @@ response.content
   }
 ]
 ```
-</details>
+</div>
 
-<details After>
+  <div className="col col--6" style={{minWidth: 0}}>
+    **New content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -336,7 +265,8 @@ response.content
   }
 ]
 ```
-</details>
+  </div>
+</div>
 
 #### Non-standard blocks
 
@@ -348,7 +278,9 @@ structured into a `"non_standard"` block:
     "value": original_block,
 }
 ```
-<details Before>
+<div className="row">
+  <div className="col col--6" style={{minWidth: 0}}>
+    **Old content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -407,9 +339,10 @@ response.content
   }
 ]
 ```
-</details>
+</div>
 
-<details After>
+  <div className="col col--6" style={{minWidth: 0}}>
+    **New content**
 ```python
 from langchain.chat_models import init_chat_model
 
@@ -475,7 +408,8 @@ response.content
   }
 ]
 ```
-</details>
+  </div>
+</div>
 
 
 ## Feature gaps
