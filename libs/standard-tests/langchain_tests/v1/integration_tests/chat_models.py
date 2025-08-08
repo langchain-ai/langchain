@@ -39,7 +39,6 @@ from langchain_core.messages.content_blocks import (
     create_non_standard_block,
     create_plaintext_block,
     create_text_block,
-    create_tool_call,
     is_reasoning_block,
     is_text_block,
     is_tool_call_block,
@@ -1432,9 +1431,17 @@ class ChatModelIntegrationTests(ChatModelTests):
         model_with_tools = model.bind_tools([my_adder_tool])
         messages = [
             HumanMessage("What is 1 + 2?"),
-            create_tool_call(
-                "my_adder_tool", {"a": 1}, id="abc123"
-            ),  # Missing required argument 'b'
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
             ToolMessage(
                 "Error: Missing required argument 'b'.",
                 tool_call_id="abc123",
@@ -2420,7 +2427,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        @tool
+        @tool(message_version="v1")
         def get_weather(location: str) -> str:
             """Call to surf the web."""
             return "It's sunny."
