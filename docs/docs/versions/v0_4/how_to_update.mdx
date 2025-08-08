@@ -1,5 +1,7 @@
 # How to update your code
 
+*Last updated: 08.08.25*
+
 If you maintain custom callbacks or output parsers, type checkers may raise errors if
 they do not accept the new message types as inputs. This guide describes how to
 address those issues.
@@ -16,7 +18,7 @@ attribute is False, the callback system in langchain-core will automatically con
 new message types to old, so there should be no runtime errors. You can update callback
 signatures as below to fix type-checking errors:
 
-```
+```python
 from langchain_core.v1.messages import AIMessage, AIMessageChunk, MessageV1
 
 def on_chat_model_start(
@@ -96,3 +98,6 @@ def _transform(
         # higlight-end
         ...
 ```
+This will allow your parser to work as before. You can also update the parser to
+natively handle the new message types to save this conversion step. See our guide on
+the [new message types](/docs/versions/v0_4/messages) for details.

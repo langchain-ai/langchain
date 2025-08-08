@@ -15,8 +15,10 @@ integration packages now also expose a `v1` namespace containing chat models tha
 work with the new message types.
 
 Input types for callbacks and output parsers have been widened to accept the new message
-types. Type checkers may raise errors for custom callbacks and output parsers that do
-not conform to the new interface. This is the only breaking change.
+types. If you maintain custom callbacks or output parsers, type checkers may raise
+errors if they do not accept the new message types as inputs. Refer to
+[this guide](/docs/versions/v0_4/how_to_update) for how to address those issues. This
+is the only breaking change.
 
 ## What's new
 

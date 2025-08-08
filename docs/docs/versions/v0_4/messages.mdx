@@ -1,4 +1,67 @@
 # LangChain v1.0 message types
 
+*Last updated: 08.08.25*
+
 LangChain v0.4 allows developers to opt-in to new message types that will become default
 in LangChain v1.0. LangChain v1.0 will be released this fall.
+
+These messages should be considered a beta feature and are subject to change in
+LangChain v1.0, although we do not anticipate any significant changes.
+
+## Benefits
+
+The new message types offer improvements in performance, type-safety, and consistency
+across OpenAI, Anthropic, Gemini, and other providers.
+
+### Performance
+
+Importantly, the new messages are Python dataclasses, saving some runtime from
+instantiating (layers of) Pydantic BaseModels.
+
+LangChain v0.4 introduces a new `BaseChatModel` class in `langchain_core.v1.chat_models`
+that is faster and leaner than the existing `BaseChatModel` class, offering significant
+reductions in overhead above provider SDKs.
+
+### Type-safety
+
+Message content is typed as
+```python
+import langchain_core.messages.content_blocks as types
+
+content: list[types.ContentBlock]
+```
+
+where we have introduced standard types for text, reasoning, citations, server-side
+tool executions (e.g., web search and code interpreters). These include
+[tool calls](https://python.langchain.com/docs/concepts/tool_calling/) and the
+[multi-modal types](/docs/how_to/multimodal_inputs/) introduced in earlier versions
+of LangChain. There are no breaking changes associated with the existing content types.
+
+**This is the most significant change from the existing message classes**, which permit
+strings, lists of strings, or lists of untyped dicts as content. We have added a
+`.text` getter so that developers can easily recover string content. `.tool_calls`,
+instead of an attribute, is now also a getter with an associated setter, so that
+usage is largely the same. See [usage comparison](#usage-comparison), below, for details.
+
+### Consistency
+
+Many chat models can generate a variety of content in a single conversational turn,
+including reasoning, tool calls and responses, images, text with citations, and other
+structured objects. We have standardized these types, resulting in improved
+inter-operability of messages across models.
+
+## Usage comparison
+
+| Task                    | Previous | New                                            |
+|-------------------------|----------|------------------------------------------------|
+| Get string content      | `message.content`            | `message.text`             |
+| Get content blocks      | `message.content`            | `message.content`          |
+| Get `additional_kwargs` | `message.additional_kwargs`  | `[block for block in message.content if block["type"] == "..."]` |
+| Get `response_metadata` | `message.response_metadata`  | `message.response_metadata`|
+| Get `tool_calls`        | `message.tool_calls`         | `message.tool_calls`       |
+
+
+## Feature gaps
+
+The new message types do not yet support LangChain's caching layer. Support will be
+added in the coming weeks.
