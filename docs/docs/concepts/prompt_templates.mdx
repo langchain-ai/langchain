@@ -62,6 +62,19 @@ prompt_template = ChatPromptTemplate([
 
 prompt_template.invoke({"msgs": [HumanMessage(content="hi!")]})
 ```
+``` 
+messages_to_pass = [
+    HumanMessage(content="What's the capital of France?"),
+    AIMessage(content="The capital of France is Paris."),
+    HumanMessage(content="And what about Germany?")
+]
+
+
+formatted_prompt = prompt_template.invoke({"msgs": messages_to_pass})
+
+print(formatted_prompt)
+```
+
 
 This will produce a list of two messages, the first one being a system message, and the second one being the HumanMessage we passed in.
 If we had passed in 5 messages, then it would have produced 6 messages in total (the system message plus the 5 passed in).
