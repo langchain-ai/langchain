@@ -665,6 +665,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm = ChatOpenAI(
             model="o4-mini",
             use_responses_api=True,
+            output_version="responses/v1",
         )
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
@@ -843,12 +844,6 @@ class BaseChatOpenAI(BaseChatModel):
             **{k: v for k, v in exclude_if_none.items() if v is not None},
             **self.model_kwargs,
         }
-
-        if self.model_name.startswith("gpt-5"):
-            # gpt-5 models don't support these parameters
-            params.pop("audio", None)
-            params.pop("modalities", None)
-            params.pop("prediction", None)
 
         return params
 
@@ -2399,7 +2394,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
+            llm = ChatOpenAI(
+                model="gpt-4.1-mini",
+                use_responses_api=True,
+                output_version="responses/v1",
+            )
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 

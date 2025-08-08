@@ -71,7 +71,10 @@ def test_prompt_cache_key_model_kwargs() -> None:
 def test_prompt_cache_key_responses_api() -> None:
     """Test that prompt_cache_key works with Responses API."""
     chat = ChatOpenAI(
-        model="gpt-4o-mini", use_responses_api=True, max_completion_tokens=10
+        model="gpt-4o-mini",
+        use_responses_api=True,
+        output_version="responses/v1",
+        max_completion_tokens=10,
     )
 
     messages = [HumanMessage("Hello")]

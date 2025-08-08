@@ -175,7 +175,9 @@ class FooDict(TypedDict):
 
 
 def test_parsed_pydantic_schema() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     response = llm.invoke("how are ya", response_format=Foo)
     parsed = Foo(**json.loads(response.text()))
     assert parsed == response.additional_kwargs["parsed"]
@@ -193,7 +195,9 @@ def test_parsed_pydantic_schema() -> None:
 
 
 async def test_parsed_pydantic_schema_async() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     response = await llm.ainvoke("how are ya", response_format=Foo)
     parsed = Foo(**json.loads(response.text()))
     assert parsed == response.additional_kwargs["parsed"]
@@ -213,7 +217,9 @@ async def test_parsed_pydantic_schema_async() -> None:
 @pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 def test_parsed_dict_schema(schema: Any) -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     response = llm.invoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
@@ -231,7 +237,9 @@ def test_parsed_dict_schema(schema: Any) -> None:
 
 
 def test_parsed_strict() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
 
     class InvalidJoke(TypedDict):
         setup: Annotated[str, ..., "The setup of the joke"]
@@ -258,7 +266,9 @@ def test_parsed_strict() -> None:
 @pytest.mark.flaky(retries=3, delay=1)
 @pytest.mark.parametrize("schema", [Foo.model_json_schema(), FooDict])
 async def test_parsed_dict_schema_async(schema: Any) -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     response = await llm.ainvoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
@@ -280,7 +290,9 @@ def test_function_calling_and_structured_output() -> None:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
     # Test structured output
     response = llm.invoke("how are ya", response_format=Foo)
@@ -324,7 +336,9 @@ def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
 
 
 def test_stateful_api() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version="responses/v1"
+    )
     response = llm.invoke("how are you, my name is Bobo")
     assert "id" in response.response_metadata
 
@@ -421,7 +435,9 @@ def test_stream_reasoning_summary(
 
 @pytest.mark.vcr
 def test_code_interpreter() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
     )
@@ -460,7 +476,9 @@ def test_code_interpreter() -> None:
 
 @pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
 
     llm_with_tools = llm.bind_tools(
         [
@@ -549,7 +567,9 @@ def test_mcp_builtin_zdr() -> None:
 @pytest.mark.vcr()
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
+    )
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
@@ -604,7 +624,9 @@ def test_image_generation_streaming() -> None:
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
+    )
     # Test invocation
     tool = {
         "type": "image_generation",
