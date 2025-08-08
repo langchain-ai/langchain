@@ -699,3 +699,6 @@ packages:
 - name: langchain-gradient
   path: .
   repo: digitalocean/langchain-gradient
+- name: toolbox-langchain
+  repo: googleapis/mcp-toolbox-sdk-python
+  path: packages/toolbox-langchain
