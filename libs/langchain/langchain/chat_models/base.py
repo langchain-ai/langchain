@@ -486,7 +486,7 @@ _SUPPORTED_PROVIDERS = {
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
     if any(
         model_name.startswith(pre)
-        for pre in ("gpt-3", "gpt-4", "o1", "o3")
+        for pre in ("gpt-3", "gpt-4", "gpt-5", "o1", "o3")
     ):
         return "openai"
     if model_name.startswith("claude"):
