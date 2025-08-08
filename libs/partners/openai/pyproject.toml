@@ -8,7 +8,7 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.4.0.dev0",
-    "openai<2.0.0,>=1.86.0",
+    "openai<2.0.0,>=1.99.3",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"

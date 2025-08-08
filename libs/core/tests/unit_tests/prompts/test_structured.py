@@ -81,7 +81,7 @@ def test_structured_prompt_dict() -> None:
 
     chain = loads(dumps(prompt)) | model
 
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}  # type: ignore[comparison-overlap]
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 42}
 
 
 def test_structured_prompt_kwargs() -> None:
@@ -104,7 +104,7 @@ def test_structured_prompt_kwargs() -> None:
     assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
     assert loads(dumps(prompt)).model_dump() == prompt.model_dump()
     chain = loads(dumps(prompt)) | model
-    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}  # type: ignore[comparison-overlap]
+    assert chain.invoke({"hello": "there"}) == {"name": 1, "value": 7}
 
     class OutputSchema(BaseModel):
         name: str

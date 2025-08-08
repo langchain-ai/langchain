@@ -177,7 +177,7 @@ class RunLog(RunLogPatch):
         # Then compare that the ops are the same
         return super().__eq__(other)
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 T = TypeVar("T")
