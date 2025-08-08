@@ -77,7 +77,8 @@ the translation.
 - Where provider-specific fields do not map to fields on standard types, LangChain
 stores them in an `"extras"` key (see below for examples).
 
-#### Reasoning
+<details>
+  <summary>Reasoning</summary>
 
 <div className="row">
   <div className="col col--6" style={{minWidth: 0}}>
@@ -156,8 +157,10 @@ response.content
 ```
   </div>
 </div>
+</details>
 
-#### Citations and web search
+<details>
+  <summary>Citations and web search</summary>
 
 <div className="row">
   <div className="col col--6" style={{minWidth: 0}}>
@@ -267,8 +270,11 @@ response.content
 ```
   </div>
 </div>
+</details>
 
-#### Non-standard blocks
+
+<details>
+  <summary>Non-standard blocks</summary>
 
 Where content blocks from specific providers do not map to a standard type, they are
 structured into a `"non_standard"` block:
@@ -410,6 +416,7 @@ response.content
 ```
   </div>
 </div>
+</details>
 
 
 ## Feature gaps
