@@ -171,6 +171,26 @@ Please see the [InjectedState](https://langchain-ai.github.io/langgraph/referenc
 
 Please see the [InjectedStore](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.tool_node.InjectedStore) documentation for more details.
 
+## Tool Artifacts vs. Injected State
+
+Although similar conceptually, tool artifacts in LangChain and [injected state in LangGraph](https://langchain-ai.github.io/langgraph/reference/agents/#langgraph.prebuilt.tool_node.InjectedState) serve different purposes and operate at different levels of abstraction.
+
+**Tool Artifacts**
+
+- **Purpose:** Store and pass data between tool executions within a single chain/workflow
+- **Scope:** Limited to tool-to-tool communication
+- **Lifecycle:** Tied to individual tool calls and their immediate context
+- **Usage:** Temporary storage for intermediate results that tools need to share
+
+**Injected State (LangGraph)**
+
+- **Purpose:** Maintain persistent state across the entire graph execution
+- **Scope:** Global to the entire graph workflow
+- **Lifecycle:** Persists throughout the entire graph execution and can be saved/restored
+- **Usage:** Long-term state management, conversation memory, user context, workflow checkpointing
+
+Tool artifacts are ephemeral data passed between tools, while injected state is persistent workflow-level state that survives across multiple steps, tool calls, and even execution sessions in LangGraph.
+
 ## Best practices
 
 When designing tools to be used by models, keep the following in mind:
