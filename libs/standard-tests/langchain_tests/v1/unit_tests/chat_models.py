@@ -218,14 +218,11 @@ class ChatModelTests(BaseStandardTests):
         support. Each defaults to False:
 
         - ``supports_reasoning_content_blocks``
-        - ``supports_plaintext_content_blocks``
-        - ``supports_file_content_blocks``
         - ``supports_image_content_blocks``
         - ``supports_audio_content_blocks``
         - ``supports_video_content_blocks``
         - ``supports_citations``
         - ``supports_web_search_blocks``
-        - ``supports_invalid_tool_calls``
 
         """
         return True
@@ -252,26 +249,6 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_reasoning_content_blocks(self) -> bool:
         """Whether the model supports ``ReasoningContentBlock``.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_plaintext_content_blocks(self) -> bool:
-        """Whether the model supports ``PlainTextContentBlock``.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_file_content_blocks(self) -> bool:
-        """Whether the model supports ``FileContentBlock``.
-
-        Replaces ``supports_pdf_inputs`` from v0.
 
         Defaults to False.
 
@@ -329,11 +306,6 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
-    def supports_structured_citations(self) -> bool:
-        """Whether the model supports structured citation generation."""
-        return self.supports_citations
-
-    @property
     def supports_web_search_blocks(self) -> bool:
         """Whether the model supports ``WebSearchCall``/``WebSearchResult`` blocks.
 
@@ -345,15 +317,6 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_code_interpreter(self) -> bool:
         """Whether the model supports code interpreter blocks.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_invalid_tool_calls(self) -> bool:
-        """Whether the model can handle ``InvalidToolCall`` blocks.
 
         Defaults to False.
 

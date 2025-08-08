@@ -72,10 +72,6 @@ class TestAdvancedModelV1(ChatModelV1UnitTests):
         """Model provides source citations"""
         return True
 
-    @property
-    def supports_tool_calls(self):
-        """Tool calling with metadata"""
-        return True
 ```
 
 ## 📋 Feature Reference
@@ -340,11 +336,6 @@ class TestFakeChatModelV1Integration(ChatModelV1IntegrationTests):
     def supports_web_search_blocks(self) -> bool:
         """Disable web search for this fake model."""
         return False
-
-    @property
-    def supports_tool_calls(self) -> bool:
-        """Enable tool calling tests."""
-        return True
 
     @property
     def has_tool_calling(self) -> bool:

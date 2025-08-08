@@ -81,14 +81,10 @@ class TestYourChatModelV1Integration(ChatModelIntegrationTests):
 - `supports_image_content_blocks`: `ImageContentBlock`s (v1 format)
 - `supports_video_content_blocks`: `VideoContentBlock`s (v1 format)
 - `supports_audio_content_blocks`: `AudioContentBlock`s (v1 format)
-- `supports_plaintext_content_blocks`: `PlainTextContentBlock`s (plaintext from documents)
-- `supports_file_content_blocks`: `FileContentBlock`s
 
 ### Tool Calling
 
-- `supports_tool_calls`: Tool calling with content blocks
-- `supports_invalid_tool_calls`: Error handling for invalid tool calls
-- `supports_tool_call_chunks`: Streaming tool call support
+- `has_tool_calls`: Tool calling with content blocks
 
 ### Advanced Features
 

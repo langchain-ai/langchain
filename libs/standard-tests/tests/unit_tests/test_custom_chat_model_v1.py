@@ -67,16 +67,6 @@ class TestChatParrotLinkV1Unit(ChatModelUnitTests):
         return False
 
     @property
-    def supports_plaintext_content_blocks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``PlainTextContentBlock``."""
-        return False
-
-    @property
-    def supports_file_content_blocks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``FileContentBlock``."""
-        return False
-
-    @property
     def supports_image_content_blocks(self) -> bool:
         """``ChatParrotLinkV1`` does not support ``ImageContentBlock``."""
         return False
@@ -99,19 +89,4 @@ class TestChatParrotLinkV1Unit(ChatModelUnitTests):
     @property
     def supports_web_search_blocks(self) -> bool:
         """``ChatParrotLinkV1`` does not support web search blocks."""
-        return False
-
-    @property
-    def supports_tool_calls(self) -> bool:
-        """``ChatParrotLinkV1`` does not support tool calls."""
-        return False
-
-    @property
-    def supports_invalid_tool_calls(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``InvalidToolCall`` handling."""
-        return False
-
-    @property
-    def supports_tool_call_chunks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``ToolCallChunk`` blocks."""
         return False

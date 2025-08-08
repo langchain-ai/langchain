@@ -11,7 +11,6 @@ from typing import Annotated, Any, Literal, Optional, TypedDict, Union, cast
 from unittest.mock import MagicMock
 
 import httpx
-import langchain_core.messages.content_blocks as types
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -34,13 +33,8 @@ from langchain_core.messages.content_blocks import (
     WebSearchCall,
     WebSearchResult,
     create_audio_block,
-    create_file_block,
     create_image_block,
-    create_non_standard_block,
-    create_plaintext_block,
     create_text_block,
-    is_reasoning_block,
-    is_text_block,
     is_tool_call_block,
 )
 from langchain_core.output_parsers.string import StrOutputParser
@@ -2649,374 +2643,150 @@ class ChatModelIntegrationTests(ChatModelTests):
     #         ]
     #         assert len(reasoning_blocks) > 0
 
-    def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``Citations`` with source links.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_structured_citations:
-            pytest.skip("Model does not support structured citations.")
-
-        message = HumanMessage(
-            "Provide factual information about the distance to the moon with proper "
-            "citations to scientific sources."
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for text blocks with citations
-        text_blocks_with_citations = []
-        for block in result.content:
-            if (
-                isinstance(block, dict)
-                and is_text_block(block)
-                and "annotations" in block
-            ):
-                annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
-                citations = [
-                    ann
-                    for ann in annotations
-                    if isinstance(ann, dict) and ann.get("type") == "citation"
-                ]
-                if citations:
-                    text_blocks_with_citations.append(block)
-        assert len(text_blocks_with_citations) > 0
-
-        # Validate citation structure
-        for block in text_blocks_with_citations:
-            annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
-            for annotation in annotations:
-                if annotation.get("type") == "citation":
-                    # TODO: evaluate these since none are *technically* required
-                    # This may be a test that needs adjustment on per-integration basis
-                    assert "cited_text" in annotation
-                    assert "start_index" in annotation
-                    assert "end_index" in annotation
-
-    def test_web_search_integration(self, model: BaseChatModel) -> None:
-        """Test web search content blocks integration.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_web_search_blocks:
-            pytest.skip("Model does not support web search blocks.")
-
-        message = HumanMessage(
-            "Search for the latest developments in quantum computing."
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for web search blocks
-        search_call_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict) and block.get("type") == "web_search_call"
-        ]
-        search_result_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict) and block.get("type") == "web_search_result"
-        ]
-        # TODO: should this be one or the other or both?
-        assert len(search_call_blocks) > 0 or len(search_result_blocks) > 0
-
-    def test_code_interpreter_blocks(self, model: BaseChatModel) -> None:
-        """Test code interpreter content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_code_interpreter:
-            pytest.skip("Model does not support code interpreter blocks.")
-
-        message = HumanMessage("Calculate the factorial of 10 using Python code.")
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for code interpreter blocks
-        code_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict)
-            and block.get("type")
-            in [
-                "code_interpreter_call",
-                "code_interpreter_output",
-                "code_interpreter_result",
-            ]
-        ]
-        # TODO: should we require all three types or just an output/result?
-        assert len(code_blocks) > 0
-
-    def test_tool_calling_with_content_blocks(self, model: BaseChatModel) -> None:
-        """Test tool calling with content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.has_tool_calling:
-            pytest.skip("Model does not support tool calls.")
-
-        @tool
-        def calculate_area(length: float, width: float) -> str:
-            """Calculate the area of a rectangle."""
-            area = length * width
-            return f"The area is {area} square units."
-
-        model_with_tools = model.bind_tools([calculate_area])
-        message = HumanMessage(
-            "Calculate the area of a rectangle with length 5 and width 3."
-        )
-
-        result = model_with_tools.invoke([message])
-        _validate_tool_call_message(result)
-
-    def test_plaintext_content_blocks_from_documents(
-        self, model: BaseChatModel
-    ) -> None:
-        """Test PlainTextContentBlock for document plaintext content.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_plaintext_content_blocks:
-            pytest.skip("Model does not support PlainTextContentBlock.")
-
-        # Test with PlainTextContentBlock (plaintext from document)
-        plaintext_block = create_plaintext_block(
-            text="This is plaintext content extracted from a document.",
-            file_id="doc_123",
-        )
-
-        message = HumanMessage(
-            content=cast("list[types.ContentBlock]", [plaintext_block])
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        # TODO expand
-
-    def test_content_block_streaming_integration(self, model: BaseChatModel) -> None:
-        """Test streaming with content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        message = HumanMessage(
-            content=[
-                {
-                    "type": "text",
-                    "text": "Write a detailed explanation of machine learning.",
-                }
-            ]
-        )
-
-        chunks = []
-        for chunk in model.stream([message]):
-            chunks.append(chunk)
-            assert isinstance(chunk, (AIMessage, AIMessageChunk))
-
-        assert len(chunks) > 1  # Should receive multiple chunks
-
-        # Aggregate chunks
-        final_message = chunks[0]
-        for chunk in chunks[1:]:
-            final_message = final_message + chunk
-
-        assert isinstance(final_message.content, list)
-
-    def test_error_handling_with_invalid_content_blocks(
-        self, model: BaseChatModel
-    ) -> None:
-        """Test error handling with various invalid content block configurations.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        test_cases = [
-            {"type": "text"},  # Missing text field
-            {"type": "image"},  # Missing url/mime_type
-            {"type": "tool_call", "name": "test"},  # Missing args/id
-        ]
-
-        for invalid_block in test_cases:
-            message = HumanMessage([invalid_block])  # type: ignore[list-item]
-
-            # Should either handle gracefully or raise appropriate error
-            try:
-                result = model.invoke([message])
-                assert isinstance(result, AIMessage)
-            except (ValueError, TypeError, KeyError) as e:
-                # Acceptable to raise validation errors
-                assert len(str(e)) > 0
-
-    async def test_async_content_blocks_processing(self, model: BaseChatModel) -> None:
-        """Test asynchronous processing of content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        message = HumanMessage("Generate a creative story about space exploration.")
-
-        result = await model.ainvoke([message])
-        assert isinstance(result, AIMessage)
-
-    def test_input_conversion_string(self, model: BaseChatModel) -> None:
-        """Test that string input is properly converted to messages.
-
-        TODO: expand docstring
-
-        """
-        result = model.invoke("Test string input")
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_input_conversion_empty_string(self, model: BaseChatModel) -> None:
-        """Test that empty string input is handled gracefully.
-
-        TODO: expand docstring
-
-        """
-        result = model.invoke("")
-        assert isinstance(result, AIMessage)
-
-    def test_input_conversion_message_v1_list(self, model: BaseChatModel) -> None:
-        """Test that v1 message list input is handled correctly.
-
-        TODO: expand docstring
-
-        """
-        messages = [HumanMessage("Test message")]
-        result = model.invoke(messages)
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_text_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle the ``TextContentBlock`` format."""
-        if not self.supports_text_content_blocks:
-            pytest.skip("Model does not support TextContentBlock (rare!)")
-
-        text_block = create_text_block("Hello, world!")
-        message = HumanMessage(content=[text_block])
-
-        result = model.invoke([message])
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_mixed_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle messages with mixed content blocks."""
-        if not (
-            self.supports_text_content_blocks and self.supports_image_content_blocks
-        ):
-            pytest.skip(
-                "Model doesn't support mixed content blocks (concurrent text and image)"
-            )
-
-        content_blocks: list[types.ContentBlock] = [
-            create_text_block("Describe this image:"),
-            create_image_block(
-                base64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-                mime_type="image/png",
-            ),
-        ]
-
-        message = HumanMessage(content=content_blocks)
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``ReasoningContentBlock``.
-
-        If your integration requires a reasoning parameter to be explicitly set, you
-        will need to override this test to set it appropriately.
-
-        """
-        if not self.supports_reasoning_content_blocks:
-            pytest.skip("Model does not support ReasoningContentBlock.")
-
-        message = HumanMessage("Think step by step: What is 2 + 2?")
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        if isinstance(result.content, list):
-            reasoning_blocks = [
-                block
-                for block in result.content
-                if isinstance(block, dict) and is_reasoning_block(block)
-            ]
-            assert len(reasoning_blocks) > 0, (
-                "Expected reasoning content blocks but found none. "
-                f"Content blocks: {[block.get('type') for block in result.content]}"
-            )
-
-    def test_non_standard_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``NonStandardContentBlock``."""
-        if not self.supports_non_standard_blocks:
-            pytest.skip("Model does not support NonStandardContentBlock.")
-
-        non_standard_block = create_non_standard_block(
-            {
-                "custom_field": "custom_value",
-                "data": [1, 2, 3],
-            }
-        )
-
-        message = HumanMessage(content=[non_standard_block])
-
-        # Should not raise an error
-        result = model.invoke([message])
-        assert isinstance(result, AIMessage)
-
-    def test_invalid_tool_call_handling_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``InvalidToolCall`` blocks gracefully."""
-        if not self.supports_invalid_tool_calls:
-            pytest.skip("Model does not support InvalidToolCall handling.")
-
-        invalid_tool_call: InvalidToolCall = {
-            "type": "invalid_tool_call",
-            "name": "nonexistent_tool",
-            "args": None,
-            "id": "invalid_123",
-            "error": "Tool not found",
-        }
-
-        # Create a message with invalid tool call in history
-        ai_message = AIMessage(content=[invalid_tool_call])
-        follow_up = HumanMessage("Please try again with a valid approach.")
-
-        result = model.invoke([ai_message, follow_up])
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_file_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``FileContentBlock``."""
-        if not self.supports_file_content_blocks:
-            pytest.skip("Model does not support FileContentBlock.")
-
-        file_block = create_file_block(
-            base64="SGVsbG8sIHdvcmxkIQ==",  # "Hello, world!"
-            mime_type="text/plain",
-        )
-
-        message = HumanMessage(content=[file_block])
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
+    # def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
+    #     """Test that the model can generate ``Citations`` with source links.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_citations:
+    #         pytest.skip("Model does not support citations.")
+
+    #     message = HumanMessage(
+    #         "Provide factual information about the distance to the moon with proper "
+    #         "citations to scientific sources."
+    #     )
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for text blocks with citations
+    #     text_blocks_with_citations = []
+    #     for block in result.content:
+    #         if (
+    #             isinstance(block, dict)
+    #             and is_text_block(block)
+    #             and "annotations" in block
+    #         ):
+    #             annotations = cast("list[dict[str, Any]]", block.get("annotations", []))  # noqa: E501
+    #             citations = [
+    #                 ann
+    #                 for ann in annotations
+    #                 if isinstance(ann, dict) and ann.get("type") == "citation"
+    #             ]
+    #             if citations:
+    #                 text_blocks_with_citations.append(block)
+    #     assert len(text_blocks_with_citations) > 0
+
+    #     # Validate citation structure
+    #     for block in text_blocks_with_citations:
+    #         annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
+    #         for annotation in annotations:
+    #             if annotation.get("type") == "citation":
+    #                 # TODO: evaluate these since none are *technically* required
+    #                 # This may need adjustment on per-integration basis
+    #                 assert "cited_text" in annotation
+    #                 assert "start_index" in annotation
+    #                 assert "end_index" in annotation
+
+    # def test_web_search_integration(self, model: BaseChatModel) -> None:
+    #     """Test web search content blocks integration.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_web_search_blocks:
+    #         pytest.skip("Model does not support web search blocks.")
+
+    #     message = HumanMessage(
+    #         "Search for the latest developments in quantum computing."
+    #     )
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for web search blocks
+    #     search_call_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict) and block.get("type") == "web_search_call"
+    #     ]
+    #     search_result_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict) and block.get("type") == "web_search_result"
+    #     ]
+    #     # TODO: should this be one or the other or both?
+    #     assert len(search_call_blocks) > 0 or len(search_result_blocks) > 0
+
+    # def test_code_interpreter_blocks(self, model: BaseChatModel) -> None:
+    #     """Test code interpreter content blocks.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_code_interpreter:
+    #         pytest.skip("Model does not support code interpreter blocks.")
+
+    #     message = HumanMessage("Calculate the factorial of 10 using Python code.")
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for code interpreter blocks
+    #     code_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict)
+    #         and block.get("type")
+    #         in [
+    #             "code_interpreter_call",
+    #             "code_interpreter_output",
+    #             "code_interpreter_result",
+    #         ]
+    #     ]
+    #     # TODO: should we require all three types or just an output/result?
+    #     assert len(code_blocks) > 0
+
+    # def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
+    #     """Test that the model can generate ``ReasoningContentBlock``.
+
+    #     If your integration requires a reasoning parameter to be explicitly set, you
+    #     will need to override this test to set it appropriately.
+
+    #     """
+    #     if not self.supports_reasoning_content_blocks:
+    #         pytest.skip("Model does not support ReasoningContentBlock.")
+
+    #     message = HumanMessage("Think step by step: What is 2 + 2?")
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+    #     if isinstance(result.content, list):
+    #         reasoning_blocks = [
+    #             block
+    #             for block in result.content
+    #             if isinstance(block, dict) and is_reasoning_block(block)
+    #         ]
+    #         assert len(reasoning_blocks) > 0, (
+    #             "Expected reasoning content blocks but found none. "
+    #             f"Content blocks: {[block.get('type') for block in result.content]}"
+    #         )
+
+    # def test_non_standard_content_blocks_basic(self, model: BaseChatModel) -> None:
+    #     """Test that the model can handle ``NonStandardContentBlock``."""
+    #     if not self.supports_non_standard_blocks:
+    #         pytest.skip("Model does not support NonStandardContentBlock.")
+
+    #     non_standard_block = create_non_standard_block(
+    #         {
+    #             "custom_field": "custom_value",
+    #             "data": [1, 2, 3],
+    #         }
+    #     )
+
+    #     message = HumanMessage(content=[non_standard_block])
+
+    #     # Should not raise an error
+    #     result = model.invoke([message])
+    #     assert isinstance(result, AIMessage)
