@@ -113,11 +113,12 @@ async def test_ainvoke_uses_async_response_requires_action_agent() -> None:
     assistant._await_for_run = AsyncMock(return_value=mock_run)  # type: ignore[attr-defined]
 
     # Act
-    result = await assistant.ainvoke({"content": "hi"})
+    result = await assistant.ainvoke({'content': 'hi'})
 
     # Assert: returns list of OpenAIAssistantAction
     assert isinstance(result, list)
-    assert result and getattr(result[0], "tool", None) == "foo"
+    assert result
+    assert getattr(result[0], 'tool', None) == 'foo'
 
 
 @pytest.mark.requires("openai")
