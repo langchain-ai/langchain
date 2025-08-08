@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -12,6 +13,8 @@ from typing import (
 )
 
 from daytona import Daytona
+from daytona import DaytonaConfig
+from daytona.common.filesystem import FileUpload as DaytonaFileUpload
 from pydantic import BaseModel, Field
 
 from langchain_core.tools import BaseTool, StructuredTool
@@ -48,6 +51,15 @@ class SandboxCapabilities(TypedDict):
     can_exec_session: bool
 
 
+class FileUpload(TypedDict):
+    """File upload."""
+
+    source: str | bytes
+    """Source file path or contents to upload."""
+    destination: str
+    """Destination path in the sandbox."""
+
+
 class ExecuteResponse(TypedDict):
     """Result of code execution."""
 
@@ -60,9 +72,21 @@ class ExecuteResponse(TypedDict):
     """The exit code of the executed code, if applicable."""
 
 
-class SandboxManager:
-    def __init__(self, daytona_client: Daytona) -> None:
+class DaytonaSandboxManager:
+    def __init__(
+        self, *, daytona_client: Optional[Daytona] = None, api_key: Optional[str] = None
+    ) -> None:
         """Initialize the SandboxManager with a Daytona client."""
+        if daytona_client and api_key:
+            raise ValueError("Provide either daytona_client or api_key, not both.")
+
+        if daytona_client is None:
+            api_key = api_key or os.environ.get("DAYTONA_API_KEY")
+            if api_key is None:
+                raise ValueError("Either daytona_client or api_key must be provided.")
+            config = DaytonaConfig(api_key=api_key)
+            daytona_client = Daytona(config)
+
         self.daytona_client = daytona_client
 
     def list(self) -> list[id]:
@@ -121,22 +145,24 @@ class DaytonaSandboxToolkit:
         return self.sandbox.fs.move_files(source, destination)
 
     def upload_file(
-        self, file: bytes, remote_path: str, timeout: int = 30 * 60
+        self, file: bytes, remote_path: str, *, timeout: int = 30 * 60
     ) -> None:
         """Upload a file to the sandbox."""
         return self.sandbox.fs.upload_file(file, remote_path, timeout=timeout)
 
-    def upload_files(
-        self, files: list[str | bytes], remote_path: str, timeout: int = 30 * 60
-    ):
+    def upload_files(self, files: list[FileUpload], *, timeout: int = 30 * 60):
         """Upload one or more files to the sandbox."""
-        return self.sandbox.fs.upload_files(files, remote_path, timeout=timeout)
+        file_uploads = [
+            DaytonaFileUpload(source=file["source"], destination=file["destination"])
+            for file in files
+        ]
+        return self.sandbox.fs.upload_files(file_uploads, timeout)
 
-    def download_file(self, remote_path: str, timeout: int = 30 * 60) -> bytes:
+    def download_file(self, remote_path: str, *, timeout: int = 30 * 60) -> bytes:
         """Download a file from the sandbox."""
-        return self.sandbox.fs.download_file(remote_path, timeout=timeout)
+        return self.sandbox.fs.download_file(remote_path, timeout)
 
-    def run_code(self, code: str, timeout: int = 30 * 60) -> ExecuteResponse:
+    def run_code(self, code: str, *, timeout: int = 30 * 60) -> ExecuteResponse:
         """Run code in the sandbox."""
         execute_response = self.sandbox.process.code_run(code, timeout=timeout)
         return ExecuteResponse(
@@ -144,12 +170,12 @@ class DaytonaSandboxToolkit:
             exit_code=execute_response.exit_code,
         )
 
-    def repl(self, code: str, timeout: int = 30 * 60) -> ExecuteResponse:
+    def repl(self, code: str, *, timeout: int = 30 * 60) -> ExecuteResponse:
         """Support for REPL execution in the sandbox."""
         raise NotImplementedError
 
     def exec(
-        self, command: str, cwd: Optional[str] = None, timeout: int = 30 * 60
+        self, command: str, cwd: Optional[str] = None, *, timeout: int = 30 * 60
     ) -> ExecuteResponse:
         """Execute a command in the sandbox."""
         execute_response = self.sandbox.process.exec(command, cwd=cwd, timeout=timeout)
@@ -275,7 +301,9 @@ class ExecutionInput(BaseModel):
 def create_tools(
     toolkit: DaytonaSandboxToolkit,
     tool_selection: Sequence[
-        Literal["run_code", "list_files", "upload_file", "download_file"]
+        Literal[
+            "run_code", "list_files", "upload_file", "download_file", "exec", "repl"
+        ]
     ],
 ) -> list[BaseTool]:
     """Create tools for the given sandbox.
