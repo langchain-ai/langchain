@@ -57,12 +57,9 @@ class TextAccessor(str):
     def __call__(self) -> str:
         """Enable method-style text access for backward compatibility.
 
-        This method exists solely to support legacy code that calls ``.text()``
-        as a method. New code should use property access (``.text``) instead.
-
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -270,8 +267,8 @@ class AIMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -667,8 +664,8 @@ class HumanMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -762,8 +759,8 @@ class SystemMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -811,15 +808,10 @@ class ToolMessage(ToolOutputMixin):
     """
 
     artifact: Optional[Any] = None
-    """App-side payload not intended for the model.
+    """App-side payload not intended for model consumption.
 
-    Artifacts contain data that your application needs but should not be sent
-    to the AI model. Example use cases:
-
-    - File handles or database connections used by the tool
-    - Raw binary data (images, documents) alongside text summaries
-    - Internal debugging information or execution traces
-    - Computed results that supplement the text content
+    Additonal info and usage examples are available
+    `in the LangChain documentation <https://python.langchain.com/docs/concepts/tools/#tool-artifacts>`__.
 
     """
 
@@ -879,8 +871,8 @@ class ToolMessage(ToolOutputMixin):
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
