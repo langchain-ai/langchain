@@ -1388,6 +1388,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
+                metadata= self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
             yield AgentStep(action=output, observation=observation)
@@ -1433,6 +1434,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                metadata= self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
         else:
