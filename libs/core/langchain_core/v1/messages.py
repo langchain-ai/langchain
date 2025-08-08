@@ -797,7 +797,13 @@ class ToolMessage(ToolOutputMixin):
     """
 
     content: list[types.ContentBlock]
-    """Message content as a list of content blocks."""
+    """Message content as a list of content blocks.
+
+    The tool's output should be included in the content, mapped to the appropriate
+    content block type (e.g., text, image, etc.). For instance, if the tool call returns
+    a string, it should be wrapped in a ``TextContentBlock``.
+
+    """
 
     type: Literal["tool"] = "tool"
     """The type of the message. Must be a string that is unique to the message type.
