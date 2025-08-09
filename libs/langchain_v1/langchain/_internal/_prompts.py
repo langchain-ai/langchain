@@ -6,6 +6,7 @@ and asynchronous prompt resolution with automatic detection of callable types.
 
 The module is designed to handle common prompt patterns across LangChain components,
 particularly for summarization chains and other document processing workflows.
+
 """
 
 from __future__ import annotations
@@ -65,10 +66,10 @@ def resolve_prompt(
         messages = resolve_prompt(None, state, runtime, "content", "Default")
         ```
 
-    Note:
-        Callable prompts have full control over message structure and content
-        parameter is ignored. String/None prompts create standard system + user
-        structure.
+    .. note::
+        Callable prompts have full control over message structure and content parameter
+        is ignored. String/None prompts create standard system + user structure.
+
     """
     if callable(prompt):
         return prompt(state, runtime)
@@ -141,10 +142,10 @@ async def aresolve_prompt(
         messages = await aresolve_prompt("Custom", state, runtime, "content", "default")
         ```
 
-    Note:
-        Callable prompts have full control over message structure and content
-        parameter is ignored. Automatically detects and handles async
-        callables.
+    .. note::
+        Callable prompts have full control over message structure and content parameter
+        is ignored. Automatically detects and handles async callables.
+
     """
     if callable(prompt):
         result = prompt(state, runtime)

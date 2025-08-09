@@ -533,7 +533,11 @@ class BaseChatOpenAI(BaseChatModel):
     Responses API.
 
     Currently supported values are ``'low'``, ``'medium'``, and ``'high'``.
+
     Controls how detailed the model's responses are.
+
+    .. versionadded:: 0.3.28
+
     """
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class.
@@ -667,6 +671,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm = ChatOpenAI(
             model="o4-mini",
             use_responses_api=True,
+            output_version="responses/v1",
         )
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
@@ -714,10 +719,24 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """Validate temperature parameter for different models.
+
+        - o1 models only allow temperature=1
+        - gpt-5 models only allow temperature=1 or unset (defaults to 1)
+        """
         model = values.get("model_name") or values.get("model") or ""
+
+        # For o1 models, set temperature=1 if not provided
         if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
+
+        # For gpt-5 models, handle temperature restrictions
+        if model.startswith("gpt-5"):
+            temperature = values.get("temperature")
+            if temperature is not None and temperature != 1:
+                # For gpt-5, only temperature=1 is supported, so remove non-defaults
+                values.pop("temperature", None)
+
         return values
 
     @model_validator(mode="after")
@@ -1192,6 +1211,7 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
@@ -1461,8 +1481,10 @@ class BaseChatOpenAI(BaseChatModel):
             encoding = tiktoken.encoding_for_model(model)
         except KeyError:
             encoder = "cl100k_base"
-            if self.model_name.startswith("gpt-4o") or self.model_name.startswith(
-                "gpt-4.1"
+            if (
+                self.model_name.startswith("gpt-4o")
+                or self.model_name.startswith("gpt-4.1")
+                or self.model_name.startswith("gpt-5")
             ):
                 encoder = "o200k_base"
             encoding = tiktoken.get_encoding(encoder)
@@ -1513,7 +1535,11 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 4
             # if there's a name, the role is omitted
             tokens_per_name = -1
-        elif model.startswith("gpt-3.5-turbo") or model.startswith("gpt-4"):
+        elif (
+            model.startswith("gpt-3.5-turbo")
+            or model.startswith("gpt-4")
+            or model.startswith("gpt-5")
+        ):
             tokens_per_message = 3
             tokens_per_name = 1
         else:
@@ -2393,7 +2419,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
+            llm = ChatOpenAI(
+                model="gpt-4.1-mini",
+                use_responses_api=True,
+                output_version="responses/v1",
+            )
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 
@@ -3512,6 +3542,11 @@ def _construct_responses_api_payload(
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+
+    # Remove temperature parameter for models that don't support it in responses API
+    model = payload.get("model", "")
+    if model.startswith("gpt-5"):
+        payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):

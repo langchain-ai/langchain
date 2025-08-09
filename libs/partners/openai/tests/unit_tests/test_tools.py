@@ -37,7 +37,9 @@ def test_custom_tool() -> None:
         """Do thing."""
         pass
 
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True).bind_tools([another_tool])
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
+    ).bind_tools([another_tool])
     assert llm.kwargs == {  # type: ignore[attr-defined]
         "tools": [
             {
@@ -49,7 +51,9 @@ def test_custom_tool() -> None:
         ]
     }
 
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True).bind_tools([my_tool])
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version="responses/v1"
+    ).bind_tools([my_tool])
     assert llm.kwargs == {  # type: ignore[attr-defined]
         "tools": [{"type": "custom", "name": "my_tool", "description": "Do thing."}]
     }
