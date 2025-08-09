@@ -65,7 +65,7 @@ def _dereference_refs_helper(
         # grab + copy the target
         target = deepcopy(_retrieve_ref(ref_path, full_schema))
 
-        additional_props = {k: v for k, v in obj.items() if k != '$ref'}
+        additional_props = {k: v for k, v in obj.items() if k != "$ref"}
         target.update(additional_props)
 
         # deep inlining: recurse into everything
