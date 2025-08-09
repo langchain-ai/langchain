@@ -191,6 +191,7 @@ class ChatOllama(BaseChatModel):
 
             llm = ChatOllama(
                 model = "llama3",
+                validate_model_on_init = True,
                 temperature = 0.8,
                 num_predict = 256,
                 # other params ...
@@ -199,13 +200,7 @@ class ChatOllama(BaseChatModel):
     Invoke:
         .. code-block:: python
 
-            from langchain_core.v1.messages import HumanMessage
-            from langchain_core.messages.content_blocks import TextContentBlock
-
-            messages = [
-                HumanMessage("Hello!")
-            ]
-            llm.invoke(messages)
+            llm.invoke("Hello!")
 
         .. code-block:: python
 
@@ -214,13 +209,7 @@ class ChatOllama(BaseChatModel):
     Stream:
         .. code-block:: python
 
-            from langchain_core.v1.messages import HumanMessage
-            from langchain_core.messages.content_blocks import TextContentBlock
-
-            messages = [
-                HumanMessage(Return the words Hello World!")
-            ]
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream("Return the words Hello World!"):
                 print(chunk.content, end="")
 
         .. code-block:: python
@@ -232,7 +221,7 @@ class ChatOllama(BaseChatModel):
     Multi-modal input:
         .. code-block:: python
 
-            from langchain_core.messages.content_blocks import ImageContentBlock
+            from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
 
             response = llm.invoke([
                 HumanMessage(content=[
@@ -254,9 +243,7 @@ class ChatOllama(BaseChatModel):
                 b: int = Field(..., description="Second integer")
 
             llm_with_tools = llm.bind_tools([Multiply])
-            ans = llm_with_tools.invoke([
-                HumanMessage("What is 45*67")
-            ])
+            ans = llm_with_tools.invoke("What is 45*67")
             ans.tool_calls
 
         .. code-block:: python
@@ -278,7 +265,7 @@ class ChatOllama(BaseChatModel):
     streaming: bool = False
     """Whether to use streaming for invocation.
 
-    If True, invoke will use streaming internally.
+    If True, ``invoke`` will use streaming internally.
 
     """
 
