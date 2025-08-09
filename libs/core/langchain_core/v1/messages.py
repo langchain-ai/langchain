@@ -129,7 +129,7 @@ class AIMessage:
     Attributes:
         type: Message type identifier, always ``'ai'``.
         id: Unique identifier for the message.
-        name: Optional human-readable name for the message.
+        name: The name/identifier of the agent or assistant that generated this message.
         lc_version: Encoding version for the message.
         content: List of content blocks containing the message data.
         tool_calls: Optional list of tool calls made by the AI.
@@ -147,12 +147,31 @@ class AIMessage:
     """
 
     name: Optional[str] = None
-    """An optional name for the message.
+    """The name/identifier of the agent or assistant that generated this message.
 
-    This can be used to provide a human-readable name for the message.
+    Used primarily in multi-agent systems to track which agent is speaking. Also used by
+    some providers for conversation attribution and context.
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
+    **Examples:**
+
+    .. python::
+
+        AIMessage(
+            content= [
+                TextContentBlock("Analysis complete"),
+            ],
+            name="research_agent"
+        )
+
+        AIMessage(
+            content= [
+                TextContentBlock("Task routed to specialist"),
+            ],
+            name="supervisor"
+        )
 
     """
 
@@ -203,7 +222,8 @@ class AIMessage:
         Args:
             content: Message content as string or list of content blocks.
             id: Optional unique identifier for the message.
-            name: Optional human-readable name for the message.
+            name: The name/identifier of the agent or assistant that generated this
+                message.
             lc_version: Encoding version for the message.
             response_metadata: Optional metadata about the response.
             usage_metadata: Optional metadata about token usage.
@@ -331,7 +351,7 @@ class AIMessageChunk(AIMessage):
     Attributes:
         type: Message type identifier, always ``'ai_chunk'``.
         id: Unique identifier for the message chunk.
-        name: Optional human-readable name for the message.
+        name: The name/identifier of the agent or assistant that generated this message.
         content: List of content blocks containing partial message data.
         tool_call_chunks: Optional list of partial tool call data.
         usage_metadata: Optional metadata about token usage and costs.
@@ -364,7 +384,8 @@ class AIMessageChunk(AIMessage):
         Args:
             content: Message content as string or list of content blocks.
             id: Optional unique identifier for the message.
-            name: Optional human-readable name for the message.
+            name: The name/identifier of the agent or assistant that generated this
+                message.
             lc_version: Encoding version for the message.
             response_metadata: Optional metadata about the response.
             usage_metadata: Optional metadata about token usage.
@@ -602,7 +623,7 @@ class HumanMessage:
         type: Message type identifier, always ``'human'``.
         id: Unique identifier for the message.
         content: List of content blocks containing the user's input.
-        name: Optional human-readable name for the message.
+        name: Optional identifier for the human user who sent this message.
 
     """
 
@@ -626,12 +647,31 @@ class HumanMessage:
     """
 
     name: Optional[str] = None
-    """An optional name for the message.
+    """Optional identifier for the human user who sent this message.
 
-    This can be used to provide a human-readable name for the message.
+    Can be helpful in multi-user scenarios or for conversation tracking. Most chat model
+    providers ignore this field for human messages.
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
+    **Examples:**
+
+    .. python::
+
+        HumanMessage(
+            content= [
+                TextContentBlock("Hello"),
+            ],
+            name="user_alice"
+        )
+
+        HumanMessage(
+            content= [
+                TextContentBlock("Run analysis"),
+            ],
+            name="admin_bob"
+        )
 
     """
 
@@ -647,7 +687,7 @@ class HumanMessage:
         Args:
             content: Message content as string or list of content blocks.
             id: Optional unique identifier for the message.
-            name: Optional human-readable name for the message.
+            name: Optional identifier for the human user who sent this message.
 
         """
         self.id = _ensure_id(id)
@@ -708,12 +748,30 @@ class SystemMessage:
     """
 
     name: Optional[str] = None
-    """An optional name for the message.
+    """Optional identifier for the system component/context that generated this message.
 
-    This can be used to provide a human-readable name for the message.
+    Can be used to identify different system contexts or configurations.
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
+    **Examples:**
+
+    .. python::
+
+        SystemMessage(
+            content= [
+                TextContentBlock("You are a helpful assistant"),
+            ],
+            name="base_prompt"
+        )
+
+        SystemMessage(
+            content= [
+                TextContentBlock("Advanced mode enabled"),
+            ],
+            name="config_update"
+        )
 
     """
 
@@ -741,7 +799,8 @@ class SystemMessage:
             content: Message content as string or list of content blocks.
             id: Optional unique identifier for the message.
             custom_role: If provided, a custom role for the system message.
-            name: Optional human-readable name for the message.
+            name: Optional identifier for the system component/context that generated
+                this message.
 
         """
         self.id = _ensure_id(id)
@@ -782,6 +841,7 @@ class ToolMessage(ToolOutputMixin):
         tool_call_id: ID of the tool call this message responds to.
         content: The result content from tool execution.
         artifact: Optional app-side payload not intended for the model.
+        name: Name of the tool/function that was executed to generate this message.
         status: Execution status ("success" or "error").
 
     """
@@ -822,12 +882,32 @@ class ToolMessage(ToolOutputMixin):
     """
 
     name: Optional[str] = None
-    """An optional name for the message.
+    """Name of the tool/function that was executed to generate this message.
 
-    This can be used to provide a human-readable name for the message.
+    .. important::
+        This field is required by most chat model providers (OpenAI, Anthropic,
+        Google, etc.) for proper tool calling. The name must match the tool that was
+        called.
 
-    Usage of this field is optional, and whether it's used or not is up to the
-    model implementation.
+    **Examples:**
+
+    .. python::
+
+        ToolMessage(
+            content= [
+                TextContentBlock("42"),
+            ],
+            name="calculator",
+            tool_call_id="call_123"
+        )
+
+        ToolMessage(
+            content= [
+                TextContentBlock("Weather is sunny"),
+            ],
+            name="get_weather",
+            tool_call_id="call_456"
+        )
 
     """
 
@@ -855,7 +935,7 @@ class ToolMessage(ToolOutputMixin):
             content: Message content as string or list of content blocks.
             tool_call_id: ID of the tool call this message responds to.
             id: Optional unique identifier for the message.
-            name: Optional human-readable name for the message.
+            name: Name of the tool/function that was executed to generate this message.
             artifact: Optional app-side payload not intended for the model.
             status: Execution status (``'success'`` or ``'error'``).
 
