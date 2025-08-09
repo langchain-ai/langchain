@@ -103,7 +103,7 @@ module.exports = {
         {
           type: "category",
           label: "Migrating from v0.0 chains",
-          link: {type: 'doc', id: 'versions/migrating_chains/index'},
+          link: {type: 'generated-index', slug: 'versions/migrating_chains'},
           collapsible: false,
           collapsed: false,
           items: [{
@@ -127,7 +127,7 @@ module.exports = {
         "versions/release_policy",
       ],
     },
-    "security"
+    // "security" // Commented out - file doesn't exist
   ],
   integrations: [
     {
@@ -177,8 +177,8 @@ module.exports = {
         },
       ],
       link: {
-        type: "doc",
-        id: "integrations/providers/index",
+        type: "generated-index",
+        slug: "integrations/providers",
       },
     },
     {
@@ -230,8 +230,8 @@ module.exports = {
             },
           ],
           link: {
-            type: "doc",
-            id: "integrations/tools/index",
+            type: "generated-index",
+            slug: "integrations/tools",
           },
         },
         {
@@ -335,7 +335,7 @@ module.exports = {
                 slug: "integrations/document_transformers",
               },
             },
-            "integrations/llm_caching",
+            // "integrations/llm_caching", // Commented out - file exists but causes sidebar issues
             {
               type: "category",
               label: "Graphs",
@@ -418,7 +418,7 @@ module.exports = {
             },
           ],
         },
-        
+
       ],
       link: {
         type: "generated-index",
