@@ -3,7 +3,7 @@
 import pytest
 from langchain_core.messages import AIMessage
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, custom_tool
 from langchain_openai.chat_models.cfg_grammar import (
     validate_cfg_format,
     validate_custom_tool_output,

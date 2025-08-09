@@ -5,6 +5,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages.tool import tool_call
 from langchain_core.tools import tool
 
+from langchain_openai import custom_tool
 from langchain_openai.chat_models.base import (
     _convert_delta_to_message_chunk,
     _convert_dict_to_message,
@@ -44,9 +45,7 @@ def test_regular_tool_not_custom():
 def test_tool_call_with_text_input():
     """Test creating tool calls with `text_input`."""
 
-    custom_call = tool_call(
-        name="execute_code", text_input="print('hello world')", id="call_123"
-    )
+    custom_call = tool_call(name="execute_code", id="call_123")
 
     assert custom_call["name"] == "execute_code"
     assert custom_call.get("text_input") == "print('hello world')"

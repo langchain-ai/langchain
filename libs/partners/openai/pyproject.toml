@@ -91,5 +91,4 @@ filterwarnings = [
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "F821",
 ]
