@@ -141,9 +141,7 @@ DEF_EXPECTED_RESULT = TestModel(
 
 def test_pydantic_output_parser() -> None:
     """Test PydanticOutputParser."""
-    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
-        pydantic_object=TestModel
-    )
+    pydantic_parser = PydanticOutputParser(pydantic_object=TestModel)
 
     result = pydantic_parser.parse(DEF_RESULT)
     assert result == DEF_EXPECTED_RESULT
@@ -152,9 +150,7 @@ def test_pydantic_output_parser() -> None:
 
 def test_pydantic_output_parser_fail() -> None:
     """Test PydanticOutputParser where completion result fails schema validation."""
-    pydantic_parser: PydanticOutputParser = PydanticOutputParser(
-        pydantic_object=TestModel
-    )
+    pydantic_parser = PydanticOutputParser(pydantic_object=TestModel)
 
     with pytest.raises(
         OutputParserException, match="Failed to parse TestModel from completion"

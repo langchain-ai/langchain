@@ -210,13 +210,18 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
 
 
 MessageLikeRepresentation = Union[
-    BaseMessage, list[str], tuple[str, str], str, dict[str, Any], MessageV1
+    BaseMessage,
+    list[str],
+    tuple[str, Union[str, list[dict[str, Any]]]],
+    str,
+    dict[str, Any],
+    MessageV1,
 ]
 
 
 def _create_message_from_message_type(
     message_type: str,
-    content: str,
+    content: Union[str, list[Union[str, dict[str, Any]]]],
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
@@ -226,13 +231,13 @@ def _create_message_from_message_type(
     """Create a message from a message type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., "human", "ai", etc.).
-        content: (str) the content string.
-        name: (str) the name of the message. Default is None.
-        tool_call_id: (str) the tool call id. Default is None.
-        tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
-        id: (str) the id of the message. Default is None.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., "human", "ai", etc.).
+        content: the content string.
+        name: the name of the message. Default is None.
+        tool_call_id: the tool call id. Default is None.
+        tool_calls: the tool calls. Default is None.
+        id: the id of the message. Default is None.
+        **additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
@@ -303,7 +308,7 @@ def _create_message_from_message_type(
 
 def _create_message_from_message_type_v1(
     message_type: str,
-    content: str,
+    content: Union[str, list[ContentBlock]],
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
@@ -453,7 +458,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     elif isinstance(message, Sequence) and len(message) == 2:
         # mypy doesn't realise this can't be a string given the previous branch
         message_type_str, template = message  # type: ignore[misc]
-        message_ = _create_message_from_message_type(message_type_str, template)
+        message_ = _create_message_from_message_type(message_type_str, template)  # type: ignore[arg-type]
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -590,7 +595,10 @@ def _convert_to_message_v1(message: MessageLikeRepresentation) -> MessageV1:
     elif isinstance(message, Sequence) and len(message) == 2:
         # mypy doesn't realise this can't be a string given the previous branch
         message_type_str, template = message  # type: ignore[misc]
-        message_ = _create_message_from_message_type_v1(message_type_str, template)
+        message_ = _create_message_from_message_type_v1(
+            message_type_str,
+            template,  # type: ignore[arg-type]
+        )
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -1295,13 +1303,26 @@ def convert_to_openai_messages(
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str, MessageV1Types)):
-        messages = [messages]
+    is_sequence = (
+        isinstance(messages, Sequence)
+        and not isinstance(messages, str)
+        and not (
+            isinstance(messages, tuple)
+            and len(messages) == 2
+            and isinstance(messages[0], str)
+            and isinstance(messages[1], list)
+            and len(messages[1]) > 0
+            and isinstance(messages[1][0], dict)
+        )
+    )
 
-    # TODO: resolve type ignore here
-    messages = convert_to_messages(messages)  # type: ignore[arg-type]
+    # Mypy not able to distinguish tuple(str, list[dict])
+    # from Sequence[MessageLikeRepresentation]
+    messages_: Iterable[MessageLikeRepresentation] = (
+        messages if is_sequence else [messages]  # type: ignore[assignment,list-item]
+    )
 
-    for i, message in enumerate(messages):
+    for i, message in enumerate(convert_to_messages(messages_)):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
         content: Union[str, list[dict]]
@@ -1574,9 +1595,7 @@ def convert_to_openai_messages(
         else:
             oai_messages.extend([oai_msg, *tool_messages])
 
-    if is_single:
-        return oai_messages[0]
-    return oai_messages
+    return oai_messages if is_sequence else oai_messages[0]
 
 
 def _first_max_tokens(
