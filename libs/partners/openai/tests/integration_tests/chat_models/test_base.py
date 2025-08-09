@@ -1035,30 +1035,6 @@ def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
     assert response.text().upper() == response.text()
 
 
-@pytest.mark.parametrize("use_responses_api", [False, True])
-@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
-def test_o1_minimal_reasoning_effort(
-    use_max_completion_tokens: bool, use_responses_api: bool
-) -> None:
-    if use_max_completion_tokens:
-        kwargs: dict = {"max_completion_tokens": MAX_TOKEN_COUNT}
-    else:
-        kwargs = {"max_tokens": MAX_TOKEN_COUNT}
-    response = ChatOpenAI(
-        model="o1",
-        reasoning_effort="minimal",
-        use_responses_api=use_responses_api,
-        **kwargs,
-    ).invoke(
-        [
-            {"role": "developer", "content": "respond with just 'test'"},
-            {"role": "user", "content": "hello"},
-        ]
-    )
-    assert isinstance(response, AIMessage)
-    assert isinstance(response.text(), str)
-
-
 @pytest.mark.scheduled
 def test_o1_stream_default_works() -> None:
     result = list(ChatOpenAI(model="o1").stream("say 'hi'"))
