@@ -20,7 +20,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<0.13,>=0.12.2", "langchain-core"]
 typing = [
-    "mypy<2.0,>=1.15",
+    "mypy<1.18,>=1.17.1",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.8.0",
@@ -51,7 +51,6 @@ langchain-core = { path = "../core", editable = true }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
 
 [[tool.mypy.overrides]]
 module = ["konlpy", "nltk",]
