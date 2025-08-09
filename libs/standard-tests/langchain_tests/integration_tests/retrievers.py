@@ -1,3 +1,5 @@
+"""Integration tests for retrievers."""
+
 from abc import abstractmethod
 
 import pytest
@@ -35,7 +37,10 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
     @pytest.fixture
     def retriever(self) -> BaseRetriever:
-        """:private:"""
+        """Return retriever fixture.
+
+        :private:
+        """
         return self.retriever_constructor(**self.retriever_constructor_params)
 
     def test_k_constructor_param(self) -> None:
@@ -146,7 +151,9 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_3)
 
     def test_invoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """If invoked with the example params, the retriever should return a list of
+        """Test invoke returns documents.
+
+        If invoked with the example params, the retriever should return a list of
         Documents.
 
         .. dropdown:: Troubleshooting
@@ -161,7 +168,9 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result)
 
     async def test_ainvoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """If ainvoked with the example params, the retriever should return a list of
+        """Test ainvoke returns documents.
+
+        If ainvoked with the example params, the retriever should return a list of
         Documents.
 
         See :meth:`test_invoke_returns_documents` for more information on
