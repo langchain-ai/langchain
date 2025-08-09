@@ -20,6 +20,7 @@ from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun, Callbacks
+from langchain_core.callbacks.manager import adispatch_custom_event
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.documents import Document
 from langchain_core.language_models import FakeStreamingListLLM, GenericFakeChatModel
@@ -2548,7 +2549,6 @@ async def test_cancel_astream_events() -> None:
 
 async def test_custom_event() -> None:
     """Test adhoc event."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Ignoring type due to RunnableLamdba being dynamic when it comes to being
     # applied as a decorator to async functions.
@@ -2625,7 +2625,6 @@ async def test_custom_event() -> None:
 
 async def test_custom_event_nested() -> None:
     """Test adhoc event in a nested chain."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Ignoring type due to RunnableLamdba being dynamic when it comes to being
     # applied as a decorator to async functions.
@@ -2736,7 +2735,6 @@ async def test_custom_event_root_dispatch() -> None:
     # This just tests that nothing breaks on the path.
     # It shouldn't do anything at the moment, since the tracer isn't configured
     # to handle adhoc events.
-    from langchain_core.callbacks.manager import adispatch_custom_event
 
     # Expected behavior is that the event cannot be dispatched
     with pytest.raises(RuntimeError):
@@ -2750,8 +2748,6 @@ IS_GTE_3_11 = sys.version_info >= (3, 11)
 @pytest.mark.skipif(not IS_GTE_3_11, reason="Requires Python >=3.11")
 async def test_custom_event_root_dispatch_with_in_tool() -> None:
     """Test adhoc event in a nested chain."""
-    from langchain_core.callbacks.manager import adispatch_custom_event
-    from langchain_core.tools import tool
 
     @tool
     async def foo(x: int) -> int:
