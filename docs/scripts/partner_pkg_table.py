@@ -101,7 +101,12 @@ def package_row(p: dict) -> str:
     link = p["provider_page"]
     title = p["name_title"]
     provider = f"[{title}]({link})" if link else title
-    return f"| {provider} | [{p['name']}]({p['package_url']}) | ![PyPI - Downloads](https://img.shields.io/pypi/dm/{p['name']}?style=flat-square&label=%20&color=blue) | ![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | {js} |"
+    return (
+        f"| {provider} | [{p['name']}]({p['package_url']}) | "
+        f"![Downloads](https://static.pepy.tech/personalized-badge/{p['name']}?period=month&units=abbreviation&left_color=grey&right_color=blue&left_text=%20) | "
+        f"![PyPI - Version](https://img.shields.io/pypi/v/{p['name']}?style=flat-square&label=%20&color=orange) | "
+        f"{js} |"
+    )
 
 
 def table() -> str:
