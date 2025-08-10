@@ -218,6 +218,14 @@ class ChatDeepSeek(BaseChatOpenAI):
             )
             self.async_client = self.root_async_client.chat.completions
         return self
+        
+    def _get_ls_params(
+        self, stop: Optional[list[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        ls_params = super()._get_ls_params(stop=stop, **kwargs)
+        ls_params["ls_provider"] = "deepseek"
+        return ls_params
 
     def _get_request_payload(
         self,
