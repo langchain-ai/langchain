@@ -548,7 +548,8 @@ class ChatHuggingFace(BaseChatModel):
 
         # Inherit model_kwargs if not explicitly set
         if not self.model_kwargs and hasattr(self.llm, "model_kwargs"):
-            self.model_kwargs = self.llm.model_kwargs.copy()
+            if isinstance(self.llm.model_kwargs, dict):
+                self.model_kwargs = self.llm.model_kwargs.copy()
 
     @model_validator(mode="after")
     def validate_llm(self) -> Self:
