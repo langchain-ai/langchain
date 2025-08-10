@@ -458,8 +458,7 @@ class BaseChatOpenAI(BaseChatModel):
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
-    """Base URL path for API requests, leave blank if not using a proxy or service
-        emulator."""
+    """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501
     openai_organization: Optional[str] = Field(default=None, alias="organization")
     """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
@@ -507,8 +506,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     Reasoning models only, like OpenAI o1, o3, and o4-mini.
 
-    Currently supported values are low, medium, and high. Reducing reasoning effort
-    can result in faster responses and fewer tokens used on reasoning in a response.
+    Currently supported values are ``'minimal'``, ``'low'``, ``'medium'``, and
+    ``'high'``. Reducing reasoning effort can result in faster responses and fewer
+    tokens used on reasoning in a response.
 
     .. versionadded:: 0.2.14
     """
@@ -526,6 +526,17 @@ class BaseChatOpenAI(BaseChatModel):
         }
 
     .. versionadded:: 0.3.24
+
+    """
+    verbosity: Optional[str] = None
+    """Controls the verbosity level of responses for reasoning models. For use with the
+    Responses API.
+
+    Currently supported values are ``'low'``, ``'medium'``, and ``'high'``.
+
+    Controls how detailed the model's responses are.
+
+    .. versionadded:: 0.3.28
 
     """
     tiktoken_model_name: Optional[str] = None
@@ -654,6 +665,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm = ChatOpenAI(
             model="o4-mini",
             use_responses_api=True,
+            output_version="responses/v1",
         )
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
@@ -701,10 +713,24 @@ class BaseChatOpenAI(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_temperature(cls, values: dict[str, Any]) -> Any:
-        """Currently o1 models only allow temperature=1."""
+        """Validate temperature parameter for different models.
+
+        - o1 models only allow temperature=1
+        - gpt-5 models only allow temperature=1 or unset (defaults to 1)
+        """
         model = values.get("model_name") or values.get("model") or ""
+
+        # For o1 models, set temperature=1 if not provided
         if model.startswith("o1") and "temperature" not in values:
             values["temperature"] = 1
+
+        # For gpt-5 models, handle temperature restrictions
+        if model.startswith("gpt-5"):
+            temperature = values.get("temperature")
+            if temperature is not None and temperature != 1:
+                # For gpt-5, only temperature=1 is supported, so remove non-defaults
+                values.pop("temperature", None)
+
         return values
 
     @model_validator(mode="after")
@@ -805,6 +831,7 @@ class BaseChatOpenAI(BaseChatModel):
             "temperature": self.temperature,
             "reasoning_effort": self.reasoning_effort,
             "reasoning": self.reasoning,
+            "verbosity": self.verbosity,
             "include": self.include,
             "service_tier": self.service_tier,
             "truncation": self.truncation,
@@ -1178,6 +1205,7 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs["stop"] = stop
 
         payload = {**self._default_params, **kwargs}
+
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
                 last_messages, previous_response_id = _get_last_messages(messages)
@@ -2366,7 +2394,11 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             from langchain_openai import ChatOpenAI
 
-            llm = ChatOpenAI(model="gpt-4.1-mini", use_responses_api=True)
+            llm = ChatOpenAI(
+                model="gpt-4.1-mini",
+                use_responses_api=True,
+                output_version="responses/v1",
+            )
             response = llm.invoke("Hi, I'm Bob.")
             response.text()
 
@@ -3485,6 +3517,11 @@ def _construct_responses_api_payload(
             payload["max_output_tokens"] = payload.pop(legacy_token_param)
     if "reasoning_effort" in payload and "reasoning" not in payload:
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
+
+    # Remove temperature parameter for models that don't support it in responses API
+    model = payload.get("model", "")
+    if model.startswith("gpt-5"):
+        payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
     if tools := payload.pop("tools", None):

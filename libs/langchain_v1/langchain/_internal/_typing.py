@@ -13,9 +13,10 @@ if TYPE_CHECKING:
 
 
 class TypedDictLikeV1(Protocol):
-    """Protocol to represent types that behave like TypedDicts.
+    """Protocol to represent types that behave like ``TypedDict``s.
 
-    Version 1: using `ClassVar` for keys.
+    Version 1: using ``ClassVar`` for keys.
+
     """
 
     __required_keys__: ClassVar[frozenset[str]]
@@ -23,9 +24,10 @@ class TypedDictLikeV1(Protocol):
 
 
 class TypedDictLikeV2(Protocol):
-    """Protocol to represent types that behave like TypedDicts.
+    """Protocol to represent types that behave like ``TypedDict``s.
 
-    Version 2: not using `ClassVar` for keys.
+    Version 2: not using ``ClassVar`` for keys.
+
     """
 
     __required_keys__: frozenset[str]
@@ -35,8 +37,9 @@ class TypedDictLikeV2(Protocol):
 class DataclassLike(Protocol):
     """Protocol to represent types that behave like dataclasses.
 
-    Inspired by the private _DataclassT from dataclasses that uses a similar
+    Inspired by the private ``_DataclassT`` from dataclasses that uses a similar
     protocol as a bound.
+
     """
 
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
@@ -45,9 +48,12 @@ class DataclassLike(Protocol):
 StateLike: TypeAlias = Union[TypedDictLikeV1, TypedDictLikeV2, DataclassLike, BaseModel]
 """Type alias for state-like types.
 
-It can either be a `TypedDict`, `dataclass`, or Pydantic `BaseModel`.
-Note: we cannot use either `TypedDict` or `dataclass` directly due to limitations in
-type checking.
+It can either be a ``TypedDict``, ``dataclass``, or Pydantic ``BaseModel``.
+
+.. note::
+    We cannot use either ``TypedDict`` or ``dataclass`` directly due to limitations in
+    type checking.
+
 """
 
 StateT = TypeVar("StateT", bound=StateLike)

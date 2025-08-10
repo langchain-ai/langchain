@@ -454,7 +454,7 @@ def create_stuff_documents_chain(
     Returns:
         A LangGraph that can be invoked with documents to extract information.
 
-    Note:
+    .. note::
         This is a "stuff" documents chain that puts all documents into the context
         window and processes them together. It supports refining existing results.
         Default prompts are optimized for summarization but can be customized for
