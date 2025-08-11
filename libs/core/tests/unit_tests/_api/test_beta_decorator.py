@@ -91,8 +91,8 @@ class ClassWithBetaMethods:
         """Original doc."""
         return "This is a beta staticmethod."
 
+    @beta()  # type: ignore[prop-decorator]
     @property
-    @beta()
     def beta_property(self) -> str:
         """Original doc."""
         return "This is a beta property."
@@ -226,10 +226,10 @@ def test_beta_property() -> None:
         warning = warning_list[0].message
 
         assert str(warning) == (
-            "The method `ClassWithBetaMethods.beta_property` is in beta. "
+            "The attribute `ClassWithBetaMethods.beta_property` is in beta. "
             "It is actively being worked on, so the API may change."
         )
-        doc = ClassWithBetaMethods.beta_property.__doc__
+        doc = ClassWithBetaMethods.__dict__["beta_property"].__doc__
         assert isinstance(doc, str)
         assert doc.startswith(".. beta::")
 

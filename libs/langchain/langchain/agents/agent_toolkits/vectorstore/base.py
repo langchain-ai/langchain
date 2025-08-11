@@ -41,8 +41,9 @@ def create_vectorstore_agent(
 ) -> AgentExecutor:
     """Construct a VectorStore agent from an LLM and tools.
 
-    Note: this class is deprecated. See below for a replacement that uses tool
-    calling methods and LangGraph. Install LangGraph with:
+    .. note::
+        This class is deprecated. See below for a replacement that uses tool
+        calling methods and LangGraph. Install LangGraph with:
 
         .. code-block:: bash
 
@@ -135,8 +136,9 @@ def create_vectorstore_router_agent(
 ) -> AgentExecutor:
     """Construct a VectorStore router agent from an LLM and tools.
 
-    Note: this class is deprecated. See below for a replacement that uses tool
-    calling methods and LangGraph. Install LangGraph with:
+    .. note::
+        This class is deprecated. See below for a replacement that uses tool calling
+        methods and LangGraph. Install LangGraph with:
 
         .. code-block:: bash
 

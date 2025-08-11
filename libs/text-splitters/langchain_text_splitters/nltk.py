@@ -31,9 +31,9 @@ class NLTKTextSplitter(TextSplitter):
                 self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)
             else:
                 self._tokenizer = nltk.tokenize.sent_tokenize
-        except ImportError:
+        except ImportError as err:
             msg = "NLTK is not installed, please install it with `pip install nltk`."
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
     def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""

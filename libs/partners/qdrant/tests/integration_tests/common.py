@@ -1,4 +1,4 @@
-import requests  # type: ignore
+import requests  # type: ignore[import-untyped]
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 
@@ -7,7 +7,6 @@ from langchain_qdrant import SparseEmbeddings, SparseVector
 
 def qdrant_running_locally() -> bool:
     """Check if Qdrant is running at http://localhost:6333."""
-
     try:
         response = requests.get("http://localhost:6333", timeout=10.0)
         response_json = response.json()
@@ -33,7 +32,8 @@ def assert_documents_equals(actual: list[Document], expected: list[Document]):  
 
 class ConsistentFakeEmbeddings(Embeddings):
     """Fake embeddings which remember all the texts seen so far to return consistent
-    vectors for the same texts."""
+    vectors for the same texts.
+    """  # noqa: D205
 
     def __init__(self, dimensionality: int = 10) -> None:
         self.known_texts: list[str] = []
@@ -53,13 +53,15 @@ class ConsistentFakeEmbeddings(Embeddings):
 
     def embed_query(self, text: str) -> list[float]:
         """Return consistent embeddings for the text, if seen before, or a constant
-        one if the text is unknown."""
+        one if the text is unknown.
+        """  # noqa: D205
         return self.embed_documents([text])[0]
 
 
 class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
-    """Fake sparse embeddings which remembers all the texts seen so far "
-    "to return consistent vectors for the same texts."""
+    """Fake sparse embeddings which remembers all the texts seen so far
+    "to return consistent vectors for the same texts.
+    """  # noqa: D205
 
     def __init__(self, dimensionality: int = 25) -> None:
         self.known_texts: list[str] = []
@@ -78,6 +80,7 @@ class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
         return out_vectors
 
     def embed_query(self, text: str) -> SparseVector:
-        """Return consistent embeddings for the text, "
-        "if seen before, or a constant one if the text is unknown."""
+        """Return consistent embeddings for the text, if seen before, or a constant
+        one if the text is unknown.
+        """  # noqa: D205
         return self.embed_documents([text])[0]

@@ -3053,18 +3053,18 @@ End Function
 Public Sub Main()
     Dim i As Integer
     Dim limit As Integer
-    
+
     i = 0
     limit = 50
-    
+
     While i < limit
         i = SumTwoIntegers(i, 1)
-        
+
         If i = limit \\ 2 Then
             MsgBox "Halfway there! i = " & i
         End If
     Wend
-    
+
     MsgBox "Done! Final value of i: " & i
 End Sub
 """

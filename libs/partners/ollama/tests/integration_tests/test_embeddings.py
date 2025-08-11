@@ -1,10 +1,12 @@
 """Test Ollama embeddings."""
 
+import os
+
 from langchain_tests.integration_tests import EmbeddingsIntegrationTests
 
 from langchain_ollama.embeddings import OllamaEmbeddings
 
-MODEL_NAME = "llama3.1"
+MODEL_NAME = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1")
 
 
 class TestOllamaEmbeddings(EmbeddingsIntegrationTests):

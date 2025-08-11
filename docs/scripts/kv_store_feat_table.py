@@ -30,48 +30,49 @@ The following table shows information on all available key-value stores.
 
 KV_STORE_FEAT_TABLE = {
     "AstraDBByteStore": {
-        "class": "[AstraDBByteStore](https://python.langchain.com/api_reference/astradb/storage/langchain_astradb.storage.AstraDBByteStore.html)",
+        "class": "[AstraDBByteStore](https://python.langchain.com/docs/integrations/stores/astradb/)",
         "local": False,
-        "package": "[langchain_astradb](https://python.langchain.com/api_reference/astradb/)",
+        "package": "[langchain-astradb](https://python.langchain.com/api_reference/astradb/storage/langchain_astradb.storage.AstraDBByteStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_astradb?style=flat-square&label=%20)",
     },
     "CassandraByteStore": {
-        "class": "[CassandraByteStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.cassandra.CassandraByteStore.html)",
+        "class": "[CassandraByteStore](https://python.langchain.com/docs/integrations/stores/cassandra/)",
         "local": False,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.cassandra.CassandraByteStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "ElasticsearchEmbeddingsCache": {
-        "class": "[ElasticsearchEmbeddingsCache](https://python.langchain.com/api_reference/elasticsearch/cache/langchain_elasticsearch.cache.ElasticsearchEmbeddingsCache.html)",
+        "class": "[ElasticsearchEmbeddingsCache](https://python.langchain.com/docs/integrations/stores/elasticsearch/)",
         "local": True,
-        "package": "[langchain_elasticsearch](https://python.langchain.com/api_reference/elasticsearch/)",
+        "package": "[langchain-elasticsearch](https://python.langchain.com/api_reference/elasticsearch/cache/langchain_elasticsearch.cache.ElasticsearchEmbeddingsCache.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_elasticsearch?style=flat-square&label=%20)",
     },
     "LocalFileStore": {
-        "class": "[LocalFileStore](https://python.langchain.com/api_reference/storage/langchain.storage.file_system.LocalFileStore.html)",
+        "class": "[LocalFileStore](https://python.langchain.com/docs/integrations/stores/file_system/)",
         "local": True,
-        "package": "[langchain](https://python.langchain.com/api_reference/langchain/)",
+        "package": "[langchain](https://python.langchain.com/api_reference/langchain/storage/langchain.storage.file_system.LocalFileStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain?style=flat-square&label=%20)",
     },
     "InMemoryByteStore": {
-        "class": "[InMemoryByteStore](https://python.langchain.com/api_reference/core/stores/langchain_core.stores.InMemoryByteStore.html)",
+        "class": "[InMemoryByteStore](https://python.langchain.com/docs/integrations/stores/in_memory/)",
         "local": True,
-        "package": "[langchain_core](https://python.langchain.com/api_reference/core/)",
+        "package": "[langchain-core](https://python.langchain.com/api_reference/core/stores/langchain_core.stores.InMemoryByteStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_core?style=flat-square&label=%20)",
     },
     "RedisStore": {
-        "class": "[RedisStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.redis.RedisStore.html)",
+        "class": "[RedisStore](https://python.langchain.com/docs/integrations/stores/redis/)",
         "local": True,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.redis.RedisStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
     "UpstashRedisByteStore": {
-        "class": "[UpstashRedisByteStore](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.upstash_redis.UpstashRedisByteStore.html)",
+        "class": "[UpstashRedisByteStore](https://python.langchain.com/docs/integrations/stores/upstash_redis/)",
         "local": False,
-        "package": "[langchain_community](https://python.langchain.com/api_reference/community/)",
+        "package": "[langchain-community](https://python.langchain.com/api_reference/community/storage/langchain_community.storage.upstash_redis.UpstashRedisByteStore.html)",
         "downloads": "![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain_community?style=flat-square&label=%20)",
     },
 }
+
 
 DEPRECATED = []
 
