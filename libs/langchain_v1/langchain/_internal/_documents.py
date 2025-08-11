@@ -22,9 +22,10 @@ def format_document_xml(doc: Document) -> str:
                 <metadata>...</metadata>
             </document>
 
-    Note:
-        Does not generate valid XML or escape special characters.
-        Intended for semi-structured LLM input only.
+    .. note::
+        Does not generate valid XML or escape special characters. Intended for
+        semi-structured LLM input only.
+
     """
     id_str = f"<id>{doc.id}</id>" if doc.id is not None else "<id></id>"
     metadata_str = ""
