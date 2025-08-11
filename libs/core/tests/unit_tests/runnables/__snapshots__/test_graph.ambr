@@ -1450,6 +1450,22 @@
                 
                 The common fields (``model_provider``, ``model_name``) provide a baseline
                 contract while preserving flexibility for provider innovations.
+                
+                .. note::
+                    Not all providers will return the metadata required by this class. In this case,
+                    it is acceptable to inject these fields with values at invocation.
+                
+                    For instance, requests to OpenAI's responses API will not return a provider
+                    field in the raw response, as it can be inferred that by making the request, the
+                    provider responding is OpenAI. In this case, it is safe to set the
+                    ``model_provider`` field to ``'openai'`` when creating the message.
+                
+                    On the other hand, ``model_name`` is often returned, and in such cases it is
+                    expected that you populate this field with the unmodified model name (such as
+                    ``'o1-2024-12-17'``). Only in situations where the provider does not return a
+                    model name should you artifically set this field - in which case, the value
+                    should be set to the ``model`` or ``model_name`` parameter passed in during
+                    invocation.
               ''',
               'properties': dict({
                 'model_name': dict({
