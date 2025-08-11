@@ -13,7 +13,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
     @property
     @abstractmethod
     def retriever_constructor(self) -> type[BaseRetriever]:
-        """A BaseRetriever subclass to be tested."""
+        """A ``BaseRetriever`` subclass to be tested."""
         ...
 
     @property
@@ -30,7 +30,9 @@ class RetrieversIntegrationTests(BaseStandardTests):
     def num_results_arg_name(self) -> str:
         """Returns the name of the parameter for the number of results returned.
 
-        Usually something like ``k`` or ``top_k``."""
+        Usually something like ``k`` or ``top_k``.
+
+        """
         return "k"
 
     @pytest.fixture
