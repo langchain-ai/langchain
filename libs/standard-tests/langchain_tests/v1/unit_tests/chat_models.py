@@ -72,7 +72,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
     TEST_PYDANTIC_MODELS.append(generate_schema_pydantic_v1_from_2())
 
 
-class ChatModelV1Tests(BaseStandardTests):
+class ChatModelTests(BaseStandardTests):
     """Test suite for v1 chat models.
 
     This class provides comprehensive testing for the new message system introduced in
@@ -140,15 +140,6 @@ class ChatModelV1Tests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
-        """(None or str) To use for tool choice when used in tests.
-
-        Not required.
-
-        """
-        return None
-
-    @property
     def has_tool_choice(self) -> bool:
         """Whether the model supports forcing tool calling via ``tool_choice``."""
         bind_tools_params = inspect.signature(
@@ -184,6 +175,35 @@ class ChatModelV1Tests(BaseStandardTests):
         """
         return False
 
+    @property
+    def supports_image_inputs(self) -> bool:
+        """(bool) whether the chat model supports image inputs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_image_urls(self) -> bool:
+        """(bool) whether the chat model supports image inputs from URLs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        """(bool) whether the chat model supports PDF inputs, defaults to ``False``."""
+        return False
+
+    @property
+    def supports_audio_inputs(self) -> bool:
+        """(bool) whether the chat model supports audio inputs, defaults to ``False``."""  # noqa: E501
+        return False
+
+    @property
+    def supports_video_inputs(self) -> bool:
+        """(bool) whether the chat model supports video inputs, defaults to ``False``.
+
+        No current tests are written for this feature.
+
+        """
+        return False
+
     # Content Block Support Properties
     @property
     def supports_content_blocks_v1(self) -> bool:
@@ -198,14 +218,10 @@ class ChatModelV1Tests(BaseStandardTests):
         support. Each defaults to False:
 
         - ``supports_reasoning_content_blocks``
-        - ``supports_plaintext_content_blocks``
-        - ``supports_file_content_blocks``
         - ``supports_image_content_blocks``
-        - ``supports_audio_content_blocks``
         - ``supports_video_content_blocks``
         - ``supports_citations``
         - ``supports_web_search_blocks``
-        - ``supports_invalid_tool_calls``
 
         """
         return True
@@ -239,48 +255,6 @@ class ChatModelV1Tests(BaseStandardTests):
         return False
 
     @property
-    def supports_plaintext_content_blocks(self) -> bool:
-        """Whether the model supports ``PlainTextContentBlock``.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_file_content_blocks(self) -> bool:
-        """Whether the model supports ``FileContentBlock``.
-
-        Replaces ``supports_pdf_inputs`` from v0.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_image_content_blocks(self) -> bool:
-        """Whether the model supports ``ImageContentBlock``.
-
-        Replaces ``supports_image_inputs`` from v0.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_audio_content_blocks(self) -> bool:
-        """Whether the model supports ``AudioContentBlock``.
-
-        Replaces ``supports_audio_inputs`` from v0.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
     def supports_video_content_blocks(self) -> bool:
         """Whether the model supports ``VideoContentBlock``.
 
@@ -294,10 +268,7 @@ class ChatModelV1Tests(BaseStandardTests):
     @property
     def supports_multimodal_reasoning(self) -> bool:
         """Whether the model can reason about multimodal content."""
-        return (
-            self.supports_image_content_blocks
-            and self.supports_reasoning_content_blocks
-        )
+        return self.supports_image_inputs and self.supports_reasoning_content_blocks
 
     @property
     def supports_citations(self) -> bool:
@@ -307,11 +278,6 @@ class ChatModelV1Tests(BaseStandardTests):
 
         """
         return False
-
-    @property
-    def supports_structured_citations(self) -> bool:
-        """Whether the model supports structured citation generation."""
-        return self.supports_citations
 
     @property
     def supports_web_search_blocks(self) -> bool:
@@ -325,15 +291,6 @@ class ChatModelV1Tests(BaseStandardTests):
     @property
     def supports_code_interpreter(self) -> bool:
         """Whether the model supports code interpreter blocks.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_invalid_tool_calls(self) -> bool:
-        """Whether the model can handle ``InvalidToolCall`` blocks.
 
         Defaults to False.
 
@@ -391,7 +348,7 @@ class ChatModelV1Tests(BaseStandardTests):
         return {"invoke": [], "stream": []}
 
 
-class ChatModelV1UnitTests(ChatModelV1Tests):
+class ChatModelUnitTests(ChatModelTests):
     """Base class for chat model v1 unit tests.
 
     These tests run in isolation without external dependencies.
@@ -406,11 +363,11 @@ class ChatModelV1UnitTests(ChatModelV1Tests):
 
         from typing import Type
 
-        from langchain_tests.unit_tests import ChatModelV1UnitTests
-        from my_package.chat_models import MyChatModel
+        from langchain_tests.v1.unit_tests import ChatModelUnitTests
+        from my_package.v1.chat_models import MyChatModel
 
 
-        class TestMyChatModelUnit(ChatModelV1UnitTests):
+        class TestMyChatModelUnit(ChatModelUnitTests):
             @property
             def chat_model_class(self) -> Type[MyChatModel]:
                 # Return the chat model class to test here

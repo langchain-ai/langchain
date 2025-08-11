@@ -44,6 +44,7 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.load import dumpd
 from langchain_core.messages import (
+    convert_to_openai_data_block,
     convert_to_openai_image_block,
     get_buffer_string,
     is_data_content_block,
@@ -132,6 +133,30 @@ def _format_for_tracing(messages: Sequence[MessageV1]) -> list[MessageV1]:
                 # TODO: for tracing purposes we store non-standard types (OpenAI format)
                 # in message content. Consider typing these block formats.
                 message_to_trace.content[idx] = convert_to_openai_image_block(block)  # type: ignore[arg-type, call-overload]
+            elif (
+                block.get("type") == "file"
+                and is_data_content_block(block)  # type: ignore[arg-type]  # permit unnecessary runtime check
+                and "base64" in block
+            ):
+                if message_to_trace is message:
+                    # Shallow copy
+                    message_to_trace = copy.copy(message)
+                    message_to_trace.content = list(message_to_trace.content)
+
+                message_to_trace.content[idx] = convert_to_openai_data_block(block)  # type: ignore[arg-type, call-overload]
+            elif len(block) == 1 and "type" not in block:
+                # Tracing assumes all content blocks have a "type" key. Here
+                # we add this key if it is missing, and there's an obvious
+                # choice for the type (e.g., a single key in the block).
+                if message_to_trace is message:
+                    # Shallow copy
+                    message_to_trace = copy.copy(message)
+                    message_to_trace.content = list(message_to_trace.content)
+                key = next(iter(block))
+                message_to_trace.content[idx] = {  # type: ignore[call-overload]
+                    "type": key,
+                    key: block[key],  # type: ignore[literal-required]
+                }
             else:
                 pass
         messages_to_trace.append(message_to_trace)

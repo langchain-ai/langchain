@@ -145,10 +145,14 @@ def _parse_arguments_from_tool_call(
     """
     if "function" not in raw_tool_call:
         return None
+    function_name = raw_tool_call["function"]["name"]
     arguments = raw_tool_call["function"]["arguments"]
     parsed_arguments: dict = {}
     if isinstance(arguments, dict):
         for key, value in arguments.items():
+            # Filter out metadata fields like 'functionName' that echo function name
+            if key == "functionName" and value == function_name:
+                continue
             if isinstance(value, str):
                 parsed_value = _parse_json_string(
                     value, skip=True, raw_tool_call=raw_tool_call
