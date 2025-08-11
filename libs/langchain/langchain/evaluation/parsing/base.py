@@ -166,7 +166,7 @@ class JsonEqualityEvaluator(StringEvaluator):
             dict: A dictionary containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
-        label = self._parse_json(cast(str, reference))
+        label = self._parse_json(cast("str", reference))
         if isinstance(label, list):
             if not isinstance(parsed, list):
                 return {"score": 0}

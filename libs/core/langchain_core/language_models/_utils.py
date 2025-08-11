@@ -51,6 +51,7 @@ def _parse_data_uri(uri: str) -> Optional[dict]:
                 "mime_type": "image/jpeg",
                 "data": "/9j/4AAQSkZJRg...",
             }
+
     """
     regex = r"^data:(?P<mime_type>[^;]+);base64,(?P<data>.+)$"
     match = re.match(regex, uri)

@@ -214,24 +214,24 @@ def _wrap_in_chain_factory(
         return lambda: lcf
     if callable(llm_or_chain_factory):
         if is_traceable_function(llm_or_chain_factory):
-            runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
+            runnable_ = as_runnable(cast("Callable", llm_or_chain_factory))
             return lambda: runnable_
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
             # It's an arbitrary function, wrap it in a RunnableLambda
-            user_func = cast(Callable, llm_or_chain_factory)
+            user_func = cast("Callable", llm_or_chain_factory)
             sig = inspect.signature(user_func)
             logger.info("Wrapping function %s as RunnableLambda.", sig)
             wrapped = RunnableLambda(user_func)
             return lambda: wrapped
-        constructor = cast(Callable, llm_or_chain_factory)
+        constructor = cast("Callable", llm_or_chain_factory)
         if isinstance(_model, BaseLanguageModel):
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
-        if is_traceable_function(cast(Callable, _model)):
-            runnable_ = as_runnable(cast(Callable, _model))
+        if is_traceable_function(cast("Callable", _model)):
+            runnable_ = as_runnable(cast("Callable", _model))
             return lambda: runnable_
         if not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
@@ -1104,7 +1104,7 @@ class _DatasetRunContainer:
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
-            row_result = cast(_RowResult, all_eval_results.get(str(example.id), {}))
+            row_result = cast("_RowResult", all_eval_results.get(str(example.id), {}))
             results[str(example.id)] = {
                 "input": example.inputs,
                 "feedback": row_result.get("feedback", []),
@@ -1131,7 +1131,7 @@ class _DatasetRunContainer:
                     result = evaluator(runs_list, self.examples)
                     if isinstance(result, EvaluationResult):
                         result = result.dict()
-                    aggregate_feedback.append(cast(dict, result))
+                    aggregate_feedback.append(cast("dict", result))
                     executor.submit(
                         self.client.create_feedback,
                         **result,
@@ -1148,7 +1148,7 @@ class _DatasetRunContainer:
         all_eval_results: dict = {}
         all_runs: dict = {}
         for c in self.configs:
-            for callback in cast(list, c["callbacks"]):
+            for callback in cast("list", c["callbacks"]):
                 if isinstance(callback, EvaluatorCallbackHandler):
                     eval_results = callback.logged_eval_results
                     for (_, example_id), v in eval_results.items():
@@ -1171,7 +1171,7 @@ class _DatasetRunContainer:
                         },
                     )
                     all_runs[str(callback.example_id)] = run
-        return cast(dict[str, _RowResult], all_eval_results), all_runs
+        return cast("dict[str, _RowResult]", all_eval_results), all_runs
 
     def _collect_test_results(
         self,
@@ -1451,6 +1451,7 @@ async def arun_on_dataset(
             llm_or_chain_factory=construct_chain,
             evaluation=evaluation_config,
         )
+
     """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
@@ -1623,6 +1624,7 @@ def run_on_dataset(
             llm_or_chain_factory=construct_chain,
             evaluation=evaluation_config,
         )
+
     """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:

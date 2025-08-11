@@ -374,6 +374,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                 retriever=retriever,
                 question_generator=question_generator_chain,
             )
+
     """
 
     retriever: BaseRetriever
@@ -402,6 +403,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         return docs[:num_docs]
 
+    @override
     def _get_docs(
         self,
         question: str,
@@ -416,6 +418,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         )
         return self._reduce_tokens_below_limit(docs)
 
+    @override
     async def _aget_docs(
         self,
         question: str,
@@ -512,6 +515,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,

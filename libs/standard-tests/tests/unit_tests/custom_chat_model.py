@@ -1,15 +1,9 @@
 from collections.abc import Iterator
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
@@ -32,6 +26,7 @@ class ChatParrotLink(BaseChatModel):
             result = model.invoke([HumanMessage(content="hello")])
             result = model.batch([[HumanMessage(content="hello")],
                                  [HumanMessage(content="world")]])
+
     """
 
     model_name: str = Field(alias="model")
