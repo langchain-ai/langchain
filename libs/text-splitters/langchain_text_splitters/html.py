@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 import pathlib
 import re
-from collections.abc import Iterable, Sequence
 from io import StringIO
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -20,6 +20,11 @@ from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from bs4.element import PageElement
 
 
 class ElementType(TypedDict):
@@ -386,7 +391,6 @@ class HTMLSectionSplitter:
         """
         try:
             from bs4 import BeautifulSoup
-            from bs4.element import PageElement
         except ImportError as e:
             msg = "Unable to import BeautifulSoup/PageElement, \
                     please install with `pip install \
@@ -400,7 +404,7 @@ class HTMLSectionSplitter:
         headers = soup.find_all(["body", *headers])  # type: ignore[assignment]
 
         for i, header in enumerate(headers):
-            header_element = cast(PageElement, header)
+            header_element = cast("PageElement", header)
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
@@ -481,7 +485,7 @@ class HTMLSectionSplitter:
 
         return [
             Document(
-                cast(str, section["content"]),
+                cast("str", section["content"]),
                 metadata={
                     self.headers_to_split_on[str(section["tag_name"])]: section[
                         "header"
@@ -591,7 +595,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         denylist_tags: Optional[list[str]] = None,
         preserve_parent_metadata: bool = False,
         keep_separator: Union[bool, Literal["start", "end"]] = True,
-    ):
+    ) -> None:
         """Initialize splitter."""
         try:
             from bs4 import BeautifulSoup, Tag

@@ -3,11 +3,10 @@ from __future__ import annotations
 import copy
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Sequence
-from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -18,6 +17,10 @@ from typing import (
 
 from langchain_core.documents import BaseDocumentTransformer, Document
 from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Set as AbstractSet
 
 logger = logging.getLogger(__name__)
 
