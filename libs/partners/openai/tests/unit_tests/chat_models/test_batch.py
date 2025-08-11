@@ -535,7 +535,7 @@ class TestBaseChatOpenAIBatchMethods:
 
             # Test with string inputs
             inputs = ["Hello world"]
-            results = self.llm.batch(inputs, use_batch_api=True)
+            _ = self.llm.batch(inputs, use_batch_api=True)
 
             # Verify conversion happened
             mock_create.assert_called_once()
@@ -600,7 +600,7 @@ class TestBatchIntegrationScenarios:
         mock_processor_class.return_value = mock_processor
 
         inputs = [[HumanMessage(content=f"Question {i}")] for i in range(num_requests)]
-        results = self.llm.batch(inputs, use_batch_api=True)
+        _ = self.llm.batch(inputs, use_batch_api=True)
 
         assert len(results) == num_requests
         for i, result in enumerate(results):
@@ -626,7 +626,7 @@ class TestBatchIntegrationScenarios:
             [HumanMessage(content="Direct message list")],  # Already formatted
         ]
 
-        results = self.llm.batch(inputs, use_batch_api=True)
+        _ = self.llm.batch(inputs, use_batch_api=True)
         assert len(results) == 2
 
         # Verify the conversion happened correctly

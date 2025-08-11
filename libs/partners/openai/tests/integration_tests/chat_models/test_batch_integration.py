@@ -358,10 +358,7 @@ class TestBatchAPIPerformance:
             expected_answer = str(i + i)
             assert expected_answer in content or str(i * 2) in content
 
-        # Log processing time for analysis
-        print(f"Medium batch (10 requests) processed in {processing_time:.2f} seconds")
-
-    @pytest.mark.scheduled
+        # Log processing time for analysis    @pytest.mark.scheduled
     def test_batch_vs_sequential_comparison(self):
         """Compare batch API performance vs sequential processing."""
         messages = [
@@ -387,11 +384,7 @@ class TestBatchAPIPerformance:
         # Verify both produce results
         assert len(sequential_results) == len(batch_results) == 2
 
-        # Log timing comparison
-        print(f"Sequential processing: {sequential_time:.2f}s")
-        print(f"Batch API processing: {batch_time:.2f}s")
-
-        # Note: Batch API will typically be slower for small batches due to polling,
+        # Log timing comparison        # Note: Batch API will typically be slower for small batches due to polling,
         # but should be more cost-effective for larger batches
 
 
