@@ -24,7 +24,7 @@ pytestmark = pytest.mark.skipif(
 class TestBatchAPIIntegration:
     """Integration tests for OpenAI Batch API functionality."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(
             model="gpt-3.5-turbo",
@@ -33,7 +33,7 @@ class TestBatchAPIIntegration:
         )
 
     @pytest.mark.scheduled
-    def test_batch_create_and_retrieve_small_batch(self):
+    def test_batch_create_and_retrieve_small_batch(self) -> None:
         """Test end-to-end batch processing with a small batch."""
         # Create a small batch of simple questions
         messages_list = [
@@ -82,7 +82,7 @@ class TestBatchAPIIntegration:
         assert "paris" in response2.lower()
 
     @pytest.mark.scheduled
-    def test_batch_method_with_batch_api_true(self):
+    def test_batch_method_with_batch_api_true(self) -> None:
         """Test the batch() method with use_batch_api=True."""
         inputs = [
             [HumanMessage(content="Count to 3. Answer with just: 1, 2, 3")],
@@ -107,7 +107,7 @@ class TestBatchAPIIntegration:
         assert "blue" in response2
 
     @pytest.mark.scheduled
-    def test_batch_method_comparison(self):
+    def test_batch_method_comparison(self) -> None:
         """Test that batch API and standard batch produce similar results."""
         inputs = [[HumanMessage(content="What is 1+1? Answer with just the number.")]]
 
@@ -132,7 +132,7 @@ class TestBatchAPIIntegration:
         assert "2" in batch_content or "two" in batch_content.lower()
 
     @pytest.mark.scheduled
-    def test_batch_with_different_parameters(self):
+    def test_batch_with_different_parameters(self) -> None:
         """Test batch processing with different model parameters."""
         messages_list = [
             [HumanMessage(content="Write a haiku about coding. Keep it short.")]
@@ -160,7 +160,7 @@ class TestBatchAPIIntegration:
         assert "\n" in result_content or len(result_content.split()) >= 5
 
     @pytest.mark.scheduled
-    def test_batch_with_system_message(self):
+    def test_batch_with_system_message(self) -> None:
         """Test batch processing with system messages."""
         from langchain_core.messages import SystemMessage
 
@@ -188,7 +188,7 @@ class TestBatchAPIIntegration:
         assert "30" in result_content or "thirty" in result_content.lower()
 
     @pytest.mark.scheduled
-    def test_batch_error_handling_invalid_model(self):
+    def test_batch_error_handling_invalid_model(self) -> None:
         """Test error handling with invalid model parameters."""
         # Create a ChatOpenAI instance with an invalid model
         invalid_llm = ChatOpenAI(model="invalid-model-name-12345", temperature=0.1)
@@ -201,7 +201,7 @@ class TestBatchAPIIntegration:
             # If batch creation succeeds, retrieval should fail
             invalid_llm.batch_retrieve(batch_id, timeout=300.0)
 
-    def test_batch_input_conversion(self):
+    def test_batch_input_conversion(self) -> None:
         """Test batch processing with various input formats."""
         # Test with string inputs (should be converted to HumanMessage)
         inputs = [
@@ -230,7 +230,7 @@ class TestBatchAPIIntegration:
         assert "mercury" in response2
 
     @pytest.mark.scheduled
-    def test_empty_batch_handling(self):
+    def test_empty_batch_handling(self) -> None:
         """Test handling of empty batch inputs."""
         # Empty inputs should return empty results
         results = self.llm.batch([], use_batch_api=True)
@@ -242,7 +242,7 @@ class TestBatchAPIIntegration:
         assert results == []
 
     @pytest.mark.scheduled
-    def test_batch_metadata_preservation(self):
+    def test_batch_metadata_preservation(self) -> None:
         """Test that batch metadata is properly handled."""
         messages_list = [[HumanMessage(content="Say 'test successful'")]]
 
@@ -270,12 +270,12 @@ class TestBatchAPIIntegration:
 class TestBatchAPIEdgeCases:
     """Test edge cases and error scenarios."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1, max_tokens=50)
 
     @pytest.mark.scheduled
-    def test_batch_with_very_short_timeout(self):
+    def test_batch_with_very_short_timeout(self) -> None:
         """Test batch processing with very short timeout."""
         messages_list = [[HumanMessage(content="Hello")]]
 
@@ -289,13 +289,13 @@ class TestBatchAPIEdgeCases:
                 timeout=5.0,  # Very short timeout
             )
 
-    def test_batch_retrieve_invalid_batch_id(self):
+    def test_batch_retrieve_invalid_batch_id(self) -> None:
         """Test retrieving results with invalid batch ID."""
         with pytest.raises(BatchError):
             self.llm.batch_retrieve("invalid_batch_id_12345", timeout=30.0)
 
     @pytest.mark.scheduled
-    def test_batch_with_long_content(self):
+    def test_batch_with_long_content(self) -> None:
         """Test batch processing with longer content."""
         long_content = "Please summarize this text: " + "This is a test sentence. " * 20
 
@@ -318,7 +318,7 @@ class TestBatchAPIEdgeCases:
 class TestBatchAPIPerformance:
     """Performance and scalability tests."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(
             model="gpt-3.5-turbo",
@@ -327,7 +327,7 @@ class TestBatchAPIPerformance:
         )
 
     @pytest.mark.scheduled
-    def test_medium_batch_processing(self):
+    def test_medium_batch_processing(self) -> None:
         """Test processing a medium-sized batch (10 requests)."""
         # Create 10 simple math questions
         messages_list = [
@@ -364,7 +364,7 @@ class TestBatchAPIPerformance:
 
         # Log processing time for analysis    @pytest.mark.scheduled
 
-    def test_batch_vs_sequential_comparison(self):
+    def test_batch_vs_sequential_comparison(self) -> None:
         """Compare batch API performance vs sequential processing."""
         messages = [
             [HumanMessage(content="Count to 2. Answer: 1, 2")],
