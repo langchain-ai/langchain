@@ -10,6 +10,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.stores import BaseStore, ByteStore
 from langchain_core.vectorstores import VectorStore
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.storage._lc_store import create_kv_docstore
 
@@ -43,17 +44,18 @@ class MultiVectorRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def shim_docstore(cls, values: dict) -> Any:
+    def _shim_docstore(cls, values: dict) -> Any:
         byte_store = values.get("byte_store")
         docstore = values.get("docstore")
         if byte_store is not None:
             docstore = create_kv_docstore(byte_store)
         elif docstore is None:
             msg = "You must pass a `byte_store` parameter."
-            raise Exception(msg)
+            raise ValueError(msg)
         values["docstore"] = docstore
         return values
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
@@ -91,6 +93,7 @@ class MultiVectorRetriever(BaseRetriever):
         docs = self.docstore.mget(ids)
         return [d for d in docs if d is not None]
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,

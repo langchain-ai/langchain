@@ -136,6 +136,7 @@ def deprecated(
             @deprecated('1.4.0')
             def the_function_to_deprecate():
                 pass
+
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -224,7 +225,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -549,6 +550,7 @@ def rename_parameter(
 
             @_api.rename_parameter("3.1", "bad_name", "good_name")
             def func(good_name): ...
+
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

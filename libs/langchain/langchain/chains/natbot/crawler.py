@@ -61,6 +61,7 @@ class Crawler:
     """
 
     def __init__(self) -> None:
+        """Initialize the crawler."""
         try:
             from playwright.sync_api import sync_playwright
         except ImportError as e:
@@ -78,11 +79,22 @@ class Crawler:
         self.client: CDPSession
 
     def go_to_page(self, url: str) -> None:
+        """Navigate to the given URL.
+
+        Args:
+            url: The URL to navigate to. If it does not contain a scheme, it will be
+                prefixed with "http://".
+        """
         self.page.goto(url=url if "://" in url else "http://" + url)
         self.client = self.page.context.new_cdp_session(self.page)
         self.page_element_buffer = {}
 
     def scroll(self, direction: str) -> None:
+        """Scroll the page in the given direction.
+
+        Args:
+            direction: The direction to scroll in, either "up" or "down".
+        """
         if direction == "up":
             self.page.evaluate(
                 "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop - window.innerHeight;"  # noqa: E501
@@ -93,6 +105,11 @@ class Crawler:
             )
 
     def click(self, id_: Union[str, int]) -> None:
+        """Click on an element with the given id.
+
+        Args:
+            id_: The id of the element to click on.
+        """
         # Inject javascript into the page which removes the target= attribute from links
         js = """
 		links = document.getElementsByTagName("a");
@@ -112,13 +129,25 @@ class Crawler:
             print("Could not find element")  # noqa: T201
 
     def type(self, id_: Union[str, int], text: str) -> None:
+        """Type text into an element with the given id.
+
+        Args:
+            id_: The id of the element to type into.
+            text: The text to type into the element.
+        """
         self.click(id_)
         self.page.keyboard.type(text)
 
     def enter(self) -> None:
+        """Press the Enter key."""
         self.page.keyboard.press("Enter")
 
     def crawl(self) -> list[str]:
+        """Crawl the current page.
+
+        Returns:
+            A list of the elements in the viewport.
+        """
         page = self.page
         page_element_buffer = self.page_element_buffer
         start = time.time()
@@ -271,7 +300,7 @@ class Crawler:
                 cursor = layout_node_index.index(index)
                 # TODO replace this with proper cursoring, ignoring the fact this is
                 # O(n^2) for the moment
-            except:  # noqa: E722
+            except ValueError:
                 continue
 
             if node_name in black_listed_elements:
@@ -322,7 +351,7 @@ class Crawler:
 
             if node_name == "#text" and ancestor_exception and ancestor_node:
                 text = strings[node_value[index]]
-                if text == "|" or text == "•":
+                if text in {"|", "•"}:
                     continue
                 ancestor_node.append({"type": "type", "value": text})
             else:
@@ -367,7 +396,7 @@ class Crawler:
                     element_node_value = strings[text_index]
 
             # remove redundant elements
-            if ancestor_exception and (node_name != "a" and node_name != "button"):
+            if ancestor_exception and (node_name not in {"a", "button"}):
                 continue
 
             elements_in_view_port.append(
@@ -423,10 +452,7 @@ class Crawler:
             # not very elegant, more like a placeholder
             if (
                 (converted_node_name != "button" or meta == "")
-                and converted_node_name != "link"
-                and converted_node_name != "input"
-                and converted_node_name != "img"
-                and converted_node_name != "textarea"
+                and converted_node_name not in {"link", "input", "img", "textarea"}
             ) and inner_text.strip() == "":
                 continue
 

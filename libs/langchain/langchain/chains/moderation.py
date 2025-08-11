@@ -8,6 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.utils import check_package_version, get_from_dict_or_env
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -26,6 +27,7 @@ class OpenAIModerationChain(Chain):
 
             from langchain.chains import OpenAIModerationChain
             moderation = OpenAIModerationChain()
+
     """
 
     client: Any = None  #: :meta private:
@@ -105,6 +107,7 @@ class OpenAIModerationChain(Chain):
             return error_str
         return text
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],

@@ -54,7 +54,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -99,7 +98,9 @@ ignore = [
     "RUF012",  # Doesn't play well with Pydantic
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.coverage.run]
 omit = ["tests/*"]

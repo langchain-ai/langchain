@@ -90,7 +90,7 @@ def new(
         replacements = _process_name(name)
     except ValueError as e:
         typer.echo(e)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     if name_class:
         if not re.match(r"^[A-Z][a-zA-Z0-9]*$", name_class):

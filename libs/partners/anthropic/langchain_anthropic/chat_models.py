@@ -7,14 +7,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated
@@ -42,33 +35,16 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
+from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import (
-    Runnable,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic._client_utils import (
@@ -314,7 +290,7 @@ def _format_messages(
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
-    for i, message in enumerate(merged_messages):
+    for _i, message in enumerate(merged_messages):
         if message.type == "system":
             if system is not None:
                 msg = "Received multiple non-consecutive system messages."
@@ -496,7 +472,7 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
     """Handle Anthropic BadRequestError."""
     if ("messages: at least one message is required") in e.message:
         message = "Received only system message(s). "
-        warnings.warn(message)
+        warnings.warn(message, stacklevel=2)
         raise e
     raise
 
@@ -517,7 +493,7 @@ class ChatAnthropic(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Anthropic model to use. e.g. ``'claude-3-sonnet-20240229'``.
+            Name of Anthropic model to use. e.g. ``'claude-3-7-sonnet-20250219'``.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         max_tokens: int
@@ -543,7 +519,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             llm = ChatAnthropic(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-7-sonnet-20250219",
                 temperature=0,
                 max_tokens=1024,
                 timeout=None,
@@ -583,7 +559,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
 
     Stream:
         .. code-block:: python
@@ -627,7 +603,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
 
     Tool calling:
         .. code-block:: python
@@ -982,7 +958,7 @@ class ChatAnthropic(BaseChatModel):
             .. versionadded:: 0.3.15
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
+            apply one hour caching by enabling the ``'extended-cache-ttl-2025-04-11'``
             beta header:
 
             .. code-block:: python
@@ -1156,7 +1132,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
-             'model': 'claude-3-sonnet-20240229',
+             'model': 'claude-3-7-sonnet-20250219',
              'stop_reason': 'end_turn',
              'stop_sequence': None,
              'usage': {'input_tokens': 25, 'output_tokens': 11}}
@@ -1558,7 +1534,7 @@ class ChatAnthropic(BaseChatModel):
             "generated. Consider disabling `thinking` or adjust your prompt to ensure "
             "the tool is called."
         )
-        warnings.warn(thinking_admonition)
+        warnings.warn(thinking_admonition, stacklevel=2)
         llm = self.bind_tools(
             [schema],
             ls_structured_output_format={
@@ -1593,8 +1569,8 @@ class ChatAnthropic(BaseChatModel):
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``"auto"``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
+                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
+                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
 
@@ -1801,9 +1777,10 @@ class ChatAnthropic(BaseChatModel):
             Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``raw``: BaseMessage
-                - ``parsed``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``parsing_error``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
 
@@ -2120,7 +2097,7 @@ def _make_message_chunk_from_anthropic_event(
         )
     ):
         if coerce_content_to_string:
-            warnings.warn("Received unexpected tool content block.")
+            warnings.warn("Received unexpected tool content block.", stacklevel=2)
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
         if event.content_block.type == "tool_use":

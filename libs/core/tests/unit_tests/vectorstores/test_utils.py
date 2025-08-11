@@ -42,9 +42,8 @@ class TestCosineSimilarity:
         """Test cosine similarity with zero vector."""
         x: list[list[float]] = [[0, 0, 0]]
         y: list[list[float]] = [[1, 2, 3]]
-        result = _cosine_similarity(x, y)
-        expected = np.array([[0.0]])
-        np.testing.assert_array_almost_equal(result, expected)
+        with pytest.raises(ValueError, match="NaN values found"):
+            _cosine_similarity(x, y)
 
     def test_multiple_vectors(self) -> None:
         """Test cosine similarity with multiple vectors."""
@@ -115,13 +114,8 @@ class TestCosineSimilarity:
         # Create vectors that would result in NaN/inf in similarity calculation
         x: list[list[float]] = [[0, 0]]  # Zero vector
         y: list[list[float]] = [[0, 0]]  # Zero vector
-        result = _cosine_similarity(x, y)
-
-        # Should return 0.0 instead of NaN
-        expected = np.array([[0.0]])
-        np.testing.assert_array_equal(result, expected)
-        assert not np.isnan(result).any()
-        assert not np.isinf(result).any()
+        with pytest.raises(ValueError, match="NaN values found"):
+            _cosine_similarity(x, y)
 
     def test_large_values(self) -> None:
         """Test with large values to check numerical stability."""

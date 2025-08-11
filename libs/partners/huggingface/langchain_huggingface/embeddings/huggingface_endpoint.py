@@ -98,12 +98,12 @@ class HuggingFaceEndpointEmbeddings(BaseModel, Embeddings):
             self.client = client
             self.async_client = async_client
 
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import huggingface_hub python package. "
                 "Please install it with `pip install huggingface_hub`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         return self
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:

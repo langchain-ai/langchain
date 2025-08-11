@@ -88,7 +88,7 @@ def _lc_tool_call_to_hf_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 
@@ -552,7 +552,7 @@ class ChatHuggingFace(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -593,7 +593,7 @@ class ChatHuggingFace(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         if _is_huggingface_textgen_inference(self.llm):
@@ -818,7 +818,7 @@ class ChatHuggingFace(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             **kwargs: Any additional parameters to pass to the
@@ -873,19 +873,19 @@ class ChatHuggingFace(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a typedDict class (support added in 0.1.7),
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a typedDict class (support added in 0.1.7),
 
                 Pydantic class is currently supported.
 
             method: The method for steering model generation, one of:
 
-                - "function_calling": uses tool-calling features.
-                - "json_schema": uses dedicated structured output features.
-                - "json_mode": uses JSON mode.
+                - ``'function_calling'``: uses tool-calling features.
+                - ``'json_schema'``: uses dedicated structured output features.
+                - ``'json_mode'``: uses JSON mode.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -893,7 +893,7 @@ class ChatHuggingFace(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             kwargs:
                 Additional parameters to pass to the underlying LLM's
@@ -909,9 +909,10 @@ class ChatHuggingFace(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         """  # noqa: E501
         _ = kwargs.pop("strict", None)

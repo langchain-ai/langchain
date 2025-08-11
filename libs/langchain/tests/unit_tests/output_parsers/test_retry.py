@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+from datetime import timezone
 from typing import Any, Callable, Optional, TypeVar
 
 import pytest
@@ -6,6 +7,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from typing_extensions import override
 
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
@@ -24,6 +26,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     attemp_count_before_success: int  # Number of times to fail before succeeding
     error_msg: str = "error"
 
+    @override
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
@@ -204,15 +207,15 @@ def test_retry_with_error_output_parser_parse_is_not_implemented() -> None:
 
 
 @pytest.mark.parametrize(
-    "completion,prompt,base_parser,retry_chain,expected",
+    ("completion", "prompt", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
@@ -232,15 +235,15 @@ def test_retry_output_parser_parse_with_prompt_with_retry_chain(
 
 
 @pytest.mark.parametrize(
-    "completion,prompt,base_parser,retry_chain,expected",
+    ("completion", "prompt", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
@@ -261,15 +264,15 @@ async def test_retry_output_parser_aparse_with_prompt_with_retry_chain(
 
 
 @pytest.mark.parametrize(
-    "completion,prompt,base_parser,retry_chain,expected",
+    ("completion", "prompt", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )
@@ -290,15 +293,15 @@ def test_retry_with_error_output_parser_parse_with_prompt_with_retry_chain(
 
 
 @pytest.mark.parametrize(
-    "completion,prompt,base_parser,retry_chain,expected",
+    ("completion", "prompt", "base_parser", "retry_chain", "expected"),
     [
         (
             "2024/07/08",
             StringPromptValue(text="dummy"),
-            DatetimeOutputParser(),
+            DatetimeOutputParser(format="%Y-%m-%dT%H:%M:%S.%f%z"),
             NAIVE_RETRY_WITH_ERROR_PROMPT
             | RunnableLambda(lambda _: "2024-07-08T00:00:00.000000Z"),
-            dt(2024, 7, 8),
+            dt(2024, 7, 8, tzinfo=timezone.utc),
         ),
     ],
 )

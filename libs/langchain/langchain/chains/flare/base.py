@@ -15,6 +15,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -44,6 +45,7 @@ class QuestionGeneratorChain(LLMChain):
     """Prompt template for the chain."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

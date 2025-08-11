@@ -65,7 +65,7 @@ def parse_dependency_string(
         else:
             _, post_slash = find_slash.split("/", 1)
             if "@" in post_slash or "#" in post_slash:
-                _, ref = re.split(r"[@#]", post_slash, 1)
+                _, ref = re.split(r"[@#]", post_slash, maxsplit=1)
 
         # gitstring is everything before that
         gitstring = gitstring[: -len(ref) - 1] if ref is not None else gitstring
@@ -159,7 +159,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
-    removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
+    removed_basename = re.split(r"[/:]", removed_protocol, maxsplit=1)[-1]
     removed_extras = removed_basename.split("#")[0]
     foldername = re.sub(r"\W", "_", removed_extras)
 

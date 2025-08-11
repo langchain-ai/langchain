@@ -10,7 +10,10 @@ class CharacterTextSplitter(TextSplitter):
     """Splitting text that looks at characters."""
 
     def __init__(
-        self, separator: str = "\n\n", is_separator_regex: bool = False, **kwargs: Any
+        self,
+        separator: str = "\n\n",
+        is_separator_regex: bool = False,  # noqa: FBT001,FBT002
+        **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
@@ -25,7 +28,9 @@ class CharacterTextSplitter(TextSplitter):
         )
 
         # 2. Initial split (keep separator if requested)
-        splits = _split_text_with_regex(text, sep_pattern, self._keep_separator)
+        splits = _split_text_with_regex(
+            text, sep_pattern, keep_separator=self._keep_separator
+        )
 
         # 3. Detect zero-width lookaround so we never re-insert it
         lookaround_prefixes = ("(?=", "(?<!", "(?<=", "(?!")
@@ -34,8 +39,8 @@ class CharacterTextSplitter(TextSplitter):
         )
 
         # 4. Decide merge separator:
-        #    - if keep_separator or lookaround → don’t re-insert
-        #    - else → re-insert literal separator
+        #    - if keep_separator or lookaround -> don't re-insert
+        #    - else -> re-insert literal separator
         merge_sep = ""
         if not (self._keep_separator or is_lookaround):
             merge_sep = self._separator
@@ -45,7 +50,7 @@ class CharacterTextSplitter(TextSplitter):
 
 
 def _split_text_with_regex(
-    text: str, separator: str, keep_separator: Union[bool, Literal["start", "end"]]
+    text: str, separator: str, *, keep_separator: Union[bool, Literal["start", "end"]]
 ) -> list[str]:
     # Now that we have the separator, split the text
     if separator:
@@ -81,8 +86,8 @@ class RecursiveCharacterTextSplitter(TextSplitter):
     def __init__(
         self,
         separators: Optional[list[str]] = None,
-        keep_separator: Union[bool, Literal["start", "end"]] = True,
-        is_separator_regex: bool = False,
+        keep_separator: Union[bool, Literal["start", "end"]] = True,  # noqa: FBT001,FBT002
+        is_separator_regex: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -107,7 +112,9 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 break
 
         _separator = separator if self._is_separator_regex else re.escape(separator)
-        splits = _split_text_with_regex(text, _separator, self._keep_separator)
+        splits = _split_text_with_regex(
+            text, _separator, keep_separator=self._keep_separator
+        )
 
         # Now go merging things, recursively splitting longer texts.
         _good_splits = []
@@ -727,6 +734,32 @@ class RecursiveCharacterTextSplitter(TextSplitter):
                 " ",
                 "",
             ]
+        if language == Language.VISUALBASIC6:
+            vis = r"(?:Public|Private|Friend|Global|Static)\s+"
+            return [
+                # Split along definitions
+                rf"\n(?!End\s){vis}?Sub\s+",
+                rf"\n(?!End\s){vis}?Function\s+",
+                rf"\n(?!End\s){vis}?Property\s+(?:Get|Let|Set)\s+",
+                rf"\n(?!End\s){vis}?Type\s+",
+                rf"\n(?!End\s){vis}?Enum\s+",
+                # Split along control flow statements
+                r"\n(?!End\s)If\s+",
+                r"\nElseIf\s+",
+                r"\nElse\s+",
+                r"\nSelect\s+Case\s+",
+                r"\nCase\s+",
+                r"\nFor\s+",
+                r"\nDo\s+",
+                r"\nWhile\s+",
+                r"\nWith\s+",
+                # Split by the normal type of lines
+                r"\n\n",
+                r"\n",
+                " ",
+                "",
+            ]
+
         if language in Language._value2member_map_:
             msg = f"Language {language} is not implemented yet!"
             raise ValueError(msg)

@@ -50,12 +50,12 @@ exclude = [
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
+    "B",      # flake8-bugbear
     "ARG",    # flake8-unused-arguments
     "ASYNC",  # flake8-async
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -96,6 +96,7 @@ ignore = [
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
     "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "COM812",  # Messes with the formatter
 ]
 pyupgrade.keep-runtime-typing = true
 

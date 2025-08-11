@@ -3,11 +3,10 @@ from __future__ import annotations
 import copy
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Sequence
-from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -17,6 +16,11 @@ from typing import (
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Set as AbstractSet
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +35,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: Union[bool, Literal["start", "end"]] = False,
-        add_start_index: bool = False,
-        strip_whitespace: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
+        add_start_index: bool = False,  # noqa: FBT001,FBT002
+        strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
         """Create a new TextSplitter.
 
@@ -47,6 +51,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
         """
+        if chunk_size <= 0:
+            msg = f"chunk_size must be > 0, got {chunk_size}"
+            raise ValueError(msg)
+        if chunk_overlap < 0:
+            msg = f"chunk_overlap must be >= 0, got {chunk_overlap}"
+            raise ValueError(msg)
         if chunk_overlap > chunk_size:
             msg = (
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
@@ -157,33 +167,33 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.tokenize(text))
 
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-            raise ValueError(msg)
+            raise ValueError(msg) from err
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: type[TS],
+        cls,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TS:
+    ) -> Self:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -232,13 +242,13 @@ class TokenTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         try:
             import tiktoken
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -310,6 +320,7 @@ class Language(str, Enum):
     HASKELL = "haskell"
     ELIXIR = "elixir"
     POWERSHELL = "powershell"
+    VISUALBASIC6 = "visualbasic6"
 
 
 @dataclass(frozen=True)

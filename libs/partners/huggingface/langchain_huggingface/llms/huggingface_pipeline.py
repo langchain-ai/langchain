@@ -64,6 +64,7 @@ class HuggingFacePipeline(BaseLLM):
                 "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
             hf = HuggingFacePipeline(pipeline=pipe)
+
     """
 
     pipeline: Any = None  #: :meta private:
@@ -115,12 +116,12 @@ class HuggingFacePipeline(BaseLLM):
             )
             from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-            raise ValueError(msg)
+            raise ValueError(msg) from e
 
         _model_kwargs = model_kwargs.copy() if model_kwargs else {}
         if device_map is not None:
@@ -149,7 +150,7 @@ class HuggingFacePipeline(BaseLLM):
                 )
                 raise ValueError(msg)
 
-            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            err_msg = f"Backend: {backend} {IMPORT_ERROR.format(f'optimum[{backend}]')}"
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 

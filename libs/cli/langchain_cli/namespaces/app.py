@@ -134,19 +134,22 @@ def add(
         typer.Argument(help="The dependency to add"),
     ] = None,
     *,
-    api_path: Annotated[list[str], typer.Option(help="API paths to add")] = [],
+    api_path: Annotated[
+        Optional[list[str]],
+        typer.Option(help="API paths to add"),
+    ] = None,
     project_dir: Annotated[
         Optional[Path],
         typer.Option(help="The project directory"),
     ] = None,
     repo: Annotated[
-        list[str],
+        Optional[list[str]],
         typer.Option(help="Install templates from a specific github repo instead"),
-    ] = [],
+    ] = None,
     branch: Annotated[
-        list[str],
+        Optional[list[str]],
         typer.Option(help="Install templates from a specific branch"),
-    ] = [],
+    ] = None,
     pip: Annotated[
         bool,
         typer.Option(
@@ -163,6 +166,12 @@ def add(
     langchain app add extraction-openai-functions
     langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
     """
+    if branch is None:
+        branch = []
+    if repo is None:
+        repo = []
+    if api_path is None:
+        api_path = []
     if not branch and not repo:
         warnings.warn(
             "Adding templates from the default branch and repo is deprecated."
@@ -325,8 +334,8 @@ def remove(
 
             shutil.rmtree(package_dir)
             remove_deps.append(api_path)
-        except Exception:  # noqa: S110
-            pass
+        except OSError as exc:
+            typer.echo(f"Failed to remove {api_path}: {exc}")
 
     try:
         remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)

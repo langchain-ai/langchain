@@ -21,8 +21,7 @@ def get_current_weather(location: str) -> dict:
     """Gets the current weather in a given location."""
     if "boston" in location.lower():
         return {"temperature": "15°F", "conditions": "snow"}
-    else:
-        return {"temperature": "unknown", "conditions": "unknown"}
+    return {"temperature": "unknown", "conditions": "unknown"}
 
 
 class TestChatOllama(ChatModelIntegrationTests):
@@ -41,7 +40,7 @@ class TestChatOllama(ChatModelIntegrationTests):
     @property
     def has_tool_choice(self) -> bool:
         # TODO: update after Ollama implements
-        # https://github.com/ollama/ollama/blob/main/docs/openai.md
+        # https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         return False
 
     @property
@@ -65,16 +64,15 @@ class TestChatOllama(ChatModelIntegrationTests):
 
             if chunk.tool_call_chunks:
                 tool_chunk_found = True
-                for tc_chunk in chunk.tool_call_chunks:
-                    collected_tool_chunks.append(tc_chunk)
+                collected_tool_chunks.extend(chunk.tool_call_chunks)
 
             if chunk.tool_calls:
                 final_tool_calls.extend(chunk.tool_calls)
 
         assert tool_chunk_found, "Tool streaming did not produce any tool_call_chunks."
-        assert (
-            len(final_tool_calls) == 1
-        ), f"Expected 1 final tool call, but got {len(final_tool_calls)}"
+        assert len(final_tool_calls) == 1, (
+            f"Expected 1 final tool call, but got {len(final_tool_calls)}"
+        )
 
         final_tool_call = final_tool_calls[0]
         assert final_tool_call["name"] == "get_current_weather"
@@ -110,16 +108,15 @@ class TestChatOllama(ChatModelIntegrationTests):
 
             if chunk.tool_call_chunks:
                 tool_chunk_found = True
-                for tc_chunk in chunk.tool_call_chunks:
-                    collected_tool_chunks.append(tc_chunk)
+                collected_tool_chunks.extend(chunk.tool_call_chunks)
 
             if chunk.tool_calls:
                 final_tool_calls.extend(chunk.tool_calls)
 
         assert tool_chunk_found, "Tool streaming did not produce any tool_call_chunks."
-        assert (
-            len(final_tool_calls) == 1
-        ), f"Expected 1 final tool call, but got {len(final_tool_calls)}"
+        assert len(final_tool_calls) == 1, (
+            f"Expected 1 final tool call, but got {len(final_tool_calls)}"
+        )
 
         final_tool_call = final_tool_calls[0]
         assert final_tool_call["name"] == "get_current_weather"
@@ -171,7 +168,7 @@ class TestChatOllama(ChatModelIntegrationTests):
 
         with pytest.raises(ValidationError) as excinfo:
             ChatOllama(model="any-model", validate_model_on_init=True)
-        assert "not found in Ollama" in str(excinfo.value)
+        assert "Failed to connect to Ollama" in str(excinfo.value)
 
     @patch("langchain_ollama.chat_models.Client.list")
     def test_init_response_error(self, mock_list: MagicMock) -> None:

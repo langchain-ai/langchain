@@ -23,9 +23,9 @@ def test_convert_to_openai_messages():
             ToolCall(name='parrot_multiply_tool', id='1', args={'a': 2, 'b': 3}),
         ]
     )
-    
+
     result = convert_to_openai_messages(ai_message)
-    
+
     expected = {
         "role": "assistant",
         "tool_calls": [
