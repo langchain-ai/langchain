@@ -9,8 +9,8 @@ from pydantic import BaseModel, Field
 
 from langchain_anthropic.experimental import ChatAnthropicTools
 
-MODEL_NAME = "claude-3-sonnet-20240229"
-BIG_MODEL_NAME = "claude-3-opus-20240229"
+MODEL_NAME = "claude-3-5-haiku-latest"
+BIG_MODEL_NAME = "claude-opus-4-20250514"
 
 #####################################
 ### Test Basic features, no tools ###
