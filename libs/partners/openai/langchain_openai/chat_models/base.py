@@ -2280,7 +2280,6 @@ class BaseChatOpenAI(BaseChatModel):
         config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
-        use_batch_api: bool = False,
         **kwargs: Any,
     ) -> list[BaseMessage]:
         """

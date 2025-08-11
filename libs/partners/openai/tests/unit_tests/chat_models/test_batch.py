@@ -48,7 +48,7 @@ class TestOpenAIBatchClient:
         ]
 
         batch_id = self.batch_client.create_batch(
-            batch_requests=batch_requests,
+            requests=batch_requests,
             description="Test batch",
             metadata={"test": "true"},
         )
@@ -73,7 +73,7 @@ class TestOpenAIBatchClient:
         ]
 
         with pytest.raises(BatchError, match="Failed to create batch"):
-            self.batch_client.create_batch(batch_requests=batch_requests)
+            self.batch_client.create_batch(requests=batch_requests)
 
     def test_poll_batch_status_completed(self) -> None:
         """Test polling until batch completion."""
@@ -119,8 +119,7 @@ class TestOpenAIBatchClient:
         self.mock_client.batches.retrieve.return_value = mock_batch_in_progress
 
         # Set very short timeout
-        self.batch_client.timeout = 0.2
-
+        self.batch_
         with pytest.raises(BatchError, match="Batch polling timed out"):
             self.batch_client.poll_batch_status("batch_123")
 

@@ -74,8 +74,8 @@ class TestBatchAPIIntegration:
         )
 
         # Check that we got reasonable responses
-        response1 = results[0].generations[0].message.content.strip()
-        response2 = results[1].generations[0].message.content.strip()
+        response1 = results[0].generations[0].str(message.content).strip()
+        response2 = results[1].generations[0].str(message.content).strip()
 
         # Basic sanity checks (responses should contain expected content)
         assert "4" in response1 or "four" in response1.lower()
@@ -182,7 +182,7 @@ class TestBatchAPIIntegration:
         )
 
         assert len(results) == 1
-        result_content = results[0].generations[0].message.content.strip()
+        result_content = results[0].generations[0].str(message.content).strip()
 
         # Should contain the answer
         assert "30" in result_content or "thirty" in result_content.lower()
@@ -263,7 +263,7 @@ class TestBatchAPIIntegration:
         results = self.llm.batch_retrieve(batch_id, timeout=1800.0)
 
         assert len(results) == 1
-        result_content = results[0].generations[0].message.content.strip().lower()
+        result_content = results[0].generations[0].str(message.content).strip().lower()
         assert "test successful" in result_content
 
 
@@ -272,7 +272,7 @@ class TestBatchAPIEdgeCases:
 
     def setup_method(self) -> None:
         """Set up test fixtures."""
-        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1, max_tokens=50)
+        self.llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.1)
 
     @pytest.mark.scheduled
     def test_batch_with_very_short_timeout(self) -> None:
@@ -358,7 +358,7 @@ class TestBatchAPIPerformance:
 
         # Check that we got reasonable math answers
         for i, result in enumerate(results, 1):
-            content = result.generations[0].message.content.strip()
+            content = result.generations[0].str(message.content).strip()
             expected_answer = str(i + i)
             assert expected_answer in content or str(i * 2) in content
 
