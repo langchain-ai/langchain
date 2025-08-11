@@ -7,13 +7,13 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core>=0.3.60",
+    "langchain-core>=0.3.70",
     "numpy>=1.26.0; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
     "chromadb>=1.0.9",
 ]
 name = "langchain-chroma"
-version = "0.2.4"
+version = "0.2.5"
 description = "An integration package connecting Chroma and LangChain."
 readme = "README.md"
 
@@ -69,7 +69,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes

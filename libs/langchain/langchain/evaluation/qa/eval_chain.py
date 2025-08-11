@@ -80,18 +80,22 @@ class QAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "correctness"
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return True
 
     @property
+    @override
     def requires_input(self) -> bool:
         return True
 
@@ -214,6 +218,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
     """LLM Chain for evaluating QA w/o GT based on context"""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -242,6 +247,7 @@ class ContextQAEvalChain(LLMChain, StringEvaluator, LLMEvalChain):
             raise ValueError(msg)
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "Contextual Accuracy"
 
@@ -344,10 +350,12 @@ class CotQAEvalChain(ContextQAEvalChain):
     """LLM Chain for evaluating QA using chain of thought reasoning."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "COT Contextual Accuracy"
 

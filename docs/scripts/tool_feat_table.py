@@ -163,7 +163,7 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
     "Oxylabs Web Scraper API": {
-        "link": "docs/integrations/tools/oxylabs",
+        "link": "/docs/integrations/tools/oxylabs",
         "interactions": False,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
@@ -181,6 +181,10 @@ DATABASE_TOOL_FEAT_TABLE = {
     "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
+    },
+    "MCP Toolbox": {
+        "link": "/docs/integrations/tools/toolbox",
+        "operations": "Any SQL operation",
     },
 }
 
