@@ -15,9 +15,9 @@ from langchain_core.outputs.run_info import RunInfo
 class LLMResult(BaseModel):
     """A container for results of an LLM call.
 
-    Both chat models and LLMs generate an LLMResult object. This object contains
-    the generated outputs and any additional information that the model provider
-    wants to return.
+    Both chat models and LLMs generate an LLMResult object. This object contains the
+    generated outputs and any additional information that the model provider wants to
+    return.
     """
 
     generations: list[
@@ -25,17 +25,16 @@ class LLMResult(BaseModel):
     ]
     """Generated outputs.
 
-    The first dimension of the list represents completions for different input
-    prompts.
+    The first dimension of the list represents completions for different input prompts.
 
-    The second dimension of the list represents different candidate generations
-    for a given prompt.
+    The second dimension of the list represents different candidate generations for a
+    given prompt.
 
-    When returned from an LLM the type is list[list[Generation]].
-    When returned from a chat model the type is list[list[ChatGeneration]].
+    - When returned from **an LLM**, the type is ``list[list[Generation]]``.
+    - When returned from a **chat model**, the type is ``list[list[ChatGeneration]]``.
 
-    ChatGeneration is a subclass of Generation that has a field for a structured
-    chat message.
+    ChatGeneration is a subclass of Generation that has a field for a structured chat
+    message.
     """
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output.
@@ -43,12 +42,14 @@ class LLMResult(BaseModel):
     This dictionary is a free-form dictionary that can contain any information that the
     provider wants to return. It is not standardized and is provider-specific.
 
-    Users should generally avoid relying on this field and instead rely on
-    accessing relevant information from standardized fields present in
-    AIMessage.
+    Users should generally avoid relying on this field and instead rely on accessing
+    relevant information from standardized fields present in AIMessage.
     """
     run: Optional[list[RunInfo]] = None
-    """List of metadata info for model call for each input."""
+    """List of metadata info for model call for each input.
+
+    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    """
 
     type: Literal["LLMResult"] = "LLMResult"
     """Type is used exclusively for serialization purposes."""

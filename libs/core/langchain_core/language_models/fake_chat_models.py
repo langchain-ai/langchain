@@ -63,9 +63,9 @@ class FakeListChatModel(SimpleChatModel):
     """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
-    """List of responses to **cycle** through in order."""
-    error_on_chunk_number: Optional[int] = None
     """Internally incremented after every model invocation."""
+    error_on_chunk_number: Optional[int] = None
+    """If set, raise an error on the specified chunk number during streaming."""
 
     @property
     @override
@@ -81,6 +81,8 @@ class FakeListChatModel(SimpleChatModel):
         **kwargs: Any,
     ) -> str:
         """First try to lookup in queries, else return 'foo' or 'bar'."""
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -221,11 +223,12 @@ class GenericFakeChatModel(BaseChatModel):
     This can be expanded to accept other types like Callables / dicts / strings
     to make the interface more generic if needed.
 
-    Note: if you want to pass a list, you can use `iter` to convert it to an iterator.
+    .. note::
+        if you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    Please note that streaming is not implemented yet. We should try to implement it
-    in the future by delegating to invoke and then breaking the resulting output
-    into message chunks.
+    .. warning::
+        Streaming is not implemented yet. We should try to implement it in the future by
+        delegating to invoke and then breaking the resulting output into message chunks.
     """
 
     @override

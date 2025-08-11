@@ -13,7 +13,7 @@ All functionality related to OpenAI
 > **OpenAI** systems run on an **Azure**-based supercomputing platform from **Microsoft**.
 >
 > The [OpenAI API](https://platform.openai.com/docs/models) is powered by a diverse set of models with different capabilities and price points.
-> 
+>
 > [ChatGPT](https://chat.openai.com) is the Artificial Intelligence (AI) chatbot developed by `OpenAI`.
 
 ## Installation and Setup
@@ -81,8 +81,8 @@ from langchain.retrievers import ChatGPTPluginRetriever
 
 ### Dall-E Image Generator
 
->[OpenAI Dall-E](https://openai.com/dall-e-3) are text-to-image models developed by `OpenAI` 
-> using deep learning methodologies to generate digital images from natural language descriptions, 
+>[OpenAI Dall-E](https://openai.com/dall-e-3) are text-to-image models developed by `OpenAI`
+> using deep learning methodologies to generate digital images from natural language descriptions,
 > called "prompts".
 
 
@@ -105,7 +105,7 @@ from langchain.adapters import openai as lc_openai
 There are several places you can use the `tiktoken` tokenizer. By default, it is used to count tokens
 for OpenAI LLMs.
 
-You can also use it to count tokens when splitting documents with 
+You can also use it to count tokens when splitting documents with
 ```python
 from langchain.text_splitter import CharacterTextSplitter
 CharacterTextSplitter.from_tiktoken_encoder(...)

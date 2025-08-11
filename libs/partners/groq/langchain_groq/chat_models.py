@@ -6,15 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, TypedDict, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -46,10 +38,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -60,23 +49,13 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import (
     convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq.version import __version__
@@ -122,7 +101,7 @@ class ChatGroq(BaseChatModel):
 
             See the `Groq documentation
             <https://console.groq.com/docs/reasoning#reasoning>`__ for more
-            details and a list of supported reasoning models.
+            details and a list of supported models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -304,6 +283,7 @@ class ChatGroq(BaseChatModel):
             'system_fingerprint': 'fp_c5f20b5bb1',
             'finish_reason': 'stop',
             'logprobs': None}
+
     """  # noqa: E501
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -327,20 +307,15 @@ class ChatGroq(BaseChatModel):
       overridden in ``reasoning_effort``.
 
     See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
-    for more details and a list of supported reasoning models.
+    for more details and a list of supported models.
     """
-    reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
+    reasoning_effort: Optional[str] = Field(default=None)
     """The level of effort the model will put into reasoning. Groq will default to
-    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
-    not apply and ``reasoning_content`` will not be returned.
-
-    - ``'none'``: Disable reasoning. The model will not use any reasoning tokens when
-      generating a response.
-    - ``'default'``: Enable reasoning.
+    enabling reasoning if left undefined.
 
     See the `Groq documentation
     <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
-    details and a list of models that support setting a reasoning effort.
+    details and a list of options and models that support setting a reasoning effort.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -360,7 +335,7 @@ class ChatGroq(BaseChatModel):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Groq completion API. Can be float, httpx.Timeout or
+    """Timeout for requests to Groq completion API. Can be float, ``httpx.Timeout`` or
         None."""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
@@ -486,7 +461,7 @@ class ChatGroq(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     #
@@ -600,6 +575,11 @@ class ChatGroq(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
+                reasoning_effort = (
+                    params.get("reasoning_effort") or self.reasoning_effort
+                )
+                if reasoning_effort:
+                    generation_info["reasoning_effort"] = reasoning_effort
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -643,6 +623,11 @@ class ChatGroq(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
+                reasoning_effort = (
+                    params.get("reasoning_effort") or self.reasoning_effort
+                )
+                if reasoning_effort:
+                    generation_info["reasoning_effort"] = reasoning_effort
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -713,6 +698,9 @@ class ChatGroq(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         llm_output["service_tier"] = params.get("service_tier") or self.service_tier
+        reasoning_effort = params.get("reasoning_effort") or self.reasoning_effort
+        if reasoning_effort:
+            llm_output["reasoning_effort"] = reasoning_effort
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -774,7 +762,7 @@ class ChatGroq(BaseChatModel):
                 their schema dictionary representation.
             function_call: Which function to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any).
             **kwargs: Any additional parameters to pass to
                 :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
@@ -869,8 +857,7 @@ class ChatGroq(BaseChatModel):
         r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - an OpenAI function/tool schema,
                 - a JSON Schema,
@@ -887,6 +874,7 @@ class ChatGroq(BaseChatModel):
                 .. versionchanged:: 0.1.9
 
                     Added support for TypedDict class.
+
             method:
                 The method for steering model generation, either ``'function_calling'``
                 or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
@@ -909,6 +897,7 @@ class ChatGroq(BaseChatModel):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
             kwargs:
                 Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
@@ -923,11 +912,12 @@ class ChatGroq(BaseChatModel):
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - ``"raw"``: BaseMessage
-            - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - ``"parsing_error"``: Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from typing import Optional
@@ -1337,7 +1327,7 @@ def _lc_tool_call_to_groq_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 

@@ -64,6 +64,7 @@ class BaseSingleActionAgent(BaseModel):
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[list[str]]:
+        """Get allowed tools."""
         return None
 
     @abstractmethod
@@ -115,8 +116,8 @@ class BaseSingleActionAgent(BaseModel):
     def return_stopped_response(
         self,
         early_stopping_method: str,
-        intermediate_steps: list[tuple[AgentAction, str]],
-        **kwargs: Any,
+        intermediate_steps: list[tuple[AgentAction, str]],  # noqa: ARG002
+        **_: Any,
     ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations.
 
@@ -124,7 +125,6 @@ class BaseSingleActionAgent(BaseModel):
             early_stopping_method: Method to use for early stopping.
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            **kwargs: User inputs.
 
         Returns:
             AgentFinish: Agent finish object.
@@ -167,6 +167,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return Identifier of an agent type."""
         raise NotImplementedError
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent.
 
@@ -195,6 +196,7 @@ class BaseSingleActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -288,8 +290,8 @@ class BaseMultiActionAgent(BaseModel):
     def return_stopped_response(
         self,
         early_stopping_method: str,
-        intermediate_steps: list[tuple[AgentAction, str]],
-        **kwargs: Any,
+        intermediate_steps: list[tuple[AgentAction, str]],  # noqa: ARG002
+        **_: Any,
     ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations.
 
@@ -297,7 +299,6 @@ class BaseMultiActionAgent(BaseModel):
             early_stopping_method: Method to use for early stopping.
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            **kwargs: User inputs.
 
         Returns:
             AgentFinish: Agent finish object.
@@ -316,6 +317,7 @@ class BaseMultiActionAgent(BaseModel):
         """Return Identifier of an agent type."""
         raise NotImplementedError
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().model_dump()
@@ -338,6 +340,7 @@ class BaseMultiActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -650,6 +653,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
@@ -734,6 +738,7 @@ class Agent(BaseSingleActionAgent):
     allowed_tools: Optional[list[str]] = None
     """Allowed tools for the agent. If None, all tools are allowed."""
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
@@ -748,18 +753,6 @@ class Agent(BaseSingleActionAgent):
     def return_values(self) -> list[str]:
         """Return values of the agent."""
         return ["output"]
-
-    def _fix_text(self, text: str) -> str:
-        """Fix the text.
-
-        Args:
-            text: Text to fix.
-
-        Returns:
-            str: Fixed text.
-        """
-        msg = "fix_text not implemented for this agent."
-        raise ValueError(msg)
 
     @property
     def _stop(self) -> list[str]:
@@ -1020,6 +1013,7 @@ class ExceptionTool(BaseTool):
     description: str = "Exception tool"
     """Description of the tool."""
 
+    @override
     def _run(
         self,
         query: str,
@@ -1027,6 +1021,7 @@ class ExceptionTool(BaseTool):
     ) -> str:
         return query
 
+    @override
     async def _arun(
         self,
         query: str,
@@ -1184,9 +1179,10 @@ class AgentExecutor(Chain):
         to reflect the changes made in the root_validator.
         """
         if isinstance(self.agent, Runnable):
-            return cast(RunnableAgentType, self.agent)
+            return cast("RunnableAgentType", self.agent)
         return self.agent
 
+    @override
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
 
@@ -1217,7 +1213,7 @@ class AgentExecutor(Chain):
         callbacks: Callbacks = None,
         *,
         include_run_info: bool = False,
-        async_: bool = False,  # arg kept for backwards compat, but ignored
+        async_: bool = False,  # noqa: ARG002 arg kept for backwards compat, but ignored
     ) -> AgentExecutorIterator:
         """Enables iteration over steps taken to reach final output.
 
@@ -1380,7 +1376,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg) from e
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
@@ -1519,7 +1515,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg) from e
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
