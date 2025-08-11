@@ -28,7 +28,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<0.13,>=0.12.2"]
 typing = [
-    "mypy<1.16,>=1.15",
+    "mypy<1.18,>=1.17.1",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
     "langchain-text-splitters",
@@ -86,6 +86,7 @@ ignore = [
     "FIX002", # Line contains TODO
     "ISC001", # Messes with the formatter
     "PERF203", # Rarely useful
+    "PLC0414",  # Enable re-export
     "PLR09", # Too many something (arg, statements, etc)
     "RUF012", # Doesn't play well with Pydantic
     "TC001", # Doesn't play well with Pydantic
@@ -105,6 +106,7 @@ unfixable = ["PLW1510",]
 
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"

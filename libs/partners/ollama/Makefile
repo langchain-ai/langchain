@@ -22,7 +22,7 @@ test_watch:
 
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test:
+integration_test integration_tests:
 	uv run --group test --group test_integration pytest $(TEST_FILE)
 # note: leaving out integration_tests (with s) command to skip release testing for now
 # TODO(erick) configure ollama server to run in CI, in separate repo
