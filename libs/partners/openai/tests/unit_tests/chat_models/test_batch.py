@@ -48,9 +48,7 @@ class TestOpenAIBatchClient:
         ]
 
         batch_id = self.batch_client.create_batch(
-            requests=batch_requests,
-            description="Test batch",
-            metadata={"test": "true"},
+            requests=batch_requests, description="Test batch", metadata={"test": "true"}
         )
 
         assert batch_id == "batch_123"

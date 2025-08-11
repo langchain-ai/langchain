@@ -2330,6 +2330,7 @@ class BaseChatOpenAI(BaseChatModel):
                 # Batch API processing (50% cost savings, polling required)
                 results = llm.batch(inputs, use_batch_api=True)
         """
+
     def _convert_input_to_messages(
         self, input_item: LanguageModelInput
     ) -> list[BaseMessage]:
