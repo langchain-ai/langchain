@@ -129,6 +129,7 @@ def new(
         subprocess.run(
             ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
             cwd=destination_dir,
+            check=True,
         )
     else:
         # confirm src and dst are the same length

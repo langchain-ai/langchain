@@ -1,6 +1,7 @@
 """Git utilities."""
 
 import hashlib
+import logging
 import re
 import shutil
 from collections.abc import Sequence
@@ -14,6 +15,8 @@ from langchain_cli.constants import (
     DEFAULT_GIT_REPO,
     DEFAULT_GIT_SUBDIRECTORY,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DependencySource(TypedDict):
@@ -181,16 +184,15 @@ def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
         # try pulling
         try:
             repo = Repo(repo_path)
-            if repo.active_branch.name != ref:
-                raise ValueError
-            repo.remotes.origin.pull()
+            if repo.active_branch.name == ref:
+                repo.remotes.origin.pull()
+                return repo_path
         except Exception:
-            # if it fails, delete and clone again
-            shutil.rmtree(repo_path)
-            Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
-    else:
-        Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
+            logger.exception("Failed to pull existing repo")
+        # if it fails, delete and clone again
+        shutil.rmtree(repo_path)
 
+    Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
     return repo_path
 
 
@@ -203,7 +205,7 @@ def copy_repo(
     Raises FileNotFound error if it can't find source
     """
 
-    def ignore_func(_, files):
+    def ignore_func(_: str, files: list[str]) -> list[str]:
         return [f for f in files if f == ".git"]
 
     shutil.copytree(source, destination, ignore=ignore_func)

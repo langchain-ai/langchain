@@ -1,8 +1,8 @@
 """Script to generate migrations for the migration script."""
 
 import json
-import os
 import pkgutil
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -73,8 +73,7 @@ def generic(
     else:
         dumped = dump_migrations_as_grit(name, migrations)
 
-    with open(output, "w") as f:
-        f.write(dumped)
+    Path(output).write_text(dumped)
 
 
 def handle_partner(pkg: str, output: Optional[str] = None) -> None:
@@ -85,8 +84,7 @@ def handle_partner(pkg: str, output: Optional[str] = None) -> None:
     data = dump_migrations_as_grit(name, migrations)
     output_name = f"{name}.grit" if output is None else output
     if migrations:
-        with open(output_name, "w") as f:
-            f.write(data)
+        Path(output_name).write_text(data)
         click.secho(f"LangChain migration script saved to {output_name}")
     else:
         click.secho(f"No migrations found for {pkg}", fg="yellow")
@@ -105,13 +103,13 @@ def partner(pkg: str, output: str) -> None:
 @click.argument("json_file")
 def json_to_grit(json_file: str) -> None:
     """Generate a Grit migration from an old JSON migration file."""
-    with open(json_file) as f:
+    file = Path(json_file)
+    with file.open() as f:
         migrations = json.load(f)
-    name = os.path.basename(json_file).removesuffix(".json").removesuffix(".grit")
+    name = file.stem
     data = dump_migrations_as_grit(name, migrations)
     output_name = f"{name}.grit"
-    with open(output_name, "w") as f:
-        f.write(data)
+    Path(output_name).write_text(data)
     click.secho(f"GritQL migration script saved to {output_name}")
 
 
