@@ -1,12 +1,10 @@
 """Test OpenAI Batch API functionality."""
 
 import json
-import time
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, Mock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
 from langchain_openai import ChatOpenAI
@@ -42,7 +40,10 @@ class TestOpenAIBatchClient:
                 "custom_id": "request-1",
                 "method": "POST",
                 "url": "/v1/chat/completions",
-                "body": {"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "Hello"}]},
+                "body": {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": "Hello"}],
+                },
             }
         ]
 
@@ -64,7 +65,10 @@ class TestOpenAIBatchClient:
                 "custom_id": "request-1",
                 "method": "POST",
                 "url": "/v1/chat/completions",
-                "body": {"model": "gpt-3.5-turbo", "messages": [{"role": "user", "content": "Hello"}]},
+                "body": {
+                    "model": "gpt-3.5-turbo",
+                    "messages": [{"role": "user", "content": "Hello"}],
+                },
             }
         ]
 
@@ -76,10 +80,10 @@ class TestOpenAIBatchClient:
         # Mock batch status progression
         mock_batch_validating = MagicMock()
         mock_batch_validating.status = "validating"
-        
+
         mock_batch_in_progress = MagicMock()
         mock_batch_in_progress.status = "in_progress"
-        
+
         mock_batch_completed = MagicMock()
         mock_batch_completed.status = "completed"
         mock_batch_completed.output_file_id = "file_123"
@@ -134,13 +138,17 @@ class TestOpenAIBatchClient:
                             {
                                 "message": {
                                     "role": "assistant",
-                                    "content": "Hello! How can I help you?"
+                                    "content": "Hello! How can I help you?",
                                 }
                             }
                         ],
-                        "usage": {"prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18}
-                    }
-                }
+                        "usage": {
+                            "prompt_tokens": 10,
+                            "completion_tokens": 8,
+                            "total_tokens": 18,
+                        },
+                    },
+                },
             }
         ]
 
@@ -177,7 +185,7 @@ class TestOpenAIBatchProcessor:
     def test_create_batch_success(self):
         """Test successful batch creation with message conversion."""
         # Mock batch client
-        with patch.object(self.processor, 'batch_client') as mock_batch_client:
+        with patch.object(self.processor, "batch_client") as mock_batch_client:
             mock_batch_client.create_batch.return_value = "batch_123"
 
             messages_list = [
@@ -198,7 +206,7 @@ class TestOpenAIBatchProcessor:
             # Verify batch requests were created correctly
             call_args = mock_batch_client.create_batch.call_args
             batch_requests = call_args[1]["batch_requests"]
-            
+
             assert len(batch_requests) == 2
             assert batch_requests[0]["custom_id"] == "request-0"
             assert batch_requests[0]["body"]["model"] == "gpt-3.5-turbo"
@@ -208,7 +216,7 @@ class TestOpenAIBatchProcessor:
 
     def test_poll_batch_status_success(self):
         """Test successful batch status polling."""
-        with patch.object(self.processor, 'batch_client') as mock_batch_client:
+        with patch.object(self.processor, "batch_client") as mock_batch_client:
             mock_batch = MagicMock()
             mock_batch.status = "completed"
             mock_batch_client.poll_batch_status.return_value = mock_batch
@@ -238,13 +246,17 @@ class TestOpenAIBatchProcessor:
                             {
                                 "message": {
                                     "role": "assistant",
-                                    "content": "2+2 equals 4."
+                                    "content": "2+2 equals 4.",
                                 }
                             }
                         ],
-                        "usage": {"prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18}
-                    }
-                }
+                        "usage": {
+                            "prompt_tokens": 10,
+                            "completion_tokens": 8,
+                            "total_tokens": 18,
+                        },
+                    },
+                },
             },
             {
                 "id": "batch_req_124",
@@ -256,35 +268,42 @@ class TestOpenAIBatchProcessor:
                             {
                                 "message": {
                                     "role": "assistant",
-                                    "content": "The capital of France is Paris."
+                                    "content": "The capital of France is Paris.",
                                 }
                             }
                         ],
-                        "usage": {"prompt_tokens": 12, "completion_tokens": 10, "total_tokens": 22}
-                    }
-                }
-            }
+                        "usage": {
+                            "prompt_tokens": 12,
+                            "completion_tokens": 10,
+                            "total_tokens": 22,
+                        },
+                    },
+                },
+            },
         ]
 
-        with patch.object(self.processor, 'batch_client') as mock_batch_client:
+        with patch.object(self.processor, "batch_client") as mock_batch_client:
             mock_batch_client.poll_batch_status.return_value = mock_batch
             mock_batch_client.retrieve_batch_results.return_value = mock_results
 
             chat_results = self.processor.retrieve_batch_results("batch_123")
 
             assert len(chat_results) == 2
-            
+
             # Check first result
             assert isinstance(chat_results[0], ChatResult)
             assert len(chat_results[0].generations) == 1
             assert isinstance(chat_results[0].generations[0].message, AIMessage)
             assert chat_results[0].generations[0].message.content == "2+2 equals 4."
-            
+
             # Check second result
             assert isinstance(chat_results[1], ChatResult)
             assert len(chat_results[1].generations) == 1
             assert isinstance(chat_results[1].generations[0].message, AIMessage)
-            assert chat_results[1].generations[0].message.content == "The capital of France is Paris."
+            assert (
+                chat_results[1].generations[0].message.content
+                == "The capital of France is Paris."
+            )
 
     def test_retrieve_batch_results_with_errors(self):
         """Test batch result retrieval with some failed requests."""
@@ -303,13 +322,17 @@ class TestOpenAIBatchProcessor:
                             {
                                 "message": {
                                     "role": "assistant",
-                                    "content": "Success response"
+                                    "content": "Success response",
                                 }
                             }
                         ],
-                        "usage": {"prompt_tokens": 10, "completion_tokens": 8, "total_tokens": 18}
-                    }
-                }
+                        "usage": {
+                            "prompt_tokens": 10,
+                            "completion_tokens": 8,
+                            "total_tokens": 18,
+                        },
+                    },
+                },
             },
             {
                 "id": "batch_req_124",
@@ -319,14 +342,14 @@ class TestOpenAIBatchProcessor:
                     "body": {
                         "error": {
                             "message": "Invalid request",
-                            "type": "invalid_request_error"
+                            "type": "invalid_request_error",
                         }
-                    }
-                }
-            }
+                    },
+                },
+            },
         ]
 
-        with patch.object(self.processor, 'batch_client') as mock_batch_client:
+        with patch.object(self.processor, "batch_client") as mock_batch_client:
             mock_batch_client.poll_batch_status.return_value = mock_batch
             mock_batch_client.retrieve_batch_results.return_value = mock_results
 
@@ -341,7 +364,7 @@ class TestBaseChatOpenAIBatchMethods:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(model="gpt-3.5-turbo", api_key="test-key")
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_batch_create_success(self, mock_processor_class):
         """Test successful batch creation."""
         mock_processor = MagicMock()
@@ -369,13 +392,21 @@ class TestBaseChatOpenAIBatchMethods:
             temperature=0.7,
         )
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_batch_retrieve_success(self, mock_processor_class):
         """Test successful batch result retrieval."""
         mock_processor = MagicMock()
         mock_chat_results = [
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="2+2 equals 4."))]),
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="The capital of France is Paris."))]),
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="2+2 equals 4."))]
+            ),
+            ChatResult(
+                generations=[
+                    ChatGeneration(
+                        message=AIMessage(content="The capital of France is Paris.")
+                    )
+                ]
+            ),
         ]
         mock_processor.retrieve_batch_results.return_value = mock_chat_results
         mock_processor_class.return_value = mock_processor
@@ -384,22 +415,27 @@ class TestBaseChatOpenAIBatchMethods:
 
         assert len(results) == 2
         assert results[0].generations[0].message.content == "2+2 equals 4."
-        assert results[1].generations[0].message.content == "The capital of France is Paris."
-        
+        assert (
+            results[1].generations[0].message.content
+            == "The capital of France is Paris."
+        )
+
         mock_processor.poll_batch_status.assert_called_once_with(
-            batch_id="batch_123",
-            poll_interval=1.0,
-            timeout=60.0,
+            batch_id="batch_123", poll_interval=1.0, timeout=60.0
         )
         mock_processor.retrieve_batch_results.assert_called_once_with("batch_123")
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_batch_method_with_batch_api_true(self, mock_processor_class):
         """Test batch method with use_batch_api=True."""
         mock_processor = MagicMock()
         mock_chat_results = [
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response 1"))]),
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response 2"))]),
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Response 1"))]
+            ),
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Response 2"))]
+            ),
         ]
         mock_processor.create_batch.return_value = "batch_123"
         mock_processor.retrieve_batch_results.return_value = mock_chat_results
@@ -429,7 +465,7 @@ class TestBaseChatOpenAIBatchMethods:
         ]
 
         # Mock the parent class batch method
-        with patch.object(ChatOpenAI.__bases__[0], 'batch') as mock_super_batch:
+        with patch.object(ChatOpenAI.__bases__[0], "batch") as mock_super_batch:
             mock_super_batch.return_value = [
                 AIMessage(content="Response 1"),
                 AIMessage(content="Response 2"),
@@ -439,9 +475,7 @@ class TestBaseChatOpenAIBatchMethods:
 
             assert len(results) == 2
             mock_super_batch.assert_called_once_with(
-                inputs=inputs,
-                config=None,
-                return_exceptions=False,
+                inputs=inputs, config=None, return_exceptions=False
             )
 
     def test_convert_input_to_messages_list(self):
@@ -462,7 +496,7 @@ class TestBaseChatOpenAIBatchMethods:
         assert isinstance(result[0], HumanMessage)
         assert result[0].content == "Hello"
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_batch_create_with_error_handling(self, mock_processor_class):
         """Test batch creation with error handling."""
         mock_processor = MagicMock()
@@ -474,11 +508,13 @@ class TestBaseChatOpenAIBatchMethods:
         with pytest.raises(BatchError, match="Batch creation failed"):
             self.llm.batch_create(messages_list)
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_batch_retrieve_with_error_handling(self, mock_processor_class):
         """Test batch retrieval with error handling."""
         mock_processor = MagicMock()
-        mock_processor.poll_batch_status.side_effect = BatchError("Batch polling failed")
+        mock_processor.poll_batch_status.side_effect = BatchError(
+            "Batch polling failed"
+        )
         mock_processor_class.return_value = mock_processor
 
         with pytest.raises(BatchError, match="Batch polling failed"):
@@ -486,12 +522,15 @@ class TestBaseChatOpenAIBatchMethods:
 
     def test_batch_method_input_conversion(self):
         """Test batch method handles various input formats correctly."""
-        with patch.object(self.llm, 'batch_create') as mock_create, \
-             patch.object(self.llm, 'batch_retrieve') as mock_retrieve:
-            
+        with (
+            patch.object(self.llm, "batch_create") as mock_create,
+            patch.object(self.llm, "batch_retrieve") as mock_retrieve,
+        ):
             mock_create.return_value = "batch_123"
             mock_retrieve.return_value = [
-                ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response"))]),
+                ChatResult(
+                    generations=[ChatGeneration(message=AIMessage(content="Response"))]
+                )
             ]
 
             # Test with string inputs
@@ -501,8 +540,8 @@ class TestBaseChatOpenAIBatchMethods:
             # Verify conversion happened
             mock_create.assert_called_once()
             call_args = mock_create.call_args[1]
-            messages_list = call_args['messages_list']
-            
+            messages_list = call_args["messages_list"]
+
             assert len(messages_list) == 1
             assert len(messages_list[0]) == 1
             assert isinstance(messages_list[0][0], HumanMessage)
@@ -532,7 +571,7 @@ class TestBatchIntegrationScenarios:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(model="gpt-3.5-turbo", api_key="test-key")
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_empty_messages_list(self, mock_processor_class):
         """Test handling of empty messages list."""
         mock_processor = MagicMock()
@@ -543,16 +582,18 @@ class TestBatchIntegrationScenarios:
         results = self.llm.batch([], use_batch_api=True)
         assert results == []
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_large_batch_processing(self, mock_processor_class):
         """Test processing of large batch."""
         mock_processor = MagicMock()
         mock_processor.create_batch.return_value = "batch_123"
-        
+
         # Create mock results for large batch
         num_requests = 100
         mock_chat_results = [
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content=f"Response {i}"))])
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content=f"Response {i}"))]
+            )
             for i in range(num_requests)
         ]
         mock_processor.retrieve_batch_results.return_value = mock_chat_results
@@ -565,14 +606,18 @@ class TestBatchIntegrationScenarios:
         for i, result in enumerate(results):
             assert result.content == f"Response {i}"
 
-    @patch('langchain_openai.chat_models.batch.OpenAIBatchProcessor')
+    @patch("langchain_openai.chat_models.batch.OpenAIBatchProcessor")
     def test_mixed_message_types(self, mock_processor_class):
         """Test batch processing with mixed message types."""
         mock_processor = MagicMock()
         mock_processor.create_batch.return_value = "batch_123"
         mock_processor.retrieve_batch_results.return_value = [
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response 1"))]),
-            ChatResult(generations=[ChatGeneration(message=AIMessage(content="Response 2"))]),
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Response 1"))]
+            ),
+            ChatResult(
+                generations=[ChatGeneration(message=AIMessage(content="Response 2"))]
+            ),
         ]
         mock_processor_class.return_value = mock_processor
 
@@ -587,12 +632,12 @@ class TestBatchIntegrationScenarios:
         # Verify the conversion happened correctly
         mock_processor.create_batch.assert_called_once()
         call_args = mock_processor.create_batch.call_args[1]
-        messages_list = call_args['messages_list']
-        
+        messages_list = call_args["messages_list"]
+
         # First input should be converted to HumanMessage
         assert isinstance(messages_list[0][0], HumanMessage)
         assert messages_list[0][0].content == "String input"
-        
+
         # Second input should remain as is
         assert isinstance(messages_list[1][0], HumanMessage)
         assert messages_list[1][0].content == "Direct message list"
