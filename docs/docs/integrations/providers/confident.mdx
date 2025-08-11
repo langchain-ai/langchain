@@ -33,8 +33,12 @@ pip install deepeval langchain langchain-openai
 Authenticate with your API key:
 
 ```python
+import os
 import deepeval
-deepeval.login("<api-key>")
+
+# Load API key from environment variable for security
+api_key = os.environ.get("DEEPEVAL_API_KEY")
+deepeval.login(api_key)
 ```
 
 Use the new callback handler:
