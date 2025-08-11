@@ -1,8 +1,9 @@
 """Standard LangChain interface tests"""
 
-from typing import Optional
+from __future__ import annotations
 
-from langchain_core.language_models import BaseChatModel
+from typing import TYPE_CHECKING, Optional
+
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from langchain_core.rate_limiters import InMemoryRateLimiter
 from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
@@ -10,6 +11,9 @@ from langchain_tests.integration_tests import (  # type: ignore[import-not-found
 )
 
 from langchain_xai import ChatXAI
+
+if TYPE_CHECKING:
+    from langchain_core.language_models import BaseChatModel
 
 # Initialize the rate limiter in global scope, so it can be re-used
 # across tests.
