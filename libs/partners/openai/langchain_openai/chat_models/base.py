@@ -2289,7 +2289,8 @@ class BaseChatOpenAI(BaseChatModel):
         This method provides two processing modes:
         1. Standard mode (use_batch_api=False): Uses parallel invoke for
            immediate results
-        2. Batch API mode (use_batch_api=True): Uses OpenAI's Batch API for 50% cost savings
+        2. Batch API mode (use_batch_api=True): Uses OpenAI's Batch API
+           for 50% cost savings
 
         Args:
             inputs: List of inputs to process in batch.
