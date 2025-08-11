@@ -596,8 +596,8 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             A VectorStore object.
         """
-        _path: Path = Path(path)
-        with _path.open("r") as f:
+        path_: Path = Path(path)
+        with path_.open("r") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
@@ -609,7 +609,7 @@ class InMemoryVectorStore(VectorStore):
         Args:
             path: The path to dump the vector store to.
         """
-        _path: Path = Path(path)
-        _path.parent.mkdir(exist_ok=True, parents=True)
-        with _path.open("w") as f:
+        path_: Path = Path(path)
+        path_.parent.mkdir(exist_ok=True, parents=True)
+        with path_.open("w") as f:
             json.dump(dumpd(self.store), f, indent=2)

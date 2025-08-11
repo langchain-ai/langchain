@@ -33,4 +33,4 @@ from langchain.evaluation.comparison.eval_chain import (
     PairwiseStringEvalChain,
 )
 
-__all__ = ["PairwiseStringEvalChain", "LabeledPairwiseStringEvalChain"]
+__all__ = ["LabeledPairwiseStringEvalChain", "PairwiseStringEvalChain"]

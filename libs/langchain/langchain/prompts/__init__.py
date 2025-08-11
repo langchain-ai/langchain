@@ -65,7 +65,9 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 MODULE_LOOKUP = {
-    "NGramOverlapExampleSelector": "langchain_community.example_selectors.ngram_overlap"
+    "NGramOverlapExampleSelector": (
+        "langchain_community.example_selectors.ngram_overlap"
+    ),
 }
 
 _import_attribute = create_importer(__file__, module_lookup=MODULE_LOOKUP)
@@ -82,6 +84,7 @@ __all__ = [
     "BasePromptTemplate",
     "ChatMessagePromptTemplate",
     "ChatPromptTemplate",
+    "FewShotChatMessagePromptTemplate",
     "FewShotPromptTemplate",
     "FewShotPromptWithTemplates",
     "HumanMessagePromptTemplate",
@@ -90,11 +93,10 @@ __all__ = [
     "MessagesPlaceholder",
     "NGramOverlapExampleSelector",
     "PipelinePromptTemplate",
+    "Prompt",
     "PromptTemplate",
     "SemanticSimilarityExampleSelector",
     "StringPromptTemplate",
     "SystemMessagePromptTemplate",
     "load_prompt",
-    "FewShotChatMessagePromptTemplate",
-    "Prompt",
 ]

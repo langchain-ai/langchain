@@ -5,6 +5,7 @@ from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
 from langchain_core.utils.json import parse_json_markdown
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -34,21 +35,26 @@ class JsonValidityEvaluator(StringEvaluator):
         {'score': 0, 'reasoning': 'Expecting property name enclosed in double quotes'}
     """
 
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, **_: Any) -> None:
+        """Initialize the JsonValidityEvaluator."""
         super().__init__()
 
     @property
+    @override
     def requires_input(self) -> bool:
         return False
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return False
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "json_validity"
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,
@@ -72,9 +78,9 @@ class JsonValidityEvaluator(StringEvaluator):
         """
         try:
             parse_json_markdown(prediction, parser=json.loads)
-            return {"score": 1}
         except Exception as e:
             return {"score": 0, "reasoning": str(e)}
+        return {"score": 1}
 
 
 class JsonEqualityEvaluator(StringEvaluator):
@@ -108,19 +114,28 @@ class JsonEqualityEvaluator(StringEvaluator):
 
     """
 
-    def __init__(self, operator: Optional[Callable] = None, **kwargs: Any) -> None:
+    def __init__(self, operator: Optional[Callable] = None, **_: Any) -> None:
+        """Initialize the JsonEqualityEvaluator.
+
+        Args:
+            operator: A custom operator to compare the parsed JSON objects.
+                Defaults to equality (`eq`).
+        """
         super().__init__()
         self.operator = operator or eq
 
     @property
+    @override
     def requires_input(self) -> bool:
         return False
 
     @property
+    @override
     def requires_reference(self) -> bool:
         return True
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return "json_equality"
 
@@ -132,6 +147,7 @@ class JsonEqualityEvaluator(StringEvaluator):
             return parse_json_markdown(string)
         return string
 
+    @override
     def _evaluate_strings(
         self,
         prediction: str,
@@ -150,7 +166,7 @@ class JsonEqualityEvaluator(StringEvaluator):
             dict: A dictionary containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
-        label = self._parse_json(cast(str, reference))
+        label = self._parse_json(cast("str", reference))
         if isinstance(label, list):
             if not isinstance(parsed, list):
                 return {"score": 0}

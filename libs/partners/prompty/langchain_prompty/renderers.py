@@ -11,6 +11,7 @@ class MustacheRenderer(Invoker):
         self.prompty = prompty
 
     def invoke(self, data: BaseModel) -> BaseModel:
-        assert isinstance(data, SimpleModel)
+        if not isinstance(data, SimpleModel):
+            raise ValueError("Expected data to be an instance of SimpleModel")
         generated = mustache.render(self.prompty.content, data.item)
         return SimpleModel[str](item=generated)

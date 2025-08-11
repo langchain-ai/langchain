@@ -11,7 +11,7 @@ time.
 import inspect
 import uuid
 from abc import ABC, abstractmethod
-from typing import AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
 
 import pytest
 from langchain_core.documents import Document
@@ -31,7 +31,7 @@ class DocumentIndexerTestSuite(ABC):
         """Get the index."""
 
     def test_upsert_documents_has_no_ids(self, index: DocumentIndex) -> None:
-        """Verify that there is not parameter called ids in upsert"""
+        """Verify that there is not parameter called ids in upsert."""
         signature = inspect.signature(index.upsert)
         assert "ids" not in signature.parameters
 
@@ -49,7 +49,7 @@ class DocumentIndexerTestSuite(ABC):
 
         # Ordering is not guaranteed, need to test carefully
         documents = index.get(ids)
-        sorted_documents = sorted(documents, key=lambda x: x.id)  # type: ignore
+        sorted_documents = sorted(documents, key=lambda x: x.id or "")
 
         if sorted_documents[0].page_content == "bar":
             assert sorted_documents[0] == Document(
@@ -75,7 +75,7 @@ class DocumentIndexerTestSuite(ABC):
         ]
         response = index.upsert(documents)
         ids = response["succeeded"]
-        other_id = list(set(ids) - {foo_uuid})[0]
+        other_id = next(iter(set(ids) - {foo_uuid}))
         assert response["failed"] == []
         assert foo_uuid in ids
         # Ordering is not guaranteed, so we use a set.
@@ -196,7 +196,7 @@ class DocumentIndexerTestSuite(ABC):
         }
         retrieved_documents = index.get(["1", "2", "3", "4"])
         # The ordering is not guaranteed, so we use a set.
-        assert sorted(retrieved_documents, key=lambda x: x.id) == [  # type: ignore
+        assert sorted(retrieved_documents, key=lambda x: x.id or "") == [
             Document(page_content="foo", metadata={"id": 1}, id="1"),
             Document(page_content="bar", metadata={"id": 2}, id="2"),
         ]
@@ -221,7 +221,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         """Get the index."""
 
     async def test_upsert_documents_has_no_ids(self, index: DocumentIndex) -> None:
-        """Verify that there is not parameter called ids in upsert"""
+        """Verify that there is not parameter called ids in upsert."""
         signature = inspect.signature(index.upsert)
         assert "ids" not in signature.parameters
 
@@ -239,7 +239,7 @@ class AsyncDocumentIndexTestSuite(ABC):
 
         # Ordering is not guaranteed, need to test carefully
         documents = await index.aget(ids)
-        sorted_documents = sorted(documents, key=lambda x: x.id)  # type: ignore
+        sorted_documents = sorted(documents, key=lambda x: x.id or "")
 
         if sorted_documents[0].page_content == "bar":
             assert sorted_documents[0] == Document(
@@ -265,7 +265,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         ]
         response = await index.aupsert(documents)
         ids = response["succeeded"]
-        other_id = list(set(ids) - {foo_uuid})[0]
+        other_id = next(iter(set(ids) - {foo_uuid}))
         assert response["failed"] == []
         assert foo_uuid in ids
         # Ordering is not guaranteed, so we use a set.
@@ -388,7 +388,7 @@ class AsyncDocumentIndexTestSuite(ABC):
         }
         retrieved_documents = await index.aget(["1", "2", "3", "4"])
         # The ordering is not guaranteed, so we use a set.
-        assert sorted(retrieved_documents, key=lambda x: x.id) == [  # type: ignore
+        assert sorted(retrieved_documents, key=lambda x: x.id or "") == [
             Document(page_content="foo", metadata={"id": 1}, id="1"),
             Document(page_content="bar", metadata={"id": 2}, id="2"),
         ]

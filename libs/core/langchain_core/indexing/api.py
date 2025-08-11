@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+import warnings
 from collections.abc import AsyncIterable, AsyncIterator, Iterable, Iterator, Sequence
 from itertools import islice
 from typing import (
@@ -17,8 +18,6 @@ from typing import (
     Union,
     cast,
 )
-
-from pydantic import model_validator
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
@@ -35,94 +34,51 @@ NAMESPACE_UUID = uuid.UUID(int=1984)
 T = TypeVar("T")
 
 
-def _hash_string_to_uuid(input_string: str) -> uuid.UUID:
+def _hash_string_to_uuid(input_string: str) -> str:
     """Hashes a string and returns the corresponding UUID."""
     hash_value = hashlib.sha1(
         input_string.encode("utf-8"), usedforsecurity=False
     ).hexdigest()
+    return str(uuid.uuid5(NAMESPACE_UUID, hash_value))
+
+
+_WARNED_ABOUT_SHA1: bool = False
+
+
+def _warn_about_sha1() -> None:
+    """Emit a one-time warning about SHA-1 collision weaknesses."""
+    # Global variable OK in this case
+    global _WARNED_ABOUT_SHA1  # noqa: PLW0603
+    if not _WARNED_ABOUT_SHA1:
+        warnings.warn(
+            "Using SHA-1 for document hashing. SHA-1 is *not* "
+            "collision-resistant; a motivated attacker can construct distinct inputs "
+            "that map to the same fingerprint. If this matters in your "
+            "threat model, switch to a stronger algorithm such "
+            "as 'blake2b', 'sha256', or 'sha512' by specifying "
+            " `key_encoder` parameter in the the `index` or `aindex` function. ",
+            category=UserWarning,
+            stacklevel=2,
+        )
+        _WARNED_ABOUT_SHA1 = True
+
+
+def _hash_string(
+    input_string: str, *, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
+) -> uuid.UUID:
+    """Hash *input_string* to a deterministic UUID using the configured algorithm."""
+    if algorithm == "sha1":
+        _warn_about_sha1()
+    hash_value = _calculate_hash(input_string, algorithm)
     return uuid.uuid5(NAMESPACE_UUID, hash_value)
 
 
-def _hash_nested_dict_to_uuid(data: dict[Any, Any]) -> uuid.UUID:
-    """Hashes a nested dictionary and returns the corresponding UUID."""
+def _hash_nested_dict(
+    data: dict[Any, Any], *, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
+) -> uuid.UUID:
+    """Hash a nested dictionary to a UUID using the configured algorithm."""
     serialized_data = json.dumps(data, sort_keys=True)
-    hash_value = hashlib.sha1(
-        serialized_data.encode("utf-8"), usedforsecurity=False
-    ).hexdigest()
-    return uuid.uuid5(NAMESPACE_UUID, hash_value)
-
-
-class _HashedDocument(Document):
-    """A hashed document with a unique ID."""
-
-    uid: str
-    hash_: str
-    """The hash of the document including content and metadata."""
-    content_hash: str
-    """The hash of the document content."""
-    metadata_hash: str
-    """The hash of the document metadata."""
-
-    @classmethod
-    def is_lc_serializable(cls) -> bool:
-        return False
-
-    @model_validator(mode="before")
-    @classmethod
-    def calculate_hashes(cls, values: dict[str, Any]) -> Any:
-        """Root validator to calculate content and metadata hash."""
-        content = values.get("page_content", "")
-        metadata = values.get("metadata", {})
-
-        forbidden_keys = ("hash_", "content_hash", "metadata_hash")
-
-        for key in forbidden_keys:
-            if key in metadata:
-                msg = (
-                    f"Metadata cannot contain key {key} as it "
-                    f"is reserved for internal use."
-                )
-                raise ValueError(msg)
-
-        content_hash = str(_hash_string_to_uuid(content))
-
-        try:
-            metadata_hash = str(_hash_nested_dict_to_uuid(metadata))
-        except Exception as e:
-            msg = (
-                f"Failed to hash metadata: {e}. "
-                f"Please use a dict that can be serialized using json."
-            )
-            raise ValueError(msg) from e
-
-        values["content_hash"] = content_hash
-        values["metadata_hash"] = metadata_hash
-        values["hash_"] = str(_hash_string_to_uuid(content_hash + metadata_hash))
-
-        _uid = values.get("uid")
-
-        if _uid is None:
-            values["uid"] = values["hash_"]
-        return values
-
-    def to_document(self) -> Document:
-        """Return a Document object."""
-        return Document(
-            id=self.uid,
-            page_content=self.page_content,
-            metadata=self.metadata,
-        )
-
-    @classmethod
-    def from_document(
-        cls, document: Document, *, uid: Optional[str] = None
-    ) -> _HashedDocument:
-        """Create a HashedDocument from a Document."""
-        return cls(  # type: ignore[call-arg]
-            uid=uid,  # type: ignore[arg-type]
-            page_content=document.page_content,
-            metadata=document.metadata,
-        )
+    return _hash_string(serialized_data, algorithm=algorithm)
 
 
 def _batch(size: int, iterable: Iterable[T]) -> Iterator[list[T]]:
@@ -168,19 +124,109 @@ def _get_source_id_assigner(
 
 
 def _deduplicate_in_order(
-    hashed_documents: Iterable[_HashedDocument],
-) -> Iterator[_HashedDocument]:
+    hashed_documents: Iterable[Document],
+) -> Iterator[Document]:
     """Deduplicate a list of hashed documents while preserving order."""
     seen: set[str] = set()
 
     for hashed_doc in hashed_documents:
-        if hashed_doc.hash_ not in seen:
-            seen.add(hashed_doc.hash_)
+        if hashed_doc.id not in seen:
+            # At this stage, the id is guaranteed to be a string.
+            # Avoiding unnecessary run time checks.
+            seen.add(cast("str", hashed_doc.id))
             yield hashed_doc
 
 
 class IndexingException(LangChainException):
     """Raised when an indexing operation fails."""
+
+
+def _calculate_hash(
+    text: str, algorithm: Literal["sha1", "sha256", "sha512", "blake2b"]
+) -> str:
+    """Return a hexadecimal digest of *text* using *algorithm*."""
+    if algorithm == "sha1":
+        # Calculate the SHA-1 hash and return it as a UUID.
+        digest = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
+        return str(uuid.uuid5(NAMESPACE_UUID, digest))
+    if algorithm == "blake2b":
+        return hashlib.blake2b(text.encode("utf-8")).hexdigest()
+    if algorithm == "sha256":
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    if algorithm == "sha512":
+        return hashlib.sha512(text.encode("utf-8")).hexdigest()
+    msg = f"Unsupported hashing algorithm: {algorithm}"
+    raise ValueError(msg)
+
+
+def _get_document_with_hash(
+    document: Document,
+    *,
+    key_encoder: Union[
+        Callable[[Document], str], Literal["sha1", "sha256", "sha512", "blake2b"]
+    ],
+) -> Document:
+    """Calculate a hash of the document, and assign it to the uid.
+
+    When using one of the predefined hashing algorithms, the hash is calculated
+    by hashing the content and the metadata of the document.
+
+    Args:
+        document: Document to hash.
+        key_encoder: Hashing algorithm to use for hashing the document.
+            If not provided, a default encoder using SHA-1 will be used.
+            SHA-1 is not collision-resistant, and a motivated attacker
+            could craft two different texts that hash to the
+            same cache key.
+
+            New applications should use one of the alternative encoders
+            or provide a custom and strong key encoder function to avoid this risk.
+
+            When changing the key encoder, you must change the
+            index as well to avoid duplicated documents in the cache.
+
+    Returns:
+        Document with a unique identifier based on the hash of the content and metadata.
+    """
+    metadata: dict[str, Any] = dict(document.metadata or {})
+
+    if callable(key_encoder):
+        # If key_encoder is a callable, we use it to generate the hash.
+        hash_ = key_encoder(document)
+    else:
+        # The hashes are calculated separate for the content and the metadata.
+        content_hash = _calculate_hash(document.page_content, algorithm=key_encoder)
+        try:
+            serialized_meta = json.dumps(metadata, sort_keys=True)
+        except Exception as e:
+            msg = (
+                f"Failed to hash metadata: {e}. "
+                f"Please use a dict that can be serialized using json."
+            )
+            raise ValueError(msg) from e
+        metadata_hash = _calculate_hash(serialized_meta, algorithm=key_encoder)
+        hash_ = _calculate_hash(content_hash + metadata_hash, algorithm=key_encoder)
+
+    return Document(
+        # Assign a unique identifier based on the hash.
+        id=hash_,
+        page_content=document.page_content,
+        metadata=document.metadata,
+    )
+
+
+# This internal abstraction was imported by the langchain package internally, so
+# we keep it here for backwards compatibility.
+class _HashedDocument:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an error if this class is instantiated."""
+        msg = (
+            "_HashedDocument is an internal abstraction that was deprecated in "
+            " langchain-core 0.3.63. This abstraction is marked as private and "
+            " should not have been used directly. If you are seeing this error, please "
+            " update your code appropriately."
+        )
+        raise NotImplementedError(msg)
 
 
 def _delete(
@@ -227,10 +273,13 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    key_encoder: Union[
+        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
+    ] = "sha1",
     upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Index data from the loader into the vector store.
@@ -291,6 +340,23 @@ def index(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        key_encoder: Hashing algorithm to use for hashing the document content and
+            metadata. Default is "sha1".
+            Other options include "blake2b", "sha256", and "sha512".
+
+            .. versionadded:: 0.3.66
+
+        key_encoder: Hashing algorithm to use for hashing the document.
+            If not provided, a default encoder using SHA-1 will be used.
+            SHA-1 is not collision-resistant, and a motivated attacker
+            could craft two different texts that hash to the
+            same cache key.
+
+            New applications should use one of the alternative encoders
+            or provide a custom and strong key encoder function to avoid this risk.
+
+            When changing the key encoder, you must change the
+            index as well to avoid duplicated documents in the cache.
         upsert_kwargs: Additional keyword arguments to pass to the add_documents
                        method of the VectorStore or the upsert method of the
                        DocumentIndex. For example, you can use this to
@@ -313,6 +379,11 @@ def index(
 
         * Added `scoped_full` cleanup mode.
     """
+    # Behavior is deprecated, but we keep it for backwards compatibility.
+    # # Warn only once per process.
+    if key_encoder == "sha1":
+        _warn_about_sha1()
+
     if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
             f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
@@ -373,14 +444,22 @@ def index(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc) for doc in doc_batch]
+                [
+                    _get_document_with_hash(doc, key_encoder=key_encoder)
+                    for doc in doc_batch
+                ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
-            source_id_assigner(doc) for doc in hashed_docs
+            source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
         ]
 
         if cleanup in {"incremental", "scoped_full"}:
@@ -391,8 +470,8 @@ def index(
                         f"Source ids are required when cleanup mode is "
                         f"incremental or scoped_full. "
                         f"Document that starts with "
-                        f"content: {hashed_doc.page_content[:100]} was not assigned "
-                        f"as source id."
+                        f"content: {hashed_doc.page_content[:100]} "
+                        f"was not assigned as source id."
                     )
                     raise ValueError(msg)
                 if cleanup == "scoped_full":
@@ -400,7 +479,9 @@ def index(
             # source ids cannot be None after for loop above.
             source_ids = cast("Sequence[str]", source_ids)
 
-        exists_batch = record_manager.exists([doc.uid for doc in hashed_docs])
+        exists_batch = record_manager.exists(
+            cast("Sequence[str]", [doc.id for doc in hashed_docs])
+        )
 
         # Filter out documents that already exist in the record store.
         uids = []
@@ -408,14 +489,15 @@ def index(
         uids_to_refresh = []
         seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
+            hashed_id = cast("str", hashed_doc.id)
             if doc_exists:
                 if force_update:
-                    seen_docs.add(hashed_doc.uid)
+                    seen_docs.add(hashed_id)
                 else:
-                    uids_to_refresh.append(hashed_doc.uid)
+                    uids_to_refresh.append(hashed_id)
                     continue
-            uids.append(hashed_doc.uid)
-            docs_to_index.append(hashed_doc.to_document())
+            uids.append(hashed_id)
+            docs_to_index.append(hashed_doc)
 
         # Update refresh timestamp
         if uids_to_refresh:
@@ -445,7 +527,7 @@ def index(
         # Update ALL records, even if they already exist since we want to refresh
         # their timestamp.
         record_manager.update(
-            [doc.uid for doc in hashed_docs],
+            cast("Sequence[str]", [doc.id for doc in hashed_docs]),
             group_ids=source_ids,
             time_at_least=index_start_dt,
         )
@@ -453,7 +535,6 @@ def index(
         # If source IDs are provided, we can do the deletion incrementally!
         if cleanup == "incremental":
             # Get the uids of the documents that were not returned by the loader.
-
             # mypy isn't good enough to determine that source ids cannot be None
             # here due to a check that's happening above, so we check again.
             for source_id in source_ids:
@@ -464,10 +545,10 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 _delete(destination, uids_to_delete)
@@ -533,10 +614,13 @@ async def aindex(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
+    key_encoder: Union[
+        Literal["sha1", "sha256", "sha512", "blake2b"], Callable[[Document], str]
+    ] = "sha1",
     upsert_kwargs: Optional[dict[str, Any]] = None,
 ) -> IndexingResult:
     """Async index data from the loader into the vector store.
@@ -596,6 +680,17 @@ async def aindex(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        key_encoder: Hashing algorithm to use for hashing the document.
+            If not provided, a default encoder using SHA-1 will be used.
+            SHA-1 is not collision-resistant, and a motivated attacker
+            could craft two different texts that hash to the
+            same cache key.
+
+            New applications should use one of the alternative encoders
+            or provide a custom and strong key encoder function to avoid this risk.
+
+            When changing the key encoder, you must change the
+            index as well to avoid duplicated documents in the cache.
         upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
                        method of the VectorStore or the aupsert method of the
                        DocumentIndex. For example, you can use this to
@@ -618,6 +713,11 @@ async def aindex(
 
         * Added `scoped_full` cleanup mode.
     """
+    # Behavior is deprecated, but we keep it for backwards compatibility.
+    # # Warn only once per process.
+    if key_encoder == "sha1":
+        _warn_about_sha1()
+
     if cleanup not in {"incremental", "full", "scoped_full", None}:
         msg = (
             f"cleanup should be one of 'incremental', 'full', 'scoped_full' or None. "
@@ -689,11 +789,19 @@ async def aindex(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
-                [_HashedDocument.from_document(doc) for doc in doc_batch]
+                [
+                    _get_document_with_hash(doc, key_encoder=key_encoder)
+                    for doc in doc_batch
+                ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc) for doc in hashed_docs
@@ -707,8 +815,8 @@ async def aindex(
                         f"Source ids are required when cleanup mode is "
                         f"incremental or scoped_full. "
                         f"Document that starts with "
-                        f"content: {hashed_doc.page_content[:100]} was not assigned "
-                        f"as source id."
+                        f"content: {hashed_doc.page_content[:100]} "
+                        f"was not assigned as source id."
                     )
                     raise ValueError(msg)
                 if cleanup == "scoped_full":
@@ -716,7 +824,9 @@ async def aindex(
             # source ids cannot be None after for loop above.
             source_ids = cast("Sequence[str]", source_ids)
 
-        exists_batch = await record_manager.aexists([doc.uid for doc in hashed_docs])
+        exists_batch = await record_manager.aexists(
+            cast("Sequence[str]", [doc.id for doc in hashed_docs])
+        )
 
         # Filter out documents that already exist in the record store.
         uids: list[str] = []
@@ -724,14 +834,15 @@ async def aindex(
         uids_to_refresh = []
         seen_docs: set[str] = set()
         for hashed_doc, doc_exists in zip(hashed_docs, exists_batch):
+            hashed_id = cast("str", hashed_doc.id)
             if doc_exists:
                 if force_update:
-                    seen_docs.add(hashed_doc.uid)
+                    seen_docs.add(hashed_id)
                 else:
-                    uids_to_refresh.append(hashed_doc.uid)
+                    uids_to_refresh.append(hashed_id)
                     continue
-            uids.append(hashed_doc.uid)
-            docs_to_index.append(hashed_doc.to_document())
+            uids.append(hashed_id)
+            docs_to_index.append(hashed_doc)
 
         if uids_to_refresh:
             # Must be updated to refresh timestamp.
@@ -760,7 +871,7 @@ async def aindex(
         # Update ALL records, even if they already exist since we want to refresh
         # their timestamp.
         await record_manager.aupdate(
-            [doc.uid for doc in hashed_docs],
+            cast("Sequence[str]", [doc.id for doc in hashed_docs]),
             group_ids=source_ids,
             time_at_least=index_start_dt,
         )
@@ -780,10 +891,10 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 await _adelete(destination, uids_to_delete)

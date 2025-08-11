@@ -31,9 +31,9 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "BaseRetrievalStrategy",
     "ApproxRetrievalStrategy",
+    "BaseRetrievalStrategy",
+    "ElasticsearchStore",
     "ExactRetrievalStrategy",
     "SparseRetrievalStrategy",
-    "ElasticsearchStore",
 ]

@@ -6,21 +6,21 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
-    AbstractSet,
+    TYPE_CHECKING,
     Any,
     Callable,
-    Collection,
-    Iterable,
-    List,
     Literal,
     Optional,
-    Sequence,
-    Type,
     TypeVar,
     Union,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
+from typing_extensions import Self
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Set as AbstractSet
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: Union[bool, Literal["start", "end"]] = False,
-        add_start_index: bool = False,
-        strip_whitespace: bool = True,
+        keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
+        add_start_index: bool = False,  # noqa: FBT001,FBT002
+        strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
         """Create a new TextSplitter.
 
@@ -51,11 +51,18 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             strip_whitespace: If `True`, strips whitespace from the start and end of
                               every document
         """
+        if chunk_size <= 0:
+            msg = f"chunk_size must be > 0, got {chunk_size}"
+            raise ValueError(msg)
+        if chunk_overlap < 0:
+            msg = f"chunk_overlap must be >= 0, got {chunk_overlap}"
+            raise ValueError(msg)
         if chunk_overlap > chunk_size:
-            raise ValueError(
+            msg = (
                 f"Got a larger chunk overlap ({chunk_overlap}) than chunk size "
                 f"({chunk_size}), should be smaller."
             )
+            raise ValueError(msg)
         self._chunk_size = chunk_size
         self._chunk_overlap = chunk_overlap
         self._length_function = length_function
@@ -64,12 +71,12 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         self._strip_whitespace = strip_whitespace
 
     @abstractmethod
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split text into multiple components."""
 
     def create_documents(
         self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Create documents from a list of texts."""
         _metadatas = metadatas or [{}] * len(texts)
         documents = []
@@ -87,7 +94,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                 documents.append(new_doc)
         return documents
 
-    def split_documents(self, documents: Iterable[Document]) -> List[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> list[Document]:
         """Split documents."""
         texts, metadatas = [], []
         for doc in documents:
@@ -95,22 +102,21 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
 
-    def _join_docs(self, docs: List[str], separator: str) -> Optional[str]:
+    def _join_docs(self, docs: list[str], separator: str) -> Optional[str]:
         text = separator.join(docs)
         if self._strip_whitespace:
             text = text.strip()
         if text == "":
             return None
-        else:
-            return text
+        return text
 
-    def _merge_splits(self, splits: Iterable[str], separator: str) -> List[str]:
+    def _merge_splits(self, splits: Iterable[str], separator: str) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._length_function(separator)
 
         docs = []
-        current_doc: List[str] = []
+        current_doc: list[str] = []
         total = 0
         for d in splits:
             _len = self._length_function(d)
@@ -153,38 +159,41 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             from transformers.tokenization_utils_base import PreTrainedTokenizerBase
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError(
+                msg = (
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
+                raise ValueError(msg)
 
             def _huggingface_tokenizer_length(text: str) -> int:
                 return len(tokenizer.tokenize(text))
 
-        except ImportError:
-            raise ValueError(
+        except ImportError as err:
+            msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
+            raise ValueError(msg) from err
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
-        cls: Type[TS],
+        cls,
         encoding_name: str = "gpt2",
         model_name: Optional[str] = None,
         allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
         disallowed_special: Union[Literal["all"], Collection[str]] = "all",
         **kwargs: Any,
-    ) -> TS:
+    ) -> Self:
         """Text splitter that uses tiktoken encoder to count length."""
         try:
             import tiktoken
-        except ImportError:
-            raise ImportError(
+        except ImportError as err:
+            msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -233,12 +242,13 @@ class TokenTextSplitter(TextSplitter):
         super().__init__(**kwargs)
         try:
             import tiktoken
-        except ImportError:
-            raise ImportError(
+        except ImportError as err:
+            msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
+            raise ImportError(msg) from err
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -248,7 +258,7 @@ class TokenTextSplitter(TextSplitter):
         self._allowed_special = allowed_special
         self._disallowed_special = disallowed_special
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller chunks based on tokenization.
 
         This method uses a custom tokenizer configuration to encode the input text
@@ -264,7 +274,7 @@ class TokenTextSplitter(TextSplitter):
             of the input text based on the tokenization and chunking rules.
         """
 
-        def _encode(_text: str) -> List[int]:
+        def _encode(_text: str) -> list[int]:
             return self._tokenizer.encode(
                 _text,
                 allowed_special=self._allowed_special,
@@ -310,6 +320,7 @@ class Language(str, Enum):
     HASKELL = "haskell"
     ELIXIR = "elixir"
     POWERSHELL = "powershell"
+    VISUALBASIC6 = "visualbasic6"
 
 
 @dataclass(frozen=True)
@@ -320,15 +331,15 @@ class Tokenizer:
     """Overlap in tokens between chunks"""
     tokens_per_chunk: int
     """Maximum number of tokens per chunk"""
-    decode: Callable[[List[int]], str]
+    decode: Callable[[list[int]], str]
     """ Function to decode a list of token ids to a string"""
-    encode: Callable[[str], List[int]]
+    encode: Callable[[str], list[int]]
     """ Function to encode a string to a list of token ids"""
 
 
-def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> List[str]:
+def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
     """Split incoming text and return chunks using tokenizer."""
-    splits: List[str] = []
+    splits: list[str] = []
     input_ids = tokenizer.encode(text)
     start_idx = 0
     cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))

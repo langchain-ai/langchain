@@ -71,7 +71,7 @@ def test_final_answer_after_parsable_action() -> None:
         Observation: I can use the `foo` tool to achieve the goal.
         Action: foo
         Action Input: bar
-        Final Answer: The best pizza to eat is margaritta 
+        Final Answer: The best pizza to eat is margaritta
         """
     with pytest.raises(OutputParserException) as exception_info:
         mrkl_output_parser.parse(llm_output)

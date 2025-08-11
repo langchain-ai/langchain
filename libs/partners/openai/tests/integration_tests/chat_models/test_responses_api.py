@@ -2,7 +2,7 @@
 
 import json
 import os
-from typing import Annotated, Any, Optional, cast
+from typing import Annotated, Any, Literal, Optional, cast
 
 import openai
 import pytest
@@ -17,7 +17,7 @@ from langchain_core.messages import (
 from pydantic import BaseModel
 from typing_extensions import TypedDict
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, custom_tool
 
 MODEL_NAME = "gpt-4o-mini"
 
@@ -50,15 +50,11 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
     assert response.response_metadata["service_tier"]
-    for tool_output in response.additional_kwargs["tool_outputs"]:
-        assert tool_output["id"]
-        assert tool_output["status"]
-        assert tool_output["type"]
 
 
 @pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version="responses/v1")
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -111,6 +107,11 @@ def test_web_search() -> None:
     )
     _check_response(response)
 
+    for msg in [first_response, full, response]:
+        assert isinstance(msg, AIMessage)
+        block_types = [block["type"] for block in msg.content]  # type: ignore[index]
+        assert block_types == ["web_search_call", "text"]
+
 
 @pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
@@ -132,6 +133,12 @@ async def test_web_search_async() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
+
+    for msg in [response, full]:
+        assert msg.additional_kwargs["tool_outputs"]
+        assert len(msg.additional_kwargs["tool_outputs"]) == 1
+        tool_output = msg.additional_kwargs["tool_outputs"][0]
+        assert tool_output["type"] == "web_search_call"
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -288,20 +295,32 @@ def test_function_calling_and_structured_output() -> None:
     assert set(ai_msg.tool_calls[0]["args"]) == {"x", "y"}
 
 
-def test_reasoning() -> None:
-    llm = ChatOpenAI(model="o3-mini", use_responses_api=True)
+@pytest.mark.default_cassette("test_reasoning.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     response = llm.invoke("Hello", reasoning={"effort": "low"})
     assert isinstance(response, AIMessage)
-    assert response.additional_kwargs["reasoning"]
 
     # Test init params + streaming
-    llm = ChatOpenAI(model="o3-mini", reasoning_effort="low", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", reasoning={"effort": "low"}, output_version=output_version
+    )
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("Hello"):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessage)
-    assert full.additional_kwargs["reasoning"]
+
+    for msg in [response, full]:
+        if output_version == "v0":
+            assert msg.additional_kwargs["reasoning"]
+        else:
+            block_types = [block["type"] for block in msg.content]
+            assert block_types == ["reasoning", "text"]
 
 
 def test_stateful_api() -> None:
@@ -355,20 +374,37 @@ def test_file_search() -> None:
     _check_response(full)
 
 
-def test_stream_reasoning_summary() -> None:
+@pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_stream_reasoning_summary(
+    output_version: Literal["v0", "responses/v1"],
+) -> None:
     llm = ChatOpenAI(
         model="o4-mini",
         # Routes to Responses API if `reasoning` is set.
         reasoning={"effort": "medium", "summary": "auto"},
+        output_version=output_version,
     )
-    message_1 = {"role": "user", "content": "What is 3^3?"}
+    message_1 = {
+        "role": "user",
+        "content": "What was the third tallest buliding in the year 2000?",
+    }
     response_1: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([message_1]):
         assert isinstance(chunk, AIMessageChunk)
         response_1 = chunk if response_1 is None else response_1 + chunk
     assert isinstance(response_1, AIMessageChunk)
-    reasoning = response_1.additional_kwargs["reasoning"]
-    assert set(reasoning.keys()) == {"id", "type", "summary"}
+    if output_version == "v0":
+        reasoning = response_1.additional_kwargs["reasoning"]
+        assert set(reasoning.keys()) == {"id", "type", "summary"}
+    else:
+        reasoning = next(
+            block
+            for block in response_1.content
+            if block["type"] == "reasoning"  # type: ignore[index]
+        )
+        assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
     summary = reasoning["summary"]
     assert isinstance(summary, list)
     for block in summary:
@@ -462,11 +498,11 @@ def test_mcp_builtin() -> None:
     )
 
 
-@pytest.mark.skip
+@pytest.mark.vcr
 def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        use_responses_api=True,
+        output_version="responses/v1",
         store=False,
         include=["reasoning.encrypted_content"],
     )
@@ -636,3 +672,56 @@ def test_image_generation_multi_turn() -> None:
     _check_response(ai_message2)
     tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
     assert set(tool_output2.keys()).issubset(expected_keys)
+
+
+@pytest.mark.xfail(
+    reason="verbosity parameter not yet supported by OpenAI Responses API"
+)
+def test_verbosity_parameter() -> None:
+    """Test verbosity parameter with Responses API.
+
+    TODO: This test is expected to fail until OpenAI enables verbosity support
+    in the Responses API for available models. The parameter is properly implemented
+    in the codebase but the API currently returns 'Unknown parameter: verbosity'.
+    Remove @pytest.mark.xfail when OpenAI adds support.
+    """
+    llm = ChatOpenAI(
+        model=MODEL_NAME,
+        verbosity="medium",
+        use_responses_api=True,
+        output_version="responses/v1",
+    )
+    response = llm.invoke([HumanMessage(content="Hello, explain quantum computing.")])
+
+    assert isinstance(response, AIMessage)
+    assert response.content
+    # When verbosity works, we expect the response to respect the verbosity level
+
+
+@pytest.mark.vcr()
+def test_custom_tool() -> None:
+    @custom_tool
+    def execute_code(code: str) -> str:
+        """Execute python code."""
+        return "27"
+
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1").bind_tools(
+        [execute_code]
+    )
+
+    input_message = {"role": "user", "content": "Use the tool to evaluate 3^3."}
+    tool_call_message = llm.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    assert len(tool_call_message.tool_calls) == 1
+    tool_call = tool_call_message.tool_calls[0]
+    tool_message = execute_code.invoke(tool_call)
+    response = llm.invoke([input_message, tool_call_message, tool_message])
+    assert isinstance(response, AIMessage)
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert len(full.tool_calls) == 1

@@ -6,7 +6,7 @@
 
 ## Overview
 
-The **tool** abstraction in LangChain associates a Python **function** with a **schema** that defines the function's **name**, **description** and **expected arguments**. 
+The **tool** abstraction in LangChain associates a Python **function** with a **schema** that defines the function's **name**, **description** and **expected arguments**.
 
 **Tools** can be passed to [chat models](/docs/concepts/chat_models) that support [tool calling](/docs/concepts/tool_calling) allowing the model to request the execution of a specific function with specific inputs.
 
@@ -31,7 +31,7 @@ The key attributes that correspond to the tool's **schema**:
 The key methods to execute the function associated with the **tool**:
 
 - **invoke**: Invokes the tool with the given arguments.
-- **ainvoke**: Invokes the tool with the given arguments, asynchronously. Used for [async programming with Langchain](/docs/concepts/async).
+- **ainvoke**: Invokes the tool with the given arguments, asynchronously. Used for [async programming with LangChain](/docs/concepts/async).
 
 ## Create tools using the `@tool` decorator
 
@@ -68,10 +68,10 @@ You can also inspect the tool's schema and other properties:
 ```python
 print(multiply.name) # multiply
 print(multiply.description) # Multiply two numbers.
-print(multiply.args) 
+print(multiply.args)
 # {
-# 'type': 'object', 
-# 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}}, 
+# 'type': 'object',
+# 'properties': {'a': {'type': 'integer'}, 'b': {'type': 'integer'}},
 # 'required': ['a', 'b']
 # }
 ```
@@ -89,14 +89,14 @@ Please see the [API reference for @tool](https://python.langchain.com/api_refere
 
 ## Tool artifacts
 
-**Tools** are utilities that can be called by a model, and whose outputs are designed to be fed back to a model. Sometimes, however, there are artifacts of a tool's execution that we want to make accessible to downstream components in our chain or agent, but that we don't want to expose to the model itself. For example if a tool returns a custom object, a dataframe or an image, we may want to pass some metadata about this output to the model without passing the actual output to the model. At the same time, we may want to be able to access this full output elsewhere, for example in downstream tools.
+**Tools** are utilities that can be called by a model, and whose outputs are designed to be fed back to a model. Sometimes, however, there are artifacts of a tool's execution that we want to make accessible to downstream components in our chain or agent, but that we don't want to expose to the model itself. For example if a tool returns a custom object, a dataframe or an image, we may want to pass some metadata about this output to the model without passing the actual output. At the same time, we may want to be able to access this full output elsewhere, for example in downstream tools.
 
 ```python
 @tool(response_format="content_and_artifact")
 def some_tool(...) -> Tuple[str, Any]:
     """Tool that does something."""
     ...
-    return 'Message for chat model', some_artifact 
+    return 'Message for chat model', some_artifact
 ```
 
 See [how to return artifacts from tools](/docs/how_to/tool_artifacts/) for more details.
@@ -134,7 +134,7 @@ def user_specific_tool(input_data: str, user_id: InjectedToolArg) -> str:
 Annotating the `user_id` argument with `InjectedToolArg` tells LangChain that this argument should not be exposed as part of the
 tool's schema.
 
-See [how to pass run time values to tools](/docs/how_to/tool_runtime/) for more details on how to use `InjectedToolArg`.  
+See [how to pass run time values to tools](/docs/how_to/tool_runtime/) for more details on how to use `InjectedToolArg`.
 
 
 ### RunnableConfig

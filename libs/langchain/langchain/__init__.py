@@ -1,4 +1,3 @@
-# ruff: noqa: E402
 """Main entrypoint into package."""
 
 import warnings
@@ -29,11 +28,13 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     if replacement:
         warnings.warn(
             f"Importing {name} from langchain root module is no longer supported. "
-            f"Please use {replacement} instead."
+            f"Please use {replacement} instead.",
+            stacklevel=3,
         )
     else:
         warnings.warn(
-            f"Importing {name} from langchain root module is no longer supported."
+            f"Importing {name} from langchain root module is no longer supported.",
+            stacklevel=3,
         )
 
 
@@ -48,26 +49,26 @@ def __getattr__(name: str) -> Any:
         _warn_on_import(name, replacement="langchain.agents.MRKLChain")
 
         return MRKLChain
-    elif name == "ReActChain":
+    if name == "ReActChain":
         from langchain.agents import ReActChain
 
         _warn_on_import(name, replacement="langchain.agents.ReActChain")
 
         return ReActChain
-    elif name == "SelfAskWithSearchChain":
+    if name == "SelfAskWithSearchChain":
         from langchain.agents import SelfAskWithSearchChain
 
         _warn_on_import(name, replacement="langchain.agents.SelfAskWithSearchChain")
 
         return SelfAskWithSearchChain
-    elif name == "ConversationChain":
+    if name == "ConversationChain":
         from langchain.chains import ConversationChain
 
         _warn_on_import(name, replacement="langchain.chains.ConversationChain")
 
         return ConversationChain
-    elif name == "LLMBashChain":
-        raise ImportError(
+    if name == "LLMBashChain":
+        msg = (
             "This module has been moved to langchain-experimental. "
             "For more details: "
             "https://github.com/langchain-ai/langchain/discussions/11352."
@@ -75,154 +76,156 @@ def __getattr__(name: str) -> Any:
             "`from langchain_experimental.llm_bash.base "
             "import LLMBashChain`"
         )
+        raise ImportError(msg)
 
-    elif name == "LLMChain":
+    if name == "LLMChain":
         from langchain.chains import LLMChain
 
         _warn_on_import(name, replacement="langchain.chains.LLMChain")
 
         return LLMChain
-    elif name == "LLMCheckerChain":
+    if name == "LLMCheckerChain":
         from langchain.chains import LLMCheckerChain
 
         _warn_on_import(name, replacement="langchain.chains.LLMCheckerChain")
 
         return LLMCheckerChain
-    elif name == "LLMMathChain":
+    if name == "LLMMathChain":
         from langchain.chains import LLMMathChain
 
         _warn_on_import(name, replacement="langchain.chains.LLMMathChain")
 
         return LLMMathChain
-    elif name == "QAWithSourcesChain":
+    if name == "QAWithSourcesChain":
         from langchain.chains import QAWithSourcesChain
 
         _warn_on_import(name, replacement="langchain.chains.QAWithSourcesChain")
 
         return QAWithSourcesChain
-    elif name == "VectorDBQA":
+    if name == "VectorDBQA":
         from langchain.chains import VectorDBQA
 
         _warn_on_import(name, replacement="langchain.chains.VectorDBQA")
 
         return VectorDBQA
-    elif name == "VectorDBQAWithSourcesChain":
+    if name == "VectorDBQAWithSourcesChain":
         from langchain.chains import VectorDBQAWithSourcesChain
 
         _warn_on_import(name, replacement="langchain.chains.VectorDBQAWithSourcesChain")
 
         return VectorDBQAWithSourcesChain
-    elif name == "InMemoryDocstore":
+    if name == "InMemoryDocstore":
         from langchain_community.docstore import InMemoryDocstore
 
         _warn_on_import(name, replacement="langchain.docstore.InMemoryDocstore")
 
         return InMemoryDocstore
-    elif name == "Wikipedia":
+    if name == "Wikipedia":
         from langchain_community.docstore import Wikipedia
 
         _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
 
         return Wikipedia
-    elif name == "Anthropic":
+    if name == "Anthropic":
         from langchain_community.llms import Anthropic
 
         _warn_on_import(name, replacement="langchain_community.llms.Anthropic")
 
         return Anthropic
-    elif name == "Banana":
+    if name == "Banana":
         from langchain_community.llms import Banana
 
         _warn_on_import(name, replacement="langchain_community.llms.Banana")
 
         return Banana
-    elif name == "CerebriumAI":
+    if name == "CerebriumAI":
         from langchain_community.llms import CerebriumAI
 
         _warn_on_import(name, replacement="langchain_community.llms.CerebriumAI")
 
         return CerebriumAI
-    elif name == "Cohere":
+    if name == "Cohere":
         from langchain_community.llms import Cohere
 
         _warn_on_import(name, replacement="langchain_community.llms.Cohere")
 
         return Cohere
-    elif name == "ForefrontAI":
+    if name == "ForefrontAI":
         from langchain_community.llms import ForefrontAI
 
         _warn_on_import(name, replacement="langchain_community.llms.ForefrontAI")
 
         return ForefrontAI
-    elif name == "GooseAI":
+    if name == "GooseAI":
         from langchain_community.llms import GooseAI
 
         _warn_on_import(name, replacement="langchain_community.llms.GooseAI")
 
         return GooseAI
-    elif name == "HuggingFaceHub":
+    if name == "HuggingFaceHub":
         from langchain_community.llms import HuggingFaceHub
 
         _warn_on_import(name, replacement="langchain_community.llms.HuggingFaceHub")
 
         return HuggingFaceHub
-    elif name == "HuggingFaceTextGenInference":
+    if name == "HuggingFaceTextGenInference":
         from langchain_community.llms import HuggingFaceTextGenInference
 
         _warn_on_import(
-            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
+            name,
+            replacement="langchain_community.llms.HuggingFaceTextGenInference",
         )
 
         return HuggingFaceTextGenInference
-    elif name == "LlamaCpp":
+    if name == "LlamaCpp":
         from langchain_community.llms import LlamaCpp
 
         _warn_on_import(name, replacement="langchain_community.llms.LlamaCpp")
 
         return LlamaCpp
-    elif name == "Modal":
+    if name == "Modal":
         from langchain_community.llms import Modal
 
         _warn_on_import(name, replacement="langchain_community.llms.Modal")
 
         return Modal
-    elif name == "OpenAI":
+    if name == "OpenAI":
         from langchain_community.llms import OpenAI
 
         _warn_on_import(name, replacement="langchain_community.llms.OpenAI")
 
         return OpenAI
-    elif name == "Petals":
+    if name == "Petals":
         from langchain_community.llms import Petals
 
         _warn_on_import(name, replacement="langchain_community.llms.Petals")
 
         return Petals
-    elif name == "PipelineAI":
+    if name == "PipelineAI":
         from langchain_community.llms import PipelineAI
 
         _warn_on_import(name, replacement="langchain_community.llms.PipelineAI")
 
         return PipelineAI
-    elif name == "SagemakerEndpoint":
+    if name == "SagemakerEndpoint":
         from langchain_community.llms import SagemakerEndpoint
 
         _warn_on_import(name, replacement="langchain_community.llms.SagemakerEndpoint")
 
         return SagemakerEndpoint
-    elif name == "StochasticAI":
+    if name == "StochasticAI":
         from langchain_community.llms import StochasticAI
 
         _warn_on_import(name, replacement="langchain_community.llms.StochasticAI")
 
         return StochasticAI
-    elif name == "Writer":
+    if name == "Writer":
         from langchain_community.llms import Writer
 
         _warn_on_import(name, replacement="langchain_community.llms.Writer")
 
         return Writer
-    elif name == "HuggingFacePipeline":
+    if name == "HuggingFacePipeline":
         from langchain_community.llms.huggingface_pipeline import HuggingFacePipeline
 
         _warn_on_import(
@@ -231,15 +234,16 @@ def __getattr__(name: str) -> Any:
         )
 
         return HuggingFacePipeline
-    elif name == "FewShotPromptTemplate":
+    if name == "FewShotPromptTemplate":
         from langchain_core.prompts import FewShotPromptTemplate
 
         _warn_on_import(
-            name, replacement="langchain_core.prompts.FewShotPromptTemplate"
+            name,
+            replacement="langchain_core.prompts.FewShotPromptTemplate",
         )
 
         return FewShotPromptTemplate
-    elif name == "Prompt":
+    if name == "Prompt":
         from langchain_core.prompts import PromptTemplate
 
         _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
@@ -247,112 +251,122 @@ def __getattr__(name: str) -> Any:
         # it's renamed as prompt template anyways
         # this is just for backwards compat
         return PromptTemplate
-    elif name == "PromptTemplate":
+    if name == "PromptTemplate":
         from langchain_core.prompts import PromptTemplate
 
         _warn_on_import(name, replacement="langchain_core.prompts.PromptTemplate")
 
         return PromptTemplate
-    elif name == "BasePromptTemplate":
+    if name == "BasePromptTemplate":
         from langchain_core.prompts import BasePromptTemplate
 
         _warn_on_import(name, replacement="langchain_core.prompts.BasePromptTemplate")
 
         return BasePromptTemplate
-    elif name == "ArxivAPIWrapper":
+    if name == "ArxivAPIWrapper":
         from langchain_community.utilities import ArxivAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.ArxivAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.ArxivAPIWrapper",
         )
 
         return ArxivAPIWrapper
-    elif name == "GoldenQueryAPIWrapper":
+    if name == "GoldenQueryAPIWrapper":
         from langchain_community.utilities import GoldenQueryAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoldenQueryAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoldenQueryAPIWrapper",
         )
 
         return GoldenQueryAPIWrapper
-    elif name == "GoogleSearchAPIWrapper":
+    if name == "GoogleSearchAPIWrapper":
         from langchain_community.utilities import GoogleSearchAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSearchAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoogleSearchAPIWrapper",
         )
 
         return GoogleSearchAPIWrapper
-    elif name == "GoogleSerperAPIWrapper":
+    if name == "GoogleSerperAPIWrapper":
         from langchain_community.utilities import GoogleSerperAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSerperAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoogleSerperAPIWrapper",
         )
 
         return GoogleSerperAPIWrapper
-    elif name == "PowerBIDataset":
+    if name == "PowerBIDataset":
         from langchain_community.utilities import PowerBIDataset
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.PowerBIDataset"
+            name,
+            replacement="langchain_community.utilities.PowerBIDataset",
         )
 
         return PowerBIDataset
-    elif name == "SearxSearchWrapper":
+    if name == "SearxSearchWrapper":
         from langchain_community.utilities import SearxSearchWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.SearxSearchWrapper"
+            name,
+            replacement="langchain_community.utilities.SearxSearchWrapper",
         )
 
         return SearxSearchWrapper
-    elif name == "WikipediaAPIWrapper":
+    if name == "WikipediaAPIWrapper":
         from langchain_community.utilities import WikipediaAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.WikipediaAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.WikipediaAPIWrapper",
         )
 
         return WikipediaAPIWrapper
-    elif name == "WolframAlphaAPIWrapper":
+    if name == "WolframAlphaAPIWrapper":
         from langchain_community.utilities import WolframAlphaAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.WolframAlphaAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.WolframAlphaAPIWrapper",
         )
 
         return WolframAlphaAPIWrapper
-    elif name == "SQLDatabase":
+    if name == "SQLDatabase":
         from langchain_community.utilities import SQLDatabase
 
         _warn_on_import(name, replacement="langchain_community.utilities.SQLDatabase")
 
         return SQLDatabase
-    elif name == "FAISS":
+    if name == "FAISS":
         from langchain_community.vectorstores import FAISS
 
         _warn_on_import(name, replacement="langchain_community.vectorstores.FAISS")
 
         return FAISS
-    elif name == "ElasticVectorSearch":
+    if name == "ElasticVectorSearch":
         from langchain_community.vectorstores import ElasticVectorSearch
 
         _warn_on_import(
-            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
+            name,
+            replacement="langchain_community.vectorstores.ElasticVectorSearch",
         )
 
         return ElasticVectorSearch
     # For backwards compatibility
-    elif name == "SerpAPIChain" or name == "SerpAPIWrapper":
+    if name in {"SerpAPIChain", "SerpAPIWrapper"}:
         from langchain_community.utilities import SerpAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.SerpAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.SerpAPIWrapper",
         )
 
         return SerpAPIWrapper
-    elif name == "verbose":
+    if name == "verbose":
         from langchain.globals import _verbose
 
         _warn_on_import(
@@ -363,7 +377,7 @@ def __getattr__(name: str) -> Any:
         )
 
         return _verbose
-    elif name == "debug":
+    if name == "debug":
         from langchain.globals import _debug
 
         _warn_on_import(
@@ -374,7 +388,7 @@ def __getattr__(name: str) -> Any:
         )
 
         return _debug
-    elif name == "llm_cache":
+    if name == "llm_cache":
         from langchain.globals import _llm_cache
 
         _warn_on_import(
@@ -385,55 +399,55 @@ def __getattr__(name: str) -> Any:
         )
 
         return _llm_cache
-    else:
-        raise AttributeError(f"Could not find: {name}")
+    msg = f"Could not find: {name}"
+    raise AttributeError(msg)
 
 
 __all__ = [
+    "FAISS",
+    "Anthropic",
+    "ArxivAPIWrapper",
+    "Banana",
+    "BasePromptTemplate",
+    "CerebriumAI",
+    "Cohere",
+    "ConversationChain",
+    "ElasticVectorSearch",
+    "FewShotPromptTemplate",
+    "ForefrontAI",
+    "GoldenQueryAPIWrapper",
+    "GoogleSearchAPIWrapper",
+    "GoogleSerperAPIWrapper",
+    "GooseAI",
+    "HuggingFaceHub",
+    "HuggingFacePipeline",
+    "HuggingFaceTextGenInference",
+    "InMemoryDocstore",
     "LLMChain",
     "LLMCheckerChain",
     "LLMMathChain",
-    "ArxivAPIWrapper",
-    "GoldenQueryAPIWrapper",
-    "SelfAskWithSearchChain",
-    "SerpAPIWrapper",
-    "SerpAPIChain",
-    "SearxSearchWrapper",
-    "GoogleSearchAPIWrapper",
-    "GoogleSerperAPIWrapper",
-    "WolframAlphaAPIWrapper",
-    "WikipediaAPIWrapper",
-    "Anthropic",
-    "Banana",
-    "CerebriumAI",
-    "Cohere",
-    "ForefrontAI",
-    "GooseAI",
+    "LlamaCpp",
+    "MRKLChain",
     "Modal",
     "OpenAI",
     "Petals",
     "PipelineAI",
-    "StochasticAI",
-    "Writer",
-    "BasePromptTemplate",
-    "Prompt",
-    "FewShotPromptTemplate",
-    "PromptTemplate",
-    "ReActChain",
-    "Wikipedia",
-    "HuggingFaceHub",
-    "SagemakerEndpoint",
-    "HuggingFacePipeline",
-    "SQLDatabase",
     "PowerBIDataset",
-    "FAISS",
-    "MRKLChain",
-    "VectorDBQA",
-    "ElasticVectorSearch",
-    "InMemoryDocstore",
-    "ConversationChain",
-    "VectorDBQAWithSourcesChain",
+    "Prompt",
+    "PromptTemplate",
     "QAWithSourcesChain",
-    "LlamaCpp",
-    "HuggingFaceTextGenInference",
+    "ReActChain",
+    "SQLDatabase",
+    "SagemakerEndpoint",
+    "SearxSearchWrapper",
+    "SelfAskWithSearchChain",
+    "SerpAPIChain",
+    "SerpAPIWrapper",
+    "StochasticAI",
+    "VectorDBQA",
+    "VectorDBQAWithSourcesChain",
+    "Wikipedia",
+    "WikipediaAPIWrapper",
+    "WolframAlphaAPIWrapper",
+    "Writer",
 ]

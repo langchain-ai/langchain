@@ -9,6 +9,7 @@ import pytest
 from pydantic import SecretStr
 
 from langchain_core import utils
+from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -16,10 +17,6 @@ from langchain_core.utils import (
     guard_import,
 )
 from langchain_core.utils._merge import merge_dicts
-from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V1,
-    IS_PYDANTIC_V2,
-)
 from langchain_core.utils.utils import secret_from_env
 
 
@@ -214,7 +211,6 @@ def test_guard_import_failure(
         guard_import(module_name, pip_name=pip_name, package=package)
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v1_in_2() -> None:
     from pydantic.v1 import BaseModel as PydanticV1BaseModel
     from pydantic.v1 import Field
@@ -229,22 +225,7 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
     assert result == expected
 
 
-@pytest.mark.skipif(not IS_PYDANTIC_V2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field
-
-    class PydanticModel(BaseModel):
-        field1: str
-        field2: int
-        alias_field: int = Field(alias="aliased_field")
-
-    result = get_pydantic_field_names(PydanticModel)
-    expected = {"field1", "field2", "aliased_field", "alias_field"}
-    assert result == expected
-
-
-@pytest.mark.skipif(not IS_PYDANTIC_V1, reason="Requires pydantic 1")
-def test_get_pydantic_field_names_v1() -> None:
     from pydantic import BaseModel, Field
 
     class PydanticModel(BaseModel):
@@ -395,3 +376,10 @@ def test_using_secret_from_env_as_default_factory(
 
     with pytest.raises(ValueError, match="Did not find FOOFOOFOOBAR"):
         OhMy()
+
+
+def test_generation_chunk_addition_type_error() -> None:
+    chunk1 = GenerationChunk(text="", generation_info={"len": 0})
+    chunk2 = GenerationChunk(text="Non-empty text", generation_info={"len": 14})
+    result = chunk1 + chunk2
+    assert result == GenerationChunk(text="Non-empty text", generation_info={"len": 14})

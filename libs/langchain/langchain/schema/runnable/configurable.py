@@ -8,8 +8,8 @@ from langchain_core.runnables.configurable import (
 
 __all__ = [
     "DynamicRunnable",
+    "RunnableConfigurableAlternatives",
     "RunnableConfigurableFields",
     "StrEnum",
-    "RunnableConfigurableAlternatives",
     "make_options_spec",
 ]
