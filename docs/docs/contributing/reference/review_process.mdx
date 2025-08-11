@@ -8,7 +8,7 @@ This document outlines the process used by the LangChain maintainers for reviewi
 
 We categorize PRs using three main statuses, which are marked as project item statuses in the right sidebar and can be viewed in detail [here](https://github.com/orgs/langchain-ai/projects/12/views/1).
 
-- **Triage**: 
+- **Triage**:
   - Initial status for all newly submitted PRs.
   - Requires a maintainer to categorize it into one of the other statuses.
 
@@ -32,7 +32,7 @@ by the submitter.
 
 ## Review Guidelines
 
-1. **PRs that touch /libs/core**:
+1. **PRs that touch `/libs/core`**:
    - PRs that directly impact core code and are likely to affect end users.
    - **Triage Guideline**: most PRs should either go straight to `In Review` or closed.
    - These PRs are given top priority and are reviewed the fastest.
@@ -40,13 +40,13 @@ by the submitter.
    - PRs that don't have unit tests are likely to be closed.
    - Feature requests should first be opened as a GitHub issue and discussed with the LangChain maintainers. Large PRs submitted without prior discussion are likely to be closed.
 
-2. **PRs that touch /libs/langchain**:
+2. **PRs that touch `/libs/langchain`**:
    - High-impact PRs that are closely related to core PRs but slightly lower in priority.
    - **Triage Guideline**: most PRs should either go straight to `In Review` or closed.
    - These are reviewed and closed aggressively, similar to core PRs.
    - New feature requests should be discussed with the core maintainer team beforehand in an issue.
 
-3. **PRs that touch /libs/partners/**:
+3. **PRs that touch `/libs/partners/`**:
    - PRs involving integration packages.
    - **Triage Guideline**: most PRs should either go straight to `In Review` or closed.
    - The review may be conducted by our team or handed off to the partner's development team, depending on the PR's content.
@@ -59,7 +59,7 @@ by the submitter.
    - PRs in the `Needs Support` status for 20 days are marked as “stale” and will be closed after 30 days if no action is taken.
 
 5. **Documentation PRs**:
-   - PRs that touch the documentation content in docs/docs.
+   - PRs that touch the documentation content in `docs/docs`.
    - **Triage Guideline**:
       - PRs that fix typos or small errors in a single file and pass CI should go straight to `In Review`.
       - PRs that make changes that have been discussed and agreed upon in an issue should go straight to `In Review`.
@@ -88,8 +88,3 @@ Our goal is to provide the best possible development experience by focusing on m
 - Is easy: Is intuitive to use and well-documented.
 
 We believe this process reflects our priorities and are open to feedback if you feel it does not.
-
-## Github Discussion
-
-We welcome your feedback on this process. Please feel free to add a comment in 
-[this GitHub Discussion](https://github.com/langchain-ai/langchain/discussions/25920).

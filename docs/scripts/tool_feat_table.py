@@ -71,7 +71,7 @@ SEARCH_TOOL_FEAT_TABLE = {
 
 CODE_INTERPRETER_TOOL_FEAT_TABLE = {
     "Bearly Code Interpreter": {
-        "langauges": "Python",
+        "languages": "Python",
         "sandbox_lifetime": "Resets on Execution",
         "upload": True,
         "return_results": "Text",
@@ -79,7 +79,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "self_hosting": False,
     },
     "Riza Code Interpreter": {
-        "langauges": "Python, JavaScript, PHP, Ruby",
+        "languages": "Python, JavaScript, PHP, Ruby",
         "sandbox_lifetime": "Resets on Execution",
         "upload": True,
         "return_results": "Text",
@@ -87,7 +87,7 @@ CODE_INTERPRETER_TOOL_FEAT_TABLE = {
         "self_hosting": True,
     },
     "Azure Container Apps dynamic sessions": {
-        "langauges": "Python",
+        "languages": "Python",
         "sandbox_lifetime": "1 Hour",
         "upload": True,
         "return_results": "Text, Images",
@@ -162,6 +162,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": False,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
+    "Oxylabs Web Scraper API": {
+        "link": "/docs/integrations/tools/oxylabs",
+        "interactions": False,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
@@ -176,6 +181,10 @@ DATABASE_TOOL_FEAT_TABLE = {
     "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
+    },
+    "MCP Toolbox": {
+        "link": "/docs/integrations/tools/toolbox",
+        "operations": "Any SQL operation",
     },
 }
 
@@ -350,7 +359,7 @@ def get_code_interpreter_table() -> str:
     """Get the table of code interpreter tools."""
     header = [
         "tool",
-        "langauges",
+        "languages",
         "sandbox_lifetime",
         "upload",
         "return_results",

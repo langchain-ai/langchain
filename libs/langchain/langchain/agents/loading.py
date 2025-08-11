@@ -20,11 +20,15 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/age
 
 
 def _load_agent_from_tools(
-    config: dict, llm: BaseLanguageModel, tools: list[Tool], **kwargs: Any
+    config: dict,
+    llm: BaseLanguageModel,
+    tools: list[Tool],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
-        raise ValueError(f"Loading {config_type} agent not supported")
+        msg = f"Loading {config_type} agent not supported"
+        raise ValueError(msg)
 
     agent_cls = AGENT_TO_CLASS[config_type]
     combined_config = {**config, **kwargs}
@@ -53,23 +57,27 @@ def load_agent_from_config(
         ValueError: If agent type is not specified in the config.
     """
     if "_type" not in config:
-        raise ValueError("Must specify an agent Type in config")
+        msg = "Must specify an agent Type in config"
+        raise ValueError(msg)
     load_from_tools = config.pop("load_from_llm_and_tools", False)
     if load_from_tools:
         if llm is None:
-            raise ValueError(
+            msg = (
                 "If `load_from_llm_and_tools` is set to True, then LLM must be provided"
             )
+            raise ValueError(msg)
         if tools is None:
-            raise ValueError(
+            msg = (
                 "If `load_from_llm_and_tools` is set to True, "
                 "then tools must be provided"
             )
+            raise ValueError(msg)
         return _load_agent_from_tools(config, llm, tools, **kwargs)
     config_type = config.pop("_type")
 
     if config_type not in AGENT_TO_CLASS:
-        raise ValueError(f"Loading {config_type} agent not supported")
+        msg = f"Loading {config_type} agent not supported"
+        raise ValueError(msg)
 
     agent_cls = AGENT_TO_CLASS[config_type]
     if "llm_chain" in config:
@@ -77,11 +85,12 @@ def load_agent_from_config(
     elif "llm_chain_path" in config:
         config["llm_chain"] = load_chain(config.pop("llm_chain_path"))
     else:
-        raise ValueError("One of `llm_chain` and `llm_chain_path` should be specified.")
+        msg = "One of `llm_chain` and `llm_chain_path` should be specified."
+        raise ValueError(msg)
     if "output_parser" in config:
         logger.warning(
             "Currently loading output parsers on agent is not supported, "
-            "will just use the default one."
+            "will just use the default one.",
         )
         del config["output_parser"]
 
@@ -91,7 +100,8 @@ def load_agent_from_config(
 
 @deprecated("0.1.0", removal="1.0")
 def load_agent(
-    path: Union[str, Path], **kwargs: Any
+    path: Union[str, Path],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Unified method for loading an agent from LangChainHub or local fs.
 
@@ -107,32 +117,32 @@ def load_agent(
             Hub is attempted.
     """
     if isinstance(path, str) and path.startswith("lc://"):
-        raise RuntimeError(
+        msg = (
             "Loading from the deprecated github-based Hub is no longer supported. "
             "Please use the new LangChain Hub at https://smith.langchain.com/hub "
             "instead."
         )
+        raise RuntimeError(msg)
     return _load_agent_from_file(path, **kwargs)
 
 
 def _load_agent_from_file(
-    file: Union[str, Path], **kwargs: Any
+    file: Union[str, Path],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Load agent from file."""
     valid_suffixes = {"json", "yaml"}
     # Convert file to Path object.
-    if isinstance(file, str):
-        file_path = Path(file)
-    else:
-        file_path = file
+    file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix[1:] == "json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix[1:] == "yaml":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
-        raise ValueError(f"Unsupported file type, must be one of {valid_suffixes}.")
+        msg = f"Unsupported file type, must be one of {valid_suffixes}."
+        raise ValueError(msg)
     # Load the agent from the config now.
     return load_agent_from_config(config, **kwargs)

@@ -38,11 +38,11 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AzureMLEndpointClient",
-    "ContentFormatterBase",
-    "GPT2ContentFormatter",
-    "OSSContentFormatter",
-    "HFContentFormatter",
-    "DollyContentFormatter",
-    "CustomOpenAIContentFormatter",
     "AzureMLOnlineEndpoint",
+    "ContentFormatterBase",
+    "CustomOpenAIContentFormatter",
+    "DollyContentFormatter",
+    "GPT2ContentFormatter",
+    "HFContentFormatter",
+    "OSSContentFormatter",
 ]

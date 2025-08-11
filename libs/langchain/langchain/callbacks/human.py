@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "HumanRejectedException",
-    "HumanApprovalCallbackHandler",
     "AsyncHumanApprovalCallbackHandler",
+    "HumanApprovalCallbackHandler",
+    "HumanRejectedException",
 ]

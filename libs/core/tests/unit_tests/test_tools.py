@@ -544,8 +544,9 @@ def test_empty_args_decorator() -> None:
 def test_tool_from_function_with_run_manager() -> None:
     """Test run of tool when using run_manager."""
 
-    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:
-        """Docstring
+    def foo(bar: str, callbacks: Optional[CallbackManagerForToolRun] = None) -> str:  # noqa: D417
+        """Docstring.
+
         Args:
             bar: str.
         """
@@ -562,7 +563,7 @@ def test_tool_from_function_with_run_manager() -> None:
 def test_structured_tool_from_function_with_run_manager() -> None:
     """Test args and schema of structured tool when using callbacks."""
 
-    def foo(
+    def foo(  # noqa: D417
         bar: int, baz: str, callbacks: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """Docstring.
@@ -700,6 +701,12 @@ def test_missing_docstring() -> None:
         def search_api(query: str) -> str:
             return "API result"
 
+    @tool
+    class MyTool(BaseModel):
+        foo: str
+
+    assert MyTool.description == ""  # type: ignore[attr-defined]
+
 
 def test_create_tool_positional_args() -> None:
     """Test that positional arguments are allowed."""
@@ -752,16 +759,16 @@ class _FakeExceptionTool(BaseTool):
 
 
 def test_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = _tool.run({})
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -771,28 +778,28 @@ def test_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = _tool.run({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_exception_handling_bool() -> None:
-    _tool = _FakeExceptionTool(handle_tool_error=True)
+    tool_ = _FakeExceptionTool(handle_tool_error=True)
     expected = "Tool execution error"
-    actual = await _tool.arun({})
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_str() -> None:
     expected = "foo bar"
-    _tool = _FakeExceptionTool(handle_tool_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -802,15 +809,15 @@ async def test_async_exception_handling_callable() -> None:
     def handling(e: ToolException) -> str:
         return expected
 
-    _tool = _FakeExceptionTool(handle_tool_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _FakeExceptionTool(handle_tool_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_exception_handling_non_tool_exception() -> None:
-    _tool = _FakeExceptionTool(exception=ValueError("some error"))
+    tool_ = _FakeExceptionTool(exception=ValueError("some error"))
     with pytest.raises(ValueError, match="some error"):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_structured_tool_from_function() -> None:
@@ -850,16 +857,16 @@ def test_structured_tool_from_function() -> None:
 def test_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = tool_.run({})
     assert expected == actual
 
 
 def test_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -870,8 +877,8 @@ def test_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = _tool.run({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = tool_.run({})
     assert expected == actual
 
 
@@ -884,6 +891,7 @@ def test_validation_error_handling_callable() -> None:
     ],
 )
 def test_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -907,24 +915,24 @@ def test_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        _tool.run({})
+        tool_.run({})
 
 
 async def test_async_validation_error_handling_bool() -> None:
     """Test that validation errors are handled correctly."""
     expected = "Tool input validation error"
-    _tool = _MockStructuredTool(handle_validation_error=True)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=True)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
 async def test_async_validation_error_handling_str() -> None:
     """Test that validation errors are handled correctly."""
     expected = "foo bar"
-    _tool = _MockStructuredTool(handle_validation_error=expected)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=expected)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -935,8 +943,8 @@ async def test_async_validation_error_handling_callable() -> None:
     def handling(e: Union[ValidationError, ValidationErrorV1]) -> str:
         return expected
 
-    _tool = _MockStructuredTool(handle_validation_error=handling)
-    actual = await _tool.arun({})
+    tool_ = _MockStructuredTool(handle_validation_error=handling)
+    actual = await tool_.arun({})
     assert expected == actual
 
 
@@ -949,6 +957,7 @@ async def test_async_validation_error_handling_callable() -> None:
     ],
 )
 async def test_async_validation_error_handling_non_validation_error(
+    *,
     handler: Union[
         bool, str, Callable[[Union[ValidationError, ValidationErrorV1]], str]
     ],
@@ -972,9 +981,9 @@ async def test_async_validation_error_handling_non_validation_error(
         async def _arun(self) -> str:
             return "dummy"
 
-    _tool = _RaiseNonValidationErrorTool(handle_validation_error=handler)
+    tool_ = _RaiseNonValidationErrorTool(handle_validation_error=handler)
     with pytest.raises(NotImplementedError):
-        await _tool.arun({})
+        await tool_.arun({})
 
 
 def test_optional_subset_model_rewrite() -> None:
@@ -1191,7 +1200,7 @@ def test_tool_arg_descriptions() -> None:
     assert args_schema == expected
 
     # Test parsing with run_manager does not raise error
-    def foo3(
+    def foo3(  # noqa: D417
         bar: str, baz: int, run_manager: Optional[CallbackManagerForToolRun] = None
     ) -> str:
         """The foo.
@@ -1308,7 +1317,7 @@ def test_docstring_parsing() -> None:
 
 
 def test_tool_invalid_docstrings() -> None:
-    """Test invalid docstrings"""
+    """Test invalid docstrings."""
 
     def foo3(bar: str, baz: int) -> str:
         """The foo."""
@@ -1319,14 +1328,14 @@ def test_tool_invalid_docstrings() -> None:
         Args:
             bar: The bar.
             baz: The baz.
-        """
+        """  # noqa: D205,D411
         return bar
 
     for func in {foo3, foo4}:
         with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
             _ = tool(func, parse_docstring=True)
 
-    def foo5(bar: str, baz: int) -> str:
+    def foo5(bar: str, baz: int) -> str:  # noqa: D417
         """The foo.
 
         Args:
@@ -1889,6 +1898,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     Please note that this will test using pydantic 2 even though BaseTool
     is a pydantic 1 model!
+
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
     from pydantic import BaseModel
@@ -2331,6 +2341,9 @@ def test_tool_return_output_mixin() -> None:
         def __eq__(self, other: object) -> bool:
             return isinstance(other, self.__class__) and self.x == other.x
 
+        def __hash__(self) -> int:
+            return hash(self.x)
+
     @tool
     def foo(x: int) -> Bar:
         """Foo."""
@@ -2572,6 +2585,18 @@ def test_title_property_preserved() -> None:
         },
         "type": "function",
     }
+
+
+def test_nested_pydantic_fields() -> None:
+    class Address(BaseModel):
+        street: str
+
+    class Person(BaseModel):
+        name: str
+        address: Address = Field(description="Home address")
+
+    result = convert_to_openai_tool(Person)
+    assert len(result["function"]["parameters"]["properties"]) == 2
 
 
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:

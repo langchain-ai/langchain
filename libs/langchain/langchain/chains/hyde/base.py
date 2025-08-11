@@ -47,8 +47,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Output keys for Hyde's LLM chain."""
         if isinstance(self.llm_chain, LLMChain):
             return self.llm_chain.output_keys
-        else:
-            return ["text"]
+        return ["text"]
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Call the base embeddings."""
@@ -66,7 +65,7 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
                 "HypotheticalDocumentEmbedder will use a pure Python implementation "
                 "for internal calculations, which may significantly impact "
                 "performance, especially for large datasets. For optimal speed and "
-                "efficiency, consider installing NumPy: pip install numpy"
+                "efficiency, consider installing NumPy: pip install numpy",
             )
             if not embeddings:
                 return []
@@ -92,7 +91,8 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         """Call the internal llm chain."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         return self.llm_chain.invoke(
-            inputs, config={"callbacks": _run_manager.get_child()}
+            inputs,
+            config={"callbacks": _run_manager.get_child()},
         )
 
     @classmethod
@@ -110,10 +110,11 @@ class HypotheticalDocumentEmbedder(Chain, Embeddings):
         elif prompt_key is not None and prompt_key in PROMPT_MAP:
             prompt = PROMPT_MAP[prompt_key]
         else:
-            raise ValueError(
+            msg = (
                 f"Must specify prompt_key if custom_prompt not provided. Should be one "
                 f"of {list(PROMPT_MAP.keys())}."
             )
+            raise ValueError(msg)
 
         llm_chain = prompt | llm | StrOutputParser()
         return cls(base_embeddings=base_embeddings, llm_chain=llm_chain, **kwargs)

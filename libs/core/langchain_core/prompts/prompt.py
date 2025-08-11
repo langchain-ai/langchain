@@ -56,6 +56,7 @@ class PromptTemplate(StringPromptTemplate):
 
             # Instantiation using initializer
             prompt = PromptTemplate(template="Say {foo}")
+
     """
 
     @property
@@ -287,17 +288,17 @@ class PromptTemplate(StringPromptTemplate):
             The prompt template loaded from the template.
         """
         input_variables = get_template_variables(template, template_format)
-        _partial_variables = partial_variables or {}
+        partial_variables_ = partial_variables or {}
 
-        if _partial_variables:
+        if partial_variables_:
             input_variables = [
-                var for var in input_variables if var not in _partial_variables
+                var for var in input_variables if var not in partial_variables_
             ]
 
         return cls(
             input_variables=input_variables,
             template=template,
             template_format=template_format,
-            partial_variables=_partial_variables,
+            partial_variables=partial_variables_,
             **kwargs,
         )

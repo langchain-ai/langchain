@@ -1,5 +1,4 @@
-# flake8: noqa
-PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""
+PREFIX = """Answer the following questions as best you can. You have access to the following tools:"""  # noqa: E501
 FORMAT_INSTRUCTIONS = """Use the following format:
 
 Question: the input question you must answer

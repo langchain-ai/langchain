@@ -7,4 +7,4 @@ from langchain.evaluation.qa.eval_chain import (
 )
 from langchain.evaluation.qa.generate_chain import QAGenerateChain
 
-__all__ = ["QAEvalChain", "QAGenerateChain", "ContextQAEvalChain", "CotQAEvalChain"]
+__all__ = ["ContextQAEvalChain", "CotQAEvalChain", "QAEvalChain", "QAGenerateChain"]

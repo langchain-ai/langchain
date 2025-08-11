@@ -13,6 +13,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -49,21 +50,23 @@ class ChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
+            msg = "agent_scratchpad should be of type string."
+            raise ValueError(msg)  # noqa: TRY004
         if agent_scratchpad:
             return (
                 f"This was your previous work "
                 f"(but I haven't seen any of it! I only see what "
                 f"you return as final answer):\n{agent_scratchpad}"
             )
-        else:
-            return agent_scratchpad
+        return agent_scratchpad
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
 
@@ -106,14 +109,7 @@ class ChatAgent(Agent):
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join(
-            [
-                system_message_prefix,
-                tool_strings,
-                format_instructions,
-                system_message_suffix,
-            ]
-        )
+        template = f"{system_message_prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{system_message_suffix}"  # noqa: E501
         messages = [
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template(human_message),

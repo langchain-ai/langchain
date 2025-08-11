@@ -1,4 +1,4 @@
-name: Integration docs lint
+name: '📑 Integration Docs Lint'
 
 on:
   push:
@@ -15,6 +15,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -30,6 +33,6 @@ jobs:
             *.ipynb
             *.md
             *.mdx
-      - name: Check new docs
+      - name: '🔍 Check New Documentation Templates'
         run: |
           python docs/scripts/check_templates.py ${{ steps.files.outputs.added }}

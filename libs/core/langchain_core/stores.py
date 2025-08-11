@@ -23,7 +23,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class BaseStore(Generic[K, V], ABC):
+class BaseStore(ABC, Generic[K, V]):
     """Abstract interface for a key-value store.
 
     This is an interface that's meant to abstract away the details of
@@ -76,6 +76,7 @@ class BaseStore(Generic[K, V], ABC):
                         for key in self.store.keys():
                             if key.startswith(prefix):
                                 yield key
+
     """
 
     @abstractmethod
@@ -302,6 +303,7 @@ class InMemoryStore(InMemoryBaseStore[Any]):
             # ['key2']
             list(store.yield_keys(prefix='k'))
             # ['key2']
+
     """
 
 
@@ -327,6 +329,7 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
             # ['key2']
             list(store.yield_keys(prefix='k'))
             # ['key2']
+
     """
 
 

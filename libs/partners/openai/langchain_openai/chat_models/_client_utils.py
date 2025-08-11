@@ -23,7 +23,7 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
@@ -37,12 +37,11 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
-@lru_cache
-def _get_default_httpx_client(
+def _build_sync_httpx_client(
     base_url: Optional[str], timeout: Any
 ) -> _SyncHttpxClientWrapper:
     return _SyncHttpxClientWrapper(
@@ -53,8 +52,7 @@ def _get_default_httpx_client(
     )
 
 
-@lru_cache
-def _get_default_async_httpx_client(
+def _build_async_httpx_client(
     base_url: Optional[str], timeout: Any
 ) -> _AsyncHttpxClientWrapper:
     return _AsyncHttpxClientWrapper(
@@ -63,3 +61,47 @@ def _get_default_async_httpx_client(
         or "https://api.openai.com/v1",
         timeout=timeout,
     )
+
+
+@lru_cache
+def _cached_sync_httpx_client(
+    base_url: Optional[str], timeout: Any
+) -> _SyncHttpxClientWrapper:
+    return _build_sync_httpx_client(base_url, timeout)
+
+
+@lru_cache
+def _cached_async_httpx_client(
+    base_url: Optional[str], timeout: Any
+) -> _AsyncHttpxClientWrapper:
+    return _build_async_httpx_client(base_url, timeout)
+
+
+def _get_default_httpx_client(
+    base_url: Optional[str], timeout: Any
+) -> _SyncHttpxClientWrapper:
+    """Get default httpx client.
+
+    Uses cached client unless timeout is ``httpx.Timeout``, which is not hashable.
+    """
+    try:
+        hash(timeout)
+    except TypeError:
+        return _build_sync_httpx_client(base_url, timeout)
+    else:
+        return _cached_sync_httpx_client(base_url, timeout)
+
+
+def _get_default_async_httpx_client(
+    base_url: Optional[str], timeout: Any
+) -> _AsyncHttpxClientWrapper:
+    """Get default httpx client.
+
+    Uses cached client unless timeout is ``httpx.Timeout``, which is not hashable.
+    """
+    try:
+        hash(timeout)
+    except TypeError:
+        return _build_async_httpx_client(base_url, timeout)
+    else:
+        return _cached_async_httpx_client(base_url, timeout)

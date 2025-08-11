@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from itertools import starmap
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -67,6 +66,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
             router = RouterRunnable(runnables={"add": add, "square": square})
             router.invoke({"key": "square", "input": 3})
+
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
@@ -206,7 +206,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         configs = get_config_list(config, len(inputs))
         return await gather_with_concurrency(
             configs[0].get("max_concurrency"),
-            *starmap(ainvoke, zip(runnables, actual_inputs, configs)),
+            *map(ainvoke, runnables, actual_inputs, configs),
         )
 
     @override

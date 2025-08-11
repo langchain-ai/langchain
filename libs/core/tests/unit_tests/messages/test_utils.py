@@ -21,6 +21,7 @@ from langchain_core.messages.utils import (
     convert_to_openai_messages,
     count_tokens_approximately,
     filter_messages,
+    get_buffer_string,
     merge_message_runs,
     trim_messages,
 )
@@ -422,7 +423,7 @@ def test_trim_messages_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="first",
         allow_partial=True,
     )
@@ -440,7 +441,7 @@ def test_trim_messages_last_allow_partial_one_message() -> None:
         [HumanMessage("This is a funky text.", id="third")],
         max_tokens=2,
         token_counter=lambda messages: sum(len(m.content) for m in messages),
-        text_splitter=lambda x: list(x),
+        text_splitter=list,
         strategy="last",
         allow_partial=True,
     )
@@ -1120,6 +1121,33 @@ def test_convert_to_openai_messages_tool_use() -> None:
     assert result[0]["tool_calls"][0]["function"]["arguments"] == json.dumps({"a": "b"})
 
 
+def test_convert_to_openai_messages_tool_use_unicode() -> None:
+    """Test that Unicode characters in tool call args are preserved correctly."""
+    messages = [
+        AIMessage(
+            content=[
+                {
+                    "type": "tool_use",
+                    "id": "123",
+                    "name": "create_customer",
+                    "input": {"customer_name": "你好啊集团"},
+                }
+            ]
+        )
+    ]
+    result = convert_to_openai_messages(messages, text_format="block")
+    assert result[0]["tool_calls"][0]["type"] == "function"
+    assert result[0]["tool_calls"][0]["id"] == "123"
+    assert result[0]["tool_calls"][0]["function"]["name"] == "create_customer"
+    # Ensure Unicode characters are preserved, not escaped as \\uXXXX
+    arguments_str = result[0]["tool_calls"][0]["function"]["arguments"]
+    parsed_args = json.loads(arguments_str)
+    assert parsed_args["customer_name"] == "你好啊集团"
+    # Also ensure the raw JSON string contains Unicode, not escaped sequences
+    assert "你好啊集团" in arguments_str
+    assert "\\u4f60" not in arguments_str  # Should not contain escaped Unicode
+
+
 def test_convert_to_openai_messages_json() -> None:
     json_data = {"key": "value"}
     messages = [HumanMessage(content=[{"type": "json", "json": json_data}])]
@@ -1395,3 +1423,64 @@ def test_count_tokens_approximately_mixed_content_types() -> None:
 
     # Ensure that count is consistent if we do one message at a time
     assert sum(count_tokens_approximately([m]) for m in messages) == token_count
+
+
+def test_get_buffer_string_with_structured_content() -> None:
+    """Test get_buffer_string with structured content in messages."""
+    messages = [
+        HumanMessage(content=[{"type": "text", "text": "Hello, world!"}]),
+        AIMessage(content=[{"type": "text", "text": "Hi there!"}]),
+        SystemMessage(content=[{"type": "text", "text": "System message"}]),
+    ]
+    expected = "Human: Hello, world!\nAI: Hi there!\nSystem: System message"
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_mixed_content() -> None:
+    """Test get_buffer_string with mixed content types in messages."""
+    messages = [
+        HumanMessage(content="Simple text"),
+        AIMessage(content=[{"type": "text", "text": "Structured text"}]),
+        SystemMessage(content=[{"type": "text", "text": "Another structured text"}]),
+    ]
+    expected = (
+        "Human: Simple text\nAI: Structured text\nSystem: Another structured text"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_function_call() -> None:
+    """Test get_buffer_string with function call in additional_kwargs."""
+    messages = [
+        HumanMessage(content="Hello"),
+        AIMessage(
+            content="Hi",
+            additional_kwargs={
+                "function_call": {
+                    "name": "test_function",
+                    "arguments": '{"arg": "value"}',
+                }
+            },
+        ),
+    ]
+    # TODO: consider changing this
+    expected = (
+        "Human: Hello\n"
+        "AI: Hi{'name': 'test_function', 'arguments': '{\"arg\": \"value\"}'}"
+    )
+    actual = get_buffer_string(messages)
+    assert actual == expected
+
+
+def test_get_buffer_string_with_empty_content() -> None:
+    """Test get_buffer_string with empty content in messages."""
+    messages = [
+        HumanMessage(content=[]),
+        AIMessage(content=""),
+        SystemMessage(content=[]),
+    ]
+    expected = "Human: \nAI: \nSystem: "
+    actual = get_buffer_string(messages)
+    assert actual == expected
