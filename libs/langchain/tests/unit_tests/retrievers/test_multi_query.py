@@ -1,11 +1,11 @@
-import pytest as pytest
+import pytest
 from langchain_core.documents import Document
 
 from langchain.retrievers.multi_query import LineListOutputParser, _unique_documents
 
 
 @pytest.mark.parametrize(
-    "documents,expected",
+    ("documents", "expected"),
     [
         ([], []),
         ([Document(page_content="foo")], [Document(page_content="foo")]),
@@ -39,7 +39,7 @@ def test__unique_documents(documents: list[Document], expected: list[Document]) 
 
 
 @pytest.mark.parametrize(
-    "text,expected",
+    ("text", "expected"),
     [
         ("foo\nbar\nbaz", ["foo", "bar", "baz"]),
         ("foo\nbar\nbaz\n", ["foo", "bar", "baz"]),

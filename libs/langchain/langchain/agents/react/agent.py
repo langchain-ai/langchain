@@ -116,6 +116,7 @@ def create_react_agent(
             Thought:{agent_scratchpad}'''
 
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

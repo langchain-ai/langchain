@@ -33,8 +33,9 @@ from langchain.chains.llm_math.prompt import PROMPT
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
-    Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+    .. note::
+        This class is deprecated. See below for a replacement implementation using
+        LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features;
         - Support for both token-by-token and step-by-step streaming;
@@ -146,6 +147,7 @@ class LLMMathChain(Chain):
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
             llm_math = LLMMathChain.from_llm(OpenAI())
+
     """  # noqa: E501
 
     llm_chain: LLMChain
@@ -163,7 +165,7 @@ class LLMMathChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         try:
             import numexpr  # noqa: F401
         except ImportError as e:
@@ -307,5 +309,12 @@ class LLMMathChain(Chain):
         prompt: BasePromptTemplate = PROMPT,
         **kwargs: Any,
     ) -> LLMMathChain:
+        """Create a LLMMathChain from a language model.
+
+        Args:
+            llm: a language model
+            prompt: a prompt template
+            **kwargs: additional arguments
+        """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)

@@ -42,7 +42,7 @@ class CustomSerializer:
 
 
 class CustomPersister:
-    """A custom persister for VCR that uses the CustomSerializer."""
+    """A custom persister for VCR that uses the ``CustomSerializer``."""
 
     @classmethod
     def load_cassette(
@@ -88,9 +88,9 @@ _BASE_FILTER_HEADERS = [
 
 @pytest.fixture(scope="session")
 def _base_vcr_config() -> dict:
-    """Configuration that every cassette will receive.
+    """Get configuration that every cassette will receive.
 
-    (Anything permitted by vcr.VCR(**kwargs) can be put here.)
+    (Anything permitted by ``vcr.VCR(**kwargs)`` can be put here.)
     """
     return {
         "record_mode": "once",
