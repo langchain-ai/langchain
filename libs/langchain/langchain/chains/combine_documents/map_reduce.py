@@ -99,6 +99,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 llm_chain=llm_chain,
                 reduce_documents_chain=reduce_documents_chain,
             )
+
     """
 
     llm_chain: LLMChain

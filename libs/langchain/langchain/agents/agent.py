@@ -196,6 +196,7 @@ class BaseSingleActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -339,6 +340,7 @@ class BaseMultiActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path

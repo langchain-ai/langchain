@@ -47,6 +47,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Raises:
         ValueError: If the model string is not in the correct format or
             the provider is unsupported
+
     """
     if ":" not in model_name:
         providers = _SUPPORTED_PROVIDERS
@@ -177,6 +178,7 @@ def init_embeddings(
             )
 
     .. versionadded:: 0.3.9
+
     """
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()

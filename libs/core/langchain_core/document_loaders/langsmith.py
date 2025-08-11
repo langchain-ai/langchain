@@ -36,6 +36,7 @@ class LangSmithLoader(BaseLoader):
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 
     .. versionadded:: 0.2.34
+
     """  # noqa: E501
 
     def __init__(

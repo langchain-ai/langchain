@@ -374,6 +374,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                 retriever=retriever,
                 question_generator=question_generator_chain,
             )
+
     """
 
     retriever: BaseRetriever

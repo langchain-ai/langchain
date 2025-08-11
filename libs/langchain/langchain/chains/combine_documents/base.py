@@ -234,6 +234,7 @@ class AnalyzeDocumentChain(Chain):
                     input_documents=itemgetter("input_document") | split_text,
                 ) | chain.pick("output_text")
             )
+
     """
 
     input_key: str = "input_document"  #: :meta private:

@@ -378,6 +378,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 {"question": "foo", "context": "bar"},
                 config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
             )
+
     """
 
     fields: dict[str, AnyConfigurableField]

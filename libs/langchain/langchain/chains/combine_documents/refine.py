@@ -79,6 +79,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
                 document_variable_name=document_variable_name,
                 initial_response_name=initial_response_name,
             )
+
     """
 
     initial_llm_chain: LLMChain

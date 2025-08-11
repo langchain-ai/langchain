@@ -3,9 +3,9 @@ from __future__ import annotations
 import copy
 import pathlib
 import re
-from collections.abc import Iterable, Sequence
 from io import StringIO
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -20,6 +20,11 @@ from langchain_core._api import beta
 from langchain_core.documents import BaseDocumentTransformer, Document
 
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from bs4.element import PageElement
 
 
 class ElementType(TypedDict):
@@ -107,6 +112,7 @@ class HTMLHeaderTextSplitter:
             #   content="Conclusion"
             # - Document with metadata={"Main Topic": "Conclusion"} and
             #   content="Final thoughts."
+
     """
 
     def __init__(
@@ -158,7 +164,11 @@ class HTMLHeaderTextSplitter:
             requests.RequestException: If the HTTP request fails.
         """
         kwargs.setdefault("timeout", timeout)
-        response = requests.get(url, **kwargs)
+        response = requests.get(
+            url,
+            timeout=kwargs.get("timeout", timeout),
+            **{k: v for k, v in kwargs.items() if k != "timeout"},
+        )
         response.raise_for_status()
         return self.split_text(response.text)
 
@@ -228,9 +238,9 @@ class HTMLHeaderTextSplitter:
             children = list(node.children)
             from bs4.element import Tag
 
-            for child in reversed(children):
-                if isinstance(child, Tag):
-                    stack.append(child)
+            stack.extend(
+                child for child in reversed(children) if isinstance(child, Tag)
+            )
 
             tag = getattr(node, "name", None)
             if not tag:
@@ -381,7 +391,6 @@ class HTMLSectionSplitter:
         """
         try:
             from bs4 import BeautifulSoup
-            from bs4.element import PageElement
         except ImportError as e:
             msg = "Unable to import BeautifulSoup/PageElement, \
                     please install with `pip install \
@@ -395,7 +404,7 @@ class HTMLSectionSplitter:
         headers = soup.find_all(["body", *headers])  # type: ignore[assignment]
 
         for i, header in enumerate(headers):
-            header_element = cast(PageElement, header)
+            header_element = cast("PageElement", header)
             if i == 0:
                 current_header = "#TITLE#"
                 current_header_tag = "h1"
@@ -476,7 +485,7 @@ class HTMLSectionSplitter:
 
         return [
             Document(
-                cast(str, section["content"]),
+                cast("str", section["content"]),
                 metadata={
                     self.headers_to_split_on[str(section["tag_name"])]: section[
                         "header"
@@ -562,6 +571,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
                 preserve_images=True,
                 custom_handlers={"iframe": custom_iframe_extractor}
             )
+
     """  # noqa: E501, D214
 
     def __init__(
@@ -585,19 +595,19 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
         denylist_tags: Optional[list[str]] = None,
         preserve_parent_metadata: bool = False,
         keep_separator: Union[bool, Literal["start", "end"]] = True,
-    ):
+    ) -> None:
         """Initialize splitter."""
         try:
             from bs4 import BeautifulSoup, Tag
 
             self._BeautifulSoup = BeautifulSoup
             self._Tag = Tag
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -645,11 +655,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
                 nltk.download("stopwords")
                 self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
-            except ImportError:
+            except ImportError as err:
                 msg = (
                     "Could not import nltk. Please install it with 'pip install nltk'."
                 )
-                raise ImportError(msg)
+                raise ImportError(msg) from err
 
     def split_text(self, text: str) -> list[Document]:
         """Splits the provided HTML text into smaller chunks based on the configuration.

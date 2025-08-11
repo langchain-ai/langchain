@@ -75,6 +75,7 @@ def create_stuff_documents_chain(
             ]
 
             chain.invoke({"context": docs})
+
     """  # noqa: E501
 
     _validate_prompt(prompt, document_variable_name)
@@ -142,6 +143,7 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
+
     """
 
     llm_chain: LLMChain

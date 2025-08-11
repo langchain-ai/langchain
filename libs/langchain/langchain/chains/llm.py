@@ -74,6 +74,7 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
@@ -323,6 +324,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -340,6 +342,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 

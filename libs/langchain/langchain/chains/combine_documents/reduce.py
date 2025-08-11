@@ -201,6 +201,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 combine_documents_chain=combine_documents_chain,
                 collapse_documents_chain=collapse_documents_chain,
             )
+
     """
 
     combine_documents_chain: BaseCombineDocumentsChain

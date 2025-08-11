@@ -99,6 +99,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """  # noqa: E501
 
     azure_endpoint: Optional[str] = Field(
@@ -114,7 +115,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
-        Note: this means you won't be able to use non-deployment endpoints.
+
+        .. note::
+            This means you won't be able to use non-deployment endpoints.
+
     """
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
@@ -131,7 +135,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         alias="api_version",
     )
     """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided.
-    
+
     Set to ``'2023-05-15'`` by default if env variable ``OPENAI_API_VERSION`` is not
     set.
     """
