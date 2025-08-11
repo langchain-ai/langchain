@@ -1,7 +1,7 @@
 from typing import Any
 
 
-def __getattr__(name: str = "") -> Any:
+def __getattr__(_: str = "") -> Any:
     msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "

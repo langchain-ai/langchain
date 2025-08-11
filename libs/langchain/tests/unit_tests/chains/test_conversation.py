@@ -8,6 +8,7 @@ from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import LLM
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts.prompt import PromptTemplate
+from typing_extensions import override
 
 from langchain.chains.conversation.base import ConversationChain
 from langchain.memory.buffer import ConversationBufferMemory
@@ -26,6 +27,7 @@ class DummyLLM(LLM):
     def _llm_type(self) -> str:
         return "dummy"
 
+    @override
     def _call(
         self,
         prompt: str,

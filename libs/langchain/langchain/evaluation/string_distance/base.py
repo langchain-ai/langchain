@@ -224,6 +224,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return f"{self.distance.value}_distance"
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -242,6 +243,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -357,6 +359,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         """
         return f"pairwise_{self.distance.value}_distance"
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -377,6 +380,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -397,6 +401,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -431,6 +436,7 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,

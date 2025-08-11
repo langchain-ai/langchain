@@ -321,7 +321,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "VertexAILLM",
-                link: "google_vertexai",
+                link: "google_vertex_ai_palm",
                 package: "langchain-google-vertexai",
                 apiLink: "https://python.langchain.com/api_reference/google_vertexai/llms/langchain_google_vertexai.llms.VertexAI.html"
             },
@@ -435,7 +435,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/aws/retrievers/langchain_aws.retrievers.bedrock.AmazonKnowledgeBasesRetriever.html",
-                package: "langchain_aws"
+                package: "langchain-aws"
             },
             {
                 name: "AzureAISearchRetriever",
@@ -443,7 +443,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.azure_ai_search.AzureAISearchRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "ElasticsearchRetriever",
@@ -451,7 +451,7 @@ const FEATURE_TABLES = {
                 selfHost: true,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/elasticsearch/retrievers/langchain_elasticsearch.retrievers.ElasticsearchRetriever.html",
-                package: "langchain_elasticsearch"
+                package: "langchain-elasticsearch"
             },
             {
                 name: "VertexAISearchRetriever",
@@ -459,7 +459,7 @@ const FEATURE_TABLES = {
                 selfHost: false,
                 cloudOffering: true,
                 apiLink: "https://python.langchain.com/api_reference/google_community/vertex_ai_search/langchain_google_community.vertex_ai_search.VertexAISearchRetriever.html",
-                package: "langchain_google_community"
+                package: "langchain-google-community"
             }
         ],
     },
@@ -484,21 +484,21 @@ const FEATURE_TABLES = {
                 link: "arxiv",
                 source: (<>Scholarly articles on <a href="https://arxiv.org/">arxiv.org</a></>),
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.arxiv.ArxivRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "TavilySearchAPIRetriever",
                 link: "tavily",
                 source: "Internet search",
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.tavily_search_api.TavilySearchAPIRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             },
             {
                 name: "WikipediaRetriever",
                 link: "wikipedia",
                 source: (<><a href="https://www.wikipedia.org/">Wikipedia</a> articles</>),
                 apiLink: "https://python.langchain.com/api_reference/community/retrievers/langchain_community.retrievers.wikipedia.WikipediaRetriever.html",
-                package: "langchain_community"
+                package: "langchain-community"
             }
         ]
 
@@ -776,7 +776,7 @@ const FEATURE_TABLES = {
             },
             {
                 name: "Reddit",
-                link: "RedditPostsLoader",
+                link: "reddit",
                 loaderName: "RedditPostsLoader",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.reddit.RedditPostsLoader.html"
             },
@@ -823,9 +823,16 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.sitemap.SitemapLoader.html"
             },
             {
+                name: "Spider",
+                link: "spider",
+                source: "Crawler and scraper that returns LLM-ready data.",
+                api: "API",
+                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.spider.SpiderLoader.html"
+            },
+            {
                 name: "Firecrawl",
                 link: "firecrawl",
-                source: "API service that can be deployed locally, hosted version has free credits.",
+                source: "API service that can be deployed locally.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
             },
@@ -1173,6 +1180,19 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+            },
+            {
+              name: "PGVectorStore",
+              link: "pgvectorstore",
+              deleteById: true,
+              filtering: true,
+              searchByVector: true,
+              searchWithScore: true,
+              async: true,
+              passesStandardTests: true,
+              multiTenancy: false,
+              local: true,
+              idsInAddDocuments: true,
             },
             {
                 name: "PineconeVectorStore",

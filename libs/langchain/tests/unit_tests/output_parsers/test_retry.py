@@ -7,6 +7,7 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompt_values import PromptValue, StringPromptValue
 from langchain_core.runnables import Runnable, RunnableLambda, RunnablePassthrough
+from typing_extensions import override
 
 from langchain.output_parsers.boolean import BooleanOutputParser
 from langchain.output_parsers.datetime import DatetimeOutputParser
@@ -25,6 +26,7 @@ class SuccessfulParseAfterRetries(BaseOutputParser[str]):
     attemp_count_before_success: int  # Number of times to fail before succeeding
     error_msg: str = "error"
 
+    @override
     def parse(self, *args: Any, **kwargs: Any) -> str:
         self.parse_count += 1
         if self.parse_count <= self.attemp_count_before_success:
