@@ -80,7 +80,7 @@ def _value_serializer(value: Sequence[float]) -> bytes:
 
 def _value_deserializer(serialized_value: bytes) -> list[float]:
     """Deserialize a value."""
-    return cast(list[float], json.loads(serialized_value.decode()))
+    return cast("list[float]", json.loads(serialized_value.decode()))
 
 
 # The warning is global; track emission, so it appears only once.
@@ -89,7 +89,7 @@ _warned_about_sha1: bool = False
 
 def _warn_about_sha1_encoder() -> None:
     """Emit a one-time warning about SHA-1 collision weaknesses."""
-    global _warned_about_sha1
+    global _warned_about_sha1  # noqa: PLW0603
     if not _warned_about_sha1:
         warnings.warn(
             "Using default key encoder: SHA-1 is *not* collision-resistant. "
@@ -176,7 +176,7 @@ class CacheBackedEmbeddings(Embeddings):
             A list of embeddings for the given texts.
         """
         vectors: list[Union[list[float], None]] = self.document_embedding_store.mget(
-            texts
+            texts,
         )
         all_missing_indices: list[int] = [
             i for i, vector in enumerate(vectors) if vector is None
@@ -186,13 +186,14 @@ class CacheBackedEmbeddings(Embeddings):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
-                list(zip(missing_texts, missing_vectors))
+                list(zip(missing_texts, missing_vectors)),
             )
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]], vectors
+            "list[list[float]]",
+            vectors,
         )  # Nones should have been resolved by now
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -220,16 +221,17 @@ class CacheBackedEmbeddings(Embeddings):
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
-                missing_texts
+                missing_texts,
             )
             await self.document_embedding_store.amset(
-                list(zip(missing_texts, missing_vectors))
+                list(zip(missing_texts, missing_vectors)),
             )
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]], vectors
+            "list[list[float]]",
+            vectors,
         )  # Nones should have been resolved by now
 
     def embed_query(self, text: str) -> list[float]:
@@ -288,7 +290,8 @@ class CacheBackedEmbeddings(Embeddings):
         batch_size: Optional[int] = None,
         query_embedding_cache: Union[bool, ByteStore] = False,
         key_encoder: Union[
-            Callable[[str], str], Literal["sha1", "blake2b", "sha256", "sha512"]
+            Callable[[str], str],
+            Literal["sha1", "blake2b", "sha256", "sha512"],
         ] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
@@ -337,7 +340,7 @@ class CacheBackedEmbeddings(Embeddings):
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

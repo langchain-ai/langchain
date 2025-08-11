@@ -20,7 +20,10 @@ URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/age
 
 
 def _load_agent_from_tools(
-    config: dict, llm: BaseLanguageModel, tools: list[Tool], **kwargs: Any
+    config: dict,
+    llm: BaseLanguageModel,
+    tools: list[Tool],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     config_type = config.pop("_type")
     if config_type not in AGENT_TO_CLASS:
@@ -87,7 +90,7 @@ def load_agent_from_config(
     if "output_parser" in config:
         logger.warning(
             "Currently loading output parsers on agent is not supported, "
-            "will just use the default one."
+            "will just use the default one.",
         )
         del config["output_parser"]
 
@@ -97,7 +100,8 @@ def load_agent_from_config(
 
 @deprecated("0.1.0", removal="1.0")
 def load_agent(
-    path: Union[str, Path], **kwargs: Any
+    path: Union[str, Path],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Unified method for loading an agent from LangChainHub or local fs.
 
@@ -123,7 +127,8 @@ def load_agent(
 
 
 def _load_agent_from_file(
-    file: Union[str, Path], **kwargs: Any
+    file: Union[str, Path],
+    **kwargs: Any,
 ) -> Union[BaseSingleActionAgent, BaseMultiActionAgent]:
     """Load agent from file."""
     valid_suffixes = {"json", "yaml"}
@@ -131,10 +136,10 @@ def _load_agent_from_file(
     file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix[1:] == "json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix[1:] == "yaml":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
         msg = f"Unsupported file type, must be one of {valid_suffixes}."

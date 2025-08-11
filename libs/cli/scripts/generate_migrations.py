@@ -1,4 +1,3 @@
-# type: ignore
 """Script to generate migrations for the migration script."""
 
 import json
@@ -45,12 +44,17 @@ def cli() -> None:
 )
 @click.option(
     "--format",
+    "format_",
     type=click.Choice(["json", "grit"], case_sensitive=False),
     default="json",
     help="The output format for the migration script (json or grit).",
 )
 def generic(
-    pkg1: str, pkg2: str, output: str, filter_by_all: bool, format: str
+    pkg1: str,
+    pkg2: str,
+    output: str,
+    filter_by_all: bool,  # noqa: FBT001
+    format_: str,
 ) -> None:
     """Generate a migration script."""
     click.echo("Migration script generated.")
@@ -62,9 +66,9 @@ def generic(
         name = f"{pkg1}_to_{pkg2}"
 
     if output is None:
-        output = f"{name}.json" if format == "json" else f"{name}.grit"
+        output = f"{name}.json" if format_ == "json" else f"{name}.grit"
 
-    if format == "json":
+    if format_ == "json":
         dumped = json.dumps(migrations, indent=2, sort_keys=True)
     else:
         dumped = dump_migrations_as_grit(name, migrations)

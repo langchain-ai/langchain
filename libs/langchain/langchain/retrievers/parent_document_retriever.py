@@ -54,6 +54,7 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 child_splitter=child_splitter,
                 parent_splitter=parent_splitter,
             )
+
     """  # noqa: E501
 
     child_splitter: TextSplitter
@@ -132,7 +133,9 @@ class ParentDocumentRetriever(MultiVectorRetriever):
                 and you don't want to re-add them.
         """
         docs, full_docs = self._split_docs_for_adding(
-            documents, ids, add_to_docstore=add_to_docstore
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
         )
         self.vectorstore.add_documents(docs, **kwargs)
         if add_to_docstore:
@@ -145,8 +148,24 @@ class ParentDocumentRetriever(MultiVectorRetriever):
         add_to_docstore: bool = True,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> None:
+        """Adds documents to the docstore and vectorstores.
+
+        Args:
+            documents: List of documents to add
+            ids: Optional list of ids for documents. If provided should be the same
+                length as the list of documents. Can be provided if parent documents
+                are already in the document store and you don't want to re-add
+                to the docstore. If not provided, random UUIDs will be used as
+                ids.
+            add_to_docstore: Boolean of whether to add documents to docstore.
+                This can be false if and only if `ids` are provided. You may want
+                to set this to False if the documents are already in the docstore
+                and you don't want to re-add them.
+        """
         docs, full_docs = self._split_docs_for_adding(
-            documents, ids, add_to_docstore=add_to_docstore
+            documents,
+            ids,
+            add_to_docstore=add_to_docstore,
         )
         await self.vectorstore.aadd_documents(docs, **kwargs)
         if add_to_docstore:

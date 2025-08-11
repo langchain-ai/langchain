@@ -64,6 +64,7 @@ class BaseSingleActionAgent(BaseModel):
         return ["output"]
 
     def get_allowed_tools(self) -> Optional[list[str]]:
+        """Get allowed tools."""
         return None
 
     @abstractmethod
@@ -115,8 +116,8 @@ class BaseSingleActionAgent(BaseModel):
     def return_stopped_response(
         self,
         early_stopping_method: str,
-        intermediate_steps: list[tuple[AgentAction, str]],
-        **kwargs: Any,
+        intermediate_steps: list[tuple[AgentAction, str]],  # noqa: ARG002
+        **_: Any,
     ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations.
 
@@ -124,7 +125,6 @@ class BaseSingleActionAgent(BaseModel):
             early_stopping_method: Method to use for early stopping.
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            **kwargs: User inputs.
 
         Returns:
             AgentFinish: Agent finish object.
@@ -135,7 +135,8 @@ class BaseSingleActionAgent(BaseModel):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration limit or time limit."},
+                "",
             )
         msg = f"Got unsupported early_stopping_method `{early_stopping_method}`"
         raise ValueError(msg)
@@ -166,6 +167,7 @@ class BaseSingleActionAgent(BaseModel):
         """Return Identifier of an agent type."""
         raise NotImplementedError
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent.
 
@@ -194,6 +196,7 @@ class BaseSingleActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -208,10 +211,10 @@ class BaseSingleActionAgent(BaseModel):
             raise NotImplementedError(msg)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -287,8 +290,8 @@ class BaseMultiActionAgent(BaseModel):
     def return_stopped_response(
         self,
         early_stopping_method: str,
-        intermediate_steps: list[tuple[AgentAction, str]],
-        **kwargs: Any,
+        intermediate_steps: list[tuple[AgentAction, str]],  # noqa: ARG002
+        **_: Any,
     ) -> AgentFinish:
         """Return response when agent has been stopped due to max iterations.
 
@@ -296,7 +299,6 @@ class BaseMultiActionAgent(BaseModel):
             early_stopping_method: Method to use for early stopping.
             intermediate_steps: Steps the LLM has taken to date,
                 along with observations.
-            **kwargs: User inputs.
 
         Returns:
             AgentFinish: Agent finish object.
@@ -315,6 +317,7 @@ class BaseMultiActionAgent(BaseModel):
         """Return Identifier of an agent type."""
         raise NotImplementedError
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().model_dump()
@@ -337,6 +340,7 @@ class BaseMultiActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -351,10 +355,10 @@ class BaseMultiActionAgent(BaseModel):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(agent_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(agent_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -375,7 +379,7 @@ class AgentOutputParser(BaseOutputParser[Union[AgentAction, AgentFinish]]):
 
 
 class MultiActionAgentOutputParser(
-    BaseOutputParser[Union[list[AgentAction], AgentFinish]]
+    BaseOutputParser[Union[list[AgentAction], AgentFinish]],
 ):
     """Base class for parsing agent output into agent actions/finish.
 
@@ -491,7 +495,8 @@ class RunnableAgent(BaseSingleActionAgent):
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
-                inputs, config={"callbacks": callbacks}
+                inputs,
+                config={"callbacks": callbacks},
             ):
                 if final_output is None:
                     final_output = chunk
@@ -499,7 +504,8 @@ class RunnableAgent(BaseSingleActionAgent):
                     final_output += chunk
         else:
             final_output = await self.runnable.ainvoke(
-                inputs, config={"callbacks": callbacks}
+                inputs,
+                config={"callbacks": callbacks},
             )
         return final_output
 
@@ -607,7 +613,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
             # Because the response from the plan is not a generator, we need to
             # accumulate the output into final output and return that.
             async for chunk in self.runnable.astream(
-                inputs, config={"callbacks": callbacks}
+                inputs,
+                config={"callbacks": callbacks},
             ):
                 if final_output is None:
                     final_output = chunk
@@ -615,7 +622,8 @@ class RunnableMultiActionAgent(BaseMultiActionAgent):
                     final_output += chunk
         else:
             final_output = await self.runnable.ainvoke(
-                inputs, config={"callbacks": callbacks}
+                inputs,
+                config={"callbacks": callbacks},
             )
 
         return final_output
@@ -645,6 +653,7 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
         """
         return list(set(self.llm_chain.input_keys) - {"intermediate_steps"})
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
@@ -729,6 +738,7 @@ class Agent(BaseSingleActionAgent):
     allowed_tools: Optional[list[str]] = None
     """Allowed tools for the agent. If None, all tools are allowed."""
 
+    @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
         _dict = super().dict()
@@ -744,18 +754,6 @@ class Agent(BaseSingleActionAgent):
         """Return values of the agent."""
         return ["output"]
 
-    def _fix_text(self, text: str) -> str:
-        """Fix the text.
-
-        Args:
-            text: Text to fix.
-
-        Returns:
-            str: Fixed text.
-        """
-        msg = "fix_text not implemented for this agent."
-        raise ValueError(msg)
-
     @property
     def _stop(self) -> list[str]:
         return [
@@ -764,7 +762,8 @@ class Agent(BaseSingleActionAgent):
         ]
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> Union[str, list[BaseMessage]]:
         """Construct the scratchpad that lets the agent continue its thought process."""
         thoughts = ""
@@ -816,7 +815,9 @@ class Agent(BaseSingleActionAgent):
         return await self.output_parser.aparse(full_output)
 
     def get_full_inputs(
-        self, intermediate_steps: list[tuple[AgentAction, str]], **kwargs: Any
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
+        **kwargs: Any,
     ) -> builtins.dict[str, Any]:
         """Create the full inputs for the LLMChain from intermediate steps.
 
@@ -858,7 +859,7 @@ class Agent(BaseSingleActionAgent):
         if "agent_scratchpad" not in prompt.input_variables:
             logger.warning(
                 "`agent_scratchpad` should be a variable in prompt.input_variables."
-                " Did not find it, so adding it at the end."
+                " Did not find it, so adding it at the end.",
             )
             prompt.input_variables.append("agent_scratchpad")
             if isinstance(prompt, PromptTemplate):
@@ -964,7 +965,8 @@ class Agent(BaseSingleActionAgent):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration limit or time limit."},
+                "",
             )
         if early_stopping_method == "generate":
             # Generate does one final forward pass
@@ -1011,6 +1013,7 @@ class ExceptionTool(BaseTool):
     description: str = "Exception tool"
     """Description of the tool."""
 
+    @override
     def _run(
         self,
         query: str,
@@ -1018,6 +1021,7 @@ class ExceptionTool(BaseTool):
     ) -> str:
         return query
 
+    @override
     async def _arun(
         self,
         query: str,
@@ -1072,7 +1076,8 @@ class AgentExecutor(Chain):
       as an observation.
     """
     trim_intermediate_steps: Union[
-        int, Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]]
+        int,
+        Callable[[list[tuple[AgentAction, str]]], list[tuple[AgentAction, str]]],
     ] = -1
     """How to trim the intermediate steps before returning them.
     Defaults to -1, which means no trimming.
@@ -1153,11 +1158,13 @@ class AgentExecutor(Chain):
             stream_runnable = values.pop("stream_runnable", True)
             if multi_action:
                 values["agent"] = RunnableMultiActionAgent(
-                    runnable=agent, stream_runnable=stream_runnable
+                    runnable=agent,
+                    stream_runnable=stream_runnable,
                 )
             else:
                 values["agent"] = RunnableAgent(
-                    runnable=agent, stream_runnable=stream_runnable
+                    runnable=agent,
+                    stream_runnable=stream_runnable,
                 )
         return values
 
@@ -1172,9 +1179,10 @@ class AgentExecutor(Chain):
         to reflect the changes made in the root_validator.
         """
         if isinstance(self.agent, Runnable):
-            return cast(RunnableAgentType, self.agent)
+            return cast("RunnableAgentType", self.agent)
         return self.agent
 
+    @override
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
 
@@ -1205,7 +1213,7 @@ class AgentExecutor(Chain):
         callbacks: Callbacks = None,
         *,
         include_run_info: bool = False,
-        async_: bool = False,  # arg kept for backwards compat, but ignored
+        async_: bool = False,  # noqa: ARG002 arg kept for backwards compat, but ignored
     ) -> AgentExecutorIterator:
         """Enables iteration over steps taken to reach final output.
 
@@ -1281,7 +1289,9 @@ class AgentExecutor(Chain):
     ) -> dict[str, Any]:
         if run_manager:
             await run_manager.on_agent_finish(
-                output, color="green", verbose=self.verbose
+                output,
+                color="green",
+                verbose=self.verbose,
             )
         final_output = output.return_values
         if self.return_intermediate_steps:
@@ -1289,7 +1299,8 @@ class AgentExecutor(Chain):
         return final_output
 
     def _consume_next_step(
-        self, values: NextStepOutput
+        self,
+        values: NextStepOutput,
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         if isinstance(values[-1], AgentFinish):
             if len(values) != 1:
@@ -1314,8 +1325,8 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
-                )
-            )
+                ),
+            ),
         )
 
     def _iter_next_step(
@@ -1351,7 +1362,7 @@ class AgentExecutor(Chain):
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {e!s}"
                 )
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1365,7 +1376,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg)
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
                 run_manager.on_agent_action(output, color="green")
@@ -1391,7 +1402,10 @@ class AgentExecutor(Chain):
             yield agent_action
         for agent_action in actions:
             yield self._perform_agent_action(
-                name_to_tool_map, color_mapping, agent_action, run_manager
+                name_to_tool_map,
+                color_mapping,
+                agent_action,
+                run_manager,
             )
 
     def _perform_agent_action(
@@ -1451,7 +1465,7 @@ class AgentExecutor(Chain):
                     intermediate_steps,
                     run_manager,
                 )
-            ]
+            ],
         )
 
     async def _aiter_next_step(
@@ -1487,7 +1501,7 @@ class AgentExecutor(Chain):
                     "again, pass `handle_parsing_errors=True` to the AgentExecutor. "
                     f"This is the error: {e!s}"
                 )
-                raise ValueError(msg)
+                raise ValueError(msg) from e
             text = str(e)
             if isinstance(self.handle_parsing_errors, bool):
                 if e.send_to_llm:
@@ -1501,7 +1515,7 @@ class AgentExecutor(Chain):
                 observation = self.handle_parsing_errors(e)
             else:
                 msg = "Got unexpected type of `handle_parsing_errors`"
-                raise ValueError(msg)
+                raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
             observation = await ExceptionTool().arun(
@@ -1528,7 +1542,10 @@ class AgentExecutor(Chain):
         result = await asyncio.gather(
             *[
                 self._aperform_agent_action(
-                    name_to_tool_map, color_mapping, agent_action, run_manager
+                    name_to_tool_map,
+                    color_mapping,
+                    agent_action,
+                    run_manager,
                 )
                 for agent_action in actions
             ],
@@ -1547,7 +1564,9 @@ class AgentExecutor(Chain):
     ) -> AgentStep:
         if run_manager:
             await run_manager.on_agent_action(
-                agent_action, verbose=self.verbose, color="green"
+                agent_action,
+                verbose=self.verbose,
+                color="green",
             )
         # Otherwise we lookup the tool
         if agent_action.tool in name_to_tool_map:
@@ -1589,7 +1608,8 @@ class AgentExecutor(Chain):
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green", "red"]
+            [tool.name for tool in self.tools],
+            excluded_colors=["green", "red"],
         )
         intermediate_steps: list[tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
@@ -1607,7 +1627,9 @@ class AgentExecutor(Chain):
             )
             if isinstance(next_step_output, AgentFinish):
                 return self._return(
-                    next_step_output, intermediate_steps, run_manager=run_manager
+                    next_step_output,
+                    intermediate_steps,
+                    run_manager=run_manager,
                 )
 
             intermediate_steps.extend(next_step_output)
@@ -1617,12 +1639,16 @@ class AgentExecutor(Chain):
                 tool_return = self._get_tool_return(next_step_action)
                 if tool_return is not None:
                     return self._return(
-                        tool_return, intermediate_steps, run_manager=run_manager
+                        tool_return,
+                        intermediate_steps,
+                        run_manager=run_manager,
                     )
             iterations += 1
             time_elapsed = time.time() - start_time
         output = self._action_agent.return_stopped_response(
-            self.early_stopping_method, intermediate_steps, **inputs
+            self.early_stopping_method,
+            intermediate_steps,
+            **inputs,
         )
         return self._return(output, intermediate_steps, run_manager=run_manager)
 
@@ -1636,7 +1662,8 @@ class AgentExecutor(Chain):
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
         color_mapping = get_color_mapping(
-            [tool.name for tool in self.tools], excluded_colors=["green"]
+            [tool.name for tool in self.tools],
+            excluded_colors=["green"],
         )
         intermediate_steps: list[tuple[AgentAction, str]] = []
         # Let's start tracking the number of iterations and time elapsed
@@ -1668,28 +1695,39 @@ class AgentExecutor(Chain):
                         tool_return = self._get_tool_return(next_step_action)
                         if tool_return is not None:
                             return await self._areturn(
-                                tool_return, intermediate_steps, run_manager=run_manager
+                                tool_return,
+                                intermediate_steps,
+                                run_manager=run_manager,
                             )
 
                     iterations += 1
                     time_elapsed = time.time() - start_time
                 output = self._action_agent.return_stopped_response(
-                    self.early_stopping_method, intermediate_steps, **inputs
+                    self.early_stopping_method,
+                    intermediate_steps,
+                    **inputs,
                 )
                 return await self._areturn(
-                    output, intermediate_steps, run_manager=run_manager
+                    output,
+                    intermediate_steps,
+                    run_manager=run_manager,
                 )
         except (TimeoutError, asyncio.TimeoutError):
             # stop early when interrupted by the async timeout
             output = self._action_agent.return_stopped_response(
-                self.early_stopping_method, intermediate_steps, **inputs
+                self.early_stopping_method,
+                intermediate_steps,
+                **inputs,
             )
             return await self._areturn(
-                output, intermediate_steps, run_manager=run_manager
+                output,
+                intermediate_steps,
+                run_manager=run_manager,
             )
 
     def _get_tool_return(
-        self, next_step_output: tuple[AgentAction, str]
+        self,
+        next_step_output: tuple[AgentAction, str],
     ) -> Optional[AgentFinish]:
         """Check if the tool is a returning tool."""
         agent_action, observation = next_step_output
@@ -1709,7 +1747,8 @@ class AgentExecutor(Chain):
         return None
 
     def _prepare_intermediate_steps(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> list[tuple[AgentAction, str]]:
         if (
             isinstance(self.trim_intermediate_steps, int)

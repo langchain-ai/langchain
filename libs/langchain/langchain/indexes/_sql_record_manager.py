@@ -153,7 +153,7 @@ class SQLRecordManager(RecordManager):
         """Create the database schema."""
         if isinstance(self.engine, AsyncEngine):
             msg = "This method is not supported for async engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         Base.metadata.create_all(self.engine)
 
@@ -162,7 +162,7 @@ class SQLRecordManager(RecordManager):
 
         if not isinstance(self.engine, AsyncEngine):
             msg = "This method is not supported for sync engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         async with self.engine.begin() as session:
             await session.run_sync(Base.metadata.create_all)
@@ -173,7 +173,7 @@ class SQLRecordManager(RecordManager):
 
         if isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for async engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         session = self.session_factory()
         try:
@@ -187,7 +187,7 @@ class SQLRecordManager(RecordManager):
 
         if not isinstance(self.session_factory, async_sessionmaker):
             msg = "This method is not supported for sync engines."
-            raise AssertionError(msg)
+            raise AssertionError(msg)  # noqa: TRY004
 
         async with self.session_factory() as session:
             yield session
@@ -221,7 +221,7 @@ class SQLRecordManager(RecordManager):
                 dt = float(dt)
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
-                raise AssertionError(msg)
+                raise AssertionError(msg)  # noqa: TRY004
             return dt
 
     async def aget_time(self) -> float:
@@ -254,7 +254,7 @@ class SQLRecordManager(RecordManager):
                 dt = float(dt)
             if not isinstance(dt, float):
                 msg = f"Unexpected type for datetime: {type(dt)}"
-                raise AssertionError(msg)
+                raise AssertionError(msg)  # noqa: TRY004
             return dt
 
     def update(
@@ -307,7 +307,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 sqlite_insert_stmt: SqliteInsertType = sqlite_insert(
-                    UpsertionRecord
+                    UpsertionRecord,
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
@@ -323,7 +323,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses postgresql insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 pg_insert_stmt: PgInsertType = pg_insert(UpsertionRecord).values(
-                    records_to_upsert
+                    records_to_upsert,
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
@@ -389,7 +389,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 sqlite_insert_stmt: SqliteInsertType = sqlite_insert(
-                    UpsertionRecord
+                    UpsertionRecord,
                 ).values(records_to_upsert)
                 stmt = sqlite_insert_stmt.on_conflict_do_update(
                     [UpsertionRecord.key, UpsertionRecord.namespace],
@@ -405,7 +405,7 @@ class SQLRecordManager(RecordManager):
                 # Note: uses SQLite insert to make on_conflict_do_update work.
                 # This code needs to be generalized a bit to work with more dialects.
                 pg_insert_stmt: PgInsertType = pg_insert(UpsertionRecord).values(
-                    records_to_upsert
+                    records_to_upsert,
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
                     "uix_key_namespace",  # Name of constraint
@@ -429,7 +429,7 @@ class SQLRecordManager(RecordManager):
                 and_(
                     UpsertionRecord.key.in_(keys),
                     UpsertionRecord.namespace == self.namespace,
-                )
+                ),
             )
             records = filtered_query.all()
         found_keys = {r.key for r in records}
@@ -445,8 +445,8 @@ class SQLRecordManager(RecordManager):
                             and_(
                                 UpsertionRecord.key.in_(keys),
                                 UpsertionRecord.namespace == self.namespace,
-                            )
-                        )
+                            ),
+                        ),
                     )
                 )
                 .scalars()
@@ -467,7 +467,7 @@ class SQLRecordManager(RecordManager):
         session: Session
         with self._make_session() as session:
             query: Query = session.query(UpsertionRecord).filter(
-                UpsertionRecord.namespace == self.namespace
+                UpsertionRecord.namespace == self.namespace,
             )
 
             if after:
@@ -494,7 +494,7 @@ class SQLRecordManager(RecordManager):
         session: AsyncSession
         async with self._amake_session() as session:
             query: Query = select(UpsertionRecord.key).filter(  # type: ignore[assignment]
-                UpsertionRecord.namespace == self.namespace
+                UpsertionRecord.namespace == self.namespace,
             )
 
             # mypy does not recognize .all() or .filter()
@@ -518,7 +518,7 @@ class SQLRecordManager(RecordManager):
                 and_(
                     UpsertionRecord.key.in_(keys),
                     UpsertionRecord.namespace == self.namespace,
-                )
+                ),
             )
 
             filtered_query.delete()
@@ -532,8 +532,8 @@ class SQLRecordManager(RecordManager):
                     and_(
                         UpsertionRecord.key.in_(keys),
                         UpsertionRecord.namespace == self.namespace,
-                    )
-                )
+                    ),
+                ),
             )
 
             await session.commit()

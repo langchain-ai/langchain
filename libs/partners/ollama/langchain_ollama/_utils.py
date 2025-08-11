@@ -1,11 +1,11 @@
-"""Utility functions for validating Ollama models."""
+"""Utility function to validate Ollama models."""
 
 from httpx import ConnectError
 from ollama import Client, ResponseError
 
 
 def validate_model(client: Client, model_name: str) -> None:
-    """Validate that a model exists in the Ollama instance.
+    """Validate that a model exists in the local Ollama instance.
 
     Args:
         client: The Ollama client.
@@ -16,22 +16,27 @@ def validate_model(client: Client, model_name: str) -> None:
     """
     try:
         response = client.list()
-        model_names: list[str] = [model["name"] for model in response["models"]]
+
+        model_names: list[str] = [model["model"] for model in response["models"]]
+
         if not any(
             model_name == m or m.startswith(f"{model_name}:") for m in model_names
         ):
-            raise ValueError(
+            msg = (
                 f"Model `{model_name}` not found in Ollama. Please pull the "
                 f"model (using `ollama pull {model_name}`) or specify a valid "
                 f"model name. Available local models: {', '.join(model_names)}"
             )
+            raise ValueError(msg)
     except ConnectError as e:
-        raise ValueError(
-            "Connection to Ollama failed. Please make sure Ollama is running "
-            f"and accessible at {client._client.base_url}. "
-        ) from e
+        msg = (
+            "Failed to connect to Ollama. Please check that Ollama is downloaded, "
+            "running and accessible. https://ollama.com/download"
+        )
+        raise ValueError(msg) from e
     except ResponseError as e:
-        raise ValueError(
+        msg = (
             "Received an error from the Ollama API. "
             "Please check your Ollama server logs."
-        ) from e
+        )
+        raise ValueError(msg) from e

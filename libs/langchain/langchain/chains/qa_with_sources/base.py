@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -70,7 +71,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_variable_name="summaries",
         )
         reduce_documents_chain = ReduceDocumentsChain(
-            combine_documents_chain=combine_results_chain
+            combine_documents_chain=combine_results_chain,
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_question_chain,
@@ -93,7 +94,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """Load chain from chain type."""
         _chain_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_with_sources_chain(
-            llm, chain_type=chain_type, **_chain_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -133,7 +136,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """Split sources from answer."""
         if re.search(r"SOURCES?:", answer, re.IGNORECASE):
             answer, sources = re.split(
-                r"SOURCES?:|QUESTION:\s", answer, flags=re.IGNORECASE
+                r"SOURCES?:|QUESTION:\s",
+                answer,
+                flags=re.IGNORECASE,
             )[:2]
             sources = re.split(r"\n", sources)[0].strip()
         else:
@@ -164,7 +169,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
             docs = self._get_docs(inputs)  # type: ignore[call-arg]
 
         answer = self.combine_documents_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {
@@ -198,7 +205,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         else:
             docs = await self._aget_docs(inputs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
         result: dict[str, Any] = {
@@ -232,6 +241,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         """
         return [self.input_docs_key, self.question_key]
 
+    @override
     def _get_docs(
         self,
         inputs: dict[str, Any],
@@ -241,6 +251,7 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
         """Get docs to run questioning over."""
         return inputs.pop(self.input_docs_key)
 
+    @override
     async def _aget_docs(
         self,
         inputs: dict[str, Any],

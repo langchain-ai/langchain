@@ -121,6 +121,7 @@ def create_openai_fn_chain(
                 chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
@@ -143,7 +144,9 @@ def create_openai_fn_chain(
 
 
 @deprecated(
-    since="0.1.1", removal="1.0", alternative="ChatOpenAI.with_structured_output"
+    since="0.1.1",
+    removal="1.0",
+    alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(
     output_schema: Union[dict[str, Any], type[BaseModel]],
@@ -201,6 +204,7 @@ def create_structured_output_chain(
                 chain = create_structured_output_chain(Dog, llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {
@@ -220,7 +224,8 @@ def create_structured_output_chain(
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_chain(
         [function],

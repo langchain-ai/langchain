@@ -10,11 +10,14 @@ from langchain_core.messages import (
     ToolCall,
 )
 from langchain_core.outputs import ChatGeneration, Generation
+from typing_extensions import override
 
 from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 class ToolAgentAction(AgentActionMessageLog):
+    """ "Tool agent action."""
+
     tool_call_id: str
     """Tool call that this message is responding to."""
 
@@ -33,7 +36,8 @@ def parse_ai_message_to_tool_action(
     else:
         if not message.additional_kwargs.get("tool_calls"):
             return AgentFinish(
-                return_values={"output": message.content}, log=str(message.content)
+                return_values={"output": message.content},
+                log=str(message.content),
             )
         # Best-effort parsing
         tool_calls = []
@@ -43,14 +47,14 @@ def parse_ai_message_to_tool_action(
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
-                    ToolCall(name=function_name, args=args, id=tool_call["id"])
+                    ToolCall(name=function_name, args=args, id=tool_call["id"]),
                 )
-            except JSONDecodeError:
+            except JSONDecodeError as e:
                 msg = (
                     f"Could not parse tool input: {function} because "
                     f"the `arguments` is not valid JSON."
                 )
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
     for tool_call in tool_calls:
         # HACK HACK HACK:
         # The code that encodes tool input into Open AI uses a special variable
@@ -71,7 +75,7 @@ def parse_ai_message_to_tool_action(
                 log=log,
                 message_log=[message],
                 tool_call_id=tool_call["id"],
-            )
+            ),
         )
     return actions
 
@@ -89,15 +93,20 @@ class ToolsAgentOutputParser(MultiActionAgentOutputParser):
     def _type(self) -> str:
         return "tools-agent-output-parser"
 
+    @override
     def parse_result(
-        self, result: list[Generation], *, partial: bool = False
+        self,
+        result: list[Generation],
+        *,
+        partial: bool = False,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not isinstance(result[0], ChatGeneration):
             msg = "This output parser only works on ChatGeneration output"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         message = result[0].message
         return parse_ai_message_to_tool_action(message)
 
+    @override
     def parse(self, text: str) -> Union[list[AgentAction], AgentFinish]:
         msg = "Can only parse messages"
         raise ValueError(msg)

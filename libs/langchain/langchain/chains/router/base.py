@@ -12,11 +12,14 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
 
 class Route(NamedTuple):
+    """A route to a destination chain."""
+
     destination: Optional[str]
     next_inputs: dict[str, Any]
 
@@ -25,12 +28,12 @@ class RouterChain(Chain, ABC):
     """Chain that outputs the name of a destination chain and the inputs to it."""
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["destination", "next_inputs"]
 
     def route(self, inputs: dict[str, Any], callbacks: Callbacks = None) -> Route:
-        """
-        Route inputs to a destination chain.
+        """Route inputs to a destination chain.
 
         Args:
             inputs: inputs to the chain
@@ -43,8 +46,19 @@ class RouterChain(Chain, ABC):
         return Route(result["destination"], result["next_inputs"])
 
     async def aroute(
-        self, inputs: dict[str, Any], callbacks: Callbacks = None
+        self,
+        inputs: dict[str, Any],
+        callbacks: Callbacks = None,
     ) -> Route:
+        """Route inputs to a destination chain.
+
+        Args:
+            inputs: inputs to the chain
+            callbacks: callbacks to use for the chain
+
+        Returns:
+            a Route object
+        """
         result = await self.acall(inputs, callbacks=callbacks)
         return Route(result["destination"], result["next_inputs"])
 
@@ -93,13 +107,15 @@ class MultiRouteChain(Chain):
         route = self.router_chain.route(inputs, callbacks=callbacks)
 
         _run_manager.on_text(
-            str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
+            str(route.destination) + ": " + str(route.next_inputs),
+            verbose=self.verbose,
         )
         if not route.destination:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
         if route.destination in self.destination_chains:
             return self.destination_chains[route.destination](
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
         if self.silent_errors:
             return self.default_chain(route.next_inputs, callbacks=callbacks)
@@ -116,19 +132,23 @@ class MultiRouteChain(Chain):
         route = await self.router_chain.aroute(inputs, callbacks=callbacks)
 
         await _run_manager.on_text(
-            str(route.destination) + ": " + str(route.next_inputs), verbose=self.verbose
+            str(route.destination) + ": " + str(route.next_inputs),
+            verbose=self.verbose,
         )
         if not route.destination:
             return await self.default_chain.acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
         if route.destination in self.destination_chains:
             return await self.destination_chains[route.destination].acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
         if self.silent_errors:
             return await self.default_chain.acall(
-                route.next_inputs, callbacks=callbacks
+                route.next_inputs,
+                callbacks=callbacks,
             )
         msg = f"Received invalid destination chain name '{route.destination}'"
         raise ValueError(msg)

@@ -8,6 +8,7 @@ from langchain_core.callbacks import (
 )
 from langchain_core.utils import check_package_version, get_from_dict_or_env
 from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -26,6 +27,7 @@ class OpenAIModerationChain(Chain):
 
             from langchain.chains import OpenAIModerationChain
             moderation = OpenAIModerationChain()
+
     """
 
     client: Any = None  #: :meta private:
@@ -45,7 +47,9 @@ class OpenAIModerationChain(Chain):
     def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+            values,
+            "openai_api_key",
+            "OPENAI_API_KEY",
         )
         openai_organization = get_from_dict_or_env(
             values,
@@ -70,12 +74,12 @@ class OpenAIModerationChain(Chain):
                 values["client"] = openai.OpenAI(api_key=openai_api_key)
                 values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
 
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
         return values
 
     @property
@@ -103,6 +107,7 @@ class OpenAIModerationChain(Chain):
             return error_str
         return text
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],

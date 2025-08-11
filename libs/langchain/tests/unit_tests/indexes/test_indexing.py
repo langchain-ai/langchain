@@ -1,5 +1,5 @@
 from collections.abc import AsyncIterator, Iterable, Iterator, Sequence
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import (
     Any,
     Optional,
@@ -13,6 +13,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.indexing.api import _abatch, _get_document_with_hash
 from langchain_core.vectorstores import VST, VectorStore
+from typing_extensions import override
 
 from langchain.indexes import aindex, index
 from langchain.indexes._sql_record_manager import SQLRecordManager
@@ -45,18 +46,21 @@ class InMemoryVectorStore(VectorStore):
         self.store: dict[str, Document] = {}
         self.permit_upserts = permit_upserts
 
+    @override
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         """Delete the given documents from the store using their IDs."""
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     def add_documents(
         self,
         documents: Sequence[Document],
@@ -81,6 +85,7 @@ class InMemoryVectorStore(VectorStore):
 
         return list(ids)
 
+    @override
     async def aadd_documents(
         self,
         documents: Sequence[Document],
@@ -110,7 +115,7 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[str]:
         """Add the given texts to the store (insert behavior)."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @classmethod
     def from_texts(
@@ -121,13 +126,16 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> VST:
         """Create a vector store from a list of texts."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         """Find the most similar documents to the given query."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @pytest.fixture
@@ -163,8 +171,13 @@ def upserting_vector_store() -> InMemoryVectorStore:
     return InMemoryVectorStore(permit_upserts=True)
 
 
+_JANUARY_FIRST = datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+_JANUARY_SECOND = datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp()
+
+
 def test_indexing_same_content(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
@@ -175,7 +188,7 @@ def test_indexing_same_content(
             Document(
                 page_content="This is another document.",
             ),
-        ]
+        ],
     )
 
     assert index(loader, record_manager, vector_store) == {
@@ -199,7 +212,8 @@ def test_indexing_same_content(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_same_content(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
@@ -210,7 +224,7 @@ async def test_aindexing_same_content(
             Document(
                 page_content="This is another document.",
             ),
-        ]
+        ],
     )
 
     assert await aindex(loader, arecord_manager, vector_store) == {
@@ -233,7 +247,8 @@ async def test_aindexing_same_content(
 
 
 def test_index_simple_delete_full(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
@@ -244,11 +259,13 @@ def test_index_simple_delete_full(
             Document(
                 page_content="This is another document.",
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_FIRST,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 2,
@@ -258,7 +275,9 @@ def test_index_simple_delete_full(
         }
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 1).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_FIRST,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -275,11 +294,13 @@ def test_index_simple_delete_full(
             Document(
                 page_content="This is another document.",  # <-- Same as original
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 1,
@@ -297,7 +318,9 @@ def test_index_simple_delete_full(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(loader, record_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -309,7 +332,8 @@ def test_index_simple_delete_full(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aindex_simple_delete_full(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Indexing some content to confirm it gets added only once."""
     loader = ToyLoader(
@@ -320,11 +344,13 @@ async def test_aindex_simple_delete_full(
             Document(
                 page_content="This is another document.",
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_FIRST,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 2,
@@ -334,7 +360,9 @@ async def test_aindex_simple_delete_full(
         }
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 1).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_FIRST,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -351,11 +379,13 @@ async def test_aindex_simple_delete_full(
             Document(
                 page_content="This is another document.",  # <-- Same as original
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 1,
@@ -373,7 +403,9 @@ async def test_aindex_simple_delete_full(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(loader, arecord_manager, vector_store, cleanup="full") == {
             "num_added": 0,
@@ -384,7 +416,8 @@ async def test_aindex_simple_delete_full(
 
 
 def test_incremental_fails_with_bad_source_ids(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
@@ -401,14 +434,22 @@ def test_incremental_fails_with_bad_source_ids(
                 page_content="This is yet another document.",
                 metadata={"source": None},
             ),
-        ]
+        ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         index(
             loader,
@@ -421,7 +462,8 @@ def test_incremental_fails_with_bad_source_ids(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_fails_with_bad_source_ids(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
@@ -438,10 +480,14 @@ async def test_aincremental_fails_with_bad_source_ids(
                 page_content="This is yet another document.",
                 metadata={"source": None},
             ),
-        ]
+        ],
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source id key is required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
@@ -450,7 +496,11 @@ async def test_aincremental_fails_with_bad_source_ids(
             cleanup="incremental",
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Source ids are required when cleanup mode is incremental "
+        "or scoped_full.",
+    ):
         # Should raise an error because no source id function was specified
         await aindex(
             loader,
@@ -462,7 +512,8 @@ async def test_aincremental_fails_with_bad_source_ids(
 
 
 def test_no_delete(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing without a deletion strategy."""
     loader = ToyLoader(
@@ -475,11 +526,13 @@ def test_no_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -496,7 +549,9 @@ def test_no_delete(
 
     # If we add the same content twice it should be skipped
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -521,12 +576,14 @@ def test_no_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     # Should result in no updates or deletions!
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -544,7 +601,8 @@ def test_no_delete(
 
 @pytest.mark.requires("aiosqlite")
 async def test_ano_delete(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing without a deletion strategy."""
     loader = ToyLoader(
@@ -557,11 +615,13 @@ async def test_ano_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -578,7 +638,9 @@ async def test_ano_delete(
 
     # If we add the same content twice it should be skipped
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -603,12 +665,14 @@ async def test_ano_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     # Should result in no updates or deletions!
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader,
@@ -625,7 +689,8 @@ async def test_ano_delete(
 
 
 def test_incremental_delete(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
@@ -638,11 +703,13 @@ def test_incremental_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -666,7 +733,9 @@ def test_incremental_delete(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -696,12 +765,14 @@ def test_incremental_delete(
                 page_content="This is another document.",  # <-- Same as original
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 3).timestamp()
+        record_manager,
+        "get_time",
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         assert index(
             loader,
@@ -729,7 +800,8 @@ def test_incremental_delete(
 
 
 def test_incremental_indexing_with_batch_size(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental indexing"""
     loader = ToyLoader(
@@ -750,11 +822,13 @@ def test_incremental_indexing_with_batch_size(
                 page_content="4",
                 metadata={"source": "1"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -793,7 +867,8 @@ def test_incremental_indexing_with_batch_size(
 
 
 def test_incremental_delete_with_batch_size(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental deletion strategy and batch size."""
     loader = ToyLoader(
@@ -814,11 +889,13 @@ def test_incremental_delete_with_batch_size(
                 page_content="4",
                 metadata={"source": "4"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -843,7 +920,9 @@ def test_incremental_delete_with_batch_size(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        record_manager,
+        "get_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert index(
             loader,
@@ -861,7 +940,9 @@ def test_incremental_delete_with_batch_size(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2022, 1, 3).timestamp()
+        record_manager,
+        "get_time",
+        return_value=datetime(2022, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -890,7 +971,9 @@ def test_incremental_delete_with_batch_size(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2023, 1, 3).timestamp()
+        record_manager,
+        "get_time",
+        return_value=datetime(2023, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -919,7 +1002,9 @@ def test_incremental_delete_with_batch_size(
 
     # Try to index with changed docs now
     with patch.object(
-        record_manager, "get_time", return_value=datetime(2024, 1, 3).timestamp()
+        record_manager,
+        "get_time",
+        return_value=datetime(2024, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         # Docs with same content
         docs = [
@@ -948,7 +1033,8 @@ def test_incremental_delete_with_batch_size(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aincremental_delete(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with incremental deletion strategy."""
     loader = ToyLoader(
@@ -961,11 +1047,13 @@ async def test_aincremental_delete(
                 page_content="This is another document.",
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -989,7 +1077,9 @@ async def test_aincremental_delete(
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 2).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=_JANUARY_SECOND,
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1019,12 +1109,14 @@ async def test_aincremental_delete(
                 page_content="This is another document.",  # <-- Same as original
                 metadata={"source": "2"},
             ),
-        ]
+        ],
     )
 
     # Attempt to index again verify that nothing changes
     with patch.object(
-        arecord_manager, "aget_time", return_value=datetime(2021, 1, 3).timestamp()
+        arecord_manager,
+        "aget_time",
+        return_value=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp(),
     ):
         assert await aindex(
             loader.lazy_load(),
@@ -1052,7 +1144,8 @@ async def test_aincremental_delete(
 
 
 def test_indexing_with_no_docs(
-    record_manager: SQLRecordManager, vector_store: VectorStore
+    record_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
@@ -1067,7 +1160,8 @@ def test_indexing_with_no_docs(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_with_no_docs(
-    arecord_manager: SQLRecordManager, vector_store: VectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check edge case when loader returns no new docs."""
     loader = ToyLoader(documents=[])
@@ -1081,7 +1175,8 @@ async def test_aindexing_with_no_docs(
 
 
 def test_deduplication(
-    record_manager: SQLRecordManager, vector_store: VectorStore
+    record_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
@@ -1099,14 +1194,15 @@ def test_deduplication(
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 1,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
 
 @pytest.mark.requires("aiosqlite")
 async def test_adeduplication(
-    arecord_manager: SQLRecordManager, vector_store: VectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
@@ -1124,13 +1220,14 @@ async def test_adeduplication(
     assert await aindex(docs, arecord_manager, vector_store, cleanup="full") == {
         "num_added": 1,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
 
 def test_cleanup_with_different_batchsize(
-    record_manager: SQLRecordManager, vector_store: VectorStore
+    record_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check that we can clean up with different batch size."""
     docs = [
@@ -1157,7 +1254,11 @@ def test_cleanup_with_different_batchsize(
     ]
 
     assert index(
-        docs, record_manager, vector_store, cleanup="full", cleanup_batch_size=17
+        docs,
+        record_manager,
+        vector_store,
+        cleanup="full",
+        cleanup_batch_size=17,
     ) == {
         "num_added": 1001,
         "num_deleted": 1000,
@@ -1168,7 +1269,8 @@ def test_cleanup_with_different_batchsize(
 
 @pytest.mark.requires("aiosqlite")
 async def test_async_cleanup_with_different_batchsize(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Check that we can clean up with different batch size."""
     docs = [
@@ -1195,7 +1297,11 @@ async def test_async_cleanup_with_different_batchsize(
     ]
 
     assert await aindex(
-        docs, arecord_manager, vector_store, cleanup="full", cleanup_batch_size=17
+        docs,
+        arecord_manager,
+        vector_store,
+        cleanup="full",
+        cleanup_batch_size=17,
     ) == {
         "num_added": 1001,
         "num_deleted": 1000,
@@ -1205,7 +1311,8 @@ async def test_async_cleanup_with_different_batchsize(
 
 
 def test_deduplication_v2(
-    record_manager: SQLRecordManager, vector_store: VectorStore
+    record_manager: SQLRecordManager,
+    vector_store: VectorStore,
 ) -> None:
     """Check edge case when loader returns no new docs."""
     docs = [
@@ -1230,14 +1337,14 @@ def test_deduplication_v2(
     assert index(docs, record_manager, vector_store, cleanup="full") == {
         "num_added": 3,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
     # using in memory implementation here
     assert isinstance(vector_store, InMemoryVectorStore)
     contents = sorted(
-        [document.page_content for document in vector_store.store.values()]
+        [document.page_content for document in vector_store.store.values()],
     )
     assert contents == ["1", "2", "3"]
 
@@ -1268,7 +1375,8 @@ async def test_abatch() -> None:
 
 
 def test_indexing_force_update(
-    record_manager: SQLRecordManager, upserting_vector_store: VectorStore
+    record_manager: SQLRecordManager,
+    upserting_vector_store: VectorStore,
 ) -> None:
     """Test indexing with force update."""
     docs = [
@@ -1289,30 +1397,35 @@ def test_indexing_force_update(
     assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
         "num_added": 2,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
     assert index(docs, record_manager, upserting_vector_store, cleanup="full") == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 2,
+        "num_skipped": 3,
         "num_updated": 0,
     }
 
     assert index(
-        docs, record_manager, upserting_vector_store, cleanup="full", force_update=True
+        docs,
+        record_manager,
+        upserting_vector_store,
+        cleanup="full",
+        force_update=True,
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 2,
     }
 
 
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_force_update(
-    arecord_manager: SQLRecordManager, upserting_vector_store: VectorStore
+    arecord_manager: SQLRecordManager,
+    upserting_vector_store: VectorStore,
 ) -> None:
     """Test indexing with force update."""
     docs = [
@@ -1331,20 +1444,26 @@ async def test_aindexing_force_update(
     ]
 
     assert await aindex(
-        docs, arecord_manager, upserting_vector_store, cleanup="full"
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
     ) == {
         "num_added": 2,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 0,
     }
 
     assert await aindex(
-        docs, arecord_manager, upserting_vector_store, cleanup="full"
+        docs,
+        arecord_manager,
+        upserting_vector_store,
+        cleanup="full",
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 2,
+        "num_skipped": 3,
         "num_updated": 0,
     }
 
@@ -1357,13 +1476,14 @@ async def test_aindexing_force_update(
     ) == {
         "num_added": 0,
         "num_deleted": 0,
-        "num_skipped": 0,
+        "num_skipped": 1,
         "num_updated": 2,
     }
 
 
 def test_indexing_custom_batch_size(
-    record_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    record_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with a custom batch size."""
     docs = [
@@ -1389,7 +1509,7 @@ def test_indexing_custom_batch_size(
                 page_content="This is a test document.",
                 metadata={"source": "1"},
                 id=ids[0],
-            )
+            ),
         ]
         assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}
@@ -1397,7 +1517,8 @@ def test_indexing_custom_batch_size(
 
 @pytest.mark.requires("aiosqlite")
 async def test_aindexing_custom_batch_size(
-    arecord_manager: SQLRecordManager, vector_store: InMemoryVectorStore
+    arecord_manager: SQLRecordManager,
+    vector_store: InMemoryVectorStore,
 ) -> None:
     """Test indexing with a custom batch size."""
     docs = [
@@ -1423,7 +1544,7 @@ async def test_aindexing_custom_batch_size(
                 page_content="This is a test document.",
                 metadata={"source": "1"},
                 id=ids[0],
-            )
+            ),
         ]
         assert args == (docs_with_id,)
         assert kwargs == {"ids": ids, "batch_size": batch_size}

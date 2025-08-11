@@ -133,7 +133,7 @@ class TestResult(dict):
             if "reference" in result:
                 if isinstance(result["reference"], dict):
                     r.update(
-                        {f"reference.{k}": v for k, v in result["reference"].items()}
+                        {f"reference.{k}": v for k, v in result["reference"].items()},
                     )
                 else:
                     r["reference"] = result["reference"]
@@ -143,7 +143,7 @@ class TestResult(dict):
                     "error": result.get("Error"),
                     "execution_time": result["execution_time"],
                     "run_id": result.get("run_id"),
-                }
+                },
             )
             records.append(r)
             indices.append(example_id)
@@ -155,14 +155,29 @@ class EvalError(dict):
     """Your architecture raised an error."""
 
     def __init__(self, Error: BaseException, **kwargs: Any) -> None:
+        """Initialize the EvalError with an error and additional attributes.
+
+        Args:
+            Error: The error that occurred.
+            **kwargs: Additional attributes to include in the error.
+        """
         super().__init__(Error=Error, **kwargs)
 
     def __getattr__(self, name: str) -> Any:
+        """Get an attribute from the EvalError.
+
+        Args:
+            name: The name of the attribute to get.
+        Returns:
+            The value of the attribute.
+        Raises:
+            AttributeError: If the attribute does not exist.
+        """
         try:
             return self[name]
-        except KeyError:
+        except KeyError as e:
             msg = f"'EvalError' object has no attribute '{name}'"
-            raise AttributeError(msg)
+            raise AttributeError(msg) from e
 
 
 def _wrap_in_chain_factory(
@@ -199,24 +214,24 @@ def _wrap_in_chain_factory(
         return lambda: lcf
     if callable(llm_or_chain_factory):
         if is_traceable_function(llm_or_chain_factory):
-            runnable_ = as_runnable(cast(Callable, llm_or_chain_factory))
+            runnable_ = as_runnable(cast("Callable", llm_or_chain_factory))
             return lambda: runnable_
         try:
             _model = llm_or_chain_factory()  # type: ignore[call-arg]
         except TypeError:
             # It's an arbitrary function, wrap it in a RunnableLambda
-            user_func = cast(Callable, llm_or_chain_factory)
+            user_func = cast("Callable", llm_or_chain_factory)
             sig = inspect.signature(user_func)
-            logger.info(f"Wrapping function {sig} as RunnableLambda.")
+            logger.info("Wrapping function %s as RunnableLambda.", sig)
             wrapped = RunnableLambda(user_func)
             return lambda: wrapped
-        constructor = cast(Callable, llm_or_chain_factory)
+        constructor = cast("Callable", llm_or_chain_factory)
         if isinstance(_model, BaseLanguageModel):
             # It's not uncommon to do an LLM constructor instead of raw LLM,
             # so we'll unpack it for the user.
             return _model
-        if is_traceable_function(cast(Callable, _model)):
-            runnable_ = as_runnable(cast(Callable, _model))
+        if is_traceable_function(cast("Callable", _model)):
+            runnable_ = as_runnable(cast("Callable", _model))
             return lambda: runnable_
         if not isinstance(_model, Runnable):
             # This is unlikely to happen - a constructor for a model function
@@ -350,7 +365,7 @@ def _validate_example_inputs_for_language_model(
         except InputFormatError:
             try:
                 _get_messages(first_example.inputs or {})
-            except InputFormatError:
+            except InputFormatError as err2:
                 msg = (
                     "Example inputs do not match language model input format. "
                     "Expected a dictionary with messages or a single prompt."
@@ -359,7 +374,7 @@ def _validate_example_inputs_for_language_model(
                     " to convert the example.inputs to a compatible format"
                     " for the llm or chat model you wish to evaluate."
                 )
-                raise InputFormatError(msg)
+                raise InputFormatError(msg) from err2
 
 
 def _validate_example_inputs_for_chain(
@@ -416,7 +431,7 @@ def _validate_example_inputs(
             # Otherwise it's a runnable
             _validate_example_inputs_for_chain(example, chain, input_mapper)
         elif isinstance(chain, Runnable):
-            logger.debug(f"Skipping input validation for {chain}")
+            logger.debug("Skipping input validation for %s", chain)
 
 
 ## Shared Evaluator Setup Utilities
@@ -461,16 +476,19 @@ def _determine_input_key(
         input_key = config.input_key
         if run_inputs and input_key not in run_inputs:
             logger.warning(
-                f"Input key {input_key} not in chain's specified"
-                f" input keys {run_inputs}. Evaluation behavior may be undefined."
+                "Input key %s not in chain's specified input keys %s. "
+                "Evaluation behavior may be undefined.",
+                input_key,
+                run_inputs,
             )
     elif run_inputs and len(run_inputs) == 1:
         input_key = run_inputs[0]
     elif run_inputs is not None and len(run_inputs) > 1:
         logger.warning(
-            f"Chain expects multiple input keys: {run_inputs},"
-            f" Evaluator is likely to fail. Evaluation behavior may be undefined."
-            " Specify an input_key in the RunEvalConfig to avoid this warning."
+            "Chain expects multiple input keys: %s,"
+            " Evaluator is likely to fail. Evaluation behavior may be undefined."
+            " Specify an input_key in the RunEvalConfig to avoid this warning.",
+            run_inputs,
         )
 
     return input_key
@@ -485,16 +503,19 @@ def _determine_prediction_key(
         prediction_key = config.prediction_key
         if run_outputs and prediction_key not in run_outputs:
             logger.warning(
-                f"Prediction key {prediction_key} not in chain's specified"
-                f" output keys {run_outputs}. Evaluation behavior may be undefined."
+                "Prediction key %s not in chain's specified output keys %s. "
+                "Evaluation behavior may be undefined.",
+                prediction_key,
+                run_outputs,
             )
     elif run_outputs and len(run_outputs) == 1:
         prediction_key = run_outputs[0]
     elif run_outputs is not None and len(run_outputs) > 1:
         logger.warning(
-            f"Chain expects multiple output keys: {run_outputs},"
-            f" Evaluation behavior may be undefined. Specify a prediction_key"
-            " in the RunEvalConfig to avoid this warning."
+            "Chain expects multiple output keys: %s,"
+            " Evaluation behavior may be undefined. Specify a prediction_key"
+            " in the RunEvalConfig to avoid this warning.",
+            run_outputs,
         )
     return prediction_key
 
@@ -552,7 +573,7 @@ def _construct_run_evaluator(
         return run_evaluator_dec(eval_config)
     else:
         msg = f"Unknown evaluator type: {type(eval_config)}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if isinstance(evaluator_, StringEvaluator):
         if evaluator_.requires_reference and reference_key is None:
@@ -623,7 +644,10 @@ def _load_run_evaluators(
         and any(isinstance(e, StringEvaluator) for e in config.custom_evaluators)
     ):
         input_key, prediction_key, reference_key = _get_keys(
-            config, run_inputs, run_outputs, example_outputs
+            config,
+            run_inputs,
+            run_outputs,
+            example_outputs,
         )
     for eval_config in config.evaluators:
         run_evaluator = _construct_run_evaluator(
@@ -650,7 +674,7 @@ def _load_run_evaluators(
                     input_key=input_key,
                     prediction_key=prediction_key,
                     reference_key=reference_key,
-                )
+                ),
             )
         elif callable(custom_evaluator):
             run_evaluators.append(run_evaluator_dec(custom_evaluator))
@@ -659,7 +683,7 @@ def _load_run_evaluators(
                 f"Unsupported custom evaluator: {custom_evaluator}."
                 f" Expected RunEvaluator or StringEvaluator."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
     return run_evaluators
 
@@ -700,7 +724,9 @@ async def _arun_llm(
             return await llm.ainvoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         msg = (
@@ -715,7 +741,9 @@ async def _arun_llm(
         llm_output: Union[str, BaseMessage] = await llm.ainvoke(
             prompt,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     except InputFormatError:
@@ -723,7 +751,9 @@ async def _arun_llm(
         llm_output = await llm.ainvoke(
             **llm_inputs,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     return llm_output
@@ -750,12 +780,16 @@ async def _arun_chain(
         output = await chain.ainvoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = await chain.ainvoke(inputs_, config=runnable_config)
     return output
@@ -807,9 +841,11 @@ async def _arun_llm_or_chain(
         result = output
     except Exception as e:
         logger.warning(
-            f"{chain_or_llm} failed for example {example.id} "
-            f"with inputs {example.inputs}"
-            f"\n{e!r}"
+            "%s failed for example %s with inputs %s\n%s",
+            chain_or_llm,
+            example.id,
+            example.inputs,
+            e,
         )
         result = EvalError(Error=e)
     return result
@@ -852,7 +888,9 @@ def _run_llm(
             llm_output: Union[str, BaseMessage] = llm.invoke(
                 prompt_or_messages,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         else:
@@ -868,7 +906,9 @@ def _run_llm(
             llm_output = llm.invoke(
                 llm_prompts,
                 config=RunnableConfig(
-                    callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                    callbacks=callbacks,
+                    tags=tags or [],
+                    metadata=metadata or {},
                 ),
             )
         except InputFormatError:
@@ -901,12 +941,16 @@ def _run_chain(
         output = chain.invoke(
             val,
             config=RunnableConfig(
-                callbacks=callbacks, tags=tags or [], metadata=metadata or {}
+                callbacks=callbacks,
+                tags=tags or [],
+                metadata=metadata or {},
             ),
         )
     else:
         runnable_config = RunnableConfig(
-            tags=tags or [], callbacks=callbacks, metadata=metadata or {}
+            tags=tags or [],
+            callbacks=callbacks,
+            metadata=metadata or {},
         )
         output = chain.invoke(inputs_, config=runnable_config)
     return output
@@ -960,9 +1004,12 @@ def _run_llm_or_chain(
     except Exception as e:
         error_type = type(e).__name__
         logger.warning(
-            f"{chain_or_llm} failed for example {example.id} "
-            f"with inputs {example.inputs}"
-            f"\nError Type: {error_type}, Message: {e}"
+            "%s failed for example %s with inputs %s\nError Type: %s, Message: %s",
+            chain_or_llm,
+            example.id,
+            example.inputs,
+            error_type,
+            e,
         )
         result = EvalError(Error=e)
     return result
@@ -1008,7 +1055,7 @@ def _prepare_eval_run(
         )
     except (HTTPError, ValueError, LangSmithError) as e:
         if "already exists " not in str(e):
-            raise e
+            raise
         uid = uuid.uuid4()
         example_msg = f"""
 run_on_dataset(
@@ -1020,7 +1067,7 @@ run_on_dataset(
             f"Test project {project_name} already exists. Please use a different name:"
             f"\n\n{example_msg}"
         )
-        raise ValueError(msg)
+        raise ValueError(msg) from e
     comparison_url = dataset.url + f"/compare?selectedSessions={project.id}"
     print(  # noqa: T201
         f"View the evaluation results for project '{project_name}'"
@@ -1057,7 +1104,7 @@ class _DatasetRunContainer:
     ) -> dict:
         results: dict = {}
         for example, output in zip(self.examples, batch_results):
-            row_result = cast(_RowResult, all_eval_results.get(str(example.id), {}))
+            row_result = cast("_RowResult", all_eval_results.get(str(example.id), {}))
             results[str(example.id)] = {
                 "input": example.inputs,
                 "feedback": row_result.get("feedback", []),
@@ -1084,27 +1131,29 @@ class _DatasetRunContainer:
                     result = evaluator(runs_list, self.examples)
                     if isinstance(result, EvaluationResult):
                         result = result.dict()
-                    aggregate_feedback.append(cast(dict, result))
+                    aggregate_feedback.append(cast("dict", result))
                     executor.submit(
                         self.client.create_feedback,
                         **result,
                         run_id=None,
                         project_id=self.project.id,
                     )
-                except Exception as e:
-                    logger.error(f"Error running batch evaluator {evaluator!r}: {e}")
+                except Exception:
+                    logger.exception(
+                        "Error running batch evaluator %s", repr(evaluator)
+                    )
         return aggregate_feedback
 
     def _collect_metrics(self) -> tuple[dict[str, _RowResult], dict[str, Run]]:
         all_eval_results: dict = {}
         all_runs: dict = {}
         for c in self.configs:
-            for callback in cast(list, c["callbacks"]):
+            for callback in cast("list", c["callbacks"]):
                 if isinstance(callback, EvaluatorCallbackHandler):
                     eval_results = callback.logged_eval_results
                     for (_, example_id), v in eval_results.items():
                         all_eval_results.setdefault(str(example_id), {}).update(
-                            {"feedback": v}
+                            {"feedback": v},
                         )
                 elif isinstance(callback, LangChainTracer):
                     run = callback.latest_run
@@ -1119,10 +1168,10 @@ class _DatasetRunContainer:
                             "execution_time": execution_time,
                             "run_id": run_id,
                             "run": run,
-                        }
+                        },
                     )
                     all_runs[str(callback.example_id)] = run
-        return cast(dict[str, _RowResult], all_eval_results), all_runs
+        return cast("dict[str, _RowResult]", all_eval_results), all_runs
 
     def _collect_test_results(
         self,
@@ -1153,14 +1202,15 @@ class _DatasetRunContainer:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
             except Exception as e:
-                logger.debug(f"Failed to print aggregate feedback: {e!r}")
+                logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
             self.client.update_project(
-                self.project.id, end_time=datetime.now(timezone.utc)
+                self.project.id,
+                end_time=datetime.now(timezone.utc),
             )
         except Exception as e:
-            logger.debug(f"Failed to close project: {e!r}")
+            logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 
     @classmethod
@@ -1200,7 +1250,10 @@ class _DatasetRunContainer:
             run_metadata["revision_id"] = revision_id
         wrapped_model = _wrap_in_chain_factory(llm_or_chain_factory)
         run_evaluators = _setup_evaluation(
-            wrapped_model, examples, evaluation, dataset.data_type or DataType.kv
+            wrapped_model,
+            examples,
+            evaluation,
+            dataset.data_type or DataType.kv,
         )
         _validate_example_inputs(examples[0], wrapped_model, input_mapper)
         progress_bar = progress.ProgressBarCallback(len(examples))
@@ -1254,7 +1307,8 @@ def _display_aggregate_results(aggregate_results: pd.DataFrame) -> None:
         display(aggregate_results)
     else:
         formatted_string = aggregate_results.to_string(
-            float_format=lambda x: f"{x:.2f}", justify="right"
+            float_format=lambda x: f"{x:.2f}",
+            justify="right",
         )
         print("\n Experiment Results:")  # noqa: T201
         print(formatted_string)  # noqa: T201
@@ -1291,6 +1345,114 @@ async def arun_on_dataset(
     revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    """Run on dataset.
+
+    Run the Chain or language model on a dataset and store traces
+    to the specified project name.
+
+    For the (usually faster) async version of this function,
+    see :func:`arun_on_dataset`.
+
+    Args:
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        evaluation: Configuration for evaluators to run on the
+            results of the chain
+        concurrency_level: The number of async tasks to run concurrently.
+        project_name: Name of the project to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        project_metadata: Optional metadata to add to the project.
+            Useful for storing information the test variant.
+            (prompt version, model version, etc.)
+        client: LangSmith client to use to access the dataset and to
+            log feedback and run traces.
+        verbose: Whether to print progress.
+        tags: Tags to add to each run in the project.
+        revision_id: Optional revision identifier to assign this test run to
+            track the performance of different versions of your system.
+    Returns:
+        A dictionary containing the run's project name and the resulting model outputs.
+
+    Examples:
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain_openai import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = smith_eval.RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                smith_eval.RunEvalConfig.Criteria("helpfulness"),
+                smith_eval.RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        await arun_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = smith_eval.RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        await arun_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
@@ -1356,6 +1518,114 @@ def run_on_dataset(
     revision_id: Optional[str] = None,
     **kwargs: Any,
 ) -> dict[str, Any]:
+    """Run on dataset.
+
+    Run the Chain or language model on a dataset and store traces
+    to the specified project name.
+
+    For the (usually faster) async version of this function,
+    see :func:`arun_on_dataset`.
+
+    Args:
+        dataset_name: Name of the dataset to run the chain on.
+        llm_or_chain_factory: Language model or Chain constructor to run
+            over the dataset. The Chain constructor is used to permit
+            independent calls on each example without carrying over state.
+        evaluation: Configuration for evaluators to run on the
+            results of the chain
+        concurrency_level: The number of async tasks to run concurrently.
+        project_name: Name of the project to store the traces in.
+            Defaults to {dataset_name}-{chain class name}-{datetime}.
+        project_metadata: Optional metadata to add to the project.
+            Useful for storing information the test variant.
+            (prompt version, model version, etc.)
+        client: LangSmith client to use to access the dataset and to
+            log feedback and run traces.
+        verbose: Whether to print progress.
+        tags: Tags to add to each run in the project.
+        revision_id: Optional revision identifier to assign this test run to
+            track the performance of different versions of your system.
+    Returns:
+        A dictionary containing the run's project name and the resulting model outputs.
+
+    Examples:
+
+    .. code-block:: python
+
+        from langsmith import Client
+        from langchain_openai import ChatOpenAI
+        from langchain.chains import LLMChain
+        from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
+
+        # Chains may have memory. Passing in a constructor function lets the
+        # evaluation framework avoid cross-contamination between runs.
+        def construct_chain():
+            llm = ChatOpenAI(temperature=0)
+            chain = LLMChain.from_string(
+                llm,
+                "What's the answer to {your_input_key}"
+            )
+            return chain
+
+        # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
+        evaluation_config = smith_eval.RunEvalConfig(
+            evaluators=[
+                "qa",  # "Correctness" against a reference answer
+                "embedding_distance",
+                smith_eval.RunEvalConfig.Criteria("helpfulness"),
+                smith_eval.RunEvalConfig.Criteria({
+                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                }),
+            ]
+        )
+
+        client = Client()
+        run_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    You can also create custom evaluators by subclassing the
+    :class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
+    or LangSmith's `RunEvaluator` classes.
+
+    .. code-block:: python
+
+        from typing import Optional
+        from langchain.evaluation import StringEvaluator
+
+        class MyStringEvaluator(StringEvaluator):
+
+            @property
+            def requires_input(self) -> bool:
+                return False
+
+            @property
+            def requires_reference(self) -> bool:
+                return True
+
+            @property
+            def evaluation_name(self) -> str:
+                return "exact_match"
+
+            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+                return {"score": prediction == reference}
+
+
+        evaluation_config = smith_eval.RunEvalConfig(
+            custom_evaluators = [MyStringEvaluator()],
+        )
+
+        run_on_dataset(
+            client,
+            dataset_name="<my_dataset_name>",
+            llm_or_chain_factory=construct_chain,
+            evaluation=evaluation_config,
+        )
+
+    """  # noqa: E501
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
@@ -1413,120 +1683,7 @@ def run_on_dataset(
                     ),
                     container.examples,
                     container.configs,
-                )
+                ),
             )
 
     return container.finish(batch_results, verbose=verbose)
-
-
-_RUN_ON_DATASET_DOCSTRING = """
-Run the Chain or language model on a dataset and store traces
-to the specified project name.
-
-Args:
-    dataset_name: Name of the dataset to run the chain on.
-    llm_or_chain_factory: Language model or Chain constructor to run
-        over the dataset. The Chain constructor is used to permit
-        independent calls on each example without carrying over state.
-    evaluation: Configuration for evaluators to run on the
-        results of the chain
-    concurrency_level: The number of async tasks to run concurrently.
-    project_name: Name of the project to store the traces in.
-        Defaults to {dataset_name}-{chain class name}-{datetime}.
-    project_metadata: Optional metadata to add to the project.
-        Useful for storing information the test variant.
-        (prompt version, model version, etc.)
-    client: LangSmith client to use to access the dataset and to
-        log feedback and run traces.
-    verbose: Whether to print progress.
-    tags: Tags to add to each run in the project.
-    revision_id: Optional revision identifier to assign this test run to
-        track the performance of different versions of your system.
-Returns:
-    A dictionary containing the run's project name and the resulting model outputs.
-
-
-For the (usually faster) async version of this function, see :func:`arun_on_dataset`.
-
-Examples
---------
-
-.. code-block:: python
-
-    from langsmith import Client
-    from langchain_openai import ChatOpenAI
-    from langchain.chains import LLMChain
-    from langchain.smith import smith_eval.RunEvalConfig, run_on_dataset
-
-    # Chains may have memory. Passing in a constructor function lets the
-    # evaluation framework avoid cross-contamination between runs.
-    def construct_chain():
-        llm = ChatOpenAI(temperature=0)
-        chain = LLMChain.from_string(
-            llm,
-            "What's the answer to {your_input_key}"
-        )
-        return chain
-
-    # Load off-the-shelf evaluators via config or the EvaluatorType (string or enum)
-    evaluation_config = smith_eval.RunEvalConfig(
-        evaluators=[
-            "qa",  # "Correctness" against a reference answer
-            "embedding_distance",
-            smith_eval.RunEvalConfig.Criteria("helpfulness"),
-            smith_eval.RunEvalConfig.Criteria({
-                "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
-            }),
-        ]
-    )
-
-    client = Client()
-    run_on_dataset(
-        client,
-        dataset_name="<my_dataset_name>",
-        llm_or_chain_factory=construct_chain,
-        evaluation=evaluation_config,
-    )
-
-You can also create custom evaluators by subclassing the
-:class:`StringEvaluator <langchain.evaluation.schema.StringEvaluator>`
-or LangSmith's `RunEvaluator` classes.
-
-.. code-block:: python
-
-    from typing import Optional
-    from langchain.evaluation import StringEvaluator
-
-    class MyStringEvaluator(StringEvaluator):
-
-        @property
-        def requires_input(self) -> bool:
-            return False
-
-        @property
-        def requires_reference(self) -> bool:
-            return True
-
-        @property
-        def evaluation_name(self) -> str:
-            return "exact_match"
-
-        def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
-            return {"score": prediction == reference}
-
-
-    evaluation_config = smith_eval.RunEvalConfig(
-        custom_evaluators = [MyStringEvaluator()],
-    )
-
-    run_on_dataset(
-        client,
-        dataset_name="<my_dataset_name>",
-        llm_or_chain_factory=construct_chain,
-        evaluation=evaluation_config,
-    )
-"""  # noqa: E501
-run_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING
-arun_on_dataset.__doc__ = _RUN_ON_DATASET_DOCSTRING.replace(
-    "run_on_dataset(", "await arun_on_dataset("
-)

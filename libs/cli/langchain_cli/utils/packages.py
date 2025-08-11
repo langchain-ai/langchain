@@ -26,6 +26,7 @@ class LangServeExport(TypedDict):
         module: The module to import from, tool.langserve.export_module
         attr: The attribute to import from the module, tool.langserve.export_attr
         package_name: The name of the package, tool.poetry.name
+
     """
 
     module: str

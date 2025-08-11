@@ -21,7 +21,8 @@ class TestModel(BaseModel):
     action: Actions = Field(description="Action to be performed")
     action_input: str = Field(description="Input to be used in the action")
     additional_fields: Optional[str] = Field(
-        description="Additional fields", default=None
+        description="Additional fields",
+        default=None,
     )
     for_new_lines: str = Field(description="To be used to test newlines")
 
@@ -71,7 +72,7 @@ def test_yaml_output_parser(result: str) -> None:
     """Test yamlOutputParser."""
 
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
-        pydantic_object=TestModel
+        pydantic_object=TestModel,
     )
 
     model = yaml_parser.parse(result)
@@ -83,16 +84,13 @@ def test_yaml_output_parser_fail() -> None:
     """Test YamlOutputParser where completion result fails schema validation."""
 
     yaml_parser: YamlOutputParser[TestModel] = YamlOutputParser(
-        pydantic_object=TestModel
+        pydantic_object=TestModel,
     )
 
-    try:
+    with pytest.raises(OutputParserException) as exc_info:
         yaml_parser.parse(DEF_RESULT_FAIL)
-    except OutputParserException as e:
-        print("parse_result:", e)  # noqa: T201
-        assert "Failed to parse TestModel from completion" in str(e)
-    else:
-        assert False, "Expected OutputParserException"
+
+    assert "Failed to parse TestModel from completion" in str(exc_info.value)
 
 
 def test_yaml_output_parser_output_type() -> None:

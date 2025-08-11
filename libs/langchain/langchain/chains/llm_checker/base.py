@@ -82,6 +82,7 @@ class LLMCheckerChain(Chain):
             from langchain.chains import LLMCheckerChain
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
+
     """
 
     question_to_checked_assertions_chain: SequentialChain
@@ -106,12 +107,13 @@ class LLMCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
                 "Please instantiate with question_to_checked_assertions_chain "
-                "or using the from_llm class method."
+                "or using the from_llm class method.",
+                stacklevel=5,
             )
             if (
                 "question_to_checked_assertions_chain" not in values
@@ -121,7 +123,8 @@ class LLMCheckerChain(Chain):
                     _load_question_to_checked_assertions_chain(
                         values["llm"],
                         values.get(
-                            "create_draft_answer_prompt", CREATE_DRAFT_ANSWER_PROMPT
+                            "create_draft_answer_prompt",
+                            CREATE_DRAFT_ANSWER_PROMPT,
                         ),
                         values.get("list_assertions_prompt", LIST_ASSERTIONS_PROMPT),
                         values.get("check_assertions_prompt", CHECK_ASSERTIONS_PROMPT),
@@ -158,7 +161,8 @@ class LLMCheckerChain(Chain):
         question = inputs[self.input_key]
 
         output = self.question_to_checked_assertions_chain(
-            {"question": question}, callbacks=_run_manager.get_child()
+            {"question": question},
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: output["revised_statement"]}
 
@@ -176,6 +180,16 @@ class LLMCheckerChain(Chain):
         revised_answer_prompt: PromptTemplate = REVISED_ANSWER_PROMPT,
         **kwargs: Any,
     ) -> LLMCheckerChain:
+        """Create an LLMCheckerChain from a language model.
+
+        Args:
+            llm: a language model
+            create_draft_answer_prompt: prompt to create a draft answer
+            list_assertions_prompt: prompt to list assertions
+            check_assertions_prompt: prompt to check assertions
+            revised_answer_prompt: prompt to revise the answer
+            **kwargs: additional arguments
+        """
         question_to_checked_assertions_chain = (
             _load_question_to_checked_assertions_chain(
                 llm,

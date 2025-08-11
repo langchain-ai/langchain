@@ -29,7 +29,9 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
@@ -194,7 +196,7 @@ def _load_refine_chain(
         question_prompt or refine_prompts.QUESTION_PROMPT_SELECTOR.get_prompt(llm)
     )
     _refine_prompt = refine_prompt or refine_prompts.REFINE_PROMPT_SELECTOR.get_prompt(
-        llm
+        llm,
     )
     initial_chain = LLMChain(
         llm=llm,
@@ -270,5 +272,8 @@ def load_qa_chain(
         )
         raise ValueError(msg)
     return loader_mapping[chain_type](
-        llm, verbose=verbose, callback_manager=callback_manager, **kwargs
+        llm,
+        verbose=verbose,
+        callback_manager=callback_manager,
+        **kwargs,
     )

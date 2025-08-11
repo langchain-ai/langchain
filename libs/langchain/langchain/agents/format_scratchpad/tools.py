@@ -12,7 +12,8 @@ from langchain.agents.output_parsers.tools import ToolAgentAction
 
 
 def _create_tool_message(
-    agent_action: ToolAgentAction, observation: str
+    agent_action: ToolAgentAction,
+    observation: str,
 ) -> ToolMessage:
     """Convert agent action and observation into a tool message.
 

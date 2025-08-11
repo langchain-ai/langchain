@@ -15,7 +15,7 @@ from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils.json import parse_and_check_json_markdown
 from pydantic import model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains import LLMChain
 from langchain.chains.router.base import RouterChain
@@ -96,13 +96,14 @@ class LLMRouterChain(RouterChain):
             )
 
             chain.invoke({"query": "what color are carrots"})
+
     """  # noqa: E501
 
     llm_chain: LLMChain
     """LLM chain used to perform routing"""
 
     @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    def _validate_prompt(self) -> Self:
         prompt = self.llm_chain.prompt
         if prompt.output_parser is None:
             msg = (
@@ -125,7 +126,7 @@ class LLMRouterChain(RouterChain):
     def _validate_outputs(self, outputs: dict[str, Any]) -> None:
         super()._validate_outputs(outputs)
         if not isinstance(outputs["next_inputs"], dict):
-            raise ValueError
+            raise ValueError  # noqa: TRY004
 
     def _call(
         self,
@@ -137,7 +138,7 @@ class LLMRouterChain(RouterChain):
 
         prediction = self.llm_chain.predict(callbacks=callbacks, **inputs)
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             self.llm_chain.prompt.output_parser.parse(prediction),
         )
 
@@ -149,13 +150,16 @@ class LLMRouterChain(RouterChain):
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         callbacks = _run_manager.get_child()
         return cast(
-            dict[str, Any],
+            "dict[str, Any]",
             await self.llm_chain.apredict_and_parse(callbacks=callbacks, **inputs),
         )
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, prompt: BasePromptTemplate, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        prompt: BasePromptTemplate,
+        **kwargs: Any,
     ) -> LLMRouterChain:
         """Convenience constructor."""
         llm_chain = LLMChain(llm=llm, prompt=prompt)
@@ -169,16 +173,17 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
     next_inputs_type: type = str
     next_inputs_inner_key: str = "input"
 
+    @override
     def parse(self, text: str) -> dict[str, Any]:
         try:
             expected_keys = ["destination", "next_inputs"]
             parsed = parse_and_check_json_markdown(text, expected_keys)
             if not isinstance(parsed["destination"], str):
                 msg = "Expected 'destination' to be a string."
-                raise ValueError(msg)
+                raise TypeError(msg)
             if not isinstance(parsed["next_inputs"], self.next_inputs_type):
                 msg = f"Expected 'next_inputs' to be {self.next_inputs_type}."
-                raise ValueError(msg)
+                raise TypeError(msg)
             parsed["next_inputs"] = {self.next_inputs_inner_key: parsed["next_inputs"]}
             if (
                 parsed["destination"].strip().lower()
@@ -187,7 +192,7 @@ class RouterOutputParser(BaseOutputParser[dict[str, str]]):
                 parsed["destination"] = None
             else:
                 parsed["destination"] = parsed["destination"].strip()
-            return parsed
         except Exception as e:
             msg = f"Parsing text\n{text}\n raised following error:\n{e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
+        return parsed

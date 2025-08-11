@@ -4,6 +4,7 @@ from typing import Any, Union
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.base import BaseOutputParser
 from pydantic import field_validator
+from typing_extensions import override
 
 from langchain.output_parsers.format_instructions import (
     PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS,
@@ -18,7 +19,7 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
     @field_validator("dataframe")
     @classmethod
-    def validate_dataframe(cls, val: Any) -> Any:
+    def _validate_dataframe(cls, val: Any) -> Any:
         import pandas as pd
 
         if issubclass(type(val), pd.DataFrame):
@@ -32,8 +33,22 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
         raise TypeError(msg)
 
     def parse_array(
-        self, array: str, original_request_params: str
+        self,
+        array: str,
+        original_request_params: str,
     ) -> tuple[list[Union[int, str]], str]:
+        """Parse the array from the request parameters.
+
+        Args:
+            array: The array string to parse.
+            original_request_params: The original request parameters string.
+
+        Returns:
+            A tuple containing the parsed array and the stripped request parameters.
+
+        Raises:
+            OutputParserException: If the array format is invalid or cannot be parsed.
+        """
         parsed_array: list[Union[int, str]] = []
 
         # Check if the format is [1,3,5]
@@ -74,10 +89,11 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
 
         return parsed_array, original_request_params.split("[")[0]
 
+    @override
     def parse(self, request: str) -> dict[str, Any]:
         stripped_request_params = None
         splitted_request = request.strip().split(":")
-        if len(splitted_request) != 2:
+        if len(splitted_request) != 2:  # noqa: PLR2004
             msg = f"Request '{request}' is not correctly formatted. \
                     Please refer to the format instructions."
             raise OutputParserException(msg)
@@ -90,7 +106,8 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
             array_exists = re.search(r"(\[.*?\])", request_params)
             if array_exists:
                 parsed_array, stripped_request_params = self.parse_array(
-                    array_exists.group(1), request_params
+                    array_exists.group(1),
+                    request_params,
                 )
                 if request_type == "column":
                     filtered_df = self.dataframe[
@@ -121,32 +138,34 @@ class PandasDataFrameOutputParser(BaseOutputParser[dict[str, Any]]):
                         self.dataframe.index.isin(parsed_array)
                     ]
                     result[request_type] = getattr(
-                        filtered_df[stripped_request_params], request_type
+                        filtered_df[stripped_request_params],
+                        request_type,
                     )()
+            elif request_type == "column":
+                result[request_params] = self.dataframe[request_params]
+            elif request_type == "row":
+                result[request_params] = self.dataframe.iloc[int(request_params)]
             else:
-                if request_type == "column":
-                    result[request_params] = self.dataframe[request_params]
-                elif request_type == "row":
-                    result[request_params] = self.dataframe.iloc[int(request_params)]
-                else:
-                    result[request_type] = getattr(
-                        self.dataframe[request_params], request_type
-                    )()
-        except (AttributeError, IndexError, KeyError):
+                result[request_type] = getattr(
+                    self.dataframe[request_params],
+                    request_type,
+                )()
+        except (AttributeError, IndexError, KeyError) as e:
             if request_type not in {"column", "row"}:
                 msg = f"Unsupported request type '{request_type}'. \
                         Please check the format instructions."
-                raise OutputParserException(msg)
+                raise OutputParserException(msg) from e
             msg = f"""Requested index {
                 request_params
                 if stripped_request_params is None
                 else stripped_request_params
             } is out of bounds."""
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
         return result
 
+    @override
     def get_format_instructions(self) -> str:
         return PANDAS_DATAFRAME_FORMAT_INSTRUCTIONS.format(
-            columns=", ".join(self.dataframe.columns)
+            columns=", ".join(self.dataframe.columns),
         )

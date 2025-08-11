@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -98,6 +99,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 llm_chain=llm_chain,
                 reduce_documents_chain=reduce_documents_chain,
             )
+
     """
 
     llm_chain: LLMChain
@@ -111,8 +113,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
+    @override
     def get_output_schema(
-        self, config: Optional[RunnableConfig] = None
+        self,
+        config: Optional[RunnableConfig] = None,
     ) -> type[BaseModel]:
         if self.return_intermediate_steps:
             return create_model(
@@ -192,13 +196,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     @property
@@ -251,7 +254,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for i, r in enumerate(map_results)
         ]
         result, extra_return_dict = self.reduce_documents_chain.combine_docs(
-            result_docs, token_max=token_max, callbacks=callbacks, **kwargs
+            result_docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         if self.return_intermediate_steps:
             intermediate_steps = [r[question_result_key] for r in map_results]
@@ -282,7 +288,10 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             for i, r in enumerate(map_results)
         ]
         result, extra_return_dict = await self.reduce_documents_chain.acombine_docs(
-            result_docs, token_max=token_max, callbacks=callbacks, **kwargs
+            result_docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         if self.return_intermediate_steps:
             intermediate_steps = [r[question_result_key] for r in map_results]

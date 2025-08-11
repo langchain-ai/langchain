@@ -187,10 +187,11 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
-        default_factory=PairwiseStringResultOutputParser
+        default_factory=PairwiseStringResultOutputParser,
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -259,7 +260,7 @@ class PairwiseStringEvalChain(PairwiseStringEvaluator, LLMEvalChain, LLMChain):
         if not hasattr(llm, "model_name") or not llm.model_name.startswith("gpt-4"):
             logger.warning(
                 "This chain was only tested with GPT-4. \
-Performance may be significantly worse with other models."
+Performance may be significantly worse with other models.",
             )
 
         expected_input_vars = {"prediction", "prediction_b", "input", "criteria"}

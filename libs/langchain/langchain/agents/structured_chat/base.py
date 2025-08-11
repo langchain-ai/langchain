@@ -16,6 +16,7 @@ from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.format_scratchpad import format_log_to_str
@@ -35,7 +36,7 @@ class StructuredChatAgent(Agent):
     """Structured Chat Agent."""
 
     output_parser: AgentOutputParser = Field(
-        default_factory=StructuredChatOutputParserWithRetries
+        default_factory=StructuredChatOutputParserWithRetries,
     )
     """Output parser for the agent."""
 
@@ -50,12 +51,13 @@ class StructuredChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: list[tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
             msg = "agent_scratchpad should be of type string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         if agent_scratchpad:
             return (
                 f"This was your previous work "
@@ -69,16 +71,21 @@ class StructuredChatAgent(Agent):
         pass
 
     @classmethod
+    @override
     def _get_default_output_parser(
-        cls, llm: Optional[BaseLanguageModel] = None, **kwargs: Any
+        cls,
+        llm: Optional[BaseLanguageModel] = None,
+        **kwargs: Any,
     ) -> AgentOutputParser:
         return StructuredChatOutputParserWithRetries.from_llm(llm=llm)
 
     @property
+    @override
     def _stop(self) -> list[str]:
         return ["Observation:"]
 
     @classmethod
+    @override
     def create_prompt(
         cls,
         tools: Sequence[BaseTool],
@@ -96,7 +103,7 @@ class StructuredChatAgent(Agent):
         formatted_tools = "\n".join(tool_strings)
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join([prefix, formatted_tools, format_instructions, suffix])
+        template = f"{prefix}\n\n{formatted_tools}\n\n{format_instructions}\n\n{suffix}"
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
         _memory_prompts = memory_prompts or []
@@ -273,9 +280,10 @@ def create_structured_chat_agent(
                     ("human", human),
                 ]
             )
+
     """  # noqa: E501
     missing_vars = {"tools", "tool_names", "agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"

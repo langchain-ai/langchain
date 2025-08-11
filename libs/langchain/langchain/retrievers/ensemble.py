@@ -81,7 +81,7 @@ class EnsembleRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def set_weights(cls, values: dict[str, Any]) -> Any:
+    def _set_weights(cls, values: dict[str, Any]) -> Any:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
@@ -89,7 +89,10 @@ class EnsembleRetriever(BaseRetriever):
 
     @override
     def invoke(
-        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import CallbackManager
 
@@ -113,7 +116,7 @@ class EnsembleRetriever(BaseRetriever):
             result = self.rank_fusion(input, run_manager=run_manager, config=config)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -123,7 +126,10 @@ class EnsembleRetriever(BaseRetriever):
 
     @override
     async def ainvoke(
-        self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: str,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> list[Document]:
         from langchain_core.callbacks import AsyncCallbackManager
 
@@ -145,11 +151,13 @@ class EnsembleRetriever(BaseRetriever):
         )
         try:
             result = await self.arank_fusion(
-                input, run_manager=run_manager, config=config
+                input,
+                run_manager=run_manager,
+                config=config,
             )
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,
@@ -218,7 +226,8 @@ class EnsembleRetriever(BaseRetriever):
             retriever.invoke(
                 query,
                 patch_config(
-                    config, callbacks=run_manager.get_child(tag=f"retriever_{i + 1}")
+                    config,
+                    callbacks=run_manager.get_child(tag=f"retriever_{i + 1}"),
                 ),
             )
             for i, retriever in enumerate(self.retrievers)
@@ -227,7 +236,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=cast(str, doc)) if isinstance(doc, str) else doc
+                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc
                 for doc in retriever_docs[i]
             ]
 
@@ -263,7 +272,7 @@ class EnsembleRetriever(BaseRetriever):
                     ),
                 )
                 for i, retriever in enumerate(self.retrievers)
-            ]
+            ],
         )
 
         # Enforce that retrieved docs are Documents for each list in retriever_docs
@@ -277,7 +286,8 @@ class EnsembleRetriever(BaseRetriever):
         return self.weighted_reciprocal_rank(retriever_docs)
 
     def weighted_reciprocal_rank(
-        self, doc_lists: list[list[Document]]
+        self,
+        doc_lists: list[list[Document]],
     ) -> list[Document]:
         """
         Perform weighted Reciprocal Rank Fusion on multiple rank lists.

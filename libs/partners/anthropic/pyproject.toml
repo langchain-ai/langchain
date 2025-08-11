@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.57.0",
-    "langchain-core<1.0.0,>=0.3.68",
+    "anthropic<1,>=0.60.0",
+    "langchain-core<1.0.0,>=0.3.72",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.17"
+version = "0.3.18"
 description = "An integration package connecting AnthropicMessages and LangChain"
 readme = "README.md"
 
@@ -38,7 +38,7 @@ test = [
     "langchain-tests",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["langchain-core"]
 test_integration = ["requests<3.0.0,>=2.32.3", "langchain-core"]
 typing = [
@@ -60,8 +60,62 @@ plugins = ['pydantic.mypy']
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+select = [
+    "A",      # flake8-builtins
+    "B",      # flake8-bugbear
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
+]
+ignore = [
+    "D100",    # pydocstyle: Missing docstring in public module
+    "D101",    # pydocstyle: Missing docstring in public class
+    "D102",    # pydocstyle: Missing docstring in public method
+    "D103",    # pydocstyle: Missing docstring in public function
+    "D104",    # pydocstyle: Missing docstring in public package
+    "D105",    # pydocstyle: Missing docstring in magic method
+    "D107",    # pydocstyle: Missing docstring in __init__
+    "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "D203",
+    "D213",
+    "D214",    # Section over-indented, doesn't play well with reStructuredText
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "UP007",   # non-pep604-annotation-union
+    "UP045",   # non-pep604-annotation-optional
+    "SIM105",  # Rarely useful
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -78,4 +132,5 @@ asyncio_mode = "auto"
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001", # Private member access in tests
 ]

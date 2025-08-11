@@ -7,12 +7,14 @@ import warnings
 
 import pytest
 from langchain_core.embeddings import Embeddings
+from typing_extensions import override
 
 from langchain.embeddings import CacheBackedEmbeddings
 from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         # Simulate embedding documents
         embeddings: list[list[float]] = []
@@ -23,6 +25,7 @@ class MockEmbeddings(Embeddings):
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
@@ -34,7 +37,9 @@ def cache_embeddings() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace"
+        embeddings,
+        store,
+        namespace="test_namespace",
     )
 
 
@@ -44,7 +49,10 @@ def cache_embeddings_batch() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace", batch_size=3
+        embeddings,
+        store,
+        namespace="test_namespace",
+        batch_size=3,
     )
 
 
@@ -155,7 +163,10 @@ def test_blake2b_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="blake2b"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="blake2b",
     )
 
     text = "blake"
@@ -171,7 +182,10 @@ def test_sha256_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha256"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha256",
     )
 
     text = "foo"
@@ -187,7 +201,10 @@ def test_sha512_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha512"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha512",
     )
 
     text = "foo"

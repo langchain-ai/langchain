@@ -47,8 +47,8 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     scheme, domain = _extract_scheme_and_domain(url)
 
     for allowed_domain in limit_to_domains:
-        allowed_scheme, allowed_domain = _extract_scheme_and_domain(allowed_domain)
-        if scheme == allowed_scheme and domain == allowed_domain:
+        allowed_scheme, allowed_domain_ = _extract_scheme_and_domain(allowed_domain)
+        if scheme == allowed_scheme and domain == allowed_domain_:
             return True
     return False
 
@@ -82,8 +82,9 @@ try:
 
             See https://python.langchain.com/docs/security for more information.
 
-        Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+        .. note::
+            This class is deprecated. See below for a replacement implementation using
+            LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Support for both token-by-token and step-by-step streaming;
@@ -191,6 +192,7 @@ try:
             )
             async for event in events:
                 event["messages"][-1].pretty_print()
+
         """  # noqa: E501
 
         api_request_chain: LLMChain
@@ -287,7 +289,8 @@ try:
             _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
                 msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
@@ -295,7 +298,10 @@ try:
                 raise ValueError(msg)
             api_response = self.requests_wrapper.get(api_url)
             _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = self.api_answer_chain.predict(
                 question=question,
@@ -321,11 +327,15 @@ try:
                 callbacks=_run_manager.get_child(),
             )
             await _run_manager.on_text(
-                api_url, color="green", end="\n", verbose=self.verbose
+                api_url,
+                color="green",
+                end="\n",
+                verbose=self.verbose,
             )
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
                 msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
@@ -333,7 +343,10 @@ try:
                 raise ValueError(msg)
             api_response = await self.requests_wrapper.aget(api_url)
             await _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = await self.api_answer_chain.apredict(
                 question=question,
@@ -375,7 +388,10 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an ImportError if APIChain is used without langchain_community."""
+
+        def __init__(self, *_: Any, **__: Any) -> None:
+            """Raise an ImportError if APIChain is used without langchain_community."""
             msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"

@@ -1,140 +1,118 @@
 """Test OllamaLLM llm."""
 
+import os
+
 import pytest
-from langchain_core.messages import AIMessageChunk, BaseMessageChunk
+from langchain_core.outputs import GenerationChunk
 from langchain_core.runnables import RunnableConfig
 
 from langchain_ollama.llms import OllamaLLM
 
-MODEL_NAME = "llama3.1"
-
+MODEL_NAME = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1")
+REASONING_MODEL_NAME = os.environ.get("OLLAMA_REASONING_TEST_MODEL", "deepseek-r1:1.5b")
 SAMPLE = "What is 3^3?"
 
 
-def test_stream() -> None:
-    """Test streaming tokens from OpenAI."""
+def test_stream_text_tokens() -> None:
+    """Test streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-def test_stream_no_reasoning(model: str) -> None:
-    """Test streaming with `reasoning=False`"""
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test__stream_no_reasoning(model: str) -> None:
+    """Test low-level chunk streaming of a simple prompt with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
-    messages = [
-        {
-            "role": "user",
-            "content": SAMPLE,
-        }
-    ]
-    result = None
-    for chunk in llm.stream(messages):
-        assert isinstance(chunk, BaseMessageChunk)
-        if result is None:
-            result = chunk
-            continue
-        result += chunk
-    assert isinstance(result, AIMessageChunk)
-    assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
+    result_chunk = None
+    for chunk in llm._stream(SAMPLE):
+        # Should be a GenerationChunk
+        assert isinstance(chunk, GenerationChunk)
+        if result_chunk is None:
+            result_chunk = chunk
+        else:
+            result_chunk += chunk
+
+    # The final result must be a GenerationChunk with visible content
+    assert isinstance(result_chunk, GenerationChunk)
+    assert result_chunk.text
+    # No separate reasoning_content
+    assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-def test_reasoning_stream(model: str) -> None:
-    """Test streaming with `reasoning=True`"""
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+def test__stream_with_reasoning(model: str) -> None:
+    """Test low-level chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-    messages = [
-        {
-            "role": "user",
-            "content": SAMPLE,
-        }
-    ]
-    result = None
-    for chunk in llm.stream(messages):
-        assert isinstance(chunk, BaseMessageChunk)
-        if result is None:
-            result = chunk
-            continue
-        result += chunk
-    assert isinstance(result, AIMessageChunk)
-    assert result.content
-    assert "reasoning_content" in result.additional_kwargs
-    assert len(result.additional_kwargs["reasoning_content"]) > 0
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
-    assert "<think>" not in result.additional_kwargs["reasoning_content"]
-    assert "</think>" not in result.additional_kwargs["reasoning_content"]
+    result_chunk = None
+    for chunk in llm._stream(SAMPLE):
+        assert isinstance(chunk, GenerationChunk)
+        if result_chunk is None:
+            result_chunk = chunk
+        else:
+            result_chunk += chunk
+
+    assert isinstance(result_chunk, GenerationChunk)
+    assert result_chunk.text
+    # Should have extracted reasoning into generation_info
+    assert "reasoning_content" in result_chunk.generation_info  # type: ignore[operator]
+    assert len(result_chunk.generation_info["reasoning_content"]) > 0  # type: ignore[index]
+    # And neither the visible nor the hidden portion contains <think> tags
+    assert "<think>" not in result_chunk.text and "</think>" not in result_chunk.text
+    assert "<think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
+    assert "</think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
 
 
-async def test_astream() -> None:
-    """Test streaming tokens from OpenAI."""
+async def test_astream_text_tokens() -> None:
+    """Test async streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-async def test_astream_no_reasoning(model: str) -> None:
-    """Test async streaming with `reasoning=False`"""
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test__astream_no_reasoning(model: str) -> None:
+    """Test low-level async chunk streaming with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
-    messages = [
-        {
-            "role": "user",
-            "content": SAMPLE,
-        }
-    ]
-    result = None
-    async for chunk in llm.astream(messages):
-        assert isinstance(chunk, BaseMessageChunk)
-        if result is None:
-            result = chunk
-            continue
-        result += chunk
-    assert isinstance(result, AIMessageChunk)
-    assert result.content
-    assert "reasoning_content" not in result.additional_kwargs
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
+    result_chunk = None
+    async for chunk in llm._astream(SAMPLE):
+        assert isinstance(chunk, GenerationChunk)
+        if result_chunk is None:
+            result_chunk = chunk
+        else:
+            result_chunk += chunk
+
+    assert isinstance(result_chunk, GenerationChunk)
+    assert result_chunk.text
+    assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-async def test_reasoning_astream(model: str) -> None:
-    """Test async streaming with `reasoning=True`"""
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
+async def test__astream_with_reasoning(model: str) -> None:
+    """Test low-level async chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-    messages = [
-        {
-            "role": "user",
-            "content": SAMPLE,
-        }
-    ]
-    result = None
-    async for chunk in llm.astream(messages):
-        assert isinstance(chunk, BaseMessageChunk)
-        if result is None:
-            result = chunk
-            continue
-        result += chunk
-    assert isinstance(result, AIMessageChunk)
-    assert result.content
-    assert "reasoning_content" in result.additional_kwargs
-    assert len(result.additional_kwargs["reasoning_content"]) > 0
 
-    # Sanity check the old behavior isn't present
-    assert "<think>" not in result.content and "</think>" not in result.content
-    assert "<think>" not in result.additional_kwargs["reasoning_content"]
-    assert "</think>" not in result.additional_kwargs["reasoning_content"]
+    result_chunk = None
+    async for chunk in llm._astream(SAMPLE):
+        assert isinstance(chunk, GenerationChunk)
+        if result_chunk is None:
+            result_chunk = chunk
+        else:
+            result_chunk += chunk
+
+    assert isinstance(result_chunk, GenerationChunk)
+    assert result_chunk.text
+    assert "reasoning_content" in result_chunk.generation_info  # type: ignore[operator]
+    assert len(result_chunk.generation_info["reasoning_content"]) > 0  # type: ignore[index]
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from OllamaLLM."""
+    """Test batch sync token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -143,7 +121,7 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from OllamaLLM."""
+    """Test batch sync token generation with tags."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = await llm.abatch(
@@ -154,7 +132,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from OllamaLLM."""
+    """Test batch token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -163,75 +141,15 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from OllamaLLM."""
+    """Test async invoke returning a string."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = await llm.ainvoke("I'm Pickle Rick", config=RunnableConfig(tags=["foo"]))
     assert isinstance(result, str)
 
 
-# TODO
-# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-# async def test_ainvoke_no_reasoning(model: str) -> None:
-#     """Test using async invoke with `reasoning=False`"""
-#     llm = OllamaLLM(model=model, num_ctx=2**12)
-#     message = SAMPLE
-#     result = await llm.ainvoke(message)
-#     assert result.content
-#     assert "reasoning_content" not in result.additional_kwargs
-
-#     # Sanity check the old behavior isn't present
-#     assert "<think>" not in result.content and "</think>" not in result.content
-
-
-# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-# async def test_reasoning_ainvoke(model: str) -> None:
-#     """Test invoke with `reasoning=True`"""
-#     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-#     message = SAMPLE
-#     result = await llm.ainvoke(message)
-#     assert result.content
-#     assert "reasoning_content" in result.additional_kwargs
-#     assert len(result.additional_kwargs["reasoning_content"]) > 0
-
-#     # Sanity check the old behavior isn't present
-#     assert "<think>" not in result.content and "</think>" not in result.content
-#     assert "<think>" not in result.additional_kwargs["reasoning_content"]
-#     assert "</think>" not in result.additional_kwargs["reasoning_content"]
-
-
 def test_invoke() -> None:
-    """Test invoke tokens from OllamaLLM."""
+    """Test sync invoke returning a string."""
     llm = OllamaLLM(model=MODEL_NAME)
     result = llm.invoke("I'm Pickle Rick", config=RunnableConfig(tags=["foo"]))
     assert isinstance(result, str)
-
-
-# TODO
-# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-# def test_invoke_no_reasoning(model: str) -> None:
-#     """Test using invoke with `reasoning=False`"""
-#     llm = OllamaLLM(model=model, num_ctx=2**12)
-#     message = SAMPLE
-#     result = llm.invoke(message)
-#     assert result.content
-#     assert "reasoning_content" not in result.additional_kwargs
-
-#     # Sanity check the old behavior isn't present
-#     assert "<think>" not in result.content and "</think>" not in result.content
-
-
-# @pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
-# def test_reasoning_invoke(model: str) -> None:
-#     """Test invoke with `reasoning=True`"""
-#     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
-#     message = SAMPLE
-#     result = llm.invoke(message)
-#     assert result.content
-#     assert "reasoning_content" in result.additional_kwargs
-#     assert len(result.additional_kwargs["reasoning_content"]) > 0
-
-#     # Sanity check the old behavior isn't present
-#     assert "<think>" not in result.content and "</think>" not in result.content
-#     assert "<think>" not in result.additional_kwargs["reasoning_content"]
-#     assert "</think>" not in result.additional_kwargs["reasoning_content"]

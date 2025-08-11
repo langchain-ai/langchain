@@ -66,7 +66,7 @@ def new(
         Optional[str],
         typer.Option(
             help="The name of the integration in PascalCase. e.g. `MyIntegration`."
-            " This is used to name classes like `MyIntegrationVectorStore`"
+            " This is used to name classes like `MyIntegrationVectorStore`",
         ),
     ] = None,
     src: Annotated[
@@ -85,24 +85,25 @@ def new(
         ),
     ] = None,
 ) -> None:
-    """Creates a new integration package."""
+    """Create a new integration package."""
     try:
         replacements = _process_name(name)
     except ValueError as e:
         typer.echo(e)
-        raise typer.Exit(code=1)
+        raise typer.Exit(code=1) from None
 
     if name_class:
         if not re.match(r"^[A-Z][a-zA-Z0-9]*$", name_class):
             typer.echo(
                 "Name should only contain letters (a-z, A-Z), numbers, and underscores"
-                ", and start with a capital letter."
+                ", and start with a capital letter.",
             )
             raise typer.Exit(code=1)
         replacements["__ModuleName__"] = name_class
     else:
         replacements["__ModuleName__"] = typer.prompt(
-            "Name of integration in PascalCase", default=replacements["__ModuleName__"]
+            "Name of integration in PascalCase",
+            default=replacements["__ModuleName__"],
         )
 
     project_template_dir = Path(__file__).parents[1] / "integration_template"
@@ -124,7 +125,7 @@ def new(
 
         # poetry install
         subprocess.run(
-            ["poetry", "install", "--with", "lint,test,typing,test_integration"],
+            ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
             cwd=destination_dir,
         )
     else:
@@ -152,7 +153,7 @@ def new(
         if len(dst_paths) != len(set(dst_paths)):
             typer.echo(
                 "Duplicate destination paths provided or computed - please "
-                "specify them explicitly with --dst."
+                "specify them explicitly with --dst.",
             )
             raise typer.Exit(code=1)
 
@@ -224,10 +225,10 @@ def create_doc(
         ),
     ] = "docs/docs/integrations/chat/",
 ) -> None:
-    """Creates a new integration doc."""
+    """Create a new integration doc."""
     if component_type not in TEMPLATE_MAP:
         typer.echo(
-            f"Unrecognized {component_type=}. Expected one of {_component_types_str}."
+            f"Unrecognized {component_type=}. Expected one of {_component_types_str}.",
         )
         raise typer.Exit(code=1)
 

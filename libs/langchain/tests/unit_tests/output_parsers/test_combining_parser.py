@@ -29,13 +29,14 @@ def test_combining_dict_result() -> None:
         StructuredOutputParser(
             response_schemas=[
                 ResponseSchema(
-                    name="answer", description="answer to the user's question"
+                    name="answer",
+                    description="answer to the user's question",
                 ),
                 ResponseSchema(
                     name="source",
                     description="source used to answer the user's question",
                 ),
-            ]
+            ],
         ),
         RegexParser(
             regex=r"Confidence: (A|B|C), Explanation: (.*)",
@@ -54,13 +55,14 @@ def test_combining_output_parser_output_type() -> None:
         StructuredOutputParser(
             response_schemas=[
                 ResponseSchema(
-                    name="answer", description="answer to the user's question"
+                    name="answer",
+                    description="answer to the user's question",
                 ),
                 ResponseSchema(
                     name="source",
                     description="source used to answer the user's question",
                 ),
-            ]
+            ],
         ),
         RegexParser(
             regex=r"Confidence: (A|B|C), Explanation: (.*)",

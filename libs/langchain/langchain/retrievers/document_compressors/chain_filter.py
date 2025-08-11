@@ -58,7 +58,8 @@ class LLMChainFilter(BaseDocumentCompressor):
         config = RunnableConfig(callbacks=callbacks)
         outputs = zip(
             self.llm_chain.batch(
-                [self.get_input(query, doc) for doc in documents], config=config
+                [self.get_input(query, doc) for doc in documents],
+                config=config,
             ),
             documents,
         )
@@ -69,9 +70,8 @@ class LLMChainFilter(BaseDocumentCompressor):
                 output = output_[self.llm_chain.output_key]
                 if self.llm_chain.prompt.output_parser is not None:
                     include_doc = self.llm_chain.prompt.output_parser.parse(output)
-            else:
-                if isinstance(output_, bool):
-                    include_doc = output_
+            elif isinstance(output_, bool):
+                include_doc = output_
             if include_doc:
                 filtered_docs.append(doc)
 
@@ -89,7 +89,8 @@ class LLMChainFilter(BaseDocumentCompressor):
         config = RunnableConfig(callbacks=callbacks)
         outputs = zip(
             await self.llm_chain.abatch(
-                [self.get_input(query, doc) for doc in documents], config=config
+                [self.get_input(query, doc) for doc in documents],
+                config=config,
             ),
             documents,
         )
@@ -99,9 +100,8 @@ class LLMChainFilter(BaseDocumentCompressor):
                 output = output_[self.llm_chain.output_key]
                 if self.llm_chain.prompt.output_parser is not None:
                     include_doc = self.llm_chain.prompt.output_parser.parse(output)
-            else:
-                if isinstance(output_, bool):
-                    include_doc = output_
+            elif isinstance(output_, bool):
+                include_doc = output_
             if include_doc:
                 filtered_docs.append(doc)
 

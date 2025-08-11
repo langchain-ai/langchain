@@ -28,11 +28,13 @@ def _warn_on_import(name: str, replacement: Optional[str] = None) -> None:
     if replacement:
         warnings.warn(
             f"Importing {name} from langchain root module is no longer supported. "
-            f"Please use {replacement} instead."
+            f"Please use {replacement} instead.",
+            stacklevel=3,
         )
     else:
         warnings.warn(
-            f"Importing {name} from langchain root module is no longer supported."
+            f"Importing {name} from langchain root module is no longer supported.",
+            stacklevel=3,
         )
 
 
@@ -170,7 +172,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.llms import HuggingFaceTextGenInference
 
         _warn_on_import(
-            name, replacement="langchain_community.llms.HuggingFaceTextGenInference"
+            name,
+            replacement="langchain_community.llms.HuggingFaceTextGenInference",
         )
 
         return HuggingFaceTextGenInference
@@ -235,7 +238,8 @@ def __getattr__(name: str) -> Any:
         from langchain_core.prompts import FewShotPromptTemplate
 
         _warn_on_import(
-            name, replacement="langchain_core.prompts.FewShotPromptTemplate"
+            name,
+            replacement="langchain_core.prompts.FewShotPromptTemplate",
         )
 
         return FewShotPromptTemplate
@@ -263,7 +267,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import ArxivAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.ArxivAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.ArxivAPIWrapper",
         )
 
         return ArxivAPIWrapper
@@ -271,7 +276,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import GoldenQueryAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoldenQueryAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoldenQueryAPIWrapper",
         )
 
         return GoldenQueryAPIWrapper
@@ -279,7 +285,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import GoogleSearchAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSearchAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoogleSearchAPIWrapper",
         )
 
         return GoogleSearchAPIWrapper
@@ -287,7 +294,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import GoogleSerperAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.GoogleSerperAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.GoogleSerperAPIWrapper",
         )
 
         return GoogleSerperAPIWrapper
@@ -295,7 +303,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import PowerBIDataset
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.PowerBIDataset"
+            name,
+            replacement="langchain_community.utilities.PowerBIDataset",
         )
 
         return PowerBIDataset
@@ -303,7 +312,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import SearxSearchWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.SearxSearchWrapper"
+            name,
+            replacement="langchain_community.utilities.SearxSearchWrapper",
         )
 
         return SearxSearchWrapper
@@ -311,7 +321,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import WikipediaAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.WikipediaAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.WikipediaAPIWrapper",
         )
 
         return WikipediaAPIWrapper
@@ -319,7 +330,8 @@ def __getattr__(name: str) -> Any:
         from langchain_community.utilities import WolframAlphaAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.WolframAlphaAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.WolframAlphaAPIWrapper",
         )
 
         return WolframAlphaAPIWrapper
@@ -339,16 +351,18 @@ def __getattr__(name: str) -> Any:
         from langchain_community.vectorstores import ElasticVectorSearch
 
         _warn_on_import(
-            name, replacement="langchain_community.vectorstores.ElasticVectorSearch"
+            name,
+            replacement="langchain_community.vectorstores.ElasticVectorSearch",
         )
 
         return ElasticVectorSearch
     # For backwards compatibility
-    if name == "SerpAPIChain" or name == "SerpAPIWrapper":
+    if name in {"SerpAPIChain", "SerpAPIWrapper"}:
         from langchain_community.utilities import SerpAPIWrapper
 
         _warn_on_import(
-            name, replacement="langchain_community.utilities.SerpAPIWrapper"
+            name,
+            replacement="langchain_community.utilities.SerpAPIWrapper",
         )
 
         return SerpAPIWrapper

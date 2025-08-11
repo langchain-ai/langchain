@@ -122,7 +122,9 @@ def __getattr__(name: str) -> Any:
         # Get directory of langchain package
         HERE = Path(__file__).parents[1]
         relative_path = as_import_path(
-            Path(__file__).parent, suffix=name, relative_to=HERE
+            Path(__file__).parent,
+            suffix=name,
+            relative_to=HERE,
         )
         old_path = "langchain." + relative_path
         new_path = "langchain_experimental." + relative_path

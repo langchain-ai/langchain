@@ -32,6 +32,8 @@ from langchain.agents.output_parsers.openai_functions import (
     OpenAIFunctionsAgentOutputParser,
 )
 
+_NOT_SET = object()
+
 
 @deprecated("0.1.0", alternative="create_openai_functions_agent", removal="1.0")
 class OpenAIFunctionsAgent(BaseSingleActionAgent):
@@ -132,7 +134,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -161,9 +163,11 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     def return_stopped_response(
         self,
@@ -188,12 +192,15 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         if early_stopping_method == "force":
             # `force` just returns a constant string
             return AgentFinish(
-                {"output": "Agent stopped due to iteration limit or time limit."}, ""
+                {"output": "Agent stopped due to iteration limit or time limit."},
+                "",
             )
         if early_stopping_method == "generate":
             # Generate does one final forward pass
             agent_decision = self.plan(
-                intermediate_steps, with_functions=False, **kwargs
+                intermediate_steps,
+                with_functions=False,
+                **kwargs,
             )
             if isinstance(agent_decision, AgentFinish):
                 return agent_decision
@@ -208,9 +215,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> ChatPromptTemplate:
         """Create prompt for this agent.
@@ -225,15 +230,20 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             A prompt template to pass into this agent.
         """
         _prompts = extra_prompt_messages or []
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
-        messages = [system_message] if system_message else []
+        messages = [system_message_] if system_message_ else []
 
         messages.extend(
             [
                 *_prompts,
                 HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+            ],
         )
         return ChatPromptTemplate(messages=messages)
 
@@ -244,9 +254,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
         extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseSingleActionAgent:
         """Construct an agent from an LLM and tools.
@@ -260,9 +268,14 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 Defaults to a default system message.
             kwargs: Additional parameters to pass to the agent.
         """
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            system_message=system_message_,
         )
         return cls(  # type: ignore[call-arg]
             llm=llm,
@@ -274,7 +287,9 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
 
 
 def create_openai_functions_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
 ) -> Runnable:
     """Create an agent that uses OpenAI function calling.
 
@@ -344,6 +359,7 @@ def create_openai_functions_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)
@@ -357,8 +373,8 @@ def create_openai_functions_agent(
     return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_function_messages(
-                x["intermediate_steps"]
-            )
+                x["intermediate_steps"],
+            ),
         )
         | prompt
         | llm_with_tools

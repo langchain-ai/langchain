@@ -9,10 +9,13 @@ from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.utils import get_from_dict_or_env
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 
 @deprecated(
-    since="0.0.30", removal="1.0", alternative_import="langchain_cohere.CohereRerank"
+    since="0.0.30",
+    removal="1.0",
+    alternative_import="langchain_cohere.CohereRerank",
 )
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
@@ -41,14 +44,16 @@ class CohereRerank(BaseDocumentCompressor):
         if not values.get("client"):
             try:
                 import cohere
-            except ImportError:
+            except ImportError as e:
                 msg = (
                     "Could not import cohere python package. "
                     "Please install it with `pip install cohere`."
                 )
-                raise ImportError(msg)
+                raise ImportError(msg) from e
             cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+                values,
+                "cohere_api_key",
+                "COHERE_API_KEY",
             )
             client_name = values.get("user_agent", "langchain")
             values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
@@ -88,17 +93,13 @@ class CohereRerank(BaseDocumentCompressor):
             max_chunks_per_doc=max_chunks_per_doc,
         )
         if hasattr(results, "results"):
-            results = getattr(results, "results")
-        result_dicts = []
-        for res in results:
-            result_dicts.append(
-                {
-                    "index": res.index,
-                    "relevance_score": res.relevance_score,
-                }
-            )
-        return result_dicts
+            results = results.results
+        return [
+            {"index": res.index, "relevance_score": res.relevance_score}
+            for res in results
+        ]
 
+    @override
     def compress_documents(
         self,
         documents: Sequence[Document],

@@ -53,7 +53,9 @@ class MergerRetriever(BaseRetriever):
         return await self.amerge_documents(query, run_manager)
 
     def merge_documents(
-        self, query: str, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """
         Merge the results of the retrievers.
@@ -78,14 +80,16 @@ class MergerRetriever(BaseRetriever):
         merged_documents = []
         max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
-            for retriever, doc in zip(self.retrievers, retriever_docs):
+            for _retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
                     merged_documents.append(doc[i])
 
         return merged_documents
 
     async def amerge_documents(
-        self, query: str, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
         """
         Asynchronously merge the results of the retrievers.
@@ -105,14 +109,14 @@ class MergerRetriever(BaseRetriever):
                     config={"callbacks": run_manager.get_child(f"retriever_{i + 1}")},
                 )
                 for i, retriever in enumerate(self.retrievers)
-            )
+            ),
         )
 
         # Merge the results of the retrievers.
         merged_documents = []
         max_docs = max(map(len, retriever_docs), default=0)
         for i in range(max_docs):
-            for retriever, doc in zip(self.retrievers, retriever_docs):
+            for _retriever, doc in zip(self.retrievers, retriever_docs):
                 if i < len(doc):
                     merged_documents.append(doc[i])
 

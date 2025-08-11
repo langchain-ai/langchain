@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import BaseModel, ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -71,18 +72,23 @@ class InMemoryEntityStore(BaseEntityStore):
 
     store: dict[str, Optional[str]] = {}
 
+    @override
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         return self.store.get(key, default)
 
+    @override
     def set(self, key: str, value: Optional[str]) -> None:
         self.store[key] = value
 
+    @override
     def delete(self, key: str) -> None:
         del self.store[key]
 
+    @override
     def exists(self, key: str) -> bool:
         return key in self.store
 
+    @override
     def clear(self) -> None:
         return self.store.clear()
 
@@ -113,14 +119,24 @@ class UpstashRedisEntityStore(BaseEntityStore):
         *args: Any,
         **kwargs: Any,
     ):
+        """Initializes the RedisEntityStore.
+
+        Args:
+            session_id: Unique identifier for the session.
+            url: URL of the Redis server.
+            token: Authentication token for the Redis server.
+            key_prefix: Prefix for keys in the Redis store.
+            ttl: Time-to-live for keys in seconds (default 1 day).
+            recall_ttl: Time-to-live extension for keys when recalled (default 3 days).
+        """
         try:
             from upstash_redis import Redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import upstash_redis python package. "
                 "Please install it with `pip install upstash_redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
@@ -128,7 +144,7 @@ class UpstashRedisEntityStore(BaseEntityStore):
             self.redis_client = Redis(url=url, token=token)
         except Exception as exc:
             error_msg = "Upstash Redis instance could not be initiated"
-            logger.error(error_msg)
+            logger.exception(error_msg)
             raise RuntimeError(error_msg) from exc
 
         self.session_id = session_id
@@ -138,36 +154,49 @@ class UpstashRedisEntityStore(BaseEntityStore):
 
     @property
     def full_key_prefix(self) -> str:
+        """Returns the full key prefix with session ID."""
         return f"{self.key_prefix}:{self.session_id}"
 
+    @override
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         res = (
             self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
             or default
             or ""
         )
-        logger.debug(f"Upstash Redis MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug(
+            "Upstash Redis MEM get '%s:%s': '%s'", self.full_key_prefix, key, res
+        )
         return res
 
+    @override
     def set(self, key: str, value: Optional[str]) -> None:
         if not value:
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"Redis MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            "Redis MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 
+    @override
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
 
+    @override
     def exists(self, key: str) -> bool:
         return self.redis_client.exists(f"{self.full_key_prefix}:{key}") == 1
 
+    @override
     def clear(self) -> None:
         def scan_and_delete(cursor: int) -> int:
             cursor, keys_to_delete = self.redis_client.scan(
-                cursor, f"{self.full_key_prefix}:*"
+                cursor,
+                f"{self.full_key_prefix}:*",
             )
             self.redis_client.delete(*keys_to_delete)
             return cursor
@@ -208,30 +237,40 @@ class RedisEntityStore(BaseEntityStore):
         *args: Any,
         **kwargs: Any,
     ):
+        """Initializes the RedisEntityStore.
+
+        Args:
+            session_id: Unique identifier for the session.
+            url: URL of the Redis server.
+            key_prefix: Prefix for keys in the Redis store.
+            ttl: Time-to-live for keys in seconds (default 1 day).
+            recall_ttl: Time-to-live extension for keys when recalled (default 3 days).
+        """
+
         try:
             import redis
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import redis python package. "
                 "Please install it with `pip install redis`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         super().__init__(*args, **kwargs)
 
         try:
             from langchain_community.utilities.redis import get_client
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import langchain_community.utilities.redis.get_client. "
                 "Please install it with `pip install langchain-community`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         try:
             self.redis_client = get_client(redis_url=url, decode_responses=True)
-        except redis.exceptions.ConnectionError as error:
-            logger.error(error)
+        except redis.exceptions.ConnectionError:
+            logger.exception("Redis client could not connect")
 
         self.session_id = session_id
         self.key_prefix = key_prefix
@@ -240,32 +279,42 @@ class RedisEntityStore(BaseEntityStore):
 
     @property
     def full_key_prefix(self) -> str:
+        """Returns the full key prefix with session ID."""
         return f"{self.key_prefix}:{self.session_id}"
 
+    @override
     def get(self, key: str, default: Optional[str] = None) -> Optional[str]:
         res = (
             self.redis_client.getex(f"{self.full_key_prefix}:{key}", ex=self.recall_ttl)
             or default
             or ""
         )
-        logger.debug(f"REDIS MEM get '{self.full_key_prefix}:{key}': '{res}'")
+        logger.debug("REDIS MEM get '%s:%s': '%s'", self.full_key_prefix, key, res)
         return res
 
+    @override
     def set(self, key: str, value: Optional[str]) -> None:
         if not value:
             return self.delete(key)
         self.redis_client.set(f"{self.full_key_prefix}:{key}", value, ex=self.ttl)
         logger.debug(
-            f"REDIS MEM set '{self.full_key_prefix}:{key}': '{value}' EX {self.ttl}"
+            "REDIS MEM set '%s:%s': '%s' EX %s",
+            self.full_key_prefix,
+            key,
+            value,
+            self.ttl,
         )
         return None
 
+    @override
     def delete(self, key: str) -> None:
         self.redis_client.delete(f"{self.full_key_prefix}:{key}")
 
+    @override
     def exists(self, key: str) -> bool:
         return self.redis_client.exists(f"{self.full_key_prefix}:{key}") == 1
 
+    @override
     def clear(self) -> None:
         # iterate a list in batches of size batch_size
         def batched(iterable: Iterable[Any], batch_size: int) -> Iterable[Any]:
@@ -274,7 +323,8 @@ class RedisEntityStore(BaseEntityStore):
                 yield batch
 
         for keybatch in batched(
-            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"), 500
+            self.redis_client.scan_iter(f"{self.full_key_prefix}:*"),
+            500,
         ):
             self.redis_client.delete(*keybatch)
 
@@ -306,15 +356,22 @@ class SQLiteEntityStore(BaseEntityStore):
         *args: Any,
         **kwargs: Any,
     ):
+        """Initializes the SQLiteEntityStore.
+
+        Args:
+            session_id: Unique identifier for the session.
+            db_file: Path to the SQLite database file.
+            table_name: Name of the table to store entities.
+        """
         super().__init__(*args, **kwargs)
         try:
             import sqlite3
-        except ImportError:
+        except ImportError as e:
             msg = (
                 "Could not import sqlite3 python package. "
                 "Please install it with `pip install sqlite3`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from e
 
         # Basic validation to prevent obviously malicious table/session names
         if not table_name.isidentifier() or not session_id.isidentifier():
@@ -329,6 +386,7 @@ class SQLiteEntityStore(BaseEntityStore):
 
     @property
     def full_table_name(self) -> str:
+        """Returns the full table name with session ID."""
         return f"{self.table_name}_{self.session_id}"
 
     def _execute_query(self, query: str, params: tuple = ()) -> "sqlite3.Cursor":
@@ -381,6 +439,7 @@ class SQLiteEntityStore(BaseEntityStore):
         cursor = self._execute_query(query, (key,))
         return cursor.fetchone() is not None
 
+    @override
     def clear(self) -> None:
         # Ignore S608 since we validate for malicious table/session names in `__init__`
         query = f"""

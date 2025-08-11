@@ -1,7 +1,7 @@
 """A mock Robot server."""
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Optional, Union
 from uuid import uuid4
 
 import uvicorn
@@ -127,7 +127,9 @@ async def goto(x: int, y: int, z: int, cautiousness: Cautiousness) -> dict[str, 
 
 @app.get("/get_state", description="Get the robot's state")
 async def get_state(
-    fields: list[StateItems] = Query(..., description="List of state items to return"),
+    fields: Annotated[
+        list[StateItems], Query(..., description="List of state items to return")
+    ],
 ) -> dict[str, Any]:
     state = {}
     for field in fields:

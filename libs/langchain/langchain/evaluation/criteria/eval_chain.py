@@ -236,6 +236,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_key: str = "results"  #: :meta private:
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -249,6 +250,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return False
 
     @property
+    @override
     def requires_input(self) -> bool:
         return True
 
@@ -273,7 +275,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria"}
         prompt_ = prompt or PROMPT
@@ -519,6 +522,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
     """Criteria evaluation chain that requires references."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -529,7 +533,8 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCES

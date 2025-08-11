@@ -136,7 +136,8 @@ def test_aliases_hidden() -> None:
     assert dumped == expected_dump
     # Check while patching the os environment
     with patch.dict(
-        os.environ, {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"}
+        os.environ,
+        {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"},
     ):
         test_class = TestClass()  # type: ignore[call-arg]
         dumped = json.loads(dumps(test_class, pretty=True))

@@ -34,14 +34,16 @@ class BaseChatMemory(BaseMemory, ABC):
     """
 
     chat_memory: BaseChatMessageHistory = Field(
-        default_factory=InMemoryChatMessageHistory
+        default_factory=InMemoryChatMessageHistory,
     )
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     return_messages: bool = False
 
     def _get_input_output(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> tuple[str, str]:
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
@@ -55,7 +57,8 @@ class BaseChatMemory(BaseMemory, ABC):
                 warnings.warn(
                     f"'{self.__class__.__name__}' got multiple output keys:"
                     f" {outputs.keys()}. The default 'output' key is being used."
-                    f" If this is not desired, please manually set 'output_key'."
+                    f" If this is not desired, please manually set 'output_key'.",
+                    stacklevel=3,
                 )
             else:
                 msg = (
@@ -75,11 +78,13 @@ class BaseChatMemory(BaseMemory, ABC):
             [
                 HumanMessage(content=input_str),
                 AIMessage(content=output_str),
-            ]
+            ],
         )
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
@@ -87,7 +92,7 @@ class BaseChatMemory(BaseMemory, ABC):
             [
                 HumanMessage(content=input_str),
                 AIMessage(content=output_str),
-            ]
+            ],
         )
 
     def clear(self) -> None:

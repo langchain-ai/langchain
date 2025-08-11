@@ -84,23 +84,24 @@ def create_openai_tools_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
         msg = f"Prompt missing required variables: {missing_vars}"
         raise ValueError(msg)
 
     llm_with_tools = llm.bind(
-        tools=[convert_to_openai_tool(tool, strict=strict) for tool in tools]
+        tools=[convert_to_openai_tool(tool, strict=strict) for tool in tools],
     )
 
     return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_tool_messages(
-                x["intermediate_steps"]
-            )
+                x["intermediate_steps"],
+            ),
         )
         | prompt
         | llm_with_tools

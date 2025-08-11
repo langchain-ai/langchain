@@ -45,6 +45,14 @@ class FactWithEvidence(BaseModel):
             yield from s.spans()
 
     def get_spans(self, context: str) -> Iterator[str]:
+        """Get spans of the substring quote in the context.
+
+        Args:
+            context: The context in which to find the spans of the substring quote.
+
+        Returns:
+            An iterator over the spans of the substring quote in the context.
+        """
         for quote in self.substring_quote:
             yield from self._get_span(quote, context)
 
@@ -86,6 +94,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
 
     Returns:
         Runnable that can be used to answer questions with citations.
+
     """
     if llm.bind_tools is BaseChatModel.bind_tools:
         msg = "Language model must implement bind_tools to use this function."
@@ -94,16 +103,16 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
         [
             SystemMessage(
                 "You are a world class algorithm to answer "
-                "questions with correct and exact citations."
+                "questions with correct and exact citations.",
             ),
             HumanMessagePromptTemplate.from_template(
                 "Answer question using the following context."
                 "\n\n{context}"
                 "\n\nQuestion: {question}"
                 "\n\nTips: Make sure to cite your sources, "
-                "and use the exact words from the context."
+                "and use the exact words from the context.",
             ),
-        ]
+        ],
     )
     return prompt | llm.with_structured_output(QuestionAnswer)
 
@@ -123,7 +132,10 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
         Chain (LLMChain) that can be used to answer questions with citations.
     """
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
-    schema = QuestionAnswer.schema()
+    if hasattr(QuestionAnswer, "model_json_schema"):
+        schema = QuestionAnswer.model_json_schema()
+    else:
+        schema = QuestionAnswer.schema()
     function = {
         "name": schema["title"],
         "description": schema["description"],
@@ -135,7 +147,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             content=(
                 "You are a world class algorithm to answer "
                 "questions with correct and exact citations."
-            )
+            ),
         ),
         HumanMessage(content="Answer question using the following context"),
         HumanMessagePromptTemplate.from_template("{context}"),
@@ -144,7 +156,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
             content=(
                 "Tips: Make sure to cite your sources, "
                 "and use the exact words from the context."
-            )
+            ),
         ),
     ]
     prompt = ChatPromptTemplate(messages=messages)  # type: ignore[arg-type]

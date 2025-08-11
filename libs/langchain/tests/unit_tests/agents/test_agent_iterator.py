@@ -21,9 +21,7 @@ def test_agent_iterator_bad_action() -> None:
     agent = _get_agent()
     agent_iter = agent.iter(inputs="when was langchain made")
 
-    outputs = []
-    for step in agent_iter:
-        outputs.append(step)
+    outputs = list(agent_iter)
 
     assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"] == "curses foiled again"
@@ -38,9 +36,7 @@ def test_agent_iterator_stopped_early() -> None:
     agent = _get_agent(max_iterations=1)
     agent_iter = agent.iter(inputs="when was langchain made")
 
-    outputs = []
-    for step in agent_iter:
-        outputs.append(step)
+    outputs = list(agent_iter)
     # NOTE: we don't use agent.run like in the test for the regular agent executor,
     # so the dict structure for outputs stays intact
     assert isinstance(outputs[-1], dict)
@@ -70,10 +66,8 @@ async def test_agent_async_iterator_stopped_early() -> None:
     agent = _get_agent(max_iterations=1)
     agent_async_iter = agent.iter(inputs="when was langchain made")
 
-    outputs = []
     assert isinstance(agent_async_iter, AgentExecutorIterator)
-    async for step in agent_async_iter:
-        outputs.append(step)
+    outputs = list(agent_async_iter)
 
     assert isinstance(outputs[-1], dict)
     assert (
@@ -125,12 +119,12 @@ def test_agent_iterator_with_callbacks() -> None:
         verbose=True,
     )
     agent_iter = agent.iter(
-        inputs="when was langchain made", callbacks=[handler1], include_run_info=True
+        inputs="when was langchain made",
+        callbacks=[handler1],
+        include_run_info=True,
     )
 
-    outputs = []
-    for step in agent_iter:
-        outputs.append(step)
+    outputs = list(agent_iter)
     assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"] == "curses foiled again"
     assert isinstance(outputs[-1][RUN_KEY].run_id, UUID)
@@ -186,7 +180,10 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     ]
 
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
     agent_async_iter = agent.iter(
         inputs="when was langchain made",
@@ -195,9 +192,7 @@ async def test_agent_async_iterator_with_callbacks() -> None:
     )
     assert isinstance(agent_async_iter, AgentExecutorIterator)
 
-    outputs = []
-    async for step in agent_async_iter:
-        outputs.append(step)
+    outputs = list(agent_async_iter)
 
     assert outputs[-1]["output"] == "curses foiled again"
     assert isinstance(outputs[-1][RUN_KEY].run_id, UUID)
@@ -310,7 +305,7 @@ def test_agent_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            pytest.fail("Unexpected output structure")
 
 
 async def test_agent_async_iterator_output_structure() -> None:
@@ -326,7 +321,7 @@ async def test_agent_async_iterator_output_structure() -> None:
         elif "output" in step:
             assert isinstance(step["output"], str)
         else:
-            assert False, "Unexpected output structure"
+            pytest.fail("Unexpected output structure")
 
 
 def test_agent_iterator_empty_input() -> None:
@@ -334,9 +329,7 @@ def test_agent_iterator_empty_input() -> None:
     agent = _get_agent()
     agent_iter = agent.iter(inputs="")
 
-    outputs = []
-    for step in agent_iter:
-        outputs.append(step)
+    outputs = list(agent_iter)
 
     assert isinstance(outputs[-1], dict)
     assert outputs[-1]["output"]  # Check if there is an output
@@ -352,9 +345,7 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 
     agent_iter = CustomAgentExecutorIterator(agent, inputs="when was langchain made")
 
-    outputs = []
-    for step in agent_iter:
-        outputs.append(step)
+    outputs = list(agent_iter)
 
     assert len(outputs) == 2  # Check if the custom stopping condition is respected
 
@@ -373,13 +364,16 @@ def test_agent_iterator_failing_tool() -> None:
     tools = [
         Tool(
             name="FailingTool",
-            func=lambda x: 1 / 0,  # This tool will raise a ZeroDivisionError
+            func=lambda _: 1 / 0,  # This tool will raise a ZeroDivisionError
             description="A tool that fails",
         ),
     ]
 
     agent = initialize_agent(
-        tools, fake_llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True
+        tools,
+        fake_llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+        verbose=True,
     )
 
     agent_iter = agent.iter(inputs="when was langchain made")

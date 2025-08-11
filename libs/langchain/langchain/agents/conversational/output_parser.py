@@ -34,7 +34,8 @@ class ConvoOutputParser(AgentOutputParser):
 
         if f"{self.ai_prefix}:" in text:
             return AgentFinish(
-                {"output": text.split(f"{self.ai_prefix}:")[-1].strip()}, text
+                {"output": text.split(f"{self.ai_prefix}:")[-1].strip()},
+                text,
             )
         regex = r"Action: (.*?)[\n]*Action Input: ([\s\S]*)"
         match = re.search(regex, text, re.DOTALL)

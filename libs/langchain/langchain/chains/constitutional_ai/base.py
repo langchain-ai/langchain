@@ -26,8 +26,9 @@ from langchain.chains.llm import LLMChain
 class ConstitutionalChain(Chain):
     """Chain for applying constitutional principles.
 
-    Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+    .. note::
+        This class is deprecated. See below for a replacement implementation using
+        LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features instead of parsing string responses;
         - Support for both token-by-token and step-by-step streaming;
@@ -187,6 +188,7 @@ class ConstitutionalChain(Chain):
             )
 
             constitutional_chain.run(question="What is the meaning of life?")
+
     """  # noqa: E501
 
     chain: LLMChain
@@ -197,8 +199,15 @@ class ConstitutionalChain(Chain):
 
     @classmethod
     def get_principles(
-        cls, names: Optional[list[str]] = None
+        cls,
+        names: Optional[list[str]] = None,
     ) -> list[ConstitutionalPrinciple]:
+        """Get constitutional principles by name.
+
+        Args:
+            names: List of names of constitutional principles to retrieve.
+                If None (default), all principles are returned.
+        """
         if names is None:
             return list(PRINCIPLES.values())
         return [PRINCIPLES[name] for name in names]

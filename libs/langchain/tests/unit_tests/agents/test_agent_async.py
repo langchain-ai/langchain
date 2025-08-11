@@ -8,6 +8,7 @@ from langchain_core.language_models.llms import LLM
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool
+from typing_extensions import override
 
 from langchain.agents import AgentExecutor, AgentType, initialize_agent
 from tests.unit_tests.callbacks.fake_callback_handler import FakeCallbackHandler
@@ -19,6 +20,7 @@ class FakeListLLM(LLM):
     responses: list[str]
     i: int = -1
 
+    @override
     def _call(
         self,
         prompt: str,
@@ -183,12 +185,12 @@ async def test_agent_stream() -> None:
                     tool="Search",
                     tool_input="misalignment",
                     log="FooBarBaz\nAction: Search\nAction Input: misalignment",
-                )
+                ),
             ],
             "messages": [
                 AIMessage(
-                    content="FooBarBaz\nAction: Search\nAction Input: misalignment"
-                )
+                    content="FooBarBaz\nAction: Search\nAction Input: misalignment",
+                ),
             ],
         },
         {
@@ -200,7 +202,7 @@ async def test_agent_stream() -> None:
                         log="FooBarBaz\nAction: Search\nAction Input: misalignment",
                     ),
                     observation="Results for: misalignment",
-                )
+                ),
             ],
             "messages": [HumanMessage(content="Results for: misalignment")],
         },
@@ -210,12 +212,12 @@ async def test_agent_stream() -> None:
                     tool="Search",
                     tool_input="something else",
                     log="FooBarBaz\nAction: Search\nAction Input: something else",
-                )
+                ),
             ],
             "messages": [
                 AIMessage(
-                    content="FooBarBaz\nAction: Search\nAction Input: something else"
-                )
+                    content="FooBarBaz\nAction: Search\nAction Input: something else",
+                ),
             ],
         },
         {
@@ -227,14 +229,14 @@ async def test_agent_stream() -> None:
                         log="FooBarBaz\nAction: Search\nAction Input: something else",
                     ),
                     observation="Results for: something else",
-                )
+                ),
             ],
             "messages": [HumanMessage(content="Results for: something else")],
         },
         {
             "output": "curses foiled again",
             "messages": [
-                AIMessage(content="Oh well\nFinal Answer: curses foiled again")
+                AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
             ],
         },
     ]
@@ -273,7 +275,7 @@ async def test_agent_stream() -> None:
             AIMessage(content="FooBarBaz\nAction: Search\nAction Input: misalignment"),
             HumanMessage(content="Results for: misalignment"),
             AIMessage(
-                content="FooBarBaz\nAction: Search\nAction Input: something else"
+                content="FooBarBaz\nAction: Search\nAction Input: something else",
             ),
             HumanMessage(content="Results for: something else"),
             AIMessage(content="Oh well\nFinal Answer: curses foiled again"),
@@ -359,4 +361,7 @@ async def test_agent_invalid_tool() -> None:
     )
 
     resp = await agent.acall("when was langchain made")
-    resp["intermediate_steps"][0][1] == "Foo is not a valid tool, try one of [Search]."
+    assert (
+        resp["intermediate_steps"][0][1]
+        == "Foo is not a valid tool, try one of [Search]."
+    )

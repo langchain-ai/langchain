@@ -24,7 +24,10 @@ def test_loads_openai_llm() -> None:
     from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(
-        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+        model="davinci",
+        temperature=0.5,
+        openai_api_key="hello",
+        top_p=0.8,
     )
     llm_string = dumps(llm)
     llm2 = loads(llm_string, secrets_map={"OPENAI_API_KEY": "hello"})
@@ -40,7 +43,10 @@ def test_loads_llmchain() -> None:
     from langchain_openai import OpenAI
 
     llm = CommunityOpenAI(
-        model="davinci", temperature=0.5, openai_api_key="hello", top_p=0.8
+        model="davinci",
+        temperature=0.5,
+        openai_api_key="hello",
+        top_p=0.8,
     )
     prompt = PromptTemplate.from_template("hello {name}!")
     chain = LLMChain(llm=llm, prompt=prompt)

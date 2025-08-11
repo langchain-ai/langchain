@@ -1,7 +1,7 @@
-# type: ignore
 """Development Scripts for template packages."""
 
 from collections.abc import Sequence
+from typing import Literal
 
 from fastapi import FastAPI
 from langserve import add_routes
@@ -12,9 +12,9 @@ from langchain_cli.utils.packages import get_langserve_export, get_package_root
 def create_demo_server(
     *,
     config_keys: Sequence[str] = (),
-    playground_type: str = "default",
+    playground_type: Literal["default", "chat"] = "default",
 ):
-    """Creates a demo server for the current template."""
+    """Create a demo server for the current template."""
     app = FastAPI()
     package_root = get_package_root()
     pyproject = package_root / "pyproject.toml"

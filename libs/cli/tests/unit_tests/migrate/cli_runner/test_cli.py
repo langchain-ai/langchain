@@ -34,7 +34,7 @@ def find_issue(current: Folder, expected: Folder) -> str:
                     expected_file.content.splitlines(),
                     fromfile=current_file.name,
                     tofile=expected_file.name,
-                )
+                ),
             )
     return "Unknown"
 
@@ -47,8 +47,10 @@ def test_command_line(tmp_path: Path) -> None:
         before.create_structure(root=Path(td))
         # The input is used to force through the confirmation.
         result = runner.invoke(app, ["migrate", before.name, "--force"])
-        assert result.exit_code == 0, result.output
+        if result.exit_code != 0:
+            raise RuntimeError(result.output)
 
         after = Folder.from_structure(Path(td) / before.name)
 
-    assert after == expected, find_issue(after, expected)
+    if after != expected:
+        raise ValueError(find_issue(after, expected))

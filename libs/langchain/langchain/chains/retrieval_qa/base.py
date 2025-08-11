@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import inspect
-import warnings
 from abc import abstractmethod
 from typing import Any, Optional
 
@@ -19,6 +18,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -84,10 +84,14 @@ class BaseRetrievalQA(Chain):
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(
-            llm=llm, prompt=_prompt, callbacks=callbacks, **(llm_chain_kwargs or {})
+            llm=llm,
+            prompt=_prompt,
+            callbacks=callbacks,
+            **(llm_chain_kwargs or {}),
         )
         document_prompt = PromptTemplate(
-            input_variables=["page_content"], template="Context:\n{page_content}"
+            input_variables=["page_content"],
+            template="Context:\n{page_content}",
         )
         combine_documents_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
@@ -113,7 +117,9 @@ class BaseRetrievalQA(Chain):
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
-            llm, chain_type=chain_type, **_chain_type_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_type_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -141,6 +147,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -152,7 +159,9 @@ class BaseRetrievalQA(Chain):
         else:
             docs = self._get_docs(question)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
@@ -183,6 +192,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -194,7 +204,9 @@ class BaseRetrievalQA(Chain):
         else:
             docs = await self._aget_docs(question)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
@@ -267,7 +279,8 @@ class RetrievalQA(BaseRetrievalQA):
     ) -> list[Document]:
         """Get docs."""
         return self.retriever.invoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     async def _aget_docs(
@@ -278,7 +291,8 @@ class RetrievalQA(BaseRetrievalQA):
     ) -> list[Document]:
         """Get docs."""
         return await self.retriever.ainvoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     @property
@@ -310,15 +324,6 @@ class VectorDBQA(BaseRetrievalQA):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        warnings.warn(
-            "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import RetrievalQA`"
-        )
-        return values
-
-    @model_validator(mode="before")
-    @classmethod
     def validate_search_type(cls, values: dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
@@ -328,6 +333,7 @@ class VectorDBQA(BaseRetrievalQA):
                 raise ValueError(msg)
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,
@@ -337,11 +343,15 @@ class VectorDBQA(BaseRetrievalQA):
         """Get docs."""
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         else:
             msg = f"search_type of {self.search_type} not allowed."

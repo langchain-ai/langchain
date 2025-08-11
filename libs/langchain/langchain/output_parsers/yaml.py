@@ -6,6 +6,7 @@ import yaml
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from pydantic import BaseModel, ValidationError
+from typing_extensions import override
 
 from langchain.output_parsers.format_instructions import YAML_FORMAT_INSTRUCTIONS
 
@@ -18,11 +19,13 @@ class YamlOutputParser(BaseOutputParser[T]):
     pydantic_object: type[T]
     """The pydantic model to parse."""
     pattern: re.Pattern = re.compile(
-        r"^```(?:ya?ml)?(?P<yaml>[^`]*)", re.MULTILINE | re.DOTALL
+        r"^```(?:ya?ml)?(?P<yaml>[^`]*)",
+        re.MULTILINE | re.DOTALL,
     )
     """Regex pattern to match yaml code blocks
     within triple backticks with optional yaml or yml prefix."""
 
+    @override
     def parse(self, text: str) -> T:
         try:
             # Greedy search for 1st yaml candidate.
@@ -40,9 +43,18 @@ class YamlOutputParser(BaseOutputParser[T]):
             msg = f"Failed to parse {name} from completion {text}. Got: {e}"
             raise OutputParserException(msg, llm_output=text) from e
 
+    @override
     def get_format_instructions(self) -> str:
         # Copy schema to avoid altering original Pydantic schema.
-        schema = dict(self.pydantic_object.schema().items())
+        if hasattr(self.pydantic_object, "model_json_schema"):
+            # Pydantic v2
+            schema = dict(self.pydantic_object.model_json_schema().items())
+        elif hasattr(self.pydantic_object, "schema"):
+            # Pydantic v1
+            schema = dict(self.pydantic_object.schema().items())
+        else:
+            msg = "Pydantic object must have either model_json_schema or schema method"
+            raise ValueError(msg)
 
         # Remove extraneous fields.
         reduced_schema = schema
@@ -60,5 +72,6 @@ class YamlOutputParser(BaseOutputParser[T]):
         return "yaml"
 
     @property
+    @override
     def OutputType(self) -> type[T]:
         return self.pydantic_object

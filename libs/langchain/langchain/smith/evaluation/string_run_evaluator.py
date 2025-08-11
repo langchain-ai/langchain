@@ -16,6 +16,7 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.messages import BaseMessage, get_buffer_string, messages_from_dict
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
@@ -70,6 +71,15 @@ class LLMStringRunMapper(StringRunMapper):
         raise ValueError(msg)
 
     def serialize_inputs(self, inputs: dict) -> str:
+        """Serialize inputs.
+
+        Args:
+            inputs: The inputs from the run, expected to contain prompts or messages.
+        Returns:
+            The serialized input text from the prompts or messages.
+        Raises:
+            ValueError: If neither prompts nor messages are found in the inputs.
+        """
         if "prompts" in inputs:  # Should we even accept this?
             input_ = "\n\n".join(inputs["prompts"])
         elif "prompt" in inputs:
@@ -82,6 +92,18 @@ class LLMStringRunMapper(StringRunMapper):
         return input_
 
     def serialize_outputs(self, outputs: dict) -> str:
+        """Serialize outputs.
+
+        Args:
+            outputs: The outputs from the run, expected to contain generations.
+
+        Returns:
+            The serialized output text from the first generation.
+
+        Raises:
+            ValueError: If no generations are found in the outputs,
+            or if the generations are empty.
+        """
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
             raise ValueError(msg)
@@ -185,6 +207,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
+    @override
     def map(self, run: Run) -> dict[str, str]:
         if not run.outputs:
             msg = f"Run {run.id} has no outputs to evaluate."
@@ -231,7 +254,7 @@ class StringExampleMapper(Serializable):
         return {
             "reference": self.serialize_chat_messages([output])
             if isinstance(output, dict) and output.get("type") and output.get("data")
-            else output
+            else output,
         }
 
     def __call__(self, example: Example) -> dict[str, str]:
@@ -256,10 +279,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     """The evaluation chain."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return ["run", "example"]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["feedback"]
 
@@ -283,7 +308,9 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
 
     def _prepare_output(self, output: dict[str, Any]) -> dict[str, Any]:
         evaluation_result = EvaluationResult(
-            key=self.name, comment=output.get("reasoning"), **output
+            key=self.name,
+            comment=output.get("reasoning"),
+            **output,
         )
         if RUN_KEY in output:
             # TODO: Not currently surfaced. Update
@@ -328,6 +355,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
         return feedback
 
+    @override
     def evaluate_run(
         self,
         run: Run,
@@ -345,6 +373,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
                 # TODO: Add run ID once we can declare it via callbacks
             )
 
+    @override
     async def aevaluate_run(
         self,
         run: Run,
@@ -354,7 +383,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         """Evaluate an example."""
         try:
             result = await self.acall(
-                {"run": run, "example": example}, include_run_info=True
+                {"run": run, "example": example},
+                include_run_info=True,
             )
             return self._prepare_evaluator_output(result)
         except Exception as e:
@@ -405,7 +435,8 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             run_mapper: StringRunMapper = LLMStringRunMapper()
         elif run_type == "chain":
             run_mapper = ChainStringRunMapper(
-                input_key=input_key, prediction_key=prediction_key
+                input_key=input_key,
+                prediction_key=prediction_key,
             )
         else:
             msg = f"Unsupported run type {run_type}. Expected one of 'llm' or 'chain'."

@@ -10,6 +10,7 @@ from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
 from langchain_core.language_models import BaseLanguageModel
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS
@@ -27,10 +28,12 @@ class StructuredChatOutputParser(AgentOutputParser):
     pattern: Pattern = re.compile(r"```(?:json\s+)?(\W.*?)```", re.DOTALL)
     """Regex pattern to parse the output."""
 
+    @override
     def get_format_instructions(self) -> str:
         """Returns formatting instructions for the given output parser."""
         return self.format_instructions
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             action_match = self.pattern.search(text)
@@ -43,7 +46,9 @@ class StructuredChatOutputParser(AgentOutputParser):
                 if response["action"] == "Final Answer":
                     return AgentFinish({"output": response["action_input"]}, text)
                 return AgentAction(
-                    response["action"], response.get("action_input", {}), text
+                    response["action"],
+                    response.get("action_input", {}),
+                    text,
                 )
             return AgentFinish({"output": text}, text)
         except Exception as e:
@@ -63,18 +68,16 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
     output_fixing_parser: Optional[OutputFixingParser] = None
     """The output fixing parser to use."""
 
+    @override
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         try:
             if self.output_fixing_parser is not None:
-                parsed_obj: Union[AgentAction, AgentFinish] = (
-                    self.output_fixing_parser.parse(text)
-                )
-            else:
-                parsed_obj = self.base_parser.parse(text)
-            return parsed_obj
+                return self.output_fixing_parser.parse(text)
+            return self.base_parser.parse(text)
         except Exception as e:
             msg = f"Could not parse LLM output: {text}"
             raise OutputParserException(msg) from e
@@ -85,10 +88,19 @@ class StructuredChatOutputParserWithRetries(AgentOutputParser):
         llm: Optional[BaseLanguageModel] = None,
         base_parser: Optional[StructuredChatOutputParser] = None,
     ) -> StructuredChatOutputParserWithRetries:
+        """Create a StructuredChatOutputParserWithRetries from a language model.
+
+        Args:
+            llm: The language model to use.
+            base_parser: An optional StructuredChatOutputParser to use.
+        Returns:
+            An instance of StructuredChatOutputParserWithRetries.
+        """
         if llm is not None:
             base_parser = base_parser or StructuredChatOutputParser()
             output_fixing_parser: OutputFixingParser = OutputFixingParser.from_llm(
-                llm=llm, parser=base_parser
+                llm=llm,
+                parser=base_parser,
             )
             return cls(output_fixing_parser=output_fixing_parser)
         if base_parser is not None:

@@ -39,7 +39,7 @@ class ModelLaboratory:
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
                 )
-                raise ValueError(msg)
+                raise ValueError(msg)  # noqa: TRY004
             if len(chain.input_keys) != 1:
                 msg = (
                     "Currently only support chains with one input variable, "
@@ -61,7 +61,9 @@ class ModelLaboratory:
 
     @classmethod
     def from_llms(
-        cls, llms: list[BaseLLM], prompt: Optional[PromptTemplate] = None
+        cls,
+        llms: list[BaseLLM],
+        prompt: Optional[PromptTemplate] = None,
     ) -> ModelLaboratory:
         """Initialize the ModelLaboratory with LLMs and an optional prompt.
 

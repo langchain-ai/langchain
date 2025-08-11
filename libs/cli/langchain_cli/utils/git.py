@@ -65,7 +65,7 @@ def parse_dependency_string(
         else:
             _, post_slash = find_slash.split("/", 1)
             if "@" in post_slash or "#" in post_slash:
-                _, ref = re.split(r"[@#]", post_slash, 1)
+                _, ref = re.split(r"[@#]", post_slash, maxsplit=1)
 
         # gitstring is everything before that
         gitstring = gitstring[: -len(ref) - 1] if ref is not None else gitstring
@@ -122,7 +122,9 @@ def parse_dependencies(
     api_path: list[str],
 ) -> list[DependencySource]:
     num_deps = max(
-        len(dependencies) if dependencies is not None else 0, len(repo), len(branch)
+        len(dependencies) if dependencies is not None else 0,
+        len(repo),
+        len(branch),
     )
     if (
         (dependencies and len(dependencies) != num_deps)
@@ -143,7 +145,10 @@ def parse_dependencies(
     return [
         parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
         for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
-            inner_deps, inner_repos, inner_branches, inner_api_paths
+            inner_deps,
+            inner_repos,
+            inner_branches,
+            inner_api_paths,
         )
     ]
 
@@ -154,7 +159,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
     removed_protocol = gitstring.split("://")[-1]
-    removed_basename = re.split(r"[/:]", removed_protocol, 1)[-1]
+    removed_basename = re.split(r"[/:]", removed_protocol, maxsplit=1)[-1]
     removed_extras = removed_basename.split("#")[0]
     foldername = re.sub(r"\W", "_", removed_extras)
 
@@ -186,7 +191,7 @@ def copy_repo(
     source: Path,
     destination: Path,
 ) -> None:
-    """Copies a repo, ignoring git folders.
+    """Copiy a repo, ignoring git folders.
 
     Raises FileNotFound error if it can't find source
     """

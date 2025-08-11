@@ -22,6 +22,7 @@ from langchain_core.structured_query import (
     Operator,
     StructuredQuery,
 )
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
@@ -46,6 +47,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
+    @override
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
@@ -60,11 +62,11 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
             if not parsed.get("limit"):
                 parsed.pop("limit", None)
             return StructuredQuery(
-                **{k: v for k, v in parsed.items() if k in allowed_keys}
+                **{k: v for k, v in parsed.items() if k in allowed_keys},
             )
         except Exception as e:
             msg = f"Parsing text\n{text}\n raised following error:\n{e}"
-            raise OutputParserException(msg)
+            raise OutputParserException(msg) from e
 
     @classmethod
     def from_components(
@@ -89,7 +91,8 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
                 filter_directive = cast(
-                    Optional[FilterDirective], get_parser().parse(raw_filter)
+                    "Optional[FilterDirective]",
+                    get_parser().parse(raw_filter),
                 )
                 return fix_filter_directive(
                     filter_directive,
@@ -141,7 +144,7 @@ def fix_filter_directive(
             return None
         args = [
             cast(
-                FilterDirective,
+                "FilterDirective",
                 fix_filter_directive(
                     arg,
                     allowed_comparators=allowed_comparators,
@@ -235,7 +238,9 @@ def get_query_constructor_prompt(
         examples = construct_examples(examples)
         example_prompt = USER_SPECIFIED_EXAMPLE_PROMPT
         prefix = PREFIX_WITH_DATA_SOURCE.format(
-            schema=schema, content=document_contents, attributes=attribute_str
+            schema=schema,
+            content=document_contents,
+            attributes=attribute_str,
         )
         suffix = SUFFIX_WITHOUT_DATA_SOURCE.format(i=len(examples) + 1)
     else:
@@ -245,7 +250,9 @@ def get_query_constructor_prompt(
         example_prompt = EXAMPLE_PROMPT
         prefix = DEFAULT_PREFIX.format(schema=schema)
         suffix = DEFAULT_SUFFIX.format(
-            i=len(examples) + 1, content=document_contents, attributes=attribute_str
+            i=len(examples) + 1,
+            content=document_contents,
+            attributes=attribute_str,
         )
     return FewShotPromptTemplate(
         examples=list(examples),
@@ -300,11 +307,10 @@ def load_query_constructor_chain(
         enable_limit=enable_limit,
         schema_prompt=schema_prompt,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,
@@ -359,11 +365,10 @@ def load_query_constructor_runnable(
         schema_prompt=schema_prompt,
         **kwargs,
     )
-    allowed_attributes = []
-    for ainfo in attribute_info:
-        allowed_attributes.append(
-            ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
-        )
+    allowed_attributes = [
+        ainfo.name if isinstance(ainfo, AttributeInfo) else ainfo["name"]
+        for ainfo in attribute_info
+    ]
     output_parser = StructuredQueryOutputParser.from_components(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

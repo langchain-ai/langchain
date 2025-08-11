@@ -39,7 +39,8 @@ try:
     from langchain_community.llms.loading import load_llm, load_llm_from_config
 except ImportError:
 
-    def load_llm(*args: Any, **kwargs: Any) -> None:
+    def load_llm(*_: Any, **__: Any) -> None:
+        """Import error for load_llm."""
         msg = (
             "To use this load_llm functionality you must install the "
             "langchain_community package. "
@@ -47,7 +48,8 @@ except ImportError:
         )
         raise ImportError(msg)
 
-    def load_llm_from_config(*args: Any, **kwargs: Any) -> None:
+    def load_llm_from_config(*_: Any, **__: Any) -> None:
+        """Import error for load_llm_from_config."""
         msg = (
             "To use this load_llm_from_config functionality you must install the "
             "langchain_community package. "
@@ -117,7 +119,7 @@ def _load_stuff_documents_chain(config: dict, **kwargs: Any) -> StuffDocumentsCh
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "document_prompt" in config:
         prompt_config = config.pop("document_prompt")
@@ -129,12 +131,15 @@ def _load_stuff_documents_chain(config: dict, **kwargs: Any) -> StuffDocumentsCh
         raise ValueError(msg)
 
     return StuffDocumentsChain(
-        llm_chain=llm_chain, document_prompt=document_prompt, **config
+        llm_chain=llm_chain,
+        document_prompt=document_prompt,
+        **config,
     )
 
 
 def _load_map_reduce_documents_chain(
-    config: dict, **kwargs: Any
+    config: dict,
+    **kwargs: Any,
 ) -> MapReduceDocumentsChain:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
@@ -147,15 +152,17 @@ def _load_map_reduce_documents_chain(
 
     if not isinstance(llm_chain, LLMChain):
         msg = f"Expected LLMChain, got {llm_chain}"
-        raise ValueError(msg)
+        raise ValueError(msg)  # noqa: TRY004
 
     if "reduce_documents_chain" in config:
         reduce_documents_chain = load_chain_from_config(
-            config.pop("reduce_documents_chain"), **kwargs
+            config.pop("reduce_documents_chain"),
+            **kwargs,
         )
     elif "reduce_documents_chain_path" in config:
         reduce_documents_chain = load_chain(
-            config.pop("reduce_documents_chain_path"), **kwargs
+            config.pop("reduce_documents_chain_path"),
+            **kwargs,
         )
     else:
         reduce_documents_chain = _load_reduce_documents_chain(config, **kwargs)
@@ -174,20 +181,24 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
     if "combine_documents_chain" in config:
         combine_document_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_document_chain_config, **kwargs
+            combine_document_chain_config,
+            **kwargs,
         )
     elif "combine_document_chain" in config:
         combine_document_chain_config = config.pop("combine_document_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_document_chain_config, **kwargs
+            combine_document_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     elif "combine_document_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_document_chain_path"), **kwargs
+            config.pop("combine_document_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -202,11 +213,13 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             collapse_documents_chain = None
         else:
             collapse_documents_chain = load_chain_from_config(
-                collapse_document_chain_config, **kwargs
+                collapse_document_chain_config,
+                **kwargs,
             )
     elif "collapse_documents_chain_path" in config:
         collapse_documents_chain = load_chain(
-            config.pop("collapse_documents_chain_path"), **kwargs
+            config.pop("collapse_documents_chain_path"),
+            **kwargs,
         )
     elif "collapse_document_chain" in config:
         collapse_document_chain_config = config.pop("collapse_document_chain")
@@ -214,11 +227,13 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
             collapse_documents_chain = None
         else:
             collapse_documents_chain = load_chain_from_config(
-                collapse_document_chain_config, **kwargs
+                collapse_document_chain_config,
+                **kwargs,
             )
     elif "collapse_document_chain_path" in config:
         collapse_documents_chain = load_chain(
-            config.pop("collapse_document_chain_path"), **kwargs
+            config.pop("collapse_document_chain_path"),
+            **kwargs,
         )
 
     return ReduceDocumentsChain(
@@ -251,11 +266,11 @@ def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
     if "create_draft_answer_prompt" in config:
         create_draft_answer_prompt_config = config.pop("create_draft_answer_prompt")
         create_draft_answer_prompt = load_prompt_from_config(
-            create_draft_answer_prompt_config
+            create_draft_answer_prompt_config,
         )
     elif "create_draft_answer_prompt_path" in config:
         create_draft_answer_prompt = load_prompt(
-            config.pop("create_draft_answer_prompt_path")
+            config.pop("create_draft_answer_prompt_path"),
         )
     if "list_assertions_prompt" in config:
         list_assertions_prompt_config = config.pop("list_assertions_prompt")
@@ -265,11 +280,11 @@ def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
     if "check_assertions_prompt" in config:
         check_assertions_prompt_config = config.pop("check_assertions_prompt")
         check_assertions_prompt = load_prompt_from_config(
-            check_assertions_prompt_config
+            check_assertions_prompt_config,
         )
     elif "check_assertions_prompt_path" in config:
         check_assertions_prompt = load_prompt(
-            config.pop("check_assertions_prompt_path")
+            config.pop("check_assertions_prompt_path"),
         )
     if "revised_answer_prompt" in config:
         revised_answer_prompt_config = config.pop("revised_answer_prompt")
@@ -315,7 +330,8 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
 
 
 def _load_map_rerank_documents_chain(
-    config: dict, **kwargs: Any
+    config: dict,
+    **kwargs: Any,
 ) -> MapRerankDocumentsChain:
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
@@ -372,11 +388,13 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_documents_chain_config, **kwargs
+            combine_documents_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -401,7 +419,8 @@ def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
 
 
 def _load_vector_db_qa_with_sources_chain(
-    config: dict, **kwargs: Any
+    config: dict,
+    **kwargs: Any,
 ) -> VectorDBQAWithSourcesChain:
     if "vectorstore" in kwargs:
         vectorstore = kwargs.pop("vectorstore")
@@ -411,11 +430,13 @@ def _load_vector_db_qa_with_sources_chain(
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_documents_chain_config, **kwargs
+            combine_documents_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -439,11 +460,13 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_documents_chain_config, **kwargs
+            combine_documents_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -459,7 +482,8 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
 
 
 def _load_retrieval_qa_with_sources_chain(
-    config: dict, **kwargs: Any
+    config: dict,
+    **kwargs: Any,
 ) -> RetrievalQAWithSourcesChain:
     if "retriever" in kwargs:
         retriever = kwargs.pop("retriever")
@@ -469,11 +493,13 @@ def _load_retrieval_qa_with_sources_chain(
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_documents_chain_config, **kwargs
+            combine_documents_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -497,11 +523,13 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
     if "combine_documents_chain" in config:
         combine_documents_chain_config = config.pop("combine_documents_chain")
         combine_documents_chain = load_chain_from_config(
-            combine_documents_chain_config, **kwargs
+            combine_documents_chain_config,
+            **kwargs,
         )
     elif "combine_documents_chain_path" in config:
         combine_documents_chain = load_chain(
-            config.pop("combine_documents_chain_path"), **kwargs
+            config.pop("combine_documents_chain_path"),
+            **kwargs,
         )
     else:
         msg = (
@@ -525,7 +553,8 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
     if "cypher_generation_chain" in config:
         cypher_generation_chain_config = config.pop("cypher_generation_chain")
         cypher_generation_chain = load_chain_from_config(
-            cypher_generation_chain_config, **kwargs
+            cypher_generation_chain_config,
+            **kwargs,
         )
     else:
         msg = "`cypher_generation_chain` must be present."
@@ -539,13 +568,13 @@ def _load_graph_cypher_chain(config: dict, **kwargs: Any) -> GraphCypherQAChain:
 
     try:
         from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use this GraphCypherQAChain functionality you must install the "
             "langchain_community package. "
             "You can install it with `pip install langchain_community`"
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
     return GraphCypherQAChain(
         graph=graph,
         cypher_generation_chain=cypher_generation_chain,
@@ -587,13 +616,13 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
 def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
     try:
         from langchain.chains.llm_requests import LLMRequestsChain
-    except ImportError:
+    except ImportError as e:
         msg = (
             "To use this LLMRequestsChain functionality you must install the "
             "langchain package. "
             "You can install it with `pip install langchain`"
         )
-        raise ImportError(msg)
+        raise ImportError(msg) from e
 
     if "llm_chain" in config:
         llm_chain_config = config.pop("llm_chain")
@@ -606,7 +635,9 @@ def _load_llm_requests_chain(config: dict, **kwargs: Any) -> LLMRequestsChain:
     if "requests_wrapper" in kwargs:
         requests_wrapper = kwargs.pop("requests_wrapper")
         return LLMRequestsChain(
-            llm_chain=llm_chain, requests_wrapper=requests_wrapper, **config
+            llm_chain=llm_chain,
+            requests_wrapper=requests_wrapper,
+            **config,
         )
     return LLMRequestsChain(llm_chain=llm_chain, **config)
 
@@ -684,10 +715,10 @@ def _load_chain_from_file(file: Union[str, Path], **kwargs: Any) -> Chain:
     file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix == ".json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix.endswith((".yaml", ".yml")):
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
         msg = "File type must be json or yaml"

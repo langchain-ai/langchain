@@ -36,6 +36,7 @@ def __getattr__(name: str) -> None:
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.chat_models import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
+            stacklevel=2,
             category=LangChainDeprecationWarning,
         )
 
