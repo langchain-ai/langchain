@@ -144,7 +144,7 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, property):
             if not _obj_type:
