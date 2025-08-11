@@ -7,7 +7,7 @@ from tests.integration_tests.common import qdrant_running_locally
 logger = logging.getLogger(__name__)
 
 
-def qdrant_locations(use_in_memory: bool = True) -> list[str]:
+def qdrant_locations(use_in_memory: bool = True) -> list[str]:  # noqa: FBT001, FBT002
     locations = []
 
     if use_in_memory:
