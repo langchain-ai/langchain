@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -181,7 +181,7 @@ wheels = [
 
 [[package]]
 name = "anthropic"
-version = "0.57.1"
+version = "0.60.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -192,9 +192,9 @@ dependencies = [
     { name = "sniffio" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d7/75/6261a1a8d92aed47e27d2fcfb3a411af73b1435e6ae1186da02b760565d0/anthropic-0.57.1.tar.gz", hash = "sha256:7815dd92245a70d21f65f356f33fc80c5072eada87fb49437767ea2918b2c4b0", size = 423775, upload-time = "2025-07-03T16:57:35.932Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4e/03/3334921dc54ed822b3dd993ae72d823a7402588521bbba3e024b3333a1fd/anthropic-0.60.0.tar.gz", hash = "sha256:a22ba187c6f4fd5afecb2fc913b960feccf72bc0d25c1b7ce0345e87caede577", size = 425983, upload-time = "2025-07-28T19:53:47.685Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e5/cf/ca0ba77805aec6171629a8b665c7dc224dab374539c3d27005b5d8c100a0/anthropic-0.57.1-py3-none-any.whl", hash = "sha256:33afc1f395af207d07ff1bffc0a3d1caac53c371793792569c5d2f09283ea306", size = 292779, upload-time = "2025-07-03T16:57:34.636Z" },
+    { url = "https://files.pythonhosted.org/packages/da/bb/d84f287fb1c217b30c328af987cf8bbe3897edf0518dcc5fa39412f794ec/anthropic-0.60.0-py3-none-any.whl", hash = "sha256:65ad1f088a960217aaf82ba91ff743d6c89e9d811c6d64275b9a7c59ee9ac3c6", size = 293116, upload-time = "2025-07-28T19:53:45.944Z" },
 ]
 
 [[package]]
@@ -2259,15 +2259,11 @@ dependencies = [
 requires-dist = [
     { name = "async-timeout", marker = "python_full_version < '3.11'", specifier = ">=4.0.0,<5.0.0" },
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
-    { name = "langchain-aws", marker = "extra == 'aws'" },
-    { name = "langchain-azure-ai", marker = "extra == 'azure-ai'" },
-    { name = "langchain-cohere", marker = "extra == 'cohere'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
     { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
-    { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-groq", marker = "extra == 'groq'" },
     { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
     { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
@@ -2276,14 +2272,13 @@ requires-dist = [
     { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-text-splitters", editable = "libs/text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
-    { name = "langchain-xai", marker = "extra == 'xai'" },
     { name = "langsmith", specifier = ">=0.1.17" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "azure-ai", "cohere", "google-vertexai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "aws", "deepseek", "xai", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "deepseek", "perplexity"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
@@ -2354,7 +2349,7 @@ typing = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.17"
+version = "0.3.18"
 source = { editable = "libs/partners/anthropic" }
 dependencies = [
     { name = "anthropic" },
@@ -2364,7 +2359,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = ">=0.57.0,<1" },
+    { name = "anthropic", specifier = ">=0.60.0,<1" },
     { name = "langchain-core", editable = "libs/core" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
 ]
@@ -2483,7 +2478,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.72"
+version = "0.3.74"
 source = { editable = "libs/core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -2534,7 +2529,7 @@ test = [
 test-integration = []
 typing = [
     { name = "langchain-text-splitters", directory = "libs/text-splitters" },
-    { name = "mypy", specifier = ">=1.15,<1.16" },
+    { name = "mypy", specifier = ">=1.17.1,<1.18" },
     { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
     { name = "types-requests", specifier = ">=2.28.11.5,<3.0.0.0" },
 ]
@@ -2618,7 +2613,7 @@ dependencies = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.3.6"
+version = "0.3.7"
 source = { editable = "libs/partners/groq" }
 dependencies = [
     { name = "groq" },
@@ -2627,7 +2622,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "groq", specifier = ">=0.29.0,<1" },
+    { name = "groq", specifier = ">=0.30.0,<1" },
     { name = "langchain-core", editable = "libs/core" },
 ]
 
@@ -2819,7 +2814,7 @@ typing = []
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.28"
+version = "0.3.29"
 source = { editable = "libs/partners/openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -2889,10 +2884,14 @@ version = "0.3.9"
 source = { editable = "libs/text-splitters" }
 dependencies = [
     { name = "langchain-core" },
+    { name = "pip" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "langchain-core", editable = "libs/core" }]
+requires-dist = [
+    { name = "langchain-core", editable = "libs/core" },
+    { name = "pip", specifier = ">=25.2" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -2901,7 +2900,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "libs/core" },
-    { name = "ruff", specifier = ">=0.12.2,<0.13" },
+    { name = "ruff", specifier = ">=0.12.8,<0.13" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2918,6 +2917,7 @@ test-integration = [
     { name = "sentence-transformers", specifier = ">=3.0.1" },
     { name = "spacy", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "transformers", specifier = ">=4.51.3,<5.0.0" },
 ]
 typing = [
@@ -4436,6 +4436,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/cd/00/20f40a935514037b7d3f87adfc87d2c538430ea625b63b3af8c3f5578e72/pillow-11.1.0-pp310-pypy310_pp73-manylinux_2_28_aarch64.whl", hash = "sha256:d44ff19eea13ae4acdaaab0179fa68c0c6f2f45d66a4d8ec1eda7d6cecbcc15f", size = 3446208, upload-time = "2025-01-02T08:13:46.817Z" },
     { url = "https://files.pythonhosted.org/packages/28/3c/7de681727963043e093c72e6c3348411b0185eab3263100d4490234ba2f6/pillow-11.1.0-pp310-pypy310_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:d3d8da4a631471dfaf94c10c85f5277b1f8e42ac42bade1ac67da4b4a7359b73", size = 3509746, upload-time = "2025-01-02T08:13:50.6Z" },
     { url = "https://files.pythonhosted.org/packages/41/67/936f9814bdd74b2dfd4822f1f7725ab5d8ff4103919a1664eb4874c58b2f/pillow-11.1.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:4637b88343166249fe8aa94e7c4a62a180c4b3898283bb5d3d2fd5fe10d8e4e0", size = 2626353, upload-time = "2025-01-02T08:13:52.725Z" },
+]
+
+[[package]]
+name = "pip"
+version = "25.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/16/650289cd3f43d5a2fadfd98c68bd1e1e7f2550a1a5326768cddfbcedb2c5/pip-25.2.tar.gz", hash = "sha256:578283f006390f85bb6282dffb876454593d637f5d1be494b5202ce4877e71f2", size = 1840021, upload-time = "2025-07-30T21:50:15.401Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b7/3f/945ef7ab14dc4f9d7f40288d2df998d1837ee0888ec3659c813487572faa/pip-25.2-py3-none-any.whl", hash = "sha256:6d67a2b4e7f14d8b31b8b52648866fa717f45a1eb70e83002f4331d07e953717", size = 1752557, upload-time = "2025-07-30T21:50:13.323Z" },
 ]
 
 [[package]]

@@ -7,7 +7,9 @@
     BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
                                                  RecursiveCharacterTextSplitter -->  <name>TextSplitter
 
-Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
+
+.. note::
+    **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
 
 
 **Main helpers:**

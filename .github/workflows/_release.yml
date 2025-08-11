@@ -220,7 +220,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -379,7 +379,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
@@ -388,11 +388,12 @@ jobs:
       - name: Test against ${{ matrix.partner }}
         if: startsWith(inputs.working-directory, 'libs/core')
         run: |
-          # Identify latest tag
+          # Identify latest tag, excluding pre-releases
           LATEST_PACKAGE_TAG="$(
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
+            | grep -Ev '==[^=]*(\.?dev[0-9]*|\.?rc[0-9]*)$' \
             | sort -Vr \
             | head -n 1
           )"
@@ -446,7 +447,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -485,7 +486,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/

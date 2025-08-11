@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to file a bug report. 
+        Thank you for taking the time to file a bug report.
 
         Use this to report BUGS in LangChain. For usage questions, feature requests and general design questions, please use the [LangChain Forum](https://forum.langchain.com/).
 
@@ -50,7 +50,7 @@ body:
 
         If a maintainer can copy it, run it, and see it right away, there's a much higher chance that you'll be able to get help.
 
-        **Important!** 
+        **Important!**
 
         * Avoid screenshots when possible, as they are hard to read and (more importantly) don't allow others to copy-and-paste your code.
         * Reduce your code to the minimum required to reproduce the issue if possible. This makes it much easier for others to help you.
@@ -58,14 +58,14 @@ body:
         * INCLUDE the language label (e.g. `python`) after the first three backticks to enable syntax highlighting. (e.g., ```python rather than ```).
 
       placeholder: |
-        The following code: 
+        The following code:
 
         ```python
         from langchain_core.runnables import RunnableLambda
 
         def bad_code(inputs) -> int:
           raise NotImplementedError('For demo purpose')
-          
+
           chain = RunnableLambda(bad_code)
           chain.invoke('Hello!')
         ```

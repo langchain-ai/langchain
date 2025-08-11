@@ -1008,7 +1008,7 @@ def _make_tools_invocation(name_to_arguments: dict[str, dict[str, Any]]) -> AIMe
         for idx, (name, arguments) in enumerate(name_to_arguments.items())
     ]
     tool_calls = [
-        ToolCall(name=name, args=args, id=str(idx))
+        ToolCall(name=name, args=args, id=str(idx), type="tool_call")
         for idx, (name, args) in enumerate(name_to_arguments.items())
     ]
     return AIMessage(

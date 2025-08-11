@@ -35,6 +35,7 @@ embeddings.embed_query("What is the meaning of life?")
 ```
 
 ## LLMs
+
 `__ModuleName__LLM` class exposes LLMs from __ModuleName__.
 
 ```python
