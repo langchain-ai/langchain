@@ -19,7 +19,8 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,    Literal,
+    Callable,
+    Literal,
     Optional,
     TypedDict,
     TypeVar,
