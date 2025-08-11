@@ -12,7 +12,7 @@ Typically run in CI/CD to catch import problems before deployment, ensuring that
 all modules can be successfully imported in production environments.
 """
 
-import random
+import secrets
 import string
 import sys
 import traceback
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     for file in files:
         try:
             module_name = "".join(
-                random.choice(string.ascii_letters) for _ in range(20)
+                secrets.choice(string.ascii_letters) for _ in range(20)
             )
             SourceFileLoader(module_name, file).load_module()
         except Exception:

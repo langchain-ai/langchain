@@ -1,5 +1,6 @@
 name: '👥 LangChain People'
-
+run-name: 'Update People Data'
+# This workflow updates the LangChain People data by fetching the latest information from the LangChain Git
 on:
   schedule:
     - cron: "0 14 1 * *"

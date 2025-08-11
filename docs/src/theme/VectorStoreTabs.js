@@ -77,7 +77,7 @@ export default function VectorStoreTabs(props) {
         {
             value: "Qdrant",
             label: "Qdrant",
-            text: `from langchain_qdrant import QdrantVectorStore\nfrom qdrant_client import QdrantClient\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\nclient = QdrantClient(":memory:")\n${vectorStoreVarName} = QdrantVectorStore(\n    client=client,\n    collection_name="test",\n    embedding=embeddings,\n)`,
+            text: `from qdrant_client.models import Distance, VectorParams\nfrom langchain_qdrant import QdrantVectorStore\nfrom qdrant_client import QdrantClient\n${useFakeEmbeddings ? fakeEmbeddingsString : ""}\nclient = QdrantClient(":memory:")\n\nvector_size = len(embeddings.embed_query("sample text"))\n\nif not client.collection_exists("test"):\n    client.create_collection(\n        collection_name="test",\n        vectors_config=VectorParams(size=vector_size, distance=Distance.COSINE)\n    )\n${vectorStoreVarName} = QdrantVectorStore(\n    client=client,\n    collection_name="test",\n    embedding=embeddings,\n)`,
             packageName: "langchain-qdrant",
             default: false,
         },

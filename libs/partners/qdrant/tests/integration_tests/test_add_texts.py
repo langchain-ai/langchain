@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import uuid
 from typing import Optional
 
@@ -48,8 +50,8 @@ def test_qdrant_add_texts_returns_all_ids(batch_size: int) -> None:
     )
 
     ids = docsearch.add_texts(["foo", "bar", "baz"])
-    assert 3 == len(ids)
-    assert 3 == len(set(ids))
+    assert len(ids) == 3
+    assert len(set(ids)) == 3
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
@@ -73,8 +75,8 @@ def test_qdrant_add_texts_stores_duplicated_texts(vector_name: Optional[str]) ->
     )
     ids = vec_store.add_texts(["abc", "abc"], [{"a": 1}, {"a": 2}])
 
-    assert 2 == len(set(ids))
-    assert 2 == client.count(collection_name).count
+    assert len(set(ids)) == 2
+    assert client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -99,7 +101,7 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
 
     assert all(first == second for first, second in zip(ids, returned_ids))
-    assert 2 == client.count(collection_name).count
+    assert client.count(collection_name).count == 2
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)
 
@@ -128,7 +130,7 @@ def test_qdrant_add_texts_stores_embeddings_as_named_vectors(vector_name: str) -
     )
     vec_store.add_texts(["lorem", "ipsum", "dolor", "sit", "amet"])
 
-    assert 5 == client.count(collection_name).count
+    assert client.count(collection_name).count == 5
     assert all(
         vector_name in point.vector  # type: ignore[operator]
         for point in client.scroll(collection_name, with_vectors=True)[0]
