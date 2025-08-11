@@ -82,7 +82,7 @@ def test_parse_disallowed_operator() -> None:
 
 
 def _test_parse_value(x: Any) -> None:
-    parsed = cast(Comparison, (DEFAULT_PARSER.parse(f'eq("x", {x})')))
+    parsed = cast("Comparison", (DEFAULT_PARSER.parse(f'eq("x", {x})')))
     actual = parsed.value
     assert actual == x
 
@@ -104,14 +104,14 @@ def test_parse_list_value(x: list) -> None:
 
 @pytest.mark.parametrize("x", ['""', '" "', '"foo"', "'foo'"])
 def test_parse_string_value(x: str) -> None:
-    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value
     assert actual == x[1:-1]
 
 
 @pytest.mark.parametrize("x", ["true", "True", "TRUE", "false", "False", "FALSE"])
 def test_parse_bool_value(x: str) -> None:
-    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value
     expected = x.lower() == "true"
     assert actual == expected
@@ -127,7 +127,7 @@ def test_parser_unpack_single_arg_operation(op: str, arg: str) -> None:
 
 @pytest.mark.parametrize("x", ['"2022-10-20"', "'2022-10-20'", "2022-10-20"])
 def test_parse_date_value(x: str) -> None:
-    parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("x", {x})'))
+    parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("x", {x})'))
     actual = parsed.value["date"]
     assert actual == x.strip("'\"")
 
@@ -152,7 +152,7 @@ def test_parse_date_value(x: str) -> None:
 def test_parse_datetime_value(x: str, expected: dict) -> None:
     """Test parsing of datetime values with ISO 8601 format."""
     try:
-        parsed = cast(Comparison, DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
+        parsed = cast("Comparison", DEFAULT_PARSER.parse(f'eq("publishedAt", {x})'))
         actual = parsed.value
         assert actual == expected, f"Expected {expected}, got {actual}"
     except ValueError as e:

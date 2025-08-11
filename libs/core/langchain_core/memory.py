@@ -53,6 +53,7 @@ class BaseMemory(Serializable, ABC):
 
                 def clear(self) -> None:
                     pass
+
     """  # noqa: E501
 
     model_config = ConfigDict(

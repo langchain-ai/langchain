@@ -1,7 +1,6 @@
-import random
-import string
 import sys
 import traceback
+import uuid
 from importlib.machinery import SourceFileLoader
 
 if __name__ == "__main__":
@@ -9,9 +8,7 @@ if __name__ == "__main__":
     has_failure = False
     for file in files:
         try:
-            module_name = "".join(
-                random.choice(string.ascii_letters) for _ in range(20)
-            )
+            module_name = f"test_module_{uuid.uuid4().hex[:20]}"
             SourceFileLoader(module_name, file).load_module()
         except Exception:
             has_failure = True

@@ -61,6 +61,7 @@ class Crawler:
     """
 
     def __init__(self) -> None:
+        """Initialize the crawler."""
         try:
             from playwright.sync_api import sync_playwright
         except ImportError as e:
@@ -78,11 +79,22 @@ class Crawler:
         self.client: CDPSession
 
     def go_to_page(self, url: str) -> None:
+        """Navigate to the given URL.
+
+        Args:
+            url: The URL to navigate to. If it does not contain a scheme, it will be
+                prefixed with "http://".
+        """
         self.page.goto(url=url if "://" in url else "http://" + url)
         self.client = self.page.context.new_cdp_session(self.page)
         self.page_element_buffer = {}
 
     def scroll(self, direction: str) -> None:
+        """Scroll the page in the given direction.
+
+        Args:
+            direction: The direction to scroll in, either "up" or "down".
+        """
         if direction == "up":
             self.page.evaluate(
                 "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop - window.innerHeight;"  # noqa: E501
@@ -93,6 +105,11 @@ class Crawler:
             )
 
     def click(self, id_: Union[str, int]) -> None:
+        """Click on an element with the given id.
+
+        Args:
+            id_: The id of the element to click on.
+        """
         # Inject javascript into the page which removes the target= attribute from links
         js = """
 		links = document.getElementsByTagName("a");
@@ -112,13 +129,25 @@ class Crawler:
             print("Could not find element")  # noqa: T201
 
     def type(self, id_: Union[str, int], text: str) -> None:
+        """Type text into an element with the given id.
+
+        Args:
+            id_: The id of the element to type into.
+            text: The text to type into the element.
+        """
         self.click(id_)
         self.page.keyboard.type(text)
 
     def enter(self) -> None:
+        """Press the Enter key."""
         self.page.keyboard.press("Enter")
 
     def crawl(self) -> list[str]:
+        """Crawl the current page.
+
+        Returns:
+            A list of the elements in the viewport.
+        """
         page = self.page
         page_element_buffer = self.page_element_buffer
         start = time.time()

@@ -1898,6 +1898,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     Please note that this will test using pydantic 2 even though BaseTool
     is a pydantic 1 model!
+
     """
     # Check with whatever pydantic model is passed in and not via v1 namespace
     from pydantic import BaseModel
@@ -2584,6 +2585,18 @@ def test_title_property_preserved() -> None:
         },
         "type": "function",
     }
+
+
+def test_nested_pydantic_fields() -> None:
+    class Address(BaseModel):
+        street: str
+
+    class Person(BaseModel):
+        name: str
+        address: Address = Field(description="Home address")
+
+    result = convert_to_openai_tool(Person)
+    assert len(result["function"]["parameters"]["properties"]) == 2
 
 
 async def test_tool_ainvoke_does_not_mutate_inputs() -> None:

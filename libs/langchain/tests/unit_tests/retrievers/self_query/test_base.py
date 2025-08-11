@@ -14,6 +14,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
     Visitor,
 )
+from typing_extensions import override
 
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
@@ -61,6 +62,7 @@ class FakeTranslator(Visitor):
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
+    @override
     def similarity_search(
         self,
         query: str,

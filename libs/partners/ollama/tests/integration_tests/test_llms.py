@@ -1,24 +1,27 @@
 """Test OllamaLLM llm."""
 
+import os
+
 import pytest
 from langchain_core.outputs import GenerationChunk
 from langchain_core.runnables import RunnableConfig
 
 from langchain_ollama.llms import OllamaLLM
 
-MODEL_NAME = "llama3.1"
+MODEL_NAME = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1")
+REASONING_MODEL_NAME = os.environ.get("OLLAMA_REASONING_TEST_MODEL", "deepseek-r1:1.5b")
 SAMPLE = "What is 3^3?"
 
 
 def test_stream_text_tokens() -> None:
-    """Test streaming raw string tokens from OllamaLLM."""
+    """Test streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 def test__stream_no_reasoning(model: str) -> None:
     """Test low-level chunk streaming of a simple prompt with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
@@ -39,7 +42,7 @@ def test__stream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 def test__stream_with_reasoning(model: str) -> None:
     """Test low-level chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
@@ -64,14 +67,14 @@ def test__stream_with_reasoning(model: str) -> None:
 
 
 async def test_astream_text_tokens() -> None:
-    """Test async streaming raw string tokens from OllamaLLM."""
+    """Test async streaming raw string tokens from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token, str)
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 async def test__astream_no_reasoning(model: str) -> None:
     """Test low-level async chunk streaming with `reasoning=False`."""
     llm = OllamaLLM(model=model, num_ctx=2**12)
@@ -89,7 +92,7 @@ async def test__astream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result_chunk.generation_info  # type: ignore[operator]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL_NAME)])
 async def test__astream_with_reasoning(model: str) -> None:
     """Test low-level async chunk streaming with `reasoning=True`."""
     llm = OllamaLLM(model=model, num_ctx=2**12, reasoning=True)
@@ -109,7 +112,7 @@ async def test__astream_with_reasoning(model: str) -> None:
 
 
 async def test_abatch() -> None:
-    """Test batch sync token generation from OllamaLLM."""
+    """Test batch sync token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -129,7 +132,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch token generation from OllamaLLM."""
+    """Test batch token generation from `OllamaLLM`."""
     llm = OllamaLLM(model=MODEL_NAME)
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])

@@ -3,9 +3,10 @@
 
 import os
 import shutil
-import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any, Dict
+
+import yaml
 
 
 def load_packages_yaml() -> Dict[str, Any]:
@@ -28,7 +29,6 @@ def get_target_dir(package_name: str) -> Path:
 def clean_target_directories(packages: list) -> None:
     """Remove old directories that will be replaced."""
     for package in packages:
-
         target_dir = get_target_dir(package["name"])
         if target_dir.exists():
             print(f"Removing {target_dir}")
@@ -38,7 +38,6 @@ def clean_target_directories(packages: list) -> None:
 def move_libraries(packages: list) -> None:
     """Move libraries from their source locations to the target directories."""
     for package in packages:
-
         repo_name = package["repo"].split("/")[1]
         source_path = package["path"]
         target_dir = get_target_dir(package["name"])
@@ -68,21 +67,33 @@ def main():
         package_yaml = load_packages_yaml()
 
         # Clean target directories
-        clean_target_directories([
-            p
-            for p in package_yaml["packages"]
-            if (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
-            and p["repo"] != "langchain-ai/langchain"
-        ])
+        clean_target_directories(
+            [
+                p
+                for p in package_yaml["packages"]
+                if (
+                    p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref")
+                )
+                and p["repo"] != "langchain-ai/langchain"
+                and p["name"]
+                != "langchain-ai21"  # Skip AI21 due to dependency conflicts
+            ]
+        )
 
         # Move libraries to their new locations
-        move_libraries([
-            p
-            for p in package_yaml["packages"]
-            if not p.get("disabled", False)
-            and (p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref"))
-            and p["repo"] != "langchain-ai/langchain"
-        ])
+        move_libraries(
+            [
+                p
+                for p in package_yaml["packages"]
+                if not p.get("disabled", False)
+                and (
+                    p["repo"].startswith("langchain-ai/") or p.get("include_in_api_ref")
+                )
+                and p["repo"] != "langchain-ai/langchain"
+                and p["name"]
+                != "langchain-ai21"  # Skip AI21 due to dependency conflicts
+            ]
+        )
 
         # Delete ones without a pyproject.toml
         for partner in Path("langchain/libs/partners").iterdir():

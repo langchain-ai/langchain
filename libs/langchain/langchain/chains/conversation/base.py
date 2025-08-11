@@ -4,7 +4,7 @@ from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
@@ -53,6 +53,7 @@ class ConversationChain(LLMChain):
                 "Hi I'm Bob.",
                 config={"configurable": {"session_id": "1"}},
             )  # session_id determines thread
+
     Memory objects can also be incorporated into the ``get_session_history`` callable:
 
         .. code-block:: python
@@ -96,6 +97,7 @@ class ConversationChain(LLMChain):
             from langchain_community.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
+
     """
 
     memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
@@ -112,6 +114,7 @@ class ConversationChain(LLMChain):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

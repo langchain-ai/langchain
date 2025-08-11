@@ -3,15 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast, overload
 
 from langchain_core.language_models import (
     BaseChatModel,
@@ -188,7 +180,7 @@ def init_chat_model(
 
             o3_mini = init_chat_model("openai:o3-mini", temperature=0)
             claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
-            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.0-flash", temperature=0)
+            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
 
             o3_mini.invoke("what's your name")
             claude_sonnet.invoke("what's your name")
@@ -322,7 +314,7 @@ def init_chat_model(
 
     if not configurable_fields:
         return _init_chat_model_helper(
-            cast(str, model),
+            cast("str", model),
             model_provider=model_provider,
             **kwargs,
         )
@@ -632,7 +624,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> _ConfigurableModel:
         """Bind config to a Runnable, returning a new Runnable."""
-        config = RunnableConfig(**(config or {}), **cast(RunnableConfig, kwargs))
+        config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
         remaining_config["configurable"] = {
@@ -781,7 +773,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
-            yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
+            yield from self._model(cast("RunnableConfig", config)).batch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,
                 return_exceptions=return_exceptions,
@@ -811,7 +803,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             async for x in self._model(
-                cast(RunnableConfig, config),
+                cast("RunnableConfig", config),
             ).abatch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,

@@ -55,7 +55,7 @@ def _dereference_refs_helper(
         processed_refs = set()
 
     # 1) Pure $ref node?
-    if isinstance(obj, dict) and set(obj.keys()) == {"$ref"}:
+    if isinstance(obj, dict) and "$ref" in set(obj.keys()):
         ref_path = obj["$ref"]
         # cycle?
         if ref_path in processed_refs:

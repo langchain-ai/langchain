@@ -123,6 +123,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
 
     .. versionadded:: 0.2.24
+
     """  # noqa: E501
 
     def __init__(

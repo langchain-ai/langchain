@@ -4,6 +4,7 @@ from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 _MIN_PARSERS = 2
 
@@ -14,6 +15,7 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     parsers: list[BaseOutputParser]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
@@ -25,10 +27,10 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
             msg = "Must have at least two parsers"
             raise ValueError(msg)
         for parser in parsers:
-            if parser._type == "combining":
+            if parser._type == "combining":  # noqa: SLF001
                 msg = "Cannot nest combining parsers"
                 raise ValueError(msg)
-            if parser._type == "list":
+            if parser._type == "list":  # noqa: SLF001
                 msg = "Cannot combine list parsers"
                 raise ValueError(msg)
         return values

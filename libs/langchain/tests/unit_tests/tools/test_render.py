@@ -8,13 +8,13 @@ from langchain.tools.render import (
 
 
 @tool
-def search(query: str) -> str:
+def search(query: str) -> str:  # noqa: ARG001
     """Lookup things online."""
     return "foo"
 
 
 @tool
-def calculator(expression: str) -> str:
+def calculator(expression: str) -> str:  # noqa: ARG001
     """Do math."""
     return "bar"
 

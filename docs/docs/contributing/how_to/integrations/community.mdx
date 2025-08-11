@@ -15,7 +15,7 @@ guide linked without much discussion.
 
 The `langchain-community` package is in `libs/community`.
 
-It can be installed with `pip install langchain-community`, and exported members can be imported with code like 
+It can be installed with `pip install langchain-community`, and exported members can be imported with code like
 
 ```python
 from langchain_community.chat_models import ChatParrotLink
@@ -23,7 +23,7 @@ from langchain_community.llms import ParrotLinkLLM
 from langchain_community.vectorstores import ParrotLinkVectorStore
 ```
 
-The `community` package relies on manually-installed dependent packages, so you will see errors 
+The `community` package relies on manually-installed dependent packages, so you will see errors
 if you try to import a package that is not installed. In our fake example, if you tried to import `ParrotLinkLLM` without installing `parrot-link-sdk`, you will see an `ImportError` telling you to install it when trying to use it.
 
 Let's say we wanted to implement a chat model for Parrot Link AI. We would create a new file in `libs/community/langchain_community/chat_models/parrot_link.py` with the following code:

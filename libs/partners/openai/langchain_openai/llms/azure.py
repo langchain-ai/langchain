@@ -30,6 +30,7 @@ class AzureOpenAI(BaseOpenAI):
             from langchain_openai import AzureOpenAI
 
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
+
     """
 
     azure_endpoint: Optional[str] = Field(
@@ -37,21 +38,24 @@ class AzureOpenAI(BaseOpenAI):
     )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
 
-        Example: `https://example-resource.azure.openai.com/`
+        Example: ``'https://example-resource.azure.openai.com/'``
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
-        Note: this means you won't be able to use non-deployment endpoints.
+
+        .. note::
+            This means you won't be able to use non-deployment endpoints.
+
     """
     openai_api_version: Optional[str] = Field(
         alias="api_version",
         default_factory=from_env("OPENAI_API_VERSION", default=None),
     )
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
+    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided."""
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
     # other forms of azure credentials.
@@ -66,16 +70,15 @@ class AzureOpenAI(BaseOpenAI):
     )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
 
-        For more:
-        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+        `For more, see this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>.`__
     """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
         Will be invoked on every sync request. For async requests,
-        will be invoked if `azure_ad_async_token_provider` is not provided.
+        will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
     azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
     """A function that returns an Azure Active Directory token.
@@ -85,9 +88,9 @@ class AzureOpenAI(BaseOpenAI):
     openai_api_type: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
     )
-    """Legacy, for openai<1.0.0 support."""
+    """Legacy, for ``openai<1.0.0`` support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
@@ -105,7 +108,7 @@ class AzureOpenAI(BaseOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @model_validator(mode="after")

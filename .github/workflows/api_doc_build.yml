@@ -1,17 +1,21 @@
-name: API Docs Build
+name: '📚 API Docs'
+run-name: 'Build & Deploy API Reference'
+# Runs daily or can be triggered manually for immediate updates
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 13 * * *'
+    - cron:  '0 13 * * *'  # Daily at 1PM UTC
 env:
   PYTHON_VERSION: "3.11"
 
 jobs:
+  # Only runs on main repository to prevent unnecessary builds on forks
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,7 +26,7 @@ jobs:
           path: langchain-api-docs-html
           token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
 
-      - name: Get repos with yq
+      - name: '📋 Extract Repository List with yq'
         id: get-unsorted-repos
         uses: mikefarah/yq@master
         with:
@@ -41,56 +45,65 @@ jobs:
               | .repo
             ' langchain/libs/packages.yml
 
-      - name: Parse YAML and checkout repos
+      - name: '📋 Parse YAML & Checkout Repositories'
         env:
           REPOS_UNSORTED: ${{ steps.get-unsorted-repos.outputs.result }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get unique repositories
           REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
-          
-          # Checkout each unique repository that is in langchain-ai org
+          # Checkout each unique repository
           for repo in $REPOS; do
+            # Validate repository format (allow any org with proper format)
+            if [[ ! "$repo" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository format: $repo"
+              exit 1
+            fi
+
             REPO_NAME=$(echo $repo | cut -d'/' -f2)
+
+            # Additional validation for repo name
+            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository name: $REPO_NAME"
+              exit 1
+            fi
             echo "Checking out $repo to $REPO_NAME"
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done
 
-      - name: Setup Python ${{ env.PYTHON_VERSION }}
+      - name: '🐍 Setup Python ${{ env.PYTHON_VERSION }}'
         uses: actions/setup-python@v5
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: Install initial py deps
+      - name: '📦 Install Initial Python Dependencies'
         working-directory: langchain
         run: |
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
-      - name: Move libs
+      - name: '📦 Organize Library Directories'
         run: python langchain/.github/scripts/prep_api_docs_build.py
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Rm old html
+      - name: '🧹 Remove Old HTML Files'
         run:
           rm -rf langchain-api-docs-html/api_reference_build/html
 
-      - name: Install dependencies
+      - name: '📦 Install Documentation Dependencies'
         working-directory: langchain
         run: |
           python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
           python -m uv pip install -r docs/api_reference/requirements.txt
 
-      - name: Set Git config
+      - name: '🔧 Configure Git Settings'
         working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
 
-      - name: Build docs
+      - name: '📚 Build API Documentation'
         working-directory: langchain
         run: |
           python docs/api_reference/create_api_rst.py

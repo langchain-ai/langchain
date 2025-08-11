@@ -236,6 +236,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_key: str = "results"  #: :meta private:
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -249,6 +250,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return False
 
     @property
+    @override
     def requires_input(self) -> bool:
         return True
 
@@ -520,6 +522,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
     """Criteria evaluation chain that requires references."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

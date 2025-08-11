@@ -59,6 +59,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
+
     """  # noqa: E501
 
     tool_call_id: str
@@ -191,6 +192,7 @@ class ToolCall(TypedDict):
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
+
     """
 
     name: str
@@ -210,7 +212,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],  # noqa: A002
+    id: Optional[str],
 ) -> ToolCall:
     """Create a tool call.
 
@@ -240,6 +242,7 @@ class ToolCallChunk(TypedDict):
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
         ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+
     """
 
     name: Optional[str]
@@ -257,7 +260,7 @@ def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
@@ -295,7 +298,7 @@ def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.

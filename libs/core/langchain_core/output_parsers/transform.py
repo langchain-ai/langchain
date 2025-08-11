@@ -32,7 +32,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     def _transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],  # noqa: A002
+        input: Iterator[Union[str, BaseMessage]],
     ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -42,7 +42,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     async def _atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],  # noqa: A002
+        input: AsyncIterator[Union[str, BaseMessage]],
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):

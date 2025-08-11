@@ -11,7 +11,7 @@ pip install -U langchain-cli
 ## Adding packages
 
 ```bash
-# adding packages from 
+# adding packages from
 # https://github.com/langchain-ai/langchain/tree/master/templates
 langchain app add $PROJECT_NAME
 
@@ -31,10 +31,10 @@ langchain app remove my/custom/path/rag
 ```
 
 ## Setup LangSmith (Optional)
-LangSmith will help us trace, monitor and debug LangChain applications. 
-You can sign up for LangSmith [here](https://smith.langchain.com/). 
-If you don't have access, you can skip this section
 
+LangSmith will help us trace, monitor and debug LangChain applications.
+You can sign up for LangSmith [here](https://smith.langchain.com/).
+If you don't have access, you can skip this section
 
 ```shell
 export LANGSMITH_TRACING=true

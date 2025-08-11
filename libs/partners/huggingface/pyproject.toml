@@ -65,7 +65,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -103,6 +102,8 @@ ignore = [
     "D104",    # pydocstyle: Missing docstring in public package
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
+    "D203",
+    "D213",
     "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter

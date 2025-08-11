@@ -53,17 +53,29 @@ This is how you use MessagesPlaceholder.
 
 ```python
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, AIMessage
 
 prompt_template = ChatPromptTemplate([
     ("system", "You are a helpful assistant"),
     MessagesPlaceholder("msgs")
 ])
 
+# Simple example with one message
 prompt_template.invoke({"msgs": [HumanMessage(content="hi!")]})
+
+# More complex example with conversation history
+messages_to_pass = [
+    HumanMessage(content="What's the capital of France?"),
+    AIMessage(content="The capital of France is Paris."),
+    HumanMessage(content="And what about Germany?")
+]
+
+formatted_prompt = prompt_template.invoke({"msgs": messages_to_pass})
+print(formatted_prompt)
 ```
 
-This will produce a list of two messages, the first one being a system message, and the second one being the HumanMessage we passed in.
+
+This will produce a list of four messages total: the system message plus the three messages we passed in (two HumanMessages and one AIMessage).
 If we had passed in 5 messages, then it would have produced 6 messages in total (the system message plus the 5 passed in).
 This is useful for letting a list of messages be slotted into a particular spot.
 
