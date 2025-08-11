@@ -935,22 +935,16 @@ from langchain_google_community.gmail.send_message import GmailSendMessage
 
 #### Installation
 
-To get started, install the Toolbox server and client:
+To get started, [install the Toolbox server and client](https://github.com/googleapis/genai-toolbox/releases/).
 
-```bash
-# see releases page for other versions
-export VERSION=0.10.0
-curl -O https://storage.googleapis.com/genai-toolbox/v$VERSION/linux/amd64/toolbox
-chmod +x toolbox
-```
 
 [Configure](https://googleapis.github.io/genai-toolbox/getting-started/configure/) a `tools.yaml` to define your tools, and then execute toolbox to start the server:
 
 ```bash
-./toolbox --tools-file "tools.yaml"
+toolbox --tools-file "tools.yaml"
 ```
 
-Then, install the Toolbox client using `pip`:
+Then, install the Toolbox client:
 
 ```bash
 pip install toolbox-langchain
@@ -963,11 +957,8 @@ Here is a quick example of how to use MCP Toolbox to connect to your database:
 ```python
 from toolbox_langchain import ToolboxClient
 
-# update the url to point to your server
-
 async with ToolboxClient("http://127.0.0.1:5000") as client:
 
-    # these tools can be passed to your application!
     tools = client.load_toolset()
 ```
 
