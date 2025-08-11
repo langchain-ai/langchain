@@ -8,8 +8,11 @@ EXPECTED_ALL = [
     "AzureChatOpenAI",
     "AzureOpenAIEmbeddings",
     "custom_tool",
+    "BatchError",
+    "BatchStatus",
 ]
 
 
 def test_all_imports() -> None:
     assert sorted(EXPECTED_ALL) == sorted(__all__)
+
