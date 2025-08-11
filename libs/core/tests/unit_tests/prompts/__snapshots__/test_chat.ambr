@@ -726,7 +726,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -752,6 +752,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -762,6 +766,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -781,9 +789,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -998,10 +1007,21 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
+            'type': 'object',
+          }),
+          'extras': dict({
+            'title': 'Extras',
             'type': 'object',
           }),
           'id': dict({
@@ -1015,6 +1035,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -1026,9 +1050,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -1037,9 +1062,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -1064,6 +1089,10 @@
               }),
             ]),
             'title': 'Args',
+          }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -1105,9 +1134,9 @@
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -2158,7 +2187,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2184,6 +2213,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2194,6 +2227,10 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -2213,9 +2250,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -2430,10 +2468,21 @@
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
+          
+          .. note::
+              ``create_tool_call`` may also be used as a factory to create a
+              ``ToolCall``. Benefits include:
+          
+              * Automatic ID generation (when not provided)
+              * Required arguments strictly validated at creation time
         ''',
         'properties': dict({
           'args': dict({
             'title': 'Args',
+            'type': 'object',
+          }),
+          'extras': dict({
+            'title': 'Extras',
             'type': 'object',
           }),
           'id': dict({
@@ -2447,6 +2496,10 @@
             ]),
             'title': 'Id',
           }),
+          'index': dict({
+            'title': 'Index',
+            'type': 'integer',
+          }),
           'name': dict({
             'title': 'Name',
             'type': 'string',
@@ -2458,9 +2511,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
         ]),
         'title': 'ToolCall',
         'type': 'object',
@@ -2469,9 +2523,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not ``None``.
           
           Example:
           
@@ -2496,6 +2550,10 @@
               }),
             ]),
             'title': 'Args',
+          }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -2537,9 +2595,9 @@
           }),
         }),
         'required': list([
+          'id',
           'name',
           'args',
-          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',

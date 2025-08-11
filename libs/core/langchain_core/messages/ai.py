@@ -8,11 +8,7 @@ from typing import Any, Literal, Optional, Union, cast
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -20,23 +16,26 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call as create_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
 
 logger = logging.getLogger(__name__)
 
+_LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
 
-_LC_ID_PREFIX = "run-"
+_LC_ID_PREFIX = f"{_LC_AUTO_PREFIX}run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -428,17 +427,27 @@ def add_ai_message_chunks(
 
     chunk_id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non-run-* id
+    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
     for id_ in candidates:
-        if id_ and not id_.startswith(_LC_ID_PREFIX):
+        if (
+            id_
+            and not id_.startswith(_LC_ID_PREFIX)
+            and not id_.startswith(_LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non-null
+        # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_:
+            if id_ and id_.startswith(_LC_ID_PREFIX):
                 chunk_id = id_
                 break
+        else:
+            # third pass: take any remaining id (auto-generated lc_* ids)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
 
     return left.__class__(
         example=left.example,
