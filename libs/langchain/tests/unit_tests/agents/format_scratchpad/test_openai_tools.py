@@ -53,7 +53,12 @@ def test_calls_convert_agent_action_to_messages() -> None:
     message4 = AIMessage(
         content="",
         tool_calls=[
-            ToolCall(name="exponentiate", args={"a": 3, "b": 5}, id="call_abc02468"),
+            ToolCall(
+                name="exponentiate",
+                args={"a": 3, "b": 5},
+                id="call_abc02468",
+                type="tool_call",
+            ),
         ],
     )
     actions4 = parse_ai_message_to_openai_tool_action(message4)

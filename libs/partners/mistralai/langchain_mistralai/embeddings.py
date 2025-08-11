@@ -121,6 +121,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """
 
     # The type for client and async_client is ignored because the type is not
