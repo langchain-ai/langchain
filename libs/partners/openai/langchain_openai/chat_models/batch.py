@@ -12,9 +12,9 @@ import openai
 from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
 
-from langchain_openai.chat_models._compat import (
-    convert_dict_to_message,
-    convert_message_to_dict,
+from langchain_openai.chat_models.base import (
+    _convert_dict_to_message,
+    _convert_message_to_dict,
 )
 
 
@@ -504,3 +504,4 @@ def create_batch_request(
         "url": "/v1/chat/completions",
         "body": {"model": model, "messages": openai_messages, **kwargs},
     }
+
