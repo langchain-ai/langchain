@@ -1849,45 +1849,43 @@ class ChatModelIntegrationTests(ChatModelTests):
         """
         pytest.xfail("Test not implemented yet.")
 
-        # TODO
-        # if not self.supports_pdf_inputs:
-        #     pytest.skip("Model does not support PDF inputs.")
-        # url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        # pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        if not self.supports_pdf_inputs:
+            pytest.skip("Model does not support PDF inputs.")
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Summarize this document:",
-        #         },
-        #         {
-        #             "type": "file",
-        #             "source_type": "base64",
-        #             "mime_type": "application/pdf",
-        #             "data": pdf_data,
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": pdf_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
-        # # Test OpenAI Chat Completions format
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Summarize this document:",
-        #         },
-        #         {
-        #             "type": "file",
-        #             "file": {
-        #                 "filename": "test file.pdf",
-        #                 "file_data": f"data:application/pdf;base64,{pdf_data}",
-        #             },
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
     def test_audio_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process audio inputs.
@@ -1908,7 +1906,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         .. dropdown:: Configuration
 
-            To disable this test, set ``supports_audio_content_blocks`` to False in your
+            To disable this test, set ``supports_audio_inputs`` to False in your
             test class:
 
             .. code-block:: python
@@ -1916,17 +1914,17 @@ class ChatModelIntegrationTests(ChatModelTests):
                 class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
 
                     @property
-                    def supports_audio_content_blocks(self) -> bool:
+                    def supports_audio_inputs(self) -> bool:
                         return False
 
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the model can correctly handle messages
-            with audio content blocks. Otherwise, set the ``supports_audio_content_blocks``
+            with audio content blocks. Otherwise, set the ``supports_audio_inputs``
             property to False.
 
         """  # noqa: E501
-        if not self.supports_audio_content_blocks:
+        if not self.supports_audio_inputs:
             pytest.skip("Model does not support AudioContentBlock inputs.")
 
         url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
@@ -1943,21 +1941,20 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         _ = model.invoke([message])
 
-        # TODO?
         # Test OpenAI Chat Completions format
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Describe this audio:",
-        #         },
-        #         {
-        #             "type": "input_audio",
-        #             "input_audio": {"data": audio_data, "format": "wav"},
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {  # type: ignore[list-item]
+                    "type": "input_audio",
+                    "input_audio": {"data": audio_data, "format": "wav"},
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
@@ -1992,14 +1989,14 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         .. dropdown:: Configuration
 
-            To disable this test, set ``supports_image_content_blocks`` to False in your
+            To disable this test, set ``supports_image_inputs`` to False in your
             test class:
 
             .. code-block:: python
 
                 class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def supports_image_content_blocks(self) -> bool:
+                    def supports_image_inputs(self) -> bool:
                         return False
 
                     # Can also explicitly disable testing image URLs:
@@ -2011,10 +2008,10 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that the model can correctly handle messages
             with image content blocks, including base64-encoded images. Otherwise, set
-            the ``supports_image_content_blocks`` property to False.
+            the ``supports_image_inputs`` property to False.
 
         """
-        if not self.supports_image_content_blocks:
+        if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
 
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -2622,7 +2619,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     #         ),
     #     ]
 
-    #     if self.supports_audio_content_blocks:
+    #     if self.supports_audio_inputs:
     #         content_blocks.append(
     #             create_audio_block(
     #                 base64=_get_test_audio_base64(),

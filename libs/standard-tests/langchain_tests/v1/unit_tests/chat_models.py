@@ -219,7 +219,6 @@ class ChatModelTests(BaseStandardTests):
 
         - ``supports_reasoning_content_blocks``
         - ``supports_image_content_blocks``
-        - ``supports_audio_content_blocks``
         - ``supports_video_content_blocks``
         - ``supports_citations``
         - ``supports_web_search_blocks``
@@ -256,28 +255,6 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
-    def supports_image_content_blocks(self) -> bool:
-        """Whether the model supports ``ImageContentBlock``.
-
-        Replaces ``supports_image_inputs`` from v0.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
-    def supports_audio_content_blocks(self) -> bool:
-        """Whether the model supports ``AudioContentBlock``.
-
-        Replaces ``supports_audio_inputs`` from v0.
-
-        Defaults to False.
-
-        """
-        return False
-
-    @property
     def supports_video_content_blocks(self) -> bool:
         """Whether the model supports ``VideoContentBlock``.
 
@@ -291,10 +268,7 @@ class ChatModelTests(BaseStandardTests):
     @property
     def supports_multimodal_reasoning(self) -> bool:
         """Whether the model can reason about multimodal content."""
-        return (
-            self.supports_image_content_blocks
-            and self.supports_reasoning_content_blocks
-        )
+        return self.supports_image_inputs and self.supports_reasoning_content_blocks
 
     @property
     def supports_citations(self) -> bool:
