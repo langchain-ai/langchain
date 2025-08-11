@@ -600,7 +600,7 @@ class TestBatchIntegrationScenarios:
         mock_processor_class.return_value = mock_processor
 
         inputs = [[HumanMessage(content=f"Question {i}")] for i in range(num_requests)]
-        _ = self.llm.batch(inputs, use_batch_api=True)
+        results = self.llm.batch(inputs, use_batch_api=True)
 
         assert len(results) == num_requests
         for i, result in enumerate(results):

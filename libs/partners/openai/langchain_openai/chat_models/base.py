@@ -2295,8 +2295,10 @@ class BaseChatOpenAI(BaseChatModel):
             inputs: List of inputs to process in batch.
             config: Configuration for the batch processing.
             return_exceptions: Whether to return exceptions instead of raising them.
-            use_batch_api: If True, use OpenAI's Batch API for cost savings with polling.
-                          If False (default), use standard parallel processing for immediate results.
+            use_batch_api: If True, use OpenAI's Batch API for cost savings
+                          with polling.
+                          If False (default), use standard parallel processing
+                          for immediate results.
             **kwargs: Additional parameters to pass to the underlying model.
 
         Returns:

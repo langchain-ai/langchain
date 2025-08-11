@@ -253,7 +253,7 @@ class OpenAIBatchClient:
             BatchError: If batch cancellation fails.
         """
         try:
-            batch = self.client.batches.cancel(batch_id)
+            _ = self.client.batches.cancel(batch_id)
             return self.retrieve_batch(batch_id)
         except openai.OpenAIError as e:
             raise BatchError(
@@ -267,7 +267,8 @@ class OpenAIBatchClient:
 
 class OpenAIBatchProcessor:
     """
-    High-level processor for managing OpenAI Batch API lifecycle with LangChain integration.
+    High-level processor for managing OpenAI Batch API lifecycle with
+    LangChain integration.
 
     This class handles the complete batch processing workflow:
     1. Converts LangChain messages to OpenAI batch format
@@ -299,7 +300,7 @@ class OpenAIBatchProcessor:
 
     def create_batch(
         self,
-        messages_list: list[List[BaseMessage]],
+        messages_list: list[list[BaseMessage]],
         description: Optional[str] = None,
         metadata: Optional[dict[str, str]] = None,
         **kwargs: Any,
@@ -435,7 +436,7 @@ class OpenAIBatchProcessor:
 
     def process_batch(
         self,
-        messages_list: list[List[BaseMessage]],
+        messages_list: list[list[BaseMessage]],
         description: Optional[str] = None,
         metadata: Optional[dict[str, str]] = None,
         poll_interval: Optional[float] = None,
