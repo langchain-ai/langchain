@@ -411,7 +411,7 @@ class OpenAIBatchProcessor:
                     continue
 
                 # Convert OpenAI message dict to LangChain message
-                message = convert_dict_to_message(message_dict)
+                message = _convert_dict_to_message(message_dict)
 
                 # Create ChatGeneration with metadata
                 generation_info = {
@@ -504,4 +504,5 @@ def create_batch_request(
         "url": "/v1/chat/completions",
         "body": {"model": model, "messages": openai_messages, **kwargs},
     }
+
 
