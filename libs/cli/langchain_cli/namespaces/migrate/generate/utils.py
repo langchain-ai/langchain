@@ -1,9 +1,13 @@
+"""Generate migrations utilities."""
+
 import ast
 import inspect
 import os
 import pathlib
 from pathlib import Path
 from typing import Any, Optional
+
+from typing_extensions import override
 
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
@@ -15,12 +19,15 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 
 
 class ImportExtractor(ast.NodeVisitor):
+    """Import extractor"""
+
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
         self.imports: list = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node) -> None:  # noqa: N802
+    @override
+    def visit_ImportFrom(self, node) -> None:
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -143,6 +150,7 @@ def find_imports_from_package(
     *,
     from_package: Optional[str] = None,
 ) -> list[tuple[str, str]]:
+    """Find imports in code."""
     # Parse the code into an AST
     tree = ast.parse(code)
     # Create an instance of the visitor

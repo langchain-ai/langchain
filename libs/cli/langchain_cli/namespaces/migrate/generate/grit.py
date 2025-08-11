@@ -1,3 +1,6 @@
+"""Migration as Grit file."""
+
+
 def split_package(package: str) -> tuple[str, str]:
     """Split a package name into the containing package and the final name."""
     parts = package.split(".")

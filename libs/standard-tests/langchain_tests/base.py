@@ -1,15 +1,20 @@
+"""Standard tests."""
+
 from abc import ABC
 
 
 class BaseStandardTests(ABC):
-    """:private:"""
+    """Base class for standard tests.
+
+    :private:
+    """
 
     def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:
         """Test that no standard tests are overridden.
 
         :private:
         """
-        # find path to standard test implementations
+        # Find path to standard test implementations
         comparison_class = None
 
         def explore_bases(cls: type) -> None:

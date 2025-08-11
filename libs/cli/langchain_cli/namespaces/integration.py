@@ -15,6 +15,8 @@ integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
 class Replacements(TypedDict):
+    """Replacements."""
+
     __package_name__: str
     __module_name__: str
     __ModuleName__: str
