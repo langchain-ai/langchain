@@ -359,6 +359,7 @@ class TestBatchAPIPerformance:
             assert expected_answer in content or str(i * 2) in content
 
         # Log processing time for analysis    @pytest.mark.scheduled
+
     def test_batch_vs_sequential_comparison(self):
         """Compare batch API performance vs sequential processing."""
         messages = [
