@@ -504,5 +504,3 @@ def create_batch_request(
         "url": "/v1/chat/completions",
         "body": {"model": model, "messages": openai_messages, **kwargs},
     }
-
-
