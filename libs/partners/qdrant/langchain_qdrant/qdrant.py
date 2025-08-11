@@ -1142,18 +1142,17 @@ class QdrantVectorStore(VectorStore):
             # Get the VectorParams object for the specified vector_name
             vector_config = vector_config[vector_name]  # type: ignore[assignment, index]
 
-        else:
-            # vector_config is an instance of VectorParams
-            # Case of a collection with single/unnamed vector.
-            if vector_name != "":
-                msg = (
-                    f"Existing Qdrant collection {collection_name} is built "
-                    "with unnamed dense vector. "
-                    f"If you want to reuse it, set `vector_name` to ''(empty string)."
-                    f"If you want to recreate the collection, "
-                    "set `force_recreate` to `True`."
-                )
-                raise QdrantVectorStoreError(msg)
+        # vector_config is an instance of VectorParams
+        # Case of a collection with single/unnamed vector.
+        elif vector_name != "":
+            msg = (
+                f"Existing Qdrant collection {collection_name} is built "
+                "with unnamed dense vector. "
+                f"If you want to reuse it, set `vector_name` to ''(empty string)."
+                f"If you want to recreate the collection, "
+                "set `force_recreate` to `True`."
+            )
+            raise QdrantVectorStoreError(msg)
 
         if vector_config is None:
             msg = "VectorParams is None"

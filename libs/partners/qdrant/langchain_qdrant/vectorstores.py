@@ -2118,12 +2118,11 @@ class Qdrant(VectorStore):
         """
         if self.embeddings is not None:
             embedding = self.embeddings.embed_query(query)
+        elif self._embeddings_function is not None:
+            embedding = self._embeddings_function(query)
         else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                msg = "Neither of embeddings or embedding_function is set"
-                raise ValueError(msg)
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
     async def _aembed_query(self, query: str) -> list[float]:
@@ -2140,12 +2139,11 @@ class Qdrant(VectorStore):
         """
         if self.embeddings is not None:
             embedding = await self.embeddings.aembed_query(query)
+        elif self._embeddings_function is not None:
+            embedding = self._embeddings_function(query)
         else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                msg = "Neither of embeddings or embedding_function is set"
-                raise ValueError(msg)
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
     def _embed_texts(self, texts: Iterable[str]) -> list[list[float]]:
