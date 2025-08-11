@@ -134,7 +134,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -167,7 +167,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             functions=self.functions,
             callbacks=callbacks,
         )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     def return_stopped_response(
         self,
@@ -359,6 +359,7 @@ def create_openai_functions_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)

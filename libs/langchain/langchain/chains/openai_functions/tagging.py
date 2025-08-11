@@ -86,6 +86,7 @@ def create_tagging_chain(
 
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
+
     """
     function = _get_tagging_function(schema)
     prompt = prompt or ChatPromptTemplate.from_template(_TAGGING_TEMPLATE)
@@ -154,6 +155,7 @@ def create_tagging_chain_pydantic(
 
     Returns:
         Chain (LLMChain) that can be used to extract information from a passage.
+
     """
     if hasattr(pydantic_schema, "model_json_schema"):
         openai_schema = pydantic_schema.model_json_schema()

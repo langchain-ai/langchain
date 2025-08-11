@@ -85,6 +85,7 @@ class LLMSummarizationCheckerChain(Chain):
             from langchain.chains import LLMSummarizationCheckerChain
             llm = OpenAI(temperature=0.0)
             checker_chain = LLMSummarizationCheckerChain.from_llm(llm)
+
     """
 
     sequential_chain: SequentialChain
@@ -112,7 +113,7 @@ class LLMSummarizationCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
@@ -194,6 +195,17 @@ class LLMSummarizationCheckerChain(Chain):
         verbose: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> LLMSummarizationCheckerChain:
+        """Create a LLMSummarizationCheckerChain from a language model.
+
+        Args:
+            llm: a language model
+            create_assertions_prompt: prompt to create assertions
+            check_assertions_prompt: prompt to check assertions
+            revised_summary_prompt: prompt to revise summary
+            are_all_true_prompt: prompt to check if all assertions are true
+            verbose: whether to print verbose output
+            **kwargs: additional arguments
+        """
         chain = _load_sequential_chain(
             llm,
             create_assertions_prompt,

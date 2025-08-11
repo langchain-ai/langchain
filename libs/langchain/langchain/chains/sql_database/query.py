@@ -113,6 +113,7 @@ def create_sql_query_chain(
 
             Question: {input}'''
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     if prompt is not None:
         prompt_to_use = prompt
