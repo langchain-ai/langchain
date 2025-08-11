@@ -496,7 +496,7 @@ def create_batch_request(
         Dictionary in OpenAI batch request format.
     """
     # Convert LangChain messages to OpenAI format
-    openai_messages = [convert_message_to_dict(msg) for msg in messages]
+    openai_messages = [_convert_message_to_dict(msg) for msg in messages]
 
     return {
         "custom_id": custom_id,
@@ -504,5 +504,6 @@ def create_batch_request(
         "url": "/v1/chat/completions",
         "body": {"model": model, "messages": openai_messages, **kwargs},
     }
+
 
 
