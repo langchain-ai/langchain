@@ -17,9 +17,11 @@ from langchain_prompty import create_chat_prompt
 
 prompt = create_chat_prompt('<your .prompty file path>')
 ```
+
 Then you can use the prompt for next steps.
 
 Here is an example .prompty file:
+
 ```prompty
 ---
 name: Basic Prompt
@@ -39,7 +41,7 @@ sample:
 ---
 system:
 You are an AI assistant who helps people find information.
-As the assistant, you answer questions briefly, succinctly, 
+As the assistant, you answer questions briefly, succinctly,
 and in a personable manner using markdown and even add some personal flair with appropriate emojis.
 
 {% for item in chat_history %}

@@ -1,4 +1,4 @@
-"""Interface with the LangChain Hub."""
+"""Interface with the `LangChain Hub <https://smith.langchain.com/hub>`__."""
 
 from __future__ import annotations
 
