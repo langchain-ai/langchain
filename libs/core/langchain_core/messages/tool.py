@@ -5,12 +5,11 @@ from typing import Any, Literal, Optional, Union
 from uuid import UUID
 
 from pydantic import Field, model_validator
-from typing_extensions import override
+from typing_extensions import NotRequired, TypedDict, override
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.content_blocks import InvalidToolCall as InvalidToolCall
 from langchain_core.messages.content_blocks import ToolCall as ToolCall
-from langchain_core.messages.content_blocks import ToolCallChunk as ToolCallChunk
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -194,6 +193,38 @@ def tool_call(
         id: An identifier associated with the tool call.
     """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
+
+
+class ToolCallChunk(TypedDict):
+    """A chunk of a tool call (e.g., as part of a stream).
+
+    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+    all string attributes are concatenated. Chunks are only merged if their
+    values of `index` are equal and not None.
+
+    Example:
+
+    .. code-block:: python
+
+        left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+
+        (
+            AIMessageChunk(content="", tool_call_chunks=left_chunks)
+            + AIMessageChunk(content="", tool_call_chunks=right_chunks)
+        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+
+    """
+
+    name: Optional[str]
+    """The name of the tool to be called."""
+    args: Optional[str]
+    """The arguments to the tool call."""
+    id: Optional[str]
+    """An identifier associated with the tool call."""
+    index: Optional[int]
+    """The index of the tool call in a sequence."""
+    type: NotRequired[Literal["tool_call_chunk"]]
 
 
 def tool_call_chunk(

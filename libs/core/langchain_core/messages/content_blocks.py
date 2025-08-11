@@ -334,7 +334,7 @@ class ToolCallChunk(TypedDict):
 
     # TODO: Consider making fields NotRequired[str] in the future.
 
-    type: NotRequired[Literal["tool_call_chunk"]]
+    type: Literal["tool_call_chunk"]
     """Used for serialization."""
 
     id: Optional[str]
