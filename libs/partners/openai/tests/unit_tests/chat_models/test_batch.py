@@ -626,7 +626,7 @@ class TestBatchIntegrationScenarios:
             [HumanMessage(content="Direct message list")],  # Already formatted
         ]
 
-        _ = self.llm.batch(inputs, use_batch_api=True)
+        results = self.llm.batch(inputs, use_batch_api=True)
         assert len(results) == 2
 
         # Verify the conversion happened correctly

@@ -373,19 +373,19 @@ class TestBatchAPIPerformance:
         for message_list in messages:
             result = self.llm.invoke(message_list)
             sequential_results.append(result)
-        sequential_time = time.time() - start_sequential
+        _ = time.time() - start_sequential
 
         # Test batch API processing time
         start_batch = time.time()
         batch_results = self.llm.batch(
             messages, use_batch_api=True, poll_interval=30.0, timeout=1800.0
         )
-        batch_time = time.time() - start_batch
+        _ = time.time() - start_batch
 
         # Verify both produce results
         assert len(sequential_results) == len(batch_results) == 2
 
-        # Log timing comparison        # Note: Batch API will typically be slower for small batches due to polling,
+        # Note: Batch API will typically be slower for small batches due to polling,
         # but should be more cost-effective for larger batches
 
 

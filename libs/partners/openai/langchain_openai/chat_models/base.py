@@ -19,10 +19,7 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
-    Dict,
-    List,
-    Literal,
+    Callable,    Literal,
     Optional,
     TypedDict,
     TypeVar,
@@ -2152,10 +2149,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     def batch_create(
         self,
-        messages_list: List[List[BaseMessage]],
+        messages_list: list[list[BaseMessage]],
         *,
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[dict[str, str]] = None,
         poll_interval: float = 10.0,
         timeout: Optional[float] = None,
         **kwargs: Any,
@@ -2227,7 +2224,7 @@ class BaseChatOpenAI(BaseChatModel):
         *,
         poll_interval: Optional[float] = None,
         timeout: Optional[float] = None,
-    ) -> List[ChatResult]:
+    ) -> list[ChatResult]:
         """
         Retrieve results from a batch job, polling until completion if necessary.
 
