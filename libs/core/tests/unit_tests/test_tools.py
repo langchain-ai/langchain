@@ -2281,7 +2281,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
 
     assert foo.invoke(
         {
@@ -2290,7 +2290,7 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
 
     with pytest.raises(
         ValueError,
@@ -2302,7 +2302,7 @@ def test_tool_injected_tool_call_id() -> None:
     @tool
     def foo2(x: int, tool_call_id: Annotated[str, InjectedToolCallId()]) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
 
     assert foo2.invoke(
         {
@@ -2311,14 +2311,14 @@ def test_tool_injected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
 
 
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:
         """Foo."""
-        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[call-overload]
 
     with pytest.raises(ValueError, match="1 validation error for foo"):
         foo.invoke({"type": "tool_call", "args": {"x": 0}, "name": "foo", "id": "bar"})
@@ -2330,7 +2330,7 @@ def test_tool_uninjected_tool_call_id() -> None:
             "name": "foo",
             "id": "bar",
         }
-    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[arg-type]
+    ) == ToolMessage(0, tool_call_id="zap")  # type: ignore[call-overload]
 
 
 def test_tool_return_output_mixin() -> None:
