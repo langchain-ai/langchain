@@ -332,7 +332,8 @@ test_cases = [
 
 @pytest.mark.parametrize(("runnable", "cases"), test_cases)
 def test_context_runnables(
-    runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
+    runnable: Union[Runnable[Any, Any], Callable[[], Runnable[Any, Any]]],
+    cases: list[_TestCase],
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert runnable.invoke(cases[0].input) == cases[0].output
@@ -344,7 +345,8 @@ def test_context_runnables(
 
 @pytest.mark.parametrize(("runnable", "cases"), test_cases)
 async def test_context_runnables_async(
-    runnable: Union[Runnable, Callable[[], Runnable]], cases: list[_TestCase]
+    runnable: Union[Runnable[Any, Any], Callable[[], Runnable[Any, Any]]],
+    cases: list[_TestCase],
 ) -> None:
     runnable = runnable if isinstance(runnable, Runnable) else runnable()
     assert await runnable.ainvoke(cases[1].input) == cases[1].output
