@@ -50,6 +50,41 @@ def test__parse_arguments_from_tool_call() -> None:
     assert isinstance(response["arg_1"], str)
 
 
+def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
+    """Test that functionName metadata is filtered out from tool arguments.
+
+    Some models may include metadata like ``functionName`` in the arguments
+    that just echoes the function name. This should be filtered out for
+    no-argument tools to return an empty dictionary.
+    """
+    # Test case where arguments contain functionName metadata
+    raw_tool_call_with_metadata = {
+        "function": {
+            "name": "magic_function_no_args",
+            "arguments": {"functionName": "magic_function_no_args"},
+        }
+    }
+    response = _parse_arguments_from_tool_call(raw_tool_call_with_metadata)
+    assert response == {}
+
+    # Test case where arguments contain both real args and metadata
+    raw_tool_call_mixed = {
+        "function": {
+            "name": "some_function",
+            "arguments": {"functionName": "some_function", "real_arg": "value"},
+        }
+    }
+    response_mixed = _parse_arguments_from_tool_call(raw_tool_call_mixed)
+    assert response_mixed == {"real_arg": "value"}
+
+    # Test case where functionName has different value (should be preserved)
+    raw_tool_call_different = {
+        "function": {"name": "function_a", "arguments": {"functionName": "function_b"}}
+    }
+    response_different = _parse_arguments_from_tool_call(raw_tool_call_different)
+    assert response_different == {"functionName": "function_b"}
+
+
 @contextmanager
 def _mock_httpx_client_stream(
     *args: Any, **kwargs: Any

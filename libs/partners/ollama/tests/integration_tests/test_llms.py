@@ -1,13 +1,15 @@
 """Test OllamaLLM llm."""
 
+import os
+
 import pytest
 from langchain_core.outputs import GenerationChunk
 from langchain_core.runnables import RunnableConfig
 
 from langchain_ollama.llms import OllamaLLM
 
-MODEL_NAME = "llama3.1"
-REASONING_MODEL_NAME = "deepseek-r1:1.5b"
+MODEL_NAME = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1")
+REASONING_MODEL_NAME = os.environ.get("OLLAMA_REASONING_TEST_MODEL", "deepseek-r1:1.5b")
 SAMPLE = "What is 3^3?"
 
 
