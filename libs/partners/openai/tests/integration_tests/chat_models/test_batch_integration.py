@@ -302,8 +302,7 @@ class TestBatchAPIEdgeCases:
         messages_list = [[HumanMessage(content=long_content)]]
 
         batch_id = self.llm.batch_create(
-            messages_list=messages_list,
-            max_tokens=200,  # Allow more tokens for summary
+            messages_list=messages_list,  # Allow more tokens for summary
         )
 
         results = self.llm.batch_retrieve(batch_id, timeout=1800.0)
@@ -322,8 +321,7 @@ class TestBatchAPIPerformance:
         """Set up test fixtures."""
         self.llm = ChatOpenAI(
             model="gpt-3.5-turbo",
-            temperature=0.1,
-            max_tokens=30,  # Keep responses short
+            temperature=0.1,  # Keep responses short
         )
 
     @pytest.mark.scheduled
