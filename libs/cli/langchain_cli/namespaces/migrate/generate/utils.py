@@ -8,7 +8,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
 
-from typing_extensions import override
 
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
@@ -20,7 +19,7 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 
 
 class ImportExtractor(ast.NodeVisitor):
-    """Import extractor"""
+    """Import extractor."""
 
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
