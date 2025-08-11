@@ -229,7 +229,7 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: bash
 
-            ollama pull mistral:v0.3
+            ollama pull gpt-oss:20b
             pip install -U langchain-ollama
 
     Key init args — completion params:
@@ -262,7 +262,8 @@ class ChatOllama(BaseChatModel):
             from langchain_ollama import ChatOllama
 
             llm = ChatOllama(
-                model = "llama3",
+                model = "gpt-oss:20b",
+                validate_model_on_init = True,
                 temperature = 0.8,
                 num_predict = 256,
                 # other params ...
@@ -284,10 +285,7 @@ class ChatOllama(BaseChatModel):
     Stream:
         .. code-block:: python
 
-            messages = [
-                ("human", "Return the words Hello World!"),
-            ]
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream("Return the words Hello World!"):
                 print(chunk.text(), end="")
 
 
@@ -314,10 +312,7 @@ class ChatOllama(BaseChatModel):
     Async:
         .. code-block:: python
 
-            messages = [
-                ("human", "Hello how are you!"),
-            ]
-            await llm.ainvoke(messages)
+            await llm.ainvoke("Hello how are you!")
 
         .. code-block:: python
 
@@ -325,10 +320,7 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: python
 
-            messages = [
-                ("human", "Say hello world!"),
-            ]
-            async for chunk in llm.astream(messages):
+            async for chunk in llm.astream("Say hello world!"):
                 print(chunk.content)
 
         .. code-block:: python
@@ -356,10 +348,7 @@ class ChatOllama(BaseChatModel):
 
 
             json_llm = ChatOllama(format="json")
-            messages = [
-                ("human", "Return a query for the weather in a random location and time of day with two keys: location and time_of_day. Respond using JSON only."),
-            ]
-            llm.invoke(messages).content
+            llm.invoke("Return a query for the weather in a random location and time of day with two keys: location and time_of_day. Respond using JSON only.").content
 
         .. code-block:: python
 
@@ -406,17 +395,16 @@ class ChatOllama(BaseChatModel):
 
             llm = ChatOllama(
                 model = "deepseek-r1:8b",
+                validate_model_on_init = True,
                 reasoning= True,
             )
 
-            user_message = HumanMessage(content="how many r in the word strawberry?")
-            messages: List[Any] = [user_message]
-            llm.invoke(messages)
+            llm.invoke("how many r in the word strawberry?")
 
             # or, on an invocation basis:
 
-            llm.invoke(messages, reasoning=True)
-            # or llm.stream(messages, reasoning=True)
+            llm.invoke("how many r in the word strawberry?", reasoning=True)
+            # or llm.stream("how many r in the word strawberry?", reasoning=True)
 
             # If not provided, the invocation will default to the ChatOllama reasoning
             # param provided (None by default).
