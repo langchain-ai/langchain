@@ -82,8 +82,9 @@ try:
 
             See https://python.langchain.com/docs/security for more information.
 
-        Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+        .. note::
+            This class is deprecated. See below for a replacement implementation using
+            LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Support for both token-by-token and step-by-step streaming;
