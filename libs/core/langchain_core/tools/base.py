@@ -74,7 +74,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
-TOOL_MESSAGE_BLOCK_TYPES = ("text", "image_url", "image", "json", "search_result")
+TOOL_MESSAGE_BLOCK_TYPES = (
+    "text",
+    "image_url",
+    "image",
+    "json",
+    "search_result",
+    "custom_tool_call_output",
+)
 
 
 class SchemaAnnotationError(TypeError):
