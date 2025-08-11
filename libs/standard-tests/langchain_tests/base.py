@@ -9,7 +9,7 @@ class BaseStandardTests(ABC):
 
         :private:
         """
-        # find path to standard test implementations
+        # Find path to standard test implementations
         comparison_class = None
 
         def explore_bases(cls: type) -> None:
