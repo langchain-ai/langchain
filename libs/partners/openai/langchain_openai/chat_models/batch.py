@@ -505,5 +505,3 @@ def create_batch_request(
         "body": {"model": model, "messages": openai_messages, **kwargs},
     }
 
-
-
