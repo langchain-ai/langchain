@@ -711,5 +711,5 @@ packages:
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: toolbox-langchain
   repo: googleapis/mcp-toolbox-sdk-python
-  path: .
+  path: packages/toolbox-langchain
 
