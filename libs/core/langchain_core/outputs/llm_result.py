@@ -46,7 +46,10 @@ class LLMResult(BaseModel):
     relevant information from standardized fields present in AIMessage.
     """
     run: Optional[list[RunInfo]] = None
-    """List of metadata info for model call for each input."""
+    """List of metadata info for model call for each input.
+
+    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    """
 
     type: Literal["LLMResult"] = "LLMResult"
     """Type is used exclusively for serialization purposes."""

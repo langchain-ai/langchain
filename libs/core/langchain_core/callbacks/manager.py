@@ -11,15 +11,7 @@ from abc import ABC, abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager, contextmanager
 from contextvars import copy_context
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
 from uuid import UUID
 
 from langsmith.run_helpers import get_tracing_context
@@ -92,7 +84,8 @@ def trace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    Note: must have LANGCHAIN_TRACING_V2 env var set to true to see the trace in LangSmith.
+    .. note:
+        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
 
     Returns:
         CallbackManagerForChainGroup: The callback manager for the chain group.
@@ -105,6 +98,7 @@ def trace_as_chain_group(
                 # Use the callback manager for the chain group
                 res = llm.invoke(llm_input, {"callbacks": manager})
                 manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -176,7 +170,8 @@ async def atrace_as_chain_group(
     Returns:
         AsyncCallbackManager: The async callback manager for the chain group.
 
-    Note: must have LANGCHAIN_TRACING_V2 env var set to true to see the trace in LangSmith.
+    .. note:
+        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
 
     Example:
         .. code-block:: python
@@ -186,6 +181,7 @@ async def atrace_as_chain_group(
                 # Use the async callback manager for the chain group
                 res = await llm.ainvoke(llm_input, {"callbacks": manager})
                 await manager.on_chain_end({"output": res})
+
     """  # noqa: E501
     from langchain_core.tracers.context import _get_trace_callbacks
 
@@ -232,6 +228,7 @@ def shielded(func: Func) -> Func:
 
     Returns:
         Callable: The shielded function
+
     """
 
     @functools.wraps(func)
@@ -267,15 +264,17 @@ def handle_event(
 ) -> None:
     """Generic event handler for CallbackManager.
 
-    Note: This function is used by LangServe to handle events.
+    .. note::
+        This function is used by ``LangServe`` to handle events.
 
     Args:
         handlers: The list of handlers that will handle the event.
-        event_name: The name of the event (e.g., "on_llm_start").
+        event_name: The name of the event (e.g., ``'on_llm_start'``).
         ignore_condition_name: Name of the attribute defined on handler
             that if True will cause the handler to be skipped for the given event.
         *args: The arguments to pass to the event handler.
         **kwargs: The keyword arguments to pass to the event handler
+
     """
     coros: list[Coroutine[Any, Any, Any]] = []
 
@@ -430,17 +429,19 @@ async def ahandle_event(
     *args: Any,
     **kwargs: Any,
 ) -> None:
-    """Async generic event handler for AsyncCallbackManager.
+    """Async generic event handler for ``AsyncCallbackManager``.
 
-    Note: This function is used by LangServe to handle events.
+    .. note::
+        This function is used by ``LangServe`` to handle events.
 
     Args:
         handlers: The list of handlers that will handle the event.
-        event_name: The name of the event (e.g., "on_llm_start").
+        event_name: The name of the event (e.g., ``'on_llm_start'``).
         ignore_condition_name: Name of the attribute defined on handler
             that if True will cause the handler to be skipped for the given event.
         *args: The arguments to pass to the event handler.
         **kwargs: The keyword arguments to pass to the event handler.
+
     """
     for handler in [h for h in handlers if h.run_inline]:
         await _ahandle_event_for_handler(
@@ -492,6 +493,7 @@ class BaseRunManager(RunManagerMixin):
                 Defaults to None.
             inheritable_metadata (Optional[dict[str, Any]]): The inheritable metadata.
                 Defaults to None.
+
         """
         self.run_id = run_id
         self.handlers = handlers
@@ -508,6 +510,7 @@ class BaseRunManager(RunManagerMixin):
 
         Returns:
             BaseRunManager: The noop manager.
+
         """
         return cls(
             run_id=uuid.uuid4(),
@@ -560,6 +563,7 @@ class RunManager(BaseRunManager):
         Args:
             retry_state (RetryCallState): The retry state.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -587,6 +591,7 @@ class ParentRunManager(RunManager):
 
         Returns:
             CallbackManager: The child callback manager.
+
         """
         manager = CallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -606,6 +611,7 @@ class AsyncRunManager(BaseRunManager, ABC):
 
         Returns:
             RunManager: The sync RunManager.
+
         """
 
     async def on_text(
@@ -621,6 +627,7 @@ class AsyncRunManager(BaseRunManager, ABC):
 
         Returns:
             Any: The result of the callback.
+
         """
         if not self.handlers:
             return
@@ -645,6 +652,7 @@ class AsyncRunManager(BaseRunManager, ABC):
         Args:
             retry_state (RetryCallState): The retry state.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -672,6 +680,7 @@ class AsyncParentRunManager(AsyncRunManager):
 
         Returns:
             AsyncCallbackManager: The child callback manager.
+
         """
         manager = AsyncCallbackManager(handlers=[], parent_run_id=self.run_id)
         manager.set_handlers(self.inheritable_handlers)
@@ -699,6 +708,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
             chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
                 The chunk. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -720,6 +730,7 @@ class CallbackManagerForLLMRun(RunManager, LLMManagerMixin):
         Args:
             response (LLMResult): The LLM result.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -769,6 +780,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
 
         Returns:
             CallbackManagerForLLMRun: The sync RunManager.
+
         """
         return CallbackManagerForLLMRun(
             run_id=self.run_id,
@@ -795,6 +807,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
             chunk (Optional[Union[GenerationChunk, ChatGenerationChunk]], optional):
                 The chunk. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -817,6 +830,7 @@ class AsyncCallbackManagerForLLMRun(AsyncRunManager, LLMManagerMixin):
         Args:
             response (LLMResult): The LLM result.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -871,6 +885,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
         Args:
             outputs (Union[dict[str, Any], Any]): The outputs of the chain.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -895,6 +910,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -918,6 +934,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Returns:
             Any: The result of the callback.
+
         """
         if not self.handlers:
             return
@@ -941,6 +958,7 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
 
         Returns:
             Any: The result of the callback.
+
         """
         if not self.handlers:
             return
@@ -985,6 +1003,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
         Args:
             outputs (Union[dict[str, Any], Any]): The outputs of the chain.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1010,6 +1029,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1033,6 +1053,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
         Returns:
             Any: The result of the callback.
+
         """
         if not self.handlers:
             return
@@ -1056,6 +1077,7 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
 
         Returns:
             Any: The result of the callback.
+
         """
         if not self.handlers:
             return
@@ -1084,6 +1106,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
             **kwargs (Any): The keyword arguments to pass to the event handler
+
         """
         if not self.handlers:
             return
@@ -1108,6 +1131,7 @@ class CallbackManagerForToolRun(ParentRunManager, ToolManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1149,6 +1173,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         Args:
             output (Any): The output of the tool.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1173,6 +1198,7 @@ class AsyncCallbackManagerForToolRun(AsyncParentRunManager, ToolManagerMixin):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1201,6 +1227,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
         Args:
             documents (Sequence[Document]): The retrieved documents.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1225,6 +1252,7 @@ class CallbackManagerForRetrieverRun(ParentRunManager, RetrieverManagerMixin):
         Args:
             error (BaseException): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1251,6 +1279,7 @@ class AsyncCallbackManagerForRetrieverRun(
 
         Returns:
             CallbackManagerForRetrieverRun: The sync RunManager.
+
         """
         return CallbackManagerForRetrieverRun(
             run_id=self.run_id,
@@ -1272,6 +1301,7 @@ class AsyncCallbackManagerForRetrieverRun(
         Args:
             documents (Sequence[Document]): The retrieved documents.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1297,6 +1327,7 @@ class AsyncCallbackManagerForRetrieverRun(
         Args:
             error (BaseException): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if not self.handlers:
             return
@@ -1333,6 +1364,7 @@ class CallbackManager(BaseCallbackManager):
         Returns:
             list[CallbackManagerForLLMRun]: A callback manager for each
                 prompt as an LLM run.
+
         """
         managers = []
         for i, prompt in enumerate(prompts):
@@ -1384,6 +1416,7 @@ class CallbackManager(BaseCallbackManager):
         Returns:
             list[CallbackManagerForLLMRun]: A callback manager for each
                 list of messages as an LLM run.
+
         """
         managers = []
         for message_list in messages:
@@ -1437,6 +1470,7 @@ class CallbackManager(BaseCallbackManager):
 
         Returns:
             CallbackManagerForChainRun: The callback manager for the chain run.
+
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1491,6 +1525,7 @@ class CallbackManager(BaseCallbackManager):
 
         Returns:
             CallbackManagerForToolRun: The callback manager for the tool run.
+
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1537,6 +1572,7 @@ class CallbackManager(BaseCallbackManager):
             run_id (UUID, optional): The ID of the run. Defaults to None.
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
+
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1584,6 +1620,7 @@ class CallbackManager(BaseCallbackManager):
             run_id: The ID of the run. Defaults to None.
 
         .. versionadded:: 0.2.14
+
         """
         if not self.handlers:
             return
@@ -1638,6 +1675,7 @@ class CallbackManager(BaseCallbackManager):
 
         Returns:
             CallbackManager: The configured callback manager.
+
         """
         return _configure(
             cls,
@@ -1672,6 +1710,7 @@ class CallbackManagerForChainGroup(CallbackManager):
             parent_run_id (Optional[UUID]): The ID of the parent run. Defaults to None.
             parent_run_manager (CallbackManagerForChainRun): The parent run manager.
             **kwargs (Any): Additional keyword arguments.
+
         """
         super().__init__(
             handlers,
@@ -1760,6 +1799,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         Args:
             outputs (Union[dict[str, Any], Any]): The outputs of the chain.
             **kwargs (Any): Additional keyword arguments.
+
         """
         self.ended = True
         return self.parent_run_manager.on_chain_end(outputs, **kwargs)
@@ -1774,6 +1814,7 @@ class CallbackManagerForChainGroup(CallbackManager):
         Args:
             error (Exception or KeyboardInterrupt): The error.
             **kwargs (Any): Additional keyword arguments.
+
         """
         self.ended = True
         return self.parent_run_manager.on_chain_error(error, **kwargs)
@@ -2592,6 +2633,7 @@ async def adispatch_custom_event(
         behalf.
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,
@@ -2662,6 +2704,7 @@ def dispatch_custom_event(
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
     .. versionadded:: 0.2.15
+
     """
     from langchain_core.runnables.config import (
         ensure_config,

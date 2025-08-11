@@ -11,22 +11,9 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
 from langchain_core._api import deprecated
@@ -63,6 +50,7 @@ from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
     ChatResult,
+    Generation,
     LLMResult,
     RunInfo,
 )
@@ -109,36 +97,54 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
 
 
 def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
-    """Format messages for tracing in on_chat_model_start.
+    """Format messages for tracing in ``on_chat_model_start``.
 
-    For backward compatibility, we update image content blocks to OpenAI Chat
-    Completions format.
+    - Update image content blocks to OpenAI Chat Completions format (backward
+    compatibility).
+    - Add ``type`` key to content blocks that have a single key.
 
     Args:
         messages: List of messages to format.
 
     Returns:
         List of messages formatted for tracing.
+
     """
     messages_to_trace = []
     for message in messages:
         message_to_trace = message
         if isinstance(message.content, list):
             for idx, block in enumerate(message.content):
-                if (
-                    isinstance(block, dict)
-                    and block.get("type") == "image"
-                    and is_data_content_block(block)
-                    and block.get("source_type") != "id"
-                ):
-                    if message_to_trace is message:
-                        message_to_trace = message.model_copy()
-                        # Also shallow-copy content
-                        message_to_trace.content = list(message_to_trace.content)
+                if isinstance(block, dict):
+                    # Update image content blocks to OpenAI # Chat Completions format.
+                    if (
+                        block.get("type") == "image"
+                        and is_data_content_block(block)
+                        and block.get("source_type") != "id"
+                    ):
+                        if message_to_trace is message:
+                            # Shallow copy
+                            message_to_trace = message.model_copy()
+                            message_to_trace.content = list(message_to_trace.content)
 
-                    message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
-                        convert_to_openai_image_block(block)
-                    )
+                        message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
+                            convert_to_openai_image_block(block)
+                        )
+                    elif len(block) == 1 and "type" not in block:
+                        # Tracing assumes all content blocks have a "type" key. Here
+                        # we add this key if it is missing, and there's an obvious
+                        # choice for the type (e.g., a single key in the block).
+                        if message_to_trace is message:
+                            # Shallow copy
+                            message_to_trace = message.model_copy()
+                            message_to_trace.content = list(message_to_trace.content)
+                        key = next(iter(block))
+                        message_to_trace.content[idx] = {  # type: ignore[index]
+                            "type": key,
+                            key: block[key],
+                        }
+                    else:
+                        pass
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace
@@ -148,10 +154,11 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     """Generate from a stream.
 
     Args:
-        stream: Iterator of ChatGenerationChunk.
+        stream: Iterator of ``ChatGenerationChunk``.
 
     Returns:
         ChatResult: Chat result.
+
     """
     generation = next(stream, None)
     if generation:
@@ -175,10 +182,11 @@ async def agenerate_from_stream(
     """Async generate from a stream.
 
     Args:
-        stream: Iterator of ChatGenerationChunk.
+        stream: Iterator of ``ChatGenerationChunk``.
 
     Returns:
         ChatResult: Chat result.
+
     """
     chunks = [chunk async for chunk in stream]
     return await run_in_executor(None, generate_from_stream, iter(chunks))
@@ -306,15 +314,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
       provided. This offers the best of both worlds.
     - If False (default), will always use streaming case if available.
 
-    The main reason for this flag is that code might be written using ``.stream()`` and
+    The main reason for this flag is that code might be written using ``stream()`` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
+
     """
 
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if callback_manager is used.
+        """Raise deprecation warning if ``callback_manager`` is used.
 
         Args:
             values (Dict): Values to validate.
@@ -323,7 +332,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             Dict: Validated values.
 
         Raises:
-            DeprecationWarning: If callback_manager is used.
+            DeprecationWarning: If ``callback_manager`` is used.
+
         """
         if values.get("callback_manager") is not None:
             warnings.warn(
@@ -636,6 +646,45 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:  # noqa: ARG002
         return {}
 
+    def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
+        """Convert cached Generation objects to ChatGeneration objects.
+
+        Handle case where cache contains Generation objects instead of
+        ChatGeneration objects. This can happen due to serialization/deserialization
+        issues or legacy cache data (see #22389).
+
+        Args:
+            cache_val: List of cached generation objects.
+
+        Returns:
+            List of ChatGeneration objects.
+
+        """
+        converted_generations = []
+        for gen in cache_val:
+            if isinstance(gen, Generation) and not isinstance(gen, ChatGeneration):
+                # Convert Generation to ChatGeneration by creating AIMessage
+                # from the text content
+                chat_gen = ChatGeneration(
+                    message=AIMessage(content=gen.text),
+                    generation_info=gen.generation_info,
+                )
+                converted_generations.append(chat_gen)
+            else:
+                # Already a ChatGeneration or other expected type
+                if hasattr(gen, "message") and isinstance(gen.message, AIMessage):
+                    # We zero out cost on cache hits
+                    gen.message = gen.message.model_copy(
+                        update={
+                            "usage_metadata": {
+                                **(gen.message.usage_metadata or {}),
+                                "total_cost": 0,
+                            }
+                        }
+                    )
+                converted_generations.append(gen)
+        return converted_generations
+
     def _get_invocation_params(
         self,
         stop: Optional[list[str]] = None,
@@ -735,7 +784,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            prompt and additional model provider-specific output.
+
         """
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
@@ -849,7 +899,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            prompt and additional model provider-specific output.
+
         """
         ls_structured_output_format = kwargs.pop(
             "ls_structured_output_format", None
@@ -993,7 +1044,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1065,7 +1117,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
-                    return ChatResult(generations=cache_val)
+                    converted_generations = self._convert_cached_generations(cache_val)
+                    return ChatResult(generations=converted_generations)
             elif self.cache is None:
                 pass
             else:
@@ -1203,6 +1256,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             The model output message.
+
         """
         generation = self.generate(
             [messages], stop=stop, callbacks=callbacks, **kwargs
@@ -1243,6 +1297,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             The model output string.
+
         """
         return self.predict(message, stop=stop, **kwargs)
 
@@ -1262,6 +1317,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             The predicted output string.
+
         """
         stop_ = None if stop is None else list(stop)
         result = self([HumanMessage(content=text)], stop=stop_, **kwargs)
@@ -1337,6 +1393,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Returns:
             A Runnable that returns a message.
+
         """
         raise NotImplementedError
 
@@ -1350,12 +1407,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class,
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class,
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -1369,7 +1427,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -1380,9 +1438,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
             .. code-block:: python
@@ -1448,6 +1507,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         .. versionchanged:: 0.2.26
 
                 Added support for TypedDict class.
+
         """  # noqa: E501
         _ = kwargs.pop("method", None)
         _ = kwargs.pop("strict", None)
@@ -1496,8 +1556,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 class SimpleChatModel(BaseChatModel):
     """Simplified implementation for a chat model to inherit from.
 
-    **Note** This implementation is primarily here for backwards compatibility.
-        For new implementations, please use `BaseChatModel` directly.
+    .. note::
+        This implementation is primarily here for backwards compatibility. For new
+        implementations, please use ``BaseChatModel`` directly.
+
     """
 
     def _generate(

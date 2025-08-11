@@ -32,6 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -73,9 +74,11 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
+    @override
     def is_lc_serializable(self) -> bool:
         return True
 
@@ -143,7 +146,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -170,7 +173,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -321,6 +324,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -338,6 +342,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 

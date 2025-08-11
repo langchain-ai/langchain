@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -58,6 +59,8 @@ from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
 
+log = logging.getLogger(__name__)
+
 
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
@@ -84,8 +87,8 @@ def _parse_json_string(
 ) -> Any:
     """Attempt to parse a JSON string for tool calling.
 
-    It first tries to use the standard json.loads. If that fails, it falls
-    back to ast.literal_eval to safely parse Python literals, which is more
+    It first tries to use the standard ``json.loads``. If that fails, it falls
+    back to ``ast.literal_eval`` to safely parse Python literals, which is more
     robust against models using single quotes or containing apostrophes.
 
     Args:
@@ -97,7 +100,8 @@ def _parse_json_string(
         The parsed JSON string or Python literal.
 
     Raises:
-        OutputParserException: If the string is invalid and skip=False.
+        OutputParserException: If the string is invalid and ``skip=False``.
+
     """
     try:
         return json.loads(json_string)
@@ -135,14 +139,20 @@ def _parse_arguments_from_tool_call(
 
     Band-aid fix for issue in Ollama with inconsistent tool call argument structure.
     Should be removed/changed if fixed upstream.
+
     See https://github.com/ollama/ollama/issues/6155
+
     """
     if "function" not in raw_tool_call:
         return None
+    function_name = raw_tool_call["function"]["name"]
     arguments = raw_tool_call["function"]["arguments"]
     parsed_arguments: dict = {}
     if isinstance(arguments, dict):
         for key, value in arguments.items():
+            # Filter out metadata fields like 'functionName' that echo function name
+            if key == "functionName" and value == function_name:
+                continue
             if isinstance(value, str):
                 parsed_value = _parse_json_string(
                     value, skip=True, raw_tool_call=raw_tool_call
@@ -219,7 +229,7 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: bash
 
-            ollama pull mistral:v0.3
+            ollama pull gpt-oss:20b
             pip install -U langchain-ollama
 
     Key init args — completion params:
@@ -252,7 +262,8 @@ class ChatOllama(BaseChatModel):
             from langchain_ollama import ChatOllama
 
             llm = ChatOllama(
-                model = "llama3",
+                model = "gpt-oss:20b",
+                validate_model_on_init = True,
                 temperature = 0.8,
                 num_predict = 256,
                 # other params ...
@@ -274,10 +285,7 @@ class ChatOllama(BaseChatModel):
     Stream:
         .. code-block:: python
 
-            messages = [
-                ("human", "Return the words Hello World!"),
-            ]
-            for chunk in llm.stream(messages):
+            for chunk in llm.stream("Return the words Hello World!"):
                 print(chunk.text(), end="")
 
 
@@ -304,10 +312,7 @@ class ChatOllama(BaseChatModel):
     Async:
         .. code-block:: python
 
-            messages = [
-                ("human", "Hello how are you!"),
-            ]
-            await llm.ainvoke(messages)
+            await llm.ainvoke("Hello how are you!")
 
         .. code-block:: python
 
@@ -315,10 +320,7 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: python
 
-            messages = [
-                ("human", "Say hello world!"),
-            ]
-            async for chunk in llm.astream(messages):
+            async for chunk in llm.astream("Say hello world!"):
                 print(chunk.content)
 
         .. code-block:: python
@@ -346,10 +348,7 @@ class ChatOllama(BaseChatModel):
 
 
             json_llm = ChatOllama(format="json")
-            messages = [
-                ("human", "Return a query for the weather in a random location and time of day with two keys: location and time_of_day. Respond using JSON only."),
-            ]
-            llm.invoke(messages).content
+            llm.invoke("Return a query for the weather in a random location and time of day with two keys: location and time_of_day. Respond using JSON only.").content
 
         .. code-block:: python
 
@@ -396,17 +395,16 @@ class ChatOllama(BaseChatModel):
 
             llm = ChatOllama(
                 model = "deepseek-r1:8b",
+                validate_model_on_init = True,
                 reasoning= True,
             )
 
-            user_message = HumanMessage(content="how many r in the word strawberry?")
-            messages: List[Any] = [user_message]
-            llm.invoke(messages)
+            llm.invoke("how many r in the word strawberry?")
 
             # or, on an invocation basis:
 
-            llm.invoke(messages, reasoning=True)
-            # or llm.stream(messages, reasoning=True)
+            llm.invoke("how many r in the word strawberry?", reasoning=True)
+            # or llm.stream("how many r in the word strawberry?", reasoning=True)
 
             # If not provided, the invocation will default to the ChatOllama reasoning
             # param provided (None by default).
@@ -414,7 +412,6 @@ class ChatOllama(BaseChatModel):
         .. code-block:: python
 
             AIMessage(content='The word "strawberry" contains **three \'r\' letters**. Here\'s a breakdown for clarity:\n\n- The spelling of "strawberry" has two parts ... be 3.\n\nTo be thorough, let\'s confirm with an online source or common knowledge.\n\nI can recall that "strawberry" has: s-t-r-a-w-b-e-r-r-y — yes, three r\'s.\n\nPerhaps it\'s misspelled by some, but standard is correct.\n\nSo I think the response should be 3.\n'}, response_metadata={'model': 'deepseek-r1:8b', 'created_at': '2025-07-08T19:33:55.891269Z', 'done': True, 'done_reason': 'stop', 'total_duration': 98232561292, 'load_duration': 28036792, 'prompt_eval_count': 10, 'prompt_eval_duration': 40171834, 'eval_count': 3615, 'eval_duration': 98163832416, 'model_name': 'deepseek-r1:8b'}, id='run--18f8269f-6a35-4a7c-826d-b89d52c753b3-0', usage_metadata={'input_tokens': 10, 'output_tokens': 3615, 'total_tokens': 3625})
-
 
     """  # noqa: E501, pylint: disable=line-too-long
 
@@ -437,30 +434,33 @@ class ChatOllama(BaseChatModel):
       unless you set ``reasoning`` to ``True``."""
 
     validate_model_on_init: bool = False
-    """Whether to validate the model exists in Ollama locally on initialization."""
+    """Whether to validate the model exists in Ollama locally on initialization.
+
+    .. versionadded:: 0.3.4
+    """
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: 0, 0 = disabled, 1 = Mirostat, 2 = Mirostat 2.0)"""
+    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
 
     mirostat_eta: Optional[float] = None
     """Influences how quickly the algorithm responds to feedback
     from the generated text. A lower learning rate will result in
     slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: 0.1)"""
+    the algorithm more responsive. (Default: ``0.1``)"""
 
     mirostat_tau: Optional[float] = None
     """Controls the balance between coherence and diversity
     of the output. A lower value will result in more focused and
-    coherent text. (Default: 5.0)"""
+    coherent text. (Default: ``5.0``)"""
 
     num_ctx: Optional[int] = None
     """Sets the size of the context window used to generate the
-    next token. (Default: 2048)	"""
+    next token. (Default: ``2048``)	"""
 
     num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to 1 to
-    enable metal support, 0 to disable."""
+    """The number of GPUs to use. On macOS it defaults to ``1`` to
+    enable metal support, ``0`` to disable."""
 
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
@@ -470,20 +470,20 @@ class ChatOllama(BaseChatModel):
 
     num_predict: Optional[int] = None
     """Maximum number of tokens to predict when generating text.
-    (Default: 128, -1 = infinite generation, -2 = fill context)"""
+    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)"""
 
     repeat_last_n: Optional[int] = None
     """Sets how far back for the model to look back to prevent
-    repetition. (Default: 64, 0 = disabled, -1 = num_ctx)"""
+    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
 
     repeat_penalty: Optional[float] = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., 1.5)
-    will penalize repetitions more strongly, while a lower value (e.g., 0.9)
-    will be more lenient. (Default: 1.1)"""
+    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
+    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
+    will be more lenient. (Default: ``1.1``)"""
 
     temperature: Optional[float] = None
     """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: 0.8)"""
+    make the model answer more creatively. (Default: ``0.8``)"""
 
     seed: Optional[int] = None
     """Sets the random number seed to use for generation. Setting this
@@ -495,21 +495,21 @@ class ChatOllama(BaseChatModel):
 
     tfs_z: Optional[float] = None
     """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., 2.0) will reduce the
-    impact more, while a value of 1.0 disables this setting. (default: 1)"""
+    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
+    impact more, while a value of ``1.0`` disables this setting. (default: ``1``)"""
 
     top_k: Optional[int] = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. 100)
-    will give more diverse answers, while a lower value (e.g. 10)
-    will be more conservative. (Default: 40)"""
+    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
+    will give more diverse answers, while a lower value (e.g. ``10``)
+    will be more conservative. (Default: ``40``)"""
 
     top_p: Optional[float] = None
-    """Works together with top-k. A higher value (e.g., 0.95) will lead
-    to more diverse text, while a lower value (e.g., 0.5) will
-    generate more focused and conservative text. (Default: 0.9)"""
+    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
+    to more diverse text, while a lower value (e.g., ``0.5``) will
+    generate more focused and conservative text. (Default: ``0.9``)"""
 
     format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
-    """Specify the format of the output (options: "json", JSON schema)."""
+    """Specify the format of the output (options: ``'json'``, JSON schema)."""
 
     keep_alive: Optional[Union[int, str]] = None
     """How long the model will stay loaded into memory."""
@@ -519,32 +519,35 @@ class ChatOllama(BaseChatModel):
 
     client_kwargs: Optional[dict] = {}
     """Additional kwargs to pass to the httpx clients.
+
     These arguments are passed to both synchronous and async clients.
-    Use sync_client_kwargs and async_client_kwargs to pass different arguments
+
+    Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
     to synchronous and asynchronous clients.
+
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
+    """Additional kwargs to merge with ``client_kwargs`` before
     passing to the httpx AsyncClient.
+
     `Full list of params. <https://www.python-httpx.org/api/#asyncclient>`__
+
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with client_kwargs before
+    """Additional kwargs to merge with ``client_kwargs`` before
     passing to the httpx Client.
+
     `Full list of params. <https://www.python-httpx.org/api/#client>`__
+
     """
 
     _client: Client = PrivateAttr()
-    """
-    The client to use for making requests.
-    """
+    """The client to use for making requests."""
 
     _async_client: AsyncClient = PrivateAttr()
-    """
-    The async client to use for making requests.
-    """
+    """The async client to use for making requests."""
 
     def _chat_params(
         self,
@@ -834,6 +837,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'."
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -841,12 +866,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -894,6 +913,28 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
+                )
+
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
+
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'. "
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
+
                 if stream_resp.get("done") is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
@@ -901,12 +942,6 @@ class ChatOllama(BaseChatModel):
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
-
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
-                )
 
                 additional_kwargs = {}
                 if (
@@ -1006,8 +1041,7 @@ class ChatOllama(BaseChatModel):
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - a Pydantic class,
                 - a JSON schema
@@ -1023,35 +1057,35 @@ class ChatOllama(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Ollama's `structured output API <https://ollama.com/blog/structured-outputs>`__
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Ollama's tool-calling API
-                - "json_mode":
-                    Specifies ``format="json"``. Note that if using JSON mode then you
+                - ``'json_mode'``:
+                    Specifies ``format='json'``. Note that if using JSON mode then you
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
-                then both the raw model response (a BaseMessage) and the parsed model
+                then both the raw model response (a ``BaseMessage``) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: ``BaseMessage``
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         .. versionchanged:: 0.2.2
 
@@ -1059,7 +1093,7 @@ class ChatOllama(BaseChatModel):
 
         .. versionchanged:: 0.3.0
 
-            Updated default ``method`` to ``"json_schema"``.
+            Updated default ``method`` to ``'json_schema'``.
 
         .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
 
@@ -1094,7 +1128,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_schema'``, ``include_raw=True``
 
             .. code-block:: python
 
@@ -1123,7 +1157,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='function_calling'``, ``include_raw=False``
 
             .. code-block:: python
 
@@ -1187,7 +1221,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=OpenAI function schema, method="function_calling", include_raw=False
+        .. dropdown:: Example: ``schema=OpenAI`` function schema, ``method='function_calling'``, ``include_raw=False``
 
             .. code-block:: python
 
@@ -1217,7 +1251,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_mode'``, ``include_raw=True``
 
             .. code-block::
 
@@ -1245,6 +1279,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501, D301
         _ = kwargs.pop("strict", None)
         if kwargs:

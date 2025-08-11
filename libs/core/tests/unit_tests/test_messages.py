@@ -1019,6 +1019,11 @@ def test_tool_message_str() -> None:
         ("foo", [["bar"]], ["foo", "bar"]),
         (["foo"], ["bar"], ["foobar"]),
         (["foo"], [["bar"]], ["foo", "bar"]),
+        (
+            [{"text": "foo"}],
+            [[{"index": 0, "text": "bar"}]],
+            [{"text": "foo"}, {"index": 0, "text": "bar"}],
+        ),
     ],
 )
 def test_merge_content(
