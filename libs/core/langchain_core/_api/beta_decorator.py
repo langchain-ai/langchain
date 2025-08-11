@@ -147,7 +147,6 @@ def beta(
                 return cast("T", obj)
 
         elif isinstance(obj, property):
-            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
@@ -168,6 +167,7 @@ def beta(
                     self.__orig_fget = fget
                     self.__orig_fset = fset
                     self.__orig_fdel = fdel
+                    self.__doc__ = doc
 
                 def __get__(
                     self, instance: Any, owner: Union[type, None] = None
