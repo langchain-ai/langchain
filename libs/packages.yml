@@ -710,5 +710,6 @@ packages:
   downloads: 576
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-anchorbrowser
+  provider_page: anchor_browser
   path: .
   repo: anchorbrowser/langchain-anchorbrowser
