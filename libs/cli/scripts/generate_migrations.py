@@ -78,6 +78,7 @@ def generic(
 
 
 def handle_partner(pkg: str, output: Optional[str] = None) -> None:
+    """Handle partner package migrations."""
     migrations = get_migrations_for_partner_package(pkg)
     # Run with python 3.9+
     name = pkg.removeprefix("langchain_")
