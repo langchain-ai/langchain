@@ -21,7 +21,7 @@
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
-      "source.organizeImports": "explicit",
+      "source.organizeImports.ruff": "explicit",
       "source.fixAll": "explicit"
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
@@ -77,4 +77,6 @@
     "editor.tabSize": 2,
     "editor.insertSpaces": true
   },
+  "python.terminal.activateEnvironment": false,
+  "python.defaultInterpreterPath": "./.venv/bin/python"
 }
