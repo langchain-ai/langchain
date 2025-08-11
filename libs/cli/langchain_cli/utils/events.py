@@ -10,8 +10,12 @@ WRITE_KEY = "310apTK0HUFl4AOv"
 
 
 class EventDict(TypedDict):
-    """Event."""
+    """Event data structure for analytics tracking.
 
+    Attributes:
+        event: The name of the event.
+        properties: Optional dictionary of event properties.
+    """
     event: str
     properties: Optional[dict[str, Any]]
 
