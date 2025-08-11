@@ -6,13 +6,7 @@ import warnings
 from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
 from functools import partial
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 from uuid import UUID
 
 import pytest
@@ -37,11 +31,7 @@ from langchain_core.language_models import (
 )
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
-from langchain_core.messages import (
-    AIMessageChunk,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
@@ -90,9 +80,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
-)
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
@@ -102,6 +90,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
+
     It replaces run ids with deterministic UUIDs for snapshotting.
     """
 
@@ -242,7 +231,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert fake.get_config_jsonschema(include=["tags", "metadata", "run_name"]) == {
         "properties": {
-            "metadata": {"default": None, "title": "Metadata", "type": "object"},
+            "metadata": {
+                "default": None,
+                "title": "Metadata",
+                "type": "object",
+            },
             "run_name": {"default": None, "title": "Run Name", "type": "string"},
             "tags": {
                 "default": None,
@@ -4867,7 +4860,9 @@ async def test_runnable_gen_async() -> None:
 
 
 def test_runnable_gen_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -4942,9 +4937,11 @@ def test_runnable_gen_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_gen_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     async def agen(_: AsyncIterator[Any]) -> AsyncIterator[int]:
@@ -5010,7 +5007,9 @@ async def test_runnable_gen_context_config_async() -> None:
 
 
 def test_runnable_iter_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5069,9 +5068,11 @@ def test_runnable_iter_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_iter_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5135,7 +5136,9 @@ async def test_runnable_iter_context_config_async() -> None:
 
 
 def test_runnable_lambda_context_config() -> None:
-    """Test that a function can call other runnables with config
+    """Test function runnable config propagation.
+
+    Test that a function can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5192,9 +5195,11 @@ def test_runnable_lambda_context_config() -> None:
     "async tasks in a specific context",
 )
 async def test_runnable_lambda_context_config_async() -> None:
-    """Test that a function can call other runnables with config
-    propagated from the context."""
+    """Test function runnable config propagation.
 
+    Test that a function can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5295,7 +5300,9 @@ def test_with_config_callbacks() -> None:
 
 
 async def test_ainvoke_on_returned_runnable() -> None:
-    """Verify that a runnable returned by a sync runnable in the async path will
+    """Test ainvoke on a returned runnable.
+
+    Verify that a runnable returned by a sync runnable in the async path will
     be runthroughaasync path (issue #13407).
     """
 
@@ -5637,7 +5644,9 @@ def test_pydantic_protected_namespaces() -> None:
 
 
 def test_schema_for_prompt_and_chat_model() -> None:
-    """Testing that schema is generated properly when using variable names
+    """Test schema generation for prompt and chat model.
+
+    Testing that schema is generated properly when using variable names
     that collide with pydantic attributes.
     """
     prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}, {json}")])

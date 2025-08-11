@@ -18,16 +18,14 @@ def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
     since="0.3.22",
     removal="1.0",
     message=(
-        "This class is deprecated. Please see the docstring below or at the link"
-        " for a replacement option: "
-        "https://python.langchain.com/api_reference/core/prompts/langchain_core.prompts.pipeline.PipelinePromptTemplate.html"
+        "This class is deprecated in favor of chaining individual prompts together."
     ),
 )
 class PipelinePromptTemplate(BasePromptTemplate):
-    """[DEPRECATED] Pipeline prompt template.
+    """Pipeline prompt template.
 
     This has been deprecated in favor of chaining individual prompts together in your
-    code. E.g. using a for loop, you could do:
+    code; e.g. using a for loop, you could do:
 
     .. code-block:: python
 
@@ -47,6 +45,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
           Each PromptTemplate will be formatted and then passed
           to future prompt templates as a variable with
           the same name as `name`
+
     """
 
     final_prompt: BasePromptTemplate

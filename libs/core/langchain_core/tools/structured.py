@@ -174,6 +174,7 @@ class StructuredTool(BaseTool):
                     return a + b
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
+
         """
         if func is not None:
             source_function = func
@@ -197,7 +198,14 @@ class StructuredTool(BaseTool):
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
             if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
-                description_ = args_schema.__doc__ or None
+                description_ = args_schema.__doc__
+                if (
+                    description_
+                    and "A base class for creating Pydantic models" in description_
+                ):
+                    description_ = ""
+                elif not description_:
+                    description_ = None
             elif isinstance(args_schema, dict):
                 description_ = args_schema.get("description")
             else:

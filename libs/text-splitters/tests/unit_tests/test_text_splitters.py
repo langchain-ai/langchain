@@ -3043,6 +3043,82 @@ $csvContent | ForEach-Object {
     ]
 
 
+FAKE_VISUALBASIC6_TEXT = """
+Option Explicit
+
+Public Function SumTwoIntegers(ByVal a As Integer, ByVal b As Integer) As Integer
+    SumTwoIntegers = a + b
+End Function
+
+Public Sub Main()
+    Dim i As Integer
+    Dim limit As Integer
+
+    i = 0
+    limit = 50
+
+    While i < limit
+        i = SumTwoIntegers(i, 1)
+
+        If i = limit \\ 2 Then
+            MsgBox "Halfway there! i = " & i
+        End If
+    Wend
+
+    MsgBox "Done! Final value of i: " & i
+End Sub
+"""
+
+
+def test_visualbasic6_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.VISUALBASIC6,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=0,
+    )
+    chunks = splitter.split_text(FAKE_VISUALBASIC6_TEXT)
+
+    assert chunks == [
+        "Option Explicit",
+        "Public Function",
+        "SumTwoIntegers(",
+        "ByVal",
+        "a As Integer,",
+        "ByVal b As",
+        "Integer) As",
+        "Integer",
+        "SumTwoIntegers",
+        "= a + b",
+        "End Function",
+        "Public Sub",
+        "Main()",
+        "Dim i As",
+        "Integer",
+        "Dim limit",
+        "As Integer",
+        "i = 0",
+        "limit = 50",
+        "While i <",
+        "limit",
+        "i =",
+        "SumTwoIntegers(",
+        "i,",
+        "1)",
+        "If i =",
+        "limit \\ 2 Then",
+        'MsgBox "Halfway',
+        'there! i = " &',
+        "i",
+        "End If",
+        "Wend",
+        "MsgBox",
+        '"Done! Final',
+        'value of i: " &',
+        "i",
+        "End Sub",
+    ]
+
+
 def custom_iframe_extractor(iframe_tag: Any) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"

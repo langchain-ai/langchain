@@ -114,7 +114,7 @@ class Node(NamedTuple):
     def copy(
         self,
         *,
-        id: Optional[str] = None,  # noqa: A002
+        id: Optional[str] = None,
         name: Optional[str] = None,
     ) -> Node:
         """Return a copy of the node with optional new id and name.
@@ -187,7 +187,7 @@ class MermaidDrawMethod(Enum):
 
 
 def node_data_str(
-    id: str,  # noqa: A002
+    id: str,
     data: Union[type[BaseModel], RunnableType, None],
 ) -> str:
     """Convert the data of a node to a string.
@@ -328,7 +328,7 @@ class Graph:
     def add_node(
         self,
         data: Union[type[BaseModel], RunnableType, None],
-        id: Optional[str] = None,  # noqa: A002
+        id: Optional[str] = None,
         *,
         metadata: Optional[dict[str, Any]] = None,
     ) -> Node:
@@ -611,6 +611,7 @@ class Graph:
 
         Returns:
             The Mermaid syntax string.
+
         """
         from langchain_core.runnables.graph_mermaid import draw_mermaid
 
@@ -681,6 +682,7 @@ class Graph:
 
         Returns:
             The PNG image as bytes.
+
         """
         from langchain_core.runnables.graph_mermaid import draw_mermaid_png
 

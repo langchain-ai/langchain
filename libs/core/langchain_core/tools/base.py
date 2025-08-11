@@ -74,7 +74,14 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
 FILTERED_ARGS = ("run_manager", "callbacks")
-TOOL_MESSAGE_BLOCK_TYPES = ("text", "image_url", "image", "json", "search_result")
+TOOL_MESSAGE_BLOCK_TYPES = (
+    "text",
+    "image_url",
+    "image",
+    "json",
+    "search_result",
+    "custom_tool_call_output",
+)
 
 
 class SchemaAnnotationError(TypeError):
@@ -443,9 +450,7 @@ class ChildTool(BaseTool):
     Args schema should be either:
 
     - A subclass of pydantic.BaseModel.
-    or
     - A subclass of pydantic.v1.BaseModel if accessing v1 namespace in pydantic 2
-    or
     - a JSON schema dict
     """
     return_direct: bool = False
@@ -1308,8 +1313,8 @@ class InjectedToolCallId(InjectedToolArg):
     This annotation is used to mark a tool parameter that should receive
     the tool call ID at runtime.
 
-    Example:
-        ```python
+    .. code-block:: python
+
         from typing_extensions import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
@@ -1325,7 +1330,7 @@ class InjectedToolCallId(InjectedToolArg):
                 name="foo",
                 tool_call_id=tool_call_id
             )
-        ```
+
     """
 
 

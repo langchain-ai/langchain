@@ -2,6 +2,8 @@ import http.client
 import json
 from typing import Any, Optional, TypedDict
 
+import typer
+
 WRITE_KEY = "310apTK0HUFl4AOv"
 
 
@@ -37,5 +39,6 @@ def create_events(events: list[EventDict]) -> Optional[Any]:
         res = conn.getresponse()
 
         return json.loads(res.read())
-    except Exception:
+    except (http.client.HTTPException, OSError, json.JSONDecodeError) as exc:
+        typer.echo(f"Error sending events: {exc}")
         return None

@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.66",
+    "langchain-core<1.0.0,>=0.3.74",
     "openai<2.0.0,>=1.86.0",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.27"
+version = "0.3.29"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -70,6 +70,9 @@ ignore = [ "UP007", "UP045" ]
 [tool.ruff.format]
 docstring-code-format = true
 skip-magic-trailing-comma = true
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
 
 [tool.coverage.run]
 omit = ["tests/*"]
