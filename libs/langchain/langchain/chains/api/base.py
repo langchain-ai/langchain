@@ -47,8 +47,8 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     scheme, domain = _extract_scheme_and_domain(url)
 
     for allowed_domain in limit_to_domains:
-        allowed_scheme, allowed_domain = _extract_scheme_and_domain(allowed_domain)
-        if scheme == allowed_scheme and domain == allowed_domain:
+        allowed_scheme, allowed_domain_ = _extract_scheme_and_domain(allowed_domain)
+        if scheme == allowed_scheme and domain == allowed_domain_:
             return True
     return False
 
@@ -82,8 +82,9 @@ try:
 
             See https://python.langchain.com/docs/security for more information.
 
-        Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+        .. note::
+            This class is deprecated. See below for a replacement implementation using
+            LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Support for both token-by-token and step-by-step streaming;
@@ -191,6 +192,7 @@ try:
             )
             async for event in events:
                 event["messages"][-1].pretty_print()
+
         """  # noqa: E501
 
         api_request_chain: LLMChain
@@ -386,7 +388,10 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Raise an ImportError if APIChain is used without langchain_community."""
+
+        def __init__(self, *_: Any, **__: Any) -> None:
+            """Raise an ImportError if APIChain is used without langchain_community."""
             msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"

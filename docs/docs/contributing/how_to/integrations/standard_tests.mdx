@@ -15,7 +15,7 @@ First, let's install 2 dependencies:
 
 :::note
 
-Because added tests in new versions of `langchain-tests` can break your CI/CD pipelines, we recommend pinning the 
+Because added tests in new versions of `langchain-tests` can break your CI/CD pipelines, we recommend pinning the
 version of `langchain-tests` to avoid unexpected changes.
 
 :::
@@ -45,7 +45,7 @@ pip install --editable .
 
 ## Add and configure standard tests
 
-There are 2 namespaces in the `langchain-tests` package: 
+There are 2 namespaces in the `langchain-tests` package:
 
 - [unit tests](../../../concepts/testing.mdx#unit-tests) (`langchain_tests.unit_tests`): designed to be used to test the component in isolation and without access to external services
 - [integration tests](../../../concepts/testing.mdx#integration-tests) (`langchain_tests.integration_tests`): designed to be used to test the component with access to external services (in particular, the external service that the component is designed to interact with).
@@ -283,7 +283,7 @@ to specify the tool to be tested and the tool's configuration:
 | `tool_constructor_params` | The parameters to pass to the tool (optional). |
 | `tool_invoke_params_example` | An example of the parameters to pass to the tool's `invoke` method. |
 
-If you are testing a tool class and pass a class like `MyTool` to `tool_constructor`, you can pass the parameters to the constructor in `tool_constructor_params`. 
+If you are testing a tool class and pass a class like `MyTool` to `tool_constructor`, you can pass the parameters to the constructor in `tool_constructor_params`.
 
 If you are testing an instantiated tool, you can pass the instantiated tool to `tool_constructor` and do not
 override `tool_constructor_params`.

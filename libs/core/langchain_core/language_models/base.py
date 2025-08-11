@@ -57,8 +57,8 @@ class LangSmithParams(TypedDict, total=False):
 def get_tokenizer() -> Any:
     """Get a GPT-2 tokenizer instance.
 
-    This function is cached to avoid re-loading the tokenizer
-    every time it is called.
+    This function is cached to avoid re-loading the tokenizer every time it is called.
+
     """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
@@ -99,7 +99,8 @@ class BaseLanguageModel(
 ):
     """Abstract base class for interfacing with language models.
 
-    All language model wrappers inherited from BaseLanguageModel.
+    All language model wrappers inherited from ``BaseLanguageModel``.
+
     """
 
     cache: Union[BaseCache, bool, None] = Field(default=None, exclude=True)
@@ -108,9 +109,10 @@ class BaseLanguageModel(
     * If true, will use the global cache.
     * If false, will not use a cache
     * If None, will use the global cache if it's set, otherwise no cache.
-    * If instance of BaseCache, will use the provided cache.
+    * If instance of ``BaseCache``, will use the provided cache.
 
     Caching is not currently supported for streaming methods of models.
+
     """
     verbose: bool = Field(default_factory=_get_verbosity, exclude=True, repr=False)
     """Whether to print out response text."""
@@ -140,6 +142,7 @@ class BaseLanguageModel(
 
         Returns:
             The verbosity setting to use.
+
         """
         if verbose is None:
             return _get_verbosity()
@@ -195,7 +198,8 @@ class BaseLanguageModel(
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            prompt and additional model provider-specific output.
+
         """
 
     @abstractmethod
@@ -229,8 +233,9 @@ class BaseLanguageModel(
                 to the model provider API call.
 
         Returns:
-            An LLMResult, which contains a list of candidate Generations for each input
-                prompt and additional model provider-specific output.
+            An ``LLMResult``, which contains a list of candidate Generations for each
+            input prompt and additional model provider-specific output.
+
         """
 
     def with_structured_output(
@@ -248,8 +253,8 @@ class BaseLanguageModel(
     ) -> str:
         """Pass a single string input to the model and return a string.
 
-         Use this method when passing in raw text. If you want to pass in specific
-            types of chat messages, use predict_messages.
+        Use this method when passing in raw text. If you want to pass in specific types
+        of chat messages, use predict_messages.
 
         Args:
             text: String input to pass to the model.
@@ -260,6 +265,7 @@ class BaseLanguageModel(
 
         Returns:
             Top model prediction as a string.
+
         """
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
@@ -274,7 +280,7 @@ class BaseLanguageModel(
         """Pass a message sequence to the model and return a message.
 
         Use this method when passing in chat messages. If you want to pass in raw text,
-            use predict.
+        use predict.
 
         Args:
             messages: A sequence of chat messages corresponding to a single model input.
@@ -285,6 +291,7 @@ class BaseLanguageModel(
 
         Returns:
             Top model prediction as a message.
+
         """
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
@@ -295,7 +302,7 @@ class BaseLanguageModel(
         """Asynchronously pass a string to the model and return a string.
 
         Use this method when calling pure text generation models and only the top
-            candidate generation is needed.
+        candidate generation is needed.
 
         Args:
             text: String input to pass to the model.
@@ -306,6 +313,7 @@ class BaseLanguageModel(
 
         Returns:
             Top model prediction as a string.
+
         """
 
     @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
@@ -319,8 +327,8 @@ class BaseLanguageModel(
     ) -> BaseMessage:
         """Asynchronously pass messages to the model and return a message.
 
-        Use this method when calling chat models and only the top
-            candidate generation is needed.
+        Use this method when calling chat models and only the top candidate generation
+        is needed.
 
         Args:
             messages: A sequence of chat messages corresponding to a single model input.
@@ -331,6 +339,7 @@ class BaseLanguageModel(
 
         Returns:
             Top model prediction as a message.
+
         """
 
     @property
@@ -346,7 +355,8 @@ class BaseLanguageModel(
 
         Returns:
             A list of ids corresponding to the tokens in the text, in order they occur
-                in the text.
+            in the text.
+
         """
         if self.custom_get_token_ids is not None:
             return self.custom_get_token_ids(text)
@@ -362,6 +372,7 @@ class BaseLanguageModel(
 
         Returns:
             The integer number of tokens in the text.
+
         """
         return len(self.get_token_ids(text))
 
@@ -374,16 +385,18 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
-        **Note**: the base implementation of get_num_tokens_from_messages ignores
-        tool schemas.
+        .. note::
+            The base implementation of ``get_num_tokens_from_messages`` ignores tool
+            schemas.
 
         Args:
             messages: The message inputs to tokenize.
-            tools: If provided, sequence of dict, BaseModel, function, or BaseTools
-                to be converted to tool schemas.
+            tools: If provided, sequence of dict, ``BaseModel``, function, or
+                ``BaseTools`` to be converted to tool schemas.
 
         Returns:
             The sum of the number of tokens across the messages.
+
         """
         if tools is not None:
             warnings.warn(
@@ -396,6 +409,7 @@ class BaseLanguageModel(
     def _all_required_field_names(cls) -> set:
         """DEPRECATED: Kept for backwards compatibility.
 
-        Use get_pydantic_field_names.
+        Use ``get_pydantic_field_names``.
+
         """
         return get_pydantic_field_names(cls)
