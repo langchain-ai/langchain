@@ -159,7 +159,11 @@ class HTMLHeaderTextSplitter:
             requests.RequestException: If the HTTP request fails.
         """
         kwargs.setdefault("timeout", timeout)
-        response = requests.get(url, **kwargs)
+        response = requests.get(
+            url,
+            timeout=kwargs.get("timeout", timeout),
+            **{k: v for k, v in kwargs.items() if k != "timeout"},
+        )
         response.raise_for_status()
         return self.split_text(response.text)
 
@@ -229,9 +233,9 @@ class HTMLHeaderTextSplitter:
             children = list(node.children)
             from bs4.element import Tag
 
-            for child in reversed(children):
-                if isinstance(child, Tag):
-                    stack.append(child)
+            stack.extend(
+                child for child in reversed(children) if isinstance(child, Tag)
+            )
 
             tag = getattr(node, "name", None)
             if not tag:
@@ -594,12 +598,12 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
             self._BeautifulSoup = BeautifulSoup
             self._Tag = Tag
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import BeautifulSoup. "
                 "Please install it with 'pip install bs4'."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         self._headers_to_split_on = sorted(headers_to_split_on)
         self._max_chunk_size = max_chunk_size
@@ -647,11 +651,11 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
 
                 nltk.download("stopwords")
                 self._stopwords = set(nltk.corpus.stopwords.words(self._stopword_lang))
-            except ImportError:
+            except ImportError as err:
                 msg = (
                     "Could not import nltk. Please install it with 'pip install nltk'."
                 )
-                raise ImportError(msg)
+                raise ImportError(msg) from err
 
     def split_text(self, text: str) -> list[Document]:
         """Splits the provided HTML text into smaller chunks based on the configuration.
