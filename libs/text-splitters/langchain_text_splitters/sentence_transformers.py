@@ -20,13 +20,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         try:
             from sentence_transformers import SentenceTransformer
-        except ImportError:
+        except ImportError as err:
             msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from err
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)

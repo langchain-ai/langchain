@@ -105,10 +105,11 @@ class _StreamingParser:
         self.buffer = ""
         # yield all events
         try:
-            for event, elem in self.pull_parser.read_events():
+            events = self.pull_parser.read_events()
+            for event, elem in events:  # type: ignore[misc]
                 if event == "start":
                     # update current path
-                    self.current_path.append(elem.tag)
+                    self.current_path.append(elem.tag)  # type: ignore[union-attr]
                     self.current_path_has_children = False
                 elif event == "end":
                     # remove last element from current path
@@ -116,7 +117,7 @@ class _StreamingParser:
                     self.current_path.pop()
                     # yield element
                     if not self.current_path_has_children:
-                        yield nested_element(self.current_path, elem)
+                        yield nested_element(self.current_path, elem)  # type: ignore[arg-type]
                     # prevent yielding of parent element
                     if self.current_path:
                         self.current_path_has_children = True
