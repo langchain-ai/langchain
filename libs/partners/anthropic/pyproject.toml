@@ -105,6 +105,8 @@ ignore = [
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
     "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "D203",
+    "D213",
     "D214",    # Section over-indented, doesn't play well with reStructuredText
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter

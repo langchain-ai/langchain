@@ -488,8 +488,8 @@ class DeleteResponse(TypedDict, total=False):
     failed: Sequence[str]
     """The IDs that failed to be deleted.
 
-    Please note that deleting an ID that
-    does not exist is **NOT** considered a failure.
+    .. warning::
+        Deleting an ID that does not exist is **NOT** considered a failure.
     """
 
     num_failed: int
