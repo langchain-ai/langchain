@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import time
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from uuid import uuid4
 
 import openai
@@ -62,9 +62,9 @@ class OpenAIBatchClient:
 
     def create_batch(
         self,
-        requests: List[Dict[str, Any]],
+        requests: list[dict[str, Any]],
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[dict[str, str]] = None,
     ) -> str:
         """
         Create a new batch job with the OpenAI Batch API.
@@ -104,7 +104,7 @@ class OpenAIBatchClient:
         except Exception as e:
             raise BatchError(f"Unexpected error creating batch: {e}") from e
 
-    def retrieve_batch(self, batch_id: str) -> Dict[str, Any]:
+    def retrieve_batch(self, batch_id: str) -> dict[str, Any]:
         """
         Retrieve batch information by ID.
 
@@ -146,7 +146,7 @@ class OpenAIBatchClient:
         batch_id: str,
         poll_interval: float = 10.0,
         timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Poll batch status until completion or failure.
 
@@ -189,7 +189,7 @@ class OpenAIBatchClient:
 
             time.sleep(poll_interval)
 
-    def retrieve_batch_results(self, batch_id: str) -> List[Dict[str, Any]]:
+    def retrieve_batch_results(self, batch_id: str) -> list[dict[str, Any]]:
         """
         Retrieve results from a completed batch.
 
@@ -239,7 +239,7 @@ class OpenAIBatchClient:
                 batch_id=batch_id,
             ) from e
 
-    def cancel_batch(self, batch_id: str) -> Dict[str, Any]:
+    def cancel_batch(self, batch_id: str) -> dict[str, Any]:
         """
         Cancel a batch job.
 
@@ -299,9 +299,9 @@ class OpenAIBatchProcessor:
 
     def create_batch(
         self,
-        messages_list: List[List[BaseMessage]],
+        messages_list: list[List[BaseMessage]],
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> str:
         """
@@ -337,7 +337,7 @@ class OpenAIBatchProcessor:
         batch_id: str,
         poll_interval: Optional[float] = None,
         timeout: Optional[float] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Poll batch status until completion or failure.
 
@@ -358,7 +358,7 @@ class OpenAIBatchProcessor:
             timeout=timeout or self.timeout,
         )
 
-    def retrieve_batch_results(self, batch_id: str) -> List[ChatResult]:
+    def retrieve_batch_results(self, batch_id: str) -> list[ChatResult]:
         """
         Retrieve and convert batch results to LangChain format.
 
@@ -435,13 +435,13 @@ class OpenAIBatchProcessor:
 
     def process_batch(
         self,
-        messages_list: List[List[BaseMessage]],
+        messages_list: list[List[BaseMessage]],
         description: Optional[str] = None,
-        metadata: Optional[Dict[str, str]] = None,
+        metadata: Optional[dict[str, str]] = None,
         poll_interval: Optional[float] = None,
         timeout: Optional[float] = None,
         **kwargs: Any,
-    ) -> List[ChatResult]:
+    ) -> list[ChatResult]:
         """
         Complete batch processing workflow: create, poll, and retrieve results.
 
@@ -477,8 +477,8 @@ class OpenAIBatchProcessor:
 
 
 def create_batch_request(
-    messages: List[BaseMessage], model: str, custom_id: str, **kwargs: Any
-) -> Dict[str, Any]:
+    messages: list[BaseMessage], model: str, custom_id: str, **kwargs: Any
+) -> dict[str, Any]:
     """
     Create a batch request object from LangChain messages.
 

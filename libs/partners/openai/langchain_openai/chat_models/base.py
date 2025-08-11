@@ -2276,18 +2276,19 @@ class BaseChatOpenAI(BaseChatModel):
     @override
     def batch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         use_batch_api: bool = False,
         **kwargs: Any,
-    ) -> List[BaseMessage]:
+    ) -> list[BaseMessage]:
         """
         Batch process multiple inputs using either standard API or OpenAI Batch API.
 
         This method provides two processing modes:
-        1. Standard mode (use_batch_api=False): Uses parallel invoke for immediate results
+        1. Standard mode (use_batch_api=False): Uses parallel invoke for
+           immediate results
         2. Batch API mode (use_batch_api=True): Uses OpenAI's Batch API for 50% cost savings
 
         Args:
@@ -2356,7 +2357,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def _convert_input_to_messages(
         self, input_item: LanguageModelInput
-    ) -> List[BaseMessage]:
+    ) -> list[BaseMessage]:
         """Convert various input formats to a list of BaseMessage objects."""
         if isinstance(input_item, list):
             # Already a list of messages

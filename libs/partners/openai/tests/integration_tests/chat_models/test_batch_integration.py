@@ -40,7 +40,10 @@ class TestBatchAPIIntegration:
             [HumanMessage(content="What is 2+2? Answer with just the number.")],
             [
                 HumanMessage(
-                    content="What is the capital of France? Answer with just the city name."
+                    content=(
+                        "What is the capital of France? "
+                        "Answer with just the city name."
+                    )
                 )
             ],
         ]
@@ -206,7 +209,10 @@ class TestBatchAPIIntegration:
             "What is the largest planet? Answer with just the planet name.",
             [
                 HumanMessage(
-                    content="What is the smallest planet? Answer with just the planet name."
+                    content=(
+                        "What is the smallest planet? "
+                        "Answer with just the planet name."
+                    )
                 )
             ],
         ]
@@ -346,7 +352,7 @@ class TestBatchAPIPerformance:
         )
 
         end_time = time.time()
-        processing_time = end_time - start_time
+        _ = end_time - start_time
 
         # Verify all results
         assert len(results) == 10
