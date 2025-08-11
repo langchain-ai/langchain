@@ -6,12 +6,13 @@ import json
 import time
 from enum import Enum
 from typing import Any, Dict, List, Optional, Union
+from uuid import uuid4
 
 import openai
 from langchain_core.messages import BaseMessage
-from langchain_core.outputs import ChatResult
+from langchain_core.outputs import ChatGeneration, ChatResult
 
-from langchain_openai.chat_models._compat import convert_message_to_dict
+from langchain_openai.chat_models._compat import convert_dict_to_message, convert_message_to_dict
 
 
 class BatchStatus(str, Enum):
@@ -271,3 +272,4 @@ def create_batch_request(
             **kwargs
         }
     }
+
