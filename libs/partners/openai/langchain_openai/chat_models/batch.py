@@ -210,7 +210,7 @@ class OpenAIBatchClient:
             if batch_info["status"] != BatchStatus.COMPLETED:
                 raise BatchError(
                     f"Batch {batch_id} is not completed. "
-                     f"Current status: {batch_info['status']}",
+                    f"Current status: {batch_info['status']}",
                     batch_id=batch_id,
                     status=batch_info["status"],
                 )
