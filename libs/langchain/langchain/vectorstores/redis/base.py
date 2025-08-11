@@ -27,7 +27,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "check_index_exists",
     "Redis",
     "RedisVectorStoreRetriever",
+    "check_index_exists",
 ]

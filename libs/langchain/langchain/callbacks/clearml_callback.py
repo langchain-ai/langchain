@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "ClearMLCallbackHandler": "langchain_community.callbacks.clearml_callback"
+    "ClearMLCallbackHandler": "langchain_community.callbacks.clearml_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

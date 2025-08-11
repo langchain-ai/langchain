@@ -31,8 +31,7 @@ def mock_llm() -> Mock:
     "langchain_huggingface.chat_models.huggingface.ChatHuggingFace._resolve_model_id"
 )
 def chat_hugging_face(mock_resolve_id: Any, mock_llm: Any) -> ChatHuggingFace:
-    chat_hf = ChatHuggingFace(llm=mock_llm, tokenizer=MagicMock())
-    return chat_hf
+    return ChatHuggingFace(llm=mock_llm, tokenizer=MagicMock())
 
 
 def test_create_chat_result(chat_hugging_face: Any) -> None:

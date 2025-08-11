@@ -1,7 +1,7 @@
 # Couchbase
 
->[Couchbase](http://couchbase.com/) is an award-winning distributed NoSQL cloud database 
-> that delivers unmatched versatility, performance, scalability, and financial value 
+>[Couchbase](http://couchbase.com/) is an award-winning distributed NoSQL cloud database
+> that delivers unmatched versatility, performance, scalability, and financial value
 > for all of your cloud, mobile, AI, and edge computing applications.
 
 ## Installation and Setup
@@ -18,7 +18,49 @@ See a [usage example](/docs/integrations/vectorstores/couchbase).
 
 ```python
 from langchain_couchbase import CouchbaseSearchVectorStore
+
+import getpass
+
+# Constants for the connection
+COUCHBASE_CONNECTION_STRING = getpass.getpass(
+    "Enter the connection string for the Couchbase cluster: "
+)
+DB_USERNAME = getpass.getpass("Enter the username for the Couchbase cluster: ")
+DB_PASSWORD = getpass.getpass("Enter the password for the Couchbase cluster: ")
+
+# Create Couchbase connection object
+from datetime import timedelta
+
+from couchbase.auth import PasswordAuthenticator
+from couchbase.cluster import Cluster
+from couchbase.options import ClusterOptions
+
+auth = PasswordAuthenticator(DB_USERNAME, DB_PASSWORD)
+options = ClusterOptions(auth)
+cluster = Cluster(COUCHBASE_CONNECTION_STRING, options)
+
+# Wait until the cluster is ready for use.
+cluster.wait_until_ready(timedelta(seconds=5))
+
+vector_store = CouchbaseSearchVectorStore(
+    cluster=cluster,
+    bucket_name=BUCKET_NAME,
+    scope_name=SCOPE_NAME,
+    collection_name=COLLECTION_NAME,
+    embedding=my_embeddings,
+    index_name=SEARCH_INDEX_NAME,
+)
+
+# Add documents
+texts = ["Couchbase is a NoSQL database", "LangChain is a framework for LLM applications"]
+vectorstore.add_texts(texts)
+
+# Search
+query = "What is Couchbase?"
+docs = vectorstore.similarity_search(query)
 ```
+
+API Reference: [CouchbaseSearchVectorStore](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.vectorstores.search_vector_store)
 
 ## Document loader
 
@@ -26,6 +68,29 @@ See a [usage example](/docs/integrations/document_loaders/couchbase).
 
 ```python
 from langchain_community.document_loaders.couchbase import CouchbaseLoader
+
+connection_string = "couchbase://localhost"  # valid Couchbase connection string
+db_username = (
+    "Administrator"  # valid database user with read access to the bucket being queried
+)
+db_password = "Password"  # password for the database user
+
+# query is a valid SQL++ query
+query = """
+    SELECT h.* FROM `travel-sample`.inventory.hotel h
+        WHERE h.country = 'United States'
+        LIMIT 1
+        """
+
+loader = CouchbaseLoader(
+    connection_string,
+    db_username,
+    db_password,
+    query,
+)
+
+docs = loader.load()
+
 ```
 
 ## LLM Caches
@@ -56,6 +121,7 @@ set_llm_cache(
 )
 ```
 
+API Reference: [CouchbaseCache](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseCache)
 
 ### CouchbaseSemanticCache
 Semantic caching allows users to retrieve cached prompts based on the semantic similarity between the user input and previously cached inputs. Under the hood it uses Couchbase as both a cache and a vectorstore.
@@ -90,6 +156,8 @@ set_llm_cache(
 )
 ```
 
+API Reference: [CouchbaseSemanticCache](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#langchain_couchbase.cache.CouchbaseSemanticCache)
+
 ## Chat Message History
 Use Couchbase as the storage for your chat messages.
 
@@ -109,3 +177,5 @@ message_history = CouchbaseChatMessageHistory(
 
 message_history.add_user_message("hi!")
 ```
+
+API Reference: [CouchbaseChatMessageHistory](https://couchbase-ecosystem.github.io/langchain-couchbase/langchain_couchbase.html#module-langchain_couchbase.chat_message_histories)

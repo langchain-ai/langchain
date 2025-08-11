@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List, Optional, cast
+from typing import Any, Optional, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
@@ -20,12 +20,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
 
         try:
             from sentence_transformers import SentenceTransformer
-        except ImportError:
-            raise ImportError(
+        except ImportError as err:
+            msg = (
                 "Could not import sentence_transformers python package. "
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
+            raise ImportError(msg) from err
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)
@@ -43,14 +44,15 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             self.tokens_per_chunk = tokens_per_chunk
 
         if self.tokens_per_chunk > self.maximum_tokens_per_chunk:
-            raise ValueError(
+            msg = (
                 f"The token limit of the models '{self.model_name}'"
                 f" is: {self.maximum_tokens_per_chunk}."
                 f" Argument tokens_per_chunk={self.tokens_per_chunk}"
                 f" > maximum token limit."
             )
+            raise ValueError(msg)
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Splits the input text into smaller components by splitting text on tokens.
 
         This method encodes the input text using a private `_encode` method, then
@@ -65,7 +67,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
             encoding and processing.
         """
 
-        def encode_strip_start_and_stop_token_ids(text: str) -> List[int]:
+        def encode_strip_start_and_stop_token_ids(text: str) -> list[int]:
             return self._encode(text)[1:-1]
 
         tokenizer = Tokenizer(

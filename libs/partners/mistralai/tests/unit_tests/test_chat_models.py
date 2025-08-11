@@ -84,23 +84,23 @@ def test_mistralai_initialization_baseurl_env(env_var_name: str) -> None:
     [
         (
             SystemMessage(content="Hello"),
-            dict(role="system", content="Hello"),
+            {"role": "system", "content": "Hello"},
         ),
         (
             HumanMessage(content="Hello"),
-            dict(role="user", content="Hello"),
+            {"role": "user", "content": "Hello"},
         ),
         (
             AIMessage(content="Hello"),
-            dict(role="assistant", content="Hello"),
+            {"role": "assistant", "content": "Hello"},
         ),
         (
             AIMessage(content="{", additional_kwargs={"prefix": True}),
-            dict(role="assistant", content="{", prefix=True),
+            {"role": "assistant", "content": "{", "prefix": True},
         ),
         (
             ChatMessage(role="assistant", content="Hello"),
-            dict(role="assistant", content="Hello"),
+            {"role": "assistant", "content": "Hello"},
         ),
     ],
 )
@@ -112,17 +112,17 @@ def test_convert_message_to_mistral_chat_message(
 
 
 def _make_completion_response_from_token(token: str) -> dict:
-    return dict(
-        id="abc123",
-        model="fake_model",
-        choices=[
-            dict(
-                index=0,
-                delta=dict(content=token),
-                finish_reason=None,
-            )
+    return {
+        "id": "abc123",
+        "model": "fake_model",
+        "choices": [
+            {
+                "index": 0,
+                "delta": {"content": token},
+                "finish_reason": None,
+            }
         ],
-    )
+    }
 
 
 def mock_chat_stream(*args: Any, **kwargs: Any) -> Generator:
@@ -275,8 +275,7 @@ def test_extra_kwargs() -> None:
 
 
 def test_retry_with_failure_then_success() -> None:
-    """Test that retry mechanism works correctly when
-    first request fails and second succeeds."""
+    """Test retry mechanism works correctly when fiest request fails, second succeed."""
     # Create a real ChatMistralAI instance
     chat = ChatMistralAI(max_retries=3)
 
@@ -289,7 +288,8 @@ def test_retry_with_failure_then_success() -> None:
         call_count += 1
 
         if call_count == 1:
-            raise httpx.RequestError("Connection error", request=MagicMock())
+            msg = "Connection error"
+            raise httpx.RequestError(msg, request=MagicMock())
 
         mock_response = MagicMock()
         mock_response.status_code = 200

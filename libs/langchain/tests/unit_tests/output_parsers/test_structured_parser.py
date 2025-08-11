@@ -26,7 +26,8 @@ def test_parse() -> None:
     except OutputParserException:
         pass  # Test passes if OutputParserException is raised
     else:
-        assert False, f"Expected OutputParserException, but got {parser.parse(text)}"
+        msg = f"Expected OutputParserException, but got {parser.parse(text)}"
+        raise AssertionError(msg)
 
 
 def test_output_type() -> None:

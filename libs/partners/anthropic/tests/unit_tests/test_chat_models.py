@@ -1,5 +1,7 @@
 """Test chat model integration."""
 
+from __future__ import annotations
+
 import os
 from typing import Any, Callable, Literal, Optional, cast
 from unittest.mock import MagicMock, patch
@@ -187,7 +189,7 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
-            ]
+            ],
         ),
         ToolMessage("buz output", tool_call_id="1", status="error"),  # type: ignore[misc]
         ToolMessage(
@@ -234,7 +236,7 @@ def test__merge_messages() -> None:
                     "text": None,
                     "name": "blah",
                 },
-            ]
+            ],
         ),
         HumanMessage(  # type: ignore[misc]
             [
@@ -266,7 +268,7 @@ def test__merge_messages() -> None:
                     "is_error": False,
                 },
                 {"type": "text", "text": "next thing"},
-            ]
+            ],
         ),
     ]
     actual = _merge_messages(messages)
@@ -277,7 +279,7 @@ def test__merge_messages() -> None:
         ToolMessage("buz output", tool_call_id="1"),  # type: ignore[misc]
         ToolMessage(  # type: ignore[misc]
             content=[
-                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"}
+                {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
             ],
             tool_call_id="2",
         ),
@@ -292,8 +294,8 @@ def test__merge_messages() -> None:
                     "is_error": False,
                 },
                 {"type": "tool_result", "content": "blah output", "tool_use_id": "2"},
-            ]
-        )
+            ],
+        ),
     ]
     actual = _merge_messages(messages)
     assert expected == actual
@@ -310,7 +312,7 @@ def test__merge_messages_mutation() -> None:
     ]
     expected = [
         HumanMessage(  # type: ignore[misc]
-            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}]
+            [{"type": "text", "text": "bar"}, {"type": "text", "text": "next thing"}],
         ),
     ]
     actual = _merge_messages(messages)
@@ -327,7 +329,7 @@ def test__format_image() -> None:
 @pytest.fixture()
 def pydantic() -> type[BaseModel]:
     class dummy_function(BaseModel):
-        """dummy function"""
+        """Dummy function."""
 
         arg1: int = Field(..., description="foo")
         arg2: Literal["bar", "baz"] = Field(..., description="one of 'bar', 'baz'")
@@ -338,13 +340,13 @@ def pydantic() -> type[BaseModel]:
 @pytest.fixture()
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
-        """dummy function
+        """Dummy function.
 
         Args:
             arg1: foo
             arg2: one of 'bar', 'baz'
-        """
-        pass
+
+        """  # noqa: D401
 
     return dummy_function
 
@@ -358,7 +360,7 @@ def dummy_tool() -> BaseTool:
     class DummyFunction(BaseTool):  # type: ignore[override]
         args_schema: type[BaseModel] = Schema
         name: str = "dummy_function"
-        description: str = "dummy function"
+        description: str = "Dummy function."
 
         def _run(self, *args: Any, **kwargs: Any) -> Any:
             pass
@@ -370,7 +372,7 @@ def dummy_tool() -> BaseTool:
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "type": "object",
         "properties": {
             "arg1": {"description": "foo", "type": "integer"},
@@ -388,7 +390,7 @@ def json_schema() -> dict:
 def openai_function() -> dict:
     return {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -413,7 +415,7 @@ def test_convert_to_anthropic_tool(
 ) -> None:
     expected = {
         "name": "dummy_function",
-        "description": "dummy function",
+        "description": "Dummy function.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -429,7 +431,7 @@ def test_convert_to_anthropic_tool(
     }
 
     for fn in (pydantic, function, dummy_tool, json_schema, expected, openai_function):
-        actual = convert_to_anthropic_tool(fn)  # type: ignore
+        actual = convert_to_anthropic_tool(fn)
         assert actual == expected
 
 
@@ -461,7 +463,7 @@ def test__format_messages_with_tool_calls() -> None:
                     "type": "base64",
                     "media_type": "image/jpeg",
                 },
-            }
+            },
         ],
         tool_call_id="3",
     )
@@ -478,7 +480,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "name": "bar",
                         "id": "1",
                         "input": {"baz": "buzz"},
-                    }
+                    },
                 ],
             },
             {
@@ -489,7 +491,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
             {
@@ -500,7 +502,7 @@ def test__format_messages_with_tool_calls() -> None:
                         "name": "bar",
                         "id": "2",
                         "input": {"baz": "buzz"},
-                    }
+                    },
                 ],
             },
             {
@@ -516,7 +518,7 @@ def test__format_messages_with_tool_calls() -> None:
                                     "type": "base64",
                                     "media_type": "image/jpeg",
                                 },
-                            }
+                            },
                         ],
                         "tool_use_id": "2",
                         "is_error": False,
@@ -531,7 +533,7 @@ def test__format_messages_with_tool_calls() -> None:
                                     "type": "base64",
                                     "media_type": "image/jpeg",
                                 },
-                            }
+                            },
                         ],
                         "tool_use_id": "3",
                         "is_error": False,
@@ -579,7 +581,7 @@ def test__format_messages_with_str_content_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -624,7 +626,7 @@ def test__format_messages_with_list_content_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -676,7 +678,7 @@ def test__format_messages_with_tool_use_blocks_and_tool_calls() -> None:
                         "content": "blurb",
                         "tool_use_id": "1",
                         "is_error": False,
-                    }
+                    },
                 ],
             },
         ],
@@ -690,7 +692,7 @@ def test__format_messages_with_cache_control() -> None:
         SystemMessage(
             [
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
-            ]
+            ],
         ),
         HumanMessage(
             [
@@ -699,11 +701,11 @@ def test__format_messages_with_cache_control() -> None:
                     "type": "text",
                     "text": "foo",
                 },
-            ]
+            ],
         ),
     ]
     expected_system = [
-        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}}
+        {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
     ]
     expected_messages = [
         {
@@ -712,7 +714,7 @@ def test__format_messages_with_cache_control() -> None:
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
                 {"type": "text", "text": "foo"},
             ],
-        }
+        },
     ]
     actual_system, actual_messages = _format_messages(messages)
     assert expected_system == actual_system
@@ -733,8 +735,8 @@ def test__format_messages_with_cache_control() -> None:
                     "data": "<base64 data>",
                     "cache_control": {"type": "ephemeral"},
                 },
-            ]
-        )
+            ],
+        ),
     ]
     actual_system, actual_messages = _format_messages(messages)
     assert actual_system is None
@@ -756,7 +758,7 @@ def test__format_messages_with_cache_control() -> None:
                     "cache_control": {"type": "ephemeral"},
                 },
             ],
-        }
+        },
     ]
     assert actual_messages == expected_messages
 
@@ -773,8 +775,8 @@ def test__format_messages_with_citations() -> None:
                     "citations": {"enabled": True},
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
-            ]
-        )
+            ],
+        ),
     ]
     expected_messages = [
         {
@@ -791,7 +793,7 @@ def test__format_messages_with_citations() -> None:
                 },
                 {"type": "text", "text": "What color is the grass and sky?"},
             ],
-        }
+        },
     ]
     actual_system, actual_messages = _format_messages(input_messages)
     assert actual_system is None
@@ -843,7 +845,7 @@ def test__format_messages_openai_image_format() -> None:
                     },
                 },
             ],
-        }
+        },
     ]
     assert actual_messages == expected_messages
 
@@ -856,7 +858,7 @@ def test__format_messages_with_multiple_system() -> None:
         SystemMessage(
             [
                 {"type": "text", "text": "foo", "cache_control": {"type": "ephemeral"}},
-            ]
+            ],
         ),
     ]
     expected_system = [
@@ -880,7 +882,8 @@ def test_anthropic_api_key_is_secret_string() -> None:
 
 
 def test_anthropic_api_key_masked_when_passed_from_env(
-    monkeypatch: MonkeyPatch, capsys: CaptureFixture
+    monkeypatch: MonkeyPatch,
+    capsys: CaptureFixture,
 ) -> None:
     """Test that the API key is masked when passed from an environment variable."""
     monkeypatch.setenv("ANTHROPIC_API_KEY ", "secret-api-key")
@@ -920,7 +923,7 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
 
 
 class GetWeather(BaseModel):
-    """Get the current weather in a given location"""
+    """Get the current weather in a given location."""
 
     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
@@ -931,14 +934,16 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         anthropic_api_key="secret-api-key",
     )
     chat_model_with_tools = chat_model.bind_tools(
-        [GetWeather], tool_choice={"type": "tool", "name": "GetWeather"}
+        [GetWeather],
+        tool_choice={"type": "tool", "name": "GetWeather"},
     )
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
     chat_model_with_tools = chat_model.bind_tools(
-        [GetWeather], tool_choice="GetWeather"
+        [GetWeather],
+        tool_choice="GetWeather",
     )
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
@@ -946,11 +951,11 @@ def test_anthropic_bind_tools_tool_choice() -> None:
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
-        "type": "auto"
+        "type": "auto",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
     assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
-        "type": "any"
+        "type": "any",
     }
 
 
@@ -1021,7 +1026,6 @@ class FakeTracer(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-        pass
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
@@ -1036,7 +1040,7 @@ def test_mcp_tracing() -> None:
             "url": "https://mcp.deepwiki.com/mcp",
             "name": "deepwiki",
             "authorization_token": "PLACEHOLDER",
-        }
+        },
     ]
 
     llm = ChatAnthropic(

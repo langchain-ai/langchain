@@ -33,7 +33,7 @@ repository = "https://github.com/langchain-ai/langchain"
 test = ["langchain-core"]
 test_integration = []
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0.0,>=0.9.2"]
+lint = ["ruff<0.13,>=0.12.8"]
 typing = ["mypy<2,>=1", "langchain-core"]
 
 [tool.uv.sources]
@@ -55,7 +55,8 @@ ignore_missing_imports = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = ["E", "F", "I", "PGH", "T201", "UP",]
+pyupgrade.keep-runtime-typing = true
 
 [tool.coverage.run]
 omit = ["tests/*"]

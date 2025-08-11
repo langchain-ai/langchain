@@ -1,5 +1,6 @@
 """Load agent."""
 
+import contextlib
 from collections.abc import Sequence
 from typing import Any, Optional
 
@@ -59,35 +60,42 @@ def initialize_agent(
     if agent is None and agent_path is None:
         agent = AgentType.ZERO_SHOT_REACT_DESCRIPTION
     if agent is not None and agent_path is not None:
-        raise ValueError(
+        msg = (
             "Both `agent` and `agent_path` are specified, "
             "but at most only one should be."
         )
+        raise ValueError(msg)
     if agent is not None:
         if agent not in AGENT_TO_CLASS:
-            raise ValueError(
+            msg = (
                 f"Got unknown agent type: {agent}. "
                 f"Valid types are: {AGENT_TO_CLASS.keys()}."
             )
+            raise ValueError(msg)
         tags_.append(agent.value if isinstance(agent, AgentType) else agent)
         agent_cls = AGENT_TO_CLASS[agent]
         agent_kwargs = agent_kwargs or {}
         agent_obj = agent_cls.from_llm_and_tools(
-            llm, tools, callback_manager=callback_manager, **agent_kwargs
+            llm,
+            tools,
+            callback_manager=callback_manager,
+            **agent_kwargs,
         )
     elif agent_path is not None:
         agent_obj = load_agent(
-            agent_path, llm=llm, tools=tools, callback_manager=callback_manager
+            agent_path,
+            llm=llm,
+            tools=tools,
+            callback_manager=callback_manager,
         )
-        try:
+        with contextlib.suppress(NotImplementedError):
             # TODO: Add tags from the serialized object directly.
-            tags_.append(agent_obj._agent_type)
-        except NotImplementedError:
-            pass
+            tags_.append(agent_obj._agent_type)  # noqa: SLF001
     else:
-        raise ValueError(
+        msg = (
             "Somehow both `agent` and `agent_path` are None, this should never happen."
         )
+        raise ValueError(msg)
     return AgentExecutor.from_agent_and_tools(
         agent=agent_obj,
         tools=tools,

@@ -33,10 +33,8 @@ print("Hello fifty shades of gray mans!"[::-1])  # noqa: T201
     )
 
 
-def _test_convo_output(
-    input: str, expected_tool: str, expected_tool_input: str
-) -> None:
-    result = ConvoOutputParser().parse(input.strip())
+def _test_convo_output(text: str, expected_tool: str, expected_tool_input: str) -> None:
+    result = ConvoOutputParser().parse(text.strip())
     assert isinstance(result, AgentAction)
     assert result.tool == expected_tool
     assert result.tool_input == expected_tool_input

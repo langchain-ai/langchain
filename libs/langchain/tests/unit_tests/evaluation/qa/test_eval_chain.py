@@ -19,7 +19,8 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="Test not supported on Windows"
+    sys.platform.startswith("win"),
+    reason="Test not supported on Windows",
 )
 def test_eval_chain() -> None:
     """Test a simple eval chain."""
@@ -34,7 +35,8 @@ def test_eval_chain() -> None:
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith("win"), reason="Test not supported on Windows"
+    sys.platform.startswith("win"),
+    reason="Test not supported on Windows",
 )
 @pytest.mark.parametrize("chain_cls", [ContextQAEvalChain, CotQAEvalChain])
 def test_context_eval_chain(chain_cls: type[ContextQAEvalChain]) -> None:
@@ -76,17 +78,20 @@ def test_returns_expected_results(
     chain_cls: type[LLMChain],
 ) -> None:
     fake_llm = FakeLLM(
-        queries={"text": "The meaning of life\nCORRECT"}, sequential_responses=True
+        queries={"text": "The meaning of life\nCORRECT"},
+        sequential_responses=True,
     )
     chain = chain_cls.from_llm(fake_llm)  # type: ignore[attr-defined]
     results = chain.evaluate_strings(
-        prediction="my prediction", reference="my reference", input="my input"
+        prediction="my prediction",
+        reference="my reference",
+        input="my input",
     )
     assert results["score"] == 1
 
 
 @pytest.mark.parametrize(
-    "output,expected",
+    ("output", "expected"),
     [
         (
             """ GRADE: CORRECT
@@ -105,11 +110,11 @@ GRADE:""",  # noqa: E501
 
 1. The question asks who founded the Roanoke settlement.
 
-2. The context states that the grade incorrect answer is Walter Raleigh. 
+2. The context states that the grade incorrect answer is Walter Raleigh.
 
 3. The student's answer is "Sir Walter Raleigh".
 
-4. The student's answer matches the context, which states the answer is Walter Raleigh. 
+4. The student's answer matches the context, which states the answer is Walter Raleigh.
 
 5. The addition of "Sir" in the student's answer does not contradict the context. It provides extra detail about Walter Raleigh's title, but the core answer of Walter Raleigh is still correct.
 
@@ -125,7 +130,7 @@ GRADE: CORRECT""",  # noqa: E501
             """  CORRECT
 
 QUESTION: who was the first president of the united states?
-STUDENT ANSWER: George Washington 
+STUDENT ANSWER: George Washington
 TRUE ANSWER: George Washington was the first president of the United States.
 GRADE:""",
             {

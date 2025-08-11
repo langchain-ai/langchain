@@ -773,7 +773,7 @@ async def _astream_events_implementation_v1(
     run_log = RunLog(state=None)  # type: ignore[arg-type]
     encountered_start_event = False
 
-    _root_event_filter = _RootEventFilter(
+    root_event_filter = _RootEventFilter(
         include_names=include_names,
         include_types=include_types,
         include_tags=include_tags,
@@ -796,7 +796,7 @@ async def _astream_events_implementation_v1(
         with_streamed_output_list=True,
         **kwargs,
     ):
-        run_log = run_log + log
+        run_log += log
 
         if not encountered_start_event:
             # Yield the start event for the root runnable.
@@ -815,7 +815,7 @@ async def _astream_events_implementation_v1(
                 parent_ids=[],  # Not supported in v1
             )
 
-            if _root_event_filter.include_event(event, state["type"]):
+            if root_event_filter.include_event(event, state["type"]):
                 yield event
 
         paths = {
@@ -901,7 +901,7 @@ async def _astream_events_implementation_v1(
                 data=data,
                 parent_ids=[],  # Not supported in v1
             )
-            if _root_event_filter.include_event(event, state["type"]):
+            if root_event_filter.include_event(event, state["type"]):
                 yield event
 
     state = run_log.state
@@ -918,7 +918,7 @@ async def _astream_events_implementation_v1(
         },
         parent_ids=[],  # Not supported in v1
     )
-    if _root_event_filter.include_event(event, state["type"]):
+    if root_event_filter.include_event(event, state["type"]):
         yield event
 
 

@@ -37,11 +37,11 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "NavigateTool",
-    "NavigateBackTool",
-    "ExtractTextTool",
-    "ExtractHyperlinksTool",
-    "GetElementsTool",
     "ClickTool",
     "CurrentWebPageTool",
+    "ExtractHyperlinksTool",
+    "ExtractTextTool",
+    "GetElementsTool",
+    "NavigateBackTool",
+    "NavigateTool",
 ]

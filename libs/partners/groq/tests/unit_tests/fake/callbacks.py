@@ -1,5 +1,7 @@
 """A fake callback handler for testing purposes."""
 
+from __future__ import annotations
+
 from itertools import chain
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -257,7 +259,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         self.on_retriever_error_common()
 
     # Overriding since BaseModel has __deepcopy__ method as well
-    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":  # type: ignore
+    def __deepcopy__(self, memo: dict) -> FakeCallbackHandler:  # type: ignore[override]
         return self
 
 
@@ -392,5 +394,5 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         self.on_text_common()
 
     # Overriding since BaseModel has __deepcopy__ method as well
-    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":  # type: ignore
+    def __deepcopy__(self, memo: dict) -> FakeAsyncCallbackHandler:  # type: ignore[override]
         return self

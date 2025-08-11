@@ -1,7 +1,7 @@
 """A mock Robot server."""
 
 from enum import Enum
-from typing import Any, Optional, Union
+from typing import Annotated, Any, Optional, Union
 from uuid import uuid4
 
 import uvicorn
@@ -127,7 +127,9 @@ async def goto(x: int, y: int, z: int, cautiousness: Cautiousness) -> dict[str, 
 
 @app.get("/get_state", description="Get the robot's state")
 async def get_state(
-    fields: list[StateItems] = Query(..., description="List of state items to return"),
+    fields: Annotated[
+        list[StateItems], Query(..., description="List of state items to return")
+    ],
 ) -> dict[str, Any]:
     state = {}
     for field in fields:
@@ -136,11 +138,10 @@ async def get_state(
 
 
 @app.get("/ask_for_passphrase", description="Get the robot's pass phrase")
-async def ask_for_passphrase(said_please: bool) -> dict[str, Any]:
+async def ask_for_passphrase(*, said_please: bool) -> dict[str, Any]:
     if said_please:
         return {"passphrase": f"The passphrase is {PASS_PHRASE}"}
-    else:
-        return {"passphrase": "I won't share the passphrase without saying 'please'."}
+    return {"passphrase": "I won't share the passphrase without saying 'please'."}
 
 
 @app.delete(
@@ -153,12 +154,11 @@ async def recycle(password: SecretPassPhrase) -> dict[str, Any]:
     if password.pw == PASS_PHRASE:
         _ROBOT_STATE["destruct"] = True
         return {"status": "Self-destruct initiated", "state": _ROBOT_STATE}
-    else:
-        _ROBOT_STATE["destruct"] = False
-        raise HTTPException(
-            status_code=400,
-            detail="Pass phrase required. You should have thought to ask for it.",
-        )
+    _ROBOT_STATE["destruct"] = False
+    raise HTTPException(
+        status_code=400,
+        detail="Pass phrase required. You should have thought to ask for it.",
+    )
 
 
 @app.post(
@@ -201,5 +201,6 @@ def custom_openapi() -> dict[str, Any]:
 # This lets us prevent the "servers" configuration from being overwritten in
 # the auto-generated OpenAPI schema
 app.openapi = custom_openapi
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=PORT)
+    uvicorn.run(app, host="127.0.0.1", port=PORT)

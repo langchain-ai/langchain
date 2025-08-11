@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "PySparkDataFrameLoader": "langchain_community.document_loaders.pyspark_dataframe"
+    "PySparkDataFrameLoader": "langchain_community.document_loaders.pyspark_dataframe",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

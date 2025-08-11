@@ -63,15 +63,15 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "BeautifulSoupTransformer",
+    "DoctranPropertyExtractor",
     "DoctranQATransformer",
     "DoctranTextTranslator",
-    "DoctranPropertyExtractor",
     "EmbeddingsClusteringFilter",
     "EmbeddingsRedundantFilter",
     "GoogleTranslateTransformer",
-    "get_stateful_documents",
+    "Html2TextTransformer",
     "LongContextReorder",
     "NucliaTextTransformer",
     "OpenAIMetadataTagger",
-    "Html2TextTransformer",
+    "get_stateful_documents",
 ]

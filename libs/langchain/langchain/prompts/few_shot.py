@@ -5,7 +5,7 @@ from langchain_core.prompts.few_shot import (
 )
 
 __all__ = [
-    "FewShotPromptTemplate",
     "FewShotChatMessagePromptTemplate",
+    "FewShotPromptTemplate",
     "_FewShotPromptTemplateMixin",
 ]

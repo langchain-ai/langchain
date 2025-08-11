@@ -34,14 +34,16 @@ class BaseChatMemory(BaseMemory, ABC):
     """
 
     chat_memory: BaseChatMessageHistory = Field(
-        default_factory=InMemoryChatMessageHistory
+        default_factory=InMemoryChatMessageHistory,
     )
     output_key: Optional[str] = None
     input_key: Optional[str] = None
     return_messages: bool = False
 
     def _get_input_output(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> tuple[str, str]:
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
@@ -49,20 +51,22 @@ class BaseChatMemory(BaseMemory, ABC):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) == 1:
-                output_key = list(outputs.keys())[0]
+                output_key = next(iter(outputs.keys()))
             elif "output" in outputs:
                 output_key = "output"
                 warnings.warn(
                     f"'{self.__class__.__name__}' got multiple output keys:"
                     f" {outputs.keys()}. The default 'output' key is being used."
-                    f" If this is not desired, please manually set 'output_key'."
+                    f" If this is not desired, please manually set 'output_key'.",
+                    stacklevel=3,
                 )
             else:
-                raise ValueError(
+                msg = (
                     f"Got multiple output keys: {outputs.keys()}, cannot "
                     f"determine which to store in memory. Please set the "
                     f"'output_key' explicitly."
                 )
+                raise ValueError(msg)
         else:
             output_key = self.output_key
         return inputs[prompt_input_key], outputs[output_key]
@@ -74,11 +78,13 @@ class BaseChatMemory(BaseMemory, ABC):
             [
                 HumanMessage(content=input_str),
                 AIMessage(content=output_str),
-            ]
+            ],
         )
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         input_str, output_str = self._get_input_output(inputs, outputs)
@@ -86,7 +92,7 @@ class BaseChatMemory(BaseMemory, ABC):
             [
                 HumanMessage(content=input_str),
                 AIMessage(content=output_str),
-            ]
+            ],
         )
 
     def clear(self) -> None:

@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 from pathlib import Path
 from typing import Literal, cast
@@ -87,9 +87,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
@@ -118,9 +118,9 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
@@ -134,22 +134,18 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
                             "type": "text",
                             "text": input_,
                             "cache_control": {"type": "ephemeral"},
-                        }
+                        },
                     ],
-                }
+                },
             ],
             stream,
         )
 
 
-def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:
+def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noqa: FBT001
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            if full is None:
-                full = cast(BaseMessageChunk, chunk)
-            else:
-                full = full + chunk
+            full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))

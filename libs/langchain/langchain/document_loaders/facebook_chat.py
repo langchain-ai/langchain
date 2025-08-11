@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "concatenate_rows",
     "FacebookChatLoader",
+    "concatenate_rows",
 ]

@@ -28,7 +28,9 @@ def test_single_item() -> None:
 
 
 def test_multiple_items_with_spaces() -> None:
-    """Test that a string with multiple comma-separated items
+    """Test multiple items with spaces.
+
+    Test that a string with multiple comma-separated items
     with spaces is parsed to a list.
     """
     parser = CommaSeparatedListOutputParser()
@@ -66,7 +68,9 @@ def test_multiple_items() -> None:
 
 
 def test_multiple_items_with_comma() -> None:
-    """Test that a string with multiple comma-separated items with 1 item containing a
+    """Test multiple items with a comma.
+
+    Test that a string with multiple comma-separated items with 1 item containing a
     comma is parsed to a list.
     """
     parser = CommaSeparatedListOutputParser()

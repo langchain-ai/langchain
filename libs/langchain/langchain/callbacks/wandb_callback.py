@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback"
+    "WandbCallbackHandler": "langchain_community.callbacks.wandb_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

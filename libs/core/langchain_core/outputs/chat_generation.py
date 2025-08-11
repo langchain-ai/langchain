@@ -27,7 +27,11 @@ class ChatGeneration(Generation):
     """
 
     text: str = ""
-    """*SHOULD NOT BE SET DIRECTLY* The text contents of the output message."""
+    """The text contents of the output message.
+
+    .. warning::
+        SHOULD NOT BE SET DIRECTLY!
+    """
     message: BaseMessage
     """The message output by the chat model."""
     # Override type to be ChatGeneration, ignore mypy error as this is intentional
@@ -60,8 +64,6 @@ class ChatGeneration(Generation):
                 if isinstance(block, dict) and "text" in block:
                     text = block["text"]
                     break
-        else:
-            pass
         self.text = text
         return self
 

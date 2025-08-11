@@ -121,12 +121,13 @@ def __getattr__(name: str) -> Any:
         relative_path = as_import_path(Path(__file__).parent, suffix=name)
         old_path = "langchain." + relative_path
         new_path = "langchain_experimental." + relative_path
-        raise ImportError(
+        msg = (
             f"{name} has been moved to langchain experimental. "
             "See https://github.com/langchain-ai/langchain/discussions/11680"
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
+        raise ImportError(msg)
     return _import_attribute(name)
 
 
@@ -139,28 +140,28 @@ __all__ = [
     "JiraToolkit",
     "JsonToolkit",
     "MultionToolkit",
-    "NasaToolkit",
     "NLAToolkit",
+    "NasaToolkit",
     "O365Toolkit",
     "OpenAPIToolkit",
     "PlayWrightBrowserToolkit",
     "PowerBIToolkit",
-    "SlackToolkit",
-    "SteamToolkit",
     "SQLDatabaseToolkit",
+    "SlackToolkit",
     "SparkSQLToolkit",
+    "SteamToolkit",
     "VectorStoreInfo",
     "VectorStoreRouterToolkit",
     "VectorStoreToolkit",
     "ZapierToolkit",
+    "create_conversational_retrieval_agent",
     "create_json_agent",
     "create_openapi_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
+    "create_retriever_tool",
     "create_spark_sql_agent",
     "create_sql_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
-    "create_conversational_retrieval_agent",
-    "create_retriever_tool",
 ]

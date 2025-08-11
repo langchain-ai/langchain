@@ -53,6 +53,6 @@ __all__ = [
     "PDFMinerParser",
     "PDFPlumberParser",
     "PyMuPDFParser",
-    "PyPDFium2Parser",
     "PyPDFParser",
+    "PyPDFium2Parser",
 ]

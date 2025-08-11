@@ -1,5 +1,7 @@
 """Tool for the Exa Search API."""
 
+from __future__ import annotations
+
 from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
@@ -17,7 +19,7 @@ from langchain_exa._utilities import initialize_client
 
 
 class ExaSearchResults(BaseTool):  # type: ignore[override]
-    """Exa Search tool.
+    r"""Exa Search tool.
 
     Setup:
         Install ``langchain-exa`` and set environment variable ``EXA_API_KEY``.
@@ -68,29 +70,29 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
     @classmethod
     def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
-        values = initialize_client(values)
-        return values
+        return initialize_client(values)
 
     def _run(
         self,
         query: str,
         num_results: int = 10,
-        text_contents_options: Optional[
+        text_contents_options: Optional[  # noqa: FBT001
             Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
+        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
-        use_autoprompt: Optional[bool] = None,
+        use_autoprompt: Optional[bool] = None,  # noqa: FBT001
         livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, dict[str, str]]] = None,
-        type: Optional[Literal["neural", "keyword", "auto"]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
+        type: Optional[Literal["neural", "keyword", "auto"]] = None,  # noqa: A002
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
+        # TODO: rename `type` to something else, as it is a reserved keyword
         """Use the tool.
 
         Args:
@@ -109,13 +111,14 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
             type: The type of search, 'keyword', 'neural', or 'auto'.
             run_manager: The run manager for callbacks.
+
         """  # noqa: E501
         try:
             return self.client.search_and_contents(
                 query,
                 num_results=num_results,
-                text=text_contents_options,  # type: ignore
-                highlights=highlights,  # type: ignore
+                text=text_contents_options,
+                highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -126,7 +129,7 @@ class ExaSearchResults(BaseTool):  # type: ignore[override]
                 livecrawl=livecrawl,
                 summary=summary,
                 type=type,
-            )  # type: ignore
+            )  # type: ignore[call-overload, misc]
         except Exception as e:
             return repr(e)
 
@@ -148,27 +151,26 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     @classmethod
     def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
-        values = initialize_client(values)
-        return values
+        return initialize_client(values)
 
     def _run(
         self,
         url: str,
         num_results: int = 10,
-        text_contents_options: Optional[
+        text_contents_options: Optional[  # noqa: FBT001
             Union[TextContentsOptions, dict[str, Any], bool]
         ] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
+        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
         include_domains: Optional[list[str]] = None,
         exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
-        exclude_source_domain: Optional[bool] = None,
+        exclude_source_domain: Optional[bool] = None,  # noqa: FBT001
         category: Optional[str] = None,
         livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
-        summary: Optional[Union[bool, dict[str, str]]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
         run_manager: Optional[CallbackManagerForToolRun] = None,
     ) -> Union[list[dict], str]:
         """Use the tool.
@@ -189,13 +191,14 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
             livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
             summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
             run_manager: The run manager for callbacks.
+
         """  # noqa: E501
         try:
             return self.client.find_similar_and_contents(
                 url,
                 num_results=num_results,
-                text=text_contents_options,  # type: ignore
-                highlights=highlights,  # type: ignore
+                text=text_contents_options,
+                highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -206,6 +209,6 @@ class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
                 category=category,
                 livecrawl=livecrawl,
                 summary=summary,
-            )  # type: ignore
+            )  # type: ignore[call-overload, misc]
         except Exception as e:
             return repr(e)

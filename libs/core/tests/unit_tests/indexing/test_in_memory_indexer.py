@@ -24,7 +24,7 @@ class TestDocumentIndexerTestSuite(DocumentIndexerTestSuite):
 class TestAsyncDocumentIndexerTestSuite(AsyncDocumentIndexTestSuite):
     # Something funky is going on with mypy and async pytest fixture
     @pytest.fixture
-    async def index(self) -> AsyncGenerator[DocumentIndex, None]:  # type: ignore[override]
+    async def index(self) -> AsyncGenerator[DocumentIndex, None]:
         yield InMemoryDocumentIndex()  # noqa: PT022
 
 

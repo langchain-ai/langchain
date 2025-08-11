@@ -53,4 +53,4 @@ from langchain.evaluation.criteria.eval_chain import (
     LabeledCriteriaEvalChain,
 )
 
-__all__ = ["CriteriaEvalChain", "LabeledCriteriaEvalChain", "Criteria"]
+__all__ = ["Criteria", "CriteriaEvalChain", "LabeledCriteriaEvalChain"]

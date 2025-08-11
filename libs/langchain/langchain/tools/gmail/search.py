@@ -24,7 +24,7 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "GmailSearch",
     "Resource",
     "SearchArgsSchema",
-    "GmailSearch",
 ]

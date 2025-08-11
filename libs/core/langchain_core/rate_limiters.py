@@ -123,6 +123,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
 
     .. versionadded:: 0.2.24
+
     """  # noqa: E501
 
     def __init__(
@@ -146,13 +147,12 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         Args:
             requests_per_second: The number of tokens to add per second to the bucket.
-                Must be at least 1. The tokens represent "credit" that can be used
-                to make requests.
+                The tokens represent "credit" that can be used to make requests.
             check_every_n_seconds: check whether the tokens are available
                 every this many seconds. Can be a float to represent
                 fractions of a second.
             max_bucket_size: The maximum number of tokens that can be in the bucket.
-                This is used to prevent bursts of requests.
+                Must be at least 1. Used to prevent bursts of requests.
         """
         # Number of requests that we can make per second.
         self.requests_per_second = requests_per_second

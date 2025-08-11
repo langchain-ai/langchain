@@ -1,12 +1,13 @@
 """python scripts/update_mypy_ruff.py"""
 
 import glob
-import tomllib
+import re
+import subprocess
 from pathlib import Path
 
-import toml
-import subprocess
-import re
+# Ignoring errors since this script is run in a controlled environment
+import toml  # type: ignore # pyright: ignore[reportMissingModuleSource]
+import tomllib  # type: ignore # pyright: ignore[reportMissingImports]
 
 ROOT_DIR = Path(__file__).parents[1]
 
@@ -32,7 +33,7 @@ def main():
         cwd = "/".join(path.split("/")[:-1])
 
         subprocess.run(
-            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --fix .",
             cwd=cwd,
             shell=True,
             capture_output=True,
@@ -50,10 +51,9 @@ def main():
 
         to_ignore = {}
         for l in logs:
-            if re.match("^(.*)\:(\d+)\: error:.*\[(.*)\]", l):
-                path, line_no, error_type = re.match(
-                    "^(.*)\:(\d+)\: error:.*\[(.*)\]", l
-                ).groups()
+            match = re.match(r"^(.*):(\d+): error:.*\[(.*)\]", l)
+            if match:
+                path, line_no, error_type = match.groups()
                 if (path, line_no) in to_ignore:
                     to_ignore[(path, line_no)].append(error_type)
                 else:
@@ -74,12 +74,13 @@ def main():
                 f.write("".join(file_lines))
 
         subprocess.run(
-            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --select I --fix .",
+            "poetry lock --no-update; poetry install --with lint; poetry run ruff format .; poetry run ruff --fix .",
             cwd=cwd,
             shell=True,
             capture_output=True,
             text=True,
         )
+
 
 if __name__ == "__main__":
     main()

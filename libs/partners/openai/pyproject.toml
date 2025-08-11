@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.66",
+    "langchain-core<1.0.0,>=0.3.74",
     "openai<2.0.0,>=1.86.0",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.27"
+version = "0.3.29"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -40,7 +40,7 @@ test = [
     "langchain-tests",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff<0.13,>=0.12.2"]
 dev = ["langchain-core"]
 test_integration = [
     "httpx<1.0.0,>=0.27.0",
@@ -65,11 +65,14 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "UP045" ]
 
 [tool.ruff.format]
 docstring-code-format = true
 skip-magic-trailing-comma = true
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
 
 [tool.coverage.run]
 omit = ["tests/*"]

@@ -3,7 +3,7 @@
 import random
 import re
 import string
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable
 
 import pytest
 from langchain_core.documents import Document
@@ -98,10 +98,10 @@ def test_character_text_splitter_longer_words() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -120,10 +120,10 @@ def test_character_text_splitter_keep_separator_regex(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_start(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the start of each chunk.
@@ -142,10 +142,10 @@ def test_character_text_splitter_keep_separator_regex_start(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_end(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the end of each chunk.
@@ -164,10 +164,10 @@ def test_character_text_splitter_keep_separator_regex_end(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -212,6 +212,11 @@ def test_character_text_splitting_args() -> None:
     """Test invalid arguments."""
     with pytest.raises(ValueError):
         CharacterTextSplitter(chunk_size=2, chunk_overlap=4)
+    for invalid_size in (0, -1):
+        with pytest.raises(ValueError):
+            CharacterTextSplitter(chunk_size=invalid_size)
+    with pytest.raises(ValueError):
+        CharacterTextSplitter(chunk_size=2, chunk_overlap=-1)
 
 
 def test_merge_splits() -> None:
@@ -250,7 +255,7 @@ def test_create_documents_with_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    "splitter, text, expected_docs",
+    ("splitter", "text", "expected_docs"),
     [
         (
             CharacterTextSplitter(
@@ -282,7 +287,7 @@ def test_create_documents_with_metadata() -> None:
     ],
 )
 def test_create_documents_with_start_index(
-    splitter: TextSplitter, text: str, expected_docs: List[Document]
+    splitter: TextSplitter, text: str, expected_docs: list[Document]
 ) -> None:
     """Test create documents method."""
     docs = splitter.create_documents([text])
@@ -333,7 +338,9 @@ def test_iterative_text_splitter_discard_separator() -> None:
     ]
 
 
-def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+def __test_iterative_text_splitter(
+    *, chunk_size: int, keep_separator: bool
+) -> list[str]:
     chunk_size += 1 if keep_separator else 0
 
     splitter = RecursiveCharacterTextSplitter(
@@ -1390,7 +1397,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize(["fence", "other_fence"], [("```", "~~~"), ("~~~", "```")])
+@pytest.mark.parametrize(("fence", "other_fence"), [("```", "~~~"), ("~~~", "```")])
 def test_md_header_text_splitter_fenced_code_block_interleaved(
     fence: str, other_fence: str
 ) -> None:
@@ -2224,7 +2231,7 @@ def test_haskell_code_splitter() -> None:
 @pytest.fixture
 @pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
-    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+    [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
@@ -2232,7 +2239,7 @@ def html_header_splitter_splitter_factory() -> Callable[
     """
 
     def _create_splitter(
-        headers_to_split_on: List[Tuple[str, str]],
+        headers_to_split_on: list[tuple[str, str]],
     ) -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
@@ -2240,7 +2247,7 @@ def html_header_splitter_splitter_factory() -> Callable[
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_input, expected_documents, test_case",
+    ("headers_to_split_on", "html_input", "expected_documents", "test_case"),
     [
         (
             # Test Case 1: Split on h1 and h2
@@ -2426,9 +2433,9 @@ def html_header_splitter_splitter_factory() -> Callable[
 @pytest.mark.requires("bs4")
 def test_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_input: str,
-    expected_documents: List[Document],
+    expected_documents: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2469,7 +2476,7 @@ def test_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case A: Split on h1 and h2 with h3 in content
@@ -2582,9 +2589,9 @@ def test_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_additional_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2624,7 +2631,7 @@ def test_additional_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case C: Split on h1, h2, and h3 with no headers present
@@ -2653,9 +2660,9 @@ def test_additional_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_html_no_headers_with_multiple_splitters(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -3033,6 +3040,82 @@ $csvContent | ForEach-Object {
         '$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"',
         "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
+    ]
+
+
+FAKE_VISUALBASIC6_TEXT = """
+Option Explicit
+
+Public Function SumTwoIntegers(ByVal a As Integer, ByVal b As Integer) As Integer
+    SumTwoIntegers = a + b
+End Function
+
+Public Sub Main()
+    Dim i As Integer
+    Dim limit As Integer
+
+    i = 0
+    limit = 50
+
+    While i < limit
+        i = SumTwoIntegers(i, 1)
+
+        If i = limit \\ 2 Then
+            MsgBox "Halfway there! i = " & i
+        End If
+    Wend
+
+    MsgBox "Done! Final value of i: " & i
+End Sub
+"""
+
+
+def test_visualbasic6_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.VISUALBASIC6,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=0,
+    )
+    chunks = splitter.split_text(FAKE_VISUALBASIC6_TEXT)
+
+    assert chunks == [
+        "Option Explicit",
+        "Public Function",
+        "SumTwoIntegers(",
+        "ByVal",
+        "a As Integer,",
+        "ByVal b As",
+        "Integer) As",
+        "Integer",
+        "SumTwoIntegers",
+        "= a + b",
+        "End Function",
+        "Public Sub",
+        "Main()",
+        "Dim i As",
+        "Integer",
+        "Dim limit",
+        "As Integer",
+        "i = 0",
+        "limit = 50",
+        "While i <",
+        "limit",
+        "i =",
+        "SumTwoIntegers(",
+        "i,",
+        "1)",
+        "If i =",
+        "limit \\ 2 Then",
+        'MsgBox "Halfway',
+        'there! i = " &',
+        "i",
+        "End If",
+        "Wend",
+        "MsgBox",
+        '"Done! Final',
+        'value of i: " &',
+        "i",
+        "End Sub",
     ]
 
 
@@ -3551,7 +3634,7 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator,is_regex,text,chunk_size,expected",
+    ("separator", "is_regex", "text", "chunk_size", "expected"),
     [
         # 1) regex lookaround & split happens
         #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
@@ -3569,10 +3652,11 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 )
 def test_character_text_splitter_chunk_size_effect(
     separator: str,
+    *,
     is_regex: bool,
     text: str,
     chunk_size: int,
-    expected: List[str],
+    expected: list[str],
 ) -> None:
     splitter = CharacterTextSplitter(
         separator=separator,

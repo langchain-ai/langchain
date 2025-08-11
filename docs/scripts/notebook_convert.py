@@ -175,8 +175,23 @@ def _modify_frontmatter(
 def _convert_notebook(
     notebook_path: Path, output_path: Path, intermediate_docs_dir: Path
 ) -> Path:
-    with open(notebook_path) as f:
-        nb = nbformat.read(f, as_version=4)
+    import json
+    import uuid
+
+    with open(notebook_path, "r", encoding="utf-8") as f:
+        nb_json = json.load(f)
+
+    # Fix missing and duplicate cell IDs before nbformat validation
+    seen_ids = set()
+    for cell in nb_json.get("cells", []):
+        if "id" not in cell or not cell.get("id") or cell.get("id") in seen_ids:
+            cell["id"] = str(uuid.uuid4())[:8]
+        seen_ids.add(cell["id"])
+
+    nb = nbformat.reads(json.dumps(nb_json), as_version=4)
+
+    # Upgrade notebook format
+    nb = nbformat.v4.upgrade(nb)
 
     body, resources = exporter.from_notebook_node(nb)
 

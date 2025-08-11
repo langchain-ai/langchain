@@ -23,7 +23,6 @@ def test_qdrant_from_existing_collection_uses_same_collection(
     sparse_vector_name: str,
 ) -> None:
     """Test if the QdrantVectorStore.from_existing_collection reuses the collection."""
-
     collection_name = uuid.uuid4().hex
     docs = ["foo"]
     QdrantVectorStore.from_texts(
@@ -48,4 +47,4 @@ def test_qdrant_from_existing_collection_uses_same_collection(
     )
     qdrant.add_texts(["baz", "bar"])
 
-    assert 3 == qdrant.client.count(collection_name).count
+    assert qdrant.client.count(collection_name).count == 3

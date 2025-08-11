@@ -43,12 +43,12 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "satisfies_min_unstructured_version",
-    "validate_unstructured_version",
+    "UnstructuredAPIFileIOLoader",
+    "UnstructuredAPIFileLoader",
     "UnstructuredBaseLoader",
+    "UnstructuredFileIOLoader",
     "UnstructuredFileLoader",
     "get_elements_from_api",
-    "UnstructuredAPIFileLoader",
-    "UnstructuredFileIOLoader",
-    "UnstructuredAPIFileIOLoader",
+    "satisfies_min_unstructured_version",
+    "validate_unstructured_version",
 ]

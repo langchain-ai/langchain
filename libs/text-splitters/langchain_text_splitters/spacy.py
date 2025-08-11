@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
 
@@ -31,7 +31,7 @@ class SpacyTextSplitter(TextSplitter):
         self._separator = separator
         self._strip_whitespace = strip_whitespace
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         splits = (
             s.text if self._strip_whitespace else s.text_with_ws
@@ -45,12 +45,13 @@ def _make_spacy_pipeline_for_splitting(
 ) -> Any:  # avoid importing spacy
     try:
         import spacy
-    except ImportError:
-        raise ImportError(
-            "Spacy is not installed, please install it with `pip install spacy`."
-        )
+    except ImportError as err:
+        msg = "Spacy is not installed, please install it with `pip install spacy`."
+        raise ImportError(msg) from err
     if pipeline == "sentencizer":
-        sentencizer: Any = spacy.lang.en.English()
+        from spacy.lang.en import English
+
+        sentencizer: Any = English()
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])

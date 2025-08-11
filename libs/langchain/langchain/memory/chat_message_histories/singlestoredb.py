@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "SingleStoreDBChatMessageHistory": "langchain_community.chat_message_histories"
+    "SingleStoreDBChatMessageHistory": "langchain_community.chat_message_histories",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

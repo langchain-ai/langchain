@@ -45,24 +45,27 @@ class ChatOutputParser(AgentOutputParser):
             found = self.pattern.search(text)
             if not found:
                 # Fast fail to parse Final Answer.
-                raise ValueError("action not found")
+                msg = "action not found"
+                raise ValueError(msg)
             action = found.group(1)
             response = json.loads(action.strip())
             includes_action = "action" in response
             if includes_answer and includes_action:
-                raise OutputParserException(
+                msg = (
                     "Parsing LLM output produced a final answer "
                     f"and a parse-able action: {text}"
                 )
+                raise OutputParserException(msg)
             return AgentAction(
-                response["action"], response.get("action_input", {}), text
+                response["action"],
+                response.get("action_input", {}),
+                text,
             )
 
         except Exception as exc:
             if not includes_answer:
-                raise OutputParserException(
-                    f"Could not parse LLM output: {text}"
-                ) from exc
+                msg = f"Could not parse LLM output: {text}"
+                raise OutputParserException(msg) from exc
             output = text.split(FINAL_ANSWER_ACTION)[-1].strip()
             return AgentFinish({"output": output}, text)
 

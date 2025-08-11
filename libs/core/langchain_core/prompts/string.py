@@ -131,12 +131,12 @@ def mustache_template_vars(
         if type_ == "end":
             section_depth -= 1
         elif (
-            type_ in ("variable", "section", "inverted section", "no escape")
+            type_ in {"variable", "section", "inverted section", "no escape"}
             and key != "."
             and section_depth == 0
         ):
             variables.add(key.split(".")[0])
-        if type_ in ("section", "inverted section"):
+        if type_ in {"section", "inverted section"}:
             section_depth += 1
     return variables
 
@@ -164,11 +164,11 @@ def mustache_schema(
         if type_ == "end":
             if section_stack:
                 prefix = section_stack.pop()
-        elif type_ in ("section", "inverted section"):
+        elif type_ in {"section", "inverted section"}:
             section_stack.append(prefix)
             prefix = prefix + tuple(key.split("."))
             fields[prefix] = False
-        elif type_ in ("variable", "no escape"):
+        elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
     defs: Defs = {}  # None means leaf node
     while fields:

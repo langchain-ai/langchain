@@ -1,6 +1,5 @@
 import os
 from abc import abstractmethod
-from typing import Tuple, Type
 from unittest import mock
 
 import pytest
@@ -11,13 +10,11 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """
-    :private:
-    """
+    """:private:"""
 
     @property
     @abstractmethod
-    def embeddings_class(self) -> Type[Embeddings]: ...
+    def embeddings_class(self) -> type[Embeddings]: ...
 
     @property
     def embedding_model_params(self) -> dict:
@@ -89,7 +86,8 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                             "my_api_key": "api_key",
                         },
                     )
-    """  # noqa: E501
+
+    """
 
     def test_init(self) -> None:
         """Test model initialization.
@@ -103,11 +101,12 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         assert model is not None
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         """This property is used in unit tests to test initialization from environment
         variables. It should return a tuple of three dictionaries that specify the
         environment variables, additional initialization args, and expected instance
-        attributes to check."""
+        attributes to check.
+        """
         return {}, {}, {}
 
     def test_init_from_env(self) -> None:

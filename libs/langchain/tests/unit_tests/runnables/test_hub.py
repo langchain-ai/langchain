@@ -13,7 +13,7 @@ def test_hub_runnable(mock_pull: Mock) -> None:
         [
             ("system", "a"),
             ("user", "b"),
-        ]
+        ],
     )
 
     basic: HubRunnable = HubRunnable("efriis/my-prompt")
@@ -27,18 +27,18 @@ repo_dict = {
         [
             ("system", "a"),
             ("user", "1"),
-        ]
+        ],
     ),
     "efriis/my-prompt-2": ChatPromptTemplate.from_messages(
         [
             ("system", "a"),
             ("user", "2"),
-        ]
+        ],
     ),
 }
 
 
-def repo_lookup(owner_repo_commit: str, **kwargs: Any) -> ChatPromptTemplate:
+def repo_lookup(owner_repo_commit: str, **_: Any) -> ChatPromptTemplate:
     return repo_dict[owner_repo_commit]
 
 
@@ -77,6 +77,6 @@ def test_hub_runnable_configurable_fields(mock_pull: Mock) -> None:
     assert templated_1.messages[1].content == "1"
 
     templated_2 = obj_configurable.with_config(
-        configurable={"owner_repo_commit": "efriis/my-prompt-2"}
+        configurable={"owner_repo_commit": "efriis/my-prompt-2"},
     ).invoke({})
     assert templated_2.messages[1].content == "2"

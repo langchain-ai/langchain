@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts import PromptTemplate
 
 DEFAULT_REFINE_PROMPT_TMPL = (

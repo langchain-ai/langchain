@@ -1,5 +1,4 @@
-"""
-Utilities for working with pydantic models.
+"""Utilities for working with pydantic models.
 
 :private:
 """

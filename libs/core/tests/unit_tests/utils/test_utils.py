@@ -9,6 +9,7 @@ import pytest
 from pydantic import SecretStr
 
 from langchain_core import utils
+from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -375,3 +376,10 @@ def test_using_secret_from_env_as_default_factory(
 
     with pytest.raises(ValueError, match="Did not find FOOFOOFOOBAR"):
         OhMy()
+
+
+def test_generation_chunk_addition_type_error() -> None:
+    chunk1 = GenerationChunk(text="", generation_info={"len": 0})
+    chunk2 = GenerationChunk(text="Non-empty text", generation_info={"len": 14})
+    result = chunk1 + chunk2
+    assert result == GenerationChunk(text="Non-empty text", generation_info={"len": 14})

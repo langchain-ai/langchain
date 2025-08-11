@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "SearchType",
     "Neo4jVector",
+    "SearchType",
 ]

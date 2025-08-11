@@ -49,10 +49,11 @@ def create_history_aware_retriever(
 
     """
     if "input" not in prompt.input_variables:
-        raise ValueError(
+        msg = (
             "Expected `input` to be a prompt variable, "
             f"but got {prompt.input_variables}"
         )
+        raise ValueError(msg)
 
     retrieve_documents: RetrieverOutputLike = RunnableBranch(
         (

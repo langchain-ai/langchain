@@ -111,6 +111,7 @@ def get_buffer_string(
             ]
             get_buffer_string(messages)
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+
     """
     string_messages = []
     for m in messages:
@@ -138,34 +139,34 @@ def get_buffer_string(
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
-    _type = message["type"]
-    if _type == "human":
+    type_ = message["type"]
+    if type_ == "human":
         return HumanMessage(**message["data"])
-    if _type == "ai":
+    if type_ == "ai":
         return AIMessage(**message["data"])
-    if _type == "system":
+    if type_ == "system":
         return SystemMessage(**message["data"])
-    if _type == "chat":
+    if type_ == "chat":
         return ChatMessage(**message["data"])
-    if _type == "function":
+    if type_ == "function":
         return FunctionMessage(**message["data"])
-    if _type == "tool":
+    if type_ == "tool":
         return ToolMessage(**message["data"])
-    if _type == "remove":
+    if type_ == "remove":
         return RemoveMessage(**message["data"])
-    if _type == "AIMessageChunk":
+    if type_ == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
-    if _type == "HumanMessageChunk":
+    if type_ == "HumanMessageChunk":
         return HumanMessageChunk(**message["data"])
-    if _type == "FunctionMessageChunk":
+    if type_ == "FunctionMessageChunk":
         return FunctionMessageChunk(**message["data"])
-    if _type == "ToolMessageChunk":
+    if type_ == "ToolMessageChunk":
         return ToolMessageChunk(**message["data"])
-    if _type == "SystemMessageChunk":
+    if type_ == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
-    if _type == "ChatMessageChunk":
+    if type_ == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
-    msg = f"Got unexpected message type: {_type}"
+    msg = f"Got unexpected message type: {type_}"
     raise ValueError(msg)
 
 
@@ -212,7 +213,7 @@ def _create_message_from_message_type(
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -263,15 +264,15 @@ def _create_message_from_message_type(
                 )
             else:
                 kwargs["tool_calls"].append(tool_call)
-    if message_type in ("human", "user"):
+    if message_type in {"human", "user"}:
         if example := kwargs.get("additional_kwargs", {}).pop("example", False):
             kwargs["example"] = example
         message: BaseMessage = HumanMessage(content=content, **kwargs)
-    elif message_type in ("ai", "assistant"):
+    elif message_type in {"ai", "assistant"}:
         if example := kwargs.get("additional_kwargs", {}).pop("example", False):
             kwargs["example"] = example
         message = AIMessage(content=content, **kwargs)
-    elif message_type in ("system", "developer"):
+    elif message_type in {"system", "developer"}:
         if message_type == "developer":
             kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
             kwargs["additional_kwargs"]["__openai_role__"] = "developer"
@@ -315,13 +316,13 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, BaseMessage):
-        _message = message
+        message_ = message
     elif isinstance(message, str):
-        _message = _create_message_from_message_type("human", message)
+        message_ = _create_message_from_message_type("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
         # mypy doesn't realise this can't be a string given the previous branch
         message_type_str, template = message  # type: ignore[misc]
-        _message = _create_message_from_message_type(message_type_str, template)
+        message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -337,7 +338,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
             )
             raise ValueError(msg) from e
-        _message = _create_message_from_message_type(
+        message_ = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
     else:
@@ -345,7 +346,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise NotImplementedError(msg)
 
-    return _message
+    return message_
 
 
 def convert_to_messages(
@@ -370,7 +371,7 @@ def convert_to_messages(
 def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
-        messages: Literal[None] = None, **kwargs: Any
+        messages: None = None, **kwargs: Any
     ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
 
     @overload
@@ -463,6 +464,7 @@ def filter_messages(
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
+
     """  # noqa: E501
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
@@ -519,8 +521,6 @@ def filter_messages(
             or (include_ids and msg.id in include_ids)
         ):
             filtered.append(msg)
-        else:
-            pass
 
     return filtered
 
@@ -656,22 +656,23 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
-       by a `HumanMessage`. To achieve this, set `start_on="human"`.
-       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage`` followed
+       by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
-       To achieve this set the `strategy="last"`.
-    3. Usually, the new chat history should include the `SystemMessage` if it
-       was present in the original chat history since the `SystemMessage` includes
-       special instructions to the chat model. The `SystemMessage` is almost always
+       To achieve this set the ``strategy="last"``.
+    3. Usually, the new chat history should include the ``SystemMessage`` if it
+       was present in the original chat history since the ``SystemMessage`` includes
+       special instructions to the chat model. The ``SystemMessage`` is almost always
        the first message in the history if present. To achieve this set the
-       `include_system=True`.
+       ``include_system=True``.
 
-    **Note** The examples below show how to configure `trim_messages` to achieve
-        a behavior consistent with the above properties.
+    .. note::
+        The examples below show how to configure ``trim_messages`` to achieve a behavior
+        consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
@@ -871,6 +872,7 @@ def trim_messages(
                     HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
                     AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
                 ]
+
     """  # noqa: E501
     # Validate arguments
     if start_on and strategy == "first":
@@ -1000,7 +1002,7 @@ def convert_to_openai_messages(
     .. versionadded:: 0.3.11
 
     """  # noqa: E501
-    if text_format not in ("string", "block"):
+    if text_format not in {"string", "block"}:
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
@@ -1125,8 +1127,7 @@ def convert_to_openai_messages(
                                 "type": "image_url",
                                 "image_url": {
                                     "url": (
-                                        f"data:image/{image['format']};"
-                                        f"base64,{b64_image}"
+                                        f"data:image/{image['format']};base64,{b64_image}"
                                     )
                                 },
                             }
@@ -1179,7 +1180,9 @@ def convert_to_openai_messages(
                                 "id": block["id"],
                                 "function": {
                                     "name": block["name"],
-                                    "arguments": json.dumps(block["input"]),
+                                    "arguments": json.dumps(
+                                        block["input"], ensure_ascii=False
+                                    ),
                                 },
                             }
                         )
@@ -1341,8 +1344,8 @@ def _first_max_tokens(
                 excluded.content = list(reversed(excluded.content))
             for _ in range(1, num_block):
                 excluded.content = excluded.content[:-1]
-                if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                    messages = messages[:idx] + [excluded]
+                if token_counter([*messages[:idx], excluded]) <= max_tokens:
+                    messages = [*messages[:idx], excluded]
                     idx += 1
                     included_partial = True
                     break
@@ -1393,7 +1396,7 @@ def _first_max_tokens(
                     if partial_strategy == "last":
                         content_splits = list(reversed(content_splits))
                     excluded.content = "".join(content_splits)
-                    messages = messages[:idx] + [excluded]
+                    messages = [*messages[:idx], excluded]
                     idx += 1
 
     if end_on:
@@ -1553,7 +1556,7 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
             "id": tool_call["id"],
             "function": {
                 "name": tool_call["name"],
-                "arguments": json.dumps(tool_call["args"]),
+                "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             },
         }
         for tool_call in tool_calls
@@ -1578,26 +1581,26 @@ def count_tokens_approximately(
         chars_per_token: Number of characters per token to use for the approximation.
             Default is 4 (one token corresponds to ~4 chars for common English text).
             You can also specify float values for more fine-grained control.
-            See more here: https://platform.openai.com/tokenizer
+            `See more here. <https://platform.openai.com/tokenizer>`__
         extra_tokens_per_message: Number of extra tokens to add per message.
             Default is 3 (special tokens, including beginning/end of message).
             You can also specify float values for more fine-grained control.
-            See more here:
-            https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+            `See more here. <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>`__
         count_name: Whether to include message names in the count.
             Enabled by default.
 
     Returns:
         Approximate number of tokens in the messages.
 
-    Note:
-        This is a simple approximation that may not match the exact token count
-        used by specific models. For accurate counts, use model-specific tokenizers.
+    .. note::
+        This is a simple approximation that may not match the exact token count used by
+        specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
     .. versionadded:: 0.3.46
+
     """
     token_count = 0.0
     for message in convert_to_messages(messages):

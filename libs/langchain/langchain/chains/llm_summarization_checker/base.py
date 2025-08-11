@@ -30,9 +30,10 @@ def _load_sequential_chain(
     check_assertions_prompt: PromptTemplate,
     revised_summary_prompt: PromptTemplate,
     are_all_true_prompt: PromptTemplate,
+    *,
     verbose: bool = False,
 ) -> SequentialChain:
-    chain = SequentialChain(
+    return SequentialChain(
         chains=[
             LLMChain(
                 llm=llm,
@@ -63,7 +64,6 @@ def _load_sequential_chain(
         output_variables=["all_true", "revised_summary"],
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -85,6 +85,7 @@ class LLMSummarizationCheckerChain(Chain):
             from langchain.chains import LLMSummarizationCheckerChain
             llm = OpenAI(temperature=0.0)
             checker_chain = LLMSummarizationCheckerChain.from_llm(llm)
+
     """
 
     sequential_chain: SequentialChain
@@ -112,12 +113,13 @@ class LLMSummarizationCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMSummarizationCheckerChain with an llm is "
                 "deprecated. Please instantiate with"
-                " sequential_chain argument or using the from_llm class method."
+                " sequential_chain argument or using the from_llm class method.",
+                stacklevel=5,
             )
             if "sequential_chain" not in values and values["llm"] is not None:
                 values["sequential_chain"] = _load_sequential_chain(
@@ -159,7 +161,8 @@ class LLMSummarizationCheckerChain(Chain):
         chain_input = original_input
         while not all_true and count < self.max_checks:
             output = self.sequential_chain(
-                {"summary": chain_input}, callbacks=_run_manager.get_child()
+                {"summary": chain_input},
+                callbacks=_run_manager.get_child(),
             )
             count += 1
 
@@ -172,7 +175,8 @@ class LLMSummarizationCheckerChain(Chain):
             chain_input = output["revised_summary"]
 
         if not output:
-            raise ValueError("No output from chain")
+            msg = "No output from chain"
+            raise ValueError(msg)
 
         return {self.output_key: output["revised_summary"].strip()}
 
@@ -188,9 +192,20 @@ class LLMSummarizationCheckerChain(Chain):
         check_assertions_prompt: PromptTemplate = CHECK_ASSERTIONS_PROMPT,
         revised_summary_prompt: PromptTemplate = REVISED_SUMMARY_PROMPT,
         are_all_true_prompt: PromptTemplate = ARE_ALL_TRUE_PROMPT,
-        verbose: bool = False,
+        verbose: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> LLMSummarizationCheckerChain:
+        """Create a LLMSummarizationCheckerChain from a language model.
+
+        Args:
+            llm: a language model
+            create_assertions_prompt: prompt to create assertions
+            check_assertions_prompt: prompt to check assertions
+            revised_summary_prompt: prompt to revise summary
+            are_all_true_prompt: prompt to check if all assertions are true
+            verbose: whether to print verbose output
+            **kwargs: additional arguments
+        """
         chain = _load_sequential_chain(
             llm,
             create_assertions_prompt,

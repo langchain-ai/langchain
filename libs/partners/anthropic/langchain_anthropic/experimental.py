@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import (
     Any,
@@ -66,7 +68,7 @@ def get_system_message(tools: list[dict]) -> str:
                         parameter_description=parameter.get("description"),
                     )
                     for name, parameter in tool["parameters"]["properties"].items()
-                ]
+                ],
             ),
         }
         for tool in tools
@@ -79,7 +81,7 @@ def get_system_message(tools: list[dict]) -> str:
                 formatted_parameters=tool["formatted_parameters"],
             )
             for tool in tools_data
-        ]
+        ],
     )
     return SYSTEM_PROMPT_FORMAT.format(formatted_tools=tools_formatted)
 
@@ -111,18 +113,20 @@ def _xml_to_function_call(invoke: Any, tools: list[dict]) -> dict[str, Any]:
     if len(filtered_tools) > 0 and not isinstance(arguments, str):
         tool = filtered_tools[0]
         for key, value in arguments.items():
-            if key in tool["parameters"]["properties"]:
-                if "type" in tool["parameters"]["properties"][key]:
-                    if tool["parameters"]["properties"][key][
-                        "type"
-                    ] == "array" and not isinstance(value, list):
-                        arguments[key] = [value]
-                    if (
-                        tool["parameters"]["properties"][key]["type"] != "object"
-                        and isinstance(value, dict)
-                        and len(value.keys()) == 1
-                    ):
-                        arguments[key] = list(value.values())[0]
+            if (
+                key in tool["parameters"]["properties"]
+                and "type" in tool["parameters"]["properties"][key]
+            ):
+                if tool["parameters"]["properties"][key][
+                    "type"
+                ] == "array" and not isinstance(value, list):
+                    arguments[key] = [value]
+                if (
+                    tool["parameters"]["properties"][key]["type"] != "object"
+                    and isinstance(value, dict)
+                    and len(value.keys()) == 1
+                ):
+                    arguments[key] = next(iter(value.values()))
 
     return {
         "function": {
@@ -134,9 +138,7 @@ def _xml_to_function_call(invoke: Any, tools: list[dict]) -> dict[str, Any]:
 
 
 def _xml_to_tool_calls(elem: Any, tools: list[dict]) -> list[dict[str, Any]]:
-    """
-    Convert an XML element and its children into a dictionary of dictionaries.
-    """
+    """Convert an XML element and its children into a dictionary of dictionaries."""
     invokes = elem.findall("invoke")
 
     return [_xml_to_function_call(invoke, tools) for invoke in invokes]

@@ -132,6 +132,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
             runnable.invoke('hello')
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
+
     """
 
     input_type: Optional[type[Other]] = None
@@ -393,6 +394,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # Asynchronous example
             await runnable_assign.ainvoke({"input": 5})
             # returns {'input': 5, 'add_step': {'added': 15}}
+
     """
 
     mapper: RunnableParallel
@@ -697,6 +699,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             output_data = runnable.invoke(input_data)
 
             print(output_data)  # Output: {'name': 'John', 'age': 30}
+
     """
 
     keys: Union[str, list[str]]

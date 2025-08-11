@@ -3,6 +3,7 @@ from typing import Any
 
 from langchain_core.documents import Document
 from langchain_text_splitters.character import CharacterTextSplitter
+from typing_extensions import override
 
 from langchain.retrievers import ParentDocumentRetriever
 from langchain.storage import InMemoryStore
@@ -10,18 +11,24 @@ from tests.unit_tests.indexes.test_indexing import InMemoryVectorStore
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
+    @override
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
             return []
         return [res]
 
+    @override
     def add_documents(self, documents: Sequence[Document], **kwargs: Any) -> list[str]:
         print(documents)  # noqa: T201
         return super().add_documents(
-            documents, ids=[f"{i}" for i in range(len(documents))]
+            documents,
+            ids=[f"{i}" for i in range(len(documents))],
         )
 
 

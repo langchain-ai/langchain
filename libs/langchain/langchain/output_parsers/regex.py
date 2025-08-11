@@ -4,12 +4,14 @@ import re
 from typing import Optional
 
 from langchain_core.output_parsers import BaseOutputParser
+from typing_extensions import override
 
 
 class RegexParser(BaseOutputParser[dict[str, str]]):
     """Parse the output of an LLM call using a regex."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
@@ -30,11 +32,10 @@ class RegexParser(BaseOutputParser[dict[str, str]]):
         match = re.search(self.regex, text)
         if match:
             return {key: match.group(i + 1) for i, key in enumerate(self.output_keys)}
-        else:
-            if self.default_output_key is None:
-                raise ValueError(f"Could not parse output: {text}")
-            else:
-                return {
-                    key: text if key == self.default_output_key else ""
-                    for key in self.output_keys
-                }
+        if self.default_output_key is None:
+            msg = f"Could not parse output: {text}"
+            raise ValueError(msg)
+        return {
+            key: text if key == self.default_output_key else ""
+            for key in self.output_keys
+        }

@@ -30,13 +30,16 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
@@ -56,6 +59,7 @@ def _load_map_rerank_chain(
 
 def _load_stuff_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
@@ -74,6 +78,7 @@ def _load_stuff_chain(
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.COMBINE_PROMPT,
     document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
@@ -98,10 +103,11 @@ def _load_map_reduce_chain(
     if collapse_prompt is None:
         collapse_chain = None
         if collapse_llm is not None:
-            raise ValueError(
+            msg = (
                 "collapse_llm provided, but collapse_prompt was not: please "
                 "provide one or stop providing collapse_llm."
             )
+            raise ValueError(msg)
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
@@ -130,6 +136,7 @@ def _load_map_reduce_chain(
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = refine_prompts.DEFAULT_TEXT_QA_PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.DEFAULT_REFINE_PROMPT,
     document_prompt: BasePromptTemplate = refine_prompts.EXAMPLE_PROMPT,
@@ -162,16 +169,16 @@ def _load_refine_chain(
         "https://python.langchain.com/docs/how_to/qa_sources/"
         "\nSee also the following migration guides for replacements "
         "based on `chain_type`:\n"
-        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"  # noqa: E501
-        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"  # noqa: E501
-        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"  # noqa: E501
-        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"  # noqa: E501
+        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"
+        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"
+        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"
+        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"
     ),
 )
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,
+    verbose: Optional[bool] = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load a question answering with sources chain.
@@ -193,9 +200,10 @@ def load_qa_with_sources_chain(
         "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
-        raise ValueError(
+        msg = (
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
+        raise ValueError(msg)
     _func: LoadingCallable = loader_mapping[chain_type]
     return _func(llm, verbose=verbose, **kwargs)

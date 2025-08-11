@@ -90,6 +90,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             .. code-block:: python
 
                 prompt.format(variable1="foo")
+
         """
         formatted = {}
         for k, v in self.template.items():

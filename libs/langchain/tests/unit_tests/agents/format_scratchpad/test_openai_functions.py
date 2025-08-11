@@ -11,32 +11,41 @@ def test_calls_convert_agent_action_to_messages() -> None:
         "function_call": {
             "name": "tool1",
             "arguments": "input1",
-        }
+        },
     }
     message1 = AIMessage(content="", additional_kwargs=additional_kwargs1)
     action1 = AgentActionMessageLog(
-        tool="tool1", tool_input="input1", log="log1", message_log=[message1]
+        tool="tool1",
+        tool_input="input1",
+        log="log1",
+        message_log=[message1],
     )
     additional_kwargs2 = {
         "function_call": {
             "name": "tool2",
             "arguments": "input2",
-        }
+        },
     }
     message2 = AIMessage(content="", additional_kwargs=additional_kwargs2)
     action2 = AgentActionMessageLog(
-        tool="tool2", tool_input="input2", log="log2", message_log=[message2]
+        tool="tool2",
+        tool_input="input2",
+        log="log2",
+        message_log=[message2],
     )
 
     additional_kwargs3 = {
         "function_call": {
             "name": "tool3",
             "arguments": "input3",
-        }
+        },
     }
     message3 = AIMessage(content="", additional_kwargs=additional_kwargs3)
     action3 = AgentActionMessageLog(
-        tool="tool3", tool_input="input3", log="log3", message_log=[message3]
+        tool="tool3",
+        tool_input="input3",
+        log="log3",
+        message_log=[message3],
     )
 
     intermediate_steps = [

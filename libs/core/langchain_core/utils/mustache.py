@@ -107,7 +107,7 @@ def r_sa_check(
         bool: Whether the tag could be a standalone.
     """
     # Check right side if we might be a standalone
-    if is_standalone and tag_type not in ["variable", "no escape"]:
+    if is_standalone and tag_type not in {"variable", "no escape"}:
         on_newline = template.split("\n", 1)
 
         # If the stuff to the right of us are spaces we're a standalone
@@ -149,6 +149,11 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     except ValueError as e:
         msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
+
+    # Check for empty tags
+    if not tag.strip():
+        msg = f"empty tag at line {_CURRENT_LINE}"
+        raise ChevronError(msg)
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -255,7 +260,7 @@ def tokenize(
             l_del, r_del = dels[0], dels[-1]
 
         # If we are a section tag
-        elif tag_type in ["section", "inverted section"]:
+        elif tag_type in {"section", "inverted section"}:
             # Then open a new section
             open_sections.append(tag_key)
             _LAST_TAG_LINE = _CURRENT_LINE
@@ -301,7 +306,7 @@ def tokenize(
             yield ("literal", literal)
 
         # Ignore comments and set delimiters
-        if tag_type not in ["comment", "set delimiter?"]:
+        if tag_type not in {"comment", "set delimiter?"}:
             yield (tag_type, tag_key)
 
     # If there are any open sections when we're done
@@ -486,7 +491,7 @@ def render(
 
         # If the current scope is falsy and not the only scope
         elif not current_scope and len(scopes) != 1:
-            if tag in ["section", "inverted section"]:
+            if tag in {"section", "inverted section"}:
                 # Set the most recent scope to a falsy value
                 scopes.insert(0, False)
 

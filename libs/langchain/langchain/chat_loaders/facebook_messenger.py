@@ -29,4 +29,4 @@ def __getattr__(name: str) -> Any:
     return import_lookup(name)
 
 
-__all__ = ["SingleFileFacebookMessengerChatLoader", "FolderFacebookMessengerChatLoader"]
+__all__ = ["FolderFacebookMessengerChatLoader", "SingleFileFacebookMessengerChatLoader"]

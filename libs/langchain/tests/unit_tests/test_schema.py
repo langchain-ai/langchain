@@ -77,7 +77,7 @@ def test_serialization_of_wellknown_objects() -> None:
         ChatPromptValueConcrete(messages=[AIMessage(content="foo")]),
         ChatPromptValueConcrete(messages=[HumanMessage(content="human")]),
         ChatPromptValueConcrete(
-            messages=[ToolMessage(content="foo", tool_call_id="bar")]
+            messages=[ToolMessage(content="foo", tool_call_id="bar")],
         ),
         ChatPromptValueConcrete(messages=[SystemMessage(content="foo")]),
         Document(page_content="hello"),

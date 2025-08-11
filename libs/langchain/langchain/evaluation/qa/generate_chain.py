@@ -7,13 +7,15 @@ from typing import Any
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseLLMOutputParser
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.qa.generate_prompt import PROMPT
 from langchain.output_parsers.regex import RegexParser
 
 _QA_OUTPUT_PARSER = RegexParser(
-    regex=r"QUESTION: (.*?)\n+ANSWER: (.*)", output_keys=["query", "answer"]
+    regex=r"QUESTION: (.*?)\n+ANSWER: (.*)",
+    output_keys=["query", "answer"],
 )
 
 
@@ -24,6 +26,7 @@ class QAGenerateChain(LLMChain):
     output_key: str = "qa_pairs"
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

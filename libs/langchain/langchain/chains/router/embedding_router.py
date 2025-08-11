@@ -11,6 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.router.base import RouterChain
 
@@ -34,6 +35,7 @@ class EmbeddingRouterChain(RouterChain):
         """
         return self.routing_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -43,6 +45,7 @@ class EmbeddingRouterChain(RouterChain):
         results = self.vectorstore.similarity_search(_input, k=1)
         return {"next_inputs": inputs, "destination": results[0].metadata["name"]}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -63,10 +66,12 @@ class EmbeddingRouterChain(RouterChain):
         """Convenience constructor."""
         documents = []
         for name, descriptions in names_and_descriptions:
-            for description in descriptions:
-                documents.append(
+            documents.extend(
+                [
                     Document(page_content=description, metadata={"name": name})
-                )
+                    for description in descriptions
+                ]
+            )
         vectorstore = vectorstore_cls.from_documents(documents, embeddings)
         return cls(vectorstore=vectorstore, **kwargs)
 
@@ -80,10 +85,12 @@ class EmbeddingRouterChain(RouterChain):
     ) -> EmbeddingRouterChain:
         """Convenience constructor."""
         documents = []
-        for name, descriptions in names_and_descriptions:
-            for description in descriptions:
-                documents.append(
-                    Document(page_content=description, metadata={"name": name})
-                )
+        documents.extend(
+            [
+                Document(page_content=description, metadata={"name": name})
+                for name, descriptions in names_and_descriptions
+                for description in descriptions
+            ]
+        )
         vectorstore = await vectorstore_cls.afrom_documents(documents, embeddings)
         return cls(vectorstore=vectorstore, **kwargs)

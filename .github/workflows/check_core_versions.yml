@@ -1,10 +1,15 @@
-name: Check `langchain-core` version equality
+name: '🔍 Check `core` Version Equality'
+# Ensures version numbers in pyproject.toml and version.py stay in sync
+# Prevents releases with mismatched version numbers
 
 on:
   pull_request:
     paths:
       - 'libs/core/pyproject.toml'
       - 'libs/core/langchain_core/version.py'
+
+permissions:
+  contents: read
 
 jobs:
   check_version_equality:
@@ -13,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Check version equality
+      - name: '✅ Verify pyproject.toml & version.py Match'
         run: |
           PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
           VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' libs/core/langchain_core/version.py)

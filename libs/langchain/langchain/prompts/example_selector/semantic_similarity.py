@@ -5,7 +5,7 @@ from langchain_core.example_selectors.semantic_similarity import (
 )
 
 __all__ = [
-    "sorted_values",
-    "SemanticSimilarityExampleSelector",
     "MaxMarginalRelevanceExampleSelector",
+    "SemanticSimilarityExampleSelector",
+    "sorted_values",
 ]

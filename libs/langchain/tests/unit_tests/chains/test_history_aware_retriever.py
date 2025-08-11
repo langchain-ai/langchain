@@ -24,6 +24,6 @@ def test_create() -> None:
         {
             "input": "What is the answer?",
             "chat_history": ["hi", "hi"],
-        }
+        },
     )
     assert output == expected_output

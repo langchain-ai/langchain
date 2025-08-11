@@ -99,7 +99,7 @@ async def test_async_batch_size() -> None:
 
 async def test_error_callback() -> None:
     class FailingLLMError(Exception):
-        """FailingLLMError"""
+        """FailingLLMError."""
 
     class FailingLLM(LLM):
         @property

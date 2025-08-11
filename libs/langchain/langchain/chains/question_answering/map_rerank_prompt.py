@@ -1,6 +1,6 @@
-# flake8: noqa
-from langchain.output_parsers.regex import RegexParser
 from langchain_core.prompts import PromptTemplate
+
+from langchain.output_parsers.regex import RegexParser
 
 output_parser = RegexParser(
     regex=r"(.*?)\nScore: (\d*)",
@@ -58,7 +58,7 @@ Context:
 {context}
 ---------
 Question: {question}
-Helpful Answer:"""
+Helpful Answer:"""  # noqa: E501
 PROMPT = PromptTemplate(
     template=prompt_template,
     input_variables=["context", "question"],

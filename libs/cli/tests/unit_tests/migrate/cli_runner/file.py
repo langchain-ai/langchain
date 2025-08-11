@@ -6,7 +6,7 @@ class File:
         self.name = name
         self.content = "\n".join(content or [])
 
-    def __eq__(self, __value: object) -> bool:
+    def __eq__(self, __value: object, /) -> bool:
         if not isinstance(__value, File):
             return NotImplemented
 

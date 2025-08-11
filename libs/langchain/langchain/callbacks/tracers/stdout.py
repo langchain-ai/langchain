@@ -3,4 +3,4 @@ from langchain_core.tracers.stdout import (
     FunctionCallbackHandler,
 )
 
-__all__ = ["FunctionCallbackHandler", "ConsoleCallbackHandler"]
+__all__ = ["ConsoleCallbackHandler", "FunctionCallbackHandler"]

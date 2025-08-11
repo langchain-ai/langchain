@@ -22,6 +22,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "load_llm_from_config",
     "load_llm",
+    "load_llm_from_config",
 ]

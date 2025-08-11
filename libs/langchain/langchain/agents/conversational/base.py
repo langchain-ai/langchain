@@ -11,6 +11,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -35,8 +36,11 @@ class ConversationalAgent(Agent):
     """Output parser for the agent."""
 
     @classmethod
+    @override
     def _get_default_output_parser(
-        cls, ai_prefix: str = "AI", **kwargs: Any
+        cls,
+        ai_prefix: str = "AI",
+        **kwargs: Any,
     ) -> AgentOutputParser:
         return ConvoOutputParser(ai_prefix=ai_prefix)
 
@@ -93,13 +97,15 @@ class ConversationalAgent(Agent):
             A PromptTemplate with the template assembled from the pieces here.
         """
         tool_strings = "\n".join(
-            [f"> {tool.name}: {tool.description}" for tool in tools]
+            [f"> {tool.name}: {tool.description}" for tool in tools],
         )
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(
-            tool_names=tool_names, ai_prefix=ai_prefix, human_prefix=human_prefix
+            tool_names=tool_names,
+            ai_prefix=ai_prefix,
+            human_prefix=human_prefix,
         )
-        template = "\n\n".join([prefix, tool_strings, format_instructions, suffix])
+        template = f"{prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{suffix}"
         if input_variables is None:
             input_variables = ["input", "chat_history", "agent_scratchpad"]
         return PromptTemplate(template=template, input_variables=input_variables)
@@ -161,7 +167,7 @@ class ConversationalAgent(Agent):
         )
         tool_names = [tool.name for tool in tools]
         _output_parser = output_parser or cls._get_default_output_parser(
-            ai_prefix=ai_prefix
+            ai_prefix=ai_prefix,
         )
         return cls(
             llm_chain=llm_chain,

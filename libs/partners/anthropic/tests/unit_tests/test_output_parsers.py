@@ -95,7 +95,8 @@ def test_tools_output_parser_empty_content() -> None:
         chart_type: Literal["pie", "line", "bar"]
 
     output_parser = ToolsOutputParser(
-        first_tool_only=True, pydantic_schemas=[ChartType]
+        first_tool_only=True,
+        pydantic_schemas=[ChartType],
     )
     message = AIMessage(
         "",
@@ -105,7 +106,7 @@ def test_tools_output_parser_empty_content() -> None:
                 "args": {"chart_type": "pie"},
                 "id": "foo",
                 "type": "tool_call",
-            }
+            },
         ],
     )
     actual = output_parser.invoke(message)

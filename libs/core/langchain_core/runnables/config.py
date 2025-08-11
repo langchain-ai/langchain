@@ -230,6 +230,7 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
             not key.startswith("__")
             and isinstance(value, (str, int, float, bool))
             and key not in empty["metadata"]
+            and key != "api_key"
         ):
             empty["metadata"][key] = value
     return empty
@@ -401,7 +402,7 @@ def call_func_with_variable_args(
         Callable[[Input, CallbackManagerForChainRun], Output],
         Callable[[Input, CallbackManagerForChainRun, RunnableConfig], Output],
     ],
-    input: Input,  # noqa: A002
+    input: Input,
     config: RunnableConfig,
     run_manager: Optional[CallbackManagerForChainRun] = None,
     **kwargs: Any,
@@ -438,7 +439,7 @@ def acall_func_with_variable_args(
             Awaitable[Output],
         ],
     ],
-    input: Input,  # noqa: A002
+    input: Input,
     config: RunnableConfig,
     run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     **kwargs: Any,

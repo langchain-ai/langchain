@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -17,7 +17,7 @@ class ParrotRetriever(BaseRetriever):
 
 class TestParrotRetrieverIntegration(RetrieversIntegrationTests):
     @property
-    def retriever_constructor(self) -> Type[ParrotRetriever]:
+    def retriever_constructor(self) -> type[ParrotRetriever]:
         return ParrotRetriever
 
     @property

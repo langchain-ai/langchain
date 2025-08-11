@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 from typing import Literal, Optional, overload
 
@@ -16,6 +18,7 @@ class NomicEmbeddings(Embeddings):
             from langchain_nomic import NomicEmbeddings
 
             model = NomicEmbeddings()
+
     """
 
     @overload
@@ -26,8 +29,7 @@ class NomicEmbeddings(Embeddings):
         nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["remote"] = ...,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -38,8 +40,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["local", "dynamic"],
         device: Optional[str] = ...,
-    ):
-        ...
+    ): ...
 
     @overload
     def __init__(
@@ -50,8 +51,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: str,
         device: Optional[str] = ...,
-    ):
-        ...
+    ): ...
 
     def __init__(
         self,
@@ -77,6 +77,8 @@ class NomicEmbeddings(Embeddings):
                 ``'cpu'``, ``'gpu'``, ``'nvidia'``, ``'amd'``, or a specific device
                 name. See the docstring for ``GPT4All.__init__`` for more info.
                 Typically defaults to ``'cpu'``. Do not use on macOS.
+            vision_model: The vision model to use for image embeddings.
+
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
         if _api_key:
@@ -94,8 +96,8 @@ class NomicEmbeddings(Embeddings):
             texts: list of texts to embed
             task_type: the task type to use when embedding. One of ``'search_query'``,
                 ``'search_document'``, ``'classification'``, ``'clustering'``
-        """
 
+        """
         output = embed.text(
             texts=texts,
             model=self.model,
@@ -111,6 +113,7 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             texts: list of texts to embed as documents
+
         """
         return self.embed(
             texts=texts,
@@ -122,6 +125,7 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             text: query text
+
         """
         return self.embed(
             texts=[text],

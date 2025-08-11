@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 _PROMPT_TEMPLATE = """Translate a math problem into a expression that can be executed using Python's numexpr library. Use the output of running this code to answer the question.
@@ -36,7 +35,7 @@ Question: 37593^(1/5)
 Answer: 8.222831614237718
 
 Question: {question}
-"""
+"""  # noqa: E501
 
 PROMPT = PromptTemplate(
     input_variables=["question"],

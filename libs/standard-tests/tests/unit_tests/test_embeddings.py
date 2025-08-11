@@ -1,5 +1,3 @@
-from typing import Type
-
 from langchain_core.embeddings import DeterministicFakeEmbedding, Embeddings
 
 from langchain_tests.integration_tests import EmbeddingsIntegrationTests
@@ -8,7 +6,7 @@ from langchain_tests.unit_tests import EmbeddingsUnitTests
 
 class TestFakeEmbeddingsUnit(EmbeddingsUnitTests):
     @property
-    def embeddings_class(self) -> Type[Embeddings]:
+    def embeddings_class(self) -> type[Embeddings]:
         return DeterministicFakeEmbedding
 
     @property
@@ -18,7 +16,7 @@ class TestFakeEmbeddingsUnit(EmbeddingsUnitTests):
 
 class TestFakeEmbeddingsIntegration(EmbeddingsIntegrationTests):
     @property
-    def embeddings_class(self) -> Type[Embeddings]:
+    def embeddings_class(self) -> type[Embeddings]:
         return DeterministicFakeEmbedding
 
     @property

@@ -25,8 +25,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
+    "AzureOpenAI",
     "BaseOpenAI",
     "OpenAI",
-    "AzureOpenAI",
     "OpenAIChat",
 ]

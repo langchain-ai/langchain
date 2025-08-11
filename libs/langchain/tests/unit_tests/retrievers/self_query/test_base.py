@@ -14,6 +14,7 @@ from langchain_core.structured_query import (
     StructuredQuery,
     Visitor,
 )
+from typing_extensions import override
 
 from langchain.chains.query_constructor.schema import AttributeInfo
 from langchain.retrievers import SelfQueryRetriever
@@ -45,12 +46,13 @@ class FakeTranslator(Visitor):
     def visit_comparison(self, comparison: Comparison) -> dict:
         return {
             comparison.attribute: {
-                self._format_func(comparison.comparator): comparison.value
-            }
+                self._format_func(comparison.comparator): comparison.value,
+            },
         }
 
     def visit_structured_query(
-        self, structured_query: StructuredQuery
+        self,
+        structured_query: StructuredQuery,
     ) -> tuple[str, dict]:
         if structured_query.filter is None:
             kwargs = {}
@@ -60,8 +62,12 @@ class FakeTranslator(Visitor):
 
 
 class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
+    @override
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
@@ -69,7 +75,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
         return [res]
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_llm() -> FakeLLM:
     return FakeLLM(
         queries={
@@ -85,7 +91,7 @@ def fake_llm() -> FakeLLM:
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_vectorstore() -> InMemoryVectorstoreWithSearch:
     vectorstore = InMemoryVectorstoreWithSearch()
     vectorstore.add_documents(
@@ -102,9 +108,10 @@ def fake_vectorstore() -> InMemoryVectorstoreWithSearch:
     return vectorstore
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_self_query_retriever(
-    fake_llm: FakeLLM, fake_vectorstore: InMemoryVectorstoreWithSearch
+    fake_llm: FakeLLM,
+    fake_vectorstore: InMemoryVectorstoreWithSearch,
 ) -> SelfQueryRetriever:
     return SelfQueryRetriever.from_llm(
         llm=fake_llm,

@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank"
+    "FlashrankRerank": "langchain_community.document_compressors.flashrank_rerank",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

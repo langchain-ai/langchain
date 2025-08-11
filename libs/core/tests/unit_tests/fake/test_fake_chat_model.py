@@ -1,5 +1,6 @@
 """Tests for verifying that testing utility code works as expected."""
 
+import time
 from itertools import cycle
 from typing import Any, Optional, Union
 from uuid import UUID
@@ -9,10 +10,11 @@ from typing_extensions import override
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.language_models import (
     FakeListChatModel,
+    FakeMessagesListChatModel,
     GenericFakeChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
 from tests.unit_tests.stubs import (
     _any_id_ai_message,
@@ -230,3 +232,18 @@ def test_fake_list_chat_model_batch() -> None:
         fake = FakeListChatModel(responses=["a", "b", "c"])
         resp = fake.batch(["1", "2", "3"])
         assert resp == expected
+
+
+def test_fake_messages_list_chat_model_sleep_delay() -> None:
+    sleep_time = 0.1
+    model = FakeMessagesListChatModel(
+        responses=[AIMessage(content="A"), AIMessage(content="B")],
+        sleep=sleep_time,
+    )
+    messages = [HumanMessage(content="C")]
+
+    start = time.time()
+    model.invoke(messages)
+    elapsed = time.time() - start
+
+    assert elapsed >= sleep_time

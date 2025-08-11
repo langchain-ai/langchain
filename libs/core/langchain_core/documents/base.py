@@ -102,6 +102,7 @@ class Blob(BaseMedia):
             # Read the blob as a byte stream
             with blob.as_bytes_io() as f:
                 print(f.read())
+
     """
 
     data: Union[bytes, str, None] = None
@@ -201,14 +202,14 @@ class Blob(BaseMedia):
             Blob instance
         """
         if mime_type is None and guess_type:
-            _mimetype = mimetypes.guess_type(path)[0] if guess_type else None
+            mimetype = mimetypes.guess_type(path)[0] if guess_type else None
         else:
-            _mimetype = mime_type
+            mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
         # reference to the underlying data.
         return cls(
             data=None,
-            mimetype=_mimetype,
+            mimetype=mimetype,
             encoding=encoding,
             path=path,
             metadata=metadata if metadata is not None else {},
@@ -265,6 +266,7 @@ class Document(BaseMedia):
                 page_content="Hello, world!",
                 metadata={"source": "https://example.com"}
             )
+
     """
 
     page_content: str

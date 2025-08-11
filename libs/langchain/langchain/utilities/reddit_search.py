@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "RedditSearchAPIWrapper": "langchain_community.utilities.reddit_search"
+    "RedditSearchAPIWrapper": "langchain_community.utilities.reddit_search",
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

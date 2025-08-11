@@ -100,8 +100,6 @@ def _get_input_variables(
                     input_variables += get_template_variables(x, template_format)
                 elif isinstance(x, dict):
                     input_variables += _get_input_variables(x, template_format)
-        else:
-            pass
     return list(set(input_variables))
 
 

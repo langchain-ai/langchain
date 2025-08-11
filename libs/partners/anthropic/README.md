@@ -10,11 +10,11 @@ This package contains the LangChain integration for Anthropic's generative model
 
 Anthropic recommends using their chat models over text completions.
 
-You can see their recommended models [here](https://docs.anthropic.com/claude/docs/models-overview#model-recommendations).
+You can see their recommended models [in the Anthropic docs](https://docs.anthropic.com/claude/docs/models-overview#model-recommendations).
 
 To use, you should have an Anthropic API key configured. Initialize the model as:
 
-```
+```python
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage
 
