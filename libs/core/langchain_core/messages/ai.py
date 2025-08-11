@@ -3,11 +3,12 @@
 import json
 import logging
 import operator
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
@@ -179,16 +180,35 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-            content: The content of the message.
-            kwargs: Additional arguments to pass to the parent class.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify content as a positional arg or content_blocks for typing support."""
+        if content_blocks is not None:
+            super().__init__(
+                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
     @property
     def lc_attributes(self) -> dict:
@@ -197,6 +217,33 @@ class AIMessage(BaseMessage):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        blocks = super().content_blocks
+
+        # Add from tool_calls if missing from content
+        content_tool_call_ids = {
+            block.get("id")
+            for block in self.content
+            if isinstance(block, dict) and block.get("type") == "tool_call"
+        }
+        for tool_call in self.tool_calls:
+            if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                tool_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "id": id_,
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                }
+                if "index" in tool_call:
+                    tool_call_block["index"] = tool_call["index"]
+                if "extras" in tool_call:
+                    tool_call_block["extras"] = tool_call["extras"]
+                blocks.append(tool_call_block)
+
+        return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")

@@ -1062,9 +1062,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
+          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
           all string attributes are concatenated. Chunks are only merged if their
-          values of ``index`` are equal and not ``None``.
+          values of `index` are equal and not None.
           
           Example:
           
@@ -1089,10 +1089,6 @@
               }),
             ]),
             'title': 'Args',
-          }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -1134,9 +1130,9 @@
           }),
         }),
         'required': list([
-          'id',
           'name',
           'args',
+          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',
@@ -2523,9 +2519,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ``ToolCallChunks`` (e.g., via ``AIMessageChunk.__add__``),
+          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
           all string attributes are concatenated. Chunks are only merged if their
-          values of ``index`` are equal and not ``None``.
+          values of `index` are equal and not None.
           
           Example:
           
@@ -2550,10 +2546,6 @@
               }),
             ]),
             'title': 'Args',
-          }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
           }),
           'id': dict({
             'anyOf': list([
@@ -2595,9 +2587,9 @@
           }),
         }),
         'required': list([
-          'id',
           'name',
           'args',
+          'id',
           'index',
         ]),
         'title': 'ToolCallChunk',

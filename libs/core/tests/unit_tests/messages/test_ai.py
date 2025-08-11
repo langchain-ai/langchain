@@ -1,5 +1,6 @@
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
@@ -196,3 +197,73 @@ def test_add_ai_message_chunks_usage() -> None:
             output_token_details=OutputTokenDetails(audio=1, reasoning=2),
         ),
     )
+
+
+def test_content_blocks() -> None:
+    message = AIMessage(
+        "",
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"}
+        ],
+    )
+    assert len(message.content_blocks) == 1
+    assert message.content_blocks[0]["type"] == "tool_call"
+    assert message.content_blocks == [
+        {"type": "tool_call", "id": "abc_123", "name": "foo", "args": {"a": "b"}}
+    ]
+    assert message.content == ""
+
+    message = AIMessage(
+        "foo",
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"}
+        ],
+    )
+    assert len(message.content_blocks) == 2
+    assert message.content_blocks[0]["type"] == "text"
+    assert message.content_blocks[1]["type"] == "tool_call"
+    assert message.content_blocks == [
+        {"type": "text", "text": "foo"},
+        {"type": "tool_call", "id": "abc_123", "name": "foo", "args": {"a": "b"}},
+    ]
+    assert message.content == "foo"
+
+    # With standard blocks
+    standard_content: list[types.ContentBlock] = [
+        {"type": "reasoning", "reasoning": "foo"},
+        {"type": "text", "text": "bar"},
+        {
+            "type": "text",
+            "text": "baz",
+            "annotations": [{"type": "citation", "url": "http://example.com"}],
+        },
+        {
+            "type": "image",
+            "url": "http://example.com/image.png",
+            "extras": {"foo": "bar"},
+        },
+        {
+            "type": "non_standard",
+            "value": {"custom_key": "custom_value", "another_key": 123},
+        },
+        {
+            "type": "tool_call",
+            "name": "foo",
+            "args": {"a": "b"},
+            "id": "abc_123",
+        },
+    ]
+    missing_tool_call = {
+        "type": "tool_call",
+        "name": "bar",
+        "args": {"c": "d"},
+        "id": "abc_234",
+    }
+    message = AIMessage(
+        content_blocks=standard_content,
+        tool_calls=[
+            {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+            missing_tool_call,
+        ],
+    )
+    assert message.content_blocks == [*standard_content, missing_tool_call]

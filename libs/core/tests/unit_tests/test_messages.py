@@ -1234,3 +1234,35 @@ def test_known_block_types() -> None:
         for t in expected
     }
     assert expected == KNOWN_BLOCK_TYPES
+
+
+def test_typed_init() -> None:
+    # AIMessage
+    message = AIMessage("Hello")
+    assert message.content == "Hello"
+    assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    message = AIMessage(content="Hello")
+    assert message.content == "Hello"
+    assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    message = AIMessage(content_blocks=[{"type": "text", "text": "Hello"}])
+    assert message.content == [{"type": "text", "text": "Hello"}]
+    assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    # # HumanMessage
+    # message = HumanMessage("Hello")
+    # assert message.content == "Hello"
+    # assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    # message = HumanMessage(content="Hello")
+    # assert message.content == "Hello"
+    # assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    # message = HumanMessage(content_blocks=[{"type": "text", "text": "Hello"}])
+    # assert message.content == [{"type": "text", "text": "Hello"}]
+    # assert message.content_blocks == [{"type": "text", "text": "Hello"}]
+
+    # Test we get type errors for malformed blocks (type checker will complain if
+    # below type-ignores are unused).
+    _ = AIMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]

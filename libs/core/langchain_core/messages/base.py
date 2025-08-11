@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import content_blocks as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -61,15 +62,32 @@ class BaseMessage(Serializable):
         extra="allow",
     )
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-            content: The string contents of the message.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify content as a positional arg or content_blocks for typing support."""
+        if content_blocks is not None:
+            super().__init__(content=content_blocks, **kwargs)
+        else:
+            super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -87,6 +105,44 @@ class BaseMessage(Serializable):
         Default is ["langchain", "schema", "messages"].
         """
         return ["langchain", "schema", "messages"]
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return the content as a list of standard ContentBlocks.
+
+        To use this property, the corresponding chat model must support
+        ``message_version="v1"`` or higher:
+
+        .. code-block:: python
+
+            from langchain.chat_models import init_chat_model
+            llm = init_chat_model("...", message_version="v1")
+
+        otherwise, does best-effort parsing to standard types.
+        """
+        blocks: list[types.ContentBlock] = []
+        content = (
+            [self.content]
+            if isinstance(self.content, str) and self.content
+            else self.content
+        )
+        for item in content:
+            if isinstance(item, str):
+                blocks.append({"type": "text", "text": item})
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    msg = (
+                        f"Non-standard content block type '{item_type}'. Ensure "
+                        "the model supports `output_version='v1'` or higher and "
+                        "that this attribute is set on initialization."
+                    )
+                    raise ValueError(msg)
+                blocks.append(cast("types.ContentBlock", item))
+            else:
+                pass
+
+        return blocks
 
     def text(self) -> str:
         """Get the text content of the message.
