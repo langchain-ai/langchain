@@ -92,4 +92,4 @@ as required is optional.
 For chat models that support the new content blocks v1 format (multimodal content, reasoning blocks, citations, etc.), use the v1 test suite instead:
 
 - See `QUICK_START.md` and `README_V1.md` for v1 testing documentation
-- Use `ChatModelV1Tests` from `langchain_tests.unit_tests.chat_models_v1`
+- Use `ChatModelTests` from `langchain_tests.v1.unit_tests.chat_models`

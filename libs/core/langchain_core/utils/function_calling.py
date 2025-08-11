@@ -575,12 +575,23 @@ def convert_to_openai_tool(
 
         Added support for OpenAI's image generation built-in tool.
     """
+    from langchain_core.tools import Tool
+
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
             return tool
         # As of 03.12.25 can be "web_search_preview" or "web_search_preview_2025_03_11"
         if (tool.get("type") or "").startswith("web_search_preview"):
             return tool
+    if isinstance(tool, Tool) and (tool.metadata or {}).get("type") == "custom_tool":
+        oai_tool = {
+            "type": "custom",
+            "name": tool.name,
+            "description": tool.description,
+        }
+        if tool.metadata is not None and "format" in tool.metadata:
+            oai_tool["format"] = tool.metadata["format"]
+        return oai_tool
     oai_function = convert_to_openai_function(tool, strict=strict)
     return {"type": "function", "function": oai_function}
 

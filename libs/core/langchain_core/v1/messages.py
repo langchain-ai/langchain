@@ -57,12 +57,9 @@ class TextAccessor(str):
     def __call__(self) -> str:
         """Enable method-style text access for backward compatibility.
 
-        This method exists solely to support legacy code that calls ``.text()``
-        as a method. New code should use property access (``.text``) instead.
-
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -112,6 +109,22 @@ class ResponseMetadata(TypedDict, total=False):
 
     The common fields (``model_provider``, ``model_name``) provide a baseline
     contract while preserving flexibility for provider innovations.
+
+    .. note::
+        Not all providers will return the metadata required by this class. In this case,
+        it is acceptable to inject these fields with values at invocation.
+
+        For instance, requests to OpenAI's responses API will not return a provider
+        field in the raw response, as it can be inferred that by making the request, the
+        provider responding is OpenAI. In this case, it is safe to set the
+        ``model_provider`` field to ``'openai'`` when creating the message.
+
+        On the other hand, ``model_name`` is often returned, and in such cases it is
+        expected that you populate this field with the unmodified model name (such as
+        ``'o1-2024-12-17'``). Only in situations where the provider does not return a
+        model name should you artifically set this field - in which case, the value
+        should be set to the ``model`` or ``model_name`` parameter passed in during
+        invocation.
 
     """
 
@@ -270,8 +283,8 @@ class AIMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -667,8 +680,8 @@ class HumanMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -762,8 +775,8 @@ class SystemMessage:
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(
@@ -800,7 +813,13 @@ class ToolMessage(ToolOutputMixin):
     """
 
     content: list[types.ContentBlock]
-    """Message content as a list of content blocks."""
+    """Message content as a list of content blocks.
+
+    The tool's output should be included in the content, mapped to the appropriate
+    content block type (e.g., text, image, etc.). For instance, if the tool call returns
+    a string, it should be wrapped in a ``TextContentBlock``.
+
+    """
 
     type: Literal["tool"] = "tool"
     """The type of the message. Must be a string that is unique to the message type.
@@ -811,15 +830,10 @@ class ToolMessage(ToolOutputMixin):
     """
 
     artifact: Optional[Any] = None
-    """App-side payload not intended for the model.
+    """App-side payload not intended for model consumption.
 
-    Artifacts contain data that your application needs but should not be sent
-    to the AI model. Example use cases:
-
-    - File handles or database connections used by the tool
-    - Raw binary data (images, documents) alongside text summaries
-    - Internal debugging information or execution traces
-    - Computed results that supplement the text content
+    Additonal info and usage examples are available
+    `in the LangChain documentation <https://python.langchain.com/docs/concepts/tools/#tool-artifacts>`__.
 
     """
 
@@ -879,8 +893,8 @@ class ToolMessage(ToolOutputMixin):
         Can be used as both property (``message.text``) and method (``message.text()``).
 
         .. deprecated:: 0.4.0
-            Calling .text() as a method is deprecated. Use .text as a property instead.
-            This method will be removed in 2.0.0.
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         """
         text_value = "".join(

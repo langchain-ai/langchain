@@ -32,7 +32,7 @@ from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
 
-MAX_TOKEN_COUNT = 16
+MAX_TOKEN_COUNT = 100
 
 
 @pytest.mark.scheduled
@@ -219,7 +219,7 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
 def test_openai_invoke() -> None:
     """Test invoke tokens from ChatOpenAI."""
     llm = ChatOpenAI(
-        model="o4-mini",
+        model="gpt-5-nano",
         service_tier="flex",  # Also test service_tier
         max_retries=3,  # Add retries for 503 capacity errors
     )
@@ -418,7 +418,7 @@ class MakeASandwich(BaseModel):
 
 
 def test_tool_use() -> None:
-    llm = ChatOpenAI(model="gpt-4-turbo", temperature=0)
+    llm = ChatOpenAI(model="gpt-5-nano", temperature=0)
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername], tool_choice=True)
     msgs: list = [HumanMessage("Sally has green hair, what would her username be?")]
     ai_msg = llm_with_tool.invoke(msgs)
@@ -462,7 +462,7 @@ def test_tool_use() -> None:
 def test_manual_tool_call_msg(use_responses_api: bool) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(
-        model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
+        model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
     )
     llm_with_tool = llm.bind_tools(tools=[GenerateUsername])
     msgs: list = [
@@ -510,7 +510,7 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
 def test_bind_tools_tool_choice(use_responses_api: bool) -> None:
     """Test passing in manually construct tool call message."""
     llm = ChatOpenAI(
-        model="gpt-3.5-turbo-0125", temperature=0, use_responses_api=use_responses_api
+        model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
     )
     for tool_choice in ("any", "required"):
         llm_with_tools = llm.bind_tools(
@@ -525,7 +525,7 @@ def test_bind_tools_tool_choice(use_responses_api: bool) -> None:
 
 
 def test_disable_parallel_tool_calling() -> None:
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model="gpt-5-nano")
     llm_with_tools = llm.bind_tools([GenerateUsername], parallel_tool_calls=False)
     result = llm_with_tools.invoke(
         "Use the GenerateUsername tool to generate user names for:\n\n"
@@ -536,7 +536,7 @@ def test_disable_parallel_tool_calling() -> None:
     assert len(result.tool_calls) == 1
 
 
-@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4"])
+@pytest.mark.parametrize("model", ["gpt-4o-mini", "o1", "gpt-4", "gpt-5-nano"])
 def test_openai_structured_output(model: str) -> None:
     class MyModel(BaseModel):
         """A Person"""
@@ -696,7 +696,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
         input: Optional[int] = Field(default=None)
 
     model = ChatOpenAI(
-        model="gpt-4.1", temperature=0, use_responses_api=use_responses_api
+        model="gpt-5-nano", temperature=0, use_responses_api=use_responses_api
     )
     # N.B. magic_function adds metadata to schema (min/max for number fields)
     model_with_tools = model.bind_tools([magic_function], strict=True)
@@ -820,7 +820,7 @@ def test_json_schema_openai_format(
     strict: bool, method: Literal["json_schema", "function_calling"]
 ) -> None:
     """Test we can pass in OpenAI schema format specifying strict."""
-    llm = ChatOpenAI(model="gpt-4o-mini")
+    llm = ChatOpenAI(model="gpt-5-nano")
     schema = {
         "name": "get_weather",
         "description": "Fetches the weather in the given location",
@@ -941,7 +941,7 @@ def test_prediction_tokens() -> None:
     """
     )
 
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-4.1-nano")
     query = (
         "Replace the Username property with an Email property. "
         "Respond only with code, and with no markdown formatting."
@@ -983,7 +983,7 @@ class Foo(BaseModel):
 def test_stream_response_format() -> None:
     full: Optional[BaseMessageChunk] = None
     chunks = []
-    for chunk in ChatOpenAI(model="gpt-4o-mini").stream(
+    for chunk in ChatOpenAI(model="gpt-5-nano").stream(
         "how are ya", response_format=Foo
     ):
         chunks.append(chunk)
@@ -1000,7 +1000,7 @@ def test_stream_response_format() -> None:
 async def test_astream_response_format() -> None:
     full: Optional[BaseMessageChunk] = None
     chunks = []
-    async for chunk in ChatOpenAI(model="gpt-4o-mini").astream(
+    async for chunk in ChatOpenAI(model="gpt-5-nano").astream(
         "how are ya", response_format=Foo
     ):
         chunks.append(chunk)
@@ -1044,7 +1044,7 @@ def test_o1_stream_default_works() -> None:
 
 
 def test_multi_party_conversation() -> None:
-    llm = ChatOpenAI(model="gpt-4o")
+    llm = ChatOpenAI(model="gpt-5-nano")
     messages = [
         HumanMessage("Hi, I have black hair.", name="Alice"),
         HumanMessage("Hi, I have brown hair.", name="Bob"),
@@ -1059,7 +1059,7 @@ def test_structured_output_and_tools() -> None:
         response: str
         explanation: str
 
-    llm = ChatOpenAI(model="gpt-4o-mini").bind_tools(
+    llm = ChatOpenAI(model="gpt-5-nano").bind_tools(
         [GenerateUsername], strict=True, response_format=ResponseFormat
     )
 
@@ -1084,7 +1084,7 @@ def test_tools_and_structured_output() -> None:
         response: str
         explanation: str
 
-    llm = ChatOpenAI(model="gpt-4o-mini").with_structured_output(
+    llm = ChatOpenAI(model="gpt-5-nano").with_structured_output(
         ResponseFormat, strict=True, include_raw=True, tools=[GenerateUsername]
     )
 
@@ -1112,3 +1112,46 @@ def test_tools_and_structured_output() -> None:
     assert isinstance(aggregated["raw"], AIMessage)
     assert aggregated["raw"].tool_calls
     assert aggregated["parsed"] is None
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_invoke() -> None:
+    """Test that `prompt_cache_key` works with invoke calls."""
+    chat = ChatOpenAI(model="gpt-5-nano", max_completion_tokens=500)
+    messages = [HumanMessage("Say hello")]
+
+    # Test that invoke works with prompt_cache_key parameter
+    response = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+
+    # Test that subsequent call with same cache key also works
+    response2 = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+
+    assert isinstance(response2, AIMessage)
+    assert isinstance(response2.content, str)
+    assert len(response2.content) > 0
+
+
+@pytest.mark.scheduled
+def test_prompt_cache_key_usage_methods_integration() -> None:
+    """Integration test for `prompt_cache_key` usage methods."""
+    messages = [HumanMessage("Say hi")]
+
+    # Test keyword argument method
+    chat = ChatOpenAI(model="gpt-5-nano", max_completion_tokens=10)
+    response = chat.invoke(messages, prompt_cache_key="integration-test-v1")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+
+    # Test model-level via model_kwargs
+    chat_model_level = ChatOpenAI(
+        model="gpt-5-nano",
+        max_completion_tokens=10,
+        model_kwargs={"prompt_cache_key": "integration-model-level-v1"},
+    )
+    response_model_level = chat_model_level.invoke(messages)
+    assert isinstance(response_model_level, AIMessage)
+    assert isinstance(response_model_level.content, str)

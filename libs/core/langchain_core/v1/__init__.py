@@ -1,1 +1,1 @@
-"""LangChain v1.0 types."""
+"""LangChain v1.0.0 types."""
