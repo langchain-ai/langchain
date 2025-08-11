@@ -695,6 +695,8 @@ packages:
 - name: langchain-greennode
   path: libs/greennode
   repo: greennode-ai/langchain-greennode
+  downloads: 133
+  downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-tensorlake
   path: .
   repo: tensorlakeai/langchain-tensorlake
