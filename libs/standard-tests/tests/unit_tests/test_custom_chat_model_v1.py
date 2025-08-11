@@ -2,12 +2,12 @@
 
 import pytest
 
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests
 
 from .custom_chat_model_v1 import ChatParrotLinkV1
 
 
-class TestChatParrotLinkV1Unit(ChatModelV1UnitTests):
+class TestChatParrotLinkV1Unit(ChatModelUnitTests):
     """Unit tests for ``ChatParrotLinkV1`` using the standard v1 test suite."""
 
     @property
@@ -67,16 +67,6 @@ class TestChatParrotLinkV1Unit(ChatModelV1UnitTests):
         return False
 
     @property
-    def supports_plaintext_content_blocks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``PlainTextContentBlock``."""
-        return False
-
-    @property
-    def supports_file_content_blocks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``FileContentBlock``."""
-        return False
-
-    @property
     def supports_image_content_blocks(self) -> bool:
         """``ChatParrotLinkV1`` does not support ``ImageContentBlock``."""
         return False
@@ -99,19 +89,4 @@ class TestChatParrotLinkV1Unit(ChatModelV1UnitTests):
     @property
     def supports_web_search_blocks(self) -> bool:
         """``ChatParrotLinkV1`` does not support web search blocks."""
-        return False
-
-    @property
-    def supports_tool_calls(self) -> bool:
-        """``ChatParrotLinkV1`` does not support tool calls."""
-        return False
-
-    @property
-    def supports_invalid_tool_calls(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``InvalidToolCall`` handling."""
-        return False
-
-    @property
-    def supports_tool_call_chunks(self) -> bool:
-        """``ChatParrotLinkV1`` does not support ``ToolCallChunk`` blocks."""
         return False

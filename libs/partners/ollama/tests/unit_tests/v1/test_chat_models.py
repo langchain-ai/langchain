@@ -13,7 +13,7 @@ from langchain_core.messages.content_blocks import (
     create_text_block,
 )
 from langchain_core.v1.messages import AIMessage, HumanMessage, MessageV1, SystemMessage
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests
 
 from langchain_ollama._compat import (
     _convert_chunk_to_v1,
@@ -240,7 +240,7 @@ class TestMessageConversion:
         assert result["images"] == []
 
 
-class TestChatOllama(ChatModelV1UnitTests):
+class TestChatOllama(ChatModelUnitTests):
     """Test `ChatOllama`."""
 
     @property

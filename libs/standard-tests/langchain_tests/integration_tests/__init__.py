@@ -20,7 +20,6 @@ for module in modules:
 from .base_store import BaseStoreAsyncTests, BaseStoreSyncTests
 from .cache import AsyncCacheTestSuite, SyncCacheTestSuite
 from .chat_models import ChatModelIntegrationTests
-from .chat_models_v1 import ChatModelV1IntegrationTests
 from .embeddings import EmbeddingsIntegrationTests
 from .retrievers import RetrieversIntegrationTests
 from .tools import ToolsIntegrationTests
@@ -31,7 +30,6 @@ __all__ = [
     "BaseStoreAsyncTests",
     "BaseStoreSyncTests",
     "ChatModelIntegrationTests",
-    "ChatModelV1IntegrationTests",
     "EmbeddingsIntegrationTests",
     "RetrieversIntegrationTests",
     "SyncCacheTestSuite",
