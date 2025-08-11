@@ -84,7 +84,7 @@ from langchain_core.runnables import (
     RunnableMap,
     RunnablePassthrough,
 )
-from langchain_core.runnables.config import run_in_executor
+from langchain_core.runnables.config import RunnableConfig, run_in_executor
 from langchain_core.tools import BaseTool
 from langchain_core.tools.base import _stringify
 from langchain_core.utils import get_pydantic_field_names
@@ -100,7 +100,7 @@ from langchain_core.utils.pydantic import (
 from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,

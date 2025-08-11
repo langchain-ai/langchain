@@ -48,7 +48,8 @@ class OpenAIBatchClient:
     and result retrieval.
 
     This class provides a high-level interface to OpenAI's Batch API, which offers
-    50% cost savings compared to the standard API in exchange for asynchronous processing.
+    50% cost savings compared to the standard API in exchange for
+    asynchronous processing.
     """
 
     def __init__(self, client: openai.OpenAI):
@@ -182,7 +183,8 @@ class OpenAIBatchClient:
             # Check timeout
             if timeout and (time.time() - start_time) > timeout:
                 raise BatchError(
-                    f"Batch {batch_id} timed out after {timeout} seconds. Current status: {status}",
+                    f"Batch {batch_id} timed out after {timeout} seconds. "
+                    f"Current status: {status}",
                     batch_id=batch_id,
                     status=status,
                 )
