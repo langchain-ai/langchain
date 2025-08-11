@@ -4,9 +4,15 @@ keywords: [azure]
 
 # Microsoft
 
-All functionality related to `Microsoft Azure` and other `Microsoft` products.
+All functionality related to [Microsoft Azure](https://portal.azure.com) and other [Microsoft](https://www.microsoft.com) products.
 
 ## Chat Models
+
+Microsoft offers three main options for accessing chat models through Azure:
+
+1. [Azure OpenAI](https://learn.microsoft.com/en-us/azure/ai-services/openai/) - Provides access to OpenAI's powerful models like o3, 4.1, and other models through Microsoft Azure's secure enterprise platform.
+2. [Azure AI](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/deploy-models) - Offers access to a variety of models from different providers including Anthropic, DeepSeek, Cohere, Phi and Mistral through a unified API.
+3. [Azure ML](https://learn.microsoft.com/en-us/azure/machine-learning/) - Allows deployment and management of your own custom models or fine-tuned open-source models with Azure Machine Learning.
 
 ### Azure OpenAI
 
@@ -29,10 +35,35 @@ os.environ["AZURE_OPENAI_API_KEY"] = "your AzureOpenAI key"
 
 See a [usage example](/docs/integrations/chat/azure_chat_openai)
 
-
 ```python
 from langchain_openai import AzureChatOpenAI
 ```
+
+### Azure AI
+
+>[Azure AI Foundry](https://learn.microsoft.com/en-us/azure/developer/python/get-started) provides access to a wide range of models from various providers including Azure OpenAI, DeepSeek R1, Cohere, Phi and Mistral through the `AzureAIChatCompletionsModel` class.
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+llm = AzureAIChatCompletionsModel(
+    model_name="gpt-4o",
+    api_version="2024-05-01-preview",
+)
+```
+
+See a [usage example](/docs/integrations/chat/azure_ai)
 
 ### Azure ML Chat Online Endpoint
 
@@ -59,6 +90,9 @@ from langchain_openai import AzureOpenAI
 ```
 
 ## Embedding Models
+
+Microsoft offers two main options for accessing embedding models through Azure:
+
 ### Azure OpenAI
 
 See a [usage example](/docs/integrations/text_embedding/azureopenai)
@@ -67,11 +101,32 @@ See a [usage example](/docs/integrations/text_embedding/azureopenai)
 from langchain_openai import AzureOpenAIEmbeddings
 ```
 
+### Azure AI
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.embeddings import AzureAIEmbeddingsModel
+
+embed_model = AzureAIEmbeddingsModel(
+    model_name="text-embedding-ada-002"
+)
+```
+
 ## Document loaders
 
 ### Azure AI Data
 
->[Azure AI Studio](https://ai.azure.com/) provides the capability to upload data assets 
+>[Azure AI Studio](https://ai.azure.com/) provides the capability to upload data assets
 > to cloud storage and register existing data assets from the following sources:
 >
 >- `Microsoft OneLake`
@@ -95,7 +150,7 @@ from langchain.document_loaders import AzureAIDataLoader
 
 >[Azure AI Document Intelligence](https://aka.ms/doc-intelligence) (formerly known
 > as `Azure Form Recognizer`) is machine-learning
-> based service that extracts texts (including handwriting), tables, document structures, 
+> based service that extracts texts (including handwriting), tables, document structures,
 > and key-value-pairs
 > from digital or scanned PDFs, images, Office and HTML files.
 >
@@ -191,13 +246,13 @@ from langchain_community.document_loaders import UnstructuredWordDocumentLoader
 
 ### Microsoft Excel
 
->[Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet editor developed by 
-> Microsoft for Windows, macOS, Android, iOS and iPadOS. 
-> It features calculation or computation capabilities, graphing tools, pivot tables, and a macro programming 
+>[Microsoft Excel](https://en.wikipedia.org/wiki/Microsoft_Excel) is a spreadsheet editor developed by
+> Microsoft for Windows, macOS, Android, iOS and iPadOS.
+> It features calculation or computation capabilities, graphing tools, pivot tables, and a macro programming
 > language called Visual Basic for Applications (VBA). Excel forms part of the Microsoft 365 suite of software.
 
-The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files. 
-The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML 
+The `UnstructuredExcelLoader` is used to load `Microsoft Excel` files. The loader works with both `.xlsx` and `.xls` files.
+The page content will be the raw text of the Excel file. If you use the loader in `"elements"` mode, an HTML
 representation of the Excel file will be available in the document metadata under the `text_as_html` key.
 
 See a [usage example](/docs/integrations/document_loaders/microsoft_excel).
@@ -209,8 +264,8 @@ from langchain_community.document_loaders import UnstructuredExcelLoader
 
 ### Microsoft SharePoint
 
->[Microsoft SharePoint](https://en.wikipedia.org/wiki/SharePoint) is a website-based collaboration system 
-> that uses workflow applications, “list” databases, and other web parts and security features to 
+>[Microsoft SharePoint](https://en.wikipedia.org/wiki/SharePoint) is a website-based collaboration system
+> that uses workflow applications, “list” databases, and other web parts and security features to
 > empower business teams to work together developed by Microsoft.
 
 See a [usage example](/docs/integrations/document_loaders/microsoft_sharepoint).
@@ -246,9 +301,9 @@ from langchain_community.document_loaders.onenote import OneNoteLoader
 
 ### Playwright URL Loader
 
->[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
-> developed by `Microsoft` that allows you to programmatically control and automate 
-> web browsers. It is designed for end-to-end testing, scraping, and automating 
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool
+> developed by `Microsoft` that allows you to programmatically control and automate
+> web browsers. It is designed for end-to-end testing, scraping, and automating
 > tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
 
 
@@ -267,7 +322,7 @@ from langchain_community.document_loaders.onenote import OneNoteLoader
 ## Vector Stores
 
 ### Azure Cosmos DB
-AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode. 
+AI agents can rely on Azure Cosmos DB as a unified [memory system](https://learn.microsoft.com/en-us/azure/cosmos-db/ai-agents#memory-can-make-or-break-agents) solution, enjoying speed, scale, and simplicity. This service successfully [enabled OpenAI's ChatGPT service](https://www.youtube.com/watch?v=6IIUtEFKJec&t) to scale dynamically with high reliability and low maintenance. Powered by an atom-record-sequence engine, it is the world's first globally distributed [NoSQL](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-nosql), [relational](https://learn.microsoft.com/en-us/azure/cosmos-db/distributed-relational), and [vector database](https://learn.microsoft.com/en-us/azure/cosmos-db/vector-database) service that offers a serverless mode.
 
 Below are two available Azure Cosmos DB APIs that can provide vector store functionalities.
 
@@ -337,9 +392,9 @@ from langchain_community.vectorstores import AzureCosmosDBNoSQLVectorSearch
 
 >[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
 
-See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL.
 
-See a [usage example](/docs/integrations/memory/postgres_chat_message_history/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+See a [usage example](/docs/integrations/memory/postgres_chat_message_history/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal.
 
 Since Azure Database for PostgreSQL is open-source Postgres, you can use the [LangChain's Postgres support](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
 
@@ -404,11 +459,11 @@ from langchain_community.retrievers import AzureAISearchRetriever
 ### Azure Database for PostgreSQL
 >[Azure Database for PostgreSQL - Flexible Server](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/service-overview) is a relational database service based on the open-source Postgres database engine. It's a fully managed database-as-a-service that can handle mission-critical workloads with predictable performance, security, high availability, and dynamic scalability.
 
-See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL. 
+See [set up instructions](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/quickstart-create-server-portal) for Azure Database for PostgreSQL.
 
-You need to [enable pgvector extension](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-use-pgvector) in your database to use Postgres as a vector store. Once you have the extension enabled, you can use the [PGVector in LangChain](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL. 
+You need to [enable pgvector extension](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/how-to-use-pgvector) in your database to use Postgres as a vector store. Once you have the extension enabled, you can use the [PGVector in LangChain](/docs/integrations/vectorstores/pgvector/) to connect to Azure Database for PostgreSQL.
 
-See a [usage example](/docs/integrations/vectorstores/pgvector/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal. 
+See a [usage example](/docs/integrations/vectorstores/pgvector/). Simply use the [connection string](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/connect-python?tabs=cmd%2Cpassword#add-authentication-code) from your Azure Portal.
 
 
 ## Tools
@@ -566,9 +621,9 @@ from langchain_community.tools.powerbi.tool import QueryPowerBITool
 
 ### PlayWright Browser Toolkit
 
->[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool 
-> developed by `Microsoft` that allows you to programmatically control and automate 
-> web browsers. It is designed for end-to-end testing, scraping, and automating 
+>[Playwright](https://github.com/microsoft/playwright) is an open-source automation tool
+> developed by `Microsoft` that allows you to programmatically control and automate
+> web browsers. It is designed for end-to-end testing, scraping, and automating
 > tasks across various web browsers such as `Chromium`, `Firefox`, and `WebKit`.
 
 We need to install several python packages.
@@ -618,7 +673,7 @@ from langchain_community.graphs.graph_document import GraphDocument, Node, Relat
 
 ### Bing Search API
 
->[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`, 
+>[Microsoft Bing](https://www.bing.com/), commonly referred to as `Bing` or `Bing Search`,
 > is a web search engine owned and operated by `Microsoft`.
 
 See a [usage example](/docs/integrations/tools/bing_search).
@@ -631,9 +686,9 @@ from langchain_community.utilities import BingSearchAPIWrapper
 
 ### Microsoft Presidio
 
->[Presidio](https://microsoft.github.io/presidio/) (Origin from Latin praesidium ‘protection, garrison’) 
-> helps to ensure sensitive data is properly managed and governed. It provides fast identification and 
-> anonymization modules for private entities in text and images such as credit card numbers, names, 
+>[Presidio](https://microsoft.github.io/presidio/) (Origin from Latin praesidium ‘protection, garrison’)
+> helps to ensure sensitive data is properly managed and governed. It provides fast identification and
+> anonymization modules for private entities in text and images such as credit card numbers, names,
 > locations, social security numbers, bitcoin wallets, US phone numbers, financial data and more.
 
 First, you need to install several python packages and download a `SpaCy` model.

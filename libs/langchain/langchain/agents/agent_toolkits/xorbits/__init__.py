@@ -14,7 +14,7 @@ def __getattr__(name: str) -> Any:
 
         old_path = "langchain." + here + "." + name
         new_path = "langchain_experimental." + here + "." + name
-        raise ImportError(
+        msg = (
             "This agent has been moved to langchain experiment. "
             "This agent relies on python REPL tool under the hood, so to use it "
             "safely please sandbox the python REPL. "
@@ -23,4 +23,6 @@ def __getattr__(name: str) -> Any:
             "To keep using this code as is, install langchain experimental and "
             f"update your import statement from:\n `{old_path}` to `{new_path}`."
         )
-    raise AttributeError(f"{name} does not exist")
+        raise ImportError(msg)
+    msg = f"{name} does not exist"
+    raise AttributeError(msg)

@@ -20,13 +20,16 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_stuff_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_variable_name: str = "text",
     verbose: Optional[bool] = None,
@@ -44,6 +47,7 @@ def _load_stuff_chain(
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
+    *,
     map_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.PROMPT,
     combine_document_variable_name: str = "text",
@@ -54,7 +58,6 @@ def _load_map_reduce_chain(
     verbose: Optional[bool] = None,
     token_max: int = 3000,
     callbacks: Callbacks = None,
-    *,
     collapse_max_retries: Optional[int] = None,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
@@ -81,10 +84,11 @@ def _load_map_reduce_chain(
     if collapse_prompt is None:
         collapse_chain = None
         if collapse_llm is not None:
-            raise ValueError(
+            msg = (
                 "collapse_llm provided, but collapse_prompt was not: please "
                 "provide one or stop providing collapse_llm."
             )
+            raise ValueError(msg)
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
@@ -116,6 +120,7 @@ def _load_map_reduce_chain(
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = refine_prompts.PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.REFINE_PROMPT,
     document_variable_name: str = "text",
@@ -140,7 +145,7 @@ def _load_refine_chain(
 def load_summarize_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,
+    verbose: Optional[bool] = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load summarizing chain.
@@ -161,8 +166,9 @@ def load_summarize_chain(
         "refine": _load_refine_chain,
     }
     if chain_type not in loader_mapping:
-        raise ValueError(
+        msg = (
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
+        raise ValueError(msg)
     return loader_mapping[chain_type](llm, verbose=verbose, **kwargs)

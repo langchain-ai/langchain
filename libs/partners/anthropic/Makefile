@@ -1,4 +1,4 @@
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -18,6 +18,9 @@ integration_test integration_tests:
 
 test_watch:
 	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
+
+make benchmark:
+	uv run --group test pytest ./tests -m benchmark
 
 
 ######################
@@ -40,7 +43,7 @@ lint lint_diff lint_package lint_tests:
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
 spell_check:
 	uv run --all-groups codespell --toml pyproject.toml

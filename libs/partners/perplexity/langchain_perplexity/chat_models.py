@@ -74,7 +74,7 @@ class ChatPerplexity(BaseChatModel):
 
         Key init args - completion params:
             model: str
-                Name of the model to use. e.g. "llama-3.1-sonar-small-128k-online"
+                Name of the model to use. e.g. "sonar"
             temperature: float
                 Sampling temperature to use. Default is 0.7
             max_tokens: Optional[int]
@@ -95,11 +95,9 @@ class ChatPerplexity(BaseChatModel):
         Instantiate:
             .. code-block:: python
 
-                from langchain_community.chat_models import ChatPerplexity
+                from langchain_perplexity import ChatPerplexity
 
-                llm = ChatPerplexity(
-                    model="llama-3.1-sonar-small-128k-online", temperature=0.7
-                )
+                llm = ChatPerplexity(model="sonar", temperature=0.7)
 
         Invoke:
             .. code-block:: python
@@ -147,7 +145,7 @@ class ChatPerplexity(BaseChatModel):
     """  # noqa: E501
 
     client: Any = None  #: :meta private:
-    model: str = "llama-3.1-sonar-small-128k-online"
+    model: str = "sonar"
     """Model name."""
     temperature: float = 0.7
     """What sampling temperature to use."""
@@ -325,7 +323,7 @@ class ChatPerplexity(BaseChatModel):
             additional_kwargs = {}
             if first_chunk:
                 additional_kwargs["citations"] = chunk.get("citations", [])
-                for attr in ["images", "related_questions"]:
+                for attr in ["images", "related_questions", "search_results"]:
                     if attr in chunk:
                         additional_kwargs[attr] = chunk[attr]
 
@@ -376,7 +374,7 @@ class ChatPerplexity(BaseChatModel):
             usage_metadata = None
 
         additional_kwargs = {}
-        for attr in ["citations", "images", "related_questions"]:
+        for attr in ["citations", "images", "related_questions", "search_results"]:
             if hasattr(response, attr):
                 additional_kwargs[attr] = getattr(response, attr)
 
@@ -409,12 +407,11 @@ class ChatPerplexity(BaseChatModel):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema for Preplexity.
-        Currently, Preplexity only supports "json_schema" method for structured output
-        as per their official documentation: https://docs.perplexity.ai/guides/structured-outputs
+        Currently, Perplexity only supports "json_schema" method for structured output
+        as per their `official documentation <https://docs.perplexity.ai/guides/structured-outputs>`__.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
+            schema: The output schema. Can be passed in as:
 
                 - a JSON Schema,
                 - a TypedDict class,
@@ -422,7 +419,7 @@ class ChatPerplexity(BaseChatModel):
 
             method: The method for steering model generation, currently only support:
 
-                - "json_schema": Use the JSON Schema to parse the model output
+                - ``'json_schema'``: Use the JSON Schema to parse the model output
 
 
             include_raw:
@@ -431,20 +428,26 @@ class ChatPerplexity(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
+            strict:
+                Unsupported: whether to enable strict schema adherence when generating
+                the output. This parameter is included for compatibility with other
+                chat models, but is currently ignored.
 
             kwargs: Additional keyword args aren't supported.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
-            | If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
+            If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
+            an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
-            | If ``include_raw`` is True, then Runnable outputs a dict with keys:
+            If ``include_raw`` is True, then Runnable outputs a dict with keys:
 
-            - "raw": BaseMessage
-            - "parsed": None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-            - "parsing_error": Optional[BaseException]
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         """  # noqa: E501
         if method in ("function_calling", "json_mode"):

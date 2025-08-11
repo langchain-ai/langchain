@@ -29,8 +29,8 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "HuggingFaceEmbeddings",
-    "HuggingFaceInstructEmbeddings",
     "HuggingFaceBgeEmbeddings",
+    "HuggingFaceEmbeddings",
     "HuggingFaceInferenceAPIEmbeddings",
+    "HuggingFaceInstructEmbeddings",
 ]

@@ -34,6 +34,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             database = Elasticsearch("http://localhost:9200")
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
+
     """
 
     query_chain: Runnable
@@ -58,11 +59,10 @@ class ElasticsearchDatabaseChain(Chain):
     )
 
     @model_validator(mode="after")
-    def validate_indices(self) -> Self:
+    def _validate_indices(self) -> Self:
         if self.include_indices and self.ignore_indices:
-            raise ValueError(
-                "Cannot specify both 'include_indices' and 'ignore_indices'."
-            )
+            msg = "Cannot specify both 'include_indices' and 'ignore_indices'."
+            raise ValueError(msg)
         return self
 
     @property
@@ -81,8 +81,7 @@ class ElasticsearchDatabaseChain(Chain):
         """
         if not self.return_intermediate_steps:
             return [self.output_key]
-        else:
-            return [self.output_key, INTERMEDIATE_STEPS_KEY]
+        return [self.output_key, INTERMEDIATE_STEPS_KEY]
 
     def _list_indices(self) -> list[str]:
         all_indices = [
@@ -111,7 +110,7 @@ class ElasticsearchDatabaseChain(Chain):
             [
                 "Mapping for index {}:\n{}".format(index, mappings[index]["mappings"])
                 for index in mappings
-            ]
+            ],
         )
 
     def _search(self, indices: list[str], query: str) -> str:
@@ -144,7 +143,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
             intermediate_steps.append(
-                es_cmd
+                es_cmd,
             )  # output: elasticsearch dsl generation (no checker)
             intermediate_steps.append({"es_cmd": es_cmd})  # input: ES search
             result = self._search(indices=indices, query=es_cmd)
@@ -166,12 +165,13 @@ class ElasticsearchDatabaseChain(Chain):
             chain_result: dict[str, Any] = {self.output_key: final_result}
             if self.return_intermediate_steps:
                 chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
-            return chain_result
         except Exception as exc:
             # Append intermediate steps to exception, to aid in logging and later
             # improvement of few shot prompt seeds
             exc.intermediate_steps = intermediate_steps  # type: ignore[attr-defined]
-            raise exc
+            raise
+
+        return chain_result
 
     @property
     def _chain_type(self) -> str:

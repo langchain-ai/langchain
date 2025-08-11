@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from typing import Literal, Union
 
-from pydantic import computed_field
+from pydantic import model_validator
+from typing_extensions import Self
 
 from langchain_core.messages import BaseMessage, BaseMessageChunk
 from langchain_core.outputs.generation import Generation
@@ -25,30 +26,46 @@ class ChatGeneration(Generation):
     via callbacks).
     """
 
+    text: str = ""
+    """The text contents of the output message.
+
+    .. warning::
+        SHOULD NOT BE SET DIRECTLY!
+    """
     message: BaseMessage
     """The message output by the chat model."""
-
+    # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGeneration"] = "ChatGeneration"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 
-    @computed_field  # type: ignore[prop-decorator]
-    @property
-    def text(self) -> str:
-        """Set the text attribute to be the contents of the message."""
-        text_ = ""
+    @model_validator(mode="after")
+    def set_text(self) -> Self:
+        """Set the text attribute to be the contents of the message.
+
+        Args:
+            values: The values of the object.
+
+        Returns:
+            The values of the object with the text attribute set.
+
+        Raises:
+            ValueError: If the message is not a string or a list.
+        """
+        text = ""
         if isinstance(self.message.content, str):
-            text_ = self.message.content
+            text = self.message.content
         # Assumes text in content blocks in OpenAI format.
         # Uses first text block.
         elif isinstance(self.message.content, list):
             for block in self.message.content:
                 if isinstance(block, str):
-                    text_ = block
+                    text = block
                     break
                 if isinstance(block, dict) and "text" in block:
-                    text_ = block["text"]
+                    text = block["text"]
                     break
-        return text_
+        self.text = text
+        return self
 
 
 class ChatGenerationChunk(ChatGeneration):
@@ -59,7 +76,7 @@ class ChatGenerationChunk(ChatGeneration):
 
     message: BaseMessageChunk
     """The message chunk output by the chat model."""
-
+    # Override type to be ChatGeneration, ignore mypy error as this is intentional
     type: Literal["ChatGenerationChunk"] = "ChatGenerationChunk"  # type: ignore[assignment]
     """Type is used exclusively for serialization purposes."""
 

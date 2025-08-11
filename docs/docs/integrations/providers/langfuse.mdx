@@ -8,26 +8,42 @@
 
 You can configure the integration via (1) constructor arguments or (2) environment variables. Get your Langfuse credentials by signing up at [cloud.langfuse.com](https://cloud.langfuse.com) or [self-hosting Langfuse](https://langfuse.com/self-hosting).
 
-### Constructor arguments 
+### Constructor arguments
 
 ```python
 pip install langfuse
 ```
 
 ```python
-# Initialize Langfuse handler
-from langfuse.callback import CallbackHandler
-langfuse_handler = CallbackHandler(
-    secret_key="sk-lf-...",
-    public_key="pk-lf-...",
-    host="https://cloud.langfuse.com", # 🇪🇺 EU region
-  # host="https://us.cloud.langfuse.com", # 🇺🇸 US region
+from langfuse import Langfuse, get_client
+from langfuse.langchain import CallbackHandler
+from langchain_openai import ChatOpenAI  # Example LLM
+from langchain_core.prompts import ChatPromptTemplate
+
+# Initialize Langfuse client with constructor arguments
+Langfuse(
+    public_key="your-public-key",
+    secret_key="your-secret-key",
+    host="https://cloud.langfuse.com"  # Optional: defaults to https://cloud.langfuse.com
 )
- 
-# Your Langchain code
- 
-# Add Langfuse handler as callback (classic and LCEL)
-chain.invoke({"input": "<user_input>"}, config={"callbacks": [langfuse_handler]})
+
+# Get the configured client instance
+langfuse = get_client()
+
+# Initialize the Langfuse handler
+langfuse_handler = CallbackHandler()
+
+# Create your LangChain components
+llm = ChatOpenAI(model_name="gpt-4o")
+prompt = ChatPromptTemplate.from_template("Tell me a joke about {topic}")
+chain = prompt | llm
+
+# Run your chain with Langfuse tracing
+response = chain.invoke({"topic": "cats"}, config={"callbacks": [langfuse_handler]})
+print(response.content)
+
+# Flush events to Langfuse in short-lived applications
+langfuse.flush()
 ```
 
 ### Environment variables
@@ -43,11 +59,11 @@ LANGFUSE_HOST="https://cloud.langfuse.com"
 
 ```python
 # Initialize Langfuse handler
-from langfuse.callback import CallbackHandler
+from langfuse.langchain import CallbackHandler
 langfuse_handler = CallbackHandler()
- 
+
 # Your Langchain code
- 
+
 # Add Langfuse handler as callback (classic and LCEL)
 chain.invoke({"input": "<user_input>"}, config={"callbacks": [langfuse_handler]})
 ```
@@ -140,7 +156,7 @@ Now, we will add then [Langfuse callback handler for LangChain](https://langfuse
 
 
 ```python
-from langfuse.callback import CallbackHandler
+from langfuse.langchain import CallbackHandler
 
 # Initialize Langfuse CallbackHandler for Langchain (tracing)
 langfuse_handler = CallbackHandler()

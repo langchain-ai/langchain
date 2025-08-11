@@ -24,6 +24,7 @@
       }),
       'openai_api_type': 'azure',
       'openai_api_version': '2021-10-01',
+      'output_version': 'v0',
       'request_timeout': 60.0,
       'stop': list([
       ]),

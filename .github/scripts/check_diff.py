@@ -3,19 +3,18 @@ import json
 import os
 import sys
 from collections import defaultdict
-from typing import Dict, List, Set
 from pathlib import Path
+from typing import Dict, List, Set
+
 import tomllib
-
-from packaging.requirements import Requirement
-
 from get_min_versions import get_min_version_from_toml
-
+from packaging.requirements import Requirement
 
 LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
     "libs/langchain",
+    "libs/langchain_v1",
 ]
 
 # when set to True, we are ignoring core dependents
@@ -37,7 +36,7 @@ IGNORED_PARTNERS = [
 ]
 
 PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma", # https://github.com/chroma-core/chroma/issues/4382
+    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
 ]
 
 
@@ -84,9 +83,9 @@ def dependents_graph() -> dict:
                 for depline in extended_deps:
                     if depline.startswith("-e "):
                         # editable dependency
-                        assert depline.startswith(
-                            "-e ../partners/"
-                        ), "Extended test deps should only editable install partner packages"
+                        assert depline.startswith("-e ../partners/"), (
+                            "Extended test deps should only editable install partner packages"
+                        )
                         partner = depline.split("partners/")[1]
                         dep = f"langchain-{partner}"
                     else:
@@ -119,7 +118,9 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
         return _get_pydantic_test_configs(dir_)
 
-    if dir_ == "libs/core":
+    if job == "codspeed":
+        py_versions = ["3.12"]  # 3.13 is not yet supported
+    elif dir_ == "libs/core":
         py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
@@ -210,6 +211,8 @@ def _get_configs_for_multi_dirs(
         )
     elif job == "extended-tests":
         dirs = list(dirs_to_run["extended-test"])
+    elif job == "codspeed":
+        dirs = list(dirs_to_run["codspeed"])
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -225,6 +228,7 @@ if __name__ == "__main__":
         "lint": set(),
         "test": set(),
         "extended-test": set(),
+        "codspeed": set(),
     }
     docs_edited = False
 
@@ -248,6 +252,8 @@ if __name__ == "__main__":
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
             dirs_to_run["lint"].add(".")
 
+        if file.startswith("libs/core"):
+            dirs_to_run["codspeed"].add(f"libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -263,7 +269,7 @@ if __name__ == "__main__":
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
-            # note: won't run on external repo partners
+            # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/standard-tests")
             dirs_to_run["lint"].add("libs/cli")
@@ -277,7 +283,7 @@ if __name__ == "__main__":
         elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
             dirs_to_run["test"].add("libs/cli")
-            
+
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -286,6 +292,7 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
+                dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file == "libs/packages.yml":
             continue
@@ -294,7 +301,10 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in ["pyproject.toml", "uv.lock"]: # docs or root uv files
+        elif file.startswith("docs/") or file in [
+            "pyproject.toml",
+            "uv.lock",
+        ]:  # docs or root uv files
             docs_edited = True
             dirs_to_run["lint"].add(".")
 
@@ -311,6 +321,7 @@ if __name__ == "__main__":
             "compile-integration-tests",
             "dependencies",
             "test-pydantic",
+            "codspeed",
         ]
     }
     map_job_to_configs["test-doc-imports"] = (

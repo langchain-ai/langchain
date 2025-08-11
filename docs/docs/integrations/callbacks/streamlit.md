@@ -1,7 +1,7 @@
 # Streamlit
 
 > **[Streamlit](https://streamlit.io/) is a faster way to build and share data apps.**
-> Streamlit turns data scripts into shareable web apps in minutes. All in pure Python. No front‑end experience required.
+> Streamlit turns data scripts into shareable web apps in minutes. All in pure Python. No front-end experience required.
 > See more examples at [streamlit.io/generative-ai](https://streamlit.io/generative-ai).
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/streamlit-agent?quickstart=1)

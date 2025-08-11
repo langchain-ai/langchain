@@ -3,8 +3,7 @@
 import random
 import re
 import string
-from pathlib import Path
-from typing import Any, Callable, List, Tuple
+from typing import Any, Callable
 
 import pytest
 from langchain_core.documents import Document
@@ -99,10 +98,10 @@ def test_character_text_splitter_longer_words() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -121,10 +120,10 @@ def test_character_text_splitter_keep_separator_regex(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_start(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the start of each chunk.
@@ -143,10 +142,10 @@ def test_character_text_splitter_keep_separator_regex_start(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_end(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the end of each chunk.
@@ -165,10 +164,10 @@ def test_character_text_splitter_keep_separator_regex_end(
 
 
 @pytest.mark.parametrize(
-    "separator, is_separator_regex", [(re.escape("."), True), (".", False)]
+    ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -213,6 +212,11 @@ def test_character_text_splitting_args() -> None:
     """Test invalid arguments."""
     with pytest.raises(ValueError):
         CharacterTextSplitter(chunk_size=2, chunk_overlap=4)
+    for invalid_size in (0, -1):
+        with pytest.raises(ValueError):
+            CharacterTextSplitter(chunk_size=invalid_size)
+    with pytest.raises(ValueError):
+        CharacterTextSplitter(chunk_size=2, chunk_overlap=-1)
 
 
 def test_merge_splits() -> None:
@@ -251,7 +255,7 @@ def test_create_documents_with_metadata() -> None:
 
 
 @pytest.mark.parametrize(
-    "splitter, text, expected_docs",
+    ("splitter", "text", "expected_docs"),
     [
         (
             CharacterTextSplitter(
@@ -283,7 +287,7 @@ def test_create_documents_with_metadata() -> None:
     ],
 )
 def test_create_documents_with_start_index(
-    splitter: TextSplitter, text: str, expected_docs: List[Document]
+    splitter: TextSplitter, text: str, expected_docs: list[Document]
 ) -> None:
     """Test create documents method."""
     docs = splitter.create_documents([text])
@@ -334,7 +338,9 @@ def test_iterative_text_splitter_discard_separator() -> None:
     ]
 
 
-def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> List[str]:
+def __test_iterative_text_splitter(
+    *, chunk_size: int, keep_separator: bool
+) -> list[str]:
     chunk_size += 1 if keep_separator else 0
 
     splitter = RecursiveCharacterTextSplitter(
@@ -1391,7 +1397,7 @@ def test_md_header_text_splitter_fenced_code_block(fence: str) -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize(["fence", "other_fence"], [("```", "~~~"), ("~~~", "```")])
+@pytest.mark.parametrize(("fence", "other_fence"), [("```", "~~~"), ("~~~", "```")])
 def test_md_header_text_splitter_fenced_code_block_interleaved(
     fence: str, other_fence: str
 ) -> None:
@@ -1464,6 +1470,10 @@ EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "Content for header 1\n"
     "## Header 2\n"
     "Content for header 2\n"
+    "### Header 3\n"
+    "Content for header 3\n"
+    "## Header 2 Again\n"
+    "This should be tagged with Header 1 and Header 2 Again\n"
     "```python\n"
     "def func_definition():\n"
     "   print('Keep the whitespace consistent')\n"
@@ -1492,6 +1502,18 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="Content for header 3\n",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content="This should be tagged with Header 1 and Header 2 Again\n",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content=(
                 "```python\ndef func_definition():\n   "
                 "print('Keep the whitespace consistent')\n```\n"
@@ -1499,7 +1521,7 @@ def test_experimental_markdown_syntax_text_splitter() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1530,7 +1552,15 @@ def test_experimental_markdown_syntax_text_splitter_header_configuration() -> No
 
     expected_output = [
         Document(
-            page_content="Content for header 1\n## Header 2\nContent for header 2\n",
+            page_content=(
+                "Content for header 1\n"
+                "## Header 2\n"
+                "Content for header 2\n"
+                "### Header 3\n"
+                "Content for header 3\n"
+                "## Header 2 Again\n"
+                "This should be tagged with Header 1 and Header 2 Again\n"
+            ),
             metadata={"Encabezamiento 1": "My Header 1"},
         ),
         Document(
@@ -1572,6 +1602,21 @@ def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="### Header 3\nContent for header 3\n",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content=(
+                "## Header 2 Again\n"
+                "This should be tagged with Header 1 and Header 2 Again\n"
+            ),
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content=(
                 "```python\ndef func_definition():\n   "
                 "print('Keep the whitespace consistent')\n```\n"
@@ -1579,7 +1624,7 @@ def test_experimental_markdown_syntax_text_splitter_with_headers() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1615,11 +1660,23 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={"Header 1": "My Header 1", "Header 2": "Header 2"},
         ),
         Document(
+            page_content="Content for header 3",
+            metadata={
+                "Header 1": "My Header 1",
+                "Header 2": "Header 2",
+                "Header 3": "Header 3",
+            },
+        ),
+        Document(
+            page_content="This should be tagged with Header 1 and Header 2 Again",
+            metadata={"Header 1": "My Header 1", "Header 2": "Header 2 Again"},
+        ),
+        Document(
             page_content="```python",
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1627,7 +1684,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1635,7 +1692,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -1643,7 +1700,7 @@ def test_experimental_markdown_syntax_text_splitter_split_lines() -> None:
             metadata={
                 "Code": "python",
                 "Header 1": "My Header 1",
-                "Header 2": "Header 2",
+                "Header 2": "Header 2 Again",
             },
         ),
         Document(
@@ -2174,7 +2231,7 @@ def test_haskell_code_splitter() -> None:
 @pytest.fixture
 @pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
-    [List[Tuple[str, str]]], HTMLHeaderTextSplitter
+    [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
     """
     Fixture to create an HTMLHeaderTextSplitter instance with given headers.
@@ -2182,7 +2239,7 @@ def html_header_splitter_splitter_factory() -> Callable[
     """
 
     def _create_splitter(
-        headers_to_split_on: List[Tuple[str, str]],
+        headers_to_split_on: list[tuple[str, str]],
     ) -> HTMLHeaderTextSplitter:
         return HTMLHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
 
@@ -2190,7 +2247,7 @@ def html_header_splitter_splitter_factory() -> Callable[
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_input, expected_documents, test_case",
+    ("headers_to_split_on", "html_input", "expected_documents", "test_case"),
     [
         (
             # Test Case 1: Split on h1 and h2
@@ -2376,9 +2433,9 @@ def html_header_splitter_splitter_factory() -> Callable[
 @pytest.mark.requires("bs4")
 def test_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_input: str,
-    expected_documents: List[Document],
+    expected_documents: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2419,7 +2476,7 @@ def test_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case A: Split on h1 and h2 with h3 in content
@@ -2532,9 +2589,9 @@ def test_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_additional_html_header_text_splitter(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2574,7 +2631,7 @@ def test_additional_html_header_text_splitter(
 
 
 @pytest.mark.parametrize(
-    "headers_to_split_on, html_content, expected_output, test_case",
+    ("headers_to_split_on", "html_content", "expected_output", "test_case"),
     [
         (
             # Test Case C: Split on h1, h2, and h3 with no headers present
@@ -2603,9 +2660,9 @@ def test_additional_html_header_text_splitter(
 @pytest.mark.requires("bs4")
 def test_html_no_headers_with_multiple_splitters(
     html_header_splitter_splitter_factory: Any,
-    headers_to_split_on: List[Tuple[str, str]],
+    headers_to_split_on: list[tuple[str, str]],
     html_content: str,
-    expected_output: List[Document],
+    expected_output: list[Document],
     test_case: str,
 ) -> None:
     """
@@ -2816,37 +2873,6 @@ def test_happy_path_splitting_based_on_header_with_whitespace_chars() -> None:
 
 @pytest.mark.requires("bs4")
 @pytest.mark.requires("lxml")
-def test_section_splitter_accepts_a_relative_path() -> None:
-    html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt")
-    assert test_file.is_file()
-
-    sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-        xslt_path=test_file.as_posix(),
-    )
-
-    sec_splitter.split_text(html_string)
-
-
-@pytest.mark.requires("bs4")
-@pytest.mark.requires("lxml")
-def test_section_splitter_accepts_an_absolute_path() -> None:
-    html_string = """<html><body><p>Foo</p></body></html>"""
-    test_file = Path("tests/test_data/test_splitter.xslt").absolute()
-    assert test_file.is_absolute()
-    assert test_file.is_file()
-
-    sec_splitter = HTMLSectionSplitter(
-        headers_to_split_on=[("h1", "Header 1"), ("h2", "Header 2")],
-        xslt_path=test_file.as_posix(),
-    )
-
-    sec_splitter.split_text(html_string)
-
-
-@pytest.mark.requires("bs4")
-@pytest.mark.requires("lxml")
 def test_happy_path_splitting_with_duplicate_header_tag() -> None:
     # arrange
     html_string = """<!DOCTYPE html>
@@ -3014,6 +3040,82 @@ $csvContent | ForEach-Object {
         '$csvContent = Import-Csv -Path "C:\\temp\\processes.csv"',
         "$csvContent | ForEach-Object {\n    $_.ProcessName\n}",
         "# End of script",
+    ]
+
+
+FAKE_VISUALBASIC6_TEXT = """
+Option Explicit
+
+Public Function SumTwoIntegers(ByVal a As Integer, ByVal b As Integer) As Integer
+    SumTwoIntegers = a + b
+End Function
+
+Public Sub Main()
+    Dim i As Integer
+    Dim limit As Integer
+
+    i = 0
+    limit = 50
+
+    While i < limit
+        i = SumTwoIntegers(i, 1)
+
+        If i = limit \\ 2 Then
+            MsgBox "Halfway there! i = " & i
+        End If
+    Wend
+
+    MsgBox "Done! Final value of i: " & i
+End Sub
+"""
+
+
+def test_visualbasic6_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.VISUALBASIC6,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=0,
+    )
+    chunks = splitter.split_text(FAKE_VISUALBASIC6_TEXT)
+
+    assert chunks == [
+        "Option Explicit",
+        "Public Function",
+        "SumTwoIntegers(",
+        "ByVal",
+        "a As Integer,",
+        "ByVal b As",
+        "Integer) As",
+        "Integer",
+        "SumTwoIntegers",
+        "= a + b",
+        "End Function",
+        "Public Sub",
+        "Main()",
+        "Dim i As",
+        "Integer",
+        "Dim limit",
+        "As Integer",
+        "i = 0",
+        "limit = 50",
+        "While i <",
+        "limit",
+        "i =",
+        "SumTwoIntegers(",
+        "i,",
+        "1)",
+        "If i =",
+        "limit \\ 2 Then",
+        'MsgBox "Halfway',
+        'there! i = " &',
+        "i",
+        "End If",
+        "Wend",
+        "MsgBox",
+        '"Done! Final',
+        'value of i: " &',
+        "i",
+        "End Sub",
     ]
 
 
@@ -3375,6 +3477,148 @@ def test_html_splitter_with_media_preservation() -> None:
     assert documents == expected
 
 
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_true() -> None:
+    """Test HTML splitting with keep_separator=True"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=True,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_false() -> None:
+    """Test HTML splitting with keep_separator=False"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator=False,
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_start() -> None:
+    """Test HTML splitting with keep_separator="start" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="start",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_end() -> None:
+    """Test HTML splitting with keep_separator="end" """
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")],
+        max_chunk_size=10,
+        separators=[". "],
+        keep_separator="end",
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content="This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
+@pytest.mark.requires("bs4")
+def test_html_splitter_keep_separator_default() -> None:
+    """Test HTML splitting with keep_separator not set"""
+    html_content = """
+    <h1>Section 1</h1>
+    <p>This is some text. This is some other text.</p>
+    """
+    splitter = HTMLSemanticPreservingSplitter(
+        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=10, separators=[". "]
+    )
+    documents = splitter.split_text(html_content)
+
+    expected = [
+        Document(
+            page_content="This is some text",
+            metadata={"Header 1": "Section 1"},
+        ),
+        Document(
+            page_content=". This is some other text.",
+            metadata={"Header 1": "Section 1"},
+        ),
+    ]
+
+    assert documents == expected
+
+
 def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
     """Test that regex lookahead separator is not re-inserted when merging."""
     text = "SCE191 First chunk. SCE103 Second chunk."
@@ -3390,7 +3634,7 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 
 
 @pytest.mark.parametrize(
-    "separator,is_regex,text,chunk_size,expected",
+    ("separator", "is_regex", "text", "chunk_size", "expected"),
     [
         # 1) regex lookaround & split happens
         #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
@@ -3408,10 +3652,11 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 )
 def test_character_text_splitter_chunk_size_effect(
     separator: str,
+    *,
     is_regex: bool,
     text: str,
     chunk_size: int,
-    expected: List[str],
+    expected: list[str],
 ) -> None:
     splitter = CharacterTextSplitter(
         separator=separator,

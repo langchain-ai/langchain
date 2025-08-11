@@ -1,44 +1,66 @@
-name: CodSpeed
+name: '⚡ CodSpeed'
 
 on:
   push:
     branches:
         - master
   pull_request:
-    paths:
-      - 'libs/core/**'
-  # `workflow_dispatch` allows CodSpeed to trigger backtest
-  # performance analysis in order to generate initial data.
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: foo
+  AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: foo
+  DEEPSEEK_API_KEY: foo
+  FIREWORKS_API_KEY: foo
 
 jobs:
   codspeed:
-    name: Run benchmarks
-    if: (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-codspeed-benchmarks')) || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
+    name: 'Benchmark'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
+    strategy:
+      matrix:
+        include:
+          - working-directory: libs/core
+            mode: walltime
+          - working-directory: libs/partners/openai
+          - working-directory: libs/partners/anthropic
+          - working-directory: libs/partners/deepseek
+          - working-directory: libs/partners/fireworks
+          - working-directory: libs/partners/xai
+          - working-directory: libs/partners/mistralai
+          - working-directory: libs/partners/groq
+      fail-fast: false
+
     steps:
       - uses: actions/checkout@v4
 
-      # We have to use 3.12, 3.13 is not yet supported
-      - name: Install uv
+      # We have to use 3.12 as 3.13 is not yet supported
+      - name: '📦 Install UV Package Manager'
         uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
 
-      # Using this action is still necessary for CodSpeed to work
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: install deps
+      - name: '📦 Install Test Dependencies'
         run: uv sync --group test
-        working-directory: ./libs/core
+        working-directory: ${{ matrix.working-directory }}
 
-      - name: Run benchmarks
+      - name: '⚡ Run Benchmarks: ${{ matrix.working-directory }}'
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
-            cd libs/core
-            uv run --no-sync pytest ./tests/benchmarks --codspeed
-          mode: walltime
+            cd ${{ matrix.working-directory }}
+            if [ "${{ matrix.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
+          mode: ${{ matrix.mode || 'instrumentation' }}

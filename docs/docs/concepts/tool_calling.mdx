@@ -6,7 +6,7 @@
 :::
 
 
-## Overview 
+## Overview
 
 Many AI applications interact directly with humans. In these cases, it is appropriate for models to respond in natural language.
 But what about cases where we want a model to also interact *directly* with systems, such as databases or an API?
@@ -14,17 +14,17 @@ These systems often have a particular input schema; for example, APIs frequently
 This need motivates the concept of *tool calling*. You can use [tool calling](https://platform.openai.com/docs/guides/function-calling/example-use-cases) to request model responses that match a particular schema.
 
 :::info
-You will sometimes hear the term `function calling`. We use this term interchangeably with `tool calling`. 
+You will sometimes hear the term `function calling`. We use this term interchangeably with `tool calling`.
 :::
 
 ![Conceptual overview of tool calling](/img/tool_calling_concept.png)
 
-## Key concepts 
+## Key concepts
 
-**(1) Tool Creation:** Use the [@tool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.convert.tool.html) decorator to create a [tool](/docs/concepts/tools). A tool is an association between a function and its schema.
-**(2) Tool Binding:** The tool needs to be connected to a model that supports tool calling. This gives the model awareness of the tool and the associated input schema required by the tool.
-**(3) Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.
-**(4) Tool Execution:** The tool can be executed using the arguments provided by the model.
+1. **Tool Creation:** Use the [@tool](https://python.langchain.com/api_reference/core/tools/langchain_core.tools.convert.tool.html) decorator to create a [tool](/docs/concepts/tools). A tool is an association between a function and its schema.<br/>
+2. **Tool Binding:** The tool needs to be connected to a model that supports tool calling. This gives the model awareness of the tool and the associated input schema required by the tool.<br/>
+3. **Tool Calling:** When appropriate, the model can decide to call a tool and ensure its response conforms to the tool's input schema.<br/>
+4. **Tool Execution:** The tool can be executed using the arguments provided by the model.
 
 ![Conceptual parts of tool calling](/img/tool_calling_components.png)
 
@@ -40,7 +40,7 @@ The tool call arguments can be passed directly to the tool.
 tools = [my_tool]
 # Tool binding
 model_with_tools = model.bind_tools(tools)
-# Tool calling 
+# Tool calling
 response = model_with_tools.invoke(user_input)
 ```
 
@@ -65,16 +65,16 @@ def multiply(a: int, b: int) -> int:
 
 :::
 
-## Tool binding 
+## Tool binding
 
-[Many](https://platform.openai.com/docs/guides/function-calling) [model providers](https://platform.openai.com/docs/guides/function-calling) support tool calling. 
+[Many](https://platform.openai.com/docs/guides/function-calling) [model providers](https://platform.openai.com/docs/guides/function-calling) support tool calling.
 
 :::tip
 See our [model integration page](/docs/integrations/chat/) for a list of providers that support tool calling.
 :::
 
-The central concept to understand is that LangChain provides a standardized interface for connecting tools to models. 
-The `.bind_tools()` method can be used to specify which tools are available for a model to call. 
+The central concept to understand is that LangChain provides a standardized interface for connecting tools to models.
+The `.bind_tools()` method can be used to specify which tools are available for a model to call.
 
 ```python
 model_with_tools = model.bind_tools(tools_list)
@@ -113,13 +113,13 @@ However, if we pass an input *relevant to the tool*, the model should choose to 
 result = llm_with_tools.invoke("What is 2 multiplied by 3?")
 ```
 
-As before, the output `result` will be an `AIMessage`. 
-But, if the tool was called, `result` will have a `tool_calls` attribute.
+As before, the output `result` will be an `AIMessage`.
+But, if the tool was called, `result` will have a `tool_calls` [attribute](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.AIMessage.html#langchain_core.messages.ai.AIMessage.tool_calls).
 This attribute includes everything needed to execute the tool, including the tool name and input arguments:
 
 ```
 result.tool_calls
-{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}
+[{'name': 'multiply', 'args': {'a': 2, 'b': 3}, 'id': 'xxx', 'type': 'tool_call'}]
 ```
 
 For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
@@ -134,6 +134,16 @@ For more details on usage, see our [how-to guides](/docs/how_to/#tools)!
 
 * See our [how-to guide](/docs/how_to/tool_calling/) on tool calling.
 * See the [LangGraph documentation on using ToolNode](https://langchain-ai.github.io/langgraph/how-tos/tool-calling/).
+
+:::
+
+## Forcing tool use
+
+By default, the model has the freedom to choose which tool to use based on the user's input. However, in certain scenarios, you might want to influence the model's decision-making process. LangChain allows you to enforce tool choice (using `tool_choice`), ensuring the model uses either a particular tool or *any* tool from a given list. This is useful for structuring the model's behavior and guiding it towards a desired outcome.
+
+:::info[Further reading]
+
+* See our [how-to guide](/docs/how_to/tool_choice) on forcing tool use.
 
 :::
 

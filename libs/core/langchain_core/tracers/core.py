@@ -165,7 +165,7 @@ class _TracerCore(ABC):
         **kwargs: Any,
     ) -> Run:
         """Create a chat model run."""
-        if self._schema_format not in ("streaming_events", "original+chat"):
+        if self._schema_format not in {"streaming_events", "original+chat"}:
             # Please keep this un-implemented for backwards compatibility.
             # When it's unimplemented old tracers that use the "original" format
             # fallback on the on_llm_start method implementation if they
@@ -352,7 +352,7 @@ class _TracerCore(ABC):
 
     def _get_chain_inputs(self, inputs: Any) -> Any:
         """Get the inputs for a chain run."""
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             return inputs if isinstance(inputs, dict) else {"input": inputs}
         if self._schema_format == "streaming_events":
             return {
@@ -363,7 +363,7 @@ class _TracerCore(ABC):
 
     def _get_chain_outputs(self, outputs: Any) -> Any:
         """Get the outputs for a chain run."""
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             return outputs if isinstance(outputs, dict) else {"output": outputs}
         if self._schema_format == "streaming_events":
             return {
@@ -423,7 +423,7 @@ class _TracerCore(ABC):
         if metadata:
             kwargs.update({"metadata": metadata})
 
-        if self._schema_format in ("original", "original+chat"):
+        if self._schema_format in {"original", "original+chat"}:
             inputs = {"input": input_str}
         elif self._schema_format == "streaming_events":
             inputs = {"input": inputs}

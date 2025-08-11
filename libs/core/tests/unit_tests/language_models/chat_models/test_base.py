@@ -163,10 +163,15 @@ async def test_astream_fallback_to_ainvoke() -> None:
 
     model = ModelWithGenerate()
     chunks = list(model.stream("anything"))
-    assert chunks == [_any_id_ai_message(content="hello")]
+    # BaseChatModel.stream is typed to return Iterator[BaseMessageChunk].
+    # When streaming is disabled, it returns Iterator[BaseMessage], so the type hint
+    # is not strictly correct.
+    # LangChain documents a pattern of adding BaseMessageChunks to accumulate a stream.
+    # This may be better done with `reduce(operator.add, chunks)`.
+    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_any_id_ai_message(content="hello")]
+    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -324,6 +329,7 @@ class StreamingModel(NoStreamingModel):
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
@@ -336,7 +342,7 @@ def test_disable_streaming(
         == expected
     )
 
-    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
     assert next(model.stream([], tools=[{"type": "function"}])).content == expected
     assert (
         model.invoke(
@@ -348,6 +354,7 @@ def test_disable_streaming(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_async(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = StreamingModel(disable_streaming=disable_streaming)
@@ -361,7 +368,7 @@ async def test_disable_streaming_async(
         await model.ainvoke([], config={"callbacks": [_AstreamEventsCallbackHandler()]})
     ).content == expected
 
-    expected = "invoke" if disable_streaming in ("tool_calling", True) else "stream"
+    expected = "invoke" if disable_streaming in {"tool_calling", True} else "stream"
     async for c in model.astream([], tools=[{}]):
         assert c.content == expected
         break
@@ -374,6 +381,7 @@ async def test_disable_streaming_async(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 def test_disable_streaming_no_streaming_model(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
@@ -388,6 +396,7 @@ def test_disable_streaming_no_streaming_model(
 
 @pytest.mark.parametrize("disable_streaming", [True, False, "tool_calling"])
 async def test_disable_streaming_no_streaming_model_async(
+    *,
     disable_streaming: Union[bool, Literal["tool_calling"]],
 ) -> None:
     model = NoStreamingModel(disable_streaming=disable_streaming)
@@ -455,6 +464,55 @@ def test_trace_images_in_openai_format() -> None:
             "source_type": "url",
             "url": "https://example.com/image.png",
         }
+    ]
+
+
+def test_trace_content_blocks_with_no_type_key() -> None:
+    """Test that we add a ``type`` key to certain content blocks that don't have one."""
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello",
+                },
+                {
+                    "cachePoint": {"type": "default"},
+                },
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "text",
+                            "text": "Hello",
+                        },
+                        {
+                            "type": "cachePoint",
+                            "cachePoint": {"type": "default"},
+                        },
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Test no mutation
+    assert response.content == [
+        {
+            "type": "text",
+            "text": "Hello",
+        },
+        {
+            "cachePoint": {"type": "default"},
+        },
     ]
 
 

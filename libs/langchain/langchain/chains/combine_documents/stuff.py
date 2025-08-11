@@ -10,6 +10,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import BasePromptTemplate, format_document
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import (
     DEFAULT_DOCUMENT_PROMPT,
@@ -74,6 +75,7 @@ def create_stuff_documents_chain(
             ]
 
             chain.invoke({"context": docs})
+
     """  # noqa: E501
 
     _validate_prompt(prompt, document_variable_name)
@@ -88,7 +90,7 @@ def create_stuff_documents_chain(
 
     return (
         RunnablePassthrough.assign(**{document_variable_name: format_docs}).with_config(
-            run_name="format_inputs"
+            run_name="format_inputs",
         )
         | prompt
         | llm
@@ -102,7 +104,7 @@ def create_stuff_documents_chain(
     message=(
         "This class is deprecated. Use the `create_stuff_documents_chain` constructor "
         "instead. See migration guide here: "
-        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain/"
     ),
 )
 class StuffDocumentsChain(BaseCombineDocumentsChain):
@@ -141,13 +143,14 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
                 document_prompt=document_prompt,
                 document_variable_name=document_variable_name
             )
+
     """
 
     llm_chain: LLMChain
     """LLM chain which is called with the formatted document string,
     along with any other inputs."""
     document_prompt: BasePromptTemplate = Field(
-        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT
+        default_factory=lambda: DEFAULT_DOCUMENT_PROMPT,
     )
     """Prompt to use to format each document, gets passed to `format_document`."""
     document_variable_name: str
@@ -175,19 +178,21 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             if len(llm_chain_variables) == 1:
                 values["document_variable_name"] = llm_chain_variables[0]
             else:
-                raise ValueError(
+                msg = (
                     "document_variable_name must be provided if there are "
                     "multiple llm_chain_variables"
                 )
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                raise ValueError(
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
+                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         extra_keys = [
             k for k in self.llm_chain.input_keys if k != self.document_variable_name
@@ -238,10 +243,13 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         """
         inputs = self._get_inputs(docs, **kwargs)
         prompt = self.llm_chain.prompt.format(**inputs)
-        return self.llm_chain._get_num_tokens(prompt)
+        return self.llm_chain._get_num_tokens(prompt)  # noqa: SLF001
 
     def combine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Stuff all documents into one prompt and pass to LLM.
 
@@ -259,7 +267,10 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         return self.llm_chain.predict(callbacks=callbacks, **inputs), {}
 
     async def acombine_docs(
-        self, docs: list[Document], callbacks: Callbacks = None, **kwargs: Any
+        self,
+        docs: list[Document],
+        callbacks: Callbacks = None,
+        **kwargs: Any,
     ) -> tuple[str, dict]:
         """Async stuff all documents into one prompt and pass to LLM.
 

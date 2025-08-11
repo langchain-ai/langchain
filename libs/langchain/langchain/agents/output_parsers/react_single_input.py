@@ -3,6 +3,7 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from typing_extensions import override
 
 from langchain.agents.agent import AgentOutputParser
 from langchain.agents.mrkl.prompt import FORMAT_INSTRUCTIONS
@@ -45,9 +46,11 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
     """
 
+    @override
     def get_format_instructions(self) -> str:
         return FORMAT_INSTRUCTIONS
 
+    @override
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
         includes_answer = FINAL_ANSWER_ACTION in text
         regex = (
@@ -56,9 +59,8 @@ class ReActSingleInputOutputParser(AgentOutputParser):
         action_match = re.search(regex, text, re.DOTALL)
         if action_match:
             if includes_answer:
-                raise OutputParserException(
-                    f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
-                )
+                msg = f"{FINAL_ANSWER_AND_PARSABLE_ACTION_ERROR_MESSAGE}: {text}"
+                raise OutputParserException(msg)
             action = action_match.group(1).strip()
             action_input = action_match.group(2)
             tool_input = action_input.strip(" ")
@@ -66,29 +68,34 @@ class ReActSingleInputOutputParser(AgentOutputParser):
 
             return AgentAction(action, tool_input, text)
 
-        elif includes_answer:
+        if includes_answer:
             return AgentFinish(
-                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()}, text
+                {"output": text.split(FINAL_ANSWER_ACTION)[-1].strip()},
+                text,
             )
 
         if not re.search(r"Action\s*\d*\s*:[\s]*(.*?)", text, re.DOTALL):
+            msg = f"Could not parse LLM output: `{text}`"
             raise OutputParserException(
-                f"Could not parse LLM output: `{text}`",
+                msg,
                 observation=MISSING_ACTION_AFTER_THOUGHT_ERROR_MESSAGE,
                 llm_output=text,
                 send_to_llm=True,
             )
-        elif not re.search(
-            r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)", text, re.DOTALL
+        if not re.search(
+            r"[\s]*Action\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)",
+            text,
+            re.DOTALL,
         ):
+            msg = f"Could not parse LLM output: `{text}`"
             raise OutputParserException(
-                f"Could not parse LLM output: `{text}`",
+                msg,
                 observation=MISSING_ACTION_INPUT_AFTER_ACTION_ERROR_MESSAGE,
                 llm_output=text,
                 send_to_llm=True,
             )
-        else:
-            raise OutputParserException(f"Could not parse LLM output: `{text}`")
+        msg = f"Could not parse LLM output: `{text}`"
+        raise OutputParserException(msg)
 
     @property
     def _type(self) -> str:

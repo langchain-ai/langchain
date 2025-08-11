@@ -40,7 +40,7 @@ def _stream_response_to_generation_chunk(
     if not stream_response["choices"]:
         return GenerationChunk(text="")
     return GenerationChunk(
-        text=stream_response["choices"][0]["text"],
+        text=stream_response["choices"][0]["text"] or "",
         generation_info=dict(
             finish_reason=stream_response["choices"][0].get("finish_reason", None),
             logprobs=stream_response["choices"][0].get("logprobs", None),
@@ -76,7 +76,7 @@ class BaseOpenAI(BaseLLM):
     openai_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
     openai_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
@@ -88,7 +88,7 @@ class BaseOpenAI(BaseLLM):
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
+    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
     # to support explicit proxy for OpenAI
     openai_proxy: Optional[str] = Field(
         default_factory=from_env("OPENAI_PROXY", default=None)
@@ -98,7 +98,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     logit_bias: Optional[dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
@@ -130,12 +130,13 @@ class BaseOpenAI(BaseLLM):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify 
-        http_async_client as well if you'd like a custom client for async invocations.
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+        ``http_async_client`` as well if you'd like a custom client for async
+        invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify 
-        http_client as well if you'd like a custom client for sync invocations."""
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
     making requests to OpenAI compatible APIs, such as vLLM."""
@@ -288,6 +289,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 response = openai.generate(["Tell me a joke."])
+
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -310,7 +312,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,
@@ -378,7 +381,8 @@ class BaseOpenAI(BaseLLM):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
+                if generation is None:
+                    raise ValueError("Generation is empty after streaming.")
                 choices.append(
                     {
                         "text": generation.text,
@@ -505,6 +509,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -569,6 +574,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -604,13 +610,13 @@ class OpenAI(BaseOpenAI):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            OpenAI API key. If not passed in will be read from env var OPENAI_API_KEY.
+            OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
         organization: Optional[str]
             OpenAI organization ID. If not passed in will be read from env
-            var OPENAI_ORG_ID.
+            var ``OPENAI_ORG_ID``.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -682,7 +688,7 @@ class OpenAI(BaseOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @property

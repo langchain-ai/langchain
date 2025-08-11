@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 NAIVE_FIX = """Instructions:
@@ -16,7 +15,7 @@ Error:
 {error}
 --------------
 
-Please try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"""
+Please try again. Please only respond with an answer that satisfies the constraints laid out in the Instructions:"""  # noqa: E501
 
 
 NAIVE_FIX_PROMPT = PromptTemplate.from_template(NAIVE_FIX)
