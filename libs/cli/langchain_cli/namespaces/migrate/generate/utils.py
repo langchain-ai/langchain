@@ -8,7 +8,6 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional
 
-
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
 PKGS_ROOT = HERE.parent.parent.parent.parent.parent
