@@ -41,8 +41,7 @@ class TestBatchAPIIntegration:
             [
                 HumanMessage(
                     content=(
-                        "What is the capital of France? "
-                        "Answer with just the city name."
+                        "What is the capital of France? Answer with just the city name."
                     )
                 )
             ],
@@ -210,8 +209,7 @@ class TestBatchAPIIntegration:
             [
                 HumanMessage(
                     content=(
-                        "What is the smallest planet? "
-                        "Answer with just the planet name."
+                        "What is the smallest planet? Answer with just the planet name."
                     )
                 )
             ],
