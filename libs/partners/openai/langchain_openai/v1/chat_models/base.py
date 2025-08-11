@@ -1052,6 +1052,7 @@ class BaseChatOpenAI(BaseChatModel):
                 else _convert_message_to_dict(m)
                 for m in messages
             ]
+            payload["messages"][0]["content"] = payload["messages"][0]["content"][0]["text"]
         return payload
 
     def _create_ai_message(
