@@ -713,3 +713,7 @@ packages:
   provider_page: anchor_browser
   path: .
   repo: anchorbrowser/langchain-anchorbrowser
+- name: toolbox-langchain
+  repo: googleapis/mcp-toolbox-sdk-python
+  path: packages/toolbox-langchain
+
