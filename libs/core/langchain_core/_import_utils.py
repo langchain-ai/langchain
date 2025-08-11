@@ -27,8 +27,8 @@ def import_attr(
     else:
         try:
             module = import_module(f".{module_name}", package=package)
-        except ModuleNotFoundError:
-            msg = f"module '{package!r}.{module_name!r}' not found"
+        except ModuleNotFoundError as err:
+            msg = f"module '{package!r}.{module_name!r}' not found ({err})"
             raise ImportError(msg) from None
         result = getattr(module, attr_name)
     return result

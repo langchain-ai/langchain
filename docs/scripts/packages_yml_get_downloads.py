@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import re
 
 import requests
 from ruamel.yaml import YAML
@@ -11,10 +12,18 @@ PACKAGE_YML = Path(__file__).parents[2] / "libs" / "packages.yml"
 
 
 def _get_downloads(p: dict) -> int:
-    url = f"https://pypistats.org/api/packages/{p['name']}/recent?period=month"
-    r = requests.get(url)
-    r.raise_for_status()
-    return r.json()["data"]["last_month"]
+    url = f"https://pepy.tech/badge/{p['name']}/month"
+    svg = requests.get(url, timeout=10).text
+    texts = re.findall(r"<text[^>]*>([^<]+)</text>", svg)
+    latest = texts[-1].strip() if texts else "0"
+
+    # parse "1.2k", "3.4M", "12,345" -> int
+    latest = latest.replace(",", "")
+    if latest.endswith(("k", "K")):
+        return int(float(latest[:-1]) * 1_000)
+    if latest.endswith(("m", "M")):
+        return int(float(latest[:-1]) * 1_000_000)
+    return int(float(latest) if "." in latest else int(latest))
 
 
 current_datetime = datetime.now(timezone.utc)

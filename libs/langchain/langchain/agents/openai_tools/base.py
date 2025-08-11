@@ -84,6 +84,7 @@ def create_openai_tools_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

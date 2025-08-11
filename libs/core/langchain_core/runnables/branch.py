@@ -63,6 +63,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
             branch.invoke("hello") # "HELLO"
             branch.invoke(None) # "goodbye"
+
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
