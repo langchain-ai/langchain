@@ -13,10 +13,14 @@ from langchain_core.language_models import (
     FakeListChatModel,
     ParrotFakeChatModel,
 )
-from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models._utils import (
+    _normalize_messages,
+    _normalize_messages_v1,
+)
 from langchain_core.language_models.fake_chat_models import (
     FakeListChatModelError,
     GenericFakeChatModelV1,
+    ParrotFakeChatModelV1,
 )
 from langchain_core.messages import (
     AIMessage,
@@ -33,6 +37,7 @@ from langchain_core.tracers.context import collect_runs
 from langchain_core.tracers.event_stream import _AstreamEventsCallbackHandler
 from langchain_core.tracers.schemas import Run
 from langchain_core.v1.messages import AIMessageChunk as AIMessageChunkV1
+from langchain_core.v1.messages import HumanMessage as HumanMessageV1
 from tests.unit_tests.fake.callbacks import (
     BaseFakeCallbackHandler,
     FakeAsyncCallbackHandler,
@@ -430,9 +435,10 @@ class FakeChatModelStartTracer(FakeTracer):
         )
 
 
-def test_trace_images_in_openai_format() -> None:
+@pytest.mark.parametrize("llm_class", [ParrotFakeChatModel, ParrotFakeChatModelV1])
+def test_trace_images_in_openai_format(llm_class: Any) -> None:
     """Test that images are traced in OpenAI format."""
-    llm = ParrotFakeChatModel()
+    llm = llm_class()
     messages = [
         {
             "role": "user",
@@ -456,7 +462,8 @@ def test_trace_images_in_openai_format() -> None:
                             "type": "image_url",
                             "image_url": {"url": "https://example.com/image.png"},
                         }
-                    ]
+                    ],
+                    id=tracer.messages[0][0][0].id,
                 )
             ]
         ]
@@ -471,9 +478,10 @@ def test_trace_images_in_openai_format() -> None:
     ]
 
 
-def test_trace_content_blocks_with_no_type_key() -> None:
+@pytest.mark.parametrize("llm_class", [ParrotFakeChatModel, ParrotFakeChatModelV1])
+def test_trace_content_blocks_with_no_type_key(llm_class: Any) -> None:
     """Test that we add a ``type`` key to certain content blocks that don't have one."""
-    llm = ParrotFakeChatModel()
+    llm = llm_class()
     messages = [
         {
             "role": "user",
@@ -503,7 +511,8 @@ def test_trace_content_blocks_with_no_type_key() -> None:
                             "type": "cachePoint",
                             "cachePoint": {"type": "default"},
                         },
-                    ]
+                    ],
+                    id=tracer.messages[0][0][0].id,
                 )
             ]
         ]
@@ -520,9 +529,10 @@ def test_trace_content_blocks_with_no_type_key() -> None:
     ]
 
 
-def test_extend_support_to_openai_multimodal_formats() -> None:
+@pytest.mark.parametrize("llm_class", [ParrotFakeChatModel, ParrotFakeChatModelV1])
+def test_extend_support_to_openai_multimodal_formats(llm_class: Any) -> None:
     """Test that chat models normalize OpenAI file and audio inputs."""
-    llm = ParrotFakeChatModel()
+    llm = llm_class()
     messages = [
         {
             "role": "user",
@@ -658,6 +668,34 @@ def test_normalize_messages_edge_cases() -> None:
         )
     ]
     assert messages == _normalize_messages(messages)
+
+
+def test_normalize_messages_edge_cases_v1() -> None:
+    # Test some blocks that should pass through
+    messages = [
+        HumanMessageV1(
+            content=[
+                {  # type: ignore[list-item]
+                    "type": "file",
+                    "file": "uri",
+                },
+                {  # type: ignore[list-item]
+                    "type": "input_file",
+                    "file_data": "uri",
+                    "filename": "file-name",
+                },
+                {  # type: ignore[list-item]
+                    "type": "input_audio",
+                    "input_audio": "uri",
+                },
+                {  # type: ignore[list-item]
+                    "type": "input_image",
+                    "image_url": "uri",
+                },
+            ]
+        )
+    ]
+    assert messages == _normalize_messages_v1(messages)
 
 
 def test_streaming_v1() -> None:

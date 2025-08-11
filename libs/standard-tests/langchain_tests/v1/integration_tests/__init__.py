@@ -1,0 +1,16 @@
+# ruff: noqa: E402
+import pytest
+
+# Rewrite assert statements for test suite so that implementations can
+# see the full error message from failed asserts.
+# https://docs.pytest.org/en/7.1.x/how-to/writing_plugins.html#assertion-rewriting
+modules = ["chat_models"]
+
+for module in modules:
+    pytest.register_assert_rewrite(f"langchain_tests.v1.integration_tests.{module}")
+
+from .chat_models import ChatModelIntegrationTests
+
+__all__ = [
+    "ChatModelIntegrationTests",
+]

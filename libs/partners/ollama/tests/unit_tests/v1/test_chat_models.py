@@ -13,7 +13,7 @@ from langchain_core.messages.content_blocks import (
     create_text_block,
 )
 from langchain_core.v1.messages import AIMessage, HumanMessage, MessageV1, SystemMessage
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1UnitTests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelUnitTests
 
 from langchain_ollama._compat import (
     _convert_chunk_to_v1,
@@ -185,6 +185,50 @@ class TestMessageConversion:
         assert result.content[0].get("text") == "Hello"
         assert result.response_metadata.get("context") == test_context
 
+    def test_reasoning_content_block_comes_before_text(self) -> None:
+        """Test that ReasoningContentBlock always comes before TextContentBlock."""
+        ollama_response = {
+            "model": MODEL_NAME,
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {
+                "role": "assistant",
+                "content": "The final answer is 4.",
+                "thinking": "Let me calculate: 2 + 2 = 4",
+            },
+            "done": True,
+            "done_reason": "stop",
+        }
+
+        result = _convert_to_v1_from_ollama_format(ollama_response)
+
+        assert isinstance(result, AIMessage)
+        assert len(result.content) == 2
+        assert result.content[0].get("type") == "reasoning"
+        assert result.content[1].get("type") == "text"
+
+    def test_reasoning_content_block_comes_before_text_in_chunks(self) -> None:
+        """Test ReasoningContentBlock comes before TextContentBlock in chunks."""
+        chunk = {
+            "model": MODEL_NAME,
+            "created_at": "2024-01-01T00:00:00Z",
+            "message": {
+                "role": "assistant",
+                "content": "The answer is 42.",
+                "thinking": "I need to think about this carefully...",
+            },
+            "done": False,
+        }
+
+        result = _convert_chunk_to_v1(chunk)
+
+        assert len(result.content) == 2
+        assert result.content[0].get("type") == "reasoning"
+        reasoning_text = "I need to think about this carefully..."
+        assert result.content[0].get("reasoning") == reasoning_text
+
+        assert result.content[1].get("type") == "text"
+        assert result.content[1].get("text") == "The answer is 42."
+
     def test_convert_empty_content(self) -> None:
         """Test converting empty content blocks."""
         message = HumanMessage(content=[])
@@ -196,7 +240,7 @@ class TestMessageConversion:
         assert result["images"] == []
 
 
-class TestChatOllama(ChatModelV1UnitTests):
+class TestChatOllama(ChatModelUnitTests):
     """Test `ChatOllama`."""
 
     @property

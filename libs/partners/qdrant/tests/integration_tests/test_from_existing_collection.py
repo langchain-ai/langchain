@@ -34,4 +34,4 @@ def test_qdrant_from_existing_collection_uses_same_collection(vector_name: str) 
         del qdrant
 
         client = QdrantClient(path=str(tmpdir))
-        assert 3 == client.count(collection_name).count
+        assert client.count(collection_name).count == 3

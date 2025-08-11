@@ -11,7 +11,6 @@ from typing import Annotated, Any, Literal, Optional, TypedDict, Union, cast
 from unittest.mock import MagicMock
 
 import httpx
-import langchain_core.messages.content_blocks as types
 import pytest
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
@@ -34,14 +33,8 @@ from langchain_core.messages.content_blocks import (
     WebSearchCall,
     WebSearchResult,
     create_audio_block,
-    create_file_block,
     create_image_block,
-    create_non_standard_block,
-    create_plaintext_block,
     create_text_block,
-    create_tool_call,
-    is_reasoning_block,
-    is_text_block,
     is_tool_call_block,
 )
 from langchain_core.output_parsers.string import StrOutputParser
@@ -64,7 +57,7 @@ from pydantic import BaseModel, Field
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
 from vcr.cassette import Cassette
 
-from langchain_tests.unit_tests.chat_models_v1 import ChatModelV1Tests
+from langchain_tests.v1.unit_tests.chat_models import ChatModelTests
 
 # Content block type definitions for testing
 ContentBlock = Union[
@@ -204,7 +197,7 @@ def unicode_customer(customer_name: str, description: str) -> str:
     return f"Created customer: {customer_name} - {description}"
 
 
-class ChatModelV1IntegrationTests(ChatModelV1Tests):
+class ChatModelIntegrationTests(ChatModelTests):
     """Base class for v1 chat model integration tests.
 
     TODO: verify this entire docstring!
@@ -219,11 +212,11 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         from typing import Type
 
-        from langchain_tests.integration_tests import ChatModelV1IntegrationTests
-        from my_package.chat_models import MyChatModel
+        from langchain_tests.v1.integration_tests import ChatModelIntegrationTests
+        from my_package.v1.chat_models import MyChatModel
 
 
-        class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+        class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
             @property
             def chat_model_class(self) -> Type[MyV1ChatModel]:
                 # Return the chat model class to test here
@@ -489,7 +482,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``ainvoke`` has a default implementation that calls ``invoke`` in an
             async context.
 
@@ -512,7 +505,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``stream`` has a default implementation that calls ``invoke`` and
             yields the result as a single chunk.
 
@@ -538,9 +531,9 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_stream`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
             and
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_ainvoke`.
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
             because ``astream`` has a default implementation that calls ``_stream`` in
             an async context if it is implemented, or ``ainvoke`` and yields the result
             as a single ``AIMessageChunk`` chunk if not.
@@ -571,7 +564,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because ``batch`` has a default implementation that calls ``invoke`` for
             each message in the batch.
 
@@ -607,9 +600,9 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_batch`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
             and
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_ainvoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
             because ``abatch`` has a default implementation that calls ``ainvoke`` for
             each message in the batch.
 
@@ -640,7 +633,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             If that test passes but not this one, you should verify that:
@@ -672,11 +665,11 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         .. dropdown:: Troubleshooting
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_invoke`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             Second, debug
-            :meth:`~langchain_tests.integration_tests.chat_models_v1.ChatModelV1IntegrationTests.test_conversation`
+            :meth:`~langchain_tests.v1.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
@@ -718,7 +711,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
                         return False
@@ -732,7 +725,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supported_usage_metadata_details(self) -> dict:
                         return {
@@ -860,7 +853,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def returns_usage_metadata(self) -> bool:
                         return False
@@ -874,7 +867,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supported_usage_metadata_details(self) -> dict:
                         return {
@@ -1003,7 +996,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1022,7 +1015,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling(self, model: BaseChatModelV1) -> None:
+                def test_tool_calling(self, model: BaseChatModel) -> None:
                     super().test_tool_calling(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1062,7 +1055,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1081,7 +1074,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                async def test_tool_calling_async(self, model: BaseChatModelV1) -> None:
+                async def test_tool_calling_async(self, model: BaseChatModel) -> None:
                     await super().test_tool_calling_async(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1121,7 +1114,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1140,7 +1133,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_bind_runnables_as_tools(self, model: BaseChatModelV1) -> None:
+                def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
                     super().test_bind_runnables_as_tools(model)
 
             Otherwise, ensure that the ``tool_choice_value`` property is correctly
@@ -1209,7 +1202,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1288,7 +1281,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_choice(self) -> bool:
                         return False
@@ -1341,7 +1334,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1361,7 +1354,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling_with_no_arguments(self, model: BaseChatModelV1) -> None:
+                def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
@@ -1415,7 +1408,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1432,9 +1425,17 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         model_with_tools = model.bind_tools([my_adder_tool])
         messages = [
             HumanMessage("What is 1 + 2?"),
-            create_tool_call(
-                "my_adder_tool", {"a": 1}, id="abc123"
-            ),  # Missing required argument 'b'
+            AIMessage(
+                "",
+                tool_calls=[
+                    {
+                        "name": "my_adder_tool",
+                        "args": {"a": 1},
+                        "id": "abc123",
+                        "type": "tool_call",
+                    },
+                ],
+            ),
             ToolMessage(
                 "Error: Missing required argument 'b'.",
                 tool_call_id="abc123",
@@ -1468,7 +1469,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -1527,7 +1528,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1608,7 +1609,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1686,7 +1687,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_structured_output(self) -> bool:
                         return False
@@ -1758,7 +1759,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_json_mode(self) -> bool:
                         return False
@@ -1833,7 +1834,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
 
                     @property
                     def supports_pdf_inputs(self) -> bool:
@@ -1848,45 +1849,43 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         """
         pytest.xfail("Test not implemented yet.")
 
-        # TODO
-        # if not self.supports_pdf_inputs:
-        #     pytest.skip("Model does not support PDF inputs.")
-        # url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
-        # pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+        if not self.supports_pdf_inputs:
+            pytest.skip("Model does not support PDF inputs.")
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Summarize this document:",
-        #         },
-        #         {
-        #             "type": "file",
-        #             "source_type": "base64",
-        #             "mime_type": "application/pdf",
-        #             "data": pdf_data,
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": pdf_data,
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
-        # # Test OpenAI Chat Completions format
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Summarize this document:",
-        #         },
-        #         {
-        #             "type": "file",
-        #             "file": {
-        #                 "filename": "test file.pdf",
-        #                 "file_data": f"data:application/pdf;base64,{pdf_data}",
-        #             },
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
     def test_audio_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process audio inputs.
@@ -1907,25 +1906,25 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         .. dropdown:: Configuration
 
-            To disable this test, set ``supports_audio_content_blocks`` to False in your
+            To disable this test, set ``supports_audio_inputs`` to False in your
             test class:
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
 
                     @property
-                    def supports_audio_content_blocks(self) -> bool:
+                    def supports_audio_inputs(self) -> bool:
                         return False
 
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the model can correctly handle messages
-            with audio content blocks. Otherwise, set the ``supports_audio_content_blocks``
+            with audio content blocks. Otherwise, set the ``supports_audio_inputs``
             property to False.
 
         """  # noqa: E501
-        if not self.supports_audio_content_blocks:
+        if not self.supports_audio_inputs:
             pytest.skip("Model does not support AudioContentBlock inputs.")
 
         url = "https://upload.wikimedia.org/wikipedia/commons/3/3d/Alcal%C3%A1_de_Henares_%28RPS_13-04-2024%29_canto_de_ruise%C3%B1or_%28Luscinia_megarhynchos%29_en_el_Soto_del_Henares.wav"
@@ -1942,21 +1941,20 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         )
         _ = model.invoke([message])
 
-        # TODO?
         # Test OpenAI Chat Completions format
-        # message = HumanMessage(
-        #     [
-        #         {
-        #             "type": "text",
-        #             "text": "Describe this audio:",
-        #         },
-        #         {
-        #             "type": "input_audio",
-        #             "input_audio": {"data": audio_data, "format": "wav"},
-        #         },
-        #     ]
-        # )
-        # _ = model.invoke([message])
+        message = HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Describe this audio:",
+                },
+                {  # type: ignore[list-item]
+                    "type": "input_audio",
+                    "input_audio": {"data": audio_data, "format": "wav"},
+                },
+            ]
+        )
+        _ = model.invoke([message])
 
     def test_image_inputs(self, model: BaseChatModel) -> None:
         """Test that the model can process image inputs.
@@ -1991,14 +1989,14 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
         .. dropdown:: Configuration
 
-            To disable this test, set ``supports_image_content_blocks`` to False in your
+            To disable this test, set ``supports_image_inputs`` to False in your
             test class:
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
-                    def supports_image_content_blocks(self) -> bool:
+                    def supports_image_inputs(self) -> bool:
                         return False
 
                     # Can also explicitly disable testing image URLs:
@@ -2010,10 +2008,10 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             If this test fails, check that the model can correctly handle messages
             with image content blocks, including base64-encoded images. Otherwise, set
-            the ``supports_image_content_blocks`` property to False.
+            the ``supports_image_inputs`` property to False.
 
         """
-        if not self.supports_image_content_blocks:
+        if not self.supports_image_inputs:
             pytest.skip("Model does not support image message.")
 
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
@@ -2108,7 +2106,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_image_tool_message(self) -> bool:
                         return False
@@ -2232,7 +2230,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def supports_anthropic_inputs(self) -> bool:
                         return False
@@ -2392,7 +2390,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
             .. code-block:: python
 
-                class TestMyV1ChatModelIntegration(ChatModelV1IntegrationTests):
+                class TestMyV1ChatModelIntegration(ChatModelIntegrationTests):
                     @property
                     def has_tool_calling(self) -> bool:
                         return False
@@ -2420,7 +2418,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
-        @tool
+        @tool(message_version="v1")
         def get_weather(location: str) -> str:
             """Call to surf the web."""
             return "It's sunny."
@@ -2450,7 +2448,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
-        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelV1IntegrationTests>`
+        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelIntegrationTests>`
         for more information.
 
         .. dropdown:: Configuration
@@ -2468,7 +2466,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
 
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. See ``enable_vcr_tests`` dropdown
-                :class:`above <ChatModelV1IntegrationTests>` for how to configure what
+                :class:`above <ChatModelIntegrationTests>` for how to configure what
                 information is recorded in cassettes.
 
         """
@@ -2621,7 +2619,7 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
     #         ),
     #     ]
 
-    #     if self.supports_audio_content_blocks:
+    #     if self.supports_audio_inputs:
     #         content_blocks.append(
     #             create_audio_block(
     #                 base64=_get_test_audio_base64(),
@@ -2642,374 +2640,150 @@ class ChatModelV1IntegrationTests(ChatModelV1Tests):
     #         ]
     #         assert len(reasoning_blocks) > 0
 
-    def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``Citations`` with source links.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_structured_citations:
-            pytest.skip("Model does not support structured citations.")
-
-        message = HumanMessage(
-            "Provide factual information about the distance to the moon with proper "
-            "citations to scientific sources."
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for text blocks with citations
-        text_blocks_with_citations = []
-        for block in result.content:
-            if (
-                isinstance(block, dict)
-                and is_text_block(block)
-                and "annotations" in block
-            ):
-                annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
-                citations = [
-                    ann
-                    for ann in annotations
-                    if isinstance(ann, dict) and ann.get("type") == "citation"
-                ]
-                if citations:
-                    text_blocks_with_citations.append(block)
-        assert len(text_blocks_with_citations) > 0
-
-        # Validate citation structure
-        for block in text_blocks_with_citations:
-            annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
-            for annotation in annotations:
-                if annotation.get("type") == "citation":
-                    # TODO: evaluate these since none are *technically* required
-                    # This may be a test that needs adjustment on per-integration basis
-                    assert "cited_text" in annotation
-                    assert "start_index" in annotation
-                    assert "end_index" in annotation
-
-    def test_web_search_integration(self, model: BaseChatModel) -> None:
-        """Test web search content blocks integration.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_web_search_blocks:
-            pytest.skip("Model does not support web search blocks.")
-
-        message = HumanMessage(
-            "Search for the latest developments in quantum computing."
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for web search blocks
-        search_call_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict) and block.get("type") == "web_search_call"
-        ]
-        search_result_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict) and block.get("type") == "web_search_result"
-        ]
-        # TODO: should this be one or the other or both?
-        assert len(search_call_blocks) > 0 or len(search_result_blocks) > 0
-
-    def test_code_interpreter_blocks(self, model: BaseChatModel) -> None:
-        """Test code interpreter content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_code_interpreter:
-            pytest.skip("Model does not support code interpreter blocks.")
-
-        message = HumanMessage("Calculate the factorial of 10 using Python code.")
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-
-        # Check for code interpreter blocks
-        code_blocks = [
-            block
-            for block in result.content
-            if isinstance(block, dict)
-            and block.get("type")
-            in [
-                "code_interpreter_call",
-                "code_interpreter_output",
-                "code_interpreter_result",
-            ]
-        ]
-        # TODO: should we require all three types or just an output/result?
-        assert len(code_blocks) > 0
-
-    def test_tool_calling_with_content_blocks(self, model: BaseChatModel) -> None:
-        """Test tool calling with content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.has_tool_calling:
-            pytest.skip("Model does not support tool calls.")
-
-        @tool
-        def calculate_area(length: float, width: float) -> str:
-            """Calculate the area of a rectangle."""
-            area = length * width
-            return f"The area is {area} square units."
-
-        model_with_tools = model.bind_tools([calculate_area])
-        message = HumanMessage(
-            "Calculate the area of a rectangle with length 5 and width 3."
-        )
-
-        result = model_with_tools.invoke([message])
-        _validate_tool_call_message(result)
-
-    def test_plaintext_content_blocks_from_documents(
-        self, model: BaseChatModel
-    ) -> None:
-        """Test PlainTextContentBlock for document plaintext content.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_plaintext_content_blocks:
-            pytest.skip("Model does not support PlainTextContentBlock.")
-
-        # Test with PlainTextContentBlock (plaintext from document)
-        plaintext_block = create_plaintext_block(
-            text="This is plaintext content extracted from a document.",
-            file_id="doc_123",
-        )
-
-        message = HumanMessage(
-            content=cast("list[types.ContentBlock]", [plaintext_block])
-        )
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        # TODO expand
-
-    def test_content_block_streaming_integration(self, model: BaseChatModel) -> None:
-        """Test streaming with content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        message = HumanMessage(
-            content=[
-                {
-                    "type": "text",
-                    "text": "Write a detailed explanation of machine learning.",
-                }
-            ]
-        )
-
-        chunks = []
-        for chunk in model.stream([message]):
-            chunks.append(chunk)
-            assert isinstance(chunk, (AIMessage, AIMessageChunk))
-
-        assert len(chunks) > 1  # Should receive multiple chunks
-
-        # Aggregate chunks
-        final_message = chunks[0]
-        for chunk in chunks[1:]:
-            final_message = final_message + chunk
-
-        assert isinstance(final_message.content, list)
-
-    def test_error_handling_with_invalid_content_blocks(
-        self, model: BaseChatModel
-    ) -> None:
-        """Test error handling with various invalid content block configurations.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        test_cases = [
-            {"type": "text"},  # Missing text field
-            {"type": "image"},  # Missing url/mime_type
-            {"type": "tool_call", "name": "test"},  # Missing args/id
-        ]
-
-        for invalid_block in test_cases:
-            message = HumanMessage([invalid_block])  # type: ignore[list-item]
-
-            # Should either handle gracefully or raise appropriate error
-            try:
-                result = model.invoke([message])
-                assert isinstance(result, AIMessage)
-            except (ValueError, TypeError, KeyError) as e:
-                # Acceptable to raise validation errors
-                assert len(str(e)) > 0
-
-    async def test_async_content_blocks_processing(self, model: BaseChatModel) -> None:
-        """Test asynchronous processing of content blocks.
-
-        TODO: expand docstring
-
-        """
-        if not self.supports_content_blocks_v1:
-            pytest.skip("Model does not support content blocks v1.")
-
-        message = HumanMessage("Generate a creative story about space exploration.")
-
-        result = await model.ainvoke([message])
-        assert isinstance(result, AIMessage)
-
-    def test_input_conversion_string(self, model: BaseChatModel) -> None:
-        """Test that string input is properly converted to messages.
-
-        TODO: expand docstring
-
-        """
-        result = model.invoke("Test string input")
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_input_conversion_empty_string(self, model: BaseChatModel) -> None:
-        """Test that empty string input is handled gracefully.
-
-        TODO: expand docstring
-
-        """
-        result = model.invoke("")
-        assert isinstance(result, AIMessage)
-
-    def test_input_conversion_message_v1_list(self, model: BaseChatModel) -> None:
-        """Test that v1 message list input is handled correctly.
-
-        TODO: expand docstring
-
-        """
-        messages = [HumanMessage("Test message")]
-        result = model.invoke(messages)
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_text_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle the ``TextContentBlock`` format."""
-        if not self.supports_text_content_blocks:
-            pytest.skip("Model does not support TextContentBlock (rare!)")
-
-        text_block = create_text_block("Hello, world!")
-        message = HumanMessage(content=[text_block])
-
-        result = model.invoke([message])
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_mixed_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle messages with mixed content blocks."""
-        if not (
-            self.supports_text_content_blocks and self.supports_image_content_blocks
-        ):
-            pytest.skip(
-                "Model doesn't support mixed content blocks (concurrent text and image)"
-            )
-
-        content_blocks: list[types.ContentBlock] = [
-            create_text_block("Describe this image:"),
-            create_image_block(
-                base64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
-                mime_type="image/png",
-            ),
-        ]
-
-        message = HumanMessage(content=content_blocks)
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can generate ``ReasoningContentBlock``.
-
-        If your integration requires a reasoning parameter to be explicitly set, you
-        will need to override this test to set it appropriately.
-
-        """
-        if not self.supports_reasoning_content_blocks:
-            pytest.skip("Model does not support ReasoningContentBlock.")
-
-        message = HumanMessage("Think step by step: What is 2 + 2?")
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        if isinstance(result.content, list):
-            reasoning_blocks = [
-                block
-                for block in result.content
-                if isinstance(block, dict) and is_reasoning_block(block)
-            ]
-            assert len(reasoning_blocks) > 0, (
-                "Expected reasoning content blocks but found none. "
-                f"Content blocks: {[block.get('type') for block in result.content]}"
-            )
-
-    def test_non_standard_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``NonStandardContentBlock``."""
-        if not self.supports_non_standard_blocks:
-            pytest.skip("Model does not support NonStandardContentBlock.")
-
-        non_standard_block = create_non_standard_block(
-            {
-                "custom_field": "custom_value",
-                "data": [1, 2, 3],
-            }
-        )
-
-        message = HumanMessage(content=[non_standard_block])
-
-        # Should not raise an error
-        result = model.invoke([message])
-        assert isinstance(result, AIMessage)
-
-    def test_invalid_tool_call_handling_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``InvalidToolCall`` blocks gracefully."""
-        if not self.supports_invalid_tool_calls:
-            pytest.skip("Model does not support InvalidToolCall handling.")
-
-        invalid_tool_call: InvalidToolCall = {
-            "type": "invalid_tool_call",
-            "name": "nonexistent_tool",
-            "args": None,
-            "id": "invalid_123",
-            "error": "Tool not found",
-        }
-
-        # Create a message with invalid tool call in history
-        ai_message = AIMessage(content=[invalid_tool_call])
-        follow_up = HumanMessage("Please try again with a valid approach.")
-
-        result = model.invoke([ai_message, follow_up])
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
-
-    def test_file_content_blocks_basic(self, model: BaseChatModel) -> None:
-        """Test that the model can handle ``FileContentBlock``."""
-        if not self.supports_file_content_blocks:
-            pytest.skip("Model does not support FileContentBlock.")
-
-        file_block = create_file_block(
-            base64="SGVsbG8sIHdvcmxkIQ==",  # "Hello, world!"
-            mime_type="text/plain",
-        )
-
-        message = HumanMessage(content=[file_block])
-        result = model.invoke([message])
-
-        assert isinstance(result, AIMessage)
-        assert result.content is not None
+    # def test_citation_generation_with_sources(self, model: BaseChatModel) -> None:
+    #     """Test that the model can generate ``Citations`` with source links.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_citations:
+    #         pytest.skip("Model does not support citations.")
+
+    #     message = HumanMessage(
+    #         "Provide factual information about the distance to the moon with proper "
+    #         "citations to scientific sources."
+    #     )
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for text blocks with citations
+    #     text_blocks_with_citations = []
+    #     for block in result.content:
+    #         if (
+    #             isinstance(block, dict)
+    #             and is_text_block(block)
+    #             and "annotations" in block
+    #         ):
+    #             annotations = cast("list[dict[str, Any]]", block.get("annotations", []))  # noqa: E501
+    #             citations = [
+    #                 ann
+    #                 for ann in annotations
+    #                 if isinstance(ann, dict) and ann.get("type") == "citation"
+    #             ]
+    #             if citations:
+    #                 text_blocks_with_citations.append(block)
+    #     assert len(text_blocks_with_citations) > 0
+
+    #     # Validate citation structure
+    #     for block in text_blocks_with_citations:
+    #         annotations = cast("list[dict[str, Any]]", block.get("annotations", []))
+    #         for annotation in annotations:
+    #             if annotation.get("type") == "citation":
+    #                 # TODO: evaluate these since none are *technically* required
+    #                 # This may need adjustment on per-integration basis
+    #                 assert "cited_text" in annotation
+    #                 assert "start_index" in annotation
+    #                 assert "end_index" in annotation
+
+    # def test_web_search_integration(self, model: BaseChatModel) -> None:
+    #     """Test web search content blocks integration.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_web_search_blocks:
+    #         pytest.skip("Model does not support web search blocks.")
+
+    #     message = HumanMessage(
+    #         "Search for the latest developments in quantum computing."
+    #     )
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for web search blocks
+    #     search_call_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict) and block.get("type") == "web_search_call"
+    #     ]
+    #     search_result_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict) and block.get("type") == "web_search_result"
+    #     ]
+    #     # TODO: should this be one or the other or both?
+    #     assert len(search_call_blocks) > 0 or len(search_result_blocks) > 0
+
+    # def test_code_interpreter_blocks(self, model: BaseChatModel) -> None:
+    #     """Test code interpreter content blocks.
+
+    #     TODO: expand docstring
+
+    #     """
+    #     if not self.supports_code_interpreter:
+    #         pytest.skip("Model does not support code interpreter blocks.")
+
+    #     message = HumanMessage("Calculate the factorial of 10 using Python code.")
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+
+    #     # Check for code interpreter blocks
+    #     code_blocks = [
+    #         block
+    #         for block in result.content
+    #         if isinstance(block, dict)
+    #         and block.get("type")
+    #         in [
+    #             "code_interpreter_call",
+    #             "code_interpreter_output",
+    #             "code_interpreter_result",
+    #         ]
+    #     ]
+    #     # TODO: should we require all three types or just an output/result?
+    #     assert len(code_blocks) > 0
+
+    # def test_reasoning_content_blocks_basic(self, model: BaseChatModel) -> None:
+    #     """Test that the model can generate ``ReasoningContentBlock``.
+
+    #     If your integration requires a reasoning parameter to be explicitly set, you
+    #     will need to override this test to set it appropriately.
+
+    #     """
+    #     if not self.supports_reasoning_content_blocks:
+    #         pytest.skip("Model does not support ReasoningContentBlock.")
+
+    #     message = HumanMessage("Think step by step: What is 2 + 2?")
+    #     result = model.invoke([message])
+
+    #     assert isinstance(result, AIMessage)
+    #     if isinstance(result.content, list):
+    #         reasoning_blocks = [
+    #             block
+    #             for block in result.content
+    #             if isinstance(block, dict) and is_reasoning_block(block)
+    #         ]
+    #         assert len(reasoning_blocks) > 0, (
+    #             "Expected reasoning content blocks but found none. "
+    #             f"Content blocks: {[block.get('type') for block in result.content]}"
+    #         )
+
+    # def test_non_standard_content_blocks_basic(self, model: BaseChatModel) -> None:
+    #     """Test that the model can handle ``NonStandardContentBlock``."""
+    #     if not self.supports_non_standard_blocks:
+    #         pytest.skip("Model does not support NonStandardContentBlock.")
+
+    #     non_standard_block = create_non_standard_block(
+    #         {
+    #             "custom_field": "custom_value",
+    #             "data": [1, 2, 3],
+    #         }
+    #     )
+
+    #     message = HumanMessage(content=[non_standard_block])
+
+    #     # Should not raise an error
+    #     result = model.invoke([message])
+    #     assert isinstance(result, AIMessage)
