@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.68",
+    "langchain-core<1.0.0,>=0.3.74",
     "openai<2.0.0,>=1.86.0",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.28"
+version = "0.3.29"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
