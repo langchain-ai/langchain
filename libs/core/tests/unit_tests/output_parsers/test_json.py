@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 # Removed incorrect import of parse_and_check_json_markdown
 from langchain_core.exceptions import OutputParserException
+from langchain_core.utils.json import parse_and_check_json_markdown
 
 
 from langchain_core.output_parsers.json import (
@@ -217,7 +218,7 @@ def test_parse_non_dict_json_output():
     text = "```json\n1\n```"
     with pytest.raises(OutputParserException) as exc_info:
         parse_and_check_json_markdown(text, expected_keys=["foo"])
-    
+
     assert "Expected JSON object (dict)" in str(exc_info.value)
 
 
