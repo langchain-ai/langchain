@@ -24,7 +24,7 @@ class TestAsyncInMemoryStore(BaseStoreAsyncTests):
         return InMemoryStore()
 
     @pytest.fixture
-    def three_values(self) -> tuple[str, str, str]:  # type: ignore[override]
+    def three_values(self) -> tuple[str, str, str]:
         return "value1", "value2", "value3"
 
 

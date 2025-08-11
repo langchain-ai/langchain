@@ -273,7 +273,7 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -444,6 +444,9 @@ def index(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -452,6 +455,8 @@ def index(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
@@ -540,10 +545,10 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 _delete(destination, uids_to_delete)
@@ -609,7 +614,7 @@ async def aindex(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -784,6 +789,9 @@ async def aindex(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -792,6 +800,8 @@ async def aindex(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc) for doc in hashed_docs
@@ -881,10 +891,10 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 await _adelete(destination, uids_to_delete)

@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -16,7 +16,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     @property
     def chat_model_params(self) -> dict:
         llm = HuggingFaceEndpoint(  # type: ignore[call-arg]
-            repo_id="Qwen/Qwen2.5-72B-Instruct",
+            repo_id="meta-llama/Llama-4-Maverick-17B-128E-Instruct",
             task="conversational",
             provider="fireworks-ai",
             temperature=0,
@@ -58,12 +58,6 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         super().test_tool_message_histories_list_content(
             model, my_adder_tool=my_adder_tool
         )
-
-    @pytest.mark.xfail(reason=("Not implemented"))
-    def test_structured_few_shot_examples(
-        self, model: BaseChatModel, my_adder_tool: BaseTool
-    ) -> None:
-        super().test_structured_few_shot_examples(model, my_adder_tool=my_adder_tool)
 
     @property
     def has_tool_choice(self) -> bool:

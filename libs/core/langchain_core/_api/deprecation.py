@@ -136,6 +136,7 @@ def deprecated(
             @deprecated('1.4.0')
             def the_function_to_deprecate():
                 pass
+
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -224,7 +225,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -469,7 +470,7 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        _package = (
+        package_ = (
             package or name.split(".")[0].replace("_", "-")
             if "." in name
             else "LangChain"
@@ -483,14 +484,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {_package} {since}"
+            message += f" was deprecated in {package_} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
             alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == _package:
+            if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)
@@ -549,6 +550,7 @@ def rename_parameter(
 
             @_api.rename_parameter("3.1", "bad_name", "good_name")
             def func(good_name): ...
+
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

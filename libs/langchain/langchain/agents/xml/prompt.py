@@ -1,4 +1,3 @@
-# flake8: noqa
 # TODO: deprecate
 agent_instructions = """You are a helpful assistant. Help the user answer any questions.
 
@@ -19,4 +18,4 @@ When you are done, respond with a final answer between <final_answer></final_ans
 
 Begin!
 
-Question: {question}"""
+Question: {question}"""  # noqa: E501

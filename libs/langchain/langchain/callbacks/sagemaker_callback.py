@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback"
+    "SageMakerCallbackHandler": "langchain_community.callbacks.sagemaker_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

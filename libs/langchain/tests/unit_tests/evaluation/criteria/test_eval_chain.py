@@ -15,15 +15,15 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 def test_resolve_criteria_str() -> None:
     assert CriteriaEvalChain.resolve_criteria("helpfulness") == {
-        "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]
+        "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS],
     }
     assert CriteriaEvalChain.resolve_criteria("correctness") == {
-        "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS]
+        "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS],
     }
 
 
 @pytest.mark.parametrize(
-    "text,want",
+    ("text", "want"),
     [
         ("Y", {"reasoning": "", "value": "Y", "score": 1}),
         (
@@ -62,20 +62,23 @@ def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
 @pytest.mark.parametrize("criterion", list(Criteria))
 def test_resolve_criteria_enum(criterion: Criteria) -> None:
     assert CriteriaEvalChain.resolve_criteria(criterion) == {
-        criterion.value: _SUPPORTED_CRITERIA[criterion]
+        criterion.value: _SUPPORTED_CRITERIA[criterion],
     }
 
 
 def test_criteria_eval_chain() -> None:
     chain = CriteriaEvalChain.from_llm(
         llm=FakeLLM(
-            queries={"text": "The meaning of life\nY"}, sequential_responses=True
+            queries={"text": "The meaning of life\nY"},
+            sequential_responses=True,
         ),
         criteria={"my criterion": "my criterion description"},
     )
     with pytest.warns(UserWarning, match=chain._skip_reference_warning):
         result = chain.evaluate_strings(
-            prediction="my prediction", reference="my reference", input="my input"
+            prediction="my prediction",
+            reference="my reference",
+            input="my input",
         )
     assert result["reasoning"] == "The meaning of life"
 
@@ -88,7 +91,9 @@ def test_criteria_eval_chain_missing_reference() -> None:
         ),
         criteria={"my criterion": "my criterion description"},
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="LabeledCriteriaEvalChain requires a reference string."
+    ):
         chain.evaluate_strings(prediction="my prediction", input="my input")
 
 

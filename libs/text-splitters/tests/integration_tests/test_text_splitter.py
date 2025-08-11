@@ -13,7 +13,7 @@ from langchain_text_splitters.sentence_transformers import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def sentence_transformers() -> Any:
     try:
         import sentence_transformers

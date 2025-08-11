@@ -1,32 +1,29 @@
 from abc import ABC
-from typing import Type
 
 
 class BaseStandardTests(ABC):
-    """
-    :private:
-    """
+    """:private:"""
 
     def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:
-        """
-        Test that no standard tests are overridden.
+        """Test that no standard tests are overridden.
 
         :private:
         """
-        # find path to standard test implementations
+        # Find path to standard test implementations
         comparison_class = None
 
-        def explore_bases(cls: Type) -> None:
+        def explore_bases(cls: type) -> None:
             nonlocal comparison_class
             for base in cls.__bases__:
                 if base.__module__.startswith("langchain_tests."):
                     if comparison_class is None:
                         comparison_class = base
                     else:
-                        raise ValueError(
+                        msg = (
                             "Multiple standard test base classes found: "
                             f"{comparison_class}, {base}"
                         )
+                        raise ValueError(msg)
                 else:
                     explore_bases(base)
 
@@ -35,12 +32,10 @@ class BaseStandardTests(ABC):
 
         print(f"Comparing {self.__class__} to {comparison_class}")  # noqa: T201
 
-        running_tests = set(
-            [method for method in dir(self) if method.startswith("test_")]
-        )
-        base_tests = set(
-            [method for method in dir(comparison_class) if method.startswith("test_")]
-        )
+        running_tests = {method for method in dir(self) if method.startswith("test_")}
+        base_tests = {
+            method for method in dir(comparison_class) if method.startswith("test_")
+        }
         deleted_tests = base_tests - running_tests
         assert not deleted_tests, f"Standard tests deleted: {deleted_tests}"
 

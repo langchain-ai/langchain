@@ -6,6 +6,8 @@ for each instance of ChatAnthropic.
 Logic is largely replicated from anthropic._base_client.
 """
 
+from __future__ import annotations
+
 import asyncio
 import os
 from functools import lru_cache
@@ -17,7 +19,7 @@ _NOT_GIVEN: Any = object()
 
 
 class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
-    """Borrowed from anthropic._base_client"""
+    """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
         if self.is_closed:
@@ -25,12 +27,12 @@ class _SyncHttpxClientWrapper(anthropic.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
 class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
-    """Borrowed from anthropic._base_client"""
+    """Borrowed from anthropic._base_client."""
 
     def __del__(self) -> None:
         if self.is_closed:
@@ -39,7 +41,7 @@ class _AsyncHttpxClientWrapper(anthropic.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
