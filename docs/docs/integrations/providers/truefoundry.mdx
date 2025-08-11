@@ -63,7 +63,8 @@ def call_model(state: MessagesState):
     model = ChatOpenAI(
         api_key=TRUEFOUNDRY_API_KEY,
         base_url=TRUEFOUNDRY_GATEWAY_BASE_URL,
-        model="openai-main/gpt-4o (Copy the exact model name from gateway)"
+        # Copy the exact model name from gateway
+        model="openai-main/gpt-4o"
     )
     response = model.invoke(state["messages"])
     return {"messages": [response]}
