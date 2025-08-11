@@ -19,7 +19,7 @@ def fake_llm_checker_chain() -> LLMCheckerChain:
     """Fake LLMCheckerChain for testing."""
     queries = {
         _CREATE_DRAFT_ANSWER_TEMPLATE.format(
-            question="Which mammal lays the biggest eggs?"
+            question="Which mammal lays the biggest eggs?",
         ): "I don't know which mammal layers the biggest eggs.",
         _LIST_ASSERTIONS_TEMPLATE.format(
             statement="I don't know which mammal layers the biggest eggs.",

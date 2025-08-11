@@ -1,5 +1,3 @@
-from typing import List
-
 from langchain_core.embeddings import Embeddings
 
 from langchain_tests.unit_tests.embeddings import EmbeddingsTests
@@ -34,7 +32,8 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
                 return {"model": "model-001"}
 
     .. note::
-          API references for individual test methods include troubleshooting tips.
+        API references for individual test methods include troubleshooting tips.
+
     """
 
     def test_embed_query(self, model: Embeddings) -> None:
@@ -49,7 +48,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         """  # noqa: E501
         embedding_1 = model.embed_query("foo")
 
-        assert isinstance(embedding_1, List)
+        assert isinstance(embedding_1, list)
         assert isinstance(embedding_1[0], float)
 
         embedding_2 = model.embed_query("bar")
@@ -71,7 +70,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         embeddings = model.embed_documents(documents)
 
         assert len(embeddings) == len(documents)
-        assert all(isinstance(embedding, List) for embedding in embeddings)
+        assert all(isinstance(embedding, list) for embedding in embeddings)
         assert all(isinstance(embedding[0], float) for embedding in embeddings)
         assert len(embeddings[0]) > 0
         assert all(len(embedding) == len(embeddings[0]) for embedding in embeddings)
@@ -88,7 +87,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         """  # noqa: E501
         embedding_1 = await model.aembed_query("foo")
 
-        assert isinstance(embedding_1, List)
+        assert isinstance(embedding_1, list)
         assert isinstance(embedding_1[0], float)
 
         embedding_2 = await model.aembed_query("bar")
@@ -110,7 +109,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
         embeddings = await model.aembed_documents(documents)
 
         assert len(embeddings) == len(documents)
-        assert all(isinstance(embedding, List) for embedding in embeddings)
+        assert all(isinstance(embedding, list) for embedding in embeddings)
         assert all(isinstance(embedding[0], float) for embedding in embeddings)
         assert len(embeddings[0]) > 0
         assert all(len(embedding) == len(embeddings[0]) for embedding in embeddings)

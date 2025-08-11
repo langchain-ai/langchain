@@ -16,7 +16,11 @@ ChatOpenAI v0.3 stores reasoning and tool outputs in AIMessage.additional_kwargs
                 "summary": [{"type": "summary_text", "text": "Reasoning summary"}],
             },
             "tool_outputs": [
-                {"type": "web_search_call", "id": "websearch_123", "status": "completed"}
+                {
+                    "type": "web_search_call",
+                    "id": "websearch_123",
+                    "status": "completed",
+                }
             ],
             "refusal": "I cannot assist with that.",
         },
@@ -54,6 +58,7 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 
 For backwards compatibility, this module provides functions to convert between the
 old and new formats. The functions are used internally by ChatOpenAI.
+
 """  # noqa: E501
 
 import json
@@ -72,7 +77,7 @@ def _convert_to_v03_ai_message(
         new_content: list[Union[dict, str]] = []
         for block in message.content:
             if isinstance(block, dict):
-                if block.get("type") == "reasoning" or "summary" in block:
+                if block.get("type") == "reasoning":
                     # Store a reasoning item in additional_kwargs (overwriting as in
                     # v0.3)
                     _ = block.pop("index", None)
@@ -128,6 +133,8 @@ def _convert_to_v03_ai_message(
             else:
                 new_content.append(block)
         message.content = new_content
+        if isinstance(message.id, str) and message.id.startswith("resp_"):
+            message.id = None
     else:
         pass
 
@@ -137,13 +144,29 @@ def _convert_to_v03_ai_message(
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert an old-style v0.3 AIMessage into the new content-block format."""
     # Only update ChatOpenAI v0.3 AIMessages
-    if not (
+    # TODO: structure provenance into AIMessage
+    is_chatopenai_v03 = (
         isinstance(message.content, list)
         and all(isinstance(b, dict) for b in message.content)
-    ) or not any(
-        item in message.additional_kwargs
-        for item in ["reasoning", "tool_outputs", "refusal"]
-    ):
+    ) and (
+        any(
+            item in message.additional_kwargs
+            for item in [
+                "reasoning",
+                "tool_outputs",
+                "refusal",
+                _FUNCTION_CALL_IDS_MAP_KEY,
+            ]
+        )
+        or (
+            isinstance(message.id, str)
+            and message.id.startswith("msg_")
+            and (response_id := message.response_metadata.get("id"))
+            and isinstance(response_id, str)
+            and response_id.startswith("resp_")
+        )
+    )
+    if not is_chatopenai_v03:
         return message
 
     content_order = [
@@ -189,7 +212,7 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         function_call = {
             "type": "function_call",
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             "call_id": tool_call["id"],
         }
         if function_call_ids is not None and (

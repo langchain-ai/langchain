@@ -1,8 +1,7 @@
 from pathlib import Path
-from typing import Dict
 
 
-def find_and_replace(source: str, replacements: Dict[str, str]) -> str:
+def find_and_replace(source: str, replacements: dict[str, str]) -> str:
     rtn = source
 
     # replace keys in deterministic alphabetical order

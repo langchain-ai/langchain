@@ -52,7 +52,7 @@ In addition, there is a **legacy** async [astream_log](https://python.langchain.
 
 The `stream()` method returns an iterator that yields chunks of output synchronously as they are produced. You can use a `for` loop to process each chunk in real-time. For example, when using an LLM, this allows the output to be streamed incrementally as it is generated, reducing the wait time for users.
 
-The type of chunk yielded by the `stream()` and `astream()` methods depends on the component being streamed. For example, when streaming from an [LLM](/docs/concepts/chat_models) each component will be an [AIMessageChunk](/docs/concepts/messages#aimessagechunk); however, for other components, the chunk may be different. 
+The type of chunk yielded by the `stream()` and `astream()` methods depends on the component being streamed. For example, when streaming from an [LLM](/docs/concepts/chat_models) each component will be an [AIMessageChunk](/docs/concepts/messages#aimessagechunk); however, for other components, the chunk may be different.
 
 The `stream()` method returns an iterator that yields these chunks as they are produced. For example,
 
@@ -99,7 +99,7 @@ If you compose multiple Runnables using [LangChain’s Expression Language (LCEL
 <span data-heading-keywords="astream_events,stream_events,stream events"></span>
 
 :::tip
-Use the `astream_events` API to access custom data and intermediate outputs from LLM applications built entirely with [LCEL](/docs/concepts/lcel). 
+Use the `astream_events` API to access custom data and intermediate outputs from LLM applications built entirely with [LCEL](/docs/concepts/lcel).
 
 While this API is available for use with [LangGraph](/docs/concepts/architecture#langgraph) as well, it is usually not necessary when working with LangGraph, as the `stream` and `astream` methods provide comprehensive streaming capabilities for LangGraph graphs.
 :::
@@ -119,7 +119,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_anthropic import ChatAnthropic
 
-model = ChatAnthropic(model="claude-3-sonnet-20240229")
+model = ChatAnthropic(model="claude-3-7-sonnet-20250219")
 
 prompt = ChatPromptTemplate.from_template("tell me a joke about {topic}")
 parser = StrOutputParser()
@@ -148,7 +148,7 @@ LangChain simplifies streaming from [chat models](/docs/concepts/chat_models) by
 
 ### How It Works
 
-When you call the `invoke` (or `ainvoke`) method on a chat model, LangChain will automatically switch to streaming mode if it detects that you are trying to stream the overall application. 
+When you call the `invoke` (or `ainvoke`) method on a chat model, LangChain will automatically switch to streaming mode if it detects that you are trying to stream the overall application.
 
 Under the hood, it'll have `invoke` (or `ainvoke`) use the `stream` (or `astream`) method to generate its output. The result of the invocation will be the same as far as the code that was using `invoke` is concerned; however, while the chat model is being streamed, LangChain will take care of invoking `on_llm_new_token` events in LangChain's [callback system](/docs/concepts/callbacks). These callback events
 allow LangGraph `stream`/`astream` and `astream_events` to surface the chat model's output in real-time.
@@ -158,14 +158,14 @@ Example:
 ```python
 def node(state):
     ...
-    # The code below uses the invoke method, but LangChain will 
+    # The code below uses the invoke method, but LangChain will
     # automatically switch to streaming mode
-    # when it detects that the overall 
+    # when it detects that the overall
     # application is being streamed.
     ai_message = model.invoke(state["messages"])
     ...
 
-for chunk in compiled_graph.stream(..., mode="messages"): 
+for chunk in compiled_graph.stream(..., mode="messages"):
     ...
 ```
 ## Async Programming

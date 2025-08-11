@@ -241,7 +241,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         self,
         runnable: Union[
             Runnable[
-                Union[MessagesOrDictWithMessages],
+                list[BaseMessage],
+                Union[str, BaseMessage, MessagesOrDictWithMessages],
+            ],
+            Runnable[
+                dict[str, Any],
                 Union[str, BaseMessage, MessagesOrDictWithMessages],
             ],
             LanguageModelLike,
@@ -258,7 +262,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         Args:
             runnable: The base Runnable to be wrapped. Must take as input one of:
-                1. A sequence of BaseMessages
+                1. A list of BaseMessages
                 2. A dict with one key for all messages
                 3. A dict with one key for the current input string/message(s) and
                     a separate key for historical messages. If the input key points
@@ -307,6 +311,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
+
         """
         history_chain: Runnable = RunnableLambda(
             self._enter_history, self._aenter_history
@@ -335,10 +340,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
-            _config_specs = history_factory_config
+            config_specs = history_factory_config
         else:
             # If not provided, then we'll use the default session_id field
-            _config_specs = [
+            config_specs = [
                 ConfigurableFieldSpec(
                     id="session_id",
                     annotation=str,
@@ -355,7 +360,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             output_messages_key=output_messages_key,
             bound=bound,
             history_messages_key=history_messages_key,
-            history_factory_config=_config_specs,
+            history_factory_config=config_specs,
             **kwargs,
         )
         self._history_chain = history_chain

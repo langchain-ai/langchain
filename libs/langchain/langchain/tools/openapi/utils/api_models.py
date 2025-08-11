@@ -41,14 +41,14 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "PRIMITIVE_TYPES",
-    "APIPropertyLocation",
-    "SUPPORTED_LOCATIONS",
     "INVALID_LOCATION_TEMPL",
+    "PRIMITIVE_TYPES",
     "SCHEMA_TYPE",
-    "APIPropertyBase",
-    "APIProperty",
-    "APIRequestBodyProperty",
-    "APIRequestBody",
+    "SUPPORTED_LOCATIONS",
     "APIOperation",
+    "APIProperty",
+    "APIPropertyBase",
+    "APIPropertyLocation",
+    "APIRequestBody",
+    "APIRequestBodyProperty",
 ]

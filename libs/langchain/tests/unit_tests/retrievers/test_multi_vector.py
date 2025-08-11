@@ -1,6 +1,7 @@
 from typing import Any, Callable
 
 from langchain_core.documents import Document
+from typing_extensions import override
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
 from langchain.storage import InMemoryStore
@@ -15,16 +16,24 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._identity_fn
 
+    @override
     def similarity_search(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[Document]:
         res = self.store.get(query)
         if res is None:
             return []
         return [res]
 
+    @override
     def similarity_search_with_score(
-        self, query: str, k: int = 4, **kwargs: Any
+        self,
+        query: str,
+        k: int = 4,
+        **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         res = self.store.get(query)
         if res is None:
@@ -35,7 +44,9 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
 def test_multi_vector_retriever_initialization() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
     retriever = MultiVectorRetriever(  # type: ignore[call-arg]
-        vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id"
+        vectorstore=vectorstore,
+        docstore=InMemoryStore(),
+        doc_id="doc_id",
     )
     documents = [Document(page_content="test document", metadata={"doc_id": "1"})]
     retriever.vectorstore.add_documents(documents, ids=["1"])
@@ -48,7 +59,9 @@ def test_multi_vector_retriever_initialization() -> None:
 async def test_multi_vector_retriever_initialization_async() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
     retriever = MultiVectorRetriever(  # type: ignore[call-arg]
-        vectorstore=vectorstore, docstore=InMemoryStore(), doc_id="doc_id"
+        vectorstore=vectorstore,
+        docstore=InMemoryStore(),
+        doc_id="doc_id",
     )
     documents = [Document(page_content="test document", metadata={"doc_id": "1"})]
     await retriever.vectorstore.aadd_documents(documents, ids=["1"])

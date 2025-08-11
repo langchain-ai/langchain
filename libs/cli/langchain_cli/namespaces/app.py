@@ -1,16 +1,13 @@
-"""
-Manage LangChain apps
-"""
+"""Manage LangChain apps."""
 
 import shutil
 import subprocess
 import sys
 import warnings
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
@@ -44,7 +41,7 @@ def new(
     ] = None,
     *,
     package: Annotated[
-        Optional[List[str]],
+        Optional[list[str]],
         typer.Option(help="Packages to seed the project with"),
     ] = None,
     pip: Annotated[
@@ -63,15 +60,14 @@ def new(
             is_flag=True,
         ),
     ] = False,
-):
-    """
-    Create a new LangServe application.
-    """
+) -> None:
+    """Create a new LangServe application."""
     has_packages = package is not None and len(package) > 0
 
     if noninteractive:
         if name is None:
-            raise typer.BadParameter("name is required when --non-interactive is set")
+            msg = "name is required when --non-interactive is set"
+            raise typer.BadParameter(msg)
         name_str = name
         pip_bool = bool(pip)  # None should be false
     else:
@@ -83,7 +79,9 @@ def new(
             package_prompt = "What package would you like to add? (leave blank to skip)"
             while True:
                 package_str = typer.prompt(
-                    package_prompt, default="", show_default=False
+                    package_prompt,
+                    default="",
+                    show_default=False,
                 )
                 if not package_str:
                     break
@@ -125,27 +123,33 @@ def new(
     typer.echo("Then add templates with commands like:\n")
     typer.echo("    langchain app add extraction-openai-functions")
     typer.echo(
-        "    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n"
+        "    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git\n\n",
     )
 
 
 @app_cli.command()
 def add(
     dependencies: Annotated[
-        Optional[List[str]], typer.Argument(help="The dependency to add")
+        Optional[list[str]],
+        typer.Argument(help="The dependency to add"),
     ] = None,
     *,
-    api_path: Annotated[List[str], typer.Option(help="API paths to add")] = [],
+    api_path: Annotated[
+        Optional[list[str]],
+        typer.Option(help="API paths to add"),
+    ] = None,
     project_dir: Annotated[
-        Optional[Path], typer.Option(help="The project directory")
+        Optional[Path],
+        typer.Option(help="The project directory"),
     ] = None,
     repo: Annotated[
-        List[str],
+        Optional[list[str]],
         typer.Option(help="Install templates from a specific github repo instead"),
-    ] = [],
+    ] = None,
     branch: Annotated[
-        List[str], typer.Option(help="Install templates from a specific branch")
-    ] = [],
+        Optional[list[str]],
+        typer.Option(help="Install templates from a specific branch"),
+    ] = None,
     pip: Annotated[
         bool,
         typer.Option(
@@ -155,19 +159,24 @@ def add(
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
-):
-    """
-    Adds the specified template to the current LangServe app.
+) -> None:
+    """Add the specified template to the current LangServe app.
 
     e.g.:
     langchain app add extraction-openai-functions
     langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
     """
-
+    if branch is None:
+        branch = []
+    if repo is None:
+        repo = []
+    if api_path is None:
+        api_path = []
     if not branch and not repo:
         warnings.warn(
             "Adding templates from the default branch and repo is deprecated."
-            " At a minimum, you will have to add `--branch v0.2` for this to work"
+            " At a minimum, you will have to add `--branch v0.2` for this to work",
+            stacklevel=2,
         )
 
     parsed_deps = parse_dependencies(dependencies, repo, branch, api_path)
@@ -177,20 +186,20 @@ def add(
     package_dir = project_root / "packages"
 
     create_events(
-        [{"event": "serve add", "properties": dict(parsed_dep=d)} for d in parsed_deps]
+        [{"event": "serve add", "properties": {"parsed_dep": d}} for d in parsed_deps],
     )
 
     # group by repo/ref
-    grouped: Dict[Tuple[str, Optional[str]], List[DependencySource]] = {}
+    grouped: dict[tuple[str, Optional[str]], list[DependencySource]] = {}
     for dep in parsed_deps:
         key_tup = (dep["git"], dep["ref"])
         lst = grouped.get(key_tup, [])
         lst.append(dep)
         grouped[key_tup] = lst
 
-    installed_destination_paths: List[Path] = []
-    installed_destination_names: List[str] = []
-    installed_exports: List[LangServeExport] = []
+    installed_destination_paths: list[Path] = []
+    installed_destination_names: list[str] = []
+    installed_exports: list[LangServeExport] = []
 
     for (git, ref), group_deps in grouped.items():
         if len(group_deps) == 1:
@@ -217,7 +226,7 @@ def add(
             destination_path = package_dir / inner_api_path
             if destination_path.exists():
                 typer.echo(
-                    f"Folder {str(inner_api_path)} already exists. " "Skipping...",
+                    f"Folder {inner_api_path} already exists. Skipping...",
                 )
                 continue
             copy_repo(source_path, destination_path)
@@ -249,14 +258,14 @@ def add(
         typer.echo("Failed to print install command, continuing...")
     else:
         if pip:
-            cmd = ["pip", "install", "-e"] + installed_destination_strs
+            cmd = ["pip", "install", "-e", *installed_destination_strs]
             cmd_str = " \\\n  ".join(installed_destination_strs)
             typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
-            subprocess.run(cmd, cwd=cwd)
+            subprocess.run(cmd, cwd=cwd)  # noqa: S603
 
     chain_names = []
     for e in installed_exports:
-        original_candidate = f'{e["package_name"].replace("-", "_")}_chain'
+        original_candidate = f"{e['package_name'].replace('-', '_')}_chain"
         candidate = original_candidate
         i = 2
         while candidate in chain_names:
@@ -283,35 +292,35 @@ def add(
         if len(chain_names) == 1
         else f"these {len(chain_names)} templates"
     )
-    lines = (
-        ["", f"To use {t}, add the following to your app:\n\n```", ""]
-        + imports
-        + [""]
-        + routes
-        + ["```"]
-    )
+    lines = [
+        "",
+        f"To use {t}, add the following to your app:\n\n```",
+        "",
+        *imports,
+        "",
+        *routes,
+        "```",
+    ]
     typer.echo("\n".join(lines))
 
 
 @app_cli.command()
 def remove(
-    api_paths: Annotated[List[str], typer.Argument(help="The API paths to remove")],
+    api_paths: Annotated[list[str], typer.Argument(help="The API paths to remove")],
     *,
     project_dir: Annotated[
-        Optional[Path], typer.Option(help="The project directory")
+        Optional[Path],
+        typer.Option(help="The project directory"),
     ] = None,
-):
-    """
-    Removes the specified package from the current LangServe app.
-    """
-
+) -> None:
+    """Remove the specified package from the current LangServe app."""
     project_root = get_package_root(project_dir)
 
     project_pyproject = project_root / "pyproject.toml"
 
     package_root = project_root / "packages"
 
-    remove_deps: List[str] = []
+    remove_deps: list[str] = []
 
     for api_path in api_paths:
         package_dir = package_root / api_path
@@ -325,8 +334,8 @@ def remove(
 
             shutil.rmtree(package_dir)
             remove_deps.append(api_path)
-        except Exception:
-            pass
+        except OSError as exc:
+            typer.echo(f"Failed to remove {api_path}: {exc}")
 
     try:
         remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)
@@ -339,19 +348,19 @@ def remove(
 def serve(
     *,
     port: Annotated[
-        Optional[int], typer.Option(help="The port to run the server on")
+        Optional[int],
+        typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str], typer.Option(help="The host to run the server on")
+        Optional[str],
+        typer.Option(help="The host to run the server on"),
     ] = None,
     app: Annotated[
-        Optional[str], typer.Option(help="The app to run, e.g. `app.server:app`")
+        Optional[str],
+        typer.Option(help="The app to run, e.g. `app.server:app`"),
     ] = None,
 ) -> None:
-    """
-    Starts the LangServe app.
-    """
-
+    """Start the LangServe app."""
     # add current dir as first entry of path
     sys.path.append(str(Path.cwd()))
 
@@ -361,5 +370,8 @@ def serve(
     import uvicorn
 
     uvicorn.run(
-        app_str, host=host_str, port=port if port is not None else 8000, reload=True
+        app_str,
+        host=host_str,
+        port=port if port is not None else 8000,
+        reload=True,
     )

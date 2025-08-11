@@ -1,7 +1,6 @@
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
-import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from openai.types.responses import (
     ResponseCompletedEvent,
@@ -238,6 +237,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=16,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -246,6 +246,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=17,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -254,6 +255,7 @@ responses_stream = [
         output_index=1,
         sequence_number=18,
         text="text block one",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -280,6 +282,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=21,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDeltaEvent(
@@ -288,6 +291,7 @@ responses_stream = [
         item_id="msg_123",
         output_index=1,
         sequence_number=22,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -296,6 +300,7 @@ responses_stream = [
         output_index=1,
         sequence_number=23,
         text="another text block",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -444,6 +449,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=38,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -452,6 +458,7 @@ responses_stream = [
         output_index=3,
         sequence_number=39,
         text="more",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -476,6 +483,7 @@ responses_stream = [
         item_id="msg_234",
         output_index=3,
         sequence_number=42,
+        logprobs=[],
         type="response.output_text.delta",
     ),
     ResponseTextDoneEvent(
@@ -484,6 +492,7 @@ responses_stream = [
         output_index=3,
         sequence_number=43,
         text="text",
+        logprobs=[],
         type="response.output_text.done",
     ),
     ResponseContentPartDoneEvent(
@@ -601,9 +610,18 @@ responses_stream = [
 ]
 
 
-@pytest.mark.xfail(reason="Will be fixed with output format flags.")
+def _strip_none(obj: Any) -> Any:
+    """Recursively strip None values from dictionaries and lists."""
+    if isinstance(obj, dict):
+        return {k: _strip_none(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [_strip_none(v) for v in obj]
+    else:
+        return obj
+
+
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -644,3 +662,20 @@ def test_responses_stream() -> None:
     ]
     assert full.content == expected_content
     assert full.additional_kwargs == {}
+    assert full.id == "resp_123"
+
+    # Test reconstruction
+    payload = llm._get_request_payload([full])
+    completed = [
+        item
+        for item in responses_stream
+        if item.type == "response.completed"  # type: ignore[attr-defined]
+    ]
+    assert len(completed) == 1
+    response = completed[0].response  # type: ignore[attr-defined]
+
+    assert len(response.output) == len(payload["input"])
+    for idx, item in enumerate(response.output):
+        dumped = _strip_none(item.model_dump())
+        _ = dumped.pop("status", None)
+        assert dumped == payload["input"][idx]

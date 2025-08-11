@@ -20,7 +20,7 @@ class InMemoryCache(BaseCache):
 
     def update(self, prompt: str, llm_string: str, return_val: RETURN_VAL_TYPE) -> None:
         """Update cache based on prompt and llm_string."""
-        self._cache[(prompt, llm_string)] = return_val
+        self._cache[prompt, llm_string] = return_val
 
     @override
     def clear(self, **kwargs: Any) -> None:

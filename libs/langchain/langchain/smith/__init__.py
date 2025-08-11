@@ -87,6 +87,7 @@ or LangSmith's `RunEvaluator` classes.
 - :func:`arun_on_dataset <langchain.smith.evaluation.runner_utils.arun_on_dataset>`: Asynchronous function to evaluate a chain, agent, or other LangChain component over a dataset.
 - :func:`run_on_dataset <langchain.smith.evaluation.runner_utils.run_on_dataset>`: Function to evaluate a chain, agent, or other LangChain component over a dataset.
 - :class:`RunEvalConfig <langchain.smith.evaluation.config.RunEvalConfig>`: Class representing the configuration for running evaluation. You can select evaluators by :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>` or config, or you can pass in `custom_evaluators`
+
 """  # noqa: E501
 
 from langchain.smith.evaluation import (
@@ -96,7 +97,7 @@ from langchain.smith.evaluation import (
 )
 
 __all__ = [
+    "RunEvalConfig",
     "arun_on_dataset",
     "run_on_dataset",
-    "RunEvalConfig",
 ]

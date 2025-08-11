@@ -23,6 +23,6 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    "AI21PenaltyData",
     "AI21",
+    "AI21PenaltyData",
 ]

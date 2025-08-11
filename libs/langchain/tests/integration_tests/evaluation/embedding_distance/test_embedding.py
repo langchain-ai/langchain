@@ -23,7 +23,7 @@ def vectors() -> tuple[np.ndarray, np.ndarray]:
             0.891773,
             0.96366276,
             0.38344152,
-        ]
+        ],
     )
     vector_b = np.array(
         [
@@ -37,7 +37,7 @@ def vectors() -> tuple[np.ndarray, np.ndarray]:
             0.83261985,
             0.77815675,
             0.87001215,
-        ]
+        ],
     )
     return vector_a, vector_b
 
@@ -130,7 +130,8 @@ def test_pairwise_embedding_distance_eval_chain_embedding_distance(
 ) -> None:
     """Test the embedding distance."""
     result = pairwise_embedding_distance_eval_chain.evaluate_string_pairs(
-        prediction="A single cat", prediction_b="A single cat"
+        prediction="A single cat",
+        prediction_b="A single cat",
     )
     assert np.isclose(result["score"], 0.0)
 

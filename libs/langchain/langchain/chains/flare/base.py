@@ -15,6 +15,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -44,6 +45,7 @@ class QuestionGeneratorChain(LLMChain):
     """Prompt template for the chain."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -69,7 +71,8 @@ def _low_confidence_spans(
             "NumPy not found in the current Python environment. FlareChain will use a "
             "pure Python implementation for internal calculations, which may "
             "significantly impact performance, especially for large datasets. For "
-            "optimal speed and efficiency, consider installing NumPy: pip install numpy"
+            "optimal speed and efficiency, consider installing NumPy: pip install "
+            "numpy",
         )
         import math
 
@@ -171,7 +174,8 @@ class FlareChain(Chain):
         callbacks = _run_manager.get_child()
         if isinstance(self.question_generator_chain, LLMChain):
             question_gen_outputs = self.question_generator_chain.apply(
-                question_gen_inputs, callbacks=callbacks
+                question_gen_inputs,
+                callbacks=callbacks,
             )
             questions = [
                 output[self.question_generator_chain.output_keys[0]]
@@ -179,10 +183,13 @@ class FlareChain(Chain):
             ]
         else:
             questions = self.question_generator_chain.batch(
-                question_gen_inputs, config={"callbacks": callbacks}
+                question_gen_inputs,
+                config={"callbacks": callbacks},
             )
         _run_manager.on_text(
-            f"Generated Questions: {questions}", color="yellow", end="\n"
+            f"Generated Questions: {questions}",
+            color="yellow",
+            end="\n",
         )
         return self._do_generation(questions, user_input, response, _run_manager)
 
@@ -197,15 +204,18 @@ class FlareChain(Chain):
 
         response = ""
 
-        for i in range(self.max_iter):
+        for _i in range(self.max_iter):
             _run_manager.on_text(
-                f"Current Response: {response}", color="blue", end="\n"
+                f"Current Response: {response}",
+                color="blue",
+                end="\n",
             )
             _input = {"user_input": user_input, "context": "", "response": response}
             tokens, log_probs = _extract_tokens_and_log_probs(
                 self.response_chain.invoke(
-                    _input, {"callbacks": _run_manager.get_child()}
-                )
+                    _input,
+                    {"callbacks": _run_manager.get_child()},
+                ),
             )
             low_confidence_spans = _low_confidence_spans(
                 tokens,
@@ -236,7 +246,10 @@ class FlareChain(Chain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, max_generation_len: int = 32, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        max_generation_len: int = 32,
+        **kwargs: Any,
     ) -> FlareChain:
         """Creates a FlareChain from a language model.
 
@@ -250,14 +263,17 @@ class FlareChain(Chain):
         """
         try:
             from langchain_openai import ChatOpenAI
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "OpenAI is required for FlareChain. "
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
+            raise ImportError(msg) from e
         llm = ChatOpenAI(
-            max_completion_tokens=max_generation_len, logprobs=True, temperature=0
+            max_completion_tokens=max_generation_len,
+            logprobs=True,
+            temperature=0,
         )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()

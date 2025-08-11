@@ -55,6 +55,9 @@ class InputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
+    May also hold extra provider-specific keys.
+
     """
 
     audio: int
@@ -87,6 +90,7 @@ class OutputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
     """
 
     audio: int
@@ -126,6 +130,7 @@ class UsageMetadata(TypedDict):
     .. versionchanged:: 0.3.9
 
         Added ``input_token_details`` and ``output_token_details``.
+
     """
 
     input_tokens: int

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "ArizeCallbackHandler": "langchain_community.callbacks.arize_callback"
+    "ArizeCallbackHandler": "langchain_community.callbacks.arize_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

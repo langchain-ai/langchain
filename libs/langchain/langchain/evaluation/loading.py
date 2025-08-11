@@ -58,21 +58,24 @@ def load_dataset(uri: str) -> list[dict]:
 
         from langchain.evaluation import load_dataset
         ds = load_dataset("llm-math")
+
     """
     try:
         from datasets import load_dataset
-    except ImportError:
-        raise ImportError(
+    except ImportError as e:
+        msg = (
             "load_dataset requires the `datasets` package."
             " Please install with `pip install datasets`"
         )
+        raise ImportError(msg) from e
 
     dataset = load_dataset(f"LangChainDatasets/{uri}")
-    return [d for d in dataset["train"]]
+    return list(dataset["train"])
 
 
 _EVALUATOR_MAP: dict[
-    EvaluatorType, Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]]
+    EvaluatorType,
+    Union[type[LLMEvalChain], type[Chain], type[StringEvaluator]],
 ] = {
     EvaluatorType.QA: QAEvalChain,
     EvaluatorType.COT_QA: CotQAEvalChain,
@@ -125,10 +128,11 @@ def load_evaluator(
     >>> evaluator = load_evaluator(EvaluatorType.QA)
     """
     if evaluator not in _EVALUATOR_MAP:
-        raise ValueError(
+        msg = (
             f"Unknown evaluator type: {evaluator}"
             f"\nValid types are: {list(_EVALUATOR_MAP.keys())}"
         )
+        raise ValueError(msg)
     evaluator_cls = _EVALUATOR_MAP[evaluator]
     if issubclass(evaluator_cls, LLMEvalChain):
         try:
@@ -139,27 +143,28 @@ def load_evaluator(
                     from langchain_community.chat_models.openai import (  # type: ignore[no-redef]
                         ChatOpenAI,
                     )
-                except ImportError:
-                    raise ImportError(
+                except ImportError as e:
+                    msg = (
                         "Could not import langchain_openai or fallback onto "
                         "langchain_community. Please install langchain_openai "
                         "or specify a language model explicitly. "
                         "It's recommended to install langchain_openai AND "
                         "specify a language model explicitly."
                     )
+                    raise ImportError(msg) from e
 
             llm = llm or ChatOpenAI(model="gpt-4", seed=42, temperature=0)
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f"Evaluation with the {evaluator_cls} requires a "
                 "language model to function."
                 " Failed to create the default 'gpt-4' model."
                 " Please manually provide an evaluation LLM"
                 " or check your openai credentials."
-            ) from e
+            )
+            raise ValueError(msg) from e
         return evaluator_cls.from_llm(llm=llm, **kwargs)
-    else:
-        return evaluator_cls(**kwargs)
+    return evaluator_cls(**kwargs)
 
 
 def load_evaluators(

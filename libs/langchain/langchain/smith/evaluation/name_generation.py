@@ -721,7 +721,7 @@ nouns = [
 
 def random_name() -> str:
     """Generate a random name."""
-    adjective = random.choice(adjectives)
-    noun = random.choice(nouns)
-    number = random.randint(1, 100)
+    adjective = random.choice(adjectives)  # noqa: S311
+    noun = random.choice(nouns)  # noqa: S311
+    number = random.randint(1, 100)  # noqa: S311
     return f"{adjective}-{noun}-{number}"

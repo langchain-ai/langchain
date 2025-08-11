@@ -321,35 +321,35 @@ EXPECTED_STREAMED_JSON_DIFF = [
             "op": "replace",
             "path": "/setup",
             "value": "Why did the bears start a band called",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/setup",
             "value": "Why did the bears start a band called Bears",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/setup",
             "value": "Why did the bears start a band called Bears Bears",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/setup",
             "value": "Why did the bears start a band called Bears Bears Bears",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/setup",
             "value": "Why did the bears start a band called Bears Bears Bears ?",
-        }
+        },
     ],
     [{"op": "add", "path": "/punchline", "value": ""}],
     [{"op": "replace", "path": "/punchline", "value": "Because"}],
@@ -362,35 +362,35 @@ EXPECTED_STREAMED_JSON_DIFF = [
             "op": "replace",
             "path": "/punchline",
             "value": "Because they wanted to play bear",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/punchline",
             "value": "Because they wanted to play bear -y",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/punchline",
             "value": "Because they wanted to play bear -y good",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/punchline",
             "value": "Because they wanted to play bear -y good music",
-        }
+        },
     ],
     [
         {
             "op": "replace",
             "path": "/punchline",
             "value": "Because they wanted to play bear -y good music !",
-        }
+        },
     ],
     [{"op": "add", "path": "/audience", "value": []}],
     [{"op": "add", "path": "/audience/0", "value": ""}],
@@ -405,7 +405,8 @@ def test_partial_functions_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="",
+                additional_kwargs={"function_call": {"arguments": token}},
             )
 
     chain = input_iter | JsonOutputFunctionsParser()
@@ -417,7 +418,8 @@ def test_partial_functions_json_output_parser_diff() -> None:
     def input_iter(_: Any) -> Iterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="",
+                additional_kwargs={"function_call": {"arguments": token}},
             )
 
     chain = input_iter | JsonOutputFunctionsParser(diff=True)
@@ -429,7 +431,8 @@ async def test_partial_functions_json_output_parser_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="",
+                additional_kwargs={"function_call": {"arguments": token}},
             )
 
     chain = input_iter | JsonOutputFunctionsParser()
@@ -441,7 +444,8 @@ async def test_partial_functions_json_output_parser_diff_async() -> None:
     async def input_iter(_: Any) -> AsyncIterator[AIMessageChunk]:
         for token in STREAMED_TOKENS:
             yield AIMessageChunk(
-                content="", additional_kwargs={"function_call": {"arguments": token}}
+                content="",
+                additional_kwargs={"function_call": {"arguments": token}},
             )
 
     chain = input_iter | JsonOutputFunctionsParser(diff=True)
