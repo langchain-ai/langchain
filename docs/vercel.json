@@ -23,11 +23,19 @@
     {
       "source": "/v0.2/:path(.*/?)*",
       "destination": "https://langchain-v02.vercel.app/v0.2/:path*"
+    },
+    {
+      "source": "/v0.3",
+      "destination": "https://langchain-v03.vercel.app/v0.3"
+    },
+    {
+      "source": "/v0.3/:path(.*/?)*",
+      "destination": "https://langchain-v03.vercel.app/v0.3/:path*"
     }
   ],
   "redirects": [
     {
-      "source": "/v0.3/docs/:path(.*/?)*",
+      "source": "/v0.4/docs/:path(.*/?)*",
       "destination": "/docs/:path*"
     },
     {

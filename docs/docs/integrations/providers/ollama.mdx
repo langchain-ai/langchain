@@ -1,14 +1,16 @@
 # Ollama
 
 >[Ollama](https://ollama.com/) allows you to run open-source large language models,
-> such as [Llama3.1](https://ai.meta.com/blog/meta-llama-3-1/), locally.
+> such as [gpt-oss](https://ollama.com/library/gpt-oss), locally.
 >
->`Ollama` bundles model weights, configuration, and data into a single package, defined by a Modelfile.
->It optimizes setup and configuration details, including GPU usage.
->For a complete list of supported models and model variants, see the [Ollama model library](https://ollama.ai/library).
+>The `ollama` [package](https://pypi.org/project/ollama/0.5.3/) bundles model weights,
+> configuration, and data into a single package, defined by a Modelfile. It optimizes
+> setup and configuration details, including GPU usage.
+>For a complete list of supported models and model variants, see the
+> [Ollama model library](https://ollama.com/search).
 
-See [this guide](/docs/how_to/local_llms) for more details
-on how to use `Ollama` with LangChain.
+See [this guide](/docs/how_to/local_llms/#ollama) for more details
+on how to use `ollama` with LangChain.
 
 ## Installation and Setup
 ### Ollama installation
@@ -23,10 +25,10 @@ Ollama will start as a background service automatically, if this is disabled, ru
 ollama serve
 ```
 
-After starting ollama, run `ollama pull <name-of-model>` to download a model from the [Ollama model library](https://ollama.ai/library):
+After starting ollama, run `ollama pull <name-of-model>` to download a model from the [Ollama model library](https://ollama.com/library):
 
 ```bash
-ollama pull llama3.1
+ollama pull gpt-oss:20b
 ```
 
 - This will download the default tagged version of the model. Typically, the default points to the latest, smallest sized-parameter model.
