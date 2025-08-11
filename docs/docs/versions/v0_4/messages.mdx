@@ -43,9 +43,12 @@ of LangChain. There are no breaking changes associated with the existing content
 
 **This is the most significant change from the existing message classes**, which permit
 strings, lists of strings, or lists of untyped dicts as content. We have added a
-`.text` getter so that developers can easily recover string content. `.tool_calls`,
-instead of an attribute, is now also a getter with an associated setter, so that
-usage is largely the same. See [usage comparison](#usage-comparison), below, for details.
+`.text` getter so that developers can easily recover string content. Consequently, we
+have deprecated `.text()` (as a method) in favor of the new property.
+
+`.tool_calls`, instead of an attribute, is now also a getter with an associated setter,
+so that usage is largely the same. See [usage comparison](#usage-comparison), below,
+for details.
 
 ### Consistency
 
@@ -56,13 +59,13 @@ inter-operability of messages across models.
 
 ## Usage comparison
 
-| Task                    | Previous | New                                            |
-|-------------------------|----------|------------------------------------------------|
-| Get string content      | `message.content`            | `message.text`             |
-| Get content blocks      | `message.content`            | `message.content`          |
-| Get `additional_kwargs` | `message.additional_kwargs`  | `[block for block in message.content if block["type"] == "..."]` |
-| Get `response_metadata` | `message.response_metadata`  | `message.response_metadata`|
-| Get `tool_calls`        | `message.tool_calls`         | `message.tool_calls`       |
+| Task                    | Previous                               | New                                                              |
+|-------------------------|----------------------------------------|------------------------------------------------------------------|
+| Get text content (str)  | `message.content` or `message.text()`  | `message.text`                                                   |
+| Get content blocks      | `message.content`                      | `message.content`                                                |
+| Get `additional_kwargs` | `message.additional_kwargs`            | `[block for block in message.content if block["type"] == "..."]` |
+
+Getting `response_metadata` and `tool_calls` has not changed.
 
 ### Changes in content blocks
 
@@ -76,88 +79,6 @@ Importantly:
 the translation.
 - Where provider-specific fields do not map to fields on standard types, LangChain
 stores them in an `"extras"` key (see below for examples).
-
-<details>
-  <summary>Reasoning</summary>
-
-<div className="row">
-  <div className="col col--6" style={{minWidth: 0}}>
-    **Old content**
-```python
-from langchain.chat_models import init_chat_model
-
-llm = init_chat_model(
-    "openai:gpt-5",
-    reasoning={"effort": "medium", "summary": "auto"},
-    output_version="responses/v1",
-)
-response = llm.invoke(
-    "What was the third tallest building in the world in the year 2000?"
-)
-response.content
-```
-```
-[
-  {
-    "type": "reasoning",
-    "id": "rs_abc123",
-    "summary": [
-      {
-        "text": "The user is asking about...",
-        "type": "summary_text"
-      },
-      {
-        "text": "We should consider...",
-        "type": "summary_text"
-      }
-    ]
-  },
-  {
-    "type": "text",
-    "text": "In the year 2000 the third-tallest building in the world was...",
-    "id": "msg_abc123"
-  }
-]
-```
-  </div>
-
-  <div className="col col--6" style={{minWidth: 0}}>
-    **New content**
-```python
-from langchain.chat_models import init_chat_model
-
-llm = init_chat_model(
-    "openai:gpt-5",
-    reasoning={"effort": "medium", "summary": "auto"},
-    message_version="v1",
-)
-response = llm.invoke(
-    "What was the third tallest building in the world in the year 2000?"
-)
-response.content
-```
-```
-[
-  {
-    "type": "reasoning",
-    "reasoning": "The user is asking about...",
-    "id": "rs_abc123"
-  },
-  {
-    "type": "reasoning",
-    "reasoning": "We should consider...",
-    "id": "rs_abc123"
-  },
-  {
-    "type": "text",
-    "text": "In the year 2000 the third-tallest building in the world was...",
-    "id": "msg_abc123"
-  }
-]
-```
-  </div>
-</div>
-</details>
 
 <details>
   <summary>Citations and web search</summary>
@@ -264,6 +185,89 @@ response.content
         "url": "<another document url>"
       }
     ],
+    "id": "msg_abc123"
+  }
+]
+```
+  </div>
+</div>
+</details>
+
+
+<details>
+  <summary>Reasoning</summary>
+
+<div className="row">
+  <div className="col col--6" style={{minWidth: 0}}>
+    **Old content**
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    output_version="responses/v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "id": "rs_abc123",
+    "summary": [
+      {
+        "text": "The user is asking about...",
+        "type": "summary_text"
+      },
+      {
+        "text": "We should consider...",
+        "type": "summary_text"
+      }
+    ]
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
+    "id": "msg_abc123"
+  }
+]
+```
+  </div>
+
+  <div className="col col--6" style={{minWidth: 0}}>
+    **New content**
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    "openai:gpt-5",
+    reasoning={"effort": "medium", "summary": "auto"},
+    message_version="v1",
+)
+response = llm.invoke(
+    "What was the third tallest building in the world in the year 2000?"
+)
+response.content
+```
+```
+[
+  {
+    "type": "reasoning",
+    "reasoning": "The user is asking about...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "reasoning",
+    "reasoning": "We should consider...",
+    "id": "rs_abc123"
+  },
+  {
+    "type": "text",
+    "text": "In the year 2000 the third-tallest building in the world was...",
     "id": "msg_abc123"
   }
 ]
