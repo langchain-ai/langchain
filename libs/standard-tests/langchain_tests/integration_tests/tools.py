@@ -1,3 +1,5 @@
+"""Integration tests for tools."""
+
 from langchain_core.messages import ToolCall
 from langchain_core.tools import BaseTool
 
@@ -66,7 +68,9 @@ class ToolsIntegrationTests(ToolsTests):
             assert all(isinstance(c, (str, dict)) for c in tool_message.content)
 
     def test_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """If invoked without a ToolCall, the tool can return anything
+        """Test invoke without ToolCall.
+
+        If invoked without a ToolCall, the tool can return anything
         but it shouldn't throw an error.
 
         If this test fails, your tool may not be handling the input you defined
@@ -78,7 +82,9 @@ class ToolsIntegrationTests(ToolsTests):
         tool.invoke(self.tool_invoke_params_example)
 
     async def test_async_invoke_no_tool_call(self, tool: BaseTool) -> None:
-        """If ainvoked without a ToolCall, the tool can return anything
+        """Test async invoke without ToolCall.
+
+        If ainvoked without a ToolCall, the tool can return anything
         but it shouldn't throw an error.
 
         For debugging tips, see :meth:`test_invoke_no_tool_call`.

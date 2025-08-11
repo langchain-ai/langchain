@@ -41,8 +41,10 @@ def create_demo_server(
 
 
 def create_demo_server_configurable() -> FastAPI:
+    """Create a configurable demo server."""
     return create_demo_server(config_keys=["configurable"])
 
 
 def create_demo_server_chat() -> FastAPI:
+    """Create a chat demo server."""
     return create_demo_server(playground_type="chat")

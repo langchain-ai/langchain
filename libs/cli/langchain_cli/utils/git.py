@@ -1,3 +1,5 @@
+"""Git utilities."""
+
 import hashlib
 import logging
 import re
@@ -18,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class DependencySource(TypedDict):
+    """Dependency source information."""
+
     git: str
     ref: Optional[str]
     subdirectory: Optional[str]
@@ -32,6 +36,7 @@ def parse_dependency_string(
     branch: Optional[str],
     api_path: Optional[str],
 ) -> DependencySource:
+    """Parse a dependency string into a DependencySource."""
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
             msg = (
@@ -124,6 +129,7 @@ def parse_dependencies(
     branch: list[str],
     api_path: list[str],
 ) -> list[DependencySource]:
+    """Parse dependencies."""
     num_deps = max(
         len(dependencies) if dependencies is not None else 0,
         len(repo),
@@ -171,6 +177,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
 
 
 def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+    """Update a git repository to the specified ref."""
     # see if path already saved
     repo_path = _get_repo_path(gitstring, ref, repo_dir)
     if repo_path.exists():
