@@ -20,6 +20,7 @@ jobs:
   codspeed:
     name: 'Benchmark'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
     strategy:
       matrix:
         include:

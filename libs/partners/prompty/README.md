@@ -41,7 +41,7 @@ sample:
 ---
 system:
 You are an AI assistant who helps people find information.
-As the assistant, you answer questions briefly, succinctly, 
+As the assistant, you answer questions briefly, succinctly,
 and in a personable manner using markdown and even add some personal flair with appropriate emojis.
 
 {% for item in chat_history %}

@@ -197,7 +197,7 @@ def test_relevance_search_with_threshold(
     kwargs = {"score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -248,7 +248,7 @@ def test_relevance_search_with_threshold_and_filter(
     kwargs = {"filter": positive_filter, "score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("location", qdrant_locations())

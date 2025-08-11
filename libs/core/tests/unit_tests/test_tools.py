@@ -1897,6 +1897,7 @@ def test_args_schema_explicitly_typed() -> None:
 
     Please note that this will test using pydantic 2 even though BaseTool
     is a pydantic 1 model!
+
     """
 
     class Foo(BaseModel):

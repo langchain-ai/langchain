@@ -1,4 +1,4 @@
-"""Test chat model integration."""
+"""Unit tests for ChatOllama."""
 
 import json
 import logging
@@ -33,11 +33,56 @@ class TestChatOllama(ChatModelUnitTests):
 
 
 def test__parse_arguments_from_tool_call() -> None:
+    """Test that string arguments are preserved as strings in tool call parsing.
+
+    This test verifies the fix for PR #30154 which addressed an issue where
+    string-typed tool arguments (like IDs or long strings) were being incorrectly
+    processed. The parser should preserve string values as strings rather than
+    attempting to parse them as JSON when they're already valid string arguments.
+
+    The test uses a long string ID to ensure string arguments maintain their
+    original type after parsing, which is critical for tools expecting string inputs.
+    """
     raw_response = '{"model":"sample-model","message":{"role":"assistant","content":"","tool_calls":[{"function":{"name":"get_profile_details","arguments":{"arg_1":"12345678901234567890123456"}}}]},"done":false}'  # noqa: E501
     raw_tool_calls = json.loads(raw_response)["message"]["tool_calls"]
     response = _parse_arguments_from_tool_call(raw_tool_calls[0])
     assert response is not None
     assert isinstance(response["arg_1"], str)
+
+
+def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
+    """Test that functionName metadata is filtered out from tool arguments.
+
+    Some models may include metadata like ``functionName`` in the arguments
+    that just echoes the function name. This should be filtered out for
+    no-argument tools to return an empty dictionary.
+    """
+    # Test case where arguments contain functionName metadata
+    raw_tool_call_with_metadata = {
+        "function": {
+            "name": "magic_function_no_args",
+            "arguments": {"functionName": "magic_function_no_args"},
+        }
+    }
+    response = _parse_arguments_from_tool_call(raw_tool_call_with_metadata)
+    assert response == {}
+
+    # Test case where arguments contain both real args and metadata
+    raw_tool_call_mixed = {
+        "function": {
+            "name": "some_function",
+            "arguments": {"functionName": "some_function", "real_arg": "value"},
+        }
+    }
+    response_mixed = _parse_arguments_from_tool_call(raw_tool_call_mixed)
+    assert response_mixed == {"real_arg": "value"}
+
+    # Test case where functionName has different value (should be preserved)
+    raw_tool_call_different = {
+        "function": {"name": "function_a", "arguments": {"functionName": "function_b"}}
+    }
+    response_different = _parse_arguments_from_tool_call(raw_tool_call_different)
+    assert response_different == {"functionName": "function_b"}
 
 
 @contextmanager
@@ -54,6 +99,7 @@ def _mock_httpx_client_stream(
 def test_arbitrary_roles_accepted_in_chatmessages(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
+    """Test that `ChatOllama` accepts arbitrary roles in `ChatMessage`."""
     monkeypatch.setattr(Client, "stream", _mock_httpx_client_stream)
     llm = ChatOllama(
         model=MODEL_NAME,
@@ -94,9 +140,6 @@ dummy_raw_tool_call = {
 }
 
 
-# --- Regression tests for tool-call argument parsing (see #30910) ---
-
-
 @pytest.mark.parametrize(
     "input_string, expected_output",
     [
@@ -113,14 +156,14 @@ dummy_raw_tool_call = {
 def test_parse_json_string_success_cases(
     input_string: str, expected_output: Any
 ) -> None:
-    """Tests that _parse_json_string correctly parses valid and fixable strings."""
+    """Tests that `_parse_json_string` correctly parses valid and fixable strings."""
     raw_tool_call = {"function": {"name": "test_func", "arguments": input_string}}
     result = _parse_json_string(input_string, raw_tool_call=raw_tool_call, skip=False)
     assert result == expected_output
 
 
 def test_parse_json_string_failure_case_raises_exception() -> None:
-    """Tests that _parse_json_string raises an exception for truly malformed strings."""
+    """Tests that `_parse_json_string` raises an exception for malformed strings."""
     malformed_string = "{'key': 'value',,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
     with pytest.raises(OutputParserException):
@@ -132,7 +175,7 @@ def test_parse_json_string_failure_case_raises_exception() -> None:
 
 
 def test_parse_json_string_skip_returns_input_on_failure() -> None:
-    """Tests that skip=True returns the original string on parse failure."""
+    """Tests that `skip=True` returns the original string on parse failure."""
     malformed_string = "{'not': valid,,,}"
     raw_tool_call = {"function": {"name": "test_func", "arguments": malformed_string}}
     result = _parse_json_string(

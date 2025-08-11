@@ -9,7 +9,7 @@ requires-python = ">=3.9, <4.0"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.66",
     "langchain-text-splitters<1.0.0,>=0.3.8",
-    "langgraph>=0.5.4",
+    "langgraph>=0.6.0",
     "pydantic>=2.7.4",
 ]
 
@@ -123,6 +123,7 @@ ignore = [
   "UP007",   # pyupgrade: non-pep604-annotation-union
   "PLC0415", # Imports should be at the top. Not always desirable
   "PLR0913", # Too many arguments in function definition
+  "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 

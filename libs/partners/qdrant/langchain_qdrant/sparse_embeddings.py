@@ -5,9 +5,7 @@ from pydantic import BaseModel, Field
 
 
 class SparseVector(BaseModel, extra="forbid"):
-    """
-    Sparse vector structure
-    """
+    """Sparse vector structure."""
 
     indices: list[int] = Field(..., description="indices must be unique")
     values: list[float] = Field(
