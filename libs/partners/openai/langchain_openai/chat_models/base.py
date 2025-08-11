@@ -2330,33 +2330,6 @@ class BaseChatOpenAI(BaseChatModel):
                 # Batch API processing (50% cost savings, polling required)
                 results = llm.batch(inputs, use_batch_api=True)
         """
-        if use_batch_api:
-            # Convert inputs to messages_list format expected by batch_create
-            messages_list = []
-            for input_item in inputs:
-                if isinstance(input_item, list):
-                    # Already a list of messages
-                    messages_list.append(input_item)
-                else:
-                    # Convert single input to list of messages
-                    messages = self._convert_input_to_messages(input_item)
-                    messages_list.append(messages)
-
-            # Create batch job and poll for results
-            batch_id = self.batch_create(messages_list, **kwargs)
-            chat_results = self.batch_retrieve(batch_id)
-
-            # Convert ChatResult objects to BaseMessage objects
-            return [result.generations[0].message for result in chat_results]
-        else:
-            # Use the parent class's standard batch implementation
-            return super().batch(
-                inputs=inputs,
-                config=config,
-                return_exceptions=return_exceptions,
-                **kwargs,
-            )
-
     def _convert_input_to_messages(
         self, input_item: LanguageModelInput
     ) -> list[BaseMessage]:
