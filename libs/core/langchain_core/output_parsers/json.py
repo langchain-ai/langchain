@@ -21,6 +21,7 @@ from langchain_core.utils.json import (
     parse_json_markdown,
     parse_partial_json,
 )
+from langchain_core.v1.messages import AIMessage
 
 # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
 PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]
@@ -53,7 +54,9 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
             return pydantic_object.schema()
         return None
 
-    def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
+    def parse_result(
+        self, result: Union[list[Generation], AIMessage], *, partial: bool = False
+    ) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
         Args:
@@ -70,7 +73,7 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-        text = result[0].text
+        text = result.text if isinstance(result, AIMessage) else result[0].text
         text = text.strip()
         if partial:
             try:

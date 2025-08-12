@@ -2383,6 +2383,7 @@ class Runnable(ABC, Generic[Input, Output]):
         name: Optional[str] = None,
         description: Optional[str] = None,
         arg_types: Optional[dict[str, type]] = None,
+        message_version: Literal["v0", "v1"] = "v0",
     ) -> BaseTool:
         """Create a ``BaseTool`` from a ``Runnable``.
 
@@ -2400,6 +2401,9 @@ class Runnable(ABC, Generic[Input, Output]):
             arg_types: A dictionary of argument names to types. Defaults to None.
             message_version: Version of ``ToolMessage`` to return given
             :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+
+            If ``'v0'``, output will be a v0 :class:`~langchain_core.messages.tool.ToolMessage`.
+            If ``'v1'``, output will be a v1 :class:`~langchain_core.v1.messages.ToolMessage`.
 
         Returns:
             A ``BaseTool`` instance.
@@ -2475,7 +2479,7 @@ class Runnable(ABC, Generic[Input, Output]):
 
         .. versionadded:: 0.2.14
 
-        """
+        """  # noqa: E501
         # Avoid circular import
         from langchain_core.tools import convert_runnable_to_tool
 
@@ -2485,6 +2489,7 @@ class Runnable(ABC, Generic[Input, Output]):
             name=name,
             description=description,
             arg_types=arg_types,
+            message_version=message_version,
         )
 
 

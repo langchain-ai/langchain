@@ -6,6 +6,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
+from langchain_core.v1.chat_models import BaseChatModel as BaseChatModelV1
 from pydantic import SecretStr
 
 from langchain.chat_models.base import __all__, init_chat_model
@@ -49,6 +50,22 @@ def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None
         api_key="foo",
     )
     assert llm1.dict() == llm2.dict()
+
+
+@pytest.mark.requires("langchain_openai")
+def test_message_version() -> None:
+    model = init_chat_model("openai:gpt-4.1", api_key="foo")
+    assert isinstance(model, BaseChatModel)
+
+    model_v1 = init_chat_model("openai:gpt-4.1", api_key="foo", message_version="v1")
+    assert isinstance(model_v1, BaseChatModelV1)
+
+    # Test we emit a warning for unsupported providers
+    with (
+        pytest.warns(match="Model provider bar does not support message_version=v1"),
+        pytest.raises(ValueError, match="Unsupported model_provider='bar'."),
+    ):
+        init_chat_model("foo", model_provider="bar", message_version="v1")
 
 
 def test_init_missing_dep() -> None:

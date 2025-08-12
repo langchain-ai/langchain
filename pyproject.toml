@@ -12,7 +12,10 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = [
+    "ruff<0.13,>=0.12.2",
+    "types-toml",
+]
 dev = [
     "langchain-core",
     "langchain-text-splitters",
