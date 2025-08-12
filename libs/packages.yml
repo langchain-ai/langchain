@@ -719,3 +719,6 @@ packages:
 - name: langchain-aimlapi
   path: libs/aimlapi
   repo: D1m7asis/langchain-aimlapi
+- name: langchain-scrapeless
+  repo: scrapeless-ai/langchain-scrapeless
+  path: .
