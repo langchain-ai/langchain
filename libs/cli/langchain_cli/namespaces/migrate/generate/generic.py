@@ -3,6 +3,7 @@
 import importlib
 import inspect
 import pkgutil
+from types import ModuleType
 
 
 def generate_raw_migrations(
@@ -89,7 +90,7 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     items = []
 
     # Function to handle importing from modules
-    def handle_module(module, module_name) -> None:
+    def handle_module(module: ModuleType, module_name: str) -> None:
         if hasattr(module, "__all__"):
             all_objects = module.__all__
             for name in all_objects:
