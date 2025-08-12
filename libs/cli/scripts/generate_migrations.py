@@ -52,7 +52,7 @@ def cli() -> None:
 def generic(
     pkg1: str,
     pkg2: str,
-    output: str,
+    output: Optional[str],
     filter_by_all: bool,  # noqa: FBT001
     format_: str,
 ) -> None:
