@@ -1577,7 +1577,5 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
     content = result.messages[1].content
     assert isinstance(content, list)
     assert not [
-        block
-        for block in content
-        if block["type"] == "text" and block["text"] == ""
+        block for block in content if block["type"] == "text" and block["text"] == ""
     ]
