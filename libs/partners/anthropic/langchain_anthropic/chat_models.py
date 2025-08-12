@@ -916,8 +916,13 @@ class ChatAnthropic(BaseChatModel):
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
     Prompt caching:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
-        for more detail.
+        Prompt caching reduces processing time and costs for repetitive tasks or prompts
+        with consistent elements
+
+        .. note::
+            Only certain models support prompt caching.
+            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            for a full list.
 
         .. code-block:: python
 
@@ -953,6 +958,15 @@ class ChatAnthropic(BaseChatModel):
 
             {'cache_read': 0, 'cache_creation': 1458}
 
+        Alternatively, you may enable prompt caching at invocation time:
+
+        .. code-block:: python
+
+            response = llm.invoke(
+                messages,
+                cache_control={"type": "ephemeral"},
+            )
+
         .. dropdown:: Extended caching
 
             .. versionadded:: 0.3.15
@@ -969,6 +983,10 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            .. important::
+                Specifying a `ttl` key under `cache_control` will not work unless the
+                beta header is set!
 
             Details of cached token counts will be included on the ``InputTokenDetails``
             of response's ``usage_metadata``:
@@ -1033,7 +1051,7 @@ class ChatAnthropic(BaseChatModel):
             Total tokens: 408
 
     Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
         .. dropdown::  Web search
@@ -1351,6 +1369,9 @@ class ChatAnthropic(BaseChatModel):
                 ]
             else:
                 pass
+
+        # If cache_control remains in kwargs, it would be passed as a top-level param
+        # to the API, but Anthropic expects it nested within a message
         _ = kwargs.pop("cache_control", None)
 
         payload = {
