@@ -404,6 +404,8 @@ def test_stream_reasoning_summary(
             for block in response_1.content
             if block["type"] == "reasoning"  # type: ignore[index]
         )
+        if isinstance(reasoning, str):
+            reasoning = json.loads(reasoning)
         assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
     summary = reasoning["summary"]
     assert isinstance(summary, list)
