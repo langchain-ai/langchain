@@ -1724,7 +1724,7 @@ class Runnable(ABC, Generic[Input, Output]):
             on end callback ends at 2025-03-01T07:05:29.883893+00:00
             on end callback ends at 2025-03-01T07:05:30.884831+00:00
 
-        """
+        """  # noqa: E501
         return RunnableBinding(
             bound=self,
             config_factories=[
@@ -1913,7 +1913,7 @@ class Runnable(ABC, Generic[Input, Output]):
             A new ``Runnable`` that will try the original ``Runnable``, and then each
             fallback in order, upon failures.
 
-        """
+        """  # noqa: E501
         # Import locally to prevent circular import
         from langchain_core.runnables.fallbacks import (  # noqa: PLC0415
             RunnableWithFallbacks,

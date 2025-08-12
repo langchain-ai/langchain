@@ -570,7 +570,7 @@ def convert_to_openai_tool(
 
         Added support for OpenAI's image generation built-in tool.
     """
-    from langchain_core.tools import Tool
+    from langchain_core.tools import Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:
