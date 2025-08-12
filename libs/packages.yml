@@ -711,7 +711,7 @@ packages:
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-moorcheh
   path: libs/moorcheh
-  repo: langchain-ai/langchain-pinecone
-  js: '@langchain/pinecone'
+  repo: langchain-ai/langchain-moorcheh
+  js: '@langchain/moorcheh'
   downloads: 3000
   downloads_updated_at: '2025-08-12T21:38:36.795416+00:00'
