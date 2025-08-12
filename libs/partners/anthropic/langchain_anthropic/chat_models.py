@@ -504,6 +504,7 @@ class ChatAnthropic(BaseChatModel):
             Timeout for requests.
         anthropic_proxy: Optional[str]
             Proxy to use for the Anthropic clients, will be used for every API call.
+            If not passed in will be read from env var ``ANTHROPIC_PROXY``.
         max_retries: int
             Max number of retries if a request fails.
         api_key: Optional[str]
@@ -1191,8 +1192,13 @@ class ChatAnthropic(BaseChatModel):
     )
     """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
-    anthropic_proxy: Optional[str] = None
-    """Proxy to use for the Anthropic clients, will be used for every API call."""
+    anthropic_proxy: Optional[str] = Field(
+        default_factory=from_env("ANTHROPIC_PROXY", default=None)
+    )
+    """Proxy to use for the Anthropic clients, will be used for every API call.
+
+    If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
+    variable."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
@@ -1310,7 +1316,7 @@ class ChatAnthropic(BaseChatModel):
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
         if self.anthropic_proxy:
-            http_client_params["proxy"] = self.anthropic_proxy
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
