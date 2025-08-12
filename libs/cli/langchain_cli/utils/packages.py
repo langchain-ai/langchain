@@ -39,7 +39,7 @@ class LangServeExport(TypedDict):
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
     """Get LangServe export information from a pyproject.toml file."""
-    with open(filepath) as f:
+    with filepath.open() as f:
         data: dict[str, Any] = load(f)
     try:
         module = data["tool"]["langserve"]["export_module"]

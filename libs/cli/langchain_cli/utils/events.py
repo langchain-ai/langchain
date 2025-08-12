@@ -16,6 +16,7 @@ class EventDict(TypedDict):
         event: The name of the event.
         properties: Optional dictionary of event properties.
     """
+
     event: str
     properties: Optional[dict[str, Any]]
 
