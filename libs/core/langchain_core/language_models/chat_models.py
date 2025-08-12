@@ -334,6 +334,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """
 
+    output_version: str = "v0"
+    """Version of AIMessage output format to use.
+
+    This field is used to roll-out new output formats for chat model AIMessages
+    in a backwards-compatible way.
+
+    ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
+    recommend this for new applications.
+
+    All chat models currently support the default of ``"v0"``.
+
+    .. versionadded:: 1.0
+    """
+
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:

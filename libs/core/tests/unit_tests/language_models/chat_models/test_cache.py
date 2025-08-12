@@ -301,8 +301,9 @@ def test_llm_representation_for_serializable() -> None:
     assert chat._get_llm_string() == (
         '{"id": ["tests", "unit_tests", "language_models", "chat_models", '
         '"test_cache", "CustomChat"], "kwargs": {"messages": {"id": '
-        '["builtins", "list_iterator"], "lc": 1, "type": "not_implemented"}}, "lc": '
-        '1, "name": "CustomChat", "type": "constructor"}---[(\'stop\', None)]'
+        '["builtins", "list_iterator"], "lc": 1, "type": "not_implemented"}, '
+        '"output_version": "v0"}, "lc": 1, "name": "CustomChat", "type": '
+        "\"constructor\"}---[('stop', None)]"
     )
 
 
