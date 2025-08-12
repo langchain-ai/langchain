@@ -502,7 +502,7 @@ class ChatAnthropic(BaseChatModel):
     Key init args — client params:
         timeout: Optional[float]
             Timeout for requests.
-        proxy: Optional[str]
+        anthropic_proxy: Optional[str]
             Proxy to use for the Anthropic clients, will be used for every API call.
         max_retries: int
             Max number of retries if a request fails.
@@ -1191,7 +1191,7 @@ class ChatAnthropic(BaseChatModel):
     )
     """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
-    proxy: Optional[str] = None
+    anthropic_proxy: Optional[str] = None
     """Proxy to use for the Anthropic clients, will be used for every API call."""
 
     default_headers: Optional[Mapping[str, str]] = None
@@ -1309,8 +1309,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
-        if self.proxy:
-            http_client_params["proxy"] = self.proxy
+        if self.anthropic_proxy:
+            http_client_params["proxy"] = self.anthropic_proxy
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1324,8 +1324,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
-        if self.proxy:
-            http_client_params["proxy"] = self.proxy
+        if self.anthropic_proxy:
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
