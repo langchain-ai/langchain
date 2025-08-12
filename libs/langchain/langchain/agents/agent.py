@@ -1551,7 +1551,7 @@ class AgentExecutor(Chain):
             ],
         )
 
-        # TODO This could yield each result as it becomes available
+        # TODO: This could yield each result as it becomes available
         for chunk in result:
             yield chunk
 
