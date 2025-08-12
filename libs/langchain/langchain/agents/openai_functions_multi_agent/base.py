@@ -72,6 +72,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFin
                 del _tool_input["action_name"]
             function_name = tool_schema["action_name"]
 
+            # A hack here:
             # The code that encodes tool input into Open AI uses a special variable
             # name called `__arg1` to handle old style tools that do not expose a
             # schema and expect a single string argument as an input.
