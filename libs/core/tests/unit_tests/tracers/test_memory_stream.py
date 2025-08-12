@@ -115,8 +115,6 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         assert math.isclose(delta_time, 0, abs_tol=tolerance), (
             f"delta_time: {delta_time}"
         )
-
-
 def test_send_to_closed_stream() -> None:
     """Test that sending to a closed stream doesn't raise an error.
 
