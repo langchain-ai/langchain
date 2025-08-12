@@ -212,7 +212,8 @@ def test_parse_json_with_code_blocks_and_newlines() -> None:
     assert parsed == {
         "action": "Final Answer",
         "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
-        }
+    }
+
 def test_parse_non_dict_json_output() -> None:
     text = "```json\n1\n```"
     with pytest.raises(OutputParserException) as exc_info:
