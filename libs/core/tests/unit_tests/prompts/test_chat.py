@@ -1574,9 +1574,10 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
             "whiteboard": "https://foo.com/bar.png",
         }
     )
-    assert isinstance(list, result.content)
+    content = result.messages[1].content
+    assert isinstance(list, content)
     assert not [
         block
-        for block in result.content
+        for block in content
         if block["type"] == "text" and block["text"] == ""
     ]
