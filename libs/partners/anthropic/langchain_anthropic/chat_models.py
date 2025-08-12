@@ -1355,6 +1355,23 @@ class ChatAnthropic(BaseChatModel):
         # If cache_control is provided in kwargs, add it to last message
         # and content block.
         if "cache_control" in kwargs and formatted_messages:
+            cache_control = kwargs["cache_control"]
+
+            # Validate TTL usage requires extended cache TTL beta header
+            if (
+                isinstance(cache_control, dict)
+                and "ttl" in cache_control
+                and (
+                    not self.betas or "extended-cache-ttl-2025-04-11" not in self.betas
+                )
+            ):
+                msg = (
+                    "Specifying a 'ttl' under 'cache_control' requires enabling "
+                    "the 'extended-cache-ttl-2025-04-11' beta header. "
+                    "Set betas=['extended-cache-ttl-2025-04-11'] when initializing "
+                    "ChatAnthropic."
+                )
+                warnings.warn(msg, stacklevel=2)
             if isinstance(formatted_messages[-1]["content"], list):
                 formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
                     "cache_control"
