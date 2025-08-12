@@ -958,7 +958,10 @@ class ChatAnthropic(BaseChatModel):
 
             {'cache_read': 0, 'cache_creation': 1458}
 
-        Alternatively, you may enable prompt caching at invocation time:
+        Alternatively, you may enable prompt caching at invocation time. You may want to
+        conditionally cache based on runtime conditions, such as the length of the
+        context. Alternatively, this is useful for app-level decisions about what to
+        cache.
 
         .. code-block:: python
 
