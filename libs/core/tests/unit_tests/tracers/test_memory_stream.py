@@ -117,7 +117,6 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         )
 
 
-
 def test_send_to_closed_stream() -> None:
     """Test that sending to a closed stream doesn't raise an error.
 
