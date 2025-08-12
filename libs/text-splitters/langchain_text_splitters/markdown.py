@@ -63,12 +63,23 @@ class MarkdownHeaderTextSplitter:
         if sep not in self.custom_header_patterns:
             return False
 
-        # For patterns like "**", check if line starts and ends with the pattern
-        if line.startswith(sep) and line.endswith(sep):
+        # Escape special regex characters in the separator
+        escaped_sep = re.escape(sep)
+        # Create regex pattern to match exactly one separator at start and end
+        # with content in between
+        pattern = (
+            f"^{escaped_sep}(?!{escaped_sep})"
+            f"(.+?)(?<!{escaped_sep}){escaped_sep}$"
+        )
+        
+        match = re.match(pattern, line)
+        if match:
             # Extract the content between the patterns
-            content = line[len(sep) : -len(sep)].strip()
-            # Valid header if there's content between the patterns
-            return bool(content)
+            content = match.group(1).strip()
+            # Valid header if there's actual content (not just whitespace or separators)
+            # Check that content doesn't consist only of separator characters
+            if content and not all(c in sep for c in content.replace(" ", "")):
+                return True
         return False
 
     def aggregate_lines_to_chunks(self, lines: list[LineType]) -> list[Document]:
