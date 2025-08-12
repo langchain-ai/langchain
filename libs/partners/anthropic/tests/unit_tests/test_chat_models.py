@@ -1125,3 +1125,50 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_cache_control_kwarg() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {"role": "user", "content": "baz"},
+    ]
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+            ],
+        },
+    ]
+
+    messages = [
+        HumanMessage("foo"),
+        AIMessage("bar"),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux"},
+            ]
+        ),
+    ]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
+            ],
+        },
+    ]

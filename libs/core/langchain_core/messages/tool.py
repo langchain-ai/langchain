@@ -212,7 +212,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],  # noqa: A002
+    id: Optional[str],
 ) -> ToolCall:
     """Create a tool call.
 
@@ -260,7 +260,7 @@ def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
@@ -298,7 +298,7 @@ def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
