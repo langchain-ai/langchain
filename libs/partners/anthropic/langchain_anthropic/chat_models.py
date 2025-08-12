@@ -70,6 +70,20 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[dict[str, str]]
 
 
+class _CombinedUsage(BaseModel):
+    """Combined usage model for deferred token counting in streaming.
+
+    This mimics the Anthropic Usage structure while combining stored input usage
+    with final output usage for accurate token reporting during streaming.
+    """
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_creation_input_tokens: Optional[int] = None
+    cache_read_input_tokens: Optional[int] = None
+    cache_creation: Optional[dict[str, Any]] = None
+
+
 def _is_builtin_tool(tool: Any) -> bool:
     if not isinstance(tool, dict):
         return False
@@ -2288,22 +2302,18 @@ def _make_message_chunk_from_anthropic_event(
         # Create usage metadata combining stored input usage with final output usage
         if stored_input_usage is not None:
             # Create a combined usage object that mimics the Anthropic Usage structure
-            class CombinedUsage:
-                def __init__(self, input_usage, output_tokens):
-                    self.input_tokens = getattr(input_usage, "input_tokens", 0)
-                    self.output_tokens = output_tokens
-                    self.cache_creation_input_tokens = getattr(
-                        input_usage, "cache_creation_input_tokens", None
-                    )
-                    self.cache_read_input_tokens = getattr(
-                        input_usage, "cache_read_input_tokens", None
-                    )
-                    # Copy any additional cache-related attributes
-                    if hasattr(input_usage, "cache_creation"):
-                        self.cache_creation = input_usage.cache_creation
-
-            combined_usage = CombinedUsage(
-                stored_input_usage, event.usage.output_tokens
+            combined_usage = _CombinedUsage(
+                input_tokens=getattr(stored_input_usage, "input_tokens", 0),
+                output_tokens=event.usage.output_tokens,
+                cache_creation_input_tokens=getattr(
+                    stored_input_usage, "cache_creation_input_tokens", None
+                ),
+                cache_read_input_tokens=getattr(
+                    stored_input_usage, "cache_read_input_tokens", None
+                ),
+                cache_creation=getattr(stored_input_usage, "cache_creation", None)
+                if hasattr(stored_input_usage, "cache_creation")
+                else None,
             )
             usage_metadata = _create_usage_metadata(combined_usage)
         else:
