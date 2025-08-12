@@ -916,8 +916,13 @@ class ChatAnthropic(BaseChatModel):
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
     Prompt caching:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
-        for more detail.
+        Prompt caching reduces processing time and costs for repetitive tasks or prompts
+        with consistent elements
+
+        .. note::
+            Only certain models support prompt caching.
+            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            for a full list.
 
         .. code-block:: python
 
@@ -953,6 +958,18 @@ class ChatAnthropic(BaseChatModel):
 
             {'cache_read': 0, 'cache_creation': 1458}
 
+        Alternatively, you may enable prompt caching at invocation time. You may want to
+        conditionally cache based on runtime conditions, such as the length of the
+        context. Alternatively, this is useful for app-level decisions about what to
+        cache.
+
+        .. code-block:: python
+
+            response = llm.invoke(
+                messages,
+                cache_control={"type": "ephemeral"},
+            )
+
         .. dropdown:: Extended caching
 
             .. versionadded:: 0.3.15
@@ -969,6 +986,10 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            .. important::
+                Specifying a `ttl` key under `cache_control` will not work unless the
+                beta header is set!
 
             Details of cached token counts will be included on the ``InputTokenDetails``
             of response's ``usage_metadata``:
@@ -1068,7 +1089,7 @@ class ChatAnthropic(BaseChatModel):
             Total tokens: 408
 
     Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
         .. dropdown::  Web search
@@ -1368,6 +1389,46 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+
+        # If cache_control is provided in kwargs, add it to last message
+        # and content block.
+        if "cache_control" in kwargs and formatted_messages:
+            cache_control = kwargs["cache_control"]
+
+            # Validate TTL usage requires extended cache TTL beta header
+            if (
+                isinstance(cache_control, dict)
+                and "ttl" in cache_control
+                and (
+                    not self.betas or "extended-cache-ttl-2025-04-11" not in self.betas
+                )
+            ):
+                msg = (
+                    "Specifying a 'ttl' under 'cache_control' requires enabling "
+                    "the 'extended-cache-ttl-2025-04-11' beta header. "
+                    "Set betas=['extended-cache-ttl-2025-04-11'] when initializing "
+                    "ChatAnthropic."
+                )
+                warnings.warn(msg, stacklevel=2)
+            if isinstance(formatted_messages[-1]["content"], list):
+                formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
+                    "cache_control"
+                )
+            elif isinstance(formatted_messages[-1]["content"], str):
+                formatted_messages[-1]["content"] = [
+                    {
+                        "type": "text",
+                        "text": formatted_messages[-1]["content"],
+                        "cache_control": kwargs.pop("cache_control"),
+                    }
+                ]
+            else:
+                pass
+
+        # If cache_control remains in kwargs, it would be passed as a top-level param
+        # to the API, but Anthropic expects it nested within a message
+        _ = kwargs.pop("cache_control", None)
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
