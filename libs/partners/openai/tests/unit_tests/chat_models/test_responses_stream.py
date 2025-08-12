@@ -1,6 +1,7 @@
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
+import pytest
 from langchain_core.messages import AIMessageChunk, BaseMessageChunk
 from openai.types.responses import (
     ResponseCompletedEvent,
@@ -337,7 +338,7 @@ responses_stream = [
             id="rs_234",
             summary=[],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -416,7 +417,7 @@ responses_stream = [
                 Summary(text="still more reasoning", type="summary_text"),
             ],
             type="reasoning",
-            encrypted_content=None,
+            encrypted_content="encrypted-content",
             status=None,
         ),
         output_index=2,
@@ -562,7 +563,7 @@ responses_stream = [
                         Summary(text="still more reasoning", type="summary_text"),
                     ],
                     type="reasoning",
-                    encrypted_content=None,
+                    encrypted_content="encrypted-content",
                     status=None,
                 ),
                 ResponseOutputMessage(
@@ -620,8 +621,99 @@ def _strip_none(obj: Any) -> Any:
         return obj
 
 
-def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
+@pytest.mark.parametrize(
+    "output_version, expected_content",
+    [
+        (
+            "responses/v1",
+            [
+                {
+                    "id": "rs_123",
+                    "summary": [
+                        {
+                            "index": 0,
+                            "type": "summary_text",
+                            "text": "reasoning block one",
+                        },
+                        {
+                            "index": 1,
+                            "type": "summary_text",
+                            "text": "another reasoning block",
+                        },
+                    ],
+                    "type": "reasoning",
+                    "index": 0,
+                },
+                {"type": "text", "text": "text block one", "index": 1, "id": "msg_123"},
+                {
+                    "type": "text",
+                    "text": "another text block",
+                    "index": 2,
+                    "id": "msg_123",
+                },
+                {
+                    "id": "rs_234",
+                    "summary": [
+                        {"index": 0, "type": "summary_text", "text": "more reasoning"},
+                        {
+                            "index": 1,
+                            "type": "summary_text",
+                            "text": "still more reasoning",
+                        },
+                    ],
+                    "encrypted_content": "encrypted-content",
+                    "type": "reasoning",
+                    "index": 3,
+                },
+                {"type": "text", "text": "more", "index": 4, "id": "msg_234"},
+                {"type": "text", "text": "text", "index": 5, "id": "msg_234"},
+            ],
+        ),
+        (
+            "v1",
+            [
+                {
+                    "type": "reasoning",
+                    "reasoning": "reasoning block one",
+                    "id": "rs_123",
+                    "index": 0,
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "another reasoning block",
+                    "id": "rs_123",
+                    "index": 1,
+                },
+                {"type": "text", "text": "text block one", "index": 2, "id": "msg_123"},
+                {
+                    "type": "text",
+                    "text": "another text block",
+                    "index": 3,
+                    "id": "msg_123",
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "more reasoning",
+                    "id": "rs_234",
+                    "extras": {"encrypted_content": "encrypted-content"},
+                    "index": 4,
+                },
+                {
+                    "type": "reasoning",
+                    "reasoning": "still more reasoning",
+                    "id": "rs_234",
+                    "index": 5,
+                },
+                {"type": "text", "text": "more", "index": 6, "id": "msg_234"},
+                {"type": "text", "text": "text", "index": 7, "id": "msg_234"},
+            ],
+        ),
+    ],
+)
+def test_responses_stream(output_version: str, expected_content: list[dict]) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -630,36 +722,14 @@ def test_responses_stream() -> None:
     mock_client.responses.create = mock_create
 
     full: Optional[BaseMessageChunk] = None
+    chunks = []
     with patch.object(llm, "root_client", mock_client):
         for chunk in llm.stream("test"):
             assert isinstance(chunk, AIMessageChunk)
             full = chunk if full is None else full + chunk
+            chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
 
-    expected_content = [
-        {
-            "id": "rs_123",
-            "summary": [
-                {"index": 0, "type": "summary_text", "text": "reasoning block one"},
-                {"index": 1, "type": "summary_text", "text": "another reasoning block"},
-            ],
-            "type": "reasoning",
-            "index": 0,
-        },
-        {"type": "text", "text": "text block one", "index": 1, "id": "msg_123"},
-        {"type": "text", "text": "another text block", "index": 2, "id": "msg_123"},
-        {
-            "id": "rs_234",
-            "summary": [
-                {"index": 0, "type": "summary_text", "text": "more reasoning"},
-                {"index": 1, "type": "summary_text", "text": "still more reasoning"},
-            ],
-            "type": "reasoning",
-            "index": 3,
-        },
-        {"type": "text", "text": "more", "index": 4, "id": "msg_234"},
-        {"type": "text", "text": "text", "index": 5, "id": "msg_234"},
-    ]
     assert full.content == expected_content
     assert full.additional_kwargs == {}
     assert full.id == "resp_123"
