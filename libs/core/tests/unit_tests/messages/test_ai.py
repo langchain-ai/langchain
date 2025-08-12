@@ -253,7 +253,7 @@ def test_content_blocks() -> None:
             "id": "abc_123",
         },
     ]
-    missing_tool_call = {
+    missing_tool_call: types.ToolCall = {
         "type": "tool_call",
         "name": "bar",
         "args": {"c": "d"},
@@ -267,3 +267,20 @@ def test_content_blocks() -> None:
         ],
     )
     assert message.content_blocks == [*standard_content, missing_tool_call]
+
+    # Check we auto-populate tool_calls
+    standard_content = [
+        {"type": "text", "text": "foo"},
+        {
+            "type": "tool_call",
+            "name": "foo",
+            "args": {"a": "b"},
+            "id": "abc_123",
+        },
+        missing_tool_call,
+    ]
+    message = AIMessage(content_blocks=standard_content)
+    assert message.tool_calls == [
+        {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
+        missing_tool_call,
+    ]
