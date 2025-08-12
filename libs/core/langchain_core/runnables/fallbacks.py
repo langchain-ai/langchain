@@ -5,7 +5,7 @@ import inspect
 import typing
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
@@ -397,7 +397,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             )
         )
 
-        to_return = {}
+        to_return: dict[int, Union[Output, BaseException]] = {}
         run_again = dict(enumerate(inputs))
         handled_exceptions: dict[int, BaseException] = {}
         first_to_raise = None
@@ -447,7 +447,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         if not return_exceptions and sorted_handled_exceptions:
             raise sorted_handled_exceptions[0][1]
         to_return.update(handled_exceptions)
-        return [output for _, output in sorted(to_return.items())]  # type: ignore[misc]
+        return [cast("Output", output) for _, output in sorted(to_return.items())]
 
     @override
     def stream(
@@ -569,7 +569,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             async for chunk in stream:
                 yield chunk
                 try:
-                    output = output + chunk
+                    output = output + chunk  # type: ignore[operator]
                 except TypeError:
                     output = None
         except BaseException as e:

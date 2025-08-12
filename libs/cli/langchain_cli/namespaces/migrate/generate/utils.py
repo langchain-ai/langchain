@@ -1,8 +1,11 @@
+"""Generate migrations utilities."""
+
 import ast
 import inspect
 import os
 import pathlib
 from pathlib import Path
+from types import ModuleType
 from typing import Any, Optional
 
 HERE = Path(__file__).parent
@@ -15,12 +18,14 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 
 
 class ImportExtractor(ast.NodeVisitor):
+    """Import extractor."""
+
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
         self.imports: list = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node) -> None:  # noqa: N802
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -39,7 +44,7 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node) -> None:  # noqa: N802
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -58,7 +63,7 @@ def is_subclass(class_obj: Any, classes_: list[type]) -> bool:
     )
 
 
-def find_subclasses_in_module(module, classes_: list[type]) -> list[str]:
+def find_subclasses_in_module(module: ModuleType, classes_: list[type]) -> list[str]:
     """Find all classes in the module that inherit from one of the classes."""
     subclasses = []
     # Iterate over all attributes of the module that are classes
@@ -70,8 +75,7 @@ def find_subclasses_in_module(module, classes_: list[type]) -> list[str]:
 
 def _get_all_classnames_from_file(file: Path, pkg: str) -> list[tuple[str, str]]:
     """Extract all class names from a file."""
-    with open(file, encoding="utf-8") as f:
-        code = f.read()
+    code = Path(file).read_text(encoding="utf-8")
     module_name = _get_current_module(file, pkg)
     class_names = _get_class_names(code)
 
@@ -84,8 +88,7 @@ def identify_all_imports_in_file(
     from_package: Optional[str] = None,
 ) -> list[tuple[str, str]]:
     """Let's also identify all the imports in the given file."""
-    with open(file, encoding="utf-8") as f:
-        code = f.read()
+    code = Path(file).read_text(encoding="utf-8")
     return find_imports_from_package(code, from_package=from_package)
 
 
@@ -143,6 +146,7 @@ def find_imports_from_package(
     *,
     from_package: Optional[str] = None,
 ) -> list[tuple[str, str]]:
+    """Find imports in code."""
     # Parse the code into an AST
     tree = ast.parse(code)
     # Create an instance of the visitor
@@ -154,8 +158,7 @@ def find_imports_from_package(
 
 def _get_current_module(path: Path, pkg_root: str) -> str:
     """Convert a path to a module name."""
-    path_as_pathlib = pathlib.Path(os.path.abspath(path))
-    relative_path = path_as_pathlib.relative_to(pkg_root).with_suffix("")
+    relative_path = path.relative_to(pkg_root).with_suffix("")
     posix_path = relative_path.as_posix()
     norm_path = os.path.normpath(str(posix_path))
     fully_qualified_module = norm_path.replace("/", ".")

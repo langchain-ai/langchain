@@ -1,22 +1,18 @@
 from collections.abc import Iterator
 from typing import Any, Optional
 
-from langchain_core.callbacks import (
-    CallbackManagerForLLMRun,
-)
+from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import (
-    AIMessage,
-    AIMessageChunk,
-    BaseMessage,
-)
+from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
 
 
 class ChatParrotLink(BaseChatModel):
-    """A custom chat model that echoes the first `parrot_buffer_length` characters
+    """Chat Parrot Link.
+
+    A custom chat model that echoes the first `parrot_buffer_length` characters
     of the input.
 
     When contributing an implementation to LangChain, carefully document
@@ -66,6 +62,8 @@ class ChatParrotLink(BaseChatModel):
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
+            **kwargs: Additional keyword arguments.
+
         """
         # Replace this with actual logic to generate a response from a list
         # of messages.
@@ -117,6 +115,8 @@ class ChatParrotLink(BaseChatModel):
                   it makes it much easier to parse the output of the model
                   downstream and understand why generation stopped.
             run_manager: A run manager with callbacks for the LLM.
+            **kwargs: Additional keyword arguments.
+
         """
         _ = stop  # Mark as used to avoid unused variable warning
         _ = kwargs  # Mark as used to avoid unused variable warning

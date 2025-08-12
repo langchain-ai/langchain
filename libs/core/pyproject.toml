@@ -28,7 +28,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<0.13,>=0.12.2"]
 typing = [
-    "mypy<1.16,>=1.15",
+    "mypy<1.18,>=1.17.1",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
     "langchain-text-splitters",
