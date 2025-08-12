@@ -4,8 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
-from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content_blocks as types
@@ -27,9 +26,6 @@ class BaseMessage(Serializable):
 
     content: Union[str, list[Union[str, dict]]]
     """The string contents of the message."""
-
-    content_blocks: list[types.ContentBlock] = Field(default_factory=list)
-    """The content of the message as a list of standard ContentBlocks."""
 
     additional_kwargs: dict = Field(default_factory=dict)
     """Reserved for additional payload data associated with the message.
@@ -88,14 +84,8 @@ class BaseMessage(Serializable):
         **kwargs: Any,
     ) -> None:
         """Specify content as a positional arg or content_blocks for typing support."""
-        if content is not None and content_blocks is None:
-            super().__init__(content=content, **kwargs)
-        elif content is None and content_blocks is not None:
-            super().__init__(
-                content=content_blocks, content_blocks=content_blocks, **kwargs
-            )
-        elif content is not None and content_blocks is not None:
-            super().__init__(content=content, content_blocks=content_blocks, **kwargs)
+        if content_blocks is not None:
+            super().__init__(content=content_blocks, **kwargs)
         else:
             super().__init__(content=content, **kwargs)
 
@@ -116,30 +106,9 @@ class BaseMessage(Serializable):
         """
         return ["langchain", "schema", "messages"]
 
-    @staticmethod
-    def _init_text_content(
-        content: Union[str, list[Union[str, dict]]],
-    ) -> list[types.ContentBlock]:
-        """Parse string content into a list of ContentBlocks."""
-        blocks: list[types.ContentBlock] = []
-        content = [content] if isinstance(content, str) and content else content
-        for item in content:
-            if isinstance(item, str):
-                blocks.append({"type": "text", "text": item})
-            elif isinstance(item, dict):
-                item_type = item.get("type")
-                if item_type not in types.KNOWN_BLOCK_TYPES:
-                    blocks.append({"type": "non_standard", "value": item})
-                else:
-                    blocks.append(cast("types.ContentBlock", item))
-            else:
-                pass
-
-        return blocks
-
-    @model_validator(mode="after")
-    def _init_content_blocks(self) -> Self:
-        """Assign the content as a list of standard ContentBlocks.
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return the content as a list of standard ContentBlocks.
 
         To use this property, the corresponding chat model must support
         ``message_version="v1"`` or higher:
@@ -151,11 +120,29 @@ class BaseMessage(Serializable):
 
         otherwise, does best-effort parsing to standard types.
         """
-        if not self.content_blocks:
-            blocks = self._init_text_content(self.content)
-            self.content_blocks = blocks
+        blocks: list[types.ContentBlock] = []
+        content = (
+            [self.content]
+            if isinstance(self.content, str) and self.content
+            else self.content
+        )
+        for item in content:
+            if isinstance(item, str):
+                blocks.append({"type": "text", "text": item})
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    msg = (
+                        f"Non-standard content block type '{item_type}'. Ensure "
+                        "the model supports `output_version='v1'` or higher and "
+                        "that this attribute is set on initialization."
+                    )
+                    raise ValueError(msg)
+                blocks.append(cast("types.ContentBlock", item))
+            else:
+                pass
 
-        return self
+        return blocks
 
     def text(self) -> str:
         """Get the text content of the message.

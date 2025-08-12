@@ -443,11 +443,19 @@ def test_trace_images_in_openai_format() -> None:
     ]
     tracer = FakeChatModelStartTracer()
     response = llm.invoke(messages, config={"callbacks": [tracer]})
-    assert tracer.messages[0][0][0].content == [
-        {
-            "type": "image_url",
-            "image_url": {"url": "https://example.com/image.png"},
-        }
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
     ]
     # Test no mutation
     assert response.content == [
@@ -478,15 +486,23 @@ def test_trace_content_blocks_with_no_type_key() -> None:
     ]
     tracer = FakeChatModelStartTracer()
     response = llm.invoke(messages, config={"callbacks": [tracer]})
-    assert tracer.messages[0][0][0].content == [
-        {
-            "type": "text",
-            "text": "Hello",
-        },
-        {
-            "type": "cachePoint",
-            "cachePoint": {"type": "default"},
-        },
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    [
+                        {
+                            "type": "text",
+                            "text": "Hello",
+                        },
+                        {
+                            "type": "cachePoint",
+                            "cachePoint": {"type": "default"},
+                        },
+                    ]
+                )
+            ]
+        ]
     ]
     # Test no mutation
     assert response.content == [

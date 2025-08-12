@@ -202,16 +202,11 @@ class AIMessage(BaseMessage):
         **kwargs: Any,
     ) -> None:
         """Specify content as a positional arg or content_blocks for typing support."""
-        if content is not None and content_blocks is None:
-            super().__init__(content=content, **kwargs)
-        elif content is None and content_blocks is not None:
+        if content_blocks is not None:
             super().__init__(
                 content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
-                content_blocks=content_blocks,
                 **kwargs,
             )
-        elif content is not None and content_blocks is not None:
-            super().__init__(content=content, content_blocks=content_blocks, **kwargs)
         else:
             super().__init__(content=content, **kwargs)
 
@@ -223,45 +218,32 @@ class AIMessage(BaseMessage):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
-    @model_validator(mode="after")
-    def _init_content_blocks(self) -> Self:
-        """Assign the content as a list of standard ContentBlocks.
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        blocks = super().content_blocks
 
-        To use this property, the corresponding chat model must support
-        ``message_version="v1"`` or higher:
+        # Add from tool_calls if missing from content
+        content_tool_call_ids = {
+            block.get("id")
+            for block in self.content
+            if isinstance(block, dict) and block.get("type") == "tool_call"
+        }
+        for tool_call in self.tool_calls:
+            if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                tool_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "id": id_,
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                }
+                if "index" in tool_call:
+                    tool_call_block["index"] = tool_call["index"]
+                if "extras" in tool_call:
+                    tool_call_block["extras"] = tool_call["extras"]
+                blocks.append(tool_call_block)
 
-        .. code-block:: python
-
-            from langchain.chat_models import init_chat_model
-            llm = init_chat_model("...", message_version="v1")
-
-        otherwise, does best-effort parsing to standard types.
-        """
-        if not self.content_blocks:
-            self.content_blocks = self._init_text_content(self.content)
-
-        if self.tool_calls or self.invalid_tool_calls:
-            # Add from tool_calls if missing from content
-            content_tool_call_ids = {
-                block.get("id")
-                for block in self.content_blocks
-                if isinstance(block, dict) and block.get("type") == "tool_call"
-            }
-            for tool_call in self.tool_calls:
-                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
-                    tool_call_block: types.ToolCall = {
-                        "type": "tool_call",
-                        "id": id_,
-                        "name": tool_call["name"],
-                        "args": tool_call["args"],
-                    }
-                    if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]
-                    if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]
-                    self.content_blocks.append(tool_call_block)
-
-        return self
+        return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
