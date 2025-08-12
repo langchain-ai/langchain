@@ -1575,7 +1575,7 @@ def test_rendering_prompt_with_conditionals_no_empty_text_blocks() -> None:
         }
     )
     content = result.messages[1].content
-    assert isinstance(list, content)
+    assert isinstance(content, list)
     assert not [
         block
         for block in content
