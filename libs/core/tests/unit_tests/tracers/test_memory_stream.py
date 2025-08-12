@@ -1,7 +1,8 @@
 import asyncio
 import math
-import time
 import sys
+import time
+
 from collections.abc import AsyncIterator
 
 from langchain_core.tracers.memory_stream import _MemoryStream
