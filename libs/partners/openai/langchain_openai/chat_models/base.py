@@ -3695,7 +3695,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
         msg = _convert_message_to_dict(lc_msg)
-        if isinstance(lc_msg, AIMessage):
+        if isinstance(lc_msg, AIMessage) and isinstance(msg.get("content"), list):
             msg["content"] = _convert_from_v1_to_responses(
                 msg["content"], lc_msg.tool_calls
             )
@@ -4278,7 +4278,7 @@ def _convert_responses_chunk_to_generation_chunk(
         return current_index, current_output_index, current_sub_index, None
 
     if output_version == "v1":
-        content = cast(AIMessageChunk, _convert_to_v1_from_responses(content))
+        content = cast(list[dict], _convert_to_v1_from_responses(content))
         for content_block in content:
             if (
                 isinstance(content_block, dict)

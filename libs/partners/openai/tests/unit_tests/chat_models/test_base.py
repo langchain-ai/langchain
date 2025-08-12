@@ -26,7 +26,6 @@ from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
-from langchain_core.v1.messages import AIMessage as AIMessageV1
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
 from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
 from openai.types.responses.response_error import ResponseError
@@ -2443,7 +2442,7 @@ def test_compat_responses_v03() -> None:
     "message_v1, expected",
     [
         (
-            AIMessageV1(
+            AIMessage(
                 [
                     {"type": "reasoning", "reasoning": "Reasoning text"},
                     {
@@ -2463,7 +2462,7 @@ def test_compat_responses_v03() -> None:
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
             ),
-            AIMessageV1(
+            AIMessage(
                 [{"type": "text", "text": "Hello, world!"}],
                 id="chatcmpl-123",
                 response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
@@ -2472,7 +2471,7 @@ def test_compat_responses_v03() -> None:
     ],
 )
 def test_convert_from_v1_to_chat_completions(
-    message_v1: AIMessageV1, expected: AIMessageV1
+    message_v1: AIMessage, expected: AIMessage
 ) -> None:
     result = _convert_from_v1_to_chat_completions(message_v1)
     assert result == expected
@@ -2486,8 +2485,8 @@ def test_convert_from_v1_to_chat_completions(
     "message_v1, expected",
     [
         (
-            AIMessageV1(
-                [
+            AIMessage(
+                content_blocks=[
                     {"type": "reasoning", "id": "abc123"},
                     {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
                     {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
@@ -2574,9 +2573,11 @@ def test_convert_from_v1_to_chat_completions(
     ],
 )
 def test_convert_from_v1_to_responses(
-    message_v1: AIMessageV1, expected: AIMessageV1
+    message_v1: AIMessage, expected: list[dict[str, Any]]
 ) -> None:
-    result = _convert_from_v1_to_responses(message_v1.content, message_v1.tool_calls)
+    result = _convert_from_v1_to_responses(
+        message_v1.content_blocks, message_v1.tool_calls
+    )
     assert result == expected
 
     # Check no mutation
