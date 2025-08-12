@@ -1478,12 +1478,18 @@ class ChatAnthropic(BaseChatModel):
                 and not _thinking_in_params(payload)
             )
             block_start_event = None
+            stored_input_usage = None
             for event in stream:
-                msg, block_start_event = _make_message_chunk_from_anthropic_event(
+                (
+                    msg,
+                    block_start_event,
+                    stored_input_usage,
+                ) = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stored_input_usage=stored_input_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1514,12 +1520,18 @@ class ChatAnthropic(BaseChatModel):
                 and not _thinking_in_params(payload)
             )
             block_start_event = None
+            stored_input_usage = None
             async for event in stream:
-                msg, block_start_event = _make_message_chunk_from_anthropic_event(
+                (
+                    msg,
+                    block_start_event,
+                    stored_input_usage,
+                ) = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stored_input_usage=stored_input_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -2152,22 +2164,40 @@ def _make_message_chunk_from_anthropic_event(
     stream_usage: bool = True,
     coerce_content_to_string: bool,
     block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
-) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
-    """Convert Anthropic event to AIMessageChunk.
+    stored_input_usage: Optional[BaseModel] = None,
+) -> tuple[
+    Optional[AIMessageChunk],
+    Optional[anthropic.types.RawMessageStreamEvent],
+    Optional[BaseModel],
+]:
+    """Convert Anthropic event to ``AIMessageChunk``.
 
     Note that not all events will result in a message chunk. In these cases
     we return ``None``.
+
+    Args:
+        event: The Anthropic streaming event to convert.
+        stream_usage: Whether to include usage metadata in the chunk.
+        coerce_content_to_string: Whether to coerce content blocks to strings.
+        block_start_event: Previous content block start event for context.
+        stored_input_usage: Usage metadata from ``message_start`` event to be used
+            in ``message_delta`` event for accurate input token counts.
+
+    Returns:
+        Tuple of ``(message_chunk, block_start_event, stored_usage)``
+
     """
     message_chunk: Optional[AIMessageChunk] = None
+    updated_stored_usage = stored_input_usage
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.message.usage)
-        # We pick up a cumulative count of output_tokens at the end of the stream,
-        # so here we zero out to avoid double counting.
-        usage_metadata["total_tokens"] = (
-            usage_metadata["total_tokens"] - usage_metadata["output_tokens"]
+        # Store input usage for later use in message_delta but don't emit tokens yet
+        updated_stored_usage = event.message.usage
+        usage_metadata = UsageMetadata(
+            input_tokens=0,
+            output_tokens=0,
+            total_tokens=0,
         )
-        usage_metadata["output_tokens"] = 0
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
@@ -2255,11 +2285,34 @@ def _make_message_chunk_from_anthropic_event(
                 tool_call_chunks=tool_call_chunks,
             )
     elif event.type == "message_delta" and stream_usage:
-        usage_metadata = UsageMetadata(
-            input_tokens=0,
-            output_tokens=event.usage.output_tokens,
-            total_tokens=event.usage.output_tokens,
-        )
+        # Create usage metadata combining stored input usage with final output usage
+        if stored_input_usage is not None:
+            # Create a combined usage object that mimics the Anthropic Usage structure
+            class CombinedUsage:
+                def __init__(self, input_usage, output_tokens):
+                    self.input_tokens = getattr(input_usage, "input_tokens", 0)
+                    self.output_tokens = output_tokens
+                    self.cache_creation_input_tokens = getattr(
+                        input_usage, "cache_creation_input_tokens", None
+                    )
+                    self.cache_read_input_tokens = getattr(
+                        input_usage, "cache_read_input_tokens", None
+                    )
+                    # Copy any additional cache-related attributes
+                    if hasattr(input_usage, "cache_creation"):
+                        self.cache_creation = input_usage.cache_creation
+
+            combined_usage = CombinedUsage(
+                stored_input_usage, event.usage.output_tokens
+            )
+            usage_metadata = _create_usage_metadata(combined_usage)
+        else:
+            # Fallback to just output tokens if no stored usage
+            usage_metadata = UsageMetadata(
+                input_tokens=0,
+                output_tokens=event.usage.output_tokens,
+                total_tokens=event.usage.output_tokens,
+            )
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
@@ -2271,7 +2324,7 @@ def _make_message_chunk_from_anthropic_event(
     else:
         pass
 
-    return message_chunk, block_start_event
+    return message_chunk, block_start_event, updated_stored_usage
 
 
 @deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
