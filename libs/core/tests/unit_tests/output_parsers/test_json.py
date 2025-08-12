@@ -209,7 +209,6 @@ def test_parse_json_with_part_code_blocks() -> None:
 
 def test_parse_json_with_code_blocks_and_newlines() -> None:
     parsed = parse_json_markdown(JSON_WITH_MARKDOWN_CODE_BLOCK_AND_NEWLINES)
-
     assert parsed == {
         "action": "Final Answer",
         "action_input": '```bar\n<div id="1" class="value">\n\ttext\n</div>```',
