@@ -635,7 +635,8 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
                 formatted: Union[str, ImageURL, dict[str, Any]] = await prompt.aformat(
                     **inputs
                 )
-                content.append({"type": "text", "text": formatted})
+                if formatted:
+                    content.append({"type": "text", "text": formatted})
             elif isinstance(prompt, ImagePromptTemplate):
                 formatted = await prompt.aformat(**inputs)
                 content.append({"type": "image_url", "image_url": formatted})
