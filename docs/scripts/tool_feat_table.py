@@ -182,6 +182,10 @@ DATABASE_TOOL_FEAT_TABLE = {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
     },
+    "MCP Toolbox": {
+        "link": "/docs/integrations/tools/toolbox",
+        "operations": "Any SQL operation",
+    },
 }
 
 FINANCE_TOOL_FEAT_TABLE = {

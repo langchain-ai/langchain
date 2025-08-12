@@ -30,6 +30,7 @@ jobs:
   build:
     name: 'Detect Changes & Set Matrix'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
       - name: '📋 Checkout Code'
         uses: actions/checkout@v4
