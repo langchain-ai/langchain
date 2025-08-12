@@ -116,7 +116,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
     @staticmethod
     def get_embeddings() -> Embeddings:
-        """A pre-defined embeddings model that should be used for this test.
+        """Get embeddings.
+
+        A pre-defined embeddings model that should be used for this test.
 
         This currently uses ``DeterministicFakeEmbedding`` from ``langchain-core``,
         which uses numpy to generate random numbers based on a hash of the input text.
@@ -173,7 +175,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
 
     def test_vectorstore_still_empty(self, vectorstore: VectorStore) -> None:
-        """This test should follow a test that adds documents.
+        """Test that the vectorstore is still empty.
+
+        This test should follow a test that adds documents.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
@@ -499,7 +503,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_vectorstore_still_empty_async(
         self, vectorstore: VectorStore
     ) -> None:
-        """This test should follow a test that adds documents.
+        """Test that the vectorstore is still empty.
+
+        This test should follow a test that adds documents.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.

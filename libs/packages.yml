@@ -716,7 +716,9 @@ packages:
 - name: toolbox-langchain
   repo: googleapis/mcp-toolbox-sdk-python
   path: packages/toolbox-langchain
+- name: langchain-scrapeless
+  repo: scrapeless-ai/langchain-scrapeless
+  path: .
 - name: langchain-zenrows
   path: .
   repo: ZenRows-Hub/langchain-zenrows
-
