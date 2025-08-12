@@ -143,70 +143,42 @@ ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "ARG",    # flake8-unused-arguments
-    "ASYNC",  # flake8-async
-    "B",      # flake8-bugbear
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D1",     # pydocstyle: missing docstring
-    "DTZ",    # flake8-datetimez
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "G",      # flake8-logging-format
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "PERF",   # flake8-perf
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PL",     # pylint
-    "PT",     # flake8-pytest-style
-    "PTH",    # flake8-use-pathlib
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SIM",    # flake8-simplify
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TC",     # flake8-type-checking
-    "TID",    # flake8-tidy-imports
-    "TRY",    # tryceratops
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
+select = [ "ALL",]
 ignore = [
+    "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
-    "ISC001",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
-    "PLR09",   # Too many something (args, statements, etc)
-    "S112",    # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
     "RUF012",  # Doesn't play well with Pydantic
     "TC001",   # Doesn't play well with Pydantic
     "TC002",   # Doesn't play well with Pydantic
     "TC003",   # Doesn't play well with Pydantic
-    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
 
     # TODO rules
+    "ANN401",
+    "BLE",
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
+    "D2",
+    "D3",
+    "D4",
+    "ERA",
+    "N",
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try
 ]
-unfixable = ["B028"] # People should intentionally tune the stacklevel
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
 
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
@@ -217,6 +189,13 @@ pyupgrade.keep-runtime-typing = true
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001",  # Private member access in tests
     "PLR2004", # Magic value comparisons
+]
+"tests/integration_tests/examples/*.py" = [
+    "INP001",   # Not a package
+    "EXE001",   # Only examples
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]
 "langchain/chains/constitutional_ai/principles.py" = [
     "E501", # Line too long

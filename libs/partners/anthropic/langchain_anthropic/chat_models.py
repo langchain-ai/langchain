@@ -995,6 +995,41 @@ class ChatAnthropic(BaseChatModel):
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
             for detail.
 
+    Extended context windows (beta):
+        Claude Sonnet 4 supports a 1-million token context window, available in beta for
+        organizations in usage tier 4 and organizations with custom rate limits.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-sonnet-4-20250514",
+                betas=["context-1m-2025-08-07"],  # Enable 1M context beta
+            )
+
+            long_document = \"\"\"
+            This is a very long document that would benefit from the extended 1M
+            context window...
+            [imagine this continues for hundreds of thousands of tokens]
+            \"\"\"
+
+            messages = [
+                HumanMessage(f\"\"\"
+            Please analyze this document and provide a summary:
+
+            {long_document}
+
+            What are the key themes and main conclusions?
+            \"\"\")
+            ]
+
+            response = llm.invoke(messages)
+
+        See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window>`__
+        for detail.
+
+
     Token-efficient tool use (beta):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
         for more detail.
