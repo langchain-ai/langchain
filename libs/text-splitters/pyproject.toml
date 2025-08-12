@@ -6,7 +6,10 @@ build-backend = "pdm.backend"
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.72"]
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.72",
+    "pip>=25.2",
+]
 name = "langchain-text-splitters"
 version = "0.3.9"
 description = "LangChain text splitting utilities"
@@ -18,9 +21,9 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2", "langchain-core"]
+lint = ["ruff<0.13,>=0.12.8", "langchain-core"]
 typing = [
-    "mypy<2.0,>=1.15",
+    "mypy<1.18,>=1.17.1",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.8.0",
@@ -42,6 +45,7 @@ test_integration = [
     "nltk<4.0.0,>=3.9.1",
     "transformers<5.0.0,>=4.51.3",
     "sentence-transformers>=3.0.1",
+    "tiktoken<1.0.0,>=0.8.0",
 ]
 
 [tool.uv.sources]
@@ -51,7 +55,6 @@ langchain-core = { path = "../core", editable = true }
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
 
 [[tool.mypy.overrides]]
 module = ["konlpy", "nltk",]
@@ -61,9 +64,71 @@ ignore_missing_imports = "True"
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "FBT", "I", "UP", "PGH003", "T201", "D"]
-ignore = ["D100",]
+select = [
+    "A",      # flake8-builtins
+    "B",      # flake8-bugbear
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
+]
+ignore = [
+    "D100",    # pydocstyle: Missing docstring in public module
+    "D101",    # pydocstyle: Missing docstring in public class
+    "D102",    # pydocstyle: Missing docstring in public method
+    "D103",    # pydocstyle: Missing docstring in public function
+    "D104",    # pydocstyle: Missing docstring in public package
+    "D105",    # pydocstyle: Missing docstring in magic method
+    "D107",    # pydocstyle: Missing docstring in __init__
+    "D203",    # Messes with the formatter
+    "D213",    # pydocstyle: Multi-line docstring summary should start at the second line (incompatible with D212)
+    "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+
 
 [tool.coverage.run]
 omit = ["tests/*"]

@@ -12,8 +12,6 @@ if __name__ == "__main__":
             SourceFileLoader("x", file).load_module()
         except Exception:
             has_failure = True
-            print(file)
             traceback.print_exc()
-            print()
 
     sys.exit(1 if has_failure else 0)
