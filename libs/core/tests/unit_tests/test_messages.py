@@ -3,6 +3,7 @@ import uuid
 from typing import Optional, Union
 
 import pytest
+from pydantic import ValidationError
 from typing_extensions import get_args
 
 from langchain_core.documents import Document
@@ -1267,10 +1268,14 @@ def test_typed_init() -> None:
 
     # Test we get type errors for malformed blocks (type checker will complain if
     # below type-ignores are unused).
-    _ = AIMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
-    _ = HumanMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
-    _ = SystemMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
-    _ = ToolMessage(
-        content_blocks=[{"type": "text", "bad": "Hello"}],  # type: ignore[list-item]
-        tool_call_id="abc123",
-    )
+    with pytest.raises(ValidationError):
+        _ = AIMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    with pytest.raises(ValidationError):
+        _ = HumanMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    with pytest.raises(ValidationError):
+        _ = SystemMessage(content_blocks=[{"type": "text", "bad": "Hello"}])  # type: ignore[list-item]
+    with pytest.raises(ValidationError):
+        _ = ToolMessage(
+            content_blocks=[{"type": "text", "bad": "Hello"}],  # type: ignore[list-item]
+            tool_call_id="abc123",
+        )

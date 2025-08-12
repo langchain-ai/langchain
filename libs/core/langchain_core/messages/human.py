@@ -64,11 +64,16 @@ class HumanMessage(BaseMessage):
         **kwargs: Any,
     ) -> None:
         """Specify content as a positional arg or content_blocks for typing support."""
-        if content_blocks is not None:
+        if content is not None and content_blocks is None:
+            super().__init__(content=content, **kwargs)
+        elif content is None and content_blocks is not None:
             super().__init__(
                 content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                content_blocks=content_blocks,
                 **kwargs,
             )
+        elif content is not None and content_blocks is not None:
+            super().__init__(content=content, content_blocks=content_blocks, **kwargs)
         else:
             super().__init__(content=content, **kwargs)
 
