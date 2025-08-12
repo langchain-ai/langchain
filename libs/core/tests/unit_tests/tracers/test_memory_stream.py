@@ -112,9 +112,9 @@ async def test_queue_for_streaming_via_sync_call() -> None:
         # expect the delta_time to be smaller than the sleep delay in the producer
         # * # of items = 30 ms
         tolerance = 0.03 if sys.version_info[:2] in [(3, 9), (3, 11)] else 0.02
-        assert math.isclose(
-                delta_time, 0, abs_tol=tolerance
-        ), f"delta_time: {delta_time}"
+        assert math.isclose(delta_time, 0, abs_tol=tolerance), (
+            f"delta_time: {delta_time}"
+        )
 
 
 
