@@ -239,7 +239,7 @@ def test_inherit_run_name_with_chain() -> None:
             self,
             serialized: dict[str, Any],  # noqa: ARG002
             inputs: dict[str, Any],  # noqa: ARG002
-            **kwargs: Any
+            **kwargs: Any,
         ) -> None:
             name = kwargs.get("name", "unnamed")
             captured_names.append(name)
@@ -306,7 +306,7 @@ def test_inherit_run_name_with_override() -> None:
             self,
             serialized: dict[str, Any],  # noqa: ARG002
             inputs: dict[str, Any],  # noqa: ARG002
-            **kwargs: Any
+            **kwargs: Any,
         ) -> None:
             name = kwargs.get("name", "unnamed")
             captured_names.append(name)
@@ -376,9 +376,3 @@ def test_inherit_run_name_merge_configs() -> None:
         "inherit_run_name should pass through ensure_config"
     )
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
-
-
-
-
-
-
