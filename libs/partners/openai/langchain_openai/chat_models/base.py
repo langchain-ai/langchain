@@ -207,7 +207,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
-def _format_message_content(content: Any) -> Any:
+def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
         formatted_content = []
@@ -219,7 +219,13 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking", "reasoning_content")
             ):
                 continue
-            elif isinstance(block, dict) and is_data_content_block(block):
+            elif (
+                isinstance(block, dict)
+                and is_data_content_block(block)
+                # Responses API messages handled separately in _compat (parsed into
+                # image generation calls)
+                and not responses_ai_msg
+            ):
                 formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
@@ -252,7 +258,9 @@ def _format_message_content(content: Any) -> Any:
     return formatted_content
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(
+    message: BaseMessage, responses_ai_msg: bool = False
+) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -261,7 +269,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: dict[str, Any] = {"content": _format_message_content(message.content)}
+    message_dict: dict[str, Any] = {
+        "content": _format_message_content(
+            message.content, responses_ai_msg=responses_ai_msg
+        )
+    }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
 
@@ -296,15 +308,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
 
-        if "audio" in message.additional_kwargs:
-            # openai doesn't support passing the data back - only the id
-            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+        audio: Optional[dict[str, Any]] = None
+        for block in message.content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "audio"
+                and (id_ := block.get("id"))
+                and not responses_ai_msg
+            ):
+                # openai doesn't support passing the data back - only the id
+                # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+                audio = {"id": id_}
+        if not audio and "audio" in message.additional_kwargs:
             raw_audio = message.additional_kwargs["audio"]
             audio = (
                 {"id": message.additional_kwargs["audio"]["id"]}
                 if "id" in raw_audio
                 else raw_audio
             )
+        if audio:
             message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
         message_dict["role"] = message.additional_kwargs.get(
@@ -3694,11 +3716,20 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
-        msg = _convert_message_to_dict(lc_msg)
-        if isinstance(lc_msg, AIMessage) and isinstance(msg.get("content"), list):
-            msg["content"] = _convert_from_v1_to_responses(
-                msg["content"], lc_msg.tool_calls
-            )
+            msg = _convert_message_to_dict(lc_msg, responses_ai_msg=True)
+            if isinstance(msg.get("content"), list) and all(
+                isinstance(block, dict) for block in msg["content"]
+            ):
+                msg["content"] = _convert_from_v1_to_responses(
+                    msg["content"], lc_msg.tool_calls
+                )
+        else:
+            msg = _convert_message_to_dict(lc_msg)
+            # Get content from non-standard content blocks
+            if isinstance(msg["content"], list):
+                for i, block in enumerate(msg["content"]):
+                    if isinstance(block, dict) and block.get("type") == "non_standard":
+                        msg["content"][i] = block["value"]
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")

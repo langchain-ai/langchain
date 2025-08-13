@@ -432,7 +432,9 @@ def _convert_to_v1_from_responses(
                     "size",
                 ):
                     if extra_key in block:
-                        new_block[extra_key] = block[extra_key]
+                        if "extras" not in new_block:
+                            new_block["extras"] = {}
+                        new_block["extras"][extra_key] = block[extra_key]
                 yield cast(types.ImageContentBlock, new_block)
 
             elif block_type == "function_call":
@@ -718,6 +720,8 @@ def _convert_from_v1_to_responses(
             for extra_key in ("id", "status"):
                 if extra_key in block:
                     new_block[extra_key] = block[extra_key]  # type: ignore[typeddict-item]
+                elif extra_key in block.get("extras", {}):
+                    new_block[extra_key] = block["extras"][extra_key]
             new_content.append(new_block)
         elif block["type"] == "non_standard" and "value" in block:
             new_content.append(block["value"])
