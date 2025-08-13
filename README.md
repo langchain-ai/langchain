@@ -66,7 +66,7 @@ reliably handle complex tasks with LangGraph, our low-level agent orchestration
 framework. LangGraph offers customizable architecture, long-term memory, and
 human-in-the-loop workflows — and is trusted in production by companies like LinkedIn,
 Uber, Klarna, and GitLab.
-- [LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/langgraph_platform/) - Deploy
+- [LangGraph Platform](https://docs.langchain.com/langgraph-platform) - Deploy
 and scale agents effortlessly with a purpose-built deployment platform for long
 running, stateful workflows. Discover, reuse, configure, and share agents across
 teams — and iterate quickly with visual prototyping in
