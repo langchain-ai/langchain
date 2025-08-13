@@ -1,3 +1,5 @@
+"""OpenAI tools agent output parser."""
+
 from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish

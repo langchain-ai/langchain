@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.input import (
     get_bolded_text,
     get_color_mapping,

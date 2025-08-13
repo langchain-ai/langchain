@@ -1,3 +1,5 @@
+"""Question Answering map reduce prompt."""
+
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,

@@ -1,3 +1,5 @@
+"""Moved to langchain_core.prompts."""
+
 from langchain_core.prompts.loading import (
     _load_examples,
     _load_few_shot_prompt,

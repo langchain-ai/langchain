@@ -1,3 +1,6 @@
+"""Moved to langchain-experimental.llm_symbolic_math."""
+
+
 def __getattr__(_: str = "") -> None:
     """Raise an error on import since is deprecated."""
     msg = (

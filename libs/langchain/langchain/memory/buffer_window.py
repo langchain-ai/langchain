@@ -1,3 +1,5 @@
+"""Conversation buffer window memory."""
+
 from typing import Any, Union
 
 from langchain_core._api import deprecated

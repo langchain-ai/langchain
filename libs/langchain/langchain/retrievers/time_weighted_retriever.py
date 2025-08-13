@@ -1,3 +1,5 @@
+"""Time weighted retriever."""
+
 import datetime
 from copy import deepcopy
 from typing import Any, Optional
