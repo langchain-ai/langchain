@@ -147,7 +147,7 @@ An `AIMessage` has the following attributes. The attributes which are **standard
 | `tool_calls`         | Standardized     | Tool calls associated with the message. See [tool calling](/docs/concepts/tool_calling) for details.                                                                                                                    |
 | `invalid_tool_calls` | Standardized     | Tool calls with parsing errors associated with the message. See [tool calling](/docs/concepts/tool_calling) for details.                                                                                                |
 | `usage_metadata`     | Standardized     | Usage metadata for a message, such as [token counts](/docs/concepts/tokens). See [Usage Metadata API Reference](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html). |
-| `id`                 | Standardized     | An optional unique identifier for the message, ideally provided by the provider/model that created the message.                                                                                                         |
+| `id`                 | Standardized     | An optional unique identifier for the message, ideally provided by the provider/model that created the message. See [Message IDs](#message-ids) for details.                                                                                                         |
 | `response_metadata`  | Raw              | Response metadata, e.g., response headers, logprobs, token counts.                                                                                                                                                      |
 
 #### content
@@ -243,3 +243,35 @@ At the moment, the output of the model will be in terms of LangChain messages, s
 need OpenAI format for the output as well.
 
 The [convert_to_openai_messages](https://python.langchain.com/api_reference/core/messages/langchain_core.messages.utils.convert_to_openai_messages.html) utility function can be used to convert from LangChain messages to OpenAI format.
+
+## Message IDs
+
+LangChain messages include an optional `id` field that serves as a unique identifier. Understanding when and how these IDs are assigned can be helpful for debugging, tracing, and working with message history.
+
+### When Messages Get IDs
+
+Messages receive IDs in the following scenarios:
+
+**Automatically assigned by LangChain:**
+- When generated through chat model invocation (`.invoke()`, `.stream()`, `.astream()`) with an active run manager/tracing context
+- IDs follow the format: `run-{uuid}` (e.g., `run-ba48f958-6402-41a5-b461-5e250a4ebd36-0`)
+
+**Provider-assigned IDs (highest priority):**
+- When the model provider assigns its own ID to the message
+- These take precedence over LangChain-generated run IDs
+- Format varies by provider
+
+### When Messages Don't Get IDs
+
+Messages will **not** receive IDs in these situations:
+
+- **Manual message creation**: Messages created directly (e.g., `AIMessage(content="hello")`) without going through chat models
+- **No run manager context**: When there's no active callback/tracing infrastructure
+
+### ID Priority System
+
+LangChain follows a clear precedence system for message IDs:
+
+1. **Provider-assigned IDs** (highest priority): IDs from the model provider
+2. **LangChain run IDs** (medium priority): IDs starting with `run-`
+3. **Manual IDs** (lowest priority): IDs explicitly set by users
