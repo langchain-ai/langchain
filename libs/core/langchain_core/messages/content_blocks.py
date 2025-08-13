@@ -812,6 +812,9 @@ class NonStandardContentBlock(TypedDict):
     the adapter's job to parse that payload and emit the corresponding standard
     ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
 
+    Has no ``extras`` field, as provider-specific data should be included in the
+    ``value`` field.
+
     .. note::
         ``create_non_standard_block`` may also be used as a factory to create a
         ``NonStandardContentBlock``. Benefits include:
@@ -886,6 +889,12 @@ KNOWN_BLOCK_TYPES = {
     "code_interpreter_result",
     "web_search_call",
     "web_search_result",
+}
+
+KNOWN_OPENAI_BLOCK_TYPES = {
+    "image_url",
+    "input_audio",
+    "file",  # Also in `KNOWN_BLOCK_TYPES`
 }
 
 
@@ -1023,6 +1032,7 @@ def create_text_block(
     id: Optional[str] = None,
     annotations: Optional[list[Annotation]] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> TextContentBlock:
     """Create a ``TextContentBlock``.
 
@@ -1049,6 +1059,10 @@ def create_text_block(
         block["annotations"] = annotations
     if index is not None:
         block["index"] = index
+
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1060,6 +1074,7 @@ def create_image_block(
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> ImageContentBlock:
     """Create an ``ImageContentBlock``.
 
@@ -1100,6 +1115,9 @@ def create_image_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1111,6 +1129,7 @@ def create_video_block(
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> VideoContentBlock:
     """Create a ``VideoContentBlock``.
 
@@ -1155,6 +1174,9 @@ def create_video_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1166,6 +1188,7 @@ def create_audio_block(
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> AudioContentBlock:
     """Create an ``AudioContentBlock``.
 
@@ -1210,6 +1233,9 @@ def create_audio_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1221,6 +1247,7 @@ def create_file_block(
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> FileContentBlock:
     """Create a ``FileContentBlock``.
 
@@ -1265,6 +1292,9 @@ def create_file_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1277,6 +1307,7 @@ def create_plaintext_block(
     context: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> PlainTextContentBlock:
     """Create a ``PlainTextContentBlock``.
 
@@ -1319,6 +1350,9 @@ def create_plaintext_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1328,6 +1362,7 @@ def create_tool_call(
     *,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> ToolCall:
     """Create a ``ToolCall``.
 
@@ -1355,6 +1390,9 @@ def create_tool_call(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1362,6 +1400,7 @@ def create_reasoning_block(
     reasoning: Optional[str] = None,
     id: Optional[str] = None,
     index: Optional[int] = None,
+    **kwargs: Any,
 ) -> ReasoningContentBlock:
     """Create a ``ReasoningContentBlock``.
 
@@ -1387,6 +1426,9 @@ def create_reasoning_block(
     if index is not None:
         block["index"] = index
 
+    if kwargs:
+        block["extras"] = kwargs
+
     return block
 
 
@@ -1398,6 +1440,7 @@ def create_citation(
     end_index: Optional[int] = None,
     cited_text: Optional[str] = None,
     id: Optional[str] = None,
+    **kwargs: Any,
 ) -> Citation:
     """Create a ``Citation``.
 
@@ -1429,6 +1472,9 @@ def create_citation(
         block["end_index"] = end_index
     if cited_text is not None:
         block["cited_text"] = cited_text
+
+    if kwargs:
+        block["extras"] = kwargs
 
     return block
 
