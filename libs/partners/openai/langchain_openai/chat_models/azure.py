@@ -19,6 +19,10 @@ from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Literal, Self
 
 from langchain_openai.chat_models.base import BaseChatOpenAI
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1145,3 +1149,4 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
+
