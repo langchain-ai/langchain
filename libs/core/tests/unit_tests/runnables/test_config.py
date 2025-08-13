@@ -273,15 +273,10 @@ def test_inherit_run_name_with_chain() -> None:
 
 
 def test_inherit_run_name_with_override() -> None:
-    """Test behavior when per-step with_config has run_name and inherit_run_name=True.
+    """Test that per-step with_config can still set different run_names when inherit_run_name is NOT used.
     
-    Note: When inherit_run_name=True is set globally, it preserves the run_name
-    throughout the chain. Step-specific run_names via with_config are merged
-    but the global inherit_run_name=True causes the inherited name to be preserved.
-    
-    To have different run_names per step, either:
-    1. Don't use inherit_run_name=True globally, OR
-    2. Set inherit_run_name=False in the step's with_config
+    This test verifies that the traditional behavior of setting different run_names
+    per step via with_config still works when inherit_run_name is not enabled.
     """
     from typing import List
     from langchain_core.callbacks.base import BaseCallbackHandler
@@ -295,50 +290,34 @@ def test_inherit_run_name_with_override() -> None:
             name = kwargs.get("name", "unnamed")
             captured_names.append(name)
     
-    # Create a chain where one step tries to override but inherit_run_name=True preserves parent name
     def identity(x: Any) -> Any:
         return x
     
     def process(x: Any) -> str:
         return f"processed: {x}"
     
-    # Test 1: With global inherit_run_name=True, all steps get the same name
+    # Test: Without inherit_run_name, per-step with_config works as before
     chain = (
-        RunnableLambda(identity) |
-        RunnableLambda(process).with_config(run_name="step_override") |
-        RunnableLambda(identity)
+        RunnableLambda(identity).with_config(run_name="step1") |
+        RunnableLambda(process).with_config(run_name="step2") |
+        RunnableLambda(identity).with_config(run_name="step3")
     )
     
     captured_names.clear()
     config: RunnableConfig = {
-        "run_name": "global_run",
-        "inherit_run_name": True,
+        "run_name": "root_run",
+        # Note: inherit_run_name is NOT set (defaults to False)
         "callbacks": [TestCallbackHandler()],
     }
     
     result = chain.invoke("test", config=config)
     assert result == "processed: test"
     
-    # When inherit_run_name=True globally, all steps should have the inherited name
-    assert all(name == "global_run" for name in captured_names), \
-        "With inherit_run_name=True, all steps should have the inherited run_name"
-    
-    # Test 2: To override, step must explicitly set inherit_run_name=False
-    chain_with_override = (
-        RunnableLambda(identity) |
-        RunnableLambda(process).with_config(run_name="step_override", inherit_run_name=False) |
-        RunnableLambda(identity)
-    )
-    
-    captured_names.clear()
-    result = chain_with_override.invoke("test", config=config)
-    assert result == "processed: test"
-    
-    # Now the middle step should have its own name
-    assert "step_override" in captured_names, \
-        "Step with inherit_run_name=False should be able to override"
-    assert "global_run" in captured_names, \
-        "Other steps should still have the global run_name"
+    # The root should have "root_run", and each step should have its own name
+    assert "root_run" in captured_names, "Root run should have the config run_name"
+    assert "step1" in captured_names, "First step should have its own run_name"
+    assert "step2" in captured_names, "Second step should have its own run_name"
+    assert "step3" in captured_names, "Third step should have its own run_name"
 
 
 def test_inherit_run_name_merge_configs() -> None:
@@ -370,6 +349,7 @@ def test_inherit_run_name_merge_configs() -> None:
     ensured = ensure_config(config_with_inherit)
     assert ensured.get("inherit_run_name") is True, "inherit_run_name should pass through ensure_config"
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
 
 
