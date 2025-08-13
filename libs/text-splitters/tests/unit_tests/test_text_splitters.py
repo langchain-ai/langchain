@@ -1490,7 +1490,7 @@ This is the content for section 2.1.
     ]
 
     custom_header_patterns = {
-        "**": 1,   # Level 1 headers
+        "**": 1,  # Level 1 headers
         "***": 2,  # Level 2 headers
     }
     markdown_splitter = MarkdownHeaderTextSplitter(
@@ -1548,7 +1548,7 @@ Content under custom header 2.
     ]
 
     custom_header_patterns = {
-        "**": 1,   # Same level as #
+        "**": 1,  # Same level as #
         "***": 2,  # Same level as ##
     }
 
