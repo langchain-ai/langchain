@@ -290,13 +290,11 @@ def test_inherit_run_name_with_override() -> None:
     This test verifies that the traditional behavior of setting different run_names
     per step via with_config still works when inherit_run_name is not enabled.
     """
-    from typing import List
-
     from langchain_core.callbacks.base import BaseCallbackHandler
     from langchain_core.runnables import RunnableLambda
 
     # Track run names through callbacks
-    captured_names: List[str] = []
+    captured_names: list[str] = []
 
     class TestCallbackHandler(BaseCallbackHandler):
         def on_chain_start(self, serialized: dict, inputs: Any, **kwargs: Any) -> None:
@@ -368,5 +366,6 @@ def test_inherit_run_name_merge_configs() -> None:
         "inherit_run_name should pass through ensure_config"
     )
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
 
