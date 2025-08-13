@@ -165,32 +165,33 @@ async def test_run_in_executor() -> None:
 
 def test_inherit_run_name_default_behavior() -> None:
     """Test that by default, run_name is NOT inherited to child runs."""
-    from langchain_core.runnables import RunnableLambda
     from langchain_core.runnables.config import patch_config
+    from langchain_core.callbacks.manager import CallbackManager
+    from langchain_core.callbacks.base import BaseCallbackHandler
     
-    # Create a mock callback manager
-    class MockCallbackManager:
-        def get_child(self, tag: str = None) -> "MockCallbackManager":
-            return MockCallbackManager()
+    # Create a real callback manager with a handler
+    handler = StdOutCallbackHandler()
+    callback_manager = CallbackManager(handlers=[handler])
     
     # Test default behavior (inherit_run_name not set or False)
     config: RunnableConfig = {
         "run_name": "parent_run",
-        "callbacks": MockCallbackManager(),
+        "callbacks": callback_manager,
     }
     
     # When callbacks are replaced, run_name should be deleted by default
-    patched = patch_config(config, callbacks=MockCallbackManager())
+    new_callback_manager = CallbackManager(handlers=[handler])
+    patched = patch_config(config, callbacks=new_callback_manager)
     assert "run_name" not in patched, "run_name should be deleted by default"
     
     # Explicitly set inherit_run_name to False
     config_explicit_false: RunnableConfig = {
         "run_name": "parent_run",
         "inherit_run_name": False,
-        "callbacks": MockCallbackManager(),
+        "callbacks": callback_manager,
     }
     
-    patched_explicit = patch_config(config_explicit_false, callbacks=MockCallbackManager())
+    patched_explicit = patch_config(config_explicit_false, callbacks=new_callback_manager)
     assert "run_name" not in patched_explicit, "run_name should be deleted when inherit_run_name=False"
 
 
@@ -342,4 +343,5 @@ def test_inherit_run_name_merge_configs() -> None:
     ensured = ensure_config(config_with_inherit)
     assert ensured.get("inherit_run_name") is True, "inherit_run_name should pass through ensure_config"
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
