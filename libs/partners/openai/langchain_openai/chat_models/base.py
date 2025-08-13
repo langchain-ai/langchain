@@ -3670,6 +3670,13 @@ def _construct_responses_api_payload(
                 }
             else:
                 pass
+
+    verbosity = payload.pop("verbosity", None)
+    if verbosity is not None:
+        if "text" not in payload:
+            payload["text"] = {"format": {"type": "text"}}
+        payload["text"]["verbosity"] = verbosity
+
     return payload
 
 
