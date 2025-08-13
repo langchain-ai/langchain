@@ -62,6 +62,55 @@ def test_anthropic_client_caching() -> None:
     assert llm1._client._client is not llm5._client._client
 
 
+def test_anthropic_proxy_support() -> None:
+    """Test that both sync and async clients support proxy configuration."""
+    proxy_url = "http://proxy.example.com:8080"
+
+    # Test sync client with proxy
+    llm_sync = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+    )
+    sync_client = llm_sync._client
+    assert sync_client is not None
+
+    # Test async client with proxy - this should not raise TypeError
+    async_client = llm_sync._async_client
+    assert async_client is not None
+
+    # Test that clients with different proxy settings are not cached together
+    llm_no_proxy = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm_with_proxy = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+    )
+
+    # Different proxy settings should result in different cached clients
+    assert llm_no_proxy._client._client is not llm_with_proxy._client._client
+
+
+def test_anthropic_proxy_from_environment() -> None:
+    """Test that proxy can be set from ANTHROPIC_PROXY environment variable."""
+    proxy_url = "http://env-proxy.example.com:8080"
+
+    # Test with environment variable set
+    with patch.dict(os.environ, {"ANTHROPIC_PROXY": proxy_url}):
+        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        assert llm.anthropic_proxy == proxy_url
+
+        # Should be able to create clients successfully
+        sync_client = llm._client
+        async_client = llm._async_client
+        assert sync_client is not None
+        assert async_client is not None
+
+    # Test that explicit parameter overrides environment variable
+    with patch.dict(os.environ, {"ANTHROPIC_PROXY": "http://env-proxy.com"}):
+        explicit_proxy = "http://explicit-proxy.com"
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest", anthropic_proxy=explicit_proxy
+        )
+        assert llm.anthropic_proxy == explicit_proxy
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
@@ -1076,3 +1125,50 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_cache_control_kwarg() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {"role": "user", "content": "baz"},
+    ]
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+            ],
+        },
+    ]
+
+    messages = [
+        HumanMessage("foo"),
+        AIMessage("bar"),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux"},
+            ]
+        ),
+    ]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
+            ],
+        },
+    ]
