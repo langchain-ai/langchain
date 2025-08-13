@@ -68,8 +68,7 @@ class MarkdownHeaderTextSplitter:
         # Create regex pattern to match exactly one separator at start and end
         # with content in between
         pattern = (
-            f"^{escaped_sep}(?!{escaped_sep})"
-            f"(.+?)(?<!{escaped_sep}){escaped_sep}$"
+            f"^{escaped_sep}(?!{escaped_sep})(.+?)(?<!{escaped_sep}){escaped_sep}$"
         )
 
         match = re.match(pattern, line)
