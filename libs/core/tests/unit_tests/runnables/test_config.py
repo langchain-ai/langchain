@@ -285,10 +285,10 @@ def test_inherit_run_name_with_chain() -> None:
 
 
 def test_inherit_run_name_with_override() -> None:
-    """Test that per-step with_config can still set different run_names when inherit_run_name is NOT used.
-
-    This test verifies that the traditional behavior of setting different run_names
-    per step via with_config still works when inherit_run_name is not enabled.
+    """Test that per-step with_config can still set different run_names.
+    
+    Verifies that when inherit_run_name is NOT used, the traditional behavior
+    of setting different run_names per step via with_config still works.
     """
     from langchain_core.callbacks.base import BaseCallbackHandler
     from langchain_core.runnables import RunnableLambda
@@ -366,6 +366,7 @@ def test_inherit_run_name_merge_configs() -> None:
         "inherit_run_name should pass through ensure_config"
     )
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
 
 
