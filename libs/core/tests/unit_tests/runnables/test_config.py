@@ -300,7 +300,7 @@ def test_inherit_run_name_with_override() -> None:
 
     class TestCallbackHandler(BaseCallbackHandler):
         def on_chain_start(
-            self, _serialized: dict, _inputs: Any, **kwargs: Any
+            self, serialized: dict[str, Any], inputs: dict[str, Any], **kwargs: Any
         ) -> None:
             name = kwargs.get("name", "unnamed")
             captured_names.append(name)
@@ -370,4 +370,5 @@ def test_inherit_run_name_merge_configs() -> None:
         "inherit_run_name should pass through ensure_config"
     )
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
