@@ -311,13 +311,20 @@ def patch_config(
     """
     config = ensure_config(config)
     if callbacks is not None:
-        # If we're replacing callbacks, we need to unset run_name
-        # As that should apply only to the same run as the original callbacks
+        # Check if run_name should be inherited to child runs
+        inherit_run_name = config.get("inherit_run_name", False)
+        
         config["callbacks"] = callbacks
-        if "run_name" in config:
-            del config["run_name"]
-        if "run_id" in config:
-            del config["run_id"]
+        
+        # Only delete run_name/run_id if inherit_run_name is False (default behavior)
+        # This preserves backward compatibility while allowing opt-in inheritance
+        if not inherit_run_name:
+            # If we're replacing callbacks, we need to unset run_name
+            # As that should apply only to the same run as the original callbacks
+            if "run_name" in config:
+                del config["run_name"]
+            if "run_id" in config:
+                del config["run_id"]
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     if max_concurrency is not None:
@@ -620,3 +627,4 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
