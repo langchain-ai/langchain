@@ -301,6 +301,14 @@ def patch_config(
     configurable: Optional[dict[str, Any]] = None,
 ) -> RunnableConfig:
     """Patch a config with new values.
+    
+    By default, when callbacks are replaced, the run_name and run_id are removed
+    from the config to ensure they only apply to the run with the original callbacks.
+    This maintains backward compatibility.
+    
+    To preserve run_name across child runs (e.g., for consistent tracing), set
+    ``inherit_run_name=True`` in the config. This allows dynamic run names to
+    propagate through complex runnable chains.
 
     Args:
         config (Optional[RunnableConfig]): The config to patch.
@@ -316,6 +324,12 @@ def patch_config(
 
     Returns:
         RunnableConfig: The patched config.
+        
+    Note:
+        The ``inherit_run_name`` config key (default: False) controls whether
+        run_name is preserved when creating child runs. When True, the run_name
+        will be inherited by all child runnables in the chain, useful for
+        maintaining consistent naming in tracing systems.
     """
     config = ensure_config(config)
     if callbacks is not None:
@@ -635,6 +649,7 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
 
 
