@@ -90,6 +90,13 @@ class RunnableConfig(TypedDict, total=False):
         will be generated.
     """
 
+    inherit_run_name: bool
+    """
+    Whether to inherit the run_name to child runs. Defaults to False for backward
+    compatibility. When set to True, the run_name will be preserved when creating
+    child runs, allowing dynamic run names to propagate through the entire chain.
+    """
+
 
 CONFIG_KEYS = [
     "tags",
@@ -628,5 +635,6 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
 
