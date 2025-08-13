@@ -48,57 +48,40 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "B",      # flake8-bugbear
-    "ARG",    # flake8-unused-arguments
-    "ASYNC",  # flake8-async
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D",      # pydocstyle
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "N",      # pep8-naming
-    "PT",     # flake8-pytest-style
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "SIM",    # flake8-simplify
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TID",    # flake8-tidy-imports
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
+select = [ "ALL",]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+    "D1",
 ]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1", "S", "SLF",]
+"scripts/**" = [ "INP", "S",]
 
 [tool.mypy]
 exclude = [

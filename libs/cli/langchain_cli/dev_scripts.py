@@ -13,7 +13,7 @@ def create_demo_server(
     *,
     config_keys: Sequence[str] = (),
     playground_type: Literal["default", "chat"] = "default",
-):
+) -> FastAPI:
     """Create a demo server for the current template."""
     app = FastAPI()
     package_root = get_package_root()
@@ -40,9 +40,11 @@ def create_demo_server(
     return app
 
 
-def create_demo_server_configurable():
+def create_demo_server_configurable() -> FastAPI:
+    """Create a configurable demo server."""
     return create_demo_server(config_keys=["configurable"])
 
 
-def create_demo_server_chat():
+def create_demo_server_chat() -> FastAPI:
+    """Create a chat demo server."""
     return create_demo_server(playground_type="chat")

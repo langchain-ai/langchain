@@ -14,3 +14,6 @@ class File:
             return False
 
         return self.content == __value.content
+
+    def __hash__(self) -> int:
+        return hash((self.name, self.content))
