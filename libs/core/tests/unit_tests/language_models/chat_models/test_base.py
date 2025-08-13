@@ -568,16 +568,15 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         },
         {
             "type": "file",
-            "source_type": "base64",
-            "data": "<base64 string>",
+            "base64": "<base64 string>",
             "mime_type": "application/pdf",
-            "filename": "draconomicon.pdf",
+            "extras": {"filename": "draconomicon.pdf"},
         },
         {
             "type": "file",
-            "source_type": "base64",
-            "data": "<base64 string>",
+            "base64": "<base64 string>",
             "mime_type": "application/pdf",
+            "extras": {"filename": None},
         },
         {
             "type": "file",
@@ -585,13 +584,23 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         },
         {
             "type": "audio",
-            "source_type": "base64",
-            "data": "<base64 data>",
+            "base64": "<base64 data>",
             "mime_type": "audio/wav",
         },
     ]
     response = llm.invoke(messages)
-    assert response.content == expected_content
+
+    # Check structure, ignoring auto-generated IDs
+    actual_content = response.content
+    assert len(actual_content) == len(expected_content)
+
+    for i, (actual, expected) in enumerate(zip(actual_content, expected_content)):
+        if isinstance(actual, dict) and "id" in actual:
+            # Remove auto-generated id for comparison
+            actual_without_id = {k: v for k, v in actual.items() if k != "id"}
+            assert actual_without_id == expected, f"Mismatch at index {i}"
+        else:
+            assert actual == expected, f"Mismatch at index {i}"
 
     # Test no mutation
     assert messages[0]["content"] == [

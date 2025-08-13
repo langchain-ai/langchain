@@ -1,8 +1,16 @@
 import re
 from collections.abc import Sequence
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
-from langchain_core.messages import BaseMessage
+if TYPE_CHECKING:
+    from langchain_core.messages import BaseMessage
+from langchain_core.messages.content_blocks import (
+    ContentBlock,
+    create_audio_block,
+    create_file_block,
+    create_image_block,
+    create_non_standard_block,
+)
 
 
 def _is_openai_data_block(block: dict) -> bool:
@@ -64,7 +72,7 @@ def _parse_data_uri(uri: str) -> Optional[dict]:
     }
 
 
-def _convert_openai_format_to_data_block(block: dict) -> dict:
+def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     """Convert OpenAI image content block to standard data content block.
 
     If parsing fails, pass-through.
@@ -78,35 +86,41 @@ def _convert_openai_format_to_data_block(block: dict) -> dict:
     if block["type"] == "image_url":
         parsed = _parse_data_uri(block["image_url"]["url"])
         if parsed is not None:
-            parsed["type"] = "image"
-            return parsed
-        return block
-
-    if block["type"] == "file":
-        parsed = _parse_data_uri(block["file"]["file_data"])
-        if parsed is not None:
-            parsed["type"] = "file"
-            if filename := block["file"].get("filename"):
-                parsed["filename"] = filename
-            return parsed
-        return block
+            base64 = parsed.pop("data", None)
+            mime_type = parsed.pop("mime_type", None)
+            if base64 and mime_type:
+                return create_image_block(
+                    base64=base64,
+                    mime_type=mime_type,
+                )
 
     if block["type"] == "input_audio":
         data = block["input_audio"].get("data")
         audio_format = block["input_audio"].get("format")
         if data and audio_format:
-            return {
-                "type": "audio",
-                "source_type": "base64",
-                "data": data,
-                "mime_type": f"audio/{audio_format}",
-            }
-        return block
+            return create_audio_block(
+                base64=data,
+                mime_type=f"audio/{audio_format}",
+            )
 
-    return block
+    if block["type"] == "file":
+        parsed = _parse_data_uri(block["file"]["file_data"])
+        if parsed is not None:
+            base64_data = parsed.pop("data")
+            mime_type = parsed.pop("mime_type")
+            filename = block["file"].get("filename")
+            return create_file_block(
+                base64=base64_data,
+                mime_type=mime_type,
+                filename=filename,
+            )
+
+    return create_non_standard_block(
+        value=block,
+    )
 
 
-def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
+def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
     """Extend support for message formats.
 
     Chat models implement support for images in OpenAI Chat Completions format, as well
@@ -132,7 +146,7 @@ def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
                         # Also shallow-copy content
                         formatted_message.content = list(formatted_message.content)
 
-                    formatted_message.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
+                    formatted_message.content[idx] = (  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                         _convert_openai_format_to_data_block(block)
                     )
         formatted_messages.append(formatted_message)
