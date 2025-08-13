@@ -81,6 +81,7 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
 
     Returns:
         The converted standard data content block.
+
     """
     if block["type"] == "input_audio":
         data = block["input_audio"].get("data")
@@ -123,10 +124,20 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
 def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
     """Extend support for message formats.
 
-    Chat models implement support for images in OpenAI Chat Completions format, as well
-    as other multimodal data as standard data blocks. This function extends support to
-    audio and file data in OpenAI Chat Completions format by converting them to standard
-    data blocks.
+    Chat models implement support for:
+    - Images in OpenAI Chat Completions format
+    - LangChain v1 standard content blocks
+
+    This function extends support to:
+    - Audio and file data in OpenAI Chat Completions format
+    - LangChain v0 standard content blocks
+
+    .. versionchanged:: 1.0.0
+        In previous versions, this function returned messages in LangChain v0 format.
+        Now, it returns messages in LangChain v1 format, which upgraded chat models now
+        expect. For backward compatibility, we now allow converting v0 message content
+        to v1 format.
+
     """
     formatted_messages = []
     for message in messages:
@@ -134,10 +145,10 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
         if isinstance(message.content, list):
             for idx, block in enumerate(message.content):
                 if (
+                    # Subset to files (PDF) and audio, as most chat models support
+                    # images in OAI format (and some may not yet support the standard
+                    # data block format)
                     isinstance(block, dict)
-                    # Subset to (PDF) files and audio, as most relevant chat models
-                    # support images in OAI format (and some may not yet support the
-                    # standard data block format)
                     and block.get("type") in {"file", "input_audio"}
                     and _is_openai_data_block(block)
                 ):
