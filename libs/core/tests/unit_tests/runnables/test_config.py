@@ -198,21 +198,22 @@ def test_inherit_run_name_default_behavior() -> None:
 def test_inherit_run_name_enabled() -> None:
     """Test that when inherit_run_name=True, run_name is preserved for child runs."""
     from langchain_core.runnables.config import patch_config
+    from langchain_core.callbacks.manager import CallbackManager
     
-    # Create a mock callback manager
-    class MockCallbackManager:
-        def get_child(self, tag: str = None) -> "MockCallbackManager":
-            return MockCallbackManager()
+    # Create a real callback manager with a handler
+    handler = StdOutCallbackHandler()
+    callback_manager = CallbackManager(handlers=[handler])
     
     # Test with inherit_run_name=True
     config: RunnableConfig = {
         "run_name": "parent_run",
         "inherit_run_name": True,
-        "callbacks": MockCallbackManager(),
+        "callbacks": callback_manager,
     }
     
     # When callbacks are replaced, run_name should be preserved
-    patched = patch_config(config, callbacks=MockCallbackManager())
+    new_callback_manager = CallbackManager(handlers=[handler])
+    patched = patch_config(config, callbacks=new_callback_manager)
     assert "run_name" in patched, "run_name should be preserved when inherit_run_name=True"
     assert patched["run_name"] == "parent_run", "run_name value should be unchanged"
     assert patched.get("inherit_run_name") is True, "inherit_run_name should be preserved"
@@ -343,5 +344,6 @@ def test_inherit_run_name_merge_configs() -> None:
     ensured = ensure_config(config_with_inherit)
     assert ensured.get("inherit_run_name") is True, "inherit_run_name should pass through ensure_config"
     assert ensured.get("run_name") == "test_run", "run_name should be preserved"
+
 
 
