@@ -700,6 +700,9 @@ packages:
 - name: langchain-tensorlake
   path: .
   repo: tensorlakeai/langchain-tensorlake
+- name: langchain-recallio
+  path: .
+  repo: recallio/langchain-recallio
   downloads: 781
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-gradient
