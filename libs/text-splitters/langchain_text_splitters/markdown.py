@@ -71,7 +71,7 @@ class MarkdownHeaderTextSplitter:
             f"^{escaped_sep}(?!{escaped_sep})"
             f"(.+?)(?<!{escaped_sep}){escaped_sep}$"
         )
-        
+
         match = re.match(pattern, line)
         if match:
             # Extract the content between the patterns
