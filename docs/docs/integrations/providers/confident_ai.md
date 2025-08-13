@@ -3,9 +3,9 @@
 >[Confident AI](https://www.confident-ai.com/) is the cloud platform for [DeepEval](https://deepeval.com/), the most widely adopted open-source framework to evaluate LLM applications such as RAG pipelines, agentics, chatbots, or even just an LLM itself.
 
 
-## Tracing LangChain
+## Tracing LangGraph
 
-Confident AI provides a [`CallbackHandler`](https://documentation.confident-ai.com/docs/llm-tracing/integrations/langchain) that can be used to trace LangChain’s execution. Therefore, you can trace the entire execution of your agent by creating nested spans of every step that your agent takes to complete the task. 
+Confident AI provides a [`CallbackHandler`](https://documentation.confident-ai.com/docs/llm-tracing/integrations/langchain) that can be used to trace LangGraph’s execution. Therefore, you can trace the entire execution of your agent by creating nested spans of every step that your agent takes to complete the task. 
 
 ### Quickstart
 
@@ -60,64 +60,93 @@ python main.py
 ### View traces in the Observatory
 On the Confident AI dashboard, go to Observatory > Traces and click on the latest trace. 
 
-![Confident AI Observatory](https://raw.githubusercontent.com/spike-spiegel-21/confident-docs/refs/heads/mayank/img/public/img/langgraph_trace.png)
+![Confident AI Observatory](https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing%3Alangchain.png)
 
 
 ## Run end-to-end evals on your agent
-You can run end-to-end evaluations on the overall inputs and outputs of your agent using these simple steps. 
+With DeepEval, you can run end-to-end evaluations on your agent by creating metrics, datasets. Supply metrics to the CallbackHandler. Then, use the dataset generator to invoke your LangGraph agent for each golden.
 
-1. Create a metric locally via DeepEval (more info [here](https://documentation.confident-ai.com/docs/llm-evaluation/metrics/create-locally) if unsure):
-2. Pull your dataset to create some test cases for evaluation, read about using datasets on Confident AI [here](https://documentation.confident-ai.com/docs/dataset-editor/introduction).
-3. Run evaluations. DeepEval will pass in the inputs of each individual golden in your dataset to invoke your agent.
+> Task completion metric is the only supported metric for end-to-end evaluations. Read more about metrics [here](https://deepeval.com/docs/metrics-task-completion).
 
-
-### Evals In CI/CD
-
+### Example (synchronous)
 ```python
-import pytest
+from deepeval.metrics import TaskCompletionMetric
+from deepeval.dataset import Golden, EvaluationDataset
  
-from deepeval.test_case import LLMTestCase
-from deepeval.dataset import EvaluationDataset, Golden
-from deepeval.metrics import AnswerRelevancyMetric
-from deepeval import assert_test
-from main import my_llm_app
+...
  
+# Create a metric
+task_completion = TaskCompletionMetric(
+    threshold=0.7,
+    model="gpt-4o-mini",
+    include_reason=True
+)
  
-dataset = EvaluationDataset()
-dataset.pull(alias="your-dataset-alias") # Pull dataset from Confident AI
+# Create goldens
+goldens = [
+    Golden(input="What is the weather in Bogotá, Colombia?"),
+    Golden(input="What is the weather in Paris, France?"),
+]
  
-@pytest.mark.parametrize("golden", dataset.goldens) # Loop through goldens
-def test_llm_app(golden: Golden):
-    test_case = LLMTestCase(
-      input=golden.input, 
-      actual_output=my_llm_app(golden.input) # Replace with your LLM app
+dataset = EvaluationDataset(goldens=goldens)
+ 
+# Run evaluation for each golden
+for golden in dataset.evals_iterator():
+    agent.invoke(
+        input={"messages": [{"role": "user", "content": golden.input}]},
+        config={"callbacks": [CallbackHandler(metrics=[task_completion])]}
     )
- 
-    # Replace with your metrics
-    assert_test(test_case=test_case, metrics=[AnswerRelevancyMetric()])
 ```
 
-### Evals In Python script
+### Example (asynchronous)
 
 ```python
-from deepeval.dataset import EvaluationDataset
-from deepeval.test_case import LLMTestCase
-from deepeval.metrics import AnswerRelevancyMetric
-from deepeval import evaluate
-from main import my_llm_app
+from deepeval.metrics import TaskCompletionMetric
+from deepeval.dataset import Golden, EvaluationDataset
+from deepeval.evaluate import test_run
  
-dataset = EvaluationDataset()
-dataset.pull(alias="your-dataset-alias") # Pull dataset from Confident AI
+...
  
-# Process each golden in your dataset
-for golden in dataset.goldens:
-    input = golden.input
-    test_case = LLMTestCase(input=input, actual_output=my_llm_app(input))
-    dataset.test_cases.append(test_case)
+# Create a metric
+task_completion = TaskCompletionMetric(
+    threshold=0.7,
+    model="gpt-4o-mini",
+    include_reason=True
+)
  
-# Run an evaluation
-evaluate(
-    test_cases=dataset.test_cases,
-    metrics=[AnswerRelevancyMetric()], # Replace with your metrics
+# Create goldens
+goldens = [
+    Golden(input="What is the weather in Bogotá, Colombia?"),
+    Golden(input="What is the weather in Paris, France?"),
+]
+ 
+dataset = EvaluationDataset(goldens=goldens)
+ 
+# Run evaluation for each golden
+for golden in dataset.evals_iterator():
+    task = asyncio.create_task(
+        agent.ainvoke(
+            input={"messages": [{"role": "user", "content": golden.input}]},
+            config={"callbacks": [CallbackHandler(metrics=[task_completion])]}
+        )
+    )
+    test_run.append(task)
+```
+
+## Running Evals in Production
+
+Confident AI provides metric collection on the platform. Running evals in production is same as running it locally. However, might want it when you want evaluate your agents in production. Refer to the [documentation](https://documentation.confident-ai.com/docs/llm-evaluation/metrics/run-evals-in-production) for more details.
+
+
+```python
+from deepeval.integrations.langchain import CallbackHandler
+...
+ 
+# Invoke your agent with the metric collection name
+agent.invoke(
+    input = {"messages": [{"role": "user", "content": "what is the weather in sf"}]},
+    config = {"callbacks": [
+        CallbackHandler(metric_collection="<metric-collection-name-with-task-completion>")
+    ]}
 )
 ```
