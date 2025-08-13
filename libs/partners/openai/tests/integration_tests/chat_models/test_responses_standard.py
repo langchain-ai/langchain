@@ -31,7 +31,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
