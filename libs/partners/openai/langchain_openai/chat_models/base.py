@@ -1316,6 +1316,7 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
+            "model_provider": "openai",
             "model_name": response_dict.get("model", self.model_name),
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
@@ -1331,7 +1332,18 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "parsed"):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
-                generations[0].message.additional_kwargs["refusal"] = message.refusal
+                if self.output_version in ("v0", "responses/v1"):
+                    generations[0].message.additional_kwargs["refusal"] = (
+                        message.refusal
+                    )
+                elif self.output_version == "v1":
+                    if isinstance(generations[0].message.content, list):
+                        generations[0].message.content.append(
+                            {
+                                "type": "non_standard",
+                                "value": {"refusal": message.refusal},
+                            }
+                        )
 
         if self.output_version == "v1":
             _ = llm_output.pop("token_usage", None)
@@ -3571,7 +3583,7 @@ def _get_last_messages(
         msg = messages[i]
         if isinstance(msg, AIMessage):
             response_id = msg.response_metadata.get("id")
-            if response_id:
+            if response_id and response_id.startswith("resp_"):
                 return messages[i + 1 :], response_id
             else:
                 return messages, None
@@ -3680,23 +3692,45 @@ def _construct_responses_api_payload(
     return payload
 
 
-def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
-    computer_call_output: dict = {
-        "call_id": message.tool_call_id,
-        "type": "computer_call_output",
-    }
+def _make_computer_call_output_from_message(
+    message: ToolMessage,
+) -> Optional[dict[str, Any]]:
+    computer_call_output: Optional[dict[str, Any]] = None
     if isinstance(message.content, list):
-        # Use first input_image block
-        output = next(
-            block
-            for block in message.content
-            if cast(dict, block)["type"] == "input_image"
-        )
+        for block in message.content:
+            if (
+                message.additional_kwargs.get("type") == "computer_call_output"
+                and isinstance(block, dict)
+                and block.get("type") == "input_image"
+            ):
+                # Use first input_image block
+                computer_call_output = {
+                    "call_id": message.tool_call_id,
+                    "type": "computer_call_output",
+                    "output": block,
+                }
+                break
+            elif (
+                isinstance(block, dict)
+                and block.get("type") == "non_standard"
+                and block.get("value", {}).get("type") == "computer_call_output"
+            ):
+                computer_call_output = block["value"]
+                break
+            else:
+                pass
     else:
-        # string, assume image_url
-        output = {"type": "input_image", "image_url": message.content}
-    computer_call_output["output"] = output
-    if "acknowledged_safety_checks" in message.additional_kwargs:
+        if message.additional_kwargs.get("type") == "computer_call_output":
+            # string, assume image_url
+            computer_call_output = {
+                "call_id": message.tool_call_id,
+                "type": "computer_call_output",
+                "output": {"type": "input_image", "image_url": message.content},
+            }
+    if (
+        computer_call_output is not None
+        and "acknowledged_safety_checks" in message.additional_kwargs
+    ):
         computer_call_output["acknowledged_safety_checks"] = message.additional_kwargs[
             "acknowledged_safety_checks"
         ]
@@ -3713,6 +3747,15 @@ def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict
                 "output": block.get("output") or "",
             }
             break
+        elif (
+            isinstance(block, dict)
+            and block.get("type") == "non_standard"
+            and block.get("value", {}).get("type") == "custom_tool_call_output"
+        ):
+            custom_tool_output = block["value"]
+            break
+        else:
+            pass
 
     return custom_tool_output
 
@@ -3756,14 +3799,14 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
+            computer_call_output = _make_computer_call_output_from_message(
+                cast(ToolMessage, lc_msg)
+            )
             custom_tool_output = _make_custom_tool_output_from_message(lc_msg)  # type: ignore[arg-type]
-            if custom_tool_output:
-                input_.append(custom_tool_output)
-            elif lc_msg.additional_kwargs.get("type") == "computer_call_output":
-                computer_call_output = _make_computer_call_output_from_message(
-                    cast(ToolMessage, lc_msg)
-                )
+            if computer_call_output:
                 input_.append(computer_call_output)
+            elif custom_tool_output:
+                input_.append(custom_tool_output)
             else:
                 if not isinstance(tool_output, str):
                     tool_output = _stringify(tool_output)
@@ -3939,6 +3982,7 @@ def _construct_lc_result_from_responses_api(
     if metadata:
         response_metadata.update(metadata)
     # for compatibility with chat completion calls.
+    response_metadata["model_provider"] = "openai"
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
         usage_metadata = _create_usage_metadata_responses(response.usage.model_dump())
