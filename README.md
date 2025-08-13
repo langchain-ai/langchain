@@ -20,6 +20,15 @@
 > [!NOTE]
 > Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
 
+<!-- Hero block -->
+
+<p align="center">
+
+[![chat with our AI docs](https://img.shields.io/badge/chat%20with%20our%20AI%20docs-%E2%86%92-72A1FF?style=for-the-badge&logo=readthedocs&logoColor=white)](https://deepwiki.com/langchain-ai/langchain)
+
+</p>
+
+
 LangChain is a framework for building LLM-powered applications. It helps you chain
 together interoperable components and third-party integrations to simplify AI
 application development —  all while future-proofing decisions as the underlying
