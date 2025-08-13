@@ -8,6 +8,7 @@ import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks.manager import AsyncCallbackManagerForLLMRun
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListChatModel,
@@ -239,7 +240,9 @@ async def test_astream_implementation_uses_astream() -> None:
             self,
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            *,
+            output_version: Optional[str] = "v0",
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
