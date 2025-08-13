@@ -27,7 +27,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'tutorials/index'},
+      link: { type: 'doc', id: 'tutorials/index' },
       label: "Tutorials",
       collapsible: false,
       items: [{
@@ -38,7 +38,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'how_to/index'},
+      link: { type: 'doc', id: 'how_to/index' },
       label: "How-to guides",
       collapsible: false,
       items: [{
@@ -49,7 +49,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'concepts/index'},
+      link: { type: 'doc', id: 'concepts/index' },
       label: "Conceptual guide",
       collapsible: false,
       items: [{
@@ -103,7 +103,7 @@ module.exports = {
         {
           type: "category",
           label: "Migrating from v0.0 chains",
-          link: {type: 'doc', id: 'versions/migrating_chains/index'},
+          link: { type: 'doc', id: 'versions/migrating_chains/index' },
           collapsible: false,
           collapsed: false,
           items: [{
@@ -115,7 +115,7 @@ module.exports = {
         {
           type: "category",
           label: "Upgrading to LangGraph memory",
-          link: {type: 'doc', id: 'versions/migrating_memory/index'},
+          link: { type: 'doc', id: 'versions/migrating_memory/index' },
           collapsible: false,
           collapsed: false,
           items: [{
@@ -315,8 +315,8 @@ module.exports = {
                 },
               ],
               link: {
-                type: "doc",
-                id: "integrations/stores/index",
+                type: "generated-index",
+                slug: "integrations/stores",
               },
             },
             {
@@ -418,7 +418,7 @@ module.exports = {
             },
           ],
         },
-        
+
       ],
       link: {
         type: "generated-index",
@@ -434,7 +434,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'contributing/tutorials/index'},
+      link: { type: 'doc', id: 'contributing/tutorials/index' },
       label: "Tutorials",
       collapsible: false,
       items: [{
@@ -445,7 +445,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'contributing/how_to/index'},
+      link: { type: 'doc', id: 'contributing/how_to/index' },
       label: "How-to guides",
       collapsible: false,
       items: [{
@@ -456,7 +456,7 @@ module.exports = {
     },
     {
       type: "category",
-      link: {type: 'doc', id: 'contributing/reference/index'},
+      link: { type: 'doc', id: 'contributing/reference/index' },
       label: "Reference & FAQ",
       collapsible: false,
       items: [{

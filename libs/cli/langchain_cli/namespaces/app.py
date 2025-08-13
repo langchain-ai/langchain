@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+import uvicorn
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
@@ -261,7 +262,7 @@ def add(
             cmd = ["pip", "install", "-e", *installed_destination_strs]
             cmd_str = " \\\n  ".join(installed_destination_strs)
             typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
-            subprocess.run(cmd, cwd=cwd)  # noqa: S603
+            subprocess.run(cmd, cwd=cwd, check=True)  # noqa: S603
 
     chain_names = []
     for e in installed_exports:
@@ -334,8 +335,8 @@ def remove(
 
             shutil.rmtree(package_dir)
             remove_deps.append(api_path)
-        except Exception:  # noqa: S110
-            pass
+        except OSError as exc:
+            typer.echo(f"Failed to remove {api_path}: {exc}")
 
     try:
         remove_dependencies_from_pyproject_toml(project_pyproject, remove_deps)
@@ -366,8 +367,6 @@ def serve(
 
     app_str = app if app is not None else "app.server:app"
     host_str = host if host is not None else "127.0.0.1"
-
-    import uvicorn
 
     uvicorn.run(
         app_str,

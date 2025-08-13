@@ -14,7 +14,7 @@ from langchain.agents.agent import BaseMultiActionAgent, BaseSingleActionAgent
 from langchain.agents.types import AGENT_TO_CLASS
 from langchain.chains.loading import load_chain, load_chain_from_config
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 URL_BASE = "https://raw.githubusercontent.com/hwchase17/langchain-hub/master/agents/"
 
@@ -136,10 +136,10 @@ def _load_agent_from_file(
     file_path = Path(file) if isinstance(file, str) else file
     # Load from either json or yaml.
     if file_path.suffix[1:] == "json":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = json.load(f)
     elif file_path.suffix[1:] == "yaml":
-        with open(file_path) as f:
+        with file_path.open() as f:
             config = yaml.safe_load(f)
     else:
         msg = f"Unsupported file type, must be one of {valid_suffixes}."

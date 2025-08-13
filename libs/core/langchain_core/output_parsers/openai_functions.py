@@ -214,6 +214,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 pydantic_schema={"cookie": Cookie, "dog": Dog}
             )
             result = parser.parse_result([chat_generation])
+
     """
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]

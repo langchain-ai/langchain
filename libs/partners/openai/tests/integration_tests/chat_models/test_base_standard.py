@@ -66,7 +66,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4o-mini", stream_usage=True)

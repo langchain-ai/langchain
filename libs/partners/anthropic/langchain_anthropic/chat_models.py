@@ -7,14 +7,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated
@@ -42,33 +35,16 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import (
-    JsonOutputKeyToolsParser,
-    PydanticToolsParser,
-)
+from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import (
-    Runnable,
-    RunnableMap,
-    RunnablePassthrough,
-)
+from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.pydantic import is_basemodel_subclass
 from langchain_core.utils.utils import _build_model_kwargs
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import NotRequired, TypedDict
 
 from langchain_anthropic._client_utils import (
@@ -517,7 +493,7 @@ class ChatAnthropic(BaseChatModel):
 
     Key init args — completion params:
         model: str
-            Name of Anthropic model to use. e.g. ``'claude-3-sonnet-20240229'``.
+            Name of Anthropic model to use. e.g. ``'claude-3-7-sonnet-20250219'``.
         temperature: float
             Sampling temperature. Ranges from ``0.0`` to ``1.0``.
         max_tokens: int
@@ -526,6 +502,9 @@ class ChatAnthropic(BaseChatModel):
     Key init args — client params:
         timeout: Optional[float]
             Timeout for requests.
+        anthropic_proxy: Optional[str]
+            Proxy to use for the Anthropic clients, will be used for every API call.
+            If not passed in will be read from env var ``ANTHROPIC_PROXY``.
         max_retries: int
             Max number of retries if a request fails.
         api_key: Optional[str]
@@ -543,7 +522,7 @@ class ChatAnthropic(BaseChatModel):
             from langchain_anthropic import ChatAnthropic
 
             llm = ChatAnthropic(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-7-sonnet-20250219",
                 temperature=0,
                 max_tokens=1024,
                 timeout=None,
@@ -583,7 +562,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
 
     Stream:
         .. code-block:: python
@@ -627,7 +606,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-sonnet-20240229', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
 
     Tool calling:
         .. code-block:: python
@@ -940,8 +919,13 @@ class ChatAnthropic(BaseChatModel):
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
     Prompt caching:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
-        for more detail.
+        Prompt caching reduces processing time and costs for repetitive tasks or prompts
+        with consistent elements
+
+        .. note::
+            Only certain models support prompt caching.
+            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            for a full list.
 
         .. code-block:: python
 
@@ -977,12 +961,24 @@ class ChatAnthropic(BaseChatModel):
 
             {'cache_read': 0, 'cache_creation': 1458}
 
+        Alternatively, you may enable prompt caching at invocation time. You may want to
+        conditionally cache based on runtime conditions, such as the length of the
+        context. Alternatively, this is useful for app-level decisions about what to
+        cache.
+
+        .. code-block:: python
+
+            response = llm.invoke(
+                messages,
+                cache_control={"type": "ephemeral"},
+            )
+
         .. dropdown:: Extended caching
 
             .. versionadded:: 0.3.15
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by enabling the ``"extended-cache-ttl-2025-04-11"``
+            apply one hour caching by enabling the ``'extended-cache-ttl-2025-04-11'``
             beta header:
 
             .. code-block:: python
@@ -993,6 +989,10 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            .. important::
+                Specifying a `ttl` key under `cache_control` will not work unless the
+                beta header is set!
 
             Details of cached token counts will be included on the ``InputTokenDetails``
             of response's ``usage_metadata``:
@@ -1018,6 +1018,41 @@ class ChatAnthropic(BaseChatModel):
 
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
             for detail.
+
+    Extended context windows (beta):
+        Claude Sonnet 4 supports a 1-million token context window, available in beta for
+        organizations in usage tier 4 and organizations with custom rate limits.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-sonnet-4-20250514",
+                betas=["context-1m-2025-08-07"],  # Enable 1M context beta
+            )
+
+            long_document = \"\"\"
+            This is a very long document that would benefit from the extended 1M
+            context window...
+            [imagine this continues for hundreds of thousands of tokens]
+            \"\"\"
+
+            messages = [
+                HumanMessage(f\"\"\"
+            Please analyze this document and provide a summary:
+
+            {long_document}
+
+            What are the key themes and main conclusions?
+            \"\"\")
+            ]
+
+            response = llm.invoke(messages)
+
+        See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window>`__
+        for detail.
+
 
     Token-efficient tool use (beta):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
@@ -1057,7 +1092,7 @@ class ChatAnthropic(BaseChatModel):
             Total tokens: 408
 
     Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
         .. dropdown::  Web search
@@ -1156,7 +1191,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
-             'model': 'claude-3-sonnet-20240229',
+             'model': 'claude-3-7-sonnet-20250219',
              'stop_reason': 'end_turn',
              'stop_sequence': None,
              'usage': {'input_tokens': 25, 'output_tokens': 11}}
@@ -1212,6 +1247,14 @@ class ChatAnthropic(BaseChatModel):
         default_factory=secret_from_env("ANTHROPIC_API_KEY", default=""),
     )
     """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
+
+    anthropic_proxy: Optional[str] = Field(
+        default_factory=from_env("ANTHROPIC_PROXY", default=None)
+    )
+    """Proxy to use for the Anthropic clients, will be used for every API call.
+
+    If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
+    variable."""
 
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
@@ -1328,6 +1371,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
+        if self.anthropic_proxy:
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1341,6 +1386,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
+        if self.anthropic_proxy:
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1357,6 +1404,46 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+
+        # If cache_control is provided in kwargs, add it to last message
+        # and content block.
+        if "cache_control" in kwargs and formatted_messages:
+            cache_control = kwargs["cache_control"]
+
+            # Validate TTL usage requires extended cache TTL beta header
+            if (
+                isinstance(cache_control, dict)
+                and "ttl" in cache_control
+                and (
+                    not self.betas or "extended-cache-ttl-2025-04-11" not in self.betas
+                )
+            ):
+                msg = (
+                    "Specifying a 'ttl' under 'cache_control' requires enabling "
+                    "the 'extended-cache-ttl-2025-04-11' beta header. "
+                    "Set betas=['extended-cache-ttl-2025-04-11'] when initializing "
+                    "ChatAnthropic."
+                )
+                warnings.warn(msg, stacklevel=2)
+            if isinstance(formatted_messages[-1]["content"], list):
+                formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
+                    "cache_control"
+                )
+            elif isinstance(formatted_messages[-1]["content"], str):
+                formatted_messages[-1]["content"] = [
+                    {
+                        "type": "text",
+                        "text": formatted_messages[-1]["content"],
+                        "cache_control": kwargs.pop("cache_control"),
+                    }
+                ]
+            else:
+                pass
+
+        # If cache_control remains in kwargs, it would be passed as a top-level param
+        # to the API, but Anthropic expects it nested within a message
+        _ = kwargs.pop("cache_control", None)
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1593,8 +1680,8 @@ class ChatAnthropic(BaseChatModel):
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
-                - ``"auto"``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
-                - ``"any"`` or ``{"type: "any"}``: force at least one tool to be called;
+                - ``'auto'``, ``{"type: "auto"}``, or ``None``: automatically selects a tool (including no tool);
+                - ``'any'`` or ``{"type: "any"}``: force at least one tool to be called;
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
 
@@ -1801,9 +1888,10 @@ class ChatAnthropic(BaseChatModel):
             Otherwise, if ``include_raw`` is ``False`` then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``raw``: BaseMessage
-                - ``parsed``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``parsing_error``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: Pydantic schema (include_raw=False):
 

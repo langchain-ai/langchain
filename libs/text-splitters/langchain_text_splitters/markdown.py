@@ -24,9 +24,9 @@ class MarkdownHeaderTextSplitter:
     def __init__(
         self,
         headers_to_split_on: list[tuple[str, str]],
-        return_each_line: bool = False,
-        strip_headers: bool = True,
-    ):
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Create a new MarkdownHeaderTextSplitter.
 
         Args:
@@ -279,9 +279,9 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     def __init__(
         self,
         headers_to_split_on: Union[list[tuple[str, str]], None] = None,
-        return_each_line: bool = False,
-        strip_headers: bool = True,
-    ):
+        return_each_line: bool = False,  # noqa: FBT001,FBT002
+        strip_headers: bool = True,  # noqa: FBT001,FBT002
+    ) -> None:
         """Initialize the text splitter with header splitting and formatting options.
 
         This constructor sets up the required configuration for splitting text into

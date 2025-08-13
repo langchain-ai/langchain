@@ -101,7 +101,7 @@ def test_character_text_splitter_longer_words() -> None:
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character.
@@ -123,7 +123,7 @@ def test_character_text_splitter_keep_separator_regex(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_start(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the start of each chunk.
@@ -145,7 +145,7 @@ def test_character_text_splitter_keep_separator_regex_start(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_keep_separator_regex_end(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters while keeping the separator
     that is a regex special character and placing it at the end of each chunk.
@@ -167,7 +167,7 @@ def test_character_text_splitter_keep_separator_regex_end(
     ("separator", "is_separator_regex"), [(re.escape("."), True), (".", False)]
 )
 def test_character_text_splitter_discard_separator_regex(
-    separator: str, is_separator_regex: bool
+    *, separator: str, is_separator_regex: bool
 ) -> None:
     """Test splitting by characters discarding the separator
     that is a regex special character."""
@@ -338,7 +338,9 @@ def test_iterative_text_splitter_discard_separator() -> None:
     ]
 
 
-def __test_iterative_text_splitter(chunk_size: int, keep_separator: bool) -> list[str]:
+def __test_iterative_text_splitter(
+    *, chunk_size: int, keep_separator: bool
+) -> list[str]:
     chunk_size += 1 if keep_separator else 0
 
     splitter = RecursiveCharacterTextSplitter(
@@ -3041,6 +3043,82 @@ $csvContent | ForEach-Object {
     ]
 
 
+FAKE_VISUALBASIC6_TEXT = """
+Option Explicit
+
+Public Function SumTwoIntegers(ByVal a As Integer, ByVal b As Integer) As Integer
+    SumTwoIntegers = a + b
+End Function
+
+Public Sub Main()
+    Dim i As Integer
+    Dim limit As Integer
+
+    i = 0
+    limit = 50
+
+    While i < limit
+        i = SumTwoIntegers(i, 1)
+
+        If i = limit \\ 2 Then
+            MsgBox "Halfway there! i = " & i
+        End If
+    Wend
+
+    MsgBox "Done! Final value of i: " & i
+End Sub
+"""
+
+
+def test_visualbasic6_code_splitter() -> None:
+    splitter = RecursiveCharacterTextSplitter.from_language(
+        Language.VISUALBASIC6,
+        chunk_size=CHUNK_SIZE,
+        chunk_overlap=0,
+    )
+    chunks = splitter.split_text(FAKE_VISUALBASIC6_TEXT)
+
+    assert chunks == [
+        "Option Explicit",
+        "Public Function",
+        "SumTwoIntegers(",
+        "ByVal",
+        "a As Integer,",
+        "ByVal b As",
+        "Integer) As",
+        "Integer",
+        "SumTwoIntegers",
+        "= a + b",
+        "End Function",
+        "Public Sub",
+        "Main()",
+        "Dim i As",
+        "Integer",
+        "Dim limit",
+        "As Integer",
+        "i = 0",
+        "limit = 50",
+        "While i <",
+        "limit",
+        "i =",
+        "SumTwoIntegers(",
+        "i,",
+        "1)",
+        "If i =",
+        "limit \\ 2 Then",
+        'MsgBox "Halfway',
+        'there! i = " &',
+        "i",
+        "End If",
+        "Wend",
+        "MsgBox",
+        '"Done! Final',
+        'value of i: " &',
+        "i",
+        "End Sub",
+    ]
+
+
 def custom_iframe_extractor(iframe_tag: Any) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"
@@ -3574,6 +3652,7 @@ def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
 )
 def test_character_text_splitter_chunk_size_effect(
     separator: str,
+    *,
     is_regex: bool,
     text: str,
     chunk_size: int,
