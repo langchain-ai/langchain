@@ -8,7 +8,6 @@ from langchain_core.messages.content_blocks import (
     ContentBlock,
     create_audio_block,
     create_file_block,
-    create_image_block,
     create_non_standard_block,
 )
 
@@ -83,17 +82,6 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     Returns:
         The converted standard data content block.
     """
-    if block["type"] == "image_url":
-        parsed = _parse_data_uri(block["image_url"]["url"])
-        if parsed is not None:
-            base64 = parsed.pop("data", None)
-            mime_type = parsed.pop("mime_type", None)
-            if base64 and mime_type:
-                return create_image_block(
-                    base64=base64,
-                    mime_type=mime_type,
-                )
-
     if block["type"] == "input_audio":
         data = block["input_audio"].get("data")
         audio_format = block["input_audio"].get("format")
@@ -114,6 +102,18 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
                 mime_type=mime_type,
                 filename=filename,
             )
+
+    # This logic is and never was used but @ccurme wanted to keep it
+    # if block["type"] == "image_url":
+    #     parsed = _parse_data_uri(block["image_url"]["url"])
+    #     if parsed is not None:
+    #         base64 = parsed.pop("data", None)
+    #         mime_type = parsed.pop("mime_type", None)
+    #         if base64 and mime_type:
+    #             return create_image_block(
+    #                 base64=base64,
+    #                 mime_type=mime_type,
+    #             )
 
     return create_non_standard_block(
         value=block,
