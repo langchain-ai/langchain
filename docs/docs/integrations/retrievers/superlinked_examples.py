@@ -453,7 +453,7 @@ def example_3_ecommerce_product_search():
                 "brand_weight": 0.2,
                 "category_weight": 0.3,
                 "price_weight": 0.1,
-                "rating_weight": 1.0,  # Prioritize high ratings
+                "rating_weight": 1.0,
                 "limit": 3,
             },
         },
@@ -465,7 +465,7 @@ def example_3_ecommerce_product_search():
                 "name_weight": 0.4,
                 "brand_weight": 0.1,
                 "category_weight": 0.2,
-                "price_weight": 1.0,  # Prioritize lower prices
+                "price_weight": 1.0,
                 "rating_weight": 0.3,
                 "limit": 3,
             },
@@ -476,7 +476,7 @@ def example_3_ecommerce_product_search():
             "params": {
                 "description_weight": 0.5,
                 "name_weight": 0.3,
-                "brand_weight": 1.0,  # Prioritize specific brand
+                "brand_weight": 1.0,
                 "category_weight": 0.2,
                 "price_weight": 0.2,
                 "rating_weight": 0.4,
@@ -952,3 +952,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
