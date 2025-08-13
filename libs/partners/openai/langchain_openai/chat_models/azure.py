@@ -666,7 +666,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
             client_params["max_retries"] = self.max_retries
 
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
+            sync_specific = {
+                "http_client": self.http_client
+                or _get_default_httpx_client(self.azure_endpoint, self.request_timeout)
+            }
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
@@ -1149,4 +1152,5 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
+
 
