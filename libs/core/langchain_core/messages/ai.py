@@ -358,7 +358,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                if chunk["args"] not in ("", None):
+                if chunk["args"] is not None and chunk["args"] != "":
                     args_ = parse_partial_json(chunk["args"])  # type: ignore[arg-type]
                 else:
                     args_ = {}
