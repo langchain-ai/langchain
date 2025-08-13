@@ -159,5 +159,3 @@ def test_max_completion_tokens_in_payload() -> None:
         "stream": False,
         "max_completion_tokens": 300,
     }
-
-

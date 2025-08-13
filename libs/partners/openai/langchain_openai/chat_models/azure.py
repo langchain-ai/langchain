@@ -18,11 +18,11 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Literal, Self
 
-from langchain_openai.chat_models.base import BaseChatOpenAI
 from langchain_openai.chat_models._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
 
@@ -675,7 +675,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
         if not self.async_client:
             async_specific = {
                 "http_client": self.http_async_client
-                or _get_default_async_httpx_client(self.azure_endpoint, self.request_timeout)
+                or _get_default_async_httpx_client(
+                    self.azure_endpoint, self.request_timeout
+                )
             }
 
             if self.azure_ad_async_token_provider:
@@ -1155,6 +1157,3 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
-
-
-
