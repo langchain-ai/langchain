@@ -7,7 +7,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Callable, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated
@@ -59,6 +59,29 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+_MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
+    "claude-opus-4-1": 32000,
+    "claude-opus-4": 32000,
+    "claude-sonnet-4": 64000,
+    "claude-3-7-sonnet": 64000,
+    "claude-3-5-sonnet": 8192,
+    "claude-3-5-haiku": 8192,
+    "claude-3-haiku": 4096,
+}
+_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
+
+
+def _default_max_tokens_for(model: str) -> int:
+    """Return the default max output tokens for an Anthropic model (with fallback).
+
+    Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
+    """
+    parts = model.split("-")
+    family = "-".join(parts[:-1]) if len(parts) > 1 else model
+
+    return _MODEL_DEFAULT_MAX_OUTPUT_TOKENS.get(family, _FALLBACK_MAX_OUTPUT_TOKENS)
 
 
 class AnthropicTool(TypedDict):
@@ -1346,24 +1369,9 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
-        """Validate max_tokens.
-
-        Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
-        """
+        """Validate max_tokens."""
         if values.get("max_tokens") is None and values.get("model"):
-            if "claude-opus-4" in values.get("model", ""):
-                values["max_tokens"] = 32000
-            elif "claude-sonnet-4" in values.get(
-                "model", ""
-            ) or "claude-3-7-sonnet" in values.get("model", ""):
-                values["max_tokens"] = 64000
-            elif "claude-3-5-sonnet" in values.get(
-                "model", ""
-            ) or "claude-3-5-haiku" in values.get("model", ""):
-                values["max_tokens"] = 8192
-            # leaves us with "claude-3-haiku"
-            else:
-                values["max_tokens"] = 4096
+            values["max_tokens"] = _default_max_tokens_for(values["model"])
         return values
 
     @model_validator(mode="before")
