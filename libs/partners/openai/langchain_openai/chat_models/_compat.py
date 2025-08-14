@@ -271,8 +271,7 @@ def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
             message.content = []
 
     for tool_call in message.tool_calls:
-        if id_ := tool_call.get("id"):
-            message.content.append({"type": "tool_call", "id": id_})
+        message.content.append(cast(dict, tool_call))
 
     if "tool_calls" in message.additional_kwargs:
         _ = message.additional_kwargs.pop("tool_calls")
@@ -284,8 +283,23 @@ def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
 
 
 def _convert_to_v1_from_chat_completions_chunk(chunk: AIMessageChunk) -> AIMessageChunk:
-    result = _convert_to_v1_from_chat_completions(cast(AIMessage, chunk))
-    return cast(AIMessageChunk, result)
+    """Mutate a Chat Completions chunk to v1 format."""
+    if isinstance(chunk.content, str):
+        if chunk.content:
+            chunk.content = [{"type": "text", "text": chunk.content}]
+        else:
+            chunk.content = []
+
+    for tool_call_chunk in chunk.tool_call_chunks:
+        chunk.content.append(cast(dict, tool_call_chunk))
+
+    if "tool_calls" in chunk.additional_kwargs:
+        _ = chunk.additional_kwargs.pop("tool_calls")
+
+    if "token_usage" in chunk.response_metadata:
+        _ = chunk.response_metadata.pop("token_usage")
+
+    return chunk
 
 
 def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
