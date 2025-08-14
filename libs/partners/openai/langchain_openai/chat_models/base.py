@@ -111,9 +111,6 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
-    _convert_to_v1_from_chat_completions,
-    _convert_to_v1_from_chat_completions_chunk,
-    _convert_to_v1_from_responses,
 )
 
 if TYPE_CHECKING:
@@ -924,10 +921,7 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
-            if self.output_version == "v1":
-                generation_chunk.message = _convert_to_v1_from_chat_completions_chunk(
-                    cast(AIMessageChunk, generation_chunk.message)
-                )
+
             return generation_chunk
 
         choice = choices[0]
@@ -954,20 +948,6 @@ class BaseChatOpenAI(BaseChatModel):
 
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
-
-        if self.output_version == "v1":
-            message_chunk = cast(AIMessageChunk, message_chunk)
-            # Convert to v1 format
-            if isinstance(message_chunk.content, str):
-                message_chunk = _convert_to_v1_from_chat_completions_chunk(
-                    message_chunk
-                )
-                if message_chunk.content:
-                    message_chunk.content[0]["index"] = 0  # type: ignore[index]
-            else:
-                message_chunk = _convert_to_v1_from_chat_completions_chunk(
-                    message_chunk
-                )
 
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
@@ -1332,24 +1312,7 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "parsed"):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
-                if self.output_version in ("v0", "responses/v1"):
-                    generations[0].message.additional_kwargs["refusal"] = (
-                        message.refusal
-                    )
-                elif self.output_version == "v1":
-                    if isinstance(generations[0].message.content, list):
-                        generations[0].message.content.append(
-                            {
-                                "type": "non_standard",
-                                "value": {"refusal": message.refusal},
-                            }
-                        )
-
-        if self.output_version == "v1":
-            _ = llm_output.pop("token_usage", None)
-            generations[0].message = _convert_to_v1_from_chat_completions(
-                cast(AIMessage, generations[0].message)
-            )
+                generations[0].message.additional_kwargs["refusal"] = message.refusal
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -4095,29 +4058,6 @@ def _construct_lc_result_from_responses_api(
         except json.JSONDecodeError:
             pass
 
-    if output_version == "v1":
-        content_blocks = _convert_to_v1_from_responses(content_blocks)
-
-        if response.tools and any(
-            tool.type == "image_generation" for tool in response.tools
-        ):
-            # Get mime_time from tool definition and add to image generations
-            # if missing (primarily for tracing purposes).
-            image_generation_call = next(
-                tool for tool in response.tools if tool.type == "image_generation"
-            )
-            if image_generation_call.output_format:
-                mime_type = f"image/{image_generation_call.output_format}"
-                for content_block in content_blocks:
-                    # OK to mutate output message
-                    if (
-                        isinstance(content_block, dict)
-                        and content_block.get("type") == "image"
-                        and "base64" in content_block
-                        and "mime_type" not in block
-                    ):
-                        block["mime_type"] = mime_type
-
     message = AIMessage(
         content=content_blocks,
         id=response.id,
@@ -4208,29 +4148,12 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        if output_version == "v1":
-            content.append(
-                {
-                    "type": "text",
-                    "text": "",
-                    "annotations": [annotation],
-                    "index": current_index,
-                }
-            )
-        else:
-            content.append({"annotations": [annotation], "index": current_index})
+
+        content.append(
+            {"type": "text", "annotations": [annotation], "index": current_index}
+        )
     elif chunk.type == "response.output_text.done":
-        if output_version == "v1":
-            content.append(
-                {
-                    "type": "text",
-                    "text": "",
-                    "id": chunk.item_id,
-                    "index": current_index,
-                }
-            )
-        else:
-            content.append({"id": chunk.item_id, "index": current_index})
+        content.append({"type": "text", "id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
@@ -4328,30 +4251,18 @@ def _convert_responses_chunk_to_generation_chunk(
         reasoning["index"] = current_index
         content.append(reasoning)
     elif chunk.type == "response.reasoning_summary_part.added":
-        if output_version in ("v0", "responses/v1"):
-            _advance(chunk.output_index)
-            content.append(
-                {
-                    # langchain-core uses the `index` key to aggregate text blocks.
-                    "summary": [
-                        {
-                            "index": chunk.summary_index,
-                            "type": "summary_text",
-                            "text": "",
-                        }
-                    ],
-                    "index": current_index,
-                    "type": "reasoning",
-                }
-            )
-        else:
-            # v1
-            block: dict = {"type": "reasoning", "reasoning": ""}
-            if chunk.summary_index > 0:
-                _advance(chunk.output_index, chunk.summary_index)
-                block["id"] = chunk.item_id
-            block["index"] = current_index
-            content.append(block)
+        _advance(chunk.output_index)
+        content.append(
+            {
+                # langchain-core uses the `index` key to aggregate text blocks.
+                "summary": [
+                    {"index": chunk.summary_index, "type": "summary_text", "text": ""}
+                ],
+                "index": current_index,
+                "type": "reasoning",
+                "id": chunk.item_id,
+            }
+        )
     elif chunk.type == "response.image_generation_call.partial_image":
         # Partial images are not supported yet.
         pass
@@ -4372,16 +4283,6 @@ def _convert_responses_chunk_to_generation_chunk(
         )
     else:
         return current_index, current_output_index, current_sub_index, None
-
-    if output_version == "v1":
-        content = cast(list[dict], _convert_to_v1_from_responses(content))
-        for content_block in content:
-            if (
-                isinstance(content_block, dict)
-                and content_block.get("index", -1) > current_index
-            ):
-                # blocks were added for v1
-                current_index = content_block["index"]
 
     message = AIMessageChunk(
         content=content,  # type: ignore[arg-type]
