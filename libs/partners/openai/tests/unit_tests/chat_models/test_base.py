@@ -2673,3 +2673,46 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+def test_structured_output_with_text_model_kwargs() -> None:
+    """Test that structured output works with text parameter in `model_kwargs`.
+
+    This test ensures that when using structured output with the `json_schema` method
+    and `text` parameters in `model_kwargs`, both parameters are properly merged.
+
+    """
+
+    schema = {
+        "title": "MovieAnalysis",
+        "description": "Analysis of a movie",
+        "type": "object",
+        "properties": {
+            "title": {"type": "string", "description": "The movie title"},
+            "genre": {"type": "string", "description": "The genre"},
+            "rating": {"type": "integer", "description": "Rating out of 10"},
+        },
+        "required": ["title", "genre", "rating"],
+    }
+
+    llm = ChatOpenAI(model="gpt-4o", model_kwargs={"text": {"verbosity": "high"}})
+    structured_llm = llm.with_structured_output(schema, method="json_schema")
+
+    # Get the payload to verify text parameter is merged correctly
+    messages = [HumanMessage(content="Analyze the movie Inception")]
+
+    # Get the bound llm and its kwargs
+    bound_llm = structured_llm.first.bound
+    bound_kwargs = structured_llm.first.kwargs
+
+    payload = bound_llm._get_request_payload(messages, **bound_kwargs)
+
+    # Verify that it uses responses API when text parameter is present
+    assert bound_llm._use_responses_api(payload)
+
+    # Verify that both verbosity and format parameters are present in text
+    assert "text" in payload
+    assert "verbosity" in payload["text"]
+    assert payload["text"]["verbosity"] == "high"
+    assert "format" in payload["text"]
+    assert payload["text"]["format"]["type"] == "json_schema"

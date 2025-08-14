@@ -3565,12 +3565,7 @@ def _construct_responses_api_payload(
 
     # Structured output
     if schema := payload.pop("response_format", None):
-        if payload.get("text"):
-            text = payload["text"]
-            raise ValueError(
-                "Can specify at most one of 'response_format' or 'text', received both:"
-                f"\n{schema=}\n{text=}"
-            )
+        existing_text = payload.pop("text", None)
 
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
@@ -3584,7 +3579,7 @@ def _construct_responses_api_payload(
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                payload["text"] = {"format": {"type": "json_object"}}
+                structured_text = {"format": {"type": "json_object"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -3594,9 +3589,20 @@ def _construct_responses_api_payload(
                 and (isinstance(response_format, dict))
                 and (response_format["type"] == "json_schema")
             ):
-                payload["text"] = {
+                structured_text = {
                     "format": {"type": "json_schema", **response_format["json_schema"]}
                 }
+            else:
+                structured_text = {}
+
+            # Merge existing text parameters with structured output text
+            if existing_text or structured_text:
+                merged_text = {}
+                if existing_text:
+                    merged_text.update(existing_text)
+                if structured_text:
+                    merged_text.update(structured_text)
+                payload["text"] = merged_text
             else:
                 pass
 
