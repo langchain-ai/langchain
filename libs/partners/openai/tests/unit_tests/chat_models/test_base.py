@@ -23,6 +23,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
@@ -2702,8 +2703,12 @@ def test_structured_output_with_text_model_kwargs() -> None:
     messages = [HumanMessage(content="Analyze the movie Inception")]
 
     # Get the bound llm and its kwargs
-    bound_llm = structured_llm.first.bound
-    bound_kwargs = structured_llm.first.kwargs
+    # Type cast for mypy - structured_llm is a RunnableSequence with a
+    # RunnableBinding first element
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(RunnableBinding, sequence.first)
+    bound_llm = cast(ChatOpenAI, binding.bound)
+    bound_kwargs = binding.kwargs
 
     payload = bound_llm._get_request_payload(messages, **bound_kwargs)
 
