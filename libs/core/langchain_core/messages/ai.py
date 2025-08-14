@@ -230,25 +230,26 @@ class AIMessage(BaseMessage):
         """Return content blocks of the message."""
         blocks = super().content_blocks
 
-        # Add from tool_calls if missing from content
-        content_tool_call_ids = {
-            block.get("id")
-            for block in self.content
-            if isinstance(block, dict) and block.get("type") == "tool_call"
-        }
-        for tool_call in self.tool_calls:
-            if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
-                tool_call_block: types.ToolCall = {
-                    "type": "tool_call",
-                    "id": id_,
-                    "name": tool_call["name"],
-                    "args": tool_call["args"],
-                }
-                if "index" in tool_call:
-                    tool_call_block["index"] = tool_call["index"]
-                if "extras" in tool_call:
-                    tool_call_block["extras"] = tool_call["extras"]
-                blocks.append(tool_call_block)
+        if self.tool_calls:
+            # Add from tool_calls if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call"
+            }
+            for tool_call in self.tool_calls:
+                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_block: types.ToolCall = {
+                        "type": "tool_call",
+                        "id": id_,
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                    }
+                    if "index" in tool_call:
+                        tool_call_block["index"] = tool_call["index"]
+                    if "extras" in tool_call:
+                        tool_call_block["extras"] = tool_call["extras"]
+                    blocks.append(tool_call_block)
 
         return blocks
 
@@ -360,6 +361,38 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        blocks = super().content_blocks
+
+        if self.tool_call_chunks:
+            blocks = [
+                block
+                for block in blocks
+                if block["type"] not in ("tool_call", "invalid_tool_call")
+            ]
+            # Add from tool_call_chunks if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call_chunk"
+            }
+            for chunk in self.tool_call_chunks:
+                if (id_ := chunk.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_chunk_block: types.ToolCallChunk = {
+                        "type": "tool_call_chunk",
+                        "id": id_,
+                        "name": chunk["name"],
+                        "args": chunk["args"],
+                        "index": chunk.get("index"),
+                    }
+                    if "extras" in chunk:
+                        tool_call_chunk_block["extras"] = chunk["extras"]  # type: ignore[typeddict-item]
+                    blocks.append(tool_call_chunk_block)
+
+        return blocks
 
     @model_validator(mode="after")
     def init_tool_calls(self) -> Self:
