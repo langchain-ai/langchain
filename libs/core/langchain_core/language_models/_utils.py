@@ -325,73 +325,86 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         formatted_message.content = list(formatted_message.content)
 
                     # URL-image
-                    if block["source_type"] == "url" and block["type"] == "image":
+                    if block.get("source_type") == "url" and block["type"] == "image":
                         formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # URL-audio
-                    elif block["source_type"] == "url" and block["type"] == "audio":
+                    elif block.get("source_type") == "url" and block["type"] == "audio":
                         formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # URL-file
-                    elif block["source_type"] == "url" and block["type"] == "file":
+                    elif block.get("source_type") == "url" and block["type"] == "file":
                         formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # base64-image
-                    elif block["source_type"] == "base64" and block["type"] == "image":
+                    elif (
+                        block.get("source_type") == "base64"
+                        and block["type"] == "image"
+                    ):
                         formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # base64-audio
-                    elif block["source_type"] == "base64" and block["type"] == "audio":
+                    elif (
+                        block.get("source_type") == "base64"
+                        and block["type"] == "audio"
+                    ):
                         formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # base64-file
-                    elif block["source_type"] == "base64" and block["type"] == "file":
+                    elif (
+                        block.get("source_type") == "base64" and block["type"] == "file"
+                    ):
                         formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
 
                     # id-image
-                    elif block["source_type"] == "id" and block["type"] == "image":
+                    elif block.get("source_type") == "id" and block["type"] == "image":
                         formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             id=block["id"],
                         )
 
                     # id-audio
-                    elif block["source_type"] == "id" and block["type"] == "audio":
+                    elif block.get("source_type") == "id" and block["type"] == "audio":
                         formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             id=block["id"],
                         )
 
                     # id-file
-                    elif block["source_type"] == "id" and block["type"] == "file":
+                    elif block.get("source_type") == "id" and block["type"] == "file":
                         formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             id=block["id"],
                         )
 
                     # text-file
-                    elif block["source_type"] == "text" and block["type"] == "file":
+                    elif block.get("source_type") == "text" and block["type"] == "file":
                         formatted_message.content[idx] = create_plaintext_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
                             text=block["url"],
                             # Note: `text` is the URL in this case, not the content
                             # This is a legacy format, so we don't expect a MIME type
                             # but we can still pass it if it exists
                             mime_type=block.get("mime_type"),
+                        )
+
+                    else:  # Unsupported or malformed v0 content block
+                        formatted_message.content[idx] = create_non_standard_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
+                            value=block,
                         )
 
         # If we didn't modify the message, skip creating a new instance
