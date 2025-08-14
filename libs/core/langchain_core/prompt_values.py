@@ -108,7 +108,11 @@ class ImageURL(TypedDict, total=False):
 
     detail: Literal["auto", "low", "high"]
     """Specifies the detail level of the image. Defaults to "auto".
-    Can be "auto", "low", or "high"."""
+    Can be "auto", "low", or "high".
+
+    This follows OpenAI's Chat Completion API's image URL format.
+
+    """
 
     url: str
     """Either a URL of the image or the base64 encoded image data."""
@@ -123,7 +127,7 @@ class ImagePromptValue(PromptValue):
 
     def to_string(self) -> str:
         """Return prompt (image URL) as string."""
-        return self.image_url["url"]
+        return self.image_url.get("url", "")
 
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""
