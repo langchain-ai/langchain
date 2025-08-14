@@ -1,7 +1,7 @@
 """Test output_version functionality in BaseChatModel."""
 
 from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from unittest.mock import patch
 
 import pytest
@@ -380,3 +380,191 @@ def test_internal_output_version_parameter_in_signature() -> None:
     astream_sig = inspect.signature(model._astream)
     assert "output_version" in astream_sig.parameters
     assert astream_sig.parameters["output_version"].default == "v0"
+
+
+@pytest.mark.parametrize(
+    ("model_version", "expected"),
+    [
+        ("v0", "v0"),
+        ("v1", "v1"),
+        ("responses/v1", "responses/v1"),
+    ],
+)
+def test_output_version_stored_in_additional_kwargs_invoke(
+    messages: list[BaseMessage], model_version: str, expected: str
+) -> None:
+    """Test that output_version is stored in message additional_kwargs for invoke."""
+    model = MockChatModel(output_version=model_version)
+    response = model.invoke(messages)
+
+    assert "output_version" in response.additional_kwargs
+    assert response.additional_kwargs["output_version"] == expected
+
+
+@pytest.mark.parametrize(
+    ("model_version", "override_version", "expected"),
+    [
+        ("v0", None, "v0"),
+        ("v1", None, "v1"),
+        ("v0", "v2", "v2"),
+        ("v1", "v0", "v0"),
+    ],
+)
+async def test_output_version_ainvoke_with_override(
+    messages: list[BaseMessage],
+    model_version: str,
+    override_version: str,
+    expected: str,
+) -> None:
+    """Test ainvoke with output_version override."""
+    model = MockChatModel(output_version=model_version)
+    response = await model.ainvoke(messages, output_version=override_version)
+
+    assert "output_version" in response.additional_kwargs
+    assert response.additional_kwargs["output_version"] == expected
+
+
+@pytest.mark.parametrize(
+    ("model_version", "override_version", "expected"),
+    [
+        ("v0", None, "v0"),
+        ("v1", None, "v1"),
+        ("v0", "v2", "v2"),
+    ],
+)
+def test_output_version_stored_in_stream_chunks(
+    messages: list[BaseMessage],
+    model_version: str,
+    override_version: str,
+    expected: str,
+) -> None:
+    """Test that output_version is stored in streaming chunk additional_kwargs."""
+    model = MockChatModel(output_version=model_version)
+    chunks = list(model.stream(messages, output_version=override_version))
+
+    for chunk in chunks:
+        assert "output_version" in chunk.additional_kwargs
+        assert chunk.additional_kwargs["output_version"] == expected
+
+
+@pytest.mark.parametrize(
+    ("model_version", "override_version", "expected"),
+    [
+        ("v0", None, "v0"),
+        ("v1", None, "v1"),
+        ("v0", "v2", "v2"),
+    ],
+)
+async def test_output_version_stored_in_astream_chunks(
+    messages: list[BaseMessage],
+    model_version: str,
+    override_version: str,
+    expected: str,
+) -> None:
+    """Test that output_version is stored in async streaming chunk additional_kwargs."""
+    model = MockChatModel(output_version=model_version)
+    chunks = [
+        chunk
+        async for chunk in model.astream(messages, output_version=override_version)
+    ]
+
+    for chunk in chunks:
+        assert "output_version" in chunk.additional_kwargs
+        assert chunk.additional_kwargs["output_version"] == expected
+
+
+@pytest.mark.parametrize("version", ["v0", "v1", "v2", "beta", "responses/v1"])
+def test_output_version_preserved_through_serialization(
+    messages: list[BaseMessage], version: str
+) -> None:
+    """Test that output_version in additional_kwargs persists through serialization."""
+    import json
+
+    model = MockChatModel(output_version="v0")
+    response = model.invoke(messages, output_version=version)
+    assert response.additional_kwargs["output_version"] == version
+
+    # Verify serialization preserves version
+    message_dict = {"additional_kwargs": response.additional_kwargs}
+    serialized = json.dumps(message_dict)
+    deserialized = json.loads(serialized)
+    assert deserialized["additional_kwargs"]["output_version"] == version
+
+
+@pytest.mark.parametrize(
+    ("output_version", "content_type"),
+    [
+        ("v0", str),
+        ("v1", list),
+    ],
+)
+def test_output_version_with_different_content_formats(
+    messages: list[BaseMessage], output_version: str, content_type: type
+) -> None:
+    """Test output_version storage works with different content formats."""
+
+    class CustomChatModel(BaseChatModel):
+        model_config = ConfigDict(extra="allow")
+
+        def _generate(
+            self,
+            messages: list[BaseMessage],  # noqa: ARG002
+            stop: Optional[list[str]] = None,  # noqa: ARG002
+            run_manager: Optional[CallbackManagerForLLMRun] = None,  # noqa: ARG002
+            *,
+            output_version: str = "v0",
+            **kwargs: Any,  # noqa: ARG002
+        ) -> ChatResult:
+            if output_version == "v0":
+                content: Union[str, list[dict[str, Any]]] = "test response"
+            else:
+                content = [{"type": "text", "text": "test response"}]
+            message = AIMessage(content=content)  # type: ignore[arg-type]
+            return ChatResult(generations=[ChatGeneration(message=message)])
+
+        @property
+        def _llm_type(self) -> str:
+            return "custom-test-model"
+
+    model = CustomChatModel()
+    response = model.invoke(messages, output_version=output_version)
+
+    assert response.additional_kwargs["output_version"] == output_version
+    assert isinstance(response.content, content_type)
+
+
+def test_output_version_preserves_existing_additional_kwargs(
+    messages: list[BaseMessage],
+) -> None:
+    """Test that output_version doesn't overwrite existing additional_kwargs."""
+
+    class ModelWithExistingKwargs(BaseChatModel):
+        model_config = ConfigDict(extra="allow")
+
+        def _generate(
+            self,
+            messages: list[BaseMessage],  # noqa: ARG002
+            stop: Optional[list[str]] = None,  # noqa: ARG002
+            run_manager: Optional[CallbackManagerForLLMRun] = None,  # noqa: ARG002
+            *,
+            output_version: str = "v0",  # noqa: ARG002
+            **kwargs: Any,  # noqa: ARG002
+        ) -> ChatResult:
+            message = AIMessage(
+                content="test response",
+                additional_kwargs={"model": "test-model", "temperature": 0.7},
+            )
+            return ChatResult(generations=[ChatGeneration(message=message)])
+
+        @property
+        def _llm_type(self) -> str:
+            return "kwargs-test-model"
+
+    model = ModelWithExistingKwargs(output_version="v1")
+    response = model.invoke(messages)
+
+    # Verify output_version was added and existing kwargs preserved
+    assert response.additional_kwargs["output_version"] == "v1"
+    assert response.additional_kwargs["model"] == "test-model"
+    assert response.additional_kwargs["temperature"] == 0.7
+    assert len(response.additional_kwargs) == 3
