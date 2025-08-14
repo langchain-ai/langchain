@@ -3574,7 +3574,7 @@ def _construct_responses_api_payload(
             verbosity = payload.pop("verbosity", None)
             payload["text_format"] = schema
 
-            text_content = existing_text.copy() if existing_text else {}
+            text_content = existing_text.copy() if isinstance(existing_text, dict) else {}
             if verbosity is not None:
                 text_content["verbosity"] = verbosity
             if text_content and "format" not in text_content:
