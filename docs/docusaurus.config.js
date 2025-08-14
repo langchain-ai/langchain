@@ -143,7 +143,7 @@ const config = {
       },
       announcementBar: {
         content:
-          '<strong>Our <a href="https://academy.langchain.com/courses/ambient-agents/?utm_medium=internal&utm_source=docs&utm_campaign=q2-2025_ambient-agents_co" target="_blank">Building Ambient Agents with LangGraph</a> course is now available on LangChain Academy!</strong>',
+          "Our new LangChain Academy Course Deep Research with LangGraph is now live! <a href='https://www.langchain.com/langsmith/?utm_medium=internal&utm_source=docs&utm_campaign=q3-2025_deep-research-course_co' target='_blank'>Enroll for free</a>.",
         backgroundColor: "#d0c9fe",
       },
       prism: {
