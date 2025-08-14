@@ -709,7 +709,7 @@ packages:
   repo: digitalocean/langchain-gradient
   downloads: 576
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
-- name: moorcheh-langchain-integration
+- name: langchain-moorcheh
   path: .
   repo: moorcheh-ai/moorcheh-langchain-integration
   downloads: 3000
