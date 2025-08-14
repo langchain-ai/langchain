@@ -142,8 +142,7 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content:
-          "Our new LangChain Academy Course Deep Research with LangGraph is now live! <a href='https://www.langchain.com/langsmith/?utm_medium=internal&utm_source=docs&utm_campaign=q3-2025_deep-research-course_co' target='_blank'>Enroll for free</a>.",
+        content: "Our new LangChain Academy Course Deep Research with LangGraph is now live! <a href='https://academy.langchain.com/courses/deep-research-with-langgraph/?utm_medium=internal&utm_source=docs&utm_campaign=q3-2025_deep-research-course_co' target='_blank'>Enroll for free</a>.",
         backgroundColor: "#d0c9fe",
       },
       prism: {
