@@ -3571,8 +3571,16 @@ def _construct_responses_api_payload(
         # Otherwise, we use responses.create.
         strict = payload.pop("strict", None)
         if not payload.get("stream") and _is_pydantic_class(schema):
+            verbosity = payload.pop("verbosity", None)
             payload["text_format"] = schema
+
+            text_content = existing_text.copy() if existing_text else {}
+            if verbosity is not None:
+                text_content["verbosity"] = verbosity
+            if text_content and "format" not in text_content:
+                payload["text"] = text_content
         else:
+            # For responses.create, use response_format in text.format
             if _is_pydantic_class(schema):
                 schema_dict = schema.model_json_schema()
                 strict = True
@@ -3606,11 +3614,19 @@ def _construct_responses_api_payload(
             else:
                 pass
 
-    verbosity = payload.pop("verbosity", None)
-    if verbosity is not None:
-        if "text" not in payload:
-            payload["text"] = {"format": {"type": "text"}}
-        payload["text"]["verbosity"] = verbosity
+            # Handle verbosity for responses.create path
+            verbosity = payload.pop("verbosity", None)
+            if verbosity is not None:
+                if "text" not in payload:
+                    payload["text"] = {"format": {"type": "text"}}
+                payload["text"]["verbosity"] = verbosity
+    else:
+        # No structured output, handle verbosity normally
+        verbosity = payload.pop("verbosity", None)
+        if verbosity is not None:
+            if "text" not in payload:
+                payload["text"] = {"format": {"type": "text"}}
+            payload["text"]["verbosity"] = verbosity
 
     return payload
 
