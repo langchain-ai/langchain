@@ -103,7 +103,7 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
                         new_e = (
-                            {k: v for k, v in e.items() if k != "type"}
+                            {k: v for k, v in e.items() if k not in ("type", "id")}
                             if "type" in e
                             else e
                         )
