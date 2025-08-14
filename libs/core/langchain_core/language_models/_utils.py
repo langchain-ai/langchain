@@ -5,20 +5,20 @@ from typing import TYPE_CHECKING, Literal, Optional, TypedDict
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
 from langchain_core.messages.content_blocks import (
+    KNOWN_BLOCK_TYPES,
     ContentBlock,
     create_audio_block,
     create_file_block,
     create_image_block,
     create_non_standard_block,
     create_plaintext_block,
-    create_text_block,
 )
 
 
 def _is_openai_data_block(block: dict) -> bool:
     """Check if the block contains multimodal data in OpenAI Chat Completions format.
 
-    Does NOT allow ID-style blocks (e.g. ``'file_id'``).
+    Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``).
 
     """
     if block.get("type") == "image_url":
@@ -36,14 +36,14 @@ def _is_openai_data_block(block: dict) -> bool:
     elif block.get("type") == "file":
         if (file := block.get("file")) and isinstance(file, dict):
             file_data = file.get("file_data")
-            if isinstance(file_data, str):
+            file_id = file.get("file_id")
+            if isinstance(file_data, str) or isinstance(file_id, str):
                 return True
-            # We reject for ID-style file blocks since this is OpenAI-specific
 
     elif block.get("type") == "input_audio":
-        if (input_audio := block.get("input_audio")) and isinstance(input_audio, dict):
-            audio_data = input_audio.get("data")
-            audio_format = input_audio.get("format")
+        if (audio := block.get("audio")) and isinstance(audio, dict):
+            audio_data = audio.get("data")
+            audio_format = audio.get("format")
             if isinstance(audio_data, str) and isinstance(audio_format, str):
                 # Both required per OpenAI spec
                 return True
@@ -100,19 +100,13 @@ def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
 def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     """Convert OpenAI image/audio/file content block to v1 standard content block.
 
-    Rejects OpenAI file-ID style blocks (e.g. ``'file_id'``) since they are proprietary
-    to OpenAI's API.
-
     If parsing fails, pass-through.
 
     """
-    # Reject OpenAI format blocks containing file IDs
     if block.get("type") == "file" and "file_id" in block.get("file", {}):
-        msg = (
-            "OpenAI file blocks with 'file_id' are not supported. "
-            "Please use base64-encoded files instead."
+        return create_file_block(
+            file_id=block["file"]["file_id"],
         )
-        raise ValueError(msg)
 
     if block["type"] == "input_audio":
         return create_audio_block(
@@ -123,11 +117,10 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     if (block["type"] == "file") and (
         parsed := _parse_data_uri(block["file"]["file_data"])
     ):
-        base64_data = parsed["data"]
         mime_type = parsed["mime_type"]
         filename = block["file"].get("filename")
         return create_file_block(
-            base64=base64_data,
+            base64=block["file"]["file_data"],
             mime_type=mime_type,
             filename=filename,
         )
@@ -137,7 +130,7 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
         parsed := _parse_data_uri(block["image_url"]["url"])
     ):
         return create_image_block(
-            base64=parsed["data"],
+            base64=block["image_url"]["url"],
             mime_type=parsed["mime_type"],
             detail=block["image_url"].get("detail"),  # Optional, specific to OpenAI
         )
@@ -287,7 +280,7 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         formatted_message = message.model_copy()  # Deep copy
                         # Shallow-copy the content list so we can modify it
                         formatted_message.content = list(formatted_message.content)
-                    formatted_message.content[idx] = create_text_block(text=block)  # type: ignore[call-overload,index]  # mypy confused by .model_copy
+                    formatted_message.content[idx] = {"type": "text", "text": block}  # type: ignore[index]  # mypy confused by .model_copy
 
                 # Handle OpenAI Chat Completions multimodal data blocks
                 if (
@@ -403,9 +396,30 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         )
 
                     else:  # Unsupported or malformed v0 content block
-                        formatted_message.content[idx] = create_non_standard_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy
-                            value=block,
-                        )
+                        formatted_message.content[idx] = {  # type: ignore[index]  # mypy confused by .model_copy
+                            "type": "non_standard",
+                            "value": block,
+                        }
+
+                # Validate a v1 block to pass through
+                elif (
+                    isinstance(block, dict)
+                    and "type" in block
+                    and block["type"] in KNOWN_BLOCK_TYPES
+                ):
+                    # # Handle shared type keys between v1 blocks and Chat Completions
+                    # if block["type"] == "file" and block["file"]:
+                    #     # This is a file ID block
+                    #     formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]  # mypy confused by .model_copy  # noqa: E501
+                    #         id=block["file"]["file_id"],
+                    #     )
+
+                    formatted_message.content[idx] = block  # type: ignore[index]  # mypy confused by .model_copy
+                else:  # Unsupported or unknown content block (not v0), possibly v1
+                    formatted_message.content[idx] = {  # type: ignore[index]  # mypy confused by .model_copy
+                        "type": "non_standard",
+                        "value": block,
+                    }
 
         # If we didn't modify the message, skip creating a new instance
         if formatted_message is message:
