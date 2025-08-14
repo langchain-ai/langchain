@@ -161,12 +161,6 @@ class AIMessage(BaseMessage):
     (e.g., tool calls, usage metadata) added by the LangChain framework.
     """
 
-    example: bool = False
-    """Use to denote that a message is part of an example conversation.
-
-    At the moment, this is ignored by most models. Usage is discouraged.
-    """
-
     tool_calls: list[ToolCall] = []
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: list[InvalidToolCall] = []
@@ -445,10 +439,6 @@ def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
     """Add multiple AIMessageChunks together."""
-    if any(left.example != o.example for o in others):
-        msg = "Cannot concatenate AIMessageChunks with different example values."
-        raise ValueError(msg)
-
     content = merge_content(left.content, *(o.content for o in others))
     additional_kwargs = merge_dicts(
         left.additional_kwargs, *(o.additional_kwargs for o in others)
@@ -506,7 +496,6 @@ def add_ai_message_chunks(
                     break
 
     return left.__class__(
-        example=left.example,
         content=content,
         additional_kwargs=additional_kwargs,
         tool_call_chunks=tool_call_chunks,
