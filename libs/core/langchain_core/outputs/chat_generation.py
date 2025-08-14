@@ -15,15 +15,16 @@ from langchain_core.utils._merge import merge_dicts
 class ChatGeneration(Generation):
     """A single chat generation output.
 
-    A subclass of Generation that represents the response from a chat model
+    A subclass of ``Generation`` that represents the response from a chat model
     that generates chat messages.
 
-    The `message` attribute is a structured representation of the chat message.
-    Most of the time, the message will be of type `AIMessage`.
+    The ``message`` attribute is a structured representation of the chat message.
+    Most of the time, the message will be of type ``AIMessage``.
 
     Users working with chat models will usually access information via either
-    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
+    ``AIMessage`` (returned from runnable interfaces) or ``LLMResult`` (available
     via callbacks).
+
     """
 
     text: str = ""
@@ -31,6 +32,7 @@ class ChatGeneration(Generation):
 
     .. warning::
         SHOULD NOT BE SET DIRECTLY!
+
     """
     message: BaseMessage
     """The message output by the chat model."""
@@ -50,6 +52,7 @@ class ChatGeneration(Generation):
 
         Raises:
             ValueError: If the message is not a string or a list.
+
         """
         text = ""
         if isinstance(self.message.content, str):
@@ -69,9 +72,10 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
-    """ChatGeneration chunk.
+    """``ChatGeneration`` chunk.
 
-    ChatGeneration chunks can be concatenated with other ChatGeneration chunks.
+    ``ChatGeneration`` chunks can be concatenated with other ``ChatGeneration`` chunks.
+
     """
 
     message: BaseMessageChunk
@@ -83,11 +87,11 @@ class ChatGenerationChunk(ChatGeneration):
     def __add__(
         self, other: Union[ChatGenerationChunk, list[ChatGenerationChunk]]
     ) -> ChatGenerationChunk:
-        """Concatenate two ChatGenerationChunks.
+        """Concatenate two ``ChatGenerationChunk``s.
 
         Args:
-            other: The other ChatGenerationChunk or list of ChatGenerationChunks to
-                concatenate.
+            other: The other ``ChatGenerationChunk`` or list of ``ChatGenerationChunks``
+                to concatenate.
         """
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
@@ -116,7 +120,7 @@ class ChatGenerationChunk(ChatGeneration):
 def merge_chat_generation_chunks(
     chunks: list[ChatGenerationChunk],
 ) -> Union[ChatGenerationChunk, None]:
-    """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk."""
+    """Merge a list of ``ChatGenerationChunk``s into single ``ChatGenerationChunk``."""
     if not chunks:
         return None
 
