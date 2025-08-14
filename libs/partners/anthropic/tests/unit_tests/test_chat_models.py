@@ -111,6 +111,45 @@ def test_anthropic_proxy_from_environment() -> None:
         assert llm.anthropic_proxy == explicit_proxy
 
 
+def test_validate_max_tokens() -> None:
+    """Test the validate_max_tokens function through class initialization."""
+    # Test claude-opus-4 models
+    llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
+    assert llm.max_tokens == 32000
+
+    # Test claude-sonnet-4 models
+    llm = ChatAnthropic(model="claude-sonnet-4-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-7-sonnet models
+    llm = ChatAnthropic(model="claude-3-7-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 64000
+
+    # Test claude-3-5-sonnet models
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-5-haiku models
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 8192
+
+    # Test claude-3-5-opus models (should default to 1024)
+    llm = ChatAnthropic(model="claude-3-5-opus-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 1024
+
+    # Test claude-3-haiku models (should default to 1024)
+    llm = ChatAnthropic(model="claude-3-haiku-latest", anthropic_api_key="test")
+    assert llm.max_tokens == 1024
+
+    # Test that existing max_tokens values are preserved
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", max_tokens=2048, anthropic_api_key="test")
+    assert llm.max_tokens == 2048
+
+    # Test that explicitly set max_tokens values are preserved
+    llm = ChatAnthropic(model="claude-3-5-sonnet-latest", max_tokens=4096, anthropic_api_key="test")
+    assert llm.max_tokens == 4096
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
@@ -151,6 +190,7 @@ def test_anthropic_initialization() -> None:
     # Verify that chat anthropic can be initialized using a secret key provided
     # as a parameter rather than an environment variable.
     ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
+
 
 
 def test__format_output() -> None:
