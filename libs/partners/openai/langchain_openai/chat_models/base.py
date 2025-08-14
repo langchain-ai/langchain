@@ -3606,7 +3606,7 @@ def _construct_responses_api_payload(
             # Merge existing text parameters with structured output text
             if existing_text or structured_text:
                 merged_text = {}
-                if existing_text:
+                if existing_text and isinstance(existing_text, dict):
                     merged_text.update(existing_text)
                 if structured_text:
                     merged_text.update(structured_text)
