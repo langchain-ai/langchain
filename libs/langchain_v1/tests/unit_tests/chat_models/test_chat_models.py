@@ -258,6 +258,7 @@ def test_configurable_with_default() -> None:
         "name": None,
         "bound": {
             "name": None,
+            "output_version": "v0",
             "disable_streaming": False,
             "model": "claude-3-7-sonnet-20250219",
             "mcp_servers": None,

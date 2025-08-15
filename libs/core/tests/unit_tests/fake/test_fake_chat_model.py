@@ -77,8 +77,12 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="", additional_kwargs={"foo": 42}),
-        _any_id_ai_message_chunk(content="", additional_kwargs={"bar": 24}),
+        _any_id_ai_message_chunk(
+            content="", additional_kwargs={"foo": 42, "output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="", additional_kwargs={"bar": 24, "output_version": "v0"}
+        ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -97,21 +101,31 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     assert chunks == [
         _any_id_ai_message_chunk(
-            content="", additional_kwargs={"function_call": {"name": "move_file"}}
+            content="",
+            additional_kwargs={
+                "function_call": {"name": "move_file"},
+                "output_version": "v0",
+            },
         ),
         _any_id_ai_message_chunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '{\n  "source_path": "foo"'},
+                "output_version": "v0",
             },
         ),
         _any_id_ai_message_chunk(
-            content="", additional_kwargs={"function_call": {"arguments": ","}}
+            content="",
+            additional_kwargs={
+                "function_call": {"arguments": ","},
+                "output_version": "v0",
+            },
         ),
         _any_id_ai_message_chunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
+                "output_version": "v0",
             },
         ),
     ]
@@ -131,7 +145,8 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
+            "output_version": "v0",
         },
         id=chunks[0].id,
     )
