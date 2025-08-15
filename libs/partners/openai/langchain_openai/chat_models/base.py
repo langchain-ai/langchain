@@ -925,6 +925,9 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            if self.output_version == "v1":
+                generation_chunk.message.content = []
+                generation_chunk.message.response_metadata["output_version"] = "v1"
 
             return generation_chunk
 
