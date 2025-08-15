@@ -41,6 +41,7 @@ from langchain_core.messages import (
     BaseMessageChunk,
     HumanMessage,
     convert_to_messages,
+    convert_to_openai_data_block,
     convert_to_openai_image_block,
     is_data_content_block,
     message_chunk_to_message,
@@ -129,6 +130,19 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
 
                         message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
                             convert_to_openai_image_block(block)
+                        )
+                    elif (
+                        block.get("type") == "file"
+                        and is_data_content_block(block)
+                        and "base64" in block
+                    ):
+                        if message_to_trace is message:
+                            # Shallow copy
+                            message_to_trace = message.model_copy()
+                            message_to_trace.content = list(message_to_trace.content)
+
+                        message_to_trace.content[idx] = convert_to_openai_data_block(  # type: ignore[index]
+                            block
                         )
                     elif len(block) == 1 and "type" not in block:
                         # Tracing assumes all content blocks have a "type" key. Here
@@ -317,6 +331,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     The main reason for this flag is that code might be written using ``stream()`` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
+
+    """
+
+    output_version: str = "v0"
+    """Version of ``AIMessage`` output format to use.
+
+    This field is used to roll-out new output formats for chat model ``AIMessage``s
+    in a backwards-compatible way.
+
+    ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
+    recommend this for new applications.
+
+    All chat models currently support the default of ``'v0'``.
+
+    .. versionadded:: 1.0
 
     """
 

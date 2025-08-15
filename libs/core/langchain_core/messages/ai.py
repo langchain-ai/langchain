@@ -3,16 +3,13 @@
 import json
 import logging
 import operator
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages.base import (
-    BaseMessage,
-    BaseMessageChunk,
-    merge_content,
-)
+from langchain_core.messages import content_blocks as types
+from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -20,23 +17,16 @@ from langchain_core.messages.tool import (
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call as create_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
 
 logger = logging.getLogger(__name__)
 
-
-_LC_ID_PREFIX = "run-"
+_LC_ID_PREFIX = types.LC_ID_PREFIX
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -180,16 +170,42 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-            content: The content of the message.
-            kwargs: Additional arguments to pass to the parent class.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        if content_blocks is not None:
+            # If there are tool calls in content_blocks, but not in tool_calls, add them
+            content_tool_calls = [
+                block for block in content_blocks if block.get("type") == "tool_call"
+            ]
+            if content_tool_calls and "tool_calls" not in kwargs:
+                kwargs["tool_calls"] = content_tool_calls
+
+            super().__init__(
+                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
     @property
     def lc_attributes(self) -> dict:
@@ -198,6 +214,34 @@ class AIMessage(BaseMessage):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        blocks = super().content_blocks
+
+        if self.tool_calls:
+            # Add from tool_calls if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call"
+            }
+            for tool_call in self.tool_calls:
+                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_block: types.ToolCall = {
+                        "type": "tool_call",
+                        "id": id_,
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                    }
+                    if "index" in tool_call:
+                        tool_call_block["index"] = tool_call["index"]
+                    if "extras" in tool_call:
+                        tool_call_block["extras"] = tool_call["extras"]
+                    blocks.append(tool_call_block)
+
+        return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
@@ -227,7 +271,9 @@ class AIMessage(BaseMessage):
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
             values["tool_calls"] = [
-                create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                create_tool_call(
+                    **{k: v for k, v in tc.items() if k not in ("type", "extras")}
+                )
                 for tc in tool_calls
             ]
         if invalid_tool_calls := values.get("invalid_tool_calls"):
@@ -305,6 +351,38 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        blocks = super().content_blocks
+
+        if self.tool_call_chunks:
+            blocks = [
+                block
+                for block in blocks
+                if block["type"] not in ("tool_call", "invalid_tool_call")
+            ]
+            # Add from tool_call_chunks if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call_chunk"
+            }
+            for chunk in self.tool_call_chunks:
+                if (id_ := chunk.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_chunk_block: types.ToolCallChunk = {
+                        "type": "tool_call_chunk",
+                        "id": id_,
+                        "name": chunk["name"],
+                        "args": chunk["args"],
+                        "index": chunk.get("index"),
+                    }
+                    if "extras" in chunk:
+                        tool_call_chunk_block["extras"] = chunk["extras"]  # type: ignore[typeddict-item]
+                    blocks.append(tool_call_chunk_block)
+
+        return blocks
 
     @model_validator(mode="after")
     def init_tool_calls(self) -> Self:
@@ -431,17 +509,27 @@ def add_ai_message_chunks(
 
     chunk_id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non-run-* id
+    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
     for id_ in candidates:
-        if id_ and not id_.startswith(_LC_ID_PREFIX):
+        if (
+            id_
+            and not id_.startswith(types.LC_ID_PREFIX)
+            and not id_.startswith(types.LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non-null
+        # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_:
+            if id_ and id_.startswith(types.LC_ID_PREFIX):
                 chunk_id = id_
                 break
+        else:
+            # third pass: take any remaining id (auto-generated lc_* ids)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
 
     return left.__class__(
         example=left.example,
