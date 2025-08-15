@@ -228,6 +228,16 @@ class AIMessage(BaseMessage):
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
         """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider == "openai":
+            from langchain_core.messages.block_translators import openai
+
+            return openai.translate_content(self)
+
+        # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
         if self.tool_calls:
@@ -365,32 +375,34 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
         """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider == "openai":
+            from langchain_core.messages.block_translators import openai
+
+            return openai.translate_content_chunk(self)
+
+        # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
-        if self.tool_call_chunks:
+        if self.tool_call_chunks and not self.content:
             blocks = [
                 block
                 for block in blocks
                 if block["type"] not in ("tool_call", "invalid_tool_call")
             ]
-            # Add from tool_call_chunks if missing from content
-            content_tool_call_ids = {
-                block.get("id")
-                for block in self.content
-                if isinstance(block, dict) and block.get("type") == "tool_call_chunk"
-            }
-            for chunk in self.tool_call_chunks:
-                if (id_ := chunk.get("id")) and id_ not in content_tool_call_ids:
-                    tool_call_chunk_block: types.ToolCallChunk = {
-                        "type": "tool_call_chunk",
-                        "id": id_,
-                        "name": chunk["name"],
-                        "args": chunk["args"],
-                        "index": chunk.get("index"),
-                    }
-                    if "extras" in chunk:
-                        tool_call_chunk_block["extras"] = chunk["extras"]  # type: ignore[typeddict-item]
-                    blocks.append(tool_call_chunk_block)
+            for tool_call_chunk in self.tool_call_chunks:
+                tc: types.ToolCallChunk = {
+                    "type": "tool_call_chunk",
+                    "id": tool_call_chunk.get("id"),
+                    "name": tool_call_chunk.get("name"),
+                    "args": tool_call_chunk.get("args"),
+                }
+                if (idx := tool_call_chunk.get("index")) is not None:
+                    tc["index"] = idx
+                blocks.append(tc)
 
         return blocks
 

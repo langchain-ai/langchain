@@ -1,6 +1,7 @@
-from langchain_core.messages import AIMessage
+from typing import Optional
+
+from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content_blocks as types
-from langchain_core.messages.block_translators.openai import translate_content
 
 
 def test_convert_to_v1_from_responses() -> None:
@@ -11,8 +12,8 @@ def test_convert_to_v1_from_responses() -> None:
                 "type": "reasoning",
                 "id": "abc234",
                 "summary": [
-                    {"type": "summary_text", "text": "foo "},
-                    {"type": "summary_text", "text": "bar"},
+                    {"type": "summary_text", "text": "foo bar"},
+                    {"type": "summary_text", "text": "baz"},
                 ],
             },
             {
@@ -60,11 +61,12 @@ def test_convert_to_v1_from_responses() -> None:
                 "args": {"location": "New York"},
             },
         ],
+        response_metadata={"model_provider": "openai"},
     )
     expected_content: list[types.ContentBlock] = [
         {"type": "reasoning", "id": "abc123"},
-        {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
-        {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+        {"type": "reasoning", "id": "abc234", "reasoning": "foo bar"},
+        {"type": "reasoning", "id": "abc234", "reasoning": "baz"},
         {
             "type": "tool_call",
             "id": "call_123",
@@ -98,5 +100,127 @@ def test_convert_to_v1_from_responses() -> None:
             "value": {"type": "something_else", "foo": "bar"},
         },
     ]
-    result = translate_content(message)
-    assert result == expected_content
+    assert message.content_blocks == expected_content
+
+    # Check no mutation
+    assert message.content != expected_content
+
+
+def test_convert_to_v1_from_responses_chunk() -> None:
+    chunks = [
+        AIMessageChunk(
+            content=[{"type": "reasoning", "id": "abc123", "summary": [], "index": 0}],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo ", "index": 0},
+                    ],
+                    "index": 1,
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "bar", "index": 0},
+                    ],
+                    "index": 1,
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "baz", "index": 1},
+                    ],
+                    "index": 1,
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+    ]
+    expected_chunks = [
+        AIMessageChunk(
+            content=[{"type": "reasoning", "id": "abc123", "index": "lc_rs_0_0"}],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "reasoning": "foo ",
+                    "index": "lc_rs_1_0",
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "reasoning": "bar",
+                    "index": "lc_rs_1_0",
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+        AIMessageChunk(
+            content=[
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "reasoning": "baz",
+                    "index": "lc_rs_1_1",
+                }
+            ],
+            response_metadata={"model_provider": "openai"},
+        ),
+    ]
+    for chunk, expected in zip(chunks, expected_chunks):
+        assert chunk.content_blocks == expected.content_blocks
+
+    full: Optional[AIMessageChunk] = None
+    for chunk in chunks:
+        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+    assert isinstance(full, AIMessageChunk)
+
+    expected_content = [
+        {"type": "reasoning", "id": "abc123", "summary": [], "index": 0},
+        {
+            "type": "reasoning",
+            "id": "abc234",
+            "summary": [
+                {"type": "summary_text", "text": "foo bar", "index": 0},
+                {"type": "summary_text", "text": "baz", "index": 1},
+            ],
+            "index": 1,
+        },
+    ]
+    assert full.content == expected_content
+
+    expected_content_blocks = [
+        {"type": "reasoning", "id": "abc123", "index": "lc_rs_0_0"},
+        {
+            "type": "reasoning",
+            "id": "abc234",
+            "reasoning": "foo bar",
+            "index": "lc_rs_1_0",
+        },
+        {"type": "reasoning", "id": "abc234", "reasoning": "baz", "index": "lc_rs_1_1"},
+    ]
+    assert full.content_blocks == expected_content_blocks

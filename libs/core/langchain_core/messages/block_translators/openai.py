@@ -37,15 +37,15 @@ def _convert_to_v1_from_chat_completions_chunk(
             content_blocks = []
 
     for tool_call_chunk in chunk.tool_call_chunks:
-        content_blocks.append(
-            {
-                "type": "tool_call_chunk",
-                "id": tool_call_chunk.get("id"),
-                "name": tool_call_chunk.get("name"),
-                "args": tool_call_chunk.get("args"),
-                "index": tool_call_chunk.get("index"),
-            }
-        )
+        tc: types.ToolCallChunk = {
+            "type": "tool_call_chunk",
+            "id": tool_call_chunk.get("id"),
+            "name": tool_call_chunk.get("name"),
+            "args": tool_call_chunk.get("args"),
+        }
+        if (idx := tool_call_chunk.get("index")) is not None:
+            tc["index"] = idx
+        content_blocks.append(tc)
 
     return content_blocks
 
@@ -98,10 +98,17 @@ def _convert_annotation_to_v1(annotation: dict[str, Any]) -> types.Annotation:
         return url_citation
 
     if annotation_type == "file_citation":
-        known_fields = {"type", "title", "cited_text", "start_index", "end_index"}
+        known_fields = {
+            "type",
+            "title",
+            "cited_text",
+            "start_index",
+            "end_index",
+            "filename",
+        }
         document_citation: types.Citation = {"type": "citation"}
         if "filename" in annotation:
-            document_citation["title"] = annotation.pop("filename")
+            document_citation["title"] = annotation["filename"]
         for field, value in annotation.items():
             if field not in known_fields:
                 if "extras" not in document_citation:
@@ -133,7 +140,10 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
         block["extras"][field] = block.pop(field)
 
     if not block["summary"]:
-        _ = block.pop("summary", None)
+        # [{'id': 'rs_...', 'summary': [], 'type': 'reasoning', 'index': 0}]
+        block = {k: v for k, v in block.items() if k != "summary"}
+        if "index" in block:
+            block["index"] = f"lc_rs_{block['index']}_0"
         yield cast("types.ReasoningContentBlock", block)
         return
 
@@ -148,16 +158,21 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
         new_block["reasoning"] = part.get("text", "")
         if idx == 0 and first_only:
             new_block.update(first_only)
+        if "index" in new_block:
+            summary_index = part.get("index", 0)
+            new_block["index"] = f"lc_rs_{new_block['index']}_{summary_index}"
+
         yield cast("types.ReasoningContentBlock", new_block)
 
 
 def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock]:
-    """Mutate a Responses message to v1 format."""
+    """Convert a Responses message to v1 format."""
 
     def _iter_blocks() -> Iterable[types.ContentBlock]:
-        for block in message.content:
-            if not isinstance(block, dict):
+        for raw_block in message.content:
+            if not isinstance(raw_block, dict):
                 continue
+            block = raw_block.copy()
             block_type = block.get("type")
 
             if block_type == "text":
@@ -167,6 +182,8 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     block["annotations"] = [
                         _convert_annotation_to_v1(a) for a in block["annotations"]
                     ]
+                if "index" in block:
+                    block["index"] = f"lc_t_{block['index']}"
                 yield cast("types.TextContentBlock", block)
 
             elif block_type == "reasoning":
@@ -181,7 +198,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if "id" in block:
                     new_block["id"] = block["id"]
                 if "index" in block:
-                    new_block["index"] = block["index"]
+                    new_block["index"] = f"lc_img_{block['index']}"
                 for extra_key in (
                     "status",
                     "background",
@@ -198,10 +215,15 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
 
             elif block_type == "function_call":
                 tool_call_block: Optional[
-                    Union[types.ToolCall, types.InvalidToolCall]
+                    Union[types.ToolCall, types.InvalidToolCall, types.ToolCallChunk]
                 ] = None
                 call_id = block.get("call_id", "")
-                if call_id:
+                if (
+                    isinstance(message, AIMessageChunk)
+                    and len(message.tool_call_chunks) == 1
+                ):
+                    tool_call_block = message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                elif call_id:
                     for tool_call in message.tool_calls or []:
                         if tool_call.get("id") == call_id:
                             tool_call_block = tool_call.copy()
@@ -211,19 +233,21 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                             if invalid_tool_call.get("id") == call_id:
                                 tool_call_block = invalid_tool_call.copy()
                                 break
+                else:
+                    pass
                 if tool_call_block:
                     if "id" in block:
                         if "extras" not in tool_call_block:
                             tool_call_block["extras"] = {}
                         tool_call_block["extras"]["item_id"] = block["id"]
                     if "index" in block:
-                        tool_call_block["index"] = block["index"]
+                        tool_call_block["index"] = f"lc_tc_{block['index']}"
                     yield tool_call_block
 
             elif block_type == "web_search_call":
                 web_search_call = {"type": "web_search_call", "id": block["id"]}
                 if "index" in block:
-                    web_search_call["index"] = block["index"]
+                    web_search_call["index"] = f"lc_wsc_{block['index']}"
                 if (
                     "action" in block
                     and isinstance(block["action"], dict)
@@ -232,7 +256,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 ):
                     web_search_call["query"] = block["action"]["query"]
                 for key in block:
-                    if key not in ("type", "id"):
+                    if key not in ("type", "id", "index"):
                         web_search_call[key] = block[key]
 
                 yield cast("types.WebSearchCall", web_search_call)
@@ -245,8 +269,8 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     for other_block in message.content
                 ):
                     web_search_result = {"type": "web_search_result", "id": block["id"]}
-                    if "index" in block:
-                        web_search_result["index"] = block["index"] + 1
+                    if "index" in block and isinstance(block["index"], int):
+                        web_search_result["index"] = f"lc_wsr_{block['index'] + 1}"
                     yield cast("types.WebSearchResult", web_search_result)
 
             elif block_type == "code_interpreter_call":
@@ -256,10 +280,14 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 }
                 if "code" in block:
                     code_interpreter_call["code"] = block["code"]
-                if "container_id" in block:
-                    code_interpreter_call["container_id"] = block["container_id"]
                 if "index" in block:
-                    code_interpreter_call["index"] = block["index"]
+                    code_interpreter_call["index"] = f"lc_cic_{block['index']}"
+                known_fields = {"type", "id", "language", "code", "extras", "index"}
+                for key in block:
+                    if key not in known_fields:
+                        if "extras" not in code_interpreter_call:
+                            code_interpreter_call["extras"] = {}
+                        code_interpreter_call["extras"][key] = block[key]
 
                 code_interpreter_result = {
                     "type": "code_interpreter_result",
@@ -284,8 +312,8 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
 
                 if "status" in block:
                     code_interpreter_result["status"] = block["status"]
-                if "index" in block:
-                    code_interpreter_result["index"] = block["index"] + 1
+                if "index" in block and isinstance(block["index"], int):
+                    code_interpreter_result["index"] = f"lc_cir_{block['index'] + 1}"
 
                 yield cast("types.CodeInterpreterCall", code_interpreter_call)
                 yield cast("types.CodeInterpreterResult", code_interpreter_result)
@@ -295,7 +323,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
             else:
                 new_block = {"type": "non_standard", "value": block}
                 if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
+                    new_block["index"] = f"lc_ns_{new_block['value'].pop('index')}"
                 yield cast("types.NonStandardContentBlock", new_block)
 
     return list(_iter_blocks())
