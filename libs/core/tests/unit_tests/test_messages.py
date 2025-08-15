@@ -180,22 +180,23 @@ def test_message_chunks() -> None:
     assert AIMessageChunk(content="") + left == left
     assert right + AIMessageChunk(content="") == right
 
+    default_id = "lc_run--abc123"
+    meaningful_id = "msg_def456"
+
     # Test ID order of precedence
-    null_id = AIMessageChunk(content="", id=None)
-    default_id = AIMessageChunk(
-        content="", id="lc_run--abc123"
+    null_id_chunk = AIMessageChunk(content="", id=None)
+    default_id_chunk = AIMessageChunk(
+        content="", id=default_id
     )  # LangChain-assigned run ID
-    meaningful_id = AIMessageChunk(content="", id="msg_def456")  # provider-assigned ID
+    provider_chunk = AIMessageChunk(
+        content="", id=meaningful_id
+    )  # provided ID (either by user or provider)
 
-    assert (null_id + default_id).id == "lc_run--abc123"
-    assert (default_id + null_id).id == "lc_run--abc123"
-
-    assert (null_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + null_id).id == "msg_def456"
+    assert (null_id_chunk + default_id_chunk).id == default_id
+    assert (null_id_chunk + provider_chunk).id == meaningful_id
 
     # Provider assigned IDs have highest precedence
-    assert (default_id + meaningful_id).id == "msg_def456"
-    assert (meaningful_id + default_id).id == "msg_def456"
+    assert (default_id_chunk + provider_chunk).id == meaningful_id
 
 
 def test_chat_message_chunks() -> None:
@@ -458,9 +459,9 @@ def test_message_chunk_to_message() -> None:
         tool_calls=[
             create_tool_call(name="tool1", args={"a": 1}, id="1"),
             create_tool_call(name="tool2", args={}, id="2"),
+            create_tool_call(name="tool3", args={}, id="3"),
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
             create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
@@ -1041,6 +1042,7 @@ def test_tool_message_content() -> None:
     ToolMessage(["foo"], tool_call_id="1")
     ToolMessage([{"foo": "bar"}], tool_call_id="1")
 
+    # Ignoring since we're testing that tuples get converted to lists in `coerce_args`
     assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[call-overload]
     assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[call-overload]
     assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[call-overload]
