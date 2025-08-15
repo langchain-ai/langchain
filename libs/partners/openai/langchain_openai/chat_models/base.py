@@ -3749,11 +3749,13 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     {
                         "type": "message",
                         "role": "assistant",
-                        "content": [{
-                            "type": "output_text",
-                            "text": msg["content"],
-                            "annotations": [],
-                        }],
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": msg["content"],
+                                "annotations": [],
+                            }
+                        ],
                     }
                 )
 
