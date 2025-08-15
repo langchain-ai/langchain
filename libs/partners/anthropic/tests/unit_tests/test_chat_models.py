@@ -111,8 +111,8 @@ def test_anthropic_proxy_from_environment() -> None:
         assert llm.anthropic_proxy == explicit_proxy
 
 
-def test_validate_max_tokens() -> None:
-    """Test the validate_max_tokens function through class initialization."""
+def test_set_default_max_tokens() -> None:
+    """Test the set_default_max_tokens function."""
     # Test claude-opus-4 models
     llm = ChatAnthropic(model="claude-opus-4-20250514", anthropic_api_key="test")
     assert llm.max_tokens == 32000

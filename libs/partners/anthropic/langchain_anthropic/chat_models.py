@@ -73,11 +73,14 @@ _MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
 _FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
 
 
-def _default_max_tokens_for(model: str) -> int:
+def _default_max_tokens_for(model: str | None) -> int:
     """Return the default max output tokens for an Anthropic model (with fallback).
 
     Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
     """
+    if not model:
+        return _FALLBACK_MAX_OUTPUT_TOKENS
+        
     parts = model.split("-")
     family = "-".join(parts[:-1]) if len(parts) > 1 else model
 
@@ -1368,10 +1371,11 @@ class ChatAnthropic(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_max_tokens(cls, values: dict[str, Any]) -> Any:
-        """Validate max_tokens."""
-        if values.get("max_tokens") is None and values.get("model"):
-            values["max_tokens"] = _default_max_tokens_for(values["model"])
+    def set_default_max_tokens(cls, values: dict[str, Any]) -> Any:
+        """Set default max_tokens."""
+        if values.get("max_tokens") is None:
+            model = values.get("model") or values.get("model_name")
+            values["max_tokens"] = _default_max_tokens_for(model)
         return values
 
     @model_validator(mode="before")

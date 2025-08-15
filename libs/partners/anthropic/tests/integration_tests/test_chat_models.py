@@ -901,7 +901,10 @@ def test_image_tool_calling() -> None:
 
 @pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")  # type: ignore[call-arg]
+    llm = ChatAnthropic(
+        model="claude-3-5-sonnet-latest",  # type: ignore[call-arg]
+        max_tokens=1024
+    )
 
     tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
     llm_with_tools = llm.bind_tools([tool])
