@@ -939,6 +939,19 @@ def trim_messages(
     msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
     raise ValueError(msg)
 
+@overload
+def convert_to_openai_messages(
+    messages: MessageLikeRepresentation,
+    *,
+    text_format: Literal["string", "block"] = "string",
+) -> dict: ...
+
+@overload
+def convert_to_openai_messages(
+    messages: Sequence[MessageLikeRepresentation],
+    *,
+    text_format: Literal["string", "block"] = "string",
+) -> list[dict]: ...
 
 def convert_to_openai_messages(
     messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
