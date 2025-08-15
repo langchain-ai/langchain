@@ -148,7 +148,7 @@ Used for:
 """
 
 
-def _ensure_id(id_val: Optional[str]) -> str:
+def ensure_id(id_val: Optional[str]) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
 
     Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
@@ -1106,7 +1106,7 @@ def create_text_block(
     block = TextContentBlock(
         type="text",
         text=text,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
     if annotations is not None:
         block["annotations"] = annotations
@@ -1156,7 +1156,7 @@ def create_image_block(
         msg = "Must provide one of: url, base64, or file_id"
         raise ValueError(msg)
 
-    block = ImageContentBlock(type="image", id=_ensure_id(id))
+    block = ImageContentBlock(type="image", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1216,7 +1216,7 @@ def create_video_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = VideoContentBlock(type="video", id=_ensure_id(id))
+    block = VideoContentBlock(type="video", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1276,7 +1276,7 @@ def create_audio_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = AudioContentBlock(type="audio", id=_ensure_id(id))
+    block = AudioContentBlock(type="audio", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1336,7 +1336,7 @@ def create_file_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = FileContentBlock(type="file", id=_ensure_id(id))
+    block = FileContentBlock(type="file", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1390,7 +1390,7 @@ def create_plaintext_block(
     block = PlainTextContentBlock(
         type="text-plain",
         mime_type="text/plain",
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if text is not None:
@@ -1443,7 +1443,7 @@ def create_tool_call(
         type="tool_call",
         name=name,
         args=args,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:
@@ -1480,7 +1480,7 @@ def create_reasoning_block(
     block = ReasoningContentBlock(
         type="reasoning",
         reasoning=reasoning or "",
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:
@@ -1521,7 +1521,7 @@ def create_citation(
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
-    block = Citation(type="citation", id=_ensure_id(id))
+    block = Citation(type="citation", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1565,7 +1565,7 @@ def create_non_standard_block(
     block = NonStandardContentBlock(
         type="non_standard",
         value=value,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:
