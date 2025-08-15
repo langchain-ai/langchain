@@ -80,7 +80,7 @@ def _default_max_tokens_for(model: str | None) -> int:
     """
     if not model:
         return _FALLBACK_MAX_OUTPUT_TOKENS
-        
+
     parts = model.split("-")
     family = "-".join(parts[:-1]) if len(parts) > 1 else model
 
