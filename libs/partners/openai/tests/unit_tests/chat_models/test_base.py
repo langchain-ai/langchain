@@ -2153,7 +2153,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
 
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
-        {"type": "output_text", "text": "I'll check the weather for you."}
+        {"type": "output_text", "text": "I'll check the weather for you.", "annotations": []}
     ]
 
     assert result[1]["type"] == "function_call"
@@ -2255,6 +2255,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
         {
             "type": "output_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
         }
     ]
 
