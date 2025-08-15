@@ -83,3 +83,4 @@ concepts behind the LangChain framework.
 - [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.
+- [Chat LangChain](https://chat.langchain.com/): Ask questions & chat with our documentation
