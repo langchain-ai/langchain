@@ -260,13 +260,9 @@ async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
@@ -296,13 +292,9 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
@@ -324,13 +316,9 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
