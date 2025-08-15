@@ -1,12 +1,14 @@
 """**sys_info** prints information about the system and langchain packages for debugging purposes."""  # noqa: E501
 
+import pkgutil
+import platform
+import sys
 from collections.abc import Sequence
+from importlib import metadata, util
 
 
 def _get_sub_deps(packages: Sequence[str]) -> list[str]:
     """Get any specified sub-dependencies."""
-    from importlib import metadata
-
     sub_deps = set()
     underscored_packages = {pkg.replace("-", "_") for pkg in packages}
 
@@ -33,11 +35,6 @@ def print_sys_info(*, additional_pkgs: Sequence[str] = ()) -> None:
     Args:
         additional_pkgs: Additional packages to include in the output.
     """
-    import pkgutil
-    import platform
-    import sys
-    from importlib import metadata, util
-
     # Packages that do not start with "langchain" prefix.
     other_langchain_packages = [
         "langserve",

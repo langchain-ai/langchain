@@ -4,6 +4,13 @@ from typing import Any, Optional
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
+try:
+    import pygraphviz as pgv  # type: ignore[import-not-found]
+
+    _HAS_PYGRAPHVIZ = True
+except ImportError:
+    _HAS_PYGRAPHVIZ = False
+
 
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
@@ -134,11 +141,9 @@ class PngDrawer:
         :param graph: The graph to draw
         :param output_path: The path to save the PNG. If None, PNG bytes are returned.
         """
-        try:
-            import pygraphviz as pgv  # type: ignore[import-not-found]
-        except ImportError as exc:
+        if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
-            raise ImportError(msg) from exc
+            raise ImportError(msg)
 
         # Create a directed graph
         viz = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)
