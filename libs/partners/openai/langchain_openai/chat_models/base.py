@@ -69,6 +69,10 @@ from langchain_core.messages.ai import (
     OutputTokenDetails,
     UsageMetadata,
 )
+from langchain_core.messages.block_translators.openai import (
+    translate_content,
+    translate_content_chunk,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -934,6 +938,7 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info = {**base_generation_info} if base_generation_info else {}
 
         if finish_reason := choice.get("finish_reason"):
+            generation_info["model_provider"] = "openai"
             generation_info["finish_reason"] = finish_reason
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
@@ -948,6 +953,13 @@ class BaseChatOpenAI(BaseChatModel):
 
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
+
+        if self.output_version == "v1":
+            message_chunk.content = cast(
+                "Union[str, list[Union[str, dict]]]",
+                translate_content_chunk(cast(AIMessageChunk, message_chunk)),
+            )
+            message_chunk.response_metadata["output_version"] = "v1"
 
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
@@ -1313,6 +1325,13 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+
+        if self.output_version == "v1":
+            generations[0].message.content = cast(
+                Union[str, list[Union[str, dict]]],
+                translate_content(cast(AIMessage, generations[0].message)),
+            )
+            generations[0].message.response_metadata["output_version"] = "v1"
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -4069,6 +4088,11 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
+    elif output_version == "v1":
+        message.content = cast(
+            Union[str, list[Union[str, dict]]], translate_content(message)
+        )
+        message.response_metadata["output_version"] = "v1"
     else:
         pass
     return ChatResult(generations=[ChatGeneration(message=message)])
@@ -4297,6 +4321,11 @@ def _convert_responses_chunk_to_generation_chunk(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
         )
+    elif output_version == "v1":
+        message.content = cast(
+            Union[str, list[Union[str, dict]]], translate_content_chunk(message)
+        )
+        message.response_metadata["output_version"] = "v1"
     else:
         pass
     return (

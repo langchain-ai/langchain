@@ -414,10 +414,18 @@ def _consolidate_calls(
                 for key in ("code", "container_id"):
                     if key in current:
                         collapsed[key] = current[key]
+                    elif key in current.get("extras", {}):
+                        collapsed[key] = current["extras"][key]
+                    else:
+                        pass
 
                 for key in ("outputs", "status"):
                     if key in nxt:
                         collapsed[key] = nxt[key]
+                    elif key in nxt.get("extras", {}):
+                        collapsed[key] = nxt["extras"][key]
+                    else:
+                        pass
                 collapsed["type"] = "code_interpreter_call"
 
             yield collapsed
