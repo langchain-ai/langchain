@@ -1294,3 +1294,104 @@ def test_streaming_token_counting_fallback() -> None:
     assert msg_chunk.usage_metadata["input_tokens"] == 0
     assert msg_chunk.usage_metadata["output_tokens"] == 25
     assert msg_chunk.usage_metadata["total_tokens"] == 25
+
+
+def test_streaming_token_counting_cumulative_input_tokens() -> None:
+    """Test streaming handles cumulative input tokens from `message_delta` events.
+
+    Validates that when Anthropic sends updated cumulative input tokens in
+    `message_delta` events (e.g., due to MCP tool calling), the implementation
+    prioritizes these updated counts over stored input usage.
+
+    """
+    # Mock `message_start` event with initial usage
+    message_start_event = SimpleNamespace(
+        type="message_start",
+        message=SimpleNamespace(
+            usage=Usage(
+                input_tokens=100,  # Initial input tokens
+                output_tokens=1,
+                cache_creation_input_tokens=0,
+                cache_read_input_tokens=0,
+            ),
+            model="claude-opus-4-1-20250805",
+        ),
+    )
+
+    # Mock `message_delta` event with updated cumulative input tokens
+    # This happens when MCP tools are called mid-stream
+    message_delta_event = SimpleNamespace(
+        type="message_delta",
+        usage=MessageDeltaUsage(
+            output_tokens=50,
+            input_tokens=120,  # Cumulative count increased due to tool calling
+            cache_creation_input_tokens=None,
+            cache_read_input_tokens=None,
+        ),
+        delta=SimpleNamespace(
+            stop_reason="end_turn",
+            stop_sequence=None,
+        ),
+    )
+
+    # Store input usage from `message_start`
+    _, _, stored_usage = _make_message_chunk_from_anthropic_event(
+        message_start_event,  # type: ignore[arg-type]
+        stream_usage=True,
+        coerce_content_to_string=True,
+        stored_input_usage=None,
+    )
+
+    # Test `message_delta` with cumulative input tokens
+    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
+        message_delta_event,  # type: ignore[arg-type]
+        stream_usage=True,
+        coerce_content_to_string=True,
+        stored_input_usage=stored_usage,
+    )
+
+    assert msg_chunk is not None
+    assert msg_chunk.usage_metadata is not None
+
+    # Should use the cumulative input tokens from event (120) not stored (100)
+    assert msg_chunk.usage_metadata["input_tokens"] == 120
+    assert msg_chunk.usage_metadata["output_tokens"] == 50
+    assert msg_chunk.usage_metadata["total_tokens"] == 170
+
+
+def test_streaming_token_counting_cumulative_fallback() -> None:
+    """Test fallback handles cumulative input tokens from message_delta events.
+
+    When no stored usage is available, validates that cumulative input tokens
+    from the message_delta event are still properly used instead of defaulting to 0.
+    """
+    # Mock `message_delta` event with cumulative input tokens but no stored usage
+    message_delta_event = SimpleNamespace(
+        type="message_delta",
+        usage=MessageDeltaUsage(
+            output_tokens=30,
+            input_tokens=85,  # Cumulative input tokens in the event
+            cache_creation_input_tokens=None,
+            cache_read_input_tokens=None,
+        ),
+        delta=SimpleNamespace(
+            stop_reason="end_turn",
+            stop_sequence=None,
+        ),
+    )
+
+    # Test `message_delta` without stored usage - should use event's input tokens
+    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
+        message_delta_event,  # type: ignore[arg-type]
+        stream_usage=True,
+        coerce_content_to_string=True,
+        stored_input_usage=None,  # No stored usage
+    )
+
+    assert msg_chunk is not None
+    assert msg_chunk.usage_metadata is not None
+
+    # Should use cumulative input tokens from event, not fallback to 0
+    assert msg_chunk.usage_metadata["input_tokens"] == 85  # From event
+    assert msg_chunk.usage_metadata["output_tokens"] == 30
+    assert msg_chunk.usage_metadata["total_tokens"] == 115
