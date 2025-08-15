@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
 
+from langchain_core.language_models._utils import _convert_openai_format_to_data_block
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content_blocks as types
 from langchain_core.utils import get_bolded_text
@@ -132,6 +133,12 @@ class BaseMessage(Serializable):
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
+                if item_type in types.KNOWN_OPENAI_BLOCK_TYPES:
+                    # OpenAI-specific content blocks
+                    if item_type in {"image_url", "input_audio"}:
+                        blocks.append(_convert_openai_format_to_data_block(item))
+                    else:
+                        blocks.append(cast("types.ContentBlock", item))
                 if item_type not in types.KNOWN_BLOCK_TYPES:
                     msg = (
                         f"Non-standard content block type '{item_type}'. Ensure "
