@@ -131,6 +131,7 @@ def create_base_retry_decorator(
 
 def _resolve_cache(*, cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     """Resolve the cache."""
+    llm_cache: Optional[BaseCache]
     if isinstance(cache, BaseCache):
         llm_cache = cache
     elif cache is None:
