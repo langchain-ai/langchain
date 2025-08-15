@@ -436,7 +436,7 @@ def test_stream_reasoning_summary(
     else:
         # v1
         total_reasoning_blocks = 0
-        for block in response_1.content:
+        for block in response_1.content_blocks:
             if block["type"] == "reasoning":
                 total_reasoning_blocks += 1
                 assert isinstance(block["id"], str) and block["id"].startswith("rs_")
@@ -999,14 +999,16 @@ def test_verbosity_parameter() -> None:
     assert response.content
 
 
-@pytest.mark.vcr()
-def test_custom_tool() -> None:
+@pytest.mark.default_cassette("test_custom_tool.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_custom_tool(output_version: Literal["responses/v1", "v1"]) -> None:
     @custom_tool
     def execute_code(code: str) -> str:
         """Execute python code."""
         return "27"
 
-    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1").bind_tools(
+    llm = ChatOpenAI(model="gpt-5", output_version=output_version).bind_tools(
         [execute_code]
     )
 
