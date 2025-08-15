@@ -1047,6 +1047,7 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 def convert_to_openai_data_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
+    # TODO: make sure this supports new v1
     if block["type"] == "image":
         formatted_block = convert_to_openai_image_block(block)
 
