@@ -188,13 +188,15 @@ def test_message_chunks() -> None:
     default_id_chunk = AIMessageChunk(
         content="", id=default_id
     )  # LangChain-assigned run ID
-    meaningful_id = AIMessageChunk(content="", id=meaningful_id)  # provider-assigned ID
+    provider_chunk = AIMessageChunk(
+        content="", id=meaningful_id
+    )  # provided ID (either by user or provider)
 
     assert (null_id_chunk + default_id_chunk).id == default_id
-    assert (null_id_chunk + meaningful_id).id == meaningful_id
+    assert (null_id_chunk + provider_chunk).id == meaningful_id
 
     # Provider assigned IDs have highest precedence
-    assert (default_id_chunk + meaningful_id).id == meaningful_id
+    assert (default_id_chunk + provider_chunk).id == meaningful_id
 
 
 def test_chat_message_chunks() -> None:
