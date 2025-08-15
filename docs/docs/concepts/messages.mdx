@@ -254,7 +254,9 @@ Messages receive IDs in the following scenarios:
 
 **Automatically assigned by LangChain:**
 - When generated through chat model invocation (`.invoke()`, `.stream()`, `.astream()`) with an active run manager/tracing context
-- IDs follow the format: `run-{uuid}` (e.g., `run-ba48f958-6402-41a5-b461-5e250a4ebd36-0`)
+- IDs follow the format:
+    - `run-$RUN_ID` (e.g., `run-ba48f958-6402-41a5-b461-5e250a4ebd36-0`)
+    - `run-$RUN_ID-$IDX` (e.g., `run-ba48f958-6402-41a5-b461-5e250a4ebd36-1`) when there are multiple generations from a single chat model invocation.
 
 **Provider-assigned IDs (highest priority):**
 - When the model provider assigns its own ID to the message
