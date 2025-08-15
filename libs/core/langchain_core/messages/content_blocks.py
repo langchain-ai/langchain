@@ -1115,8 +1115,9 @@ def create_image_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1174,8 +1175,9 @@ def create_video_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1233,8 +1235,9 @@ def create_audio_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1292,8 +1295,9 @@ def create_file_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1350,8 +1354,9 @@ def create_plaintext_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1390,8 +1395,9 @@ def create_tool_call(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1426,8 +1432,9 @@ def create_reasoning_block(
     if index is not None:
         block["index"] = index
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1473,8 +1480,9 @@ def create_citation(
     if cited_text is not None:
         block["cited_text"] = cited_text
 
-    if kwargs:
-        block["extras"] = kwargs
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 

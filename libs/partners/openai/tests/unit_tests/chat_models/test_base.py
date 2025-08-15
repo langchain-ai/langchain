@@ -647,7 +647,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1
         assert call_messages[0]["role"] == "user"
-        assert call_messages[0]["content"] == "Foo"
+        assert call_messages[0]["content"] == [{"type": "text", "text": "Foo"}]
         assert call_messages[0]["name"] == "Katie"
 
         # check return type has name
