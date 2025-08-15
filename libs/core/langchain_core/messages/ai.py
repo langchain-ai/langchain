@@ -39,7 +39,6 @@ class InputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full input token count. Does *not* need to have all keys.
 
     Example:
-
         .. code-block:: python
 
             {
@@ -75,7 +74,6 @@ class OutputTokenDetails(TypedDict, total=False):
     Does *not* need to sum to full output token count. Does *not* need to have all keys.
 
     Example:
-
         .. code-block:: python
 
             {
@@ -103,7 +101,6 @@ class UsageMetadata(TypedDict):
     This is a standard representation of token usage that is consistent across models.
 
     Example:
-
         .. code-block:: python
 
             {
