@@ -2315,10 +2315,16 @@ def _make_message_chunk_from_anthropic_event(
             )
     elif event.type == "message_delta" and stream_usage:
         # Create usage metadata combining stored input usage with final output usage
+        #
+        # Per Anthropic docs: "The token counts shown in the usage field of the
+        # message_delta event are cumulative." Thus, when MCP tools are called
+        # mid-stream, `input_tokens` may be updated with a higher cumulative count.
+        # We prioritize `event.usage.input_tokens` when available to handle this case.
         if stored_input_usage is not None:
             # Create a combined usage object that mimics the Anthropic Usage structure
             combined_usage = _CombinedUsage(
-                input_tokens=getattr(stored_input_usage, "input_tokens", 0),
+                input_tokens=event.usage.input_tokens
+                or getattr(stored_input_usage, "input_tokens", 0),
                 output_tokens=event.usage.output_tokens,
                 cache_creation_input_tokens=getattr(
                     stored_input_usage, "cache_creation_input_tokens", None
@@ -2334,9 +2340,10 @@ def _make_message_chunk_from_anthropic_event(
         else:
             # Fallback to just output tokens if no stored usage
             usage_metadata = UsageMetadata(
-                input_tokens=0,
+                input_tokens=event.usage.input_tokens or 0,
                 output_tokens=event.usage.output_tokens,
-                total_tokens=event.usage.output_tokens,
+                total_tokens=(event.usage.input_tokens or 0)
+                + event.usage.output_tokens,
             )
         message_chunk = AIMessageChunk(
             content="",
