@@ -26,6 +26,8 @@ from langchain_core.utils.usage import _dict_int_op
 
 logger = logging.getLogger(__name__)
 
+_LC_ID_PREFIX = types.LC_ID_PREFIX
+
 
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
