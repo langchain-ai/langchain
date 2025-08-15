@@ -647,7 +647,7 @@ class ImageContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the image data itself."""
 
 
 class VideoContentBlock(TypedDict):
@@ -694,7 +694,7 @@ class VideoContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the video data itself."""
 
 
 class AudioContentBlock(TypedDict):
@@ -740,7 +740,7 @@ class AudioContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the audio data itself."""
 
 
 class PlainTextContentBlock(TypedDict):
@@ -796,7 +796,7 @@ class PlainTextContentBlock(TypedDict):
     """Context for the text, e.g., a description or summary of the text's content."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the data itself."""
 
 
 class FileContentBlock(TypedDict):
@@ -850,7 +850,7 @@ class FileContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the file data itself."""
 
 
 # Future modalities to consider:
