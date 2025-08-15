@@ -1050,8 +1050,11 @@ class AgentExecutor(Chain):
     loop.
 
     Setting to 'None' could lead to an infinite loop."""
+<<<<<<< HEAD
     metadata : Optional[dict[str, Any]] = None
     "metadata for organisations to pass unique values"
+=======
+>>>>>>> parent of 66ac49544 (changes for metadata)
     max_execution_time: Optional[float] = None
     """The maximum amount of wall clock time to spend in the execution
     loop.
@@ -1527,7 +1530,6 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
-                metadata = self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
             yield AgentStep(action=output, observation=observation)
@@ -1587,7 +1589,6 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
-                metadata = self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
         else:
@@ -1600,7 +1601,6 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
-                metadata = self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
         return AgentStep(action=agent_action, observation=observation)

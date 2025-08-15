@@ -955,9 +955,6 @@ class ChildTool(BaseTool):
         status = "success"
         error_to_raise: Optional[Union[Exception, KeyboardInterrupt]] = None
         try:
-            if isinstance(tool_input, dict):
-                if metadata:
-                    tool_input["metadata"] = metadata
             tool_args, tool_kwargs = self._to_args_and_kwargs(tool_input, tool_call_id)
             child_config = patch_config(config, callbacks=run_manager.get_child())
             with set_config_context(child_config) as context:
