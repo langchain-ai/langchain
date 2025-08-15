@@ -1,3 +1,5 @@
+"""This module checks if the given python files can be imported without error."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader
@@ -8,8 +10,8 @@ if __name__ == "__main__":
     for file in files:
         try:
             SourceFileLoader("x", file).load_module()
-        except Exception:
-            has_faillure = True
+        except Exception:  # noqa: PERF203
+            has_failure = True
             print(file)  # noqa: T201
             traceback.print_exc()
             print()  # noqa: T201

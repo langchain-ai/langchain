@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import logging
-import os
-from typing import Any, Callable, Dict, List, Mapping, Optional, Union
+from collections.abc import Awaitable, Mapping
+from typing import Any, Callable, Optional, Union, cast
 
 import openai
-from langchain_core.pydantic_v1 import Field, SecretStr, root_validator
-from langchain_core.utils import convert_to_secret_str, get_from_dict_or_env
+from langchain_core.language_models import LangSmithParams
+from langchain_core.utils import from_env, secret_from_env
+from pydantic import Field, SecretStr, model_validator
+from typing_extensions import Self
 
 from langchain_openai.llms.base import BaseOpenAI
 
@@ -28,113 +30,110 @@ class AzureOpenAI(BaseOpenAI):
             from langchain_openai import AzureOpenAI
 
             openai = AzureOpenAI(model_name="gpt-3.5-turbo-instruct")
+
     """
 
-    azure_endpoint: Union[str, None] = None
+    azure_endpoint: Optional[str] = Field(
+        default_factory=from_env("AZURE_OPENAI_ENDPOINT", default=None)
+    )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
 
-        Example: `https://example-resource.azure.openai.com/`
+        Example: ``'https://example-resource.azure.openai.com/'``
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
+    """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
-        Note: this means you won't be able to use non-deployment endpoints.
+
+        .. note::
+            This means you won't be able to use non-deployment endpoints.
+
     """
-    openai_api_version: str = Field(default="", alias="api_version")
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided."""
-    openai_api_key: Optional[SecretStr] = Field(default=None, alias="api_key")
-    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
-    azure_ad_token: Optional[SecretStr] = None
+    openai_api_version: Optional[str] = Field(
+        alias="api_version",
+        default_factory=from_env("OPENAI_API_VERSION", default=None),
+    )
+    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided."""
+    # Check OPENAI_KEY for backwards compatibility.
+    # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
+    # other forms of azure credentials.
+    openai_api_key: Optional[SecretStr] = Field(
+        alias="api_key",
+        default_factory=secret_from_env(
+            ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
+        ),
+    )
+    azure_ad_token: Optional[SecretStr] = Field(
+        default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
+    )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
 
-        For more: 
-        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
-    """  # noqa: E501
+        `For more, see this page <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>.`__
+    """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
-    openai_api_type: str = ""
-    """Legacy, for openai<1.0.0 support."""
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
+    """
+    openai_api_type: Optional[str] = Field(
+        default_factory=from_env("OPENAI_API_TYPE", default="azure")
+    )
+    """Legacy, for ``openai<1.0.0`` support."""
     validate_base_url: bool = True
-    """For backwards compatibility. If legacy val openai_api_base is passed in, try to 
+    """For backwards compatibility. If legacy val openai_api_base is passed in, try to
         infer if it is a base_url or azure_endpoint and update accordingly.
     """
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "llms", "openai"]
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @property
+    def lc_secrets(self) -> dict[str, str]:
+        return {
+            "openai_api_key": "AZURE_OPENAI_API_KEY",
+            "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
+        }
+
+    @classmethod
+    def is_lc_serializable(cls) -> bool:
+        """Return whether this model can be serialized by LangChain."""
+        return True
+
+    @model_validator(mode="after")
+    def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
-        if values["n"] < 1:
+        if self.n < 1:
             raise ValueError("n must be at least 1.")
-        if values["streaming"] and values["n"] > 1:
+        if self.streaming and self.n > 1:
             raise ValueError("Cannot stream results when n > 1.")
-        if values["streaming"] and values["best_of"] > 1:
+        if self.streaming and self.best_of > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
-
-        # Check OPENAI_KEY for backwards compatibility.
-        # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
-        # other forms of azure credentials.
-        openai_api_key = (
-            values["openai_api_key"]
-            or os.getenv("AZURE_OPENAI_API_KEY")
-            or os.getenv("OPENAI_API_KEY")
-        )
-        values["openai_api_key"] = (
-            convert_to_secret_str(openai_api_key) if openai_api_key else None
-        )
-
-        values["azure_endpoint"] = values["azure_endpoint"] or os.getenv(
-            "AZURE_OPENAI_ENDPOINT"
-        )
-        azure_ad_token = values["azure_ad_token"] or os.getenv("AZURE_OPENAI_AD_TOKEN")
-        values["azure_ad_token"] = (
-            convert_to_secret_str(azure_ad_token) if azure_ad_token else None
-        )
-        values["openai_api_base"] = values["openai_api_base"] or os.getenv(
-            "OPENAI_API_BASE"
-        )
-        values["openai_proxy"] = get_from_dict_or_env(
-            values,
-            "openai_proxy",
-            "OPENAI_PROXY",
-            default="",
-        )
-        values["openai_organization"] = (
-            values["openai_organization"]
-            or os.getenv("OPENAI_ORG_ID")
-            or os.getenv("OPENAI_ORGANIZATION")
-        )
-        values["openai_api_version"] = values["openai_api_version"] or os.getenv(
-            "OPENAI_API_VERSION"
-        )
-        values["openai_api_type"] = get_from_dict_or_env(
-            values, "openai_api_type", "OPENAI_API_TYPE", default="azure"
-        )
         # For backwards compatibility. Before openai v1, no distinction was made
         # between azure_endpoint and base_url (openai_api_base).
-        openai_api_base = values["openai_api_base"]
-        if openai_api_base and values["validate_base_url"]:
+        openai_api_base = self.openai_api_base
+        if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
-                values["openai_api_base"] = (
-                    values["openai_api_base"].rstrip("/") + "/openai"
+                self.openai_api_base = (
+                    cast(str, self.openai_api_base).rstrip("/") + "/openai"
                 )
                 raise ValueError(
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
                 )
-            if values["deployment_name"]:
+            if self.deployment_name:
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment_name` (or alias "
                     "`azure_deployment`) is specified then "
@@ -142,37 +141,48 @@ class AzureOpenAI(BaseOpenAI):
                     "Instead use `deployment_name` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
-                values["deployment_name"] = None
-        client_params = {
-            "api_version": values["openai_api_version"],
-            "azure_endpoint": values["azure_endpoint"],
-            "azure_deployment": values["deployment_name"],
-            "api_key": values["openai_api_key"].get_secret_value()
-            if values["openai_api_key"]
+                self.deployment_name = None
+        client_params: dict = {
+            "api_version": self.openai_api_version,
+            "azure_endpoint": self.azure_endpoint,
+            "azure_deployment": self.deployment_name,
+            "api_key": self.openai_api_key.get_secret_value()
+            if self.openai_api_key
             else None,
-            "azure_ad_token": values["azure_ad_token"].get_secret_value()
-            if values["azure_ad_token"]
+            "azure_ad_token": self.azure_ad_token.get_secret_value()
+            if self.azure_ad_token
             else None,
-            "azure_ad_token_provider": values["azure_ad_token_provider"],
-            "organization": values["openai_organization"],
-            "base_url": values["openai_api_base"],
-            "timeout": values["request_timeout"],
-            "max_retries": values["max_retries"],
-            "default_headers": values["default_headers"],
-            "default_query": values["default_query"],
+            "azure_ad_token_provider": self.azure_ad_token_provider,
+            "organization": self.openai_organization,
+            "base_url": self.openai_api_base,
+            "timeout": self.request_timeout,
+            "max_retries": self.max_retries,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
+            "default_query": self.default_query,
         }
-        if not values.get("client"):
-            sync_specific = {"http_client": values["http_client"]}
-            values["client"] = openai.AzureOpenAI(
-                **client_params, **sync_specific
+        if not self.client:
+            sync_specific = {"http_client": self.http_client}
+            self.client = openai.AzureOpenAI(
+                **client_params,
+                **sync_specific,  # type: ignore[arg-type]
             ).completions
-        if not values.get("async_client"):
-            async_specific = {"http_client": values["http_async_client"]}
-            values["async_client"] = openai.AsyncAzureOpenAI(
-                **client_params, **async_specific
+        if not self.async_client:
+            async_specific = {"http_client": self.http_async_client}
+
+            if self.azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
+
+            self.async_client = openai.AsyncAzureOpenAI(
+                **client_params,
+                **async_specific,  # type: ignore[arg-type]
             ).completions
 
-        return values
+        return self
 
     @property
     def _identifying_params(self) -> Mapping[str, Any]:
@@ -182,9 +192,20 @@ class AzureOpenAI(BaseOpenAI):
         }
 
     @property
-    def _invocation_params(self) -> Dict[str, Any]:
+    def _invocation_params(self) -> dict[str, Any]:
         openai_params = {"model": self.deployment_name}
         return {**openai_params, **super()._invocation_params}
+
+    def _get_ls_params(
+        self, stop: Optional[list[str]] = None, **kwargs: Any
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        params = super()._get_ls_params(stop=stop, **kwargs)
+        invocation_params = self._invocation_params
+        params["ls_provider"] = "azure"
+        if model_name := invocation_params.get("model"):
+            params["ls_model_name"] = model_name
+        return params
 
     @property
     def _llm_type(self) -> str:
@@ -192,7 +213,7 @@ class AzureOpenAI(BaseOpenAI):
         return "azure"
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
+    def lc_attributes(self) -> dict[str, Any]:
         return {
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,

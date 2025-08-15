@@ -1,18 +1,22 @@
+"""Document transformers."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Sequence
+from typing import TYPE_CHECKING, Any
 
 from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from langchain_core.documents import Document
 
 
 class BaseDocumentTransformer(ABC):
-    """Abstract base class for document transformation systems.
+    """Abstract base class for document transformation.
 
-    A document transformation system takes a sequence of Documents and returns a
+    A document transformation takes a sequence of Documents and returns a
     sequence of transformed Documents.
 
     Example:
@@ -55,7 +59,7 @@ class BaseDocumentTransformer(ABC):
             documents: A sequence of Documents to be transformed.
 
         Returns:
-            A list of transformed Documents.
+            A sequence of transformed Documents.
         """
 
     async def atransform_documents(
@@ -67,7 +71,7 @@ class BaseDocumentTransformer(ABC):
             documents: A sequence of Documents to be transformed.
 
         Returns:
-            A list of transformed Documents.
+            A sequence of transformed Documents.
         """
         return await run_in_executor(
             None, self.transform_documents, documents, **kwargs

@@ -1,7 +1,7 @@
 # AI21 Labs
 
->[AI21 Labs](https://www.ai21.com/about) is a company specializing in Natural 
-> Language Processing (NLP), which develops AI systems 
+>[AI21 Labs](https://www.ai21.com/about) is a company specializing in Natural
+> Language Processing (NLP), which develops AI systems
 > that can understand and generate natural language.
 
 This page covers how to use the `AI21` ecosystem within `LangChain`.
@@ -15,16 +15,9 @@ This page covers how to use the `AI21` ecosystem within `LangChain`.
 pip install langchain-ai21
 ```
 
-## LLMs
-
-See a [usage example](/docs/integrations/llms/ai21).
-
-```python
-from langchain_community.llms import AI21
-```
-
-
 ## Chat models
+
+### AI21 Chat
 
 See a [usage example](/docs/integrations/chat/ai21).
 
@@ -32,11 +25,27 @@ See a [usage example](/docs/integrations/chat/ai21).
 from langchain_ai21 import ChatAI21
 ```
 
-## Embedding models
+## Deprecated features
 
-See a [usage example](/docs/integrations/text_embedding/ai21).
+:::caution The following features are deprecated.
+:::
+
+### AI21 LLM
 
 ```python
-from langchain_ai21 import AI21Embeddings
+from langchain_ai21 import AI21LLM
 ```
 
+### AI21 Contextual Answer
+
+```python
+from langchain_ai21 import AI21ContextualAnswers
+```
+
+## Text splitters
+
+### AI21 Semantic Text Splitter
+
+```python
+from langchain_ai21 import AI21SemanticTextSplitter
+```

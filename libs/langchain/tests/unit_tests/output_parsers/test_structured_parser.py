@@ -1,9 +1,12 @@
+from typing import Any
+
 from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
 
 
 def test_parse() -> None:
+    """Test parsing structured output."""
     response_schemas = [
         ResponseSchema(name="name", description="desc"),
         ResponseSchema(name="age", description="desc"),
@@ -23,4 +26,15 @@ def test_parse() -> None:
     except OutputParserException:
         pass  # Test passes if OutputParserException is raised
     else:
-        assert False, f"Expected OutputParserException, but got {parser.parse(text)}"
+        msg = f"Expected OutputParserException, but got {parser.parse(text)}"
+        raise AssertionError(msg)
+
+
+def test_output_type() -> None:
+    """Test the output type of the structured output parser is Dict[str, Any]."""
+    response_schemas = [
+        ResponseSchema(name="name", description="desc"),
+        ResponseSchema(name="age", description="desc"),
+    ]
+    parser = StructuredOutputParser.from_response_schemas(response_schemas)
+    assert parser.OutputType == dict[str, Any]

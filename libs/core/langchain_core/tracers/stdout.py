@@ -1,21 +1,24 @@
+"""Tracers that print to the console."""
+
 import json
-from typing import Any, Callable, List
+from typing import Any, Callable
 
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from langchain_core.utils.input import get_bolded_text, get_colored_text
 
+MILLISECONDS_IN_SECOND = 1000
+
 
 def try_json_stringify(obj: Any, fallback: str) -> str:
-    """
-    Try to stringify an object to JSON.
+    """Try to stringify an object to JSON.
+
     Args:
         obj: Object to stringify.
         fallback: Fallback string to return if the object cannot be stringified.
 
     Returns:
         A JSON string if the object can be stringified, otherwise the fallback string.
-
     """
     try:
         return json.dumps(obj, indent=2, ensure_ascii=False)
@@ -35,25 +38,40 @@ def elapsed(run: Any) -> str:
 
     """
     elapsed_time = run.end_time - run.start_time
-    milliseconds = elapsed_time.total_seconds() * 1000
-    if milliseconds < 1000:
-        return f"{milliseconds:.0f}ms"
-    return f"{(milliseconds / 1000):.2f}s"
+    seconds = elapsed_time.total_seconds()
+    if seconds < 1:
+        return f"{seconds * MILLISECONDS_IN_SECOND:.0f}ms"
+    return f"{seconds:.2f}s"
 
 
 class FunctionCallbackHandler(BaseTracer):
     """Tracer that calls a function with a single str parameter."""
 
     name: str = "function_callback_handler"
+    """The name of the tracer. This is used to identify the tracer in the logs.
+    Default is "function_callback_handler"."""
 
     def __init__(self, function: Callable[[str], None], **kwargs: Any) -> None:
+        """Create a FunctionCallbackHandler.
+
+        Args:
+            function: The callback function to call.
+        """
         super().__init__(**kwargs)
         self.function_callback = function
 
     def _persist_run(self, run: Run) -> None:
         pass
 
-    def get_parents(self, run: Run) -> List[Run]:
+    def get_parents(self, run: Run) -> list[Run]:
+        """Get the parents of a run.
+
+        Args:
+            run: The run to get the parents of.
+
+        Returns:
+            A list of parent runs.
+        """
         parents = []
         current_run = run
         while current_run.parent_run_id:
@@ -66,14 +84,19 @@ class FunctionCallbackHandler(BaseTracer):
         return parents
 
     def get_breadcrumbs(self, run: Run) -> str:
+        """Get the breadcrumbs of a run.
+
+        Args:
+            run: The run to get the breadcrumbs of.
+
+        Returns:
+            A string with the breadcrumbs of the run.
+        """
         parents = self.get_parents(run)[::-1]
-        string = " > ".join(
-            f"{parent.execution_order}:{parent.run_type}:{parent.name}"
-            if i != len(parents) - 1
-            else f"{parent.execution_order}:{parent.run_type}:{parent.name}"
-            for i, parent in enumerate(parents + [run])
+        return " > ".join(
+            f"{parent.run_type}:{parent.name}"
+            for i, parent in enumerate([*parents, run])
         )
-        return string
 
     # logging methods
     def _on_chain_start(self, run: Run) -> None:
@@ -143,7 +166,7 @@ class FunctionCallbackHandler(BaseTracer):
     def _on_tool_start(self, run: Run) -> None:
         crumbs = self.get_breadcrumbs(run)
         self.function_callback(
-            f'{get_colored_text("[tool/start]", color="green")} '
+            f"{get_colored_text('[tool/start]', color='green')} "
             + get_bolded_text(f"[{crumbs}] Entering Tool run with input:\n")
             + f'"{run.inputs["input"].strip()}"'
         )
@@ -152,11 +175,11 @@ class FunctionCallbackHandler(BaseTracer):
         crumbs = self.get_breadcrumbs(run)
         if run.outputs:
             self.function_callback(
-                f'{get_colored_text("[tool/end]", color="blue")} '
+                f"{get_colored_text('[tool/end]', color='blue')} "
                 + get_bolded_text(
                     f"[{crumbs}] [{elapsed(run)}] Exiting Tool run with output:\n"
                 )
-                + f'"{run.outputs["output"].strip()}"'
+                + f'"{str(run.outputs["output"]).strip()}"'
             )
 
     def _on_tool_error(self, run: Run) -> None:
@@ -175,4 +198,5 @@ class ConsoleCallbackHandler(FunctionCallbackHandler):
     name: str = "console_callback_handler"
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create a ConsoleCallbackHandler."""
         super().__init__(function=print, **kwargs)

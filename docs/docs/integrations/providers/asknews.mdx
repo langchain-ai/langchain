@@ -1,0 +1,33 @@
+# AskNews
+
+[AskNews](https://asknews.app/) enhances language models with up-to-date global or historical news
+by processing and indexing over 300,000 articles daily, providing prompt-optimized responses
+through a low-latency endpoint, and ensuring transparency and diversity in its news coverage.
+
+## Installation and Setup
+
+First, you need to install `asknews` python package.
+
+```bash
+pip install asknews
+```
+
+You also need to set our AskNews API credentials, which can be generated at
+the [AskNews console](https://my.asknews.app/).
+
+
+## Retriever
+
+See a [usage example](/docs/integrations/retrievers/asknews).
+
+```python
+from langchain_community.retrievers import AskNewsRetriever
+```
+
+## Tool
+
+See a [usage example](/docs/integrations/tools/asknews).
+
+```python
+from langchain_community.tools.asknews import AskNewsSearch
+```

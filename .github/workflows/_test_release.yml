@@ -1,4 +1,4 @@
-name: test-release
+name: '🧪 Test Release Package'
 
 on:
   workflow_call:
@@ -14,8 +14,8 @@ on:
         description: "Release from a non-master branch (danger!)"
 
 env:
-  POETRY_VERSION: "1.7.1"
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.11"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -29,13 +29,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: '🐍 Set up Python + UV'
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ inputs.working-directory }}
-          cache-key: release
 
       # We want to keep this build stage *separate* from the release stage,
       # so that there's no sharing of permissions between them.
@@ -48,23 +45,30 @@ jobs:
       # > It is strongly advised to separate jobs for building [...]
       # > from the publish job.
       # https://github.com/pypa/gh-action-pypi-publish#non-goals
-      - name: Build project for distribution
-        run: poetry build
+      - name: '📦 Build Project for Distribution'
+        run: uv build
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Upload build
+      - name: '⬆️ Upload Build Artifacts'
         uses: actions/upload-artifact@v4
         with:
           name: test-dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Check Version
+      - name: '🔍 Extract Version Information'
         id: check-version
-        shell: bash
+        shell: python
         working-directory: ${{ inputs.working-directory }}
         run: |
-          echo pkg-name="$(poetry version | cut -d ' ' -f 1)" >> $GITHUB_OUTPUT
-          echo version="$(poetry version --short)" >> $GITHUB_OUTPUT
+          import os
+          import tomllib
+          with open("pyproject.toml", "rb") as f:
+              data = tomllib.load(f)
+          pkg_name = data["project"]["name"]
+          version = data["project"]["version"]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"pkg-name={pkg_name}\n")
+              f.write(f"version={version}\n")
 
   publish:
     needs:
@@ -81,7 +85,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: test-dist
           path: ${{ inputs.working-directory }}/dist/
@@ -98,3 +102,5 @@ jobs:
           # This is *only for CI use* and is *extremely dangerous* otherwise!
           # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
           skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false

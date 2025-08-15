@@ -51,7 +51,6 @@ For more information on the LangSmith API, see the `LangSmith API documentation 
 
 """  # noqa: E501
 
-
 from langchain.smith.evaluation.config import RunEvalConfig
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
@@ -62,8 +61,8 @@ from langchain.smith.evaluation.string_run_evaluator import StringRunEvaluatorCh
 
 __all__ = [
     "InputFormatError",
+    "RunEvalConfig",
+    "StringRunEvaluatorChain",
     "arun_on_dataset",
     "run_on_dataset",
-    "StringRunEvaluatorChain",
-    "RunEvalConfig",
 ]

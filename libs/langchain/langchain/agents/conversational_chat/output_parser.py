@@ -4,10 +4,10 @@ from typing import Union
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.exceptions import OutputParserException
+from langchain_core.utils.json import parse_json_markdown
 
 from langchain.agents import AgentOutputParser
 from langchain.agents.conversational_chat.prompt import FORMAT_INSTRUCTIONS
-from langchain.output_parsers.json import parse_json_markdown
 
 
 # Define a class that parses output for conversational agents
@@ -39,20 +39,18 @@ class ConvoOutputParser(AgentOutputParser):
                 # If the action indicates a final answer, return an AgentFinish
                 if action == "Final Answer":
                     return AgentFinish({"output": action_input}, text)
-                else:
-                    # Otherwise, return an AgentAction with the specified action and
-                    # input
-                    return AgentAction(action, action_input, text)
-            else:
-                # If the necessary keys aren't present in the response, raise an
-                # exception
-                raise OutputParserException(
-                    f"Missing 'action' or 'action_input' in LLM output: {text}"
-                )
+                # Otherwise, return an AgentAction with the specified action and
+                # input
+                return AgentAction(action, action_input, text)
+            # If the necessary keys aren't present in the response, raise an
+            # exception
+            msg = f"Missing 'action' or 'action_input' in LLM output: {text}"
+            raise OutputParserException(msg)
         except Exception as e:
             # If any other exception is raised during parsing, also raise an
             # OutputParserException
-            raise OutputParserException(f"Could not parse LLM output: {text}") from e
+            msg = f"Could not parse LLM output: {text}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

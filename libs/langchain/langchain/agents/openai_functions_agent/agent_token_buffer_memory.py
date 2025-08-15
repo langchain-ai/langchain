@@ -1,8 +1,10 @@
 """Memory used to save agent output AND intermediate steps."""
-from typing import Any, Dict, List
+
+from typing import Any
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
+from typing_extensions import override
 
 from langchain.agents.format_scratchpad import (
     format_to_openai_function_messages,
@@ -12,7 +14,22 @@ from langchain.memory.chat_memory import BaseChatMemory
 
 
 class AgentTokenBufferMemory(BaseChatMemory):
-    """Memory used to save agent output AND intermediate steps."""
+    """Memory used to save agent output AND intermediate steps.
+
+    Parameters:
+        human_prefix: Prefix for human messages. Default is "Human".
+        ai_prefix: Prefix for AI messages. Default is "AI".
+        llm: Language model.
+        memory_key: Key to save memory under. Default is "history".
+        max_token_limit: Maximum number of tokens to keep in the buffer.
+            Once the buffer exceeds this many tokens, the oldest
+            messages will be pruned. Default is 12000.
+        return_messages: Whether to return messages. Default is True.
+        output_key: Key to save output under. Default is "output".
+        intermediate_steps_key: Key to save intermediate steps under.
+            Default is "intermediate_steps".
+        format_as_tools: Whether to format as tools. Default is False.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
@@ -27,20 +44,28 @@ class AgentTokenBufferMemory(BaseChatMemory):
     format_as_tools: bool = False
 
     @property
-    def buffer(self) -> List[BaseMessage]:
+    def buffer(self) -> list[BaseMessage]:
         """String buffer of memory."""
         return self.chat_memory.messages
 
     @property
-    def memory_variables(self) -> List[str]:
-        """Will always return list of memory variables.
+    def memory_variables(self) -> list[str]:
+        """Always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
-        """Return history buffer."""
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
+        """Return history buffer.
+
+        Args:
+            inputs: Inputs to the agent.
+
+        Returns:
+            A dictionary with the history buffer.
+        """
         if self.return_messages:
             final_buffer: Any = self.buffer
         else:
@@ -51,8 +76,13 @@ class AgentTokenBufferMemory(BaseChatMemory):
             )
         return {self.memory_key: final_buffer}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, Any]) -> None:
-        """Save context from this conversation to buffer. Pruned."""
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, Any]) -> None:
+        """Save context from this conversation to buffer. Pruned.
+
+        Args:
+            inputs: Inputs to the agent.
+            outputs: Outputs from the agent.
+        """
         input_str, output_str = self._get_input_output(inputs, outputs)
         self.chat_memory.add_user_message(input_str)
         format_to_messages = (

@@ -1,12 +1,18 @@
-from typing import Any, AsyncIterator, Iterator, List, Optional
+from collections.abc import AsyncIterator, Iterator
+from typing import Any, Optional
 
 import pytest
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import BaseLLM, FakeListLLM, FakeStreamingListLLM
+from langchain_core.language_models import (
+    LLM,
+    BaseLLM,
+    FakeListLLM,
+)
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from langchain_core.tracers.context import collect_runs
 from tests.unit_tests.fake.callbacks import (
@@ -38,12 +44,12 @@ def test_batch_size() -> None:
     llm = FakeListLLM(responses=["foo"] * 3)
     with collect_runs() as cb:
         llm.batch(["foo", "bar", "foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 3
     llm = FakeListLLM(responses=["foo"])
     with collect_runs() as cb:
         llm.batch(["foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     llm = FakeListLLM(responses=["foo"])
@@ -69,12 +75,12 @@ async def test_async_batch_size() -> None:
     llm = FakeListLLM(responses=["foo"] * 3)
     with collect_runs() as cb:
         await llm.abatch(["foo", "bar", "foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 3 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 3
     llm = FakeListLLM(responses=["foo"])
     with collect_runs() as cb:
         await llm.abatch(["foo"], {"callbacks": [cb]})
-        assert all([(r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs])
+        assert all((r.extra or {}).get("batch_size") == 1 for r in cb.traced_runs)
         assert len(cb.traced_runs) == 1
 
     llm = FakeListLLM(responses=["foo"])
@@ -91,44 +97,52 @@ async def test_async_batch_size() -> None:
         assert (cb.traced_runs[0].extra or {}).get("batch_size") == 1
 
 
-async def test_stream_error_callback() -> None:
-    message = "test"
+async def test_error_callback() -> None:
+    class FailingLLMError(Exception):
+        """FailingLLMError."""
 
-    def eval_response(callback: BaseFakeCallbackHandler, i: int) -> None:
+    class FailingLLM(LLM):
+        @property
+        def _llm_type(self) -> str:
+            """Return type of llm."""
+            return "failing-llm"
+
+        @override
+        def _call(
+            self,
+            prompt: str,
+            stop: Optional[list[str]] = None,
+            run_manager: Optional[CallbackManagerForLLMRun] = None,
+            **kwargs: Any,
+        ) -> str:
+            raise FailingLLMError
+
+    def eval_response(callback: BaseFakeCallbackHandler) -> None:
         assert callback.errors == 1
         assert len(callback.errors_args) == 1
-        llm_result: LLMResult = callback.errors_args[0]["kwargs"]["response"]
-        if i == 0:
-            assert llm_result.generations == []
-        else:
-            assert llm_result.generations[0][0].text == message[:i]
+        assert isinstance(callback.errors_args[0]["args"][0], FailingLLMError)
 
-    for i in range(0, 2):
-        llm = FakeStreamingListLLM(
-            responses=[message],
-            error_on_chunk_number=i,
-        )
-        with pytest.raises(Exception):
-            cb_async = FakeAsyncCallbackHandler()
-            async for _ in llm.astream("Dummy message", callbacks=[cb_async]):
-                pass
-            eval_response(cb_async, i)
+    llm = FailingLLM()
+    cb_async = FakeAsyncCallbackHandler()
+    with pytest.raises(FailingLLMError):
+        await llm.ainvoke("Dummy message", config={"callbacks": [cb_async]})
+    eval_response(cb_async)
 
-            cb_sync = FakeCallbackHandler()
-            for _ in llm.stream("Dumy message", callbacks=[cb_sync]):
-                pass
-
-            eval_response(cb_sync, i)
+    cb_sync = FakeCallbackHandler()
+    with pytest.raises(FailingLLMError):
+        llm.invoke("Dummy message", config={"callbacks": [cb_sync]})
+    eval_response(cb_sync)
 
 
 async def test_astream_fallback_to_ainvoke() -> None:
     """Test astream uses appropriate implementation."""
 
     class ModelWithGenerate(BaseLLM):
+        @override
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
@@ -140,7 +154,7 @@ async def test_astream_fallback_to_ainvoke() -> None:
             return "fake-chat-model"
 
     model = ModelWithGenerate()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == ["hello"]
 
     chunks = [chunk async for chunk in model.astream("anything")]
@@ -153,18 +167,19 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     class ModelWithSyncStream(BaseLLM):
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
-            """Top Level call"""
-            raise NotImplementedError()
+            """Top Level call."""
+            raise NotImplementedError
 
+        @override
         def _stream(
             self,
             prompt: str,
-            stop: Optional[List[str]] = None,
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> Iterator[GenerationChunk]:
@@ -177,7 +192,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             return "fake-chat-model"
 
     model = ModelWithSyncStream()
-    chunks = [chunk for chunk in model.stream("anything")]
+    chunks = list(model.stream("anything"))
     assert chunks == ["a", "b"]
     assert type(model)._astream == BaseLLM._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
@@ -190,18 +205,19 @@ async def test_astream_implementation_uses_astream() -> None:
     class ModelWithAsyncStream(BaseLLM):
         def _generate(
             self,
-            prompts: List[str],
-            stop: Optional[List[str]] = None,
+            prompts: list[str],
+            stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> LLMResult:
-            """Top Level call"""
-            raise NotImplementedError()
+            """Top Level call."""
+            raise NotImplementedError
 
+        @override
         async def _astream(
             self,
             prompt: str,
-            stop: Optional[List[str]] = None,
+            stop: Optional[list[str]] = None,
             run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
             **kwargs: Any,
         ) -> AsyncIterator[GenerationChunk]:

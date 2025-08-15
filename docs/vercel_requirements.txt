@@ -1,11 +1,7 @@
--e ../libs/langchain
--e ../libs/community
--e ../libs/core
--e ../libs/experimental
--e ../libs/text-splitters
-langchain-cohere
-langchain-astradb
-langchain-nvidia-ai-endpoints
-langchain-elasticsearch
-langchain-postgres
-urllib3==1.26.18
+langgraph
+pyyaml
+urllib3==1.26.19
+nbconvert==7.16.4
+
+# temp fix, uv fails to install 3.10.7 
+orjson<=3.10.6

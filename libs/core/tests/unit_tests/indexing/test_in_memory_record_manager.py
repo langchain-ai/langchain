@@ -1,13 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
 
-from tests.unit_tests.indexing.in_memory import InMemoryRecordManager
+from langchain_core.indexing import InMemoryRecordManager
 
 
-@pytest.fixture()
+@pytest.fixture
 def manager() -> InMemoryRecordManager:
     """Initialize the test database and yield the TimestampedSet instance."""
     # Initialize and yield the TimestampedSet instance
@@ -55,50 +55,94 @@ def test_update_timestamp(manager: InMemoryRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
     with patch.object(
-        manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
     ):
         manager.update(["key1"])
 
     assert manager.list_keys() == ["key1"]
-    assert manager.list_keys(before=datetime(2021, 1, 1).timestamp()) == []
-    assert manager.list_keys(after=datetime(2021, 1, 1).timestamp()) == ["key1"]
-    assert manager.list_keys(after=datetime(2021, 1, 3).timestamp()) == []
+    assert (
+        manager.list_keys(before=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp())
+        == []
+    )
+    assert manager.list_keys(
+        after=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
+    assert (
+        manager.list_keys(after=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp())
+        == []
+    )
 
     # Update the timestamp
     with patch.object(
-        manager, "get_time", return_value=datetime(2023, 1, 5).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2023, 1, 5, tzinfo=timezone.utc).timestamp(),
     ):
         manager.update(["key1"])
 
     assert manager.list_keys() == ["key1"]
-    assert manager.list_keys(before=datetime(2023, 1, 1).timestamp()) == []
-    assert manager.list_keys(after=datetime(2023, 1, 1).timestamp()) == ["key1"]
-    assert manager.list_keys(after=datetime(2023, 1, 3).timestamp()) == ["key1"]
+    assert (
+        manager.list_keys(before=datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp())
+        == []
+    )
+    assert manager.list_keys(
+        after=datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
+    assert manager.list_keys(
+        after=datetime(2023, 1, 3, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
 
 
 async def test_aupdate_timestamp(manager: InMemoryRecordManager) -> None:
     """Test updating records in the database."""
     # no keys should be present in the set
     with patch.object(
-        manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
     ):
         await manager.aupdate(["key1"])
 
     assert await manager.alist_keys() == ["key1"]
-    assert await manager.alist_keys(before=datetime(2021, 1, 1).timestamp()) == []
-    assert await manager.alist_keys(after=datetime(2021, 1, 1).timestamp()) == ["key1"]
-    assert await manager.alist_keys(after=datetime(2021, 1, 3).timestamp()) == []
+    assert (
+        await manager.alist_keys(
+            before=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+        )
+        == []
+    )
+    assert await manager.alist_keys(
+        after=datetime(2021, 1, 1, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
+    assert (
+        await manager.alist_keys(
+            after=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()
+        )
+        == []
+    )
 
     # Update the timestamp
     with patch.object(
-        manager, "get_time", return_value=datetime(2023, 1, 5).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2023, 1, 5, tzinfo=timezone.utc).timestamp(),
     ):
         await manager.aupdate(["key1"])
 
     assert await manager.alist_keys() == ["key1"]
-    assert await manager.alist_keys(before=datetime(2023, 1, 1).timestamp()) == []
-    assert await manager.alist_keys(after=datetime(2023, 1, 1).timestamp()) == ["key1"]
-    assert await manager.alist_keys(after=datetime(2023, 1, 3).timestamp()) == ["key1"]
+    assert (
+        await manager.alist_keys(
+            before=datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp()
+        )
+        == []
+    )
+    assert await manager.alist_keys(
+        after=datetime(2023, 1, 1, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
+    assert await manager.alist_keys(
+        after=datetime(2023, 1, 3, tzinfo=timezone.utc).timestamp()
+    ) == ["key1"]
 
 
 def test_exists(manager: InMemoryRecordManager) -> None:
@@ -138,14 +182,18 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     assert await manager.alist_keys() == []
 
     with patch.object(
-        manager, "get_time", return_value=datetime(2021, 1, 2).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2021, 1, 2, tzinfo=timezone.utc).timestamp(),
     ):
         manager.update(["key1", "key2"])
         manager.update(["key3"], group_ids=["group1"])
         manager.update(["key4"], group_ids=["group2"])
 
     with patch.object(
-        manager, "get_time", return_value=datetime(2021, 1, 10).timestamp()
+        manager,
+        "get_time",
+        return_value=datetime(2021, 1, 10, tzinfo=timezone.utc).timestamp(),
     ):
         manager.update(["key5"])
 
@@ -163,14 +211,18 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     assert await manager.alist_keys(group_ids=["group1"]) == ["key3"]
 
     # Before
-    assert sorted(manager.list_keys(before=datetime(2021, 1, 3).timestamp())) == [
+    assert sorted(
+        manager.list_keys(before=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp())
+    ) == [
         "key1",
         "key2",
         "key3",
         "key4",
     ]
     assert sorted(
-        await manager.alist_keys(before=datetime(2021, 1, 3).timestamp())
+        await manager.alist_keys(
+            before=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()
+        )
     ) == [
         "key1",
         "key2",
@@ -179,18 +231,22 @@ async def test_list_keys(manager: InMemoryRecordManager) -> None:
     ]
 
     # After
-    assert sorted(manager.list_keys(after=datetime(2021, 1, 3).timestamp())) == ["key5"]
-    assert sorted(await manager.alist_keys(after=datetime(2021, 1, 3).timestamp())) == [
-        "key5"
-    ]
+    assert sorted(
+        manager.list_keys(after=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp())
+    ) == ["key5"]
+    assert sorted(
+        await manager.alist_keys(
+            after=datetime(2021, 1, 3, tzinfo=timezone.utc).timestamp()
+        )
+    ) == ["key5"]
 
     results = manager.list_keys(limit=1)
     assert len(results) == 1
-    assert results[0] in ["key1", "key2", "key3", "key4", "key5"]
+    assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
     results = await manager.alist_keys(limit=1)
     assert len(results) == 1
-    assert results[0] in ["key1", "key2", "key3", "key4", "key5"]
+    assert results[0] in {"key1", "key2", "key3", "key4", "key5"}
 
 
 def test_delete_keys(manager: InMemoryRecordManager) -> None:

@@ -1,0 +1,36 @@
+language python
+
+// This migration is generated automatically - do not manually edit this file
+pattern replace_pydantic_v1_shim() {
+    `from $IMPORT import $...` where {
+        or {
+            and {
+                $IMPORT <: or {
+                    "langchain_core.pydantic_v1",
+                    "langchain.pydantic_v1",
+                    "langserve.pydantic_v1",
+                },
+                $IMPORT => `pydantic`
+            },
+            and {
+                $IMPORT <: or {
+                    "langchain_core.pydantic_v1.data_classes",
+                    "langchain.pydantic_v1.data_classes",
+                    "langserve.pydantic_v1.data_classes",
+                },
+                $IMPORT => `pydantic.data_classes`
+            },
+            and {
+                $IMPORT <: or {
+                    "langchain_core.pydantic_v1.main",
+                    "langchain.pydantic_v1.main",
+                    "langserve.pydantic_v1.main",
+                },
+                $IMPORT => `pydantic.main`
+            },
+        }
+    }
+}
+
+// Add this for invoking directly
+ replace_pydantic_v1_shim()

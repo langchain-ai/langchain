@@ -1,0 +1,59 @@
+# Azure AI
+
+All functionality related to [Azure AI Foundry](https://learn.microsoft.com/en-us/azure/developer/python/get-started) and its related projects.
+
+Integration packages for Azure AI, Dynamic Sessions, SQL Server are maintained in
+the [langchain-azure](https://github.com/langchain-ai/langchain-azure) repository.
+
+## Chat models
+
+We recommend developers start with the (`langchain-azure-ai`) to access all the models available in [Azure AI Foundry](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/model-catalog-overview).
+
+### Azure AI Chat Completions Model
+
+Access models like Azure OpenAI, DeepSeek R1, Cohere, Phi and Mistral using the `AzureAIChatCompletionsModel` class.
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.chat_models import AzureAIChatCompletionsModel
+
+llm = AzureAIChatCompletionsModel(
+    model_name="gpt-4o",
+    api_version="2024-05-01-preview",
+)
+
+llm.invoke('Tell me a joke and include some emojis')
+```
+
+## Embedding models
+
+### Azure AI model inference for embeddings
+
+```bash
+pip install -U langchain-azure-ai
+```
+
+Configure your API key and Endpoint.
+
+```bash
+export AZURE_INFERENCE_CREDENTIAL=your-api-key
+export AZURE_INFERENCE_ENDPOINT=your-endpoint
+```
+
+```python
+from langchain_azure_ai.embeddings import AzureAIEmbeddingsModel
+
+embed_model = AzureAIEmbeddingsModel(
+    model_name="text-embedding-ada-002"
+)
+```

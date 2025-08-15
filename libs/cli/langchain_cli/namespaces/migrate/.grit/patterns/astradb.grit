@@ -1,0 +1,67 @@
+
+language python
+
+// This migration is generated automatically - do not manually edit this file
+pattern langchain_migrate_astradb() {
+  find_replace_imports(list=[
+
+            [
+                `langchain_community.vectorstores.astradb`,
+                `AstraDB`,
+                `langchain_astradb`,
+                `AstraDBVectorStore`
+            ]
+            ,
+
+            [
+                `langchain_community.storage.astradb`,
+                `AstraDBByteStore`,
+                `langchain_astradb`,
+                `AstraDBByteStore`
+            ]
+            ,
+
+            [
+                `langchain_community.storage.astradb`,
+                `AstraDBStore`,
+                `langchain_astradb`,
+                `AstraDBStore`
+            ]
+            ,
+
+            [
+                `langchain_community.cache`,
+                `AstraDBCache`,
+                `langchain_astradb`,
+                `AstraDBCache`
+            ]
+            ,
+
+            [
+                `langchain_community.cache`,
+                `AstraDBSemanticCache`,
+                `langchain_astradb`,
+                `AstraDBSemanticCache`
+            ]
+            ,
+
+            [
+                `langchain_community.chat_message_histories.astradb`,
+                `AstraDBChatMessageHistory`,
+                `langchain_astradb`,
+                `AstraDBChatMessageHistory`
+            ]
+            ,
+
+            [
+                `langchain_community.document_loaders.astradb`,
+                `AstraDBLoader`,
+                `langchain_astradb`,
+                `AstraDBLoader`
+            ]
+            
+  ])
+}
+
+// Add this for invoking directly
+langchain_migrate_astradb()

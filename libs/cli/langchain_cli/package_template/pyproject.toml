@@ -1,3 +1,7 @@
+[build-system]
+requires = [ "poetry-core",]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry]
 name = "__package_name__"
 version = "0.0.1"
@@ -5,21 +9,16 @@ description = ""
 authors = []
 readme = "README.md"
 
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = ">=0.1.5"
-langchain-openai = ">=0.0.1"
+[tool.langserve]
+export_module = "__module_name__"
+export_attr = "chain"
 
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.15"
+langchain-openai = ">=0.0.1"
 
 [tool.poetry.group.dev.dependencies]
 langchain-cli = ">=0.0.4"
 fastapi = "^0.104.0"
 sse-starlette = "^1.6.5"
-
-[tool.langserve]
-export_module = "__module_name__"
-export_attr = "chain"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"

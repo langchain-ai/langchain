@@ -1,19 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Optional, Union
 
 from langchain_core._api.deprecation import deprecated
-from langchain_core.callbacks.manager import Callbacks
-from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra, root_validator
-
-from langchain.retrievers.document_compressors.base import BaseDocumentCompressor
-from langchain.utils import get_from_dict_or_env
+from langchain_core.callbacks import Callbacks
+from langchain_core.documents import BaseDocumentCompressor, Document
+from langchain_core.utils import get_from_dict_or_env
+from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 
 @deprecated(
-    since="0.0.30", removal="0.2.0", alternative_import="langchain_cohere.CohereRerank"
+    since="0.0.30",
+    removal="1.0",
+    alternative_import="langchain_cohere.CohereRerank",
 )
 class CohereRerank(BaseDocumentCompressor):
     """Document compressor that uses `Cohere Rerank API`."""
@@ -25,30 +27,33 @@ class CohereRerank(BaseDocumentCompressor):
     model: str = "rerank-english-v2.0"
     """Model to use for reranking."""
     cohere_api_key: Optional[str] = None
-    """Cohere API key. Must be specified directly or via environment variable 
+    """Cohere API key. Must be specified directly or via environment variable
         COHERE_API_KEY."""
     user_agent: str = "langchain"
     """Identifier for the application making the request."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
-    @root_validator(pre=True)
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         if not values.get("client"):
             try:
                 import cohere
-            except ImportError:
-                raise ImportError(
+            except ImportError as e:
+                msg = (
                     "Could not import cohere python package. "
                     "Please install it with `pip install cohere`."
                 )
+                raise ImportError(msg) from e
             cohere_api_key = get_from_dict_or_env(
-                values, "cohere_api_key", "COHERE_API_KEY"
+                values,
+                "cohere_api_key",
+                "COHERE_API_KEY",
             )
             client_name = values.get("user_agent", "langchain")
             values["client"] = cohere.Client(cohere_api_key, client_name=client_name)
@@ -62,7 +67,7 @@ class CohereRerank(BaseDocumentCompressor):
         model: Optional[str] = None,
         top_n: Optional[int] = -1,
         max_chunks_per_doc: Optional[int] = None,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Returns an ordered list of documents ordered by their relevance to the provided query.
 
         Args:
@@ -88,14 +93,13 @@ class CohereRerank(BaseDocumentCompressor):
             max_chunks_per_doc=max_chunks_per_doc,
         )
         if hasattr(results, "results"):
-            results = getattr(results, "results")
-        result_dicts = []
-        for res in results:
-            result_dicts.append(
-                {"index": res.index, "relevance_score": res.relevance_score}
-            )
-        return result_dicts
+            results = results.results
+        return [
+            {"index": res.index, "relevance_score": res.relevance_score}
+            for res in results
+        ]
 
+    @override
     def compress_documents(
         self,
         documents: Sequence[Document],

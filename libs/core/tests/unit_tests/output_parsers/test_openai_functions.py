@@ -1,7 +1,8 @@
 import json
-from typing import Any, Dict
+from typing import Any
 
 import pytest
+from pydantic import BaseModel
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
@@ -10,7 +11,6 @@ from langchain_core.output_parsers.openai_functions import (
     PydanticOutputFunctionsParser,
 )
 from langchain_core.outputs import ChatGeneration
-from langchain_core.pydantic_v1 import BaseModel
 
 
 def test_json_output_function_parser() -> None:
@@ -85,7 +85,7 @@ def test_json_output_function_parser() -> None:
         },
     ],
 )
-def test_json_output_function_parser_strictness(config: Dict[str, Any]) -> None:
+def test_json_output_function_parser_strictness(config: dict[str, Any]) -> None:
     """Test parsing with JSON strictness on and off."""
     args = config["args"]
 
@@ -166,7 +166,6 @@ def test_pydantic_output_functions_parser() -> None:
 
 def test_pydantic_output_functions_parser_multiple_schemas() -> None:
     """Test that the parser works if providing multiple pydantic schemas."""
-
     message = AIMessage(
         content="This is a test message",
         additional_kwargs={

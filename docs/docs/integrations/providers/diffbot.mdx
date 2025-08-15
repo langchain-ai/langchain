@@ -1,18 +1,29 @@
 # Diffbot
 
->[Diffbot](https://docs.diffbot.com/docs) is a service to read web pages. Unlike traditional web scraping tools, 
-> `Diffbot` doesn't require any rules to read the content on a page.
->It starts with computer vision, which classifies a page into one of 20 possible types. Content is then interpreted by a machine learning model trained to identify the key attributes on a page based on its type.
->The result is a website transformed into clean-structured data (like JSON or CSV), ready for your application.
+> [Diffbot](https://docs.diffbot.com/docs) is a suite of ML-based products that make it easy to structure and integrate web data.
 
 ## Installation and Setup
 
-Read [instructions](https://docs.diffbot.com/reference/authentication) how to get the Diffbot API Token.
+[Get a free Diffbot API token](https://app.diffbot.com/get-started/) and [follow these instructions](https://docs.diffbot.com/reference/authentication) to authenticate your requests.
 
 ## Document Loader
+
+Diffbot's [Extract API](https://docs.diffbot.com/reference/extract-introduction) is a service that structures and normalizes data from web pages.
+
+Unlike traditional web scraping tools, `Diffbot Extract` doesn't require any rules to read the content on a page. It uses a computer vision model to classify a page into one of 20 possible types, and then transforms raw HTML markup into JSON. The resulting structured JSON follows a consistent [type-based ontology](https://docs.diffbot.com/docs/ontology), which makes it easy to extract data from multiple different web sources with the same schema.
 
 See a [usage example](/docs/integrations/document_loaders/diffbot).
 
 ```python
 from langchain_community.document_loaders import DiffbotLoader
+```
+
+## Graphs
+
+Diffbot's [Natural Language Processing API](https://www.diffbot.com/products/natural-language/) allows for the extraction of entities, relationships, and semantic meaning from unstructured text data.
+
+See a [usage example](/docs/integrations/graphs/diffbot).
+
+```python
+from langchain_experimental.graph_transformers.diffbot import DiffbotGraphTransformer
 ```

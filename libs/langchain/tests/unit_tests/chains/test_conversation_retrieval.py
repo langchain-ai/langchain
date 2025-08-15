@@ -1,6 +1,7 @@
 """Test conversation chain and memory."""
-from langchain_community.llms.fake import FakeListLLM
+
 from langchain_core.documents import Document
+from langchain_core.language_models import FakeListLLM
 
 from langchain.chains.conversational_retrieval.base import (
     ConversationalRetrievalChain,
@@ -15,7 +16,10 @@ async def test_simplea() -> None:
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
     memory = ConversationBufferMemory(  # type: ignore[call-arg]
-        k=1, output_key="answer", memory_key="chat_history", return_messages=True
+        k=1,
+        output_key="answer",
+        memory_key="chat_history",
+        return_messages=True,
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -36,10 +40,13 @@ async def test_fixed_message_response_when_docs_founda() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(
-        sequential_responses=[[Document(page_content=answer)]]
+        sequential_responses=[[Document(page_content=answer)]],
     )
     memory = ConversationBufferMemory(  # type: ignore[call-arg]
-        k=1, output_key="answer", memory_key="chat_history", return_messages=True
+        k=1,
+        output_key="answer",
+        memory_key="chat_history",
+        return_messages=True,
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -61,7 +68,10 @@ def test_fixed_message_response_when_no_docs_found() -> None:
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(sequential_responses=[[]])
     memory = ConversationBufferMemory(  # type: ignore[call-arg]
-        k=1, output_key="answer", memory_key="chat_history", return_messages=True
+        k=1,
+        output_key="answer",
+        memory_key="chat_history",
+        return_messages=True,
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -82,10 +92,13 @@ def test_fixed_message_response_when_docs_found() -> None:
     answer = "I know the answer!"
     llm = FakeListLLM(responses=[answer])
     retriever = SequentialRetriever(
-        sequential_responses=[[Document(page_content=answer)]]
+        sequential_responses=[[Document(page_content=answer)]],
     )
     memory = ConversationBufferMemory(  # type: ignore[call-arg]
-        k=1, output_key="answer", memory_key="chat_history", return_messages=True
+        k=1,
+        output_key="answer",
+        memory_key="chat_history",
+        return_messages=True,
     )
     qa_chain = ConversationalRetrievalChain.from_llm(
         llm=llm,

@@ -3,32 +3,25 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import requests
-from langchain_community.utilities.openapi import OpenAPISpec
+from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
 from requests import Response
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.chains.sequential import SequentialChain
-from langchain.tools import APIOperation
 
 if TYPE_CHECKING:
+    from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
-
-
-def _get_description(o: Any, prefer_short: bool) -> Optional[str]:
-    summary = getattr(o, "summary", None)
-    description = getattr(o, "description", None)
-    if prefer_short:
-        return summary or description
-    return description or summary
 
 
 def _format_url(url: str, path_params: dict) -> str:
@@ -59,25 +52,24 @@ def _format_url(url: str, path_params: dict) -> str:
                 sep = ","
                 new_val = ""
             new_val += sep.join(kv_strs)
+        elif param[0] == ".":
+            new_val = f".{val}"
+        elif param[0] == ";":
+            new_val = f";{clean_param}={val}"
         else:
-            if param[0] == ".":
-                new_val = f".{val}"
-            elif param[0] == ";":
-                new_val = f";{clean_param}={val}"
-            else:
-                new_val = val
+            new_val = val
         new_params[param] = new_val
     return url.format(**new_params)
 
 
-def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -> dict:
+def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -> dict:
     properties = {}
     required = []
     for p in params:
         if p.param_schema:
             schema = spec.get_schema(p.param_schema)
         else:
-            media_type_schema = list(p.content.values())[0].media_type_schema  # type: ignore  # noqa: E501
+            media_type_schema = next(iter(p.content.values())).media_type_schema
             schema = spec.get_schema(media_type_schema)
         if p.description and not schema.description:
             schema.description = p.description
@@ -89,7 +81,7 @@ def _openapi_params_to_json_schema(params: List[Parameter], spec: OpenAPISpec) -
 
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
-) -> Tuple[List[Dict[str, Any]], Callable]:
+) -> tuple[list[dict[str, Any]], Callable]:
     """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
         functions.
 
@@ -100,6 +92,15 @@ def openapi_spec_to_openai_fn(
         Tuple of the OpenAI functions JSON schema and a default function for executing
             a request based on the OpenAI function schema.
     """
+    try:
+        from langchain_community.tools import APIOperation
+    except ImportError as e:
+        msg = (
+            "Could not import langchain_community.tools. "
+            "Please install it with `pip install langchain-community`."
+        )
+        raise ImportError(msg) from e
+
     if not spec.paths:
         return [], lambda: None
     functions = []
@@ -126,7 +127,8 @@ def openapi_spec_to_openai_fn(
             for param_loc, arg_name in param_loc_to_arg_name.items():
                 if params_by_type[param_loc]:
                     request_args[arg_name] = _openapi_params_to_json_schema(
-                        params_by_type[param_loc], spec
+                        params_by_type[param_loc],
+                        spec,
                     )
             request_body = spec.get_request_body_for_operation(op)
             # TODO: Support more MIME types.
@@ -136,10 +138,10 @@ def openapi_spec_to_openai_fn(
                     if media_type_object.media_type_schema:
                         schema = spec.get_schema(media_type_object.media_type_schema)
                         media_types[media_type] = json.loads(
-                            schema.json(exclude_none=True)
+                            schema.json(exclude_none=True),
                         )
                 if len(media_types) == 1:
-                    media_type, schema_dict = list(media_types.items())[0]
+                    media_type, schema_dict = next(iter(media_types.items()))
                     key = "json" if media_type == "application/json" else "data"
                     request_args[key] = schema_dict
                 elif len(media_types) > 1:
@@ -165,6 +167,7 @@ def openapi_spec_to_openai_fn(
         fn_args: dict,
         headers: Optional[dict] = None,
         params: Optional[dict] = None,
+        timeout: Optional[int] = 30,
         **kwargs: Any,
     ) -> Any:
         method = _name_to_call_map[name]["method"]
@@ -184,7 +187,7 @@ def openapi_spec_to_openai_fn(
                 _kwargs["params"].update(params)
             else:
                 _kwargs["params"] = params
-        return requests.request(method, url, **_kwargs)
+        return requests.request(method, url, **_kwargs, timeout=timeout)
 
     return functions, default_call_api
 
@@ -200,18 +203,20 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
-    def input_keys(self) -> List[str]:
+    @override
+    def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    @override
+    def output_keys(self) -> list[str]:
         return [self.output_key]
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run the logic of this chain and return the output."""
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         name = inputs[self.input_key].pop("name")
@@ -221,32 +226,118 @@ class SimpleRequestChain(Chain):
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
         _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)
-        if api_response.status_code != 200:
+        if api_response.status_code != requests.codes.ok:
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
-                + f"\nFor {name} "
-                + f"Called with args: {args.get('params','')}"
+                f"\nFor {name} "
+                f"Called with args: {args.get('params', '')}"
             )
         else:
             try:
                 response = api_response.json()
-            except Exception:  # noqa: E722
+            except Exception:
                 response = api_response.text
         return {self.output_key: response}
 
 
+@deprecated(
+    since="0.2.13",
+    message=(
+        "This function is deprecated and will be removed in langchain 1.0. "
+        "See API reference for replacement: "
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.openapi.get_openapi_chain.html"
+    ),
+    removal="1.0",
+)
 def get_openapi_chain(
     spec: Union[OpenAPISpec, str],
     llm: Optional[BaseLanguageModel] = None,
     prompt: Optional[BasePromptTemplate] = None,
     request_chain: Optional[Chain] = None,
-    llm_chain_kwargs: Optional[Dict] = None,
-    verbose: bool = False,
-    headers: Optional[Dict] = None,
-    params: Optional[Dict] = None,
+    llm_chain_kwargs: Optional[dict] = None,
+    verbose: bool = False,  # noqa: FBT001,FBT002
+    headers: Optional[dict] = None,
+    params: Optional[dict] = None,
     **kwargs: Any,
 ) -> SequentialChain:
     """Create a chain for querying an API from a OpenAPI spec.
+
+    Note: this class is deprecated. See below for a replacement implementation.
+        The benefits of this implementation are:
+
+        - Uses LLM tool calling features to encourage properly-formatted API requests;
+        - Includes async support.
+
+        .. code-block:: python
+
+            from typing import Any
+
+            from langchain.chains.openai_functions.openapi import openapi_spec_to_openai_fn
+            from langchain_community.utilities.openapi import OpenAPISpec
+            from langchain_core.prompts import ChatPromptTemplate
+            from langchain_openai import ChatOpenAI
+
+            # Define API spec. Can be JSON or YAML
+            api_spec = \"\"\"
+            {
+            "openapi": "3.1.0",
+            "info": {
+                "title": "JSONPlaceholder API",
+                "version": "1.0.0"
+            },
+            "servers": [
+                {
+                "url": "https://jsonplaceholder.typicode.com"
+                }
+            ],
+            "paths": {
+                "/posts": {
+                "get": {
+                    "summary": "Get posts",
+                    "parameters": [
+                    {
+                        "name": "_limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                        "type": "integer",
+                        "example": 2
+                        },
+                        "description": "Limit the number of results"
+                    }
+                    ]
+                }
+                }
+            }
+            }
+            \"\"\"
+
+            parsed_spec = OpenAPISpec.from_text(api_spec)
+            openai_fns, call_api_fn = openapi_spec_to_openai_fn(parsed_spec)
+            tools = [
+                {"type": "function", "function": fn}
+                for fn in openai_fns
+            ]
+
+            prompt = ChatPromptTemplate.from_template(
+                "Use the provided APIs to respond to this user query:\\n\\n{query}"
+            )
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0).bind_tools(tools)
+
+            def _execute_tool(message) -> Any:
+                if tool_calls := message.tool_calls:
+                    tool_call = message.tool_calls[0]
+                    response = call_api_fn(name=tool_call["name"], fn_args=tool_call["args"])
+                    response.raise_for_status()
+                    return response.json()
+                else:
+                    return message.content
+
+            chain = prompt | llm | _execute_tool
+
+        .. code-block:: python
+
+            response = chain.invoke({"query": "Get me top two posts."})
 
     Args:
         spec: OpenAPISpec or url/file/text string corresponding to one.
@@ -254,7 +345,16 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
-    """
+
+    """  # noqa: E501
+    try:
+        from langchain_community.utilities.openapi import OpenAPISpec
+    except ImportError as e:
+        msg = (
+            "Could not import langchain_community.utilities.openapi. "
+            "Please install it with `pip install langchain-community`."
+        )
+        raise ImportError(msg) from e
     if isinstance(spec, str):
         for conversion in (
             OpenAPISpec.from_url,
@@ -262,23 +362,25 @@ def get_openapi_chain(
             OpenAPISpec.from_text,
         ):
             try:
-                spec = conversion(spec)  # type: ignore[arg-type]
+                spec = conversion(spec)
                 break
-            except ImportError as e:
-                raise e
-            except Exception:  # noqa: E722
+            except ImportError:
+                raise
+            except Exception:  # noqa: S110
                 pass
         if isinstance(spec, str):
-            raise ValueError(f"Unable to parse spec from source {spec}")
+            msg = f"Unable to parse spec from source {spec}"
+            raise ValueError(msg)  # noqa: TRY004
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
-        raise ValueError(
+        msg = (
             "Must provide an LLM for this chain.For example,\n"
             "from langchain_openai import ChatOpenAI\n"
             "llm = ChatOpenAI()\n"
         )
+        raise ValueError(msg)
     prompt = prompt or ChatPromptTemplate.from_template(
-        "Use the provided API's to respond to this user query:\n\n{query}"
+        "Use the provided API's to respond to this user query:\n\n{query}",
     )
     llm_chain = LLMChain(
         llm=llm,
@@ -291,7 +393,10 @@ def get_openapi_chain(
     )
     request_chain = request_chain or SimpleRequestChain(
         request_method=lambda name, args: call_api_fn(
-            name, args, headers=headers, params=params
+            name,
+            args,
+            headers=headers,
+            params=params,
         ),
         verbose=verbose,
     )

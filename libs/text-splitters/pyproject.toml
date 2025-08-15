@@ -1,105 +1,149 @@
-[tool.poetry]
-name = "langchain-text-splitters"
-version = "0.0.1"
-description = "LangChain text splitting utilities"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
 authors = []
-license = "MIT"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.72",
+    "pip>=25.2",
+]
+name = "langchain-text-splitters"
+version = "0.3.9"
+description = "LangChain text splitting utilities"
 readme = "README.md"
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
 
-
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.28"
-lxml = {version = ">=4.9.3,<6.0", optional = true}
-beautifulsoup4 = {version = "^4.12.3", optional = true}
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-langchain-core = {path = "../core", develop = true}
-
-[tool.poetry.group.typing]
-optional = true
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1"
-lxml-stubs = "^0.5.1"
-types-requests = "^2.31.0.20240218"
-tiktoken = "^0.6.0"
-spacy = "^3.7.4"
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-langchain-core = {path = "../core", develop = true}
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-# The only dependencies that should be added are
-# dependencies used for running tests (e.g., pytest, freezegun, response).
-# Any dependencies that do not meet that criteria will be removed.
-pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock  = "^3.10.0"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-pytest-profiling = "^1.7.0"
-langchain-core = {path = "../core", develop = true}
-
-
-[tool.poetry.group.test_integration]
-optional = true
-dependencies = {}
-
-[tool.poetry.extras]
-extended_testing = [
-  "lxml", "beautifulsoup4"
+[dependency-groups]
+lint = ["ruff<0.13,>=0.12.8", "langchain-core"]
+typing = [
+    "mypy<1.18,>=1.17.1",
+    "lxml-stubs<1.0.0,>=0.5.1",
+    "types-requests<3.0.0.0,>=2.31.0.20240218",
+    "tiktoken<1.0.0,>=0.8.0",
 ]
+dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
+test = [
+    "pytest<9,>=8",
+    "freezegun<2.0.0,>=1.2.2",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "langchain-core",
+]
+test_integration = [
+    "spacy<4.0.0,>=3.8.7",
+    "thinc<9.0.0,>=8.3.6",
+    "nltk<4.0.0,>=3.9.1",
+    "transformers<5.0.0,>=4.51.3",
+    "sentence-transformers>=3.0.1",
+    "tiktoken<1.0.0,>=0.8.0",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+
+[tool.mypy]
+strict = true
+strict_bytes = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["konlpy", "nltk",]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
 
 [tool.ruff.lint]
 select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
-  "T201", # print
+    "A",      # flake8-builtins
+    "B",      # flake8-bugbear
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
+]
+ignore = [
+    "D100",    # pydocstyle: Missing docstring in public module
+    "D101",    # pydocstyle: Missing docstring in public class
+    "D102",    # pydocstyle: Missing docstring in public method
+    "D103",    # pydocstyle: Missing docstring in public function
+    "D104",    # pydocstyle: Missing docstring in public package
+    "D105",    # pydocstyle: Missing docstring in magic method
+    "D107",    # pydocstyle: Missing docstring in __init__
+    "D203",    # Messes with the formatter
+    "D213",    # pydocstyle: Multi-line docstring summary should start at the second line (incompatible with D212)
+    "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
 ]
 
-[tool.mypy]
-disallow_untyped_defs = "True"
-
-[[tool.mypy.overrides]]
-module = ["transformers", "sentence_transformers", "nltk.tokenize", "konlpy.tag", "bs4"]
-ignore_missing_imports = "True"
 
 [tool.coverage.run]
-omit = ["tests/*", ]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+omit = ["tests/*"]
 
 [tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
 addopts = "--strict-markers --strict-config --durations=5"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library",
-  "asyncio: mark tests as requiring asyncio",
-  "compile: mark placeholder test used to compile integration tests without running them",
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]

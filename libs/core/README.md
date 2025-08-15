@@ -17,17 +17,17 @@ These abstractions are designed to be as modular and simple as possible. Example
 
 The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
 
-For full documentation see the [API reference](https://api.python.langchain.com/en/stable/core_api_reference.html).
+For full documentation see the [API reference](https://python.langchain.com/api_reference/core/index.html).
 
 ## 1️⃣ Core Interface: Runnables
 
-The concept of a Runnable is central to LangChain Core – it is the interface that most LangChain Core components implement, giving them
+The concept of a `Runnable` is central to LangChain Core – it is the interface that most LangChain Core components implement, giving them
 
-- a common invocation interface (invoke, batch, stream, etc.)
+- a common invocation interface (`invoke()`, `batch()`, `stream()`, etc.)
 - built-in utilities for retries, fallbacks, schemas and runtime configurability
-- easy deployment with [LangServe](https://github.com/langchain-ai/langserve)
+- easy deployment with [LangGraph](https://github.com/langchain-ai/langgraph)
 
-For more check out the [runnable docs](https://python.langchain.com/docs/expression_language/interface). Examples of components that implement the interface include: LLMs, Chat Models, Prompts, Retrievers, Tools, Output Parsers.
+For more check out the [runnable docs](https://python.langchain.com/docs/concepts/runnables/). Examples of components that implement the interface include: LLMs, Chat Models, Prompts, Retrievers, Tools, Output Parsers.
 
 You can use LangChain Core objects in two ways:
 
@@ -51,15 +51,13 @@ LangChain Expression Language (LCEL) is a _declarative language_ for composing L
 
 LangChain Core compiles LCEL sequences to an _optimized execution plan_, with automatic parallelization, streaming, tracing, and async support.
 
-For more check out the [LCEL docs](https://python.langchain.com/docs/expression_language/).
+For more check out the [LCEL docs](https://python.langchain.com/docs/concepts/lcel/).
 
-![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](../../docs/static/img/langchain_stack.png "LangChain Framework Overview")
+![Diagram outlining the hierarchical organization of the LangChain framework, displaying the interconnected parts across multiple layers.](https://raw.githubusercontent.com/langchain-ai/langchain/master/docs/static/svg/langchain_stack_112024.svg "LangChain Framework Overview")
 
 For more advanced use cases, also check out [LangGraph](https://github.com/langchain-ai/langgraph), which is a graph-based runner for cyclic and recursive LLM workflows.
 
 ## 📕 Releases & Versioning
-
-`langchain-core` is currently on version `0.1.x`.
 
 As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything in `langchain_core.beta`. The reason for `langchain_core.beta` is that given the rate of change of the field, being able to move quickly is still a priority, and this module is our attempt to do so.
 

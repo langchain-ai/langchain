@@ -14,20 +14,34 @@ blogs, or knowledge bases.
 
 ## Installation and Setup
 
-- Install the Apify API client for Python with `pip install apify-client`
+- Install the LangChain Apify package for Python with:
+```bash
+pip install langchain-apify
+```
 - Get your [Apify API token](https://console.apify.com/account/integrations) and either set it as
-  an environment variable (`APIFY_API_TOKEN`) or pass it to the `ApifyWrapper` as `apify_api_token` in the constructor.
+  an environment variable (`APIFY_API_TOKEN`) or pass it as `apify_api_token` in the constructor.
 
+## Tool
 
-## Utility
+You can use the `ApifyActorsTool` to use Apify Actors with agents.
+
+```python
+from langchain_apify import ApifyActorsTool
+```
+
+See [this notebook](/docs/integrations/tools/apify_actors) for example usage and a full example of a tool-calling agent with LangGraph in the [Apify LangGraph agent Actor template](https://apify.com/templates/python-langgraph).
+
+For more information on how to use this tool, visit [the Apify integration documentation](https://docs.apify.com/platform/integrations/langgraph).
+
+## Wrapper
 
 You can use the `ApifyWrapper` to run Actors on the Apify platform.
 
 ```python
-from langchain_community.utilities import ApifyWrapper
+from langchain_apify import ApifyWrapper
 ```
 
-For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integrations/tools/apify).
+For more information on how to use this wrapper, see [the Apify integration documentation](https://docs.apify.com/platform/integrations/langchain).
 
 
 ## Document loader
@@ -35,7 +49,10 @@ For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integ
 You can also use our `ApifyDatasetLoader` to get data from Apify dataset.
 
 ```python
-from langchain_community.document_loaders import ApifyDatasetLoader
+from langchain_apify import ApifyDatasetLoader
 ```
 
 For a more detailed walkthrough of this loader, see [this notebook](/docs/integrations/document_loaders/apify_dataset).
+
+
+Source code for this integration can be found in the [LangChain Apify repository](https://github.com/apify/langchain-apify).

@@ -1,4 +1,5 @@
 """Test functionality related to length based selector."""
+
 import pytest
 
 from langchain_core.example_selectors import (
@@ -16,12 +17,11 @@ EXAMPLES = [
 def selector() -> LengthBasedExampleSelector:
     """Get length based selector to use in tests."""
     prompts = PromptTemplate(input_variables=["question"], template="{question}")
-    selector = LengthBasedExampleSelector(
+    return LengthBasedExampleSelector(
         examples=EXAMPLES,
         example_prompt=prompts,
         max_length=30,
     )
-    return selector
 
 
 def test_selector_valid(selector: LengthBasedExampleSelector) -> None:
@@ -37,7 +37,7 @@ def test_selector_add_example(selector: LengthBasedExampleSelector) -> None:
     selector.add_example(new_example)
     short_question = "Short question?"
     output = selector.select_examples({"question": short_question})
-    assert output == EXAMPLES + [new_example]
+    assert output == [*EXAMPLES, new_example]
 
 
 def test_selector_trims_one_example(selector: LengthBasedExampleSelector) -> None:

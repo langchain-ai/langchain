@@ -1,14 +1,24 @@
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
+
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
-test tests integration_test integration_tests:
-	poetry run pytest $(TEST_FILE)
+
+test tests:
+	uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+integration_test integration_tests:
+	uv run --group test --group test_integration pytest --retries 3 --retry-delay 1 $(TEST_FILE)
+
+test_watch:
+	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
 
 
 ######################
@@ -25,23 +35,22 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff .
-	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
 spell_check:
-	poetry run codespell --toml pyproject.toml
+	uv run --all-groups codespell --toml pyproject.toml
 
 spell_fix:
-	poetry run codespell --toml pyproject.toml -w
+	uv run --all-groups codespell --toml pyproject.toml -w
 
 check_imports: $(shell find langchain_groq -name '*.py')
-	poetry run python ./scripts/check_imports.py $^
+	uv run --all-groups python ./scripts/check_imports.py $^
 
 ######################
 # HELP

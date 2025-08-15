@@ -7,26 +7,21 @@ import functools
 import inspect
 import json
 import logging
-import uuid
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator, Iterator, Sequence
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 
 import yaml
+from pydantic import ConfigDict, Field, model_validator
 from tenacity import (
     RetryCallState,
     before_sleep_log,
@@ -36,6 +31,7 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from typing_extensions import override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
@@ -48,7 +44,11 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models.base import BaseLanguageModel, LanguageModelInput
+from langchain_core.language_models.base import (
+    BaseLanguageModel,
+    LangSmithParams,
+    LanguageModelInput,
+)
 from langchain_core.load import dumpd
 from langchain_core.messages import (
     AIMessage,
@@ -58,9 +58,11 @@ from langchain_core.messages import (
 )
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult, RunInfo
 from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPromptValue
-from langchain_core.pydantic_v1 import Field, root_validator
 from langchain_core.runnables import RunnableConfig, ensure_config, get_config_list
 from langchain_core.runnables.config import run_in_executor
+
+if TYPE_CHECKING:
+    import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -72,40 +74,52 @@ def _log_error_once(msg: str) -> None:
 
 
 def create_base_retry_decorator(
-    error_types: List[Type[BaseException]],
+    error_types: list[type[BaseException]],
     max_retries: int = 1,
     run_manager: Optional[
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Create a retry decorator for a given LLM and provided list of error types."""
+    """Create a retry decorator for a given LLM and provided a list of error types.
 
-    _logging = before_sleep_log(logger, logging.WARNING)
+    Args:
+        error_types: List of error types to retry on.
+        max_retries: Number of retries. Default is 1.
+        run_manager: Callback manager for the run. Default is None.
+
+    Returns:
+        A retry decorator.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    logging_ = before_sleep_log(logger, logging.WARNING)
 
     def _before_sleep(retry_state: RetryCallState) -> None:
-        _logging(retry_state)
+        logging_(retry_state)
         if run_manager:
             if isinstance(run_manager, AsyncCallbackManagerForLLMRun):
                 coro = run_manager.on_retry(retry_state)
                 try:
                     loop = asyncio.get_event_loop()
                     if loop.is_running():
-                        loop.create_task(coro)
+                        # TODO: Fix RUF006 - this task should have a reference
+                        #  and be awaited somewhere
+                        loop.create_task(coro)  # noqa: RUF006
                     else:
                         asyncio.run(coro)
                 except Exception as e:
                     _log_error_once(f"Error in on_retry: {e}")
             else:
                 run_manager.on_retry(retry_state)
-        return None
 
     min_seconds = 4
     max_seconds = 10
     # Wait 2^x * 1 second between each retry starting with
     # 4 seconds, then up to 10 seconds, then 10 seconds afterwards
-    retry_instance: "retry_base" = retry_if_exception_type(error_types[0])
+    retry_instance: retry_base = retry_if_exception_type(error_types[0])
     for error in error_types[1:]:
-        retry_instance = retry_instance | retry_if_exception_type(error)
+        retry_instance |= retry_if_exception_type(error)
     return retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
@@ -115,7 +129,7 @@ def create_base_retry_decorator(
     )
 
 
-def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
+def _resolve_cache(*, cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     """Resolve the cache."""
     if isinstance(cache, BaseCache):
         llm_cache = cache
@@ -124,30 +138,45 @@ def _resolve_cache(cache: Union[BaseCache, bool, None]) -> Optional[BaseCache]:
     elif cache is True:
         llm_cache = get_llm_cache()
         if llm_cache is None:
-            raise ValueError(
+            msg = (
                 "No global cache was configured. Use `set_llm_cache`."
                 "to set a global cache if you want to use a global cache."
                 "Otherwise either pass a cache object or set cache to False/None"
             )
+            raise ValueError(msg)
     elif cache is False:
         llm_cache = None
     else:
-        raise ValueError(f"Unsupported cache value {cache}")
+        msg = f"Unsupported cache value {cache}"
+        raise ValueError(msg)
     return llm_cache
 
 
 def get_prompts(
-    params: Dict[str, Any],
-    prompts: List[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
-) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached."""
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    params: dict[str, Any],
+    prompts: list[str],
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
+) -> tuple[dict[int, list], str, list[int], list[str]]:
+    """Get prompts that are already cached.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
 
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = llm_cache.lookup(prompt, llm_string)
@@ -160,16 +189,29 @@ def get_prompts(
 
 
 async def aget_prompts(
-    params: Dict[str, Any],
-    prompts: List[str],
-    cache: Optional[Union[BaseCache, bool, None]] = None,
-) -> Tuple[Dict[int, List], str, List[int], List[str]]:
-    """Get prompts that are already cached. Async version."""
-    llm_string = str(sorted([(k, v) for k, v in params.items()]))
+    params: dict[str, Any],
+    prompts: list[str],
+    cache: Union[BaseCache, bool, None] = None,  # noqa: FBT001
+) -> tuple[dict[int, list], str, list[int], list[str]]:
+    """Get prompts that are already cached. Async version.
+
+    Args:
+        params: Dictionary of parameters.
+        prompts: List of prompts.
+        cache: Cache object. Default is None.
+
+    Returns:
+        A tuple of existing prompts, llm_string, missing prompt indexes,
+            and missing prompts.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    llm_string = str(sorted(params.items()))
     missing_prompts = []
     missing_prompt_idxs = []
     existing_prompts = {}
-    llm_cache = _resolve_cache(cache)
+    llm_cache = _resolve_cache(cache=cache)
     for i, prompt in enumerate(prompts):
         if llm_cache:
             cache_val = await llm_cache.alookup(prompt, llm_string)
@@ -182,93 +224,164 @@ async def aget_prompts(
 
 
 def update_cache(
-    cache: Union[BaseCache, bool, None],
-    existing_prompts: Dict[int, List],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
+    existing_prompts: dict[int, list],
     llm_string: str,
-    missing_prompt_idxs: List[int],
+    missing_prompt_idxs: list[int],
     new_results: LLMResult,
-    prompts: List[str],
+    prompts: list[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output."""
-    llm_cache = _resolve_cache(cache)
+    """Update the cache and get the LLM output.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache is not None:
             llm_cache.update(prompt, llm_string, result)
-    llm_output = new_results.llm_output
-    return llm_output
+    return new_results.llm_output
 
 
 async def aupdate_cache(
-    cache: Union[BaseCache, bool, None],
-    existing_prompts: Dict[int, List],
+    cache: Union[BaseCache, bool, None],  # noqa: FBT001
+    existing_prompts: dict[int, list],
     llm_string: str,
-    missing_prompt_idxs: List[int],
+    missing_prompt_idxs: list[int],
     new_results: LLMResult,
-    prompts: List[str],
+    prompts: list[str],
 ) -> Optional[dict]:
-    """Update the cache and get the LLM output. Async version"""
-    llm_cache = _resolve_cache(cache)
+    """Update the cache and get the LLM output. Async version.
+
+    Args:
+        cache: Cache object.
+        existing_prompts: Dictionary of existing prompts.
+        llm_string: LLM string.
+        missing_prompt_idxs: List of missing prompt indexes.
+        new_results: LLMResult object.
+        prompts: List of prompts.
+
+    Returns:
+        LLM output.
+
+    Raises:
+        ValueError: If the cache is not set and cache is True.
+    """
+    llm_cache = _resolve_cache(cache=cache)
     for i, result in enumerate(new_results.generations):
         existing_prompts[missing_prompt_idxs[i]] = result
         prompt = prompts[missing_prompt_idxs[i]]
         if llm_cache:
             await llm_cache.aupdate(prompt, llm_string, result)
-    llm_output = new_results.llm_output
-    return llm_output
+    return new_results.llm_output
 
 
 class BaseLLM(BaseLanguageModel[str], ABC):
     """Base LLM abstract interface.
 
-    It should take in a prompt and return a string."""
+    It should take in a prompt and return a string.
+    """
 
     callback_manager: Optional[BaseCallbackManager] = Field(default=None, exclude=True)
     """[DEPRECATED]"""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def raise_deprecation(cls, values: dict) -> Any:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             warnings.warn(
                 "callback_manager is deprecated. Please use callbacks instead.",
                 DeprecationWarning,
+                stacklevel=5,
             )
             values["callbacks"] = values.pop("callback_manager", None)
         return values
 
+    @functools.cached_property
+    def _serialized(self) -> dict[str, Any]:
+        return dumpd(self)
+
     # --- Runnable methods ---
 
     @property
-    def OutputType(self) -> Type[str]:
+    @override
+    def OutputType(self) -> type[str]:
         """Get the input type for this runnable."""
         return str
 
-    def _convert_input(self, input: LanguageModelInput) -> PromptValue:
-        if isinstance(input, PromptValue):
-            return input
-        elif isinstance(input, str):
-            return StringPromptValue(text=input)
-        elif isinstance(input, Sequence):
-            return ChatPromptValue(messages=convert_to_messages(input))
-        else:
-            raise ValueError(
-                f"Invalid input type {type(input)}. "
-                "Must be a PromptValue, str, or list of BaseMessages."
-            )
+    def _convert_input(self, model_input: LanguageModelInput) -> PromptValue:
+        if isinstance(model_input, PromptValue):
+            return model_input
+        if isinstance(model_input, str):
+            return StringPromptValue(text=model_input)
+        if isinstance(model_input, Sequence):
+            return ChatPromptValue(messages=convert_to_messages(model_input))
+        msg = (
+            f"Invalid input type {type(model_input)}. "
+            "Must be a PromptValue, str, or list of BaseMessages."
+        )
+        raise ValueError(msg)
 
+    def _get_ls_params(
+        self,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        """Get standard params for tracing."""
+        # get default provider from class name
+        default_provider = self.__class__.__name__
+        default_provider = default_provider.removesuffix("LLM")
+        default_provider = default_provider.lower()
+
+        ls_params = LangSmithParams(ls_provider=default_provider, ls_model_type="llm")
+        if stop:
+            ls_params["ls_stop"] = stop
+
+        # model
+        if hasattr(self, "model") and isinstance(self.model, str):
+            ls_params["ls_model_name"] = self.model
+        elif hasattr(self, "model_name") and isinstance(self.model_name, str):
+            ls_params["ls_model_name"] = self.model_name
+
+        # temperature
+        if "temperature" in kwargs and isinstance(kwargs["temperature"], float):
+            ls_params["ls_temperature"] = kwargs["temperature"]
+        elif hasattr(self, "temperature") and isinstance(self.temperature, float):
+            ls_params["ls_temperature"] = self.temperature
+
+        # max_tokens
+        if "max_tokens" in kwargs and isinstance(kwargs["max_tokens"], int):
+            ls_params["ls_max_tokens"] = kwargs["max_tokens"]
+        elif hasattr(self, "max_tokens") and isinstance(self.max_tokens, int):
+            ls_params["ls_max_tokens"] = self.max_tokens
+
+        return ls_params
+
+    @override
     def invoke(
         self,
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> str:
         config = ensure_config(config)
@@ -287,12 +400,13 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             .text
         )
 
+    @override
     async def ainvoke(
         self,
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> str:
         config = ensure_config(config)
@@ -308,14 +422,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return llm_result.generations[0][0].text
 
+    @override
     def batch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if not inputs:
             return []
 
@@ -325,7 +440,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if max_concurrency is None:
             try:
                 llm_result = self.generate_prompt(
-                    [self._convert_input(input) for input in inputs],
+                    [self._convert_input(input_) for input_ in inputs],
                     callbacks=[c.get("callbacks") for c in config],
                     tags=[c.get("tags") for c in config],
                     metadata=[c.get("metadata") for c in config],
@@ -335,15 +450,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(List[str], [e for _ in inputs])
-                else:
-                    raise e
+                    return cast("list[str]", [e for _ in inputs])
+                raise
         else:
             batches = [
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
-            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
+            config = [{**c, "max_concurrency": None} for c in config]
             return [
                 output
                 for i, batch in enumerate(batches)
@@ -355,14 +469,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
 
+    @override
     async def abatch(
         self,
-        inputs: List[LanguageModelInput],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[LanguageModelInput],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         if not inputs:
             return []
         config = get_config_list(config, len(inputs))
@@ -371,7 +486,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if max_concurrency is None:
             try:
                 llm_result = await self.agenerate_prompt(
-                    [self._convert_input(input) for input in inputs],
+                    [self._convert_input(input_) for input_ in inputs],
                     callbacks=[c.get("callbacks") for c in config],
                     tags=[c.get("tags") for c in config],
                     metadata=[c.get("metadata") for c in config],
@@ -381,15 +496,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 return [g[0].text for g in llm_result.generations]
             except Exception as e:
                 if return_exceptions:
-                    return cast(List[str], [e for _ in inputs])
-                else:
-                    raise e
+                    return cast("list[str]", [e for _ in inputs])
+                raise
         else:
             batches = [
                 inputs[i : i + max_concurrency]
                 for i in range(0, len(inputs), max_concurrency)
             ]
-            config = [{**c, "max_concurrency": None} for c in config]  # type: ignore[misc]
+            config = [{**c, "max_concurrency": None} for c in config]
             return [
                 output
                 for i, batch in enumerate(batches)
@@ -401,15 +515,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 )
             ]
 
+    @override
     def stream(
         self,
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[str]:
-        if type(self)._stream == BaseLLM._stream:
+        if type(self)._stream == BaseLLM._stream:  # noqa: SLF001
             # model doesn't implement streaming, so use default implementation
             yield self.invoke(input, config=config, stop=stop, **kwargs)
         else:
@@ -419,17 +534,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             params["stop"] = stop
             params = {**params, **kwargs}
             options = {"stop": stop}
+            inheritable_metadata = {
+                **(config.get("metadata") or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
             callback_manager = CallbackManager.configure(
                 config.get("callbacks"),
                 self.callbacks,
                 self.verbose,
                 config.get("tags"),
                 self.tags,
-                config.get("metadata"),
+                inheritable_metadata,
                 self.metadata,
             )
             (run_manager,) = callback_manager.on_llm_start(
-                dumpd(self),
+                self._serialized,
                 [prompt],
                 invocation_params=params,
                 options=options,
@@ -447,7 +566,6 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generation = chunk
                     else:
                         generation += chunk
-                assert generation is not None
             except BaseException as e:
                 run_manager.on_llm_error(
                     e,
@@ -455,21 +573,27 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                         generations=[[generation]] if generation else []
                     ),
                 )
-                raise e
-            else:
-                run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+                raise
 
+            if generation is None:
+                err = ValueError("No generation chunks were returned")
+                run_manager.on_llm_error(err, response=LLMResult(generations=[]))
+                raise err
+
+            run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+
+    @override
     async def astream(
         self,
         input: LanguageModelInput,
         config: Optional[RunnableConfig] = None,
         *,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:
         if (
-            type(self)._astream is BaseLLM._astream
-            and type(self)._stream is BaseLLM._stream
+            type(self)._astream is BaseLLM._astream  # noqa: SLF001
+            and type(self)._stream is BaseLLM._stream  # noqa: SLF001
         ):
             yield await self.ainvoke(input, config=config, stop=stop, **kwargs)
             return
@@ -480,17 +604,21 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         params["stop"] = stop
         params = {**params, **kwargs}
         options = {"stop": stop}
+        inheritable_metadata = {
+            **(config.get("metadata") or {}),
+            **self._get_ls_params(stop=stop, **kwargs),
+        }
         callback_manager = AsyncCallbackManager.configure(
             config.get("callbacks"),
             self.callbacks,
             self.verbose,
             config.get("tags"),
             self.tags,
-            config.get("metadata"),
+            inheritable_metadata,
             self.metadata,
         )
         (run_manager,) = await callback_manager.on_llm_start(
-            dumpd(self),
+            self._serialized,
             [prompt],
             invocation_params=params,
             options=options,
@@ -511,23 +639,27 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     generation = chunk
                 else:
                     generation += chunk
-            assert generation is not None
         except BaseException as e:
             await run_manager.on_llm_error(
                 e,
                 response=LLMResult(generations=[[generation]] if generation else []),
             )
-            raise e
-        else:
-            await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
+            raise
+
+        if generation is None:
+            err = ValueError("No generation chunks were returned")
+            await run_manager.on_llm_error(err, response=LLMResult(generations=[]))
+            raise err
+
+        await run_manager.on_llm_end(LLMResult(generations=[[generation]]))
 
     # --- Custom methods ---
 
     @abstractmethod
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -535,8 +667,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     async def _agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -553,7 +685,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _stream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[GenerationChunk]:
@@ -576,12 +708,12 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         Returns:
             An iterator of GenerationChunks.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def _astream(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[GenerationChunk]:
@@ -616,27 +748,29 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 None,
                 next,
                 iterator,
-                done,  # type: ignore[call-arg, arg-type]
+                done,
             )
             if item is done:
                 break
             yield item  # type: ignore[misc]
 
+    @override
     def generate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
         return self.generate(prompt_strings, stop=stop, callbacks=callbacks, **kwargs)
 
+    @override
     async def agenerate_prompt(
         self,
-        prompts: List[PromptValue],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[PromptValue],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         prompt_strings = [p.to_string() for p in prompts]
@@ -646,9 +780,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     def _generate_helper(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]],
-        run_managers: List[CallbackManagerForLLMRun],
+        prompts: list[str],
+        stop: Optional[list[str]],
+        run_managers: list[CallbackManagerForLLMRun],
+        *,
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
@@ -667,7 +802,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         except BaseException as e:
             for run_manager in run_managers:
                 run_manager.on_llm_error(e, response=LLMResult(generations=[]))
-            raise e
+            raise
         flattened_outputs = output.flatten()
         for manager, flattened_output in zip(run_managers, flattened_outputs):
             manager.on_llm_end(flattened_output)
@@ -679,14 +814,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     def generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         *,
-        tags: Optional[Union[List[str], List[List[str]]]] = None,
-        metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-        run_name: Optional[Union[str, List[str]]] = None,
-        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
+        tags: Optional[Union[list[str], list[list[str]]]] = None,
+        metadata: Optional[Union[dict[str, Any], list[dict[str, Any]]]] = None,
+        run_name: Optional[Union[str, list[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Pass a sequence of prompts to a model and return generations.
@@ -706,6 +841,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -714,11 +858,25 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 prompt and additional model provider-specific output.
         """
         if not isinstance(prompts, list):
-            raise ValueError(
-                "Argument 'prompts' is expected to be of type List[str], received"
+            msg = (
+                "Argument 'prompts' is expected to be of type list[str], received"
                 f" argument of type {type(prompts)}."
             )
+            raise ValueError(msg)  # noqa: TRY004
         # Create callback managers
+        if isinstance(metadata, list):
+            metadata = [
+                {
+                    **(meta or {}),
+                    **self._get_ls_params(stop=stop, **kwargs),
+                }
+                for meta in metadata
+            ]
+        elif isinstance(metadata, dict):
+            metadata = {
+                **(metadata or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
         if (
             isinstance(callbacks, list)
             and callbacks
@@ -728,23 +886,33 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             )
         ):
             # We've received a list of callbacks args to apply to each input
-            assert len(callbacks) == len(prompts)
-            assert tags is None or (
+            if len(callbacks) != len(prompts):
+                msg = "callbacks must be the same length as prompts"
+                raise ValueError(msg)
+            if tags is not None and not (
                 isinstance(tags, list) and len(tags) == len(prompts)
-            )
-            assert metadata is None or (
+            ):
+                msg = "tags must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if metadata is not None and not (
                 isinstance(metadata, list) and len(metadata) == len(prompts)
-            )
-            assert run_name is None or (
+            ):
+                msg = "metadata must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if run_name is not None and not (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
+            ):
+                msg = "run_name must be a list of the same length as prompts"
+                raise ValueError(msg)
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
             )
-            callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                List[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 CallbackManager.configure(
@@ -762,16 +930,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 CallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(List[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(Dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
@@ -788,7 +956,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         if (self.cache is None and get_llm_cache() is None) or self.cache is False:
             run_managers = [
                 callback_manager.on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompt],
                     invocation_params=params,
                     options=options,
@@ -800,14 +968,17 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     callback_managers, prompts, run_name_list, run_ids_list
                 )
             ]
-            output = self._generate_helper(
-                prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+            return self._generate_helper(
+                prompts,
+                stop,
+                run_managers,
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
-            return output
         if len(missing_prompts) > 0:
             run_managers = [
                 callback_managers[idx].on_llm_start(
-                    dumpd(self),
+                    self._serialized,
                     [prompts[idx]],
                     invocation_params=params,
                     options=options,
@@ -817,7 +988,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 for idx in missing_prompt_idxs
             ]
             new_results = self._generate_helper(
-                missing_prompts, stop, run_managers, bool(new_arg_supported), **kwargs
+                missing_prompts,
+                stop,
+                run_managers,
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
             llm_output = update_cache(
                 self.cache,
@@ -840,24 +1015,26 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @staticmethod
     def _get_run_ids_list(
-        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]], prompts: list
+        run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]], prompts: list
     ) -> list:
         if run_id is None:
             return [None] * len(prompts)
         if isinstance(run_id, list):
             if len(run_id) != len(prompts):
-                raise ValueError(
+                msg = (
                     "Number of manually provided run_id's does not match batch length."
                     f" {len(run_id)} != {len(prompts)}"
                 )
+                raise ValueError(msg)
             return run_id
         return [run_id] + [None] * (len(prompts) - 1)
 
     async def _agenerate_helper(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]],
-        run_managers: List[AsyncCallbackManagerForLLMRun],
+        prompts: list[str],
+        stop: Optional[list[str]],
+        run_managers: list[AsyncCallbackManagerForLLMRun],
+        *,
         new_arg_supported: bool,
         **kwargs: Any,
     ) -> LLMResult:
@@ -879,7 +1056,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                     for run_manager in run_managers
                 ]
             )
-            raise e
+            raise
         flattened_outputs = output.flatten()
         await asyncio.gather(
             *[
@@ -897,14 +1074,14 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     async def agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
-        callbacks: Optional[Union[Callbacks, List[Callbacks]]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
+        callbacks: Optional[Union[Callbacks, list[Callbacks]]] = None,
         *,
-        tags: Optional[Union[List[str], List[List[str]]]] = None,
-        metadata: Optional[Union[Dict[str, Any], List[Dict[str, Any]]]] = None,
-        run_name: Optional[Union[str, List[str]]] = None,
-        run_id: Optional[Union[uuid.UUID, List[Optional[uuid.UUID]]]] = None,
+        tags: Optional[Union[list[str], list[list[str]]]] = None,
+        metadata: Optional[Union[dict[str, Any], list[dict[str, Any]]]] = None,
+        run_name: Optional[Union[str, list[str]]] = None,
+        run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
         **kwargs: Any,
     ) -> LLMResult:
         """Asynchronously pass a sequence of prompts to a model and return generations.
@@ -924,6 +1101,15 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 first occurrence of any of these substrings.
             callbacks: Callbacks to pass through. Used for executing additional
                 functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with each prompt. If provided, the length
+                of the list must match the length of the prompts list.
+            metadata: List of metadata dictionaries to associate with each prompt. If
+                provided, the length of the list must match the length of the prompts
+                list.
+            run_name: List of run names to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
+            run_id: List of run IDs to associate with each prompt. If provided, the
+                length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
@@ -931,29 +1117,52 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             An LLMResult, which contains a list of candidate Generations for each input
                 prompt and additional model provider-specific output.
         """
+        if isinstance(metadata, list):
+            metadata = [
+                {
+                    **(meta or {}),
+                    **self._get_ls_params(stop=stop, **kwargs),
+                }
+                for meta in metadata
+            ]
+        elif isinstance(metadata, dict):
+            metadata = {
+                **(metadata or {}),
+                **self._get_ls_params(stop=stop, **kwargs),
+            }
         # Create callback managers
         if isinstance(callbacks, list) and (
             isinstance(callbacks[0], (list, BaseCallbackManager))
             or callbacks[0] is None
         ):
             # We've received a list of callbacks args to apply to each input
-            assert len(callbacks) == len(prompts)
-            assert tags is None or (
+            if len(callbacks) != len(prompts):
+                msg = "callbacks must be the same length as prompts"
+                raise ValueError(msg)
+            if tags is not None and not (
                 isinstance(tags, list) and len(tags) == len(prompts)
-            )
-            assert metadata is None or (
+            ):
+                msg = "tags must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if metadata is not None and not (
                 isinstance(metadata, list) and len(metadata) == len(prompts)
-            )
-            assert run_name is None or (
+            ):
+                msg = "metadata must be a list of the same length as prompts"
+                raise ValueError(msg)
+            if run_name is not None and not (
                 isinstance(run_name, list) and len(run_name) == len(prompts)
+            ):
+                msg = "run_name must be a list of the same length as prompts"
+                raise ValueError(msg)
+            callbacks = cast("list[Callbacks]", callbacks)
+            tags_list = cast(
+                "list[Optional[list[str]]]", tags or ([None] * len(prompts))
             )
-            callbacks = cast(List[Callbacks], callbacks)
-            tags_list = cast(List[Optional[List[str]]], tags or ([None] * len(prompts)))
             metadata_list = cast(
-                List[Optional[Dict[str, Any]]], metadata or ([{}] * len(prompts))
+                "list[Optional[dict[str, Any]]]", metadata or ([{}] * len(prompts))
             )
             run_name_list = run_name or cast(
-                List[Optional[str]], ([None] * len(prompts))
+                "list[Optional[str]]", ([None] * len(prompts))
             )
             callback_managers = [
                 AsyncCallbackManager.configure(
@@ -971,16 +1180,16 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             # We've received a single callbacks arg to apply to all inputs
             callback_managers = [
                 AsyncCallbackManager.configure(
-                    cast(Callbacks, callbacks),
+                    cast("Callbacks", callbacks),
                     self.callbacks,
                     self.verbose,
-                    cast(List[str], tags),
+                    cast("list[str]", tags),
                     self.tags,
-                    cast(Dict[str, Any], metadata),
+                    cast("dict[str, Any]", metadata),
                     self.metadata,
                 )
             ] * len(prompts)
-            run_name_list = [cast(Optional[str], run_name)] * len(prompts)
+            run_name_list = [cast("Optional[str]", run_name)] * len(prompts)
         run_ids_list = self._get_run_ids_list(run_id, prompts)
         params = self.dict()
         params["stop"] = stop
@@ -1001,7 +1210,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             run_managers = await asyncio.gather(
                 *[
                     callback_manager.on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompt],
                         invocation_params=params,
                         options=options,
@@ -1015,19 +1224,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 ]
             )
             run_managers = [r[0] for r in run_managers]  # type: ignore[misc]
-            output = await self._agenerate_helper(
+            return await self._agenerate_helper(
                 prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
-                **kwargs,  # type: ignore[arg-type]
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
-            return output
         if len(missing_prompts) > 0:
             run_managers = await asyncio.gather(
                 *[
                     callback_managers[idx].on_llm_start(
-                        dumpd(self),
+                        self._serialized,
                         [prompts[idx]],
                         invocation_params=params,
                         options=options,
@@ -1042,8 +1250,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 missing_prompts,
                 stop,
                 run_managers,  # type: ignore[arg-type]
-                bool(new_arg_supported),
-                **kwargs,  # type: ignore[arg-type]
+                new_arg_supported=bool(new_arg_supported),
+                **kwargs,
             )
             llm_output = await aupdate_cache(
                 self.cache,
@@ -1064,24 +1272,43 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         generations = [existing_prompts[i] for i in range(len(prompts))]
         return LLMResult(generations=generations, llm_output=llm_output, run=run_info)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def __call__(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
-        """Check Cache and run the LLM on the given prompt and input."""
+        """Check Cache and run the LLM on the given prompt and input.
+
+        Args:
+            prompt: The prompt to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of these substrings.
+            callbacks: Callbacks to pass through. Used for executing additional
+                functionality, such as logging or streaming, throughout generation.
+            tags: List of tags to associate with the prompt.
+            metadata: Metadata to associate with the prompt.
+            **kwargs: Arbitrary additional keyword arguments. These are usually passed
+                to the model provider API call.
+
+        Returns:
+            The generated text.
+
+        Raises:
+            ValueError: If the prompt is not a string.
+        """
         if not isinstance(prompt, str):
-            raise ValueError(
+            msg = (
                 "Argument `prompt` is expected to be a string. Instead found "
                 f"{type(prompt)}. If you want to run the LLM on multiple prompts, use "
                 "`generate` instead."
             )
+            raise ValueError(msg)  # noqa: TRY004
         return (
             self.generate(
                 [prompt],
@@ -1098,11 +1325,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     async def _call_async(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         callbacks: Callbacks = None,
         *,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -1116,56 +1343,48 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         )
         return result.generations[0][0].text
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
-        return self(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return self(text, stop=stop_, **kwargs)
 
-    @deprecated("0.1.7", alternative="invoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="invoke", removal="1.0")
+    @override
     def predict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
-        content = self(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        content = self(text, stop=stop_, **kwargs)
         return AIMessage(content=content)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict(
         self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
     ) -> str:
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
-        return await self._call_async(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        return await self._call_async(text, stop=stop_, **kwargs)
 
-    @deprecated("0.1.7", alternative="ainvoke", removal="0.2.0")
+    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
+    @override
     async def apredict_messages(
         self,
-        messages: List[BaseMessage],
+        messages: list[BaseMessage],
         *,
         stop: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ) -> BaseMessage:
         text = get_buffer_string(messages)
-        if stop is None:
-            _stop = None
-        else:
-            _stop = list(stop)
-        content = await self._call_async(text, stop=_stop, **kwargs)
+        stop_ = None if stop is None else list(stop)
+        content = await self._call_async(text, stop=stop_, **kwargs)
         return AIMessage(content=content)
 
     def __str__(self) -> str:
@@ -1178,7 +1397,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
     def _llm_type(self) -> str:
         """Return type of llm."""
 
-    def dict(self, **kwargs: Any) -> Dict:
+    @override
+    def dict(self, **kwargs: Any) -> dict:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1190,16 +1410,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         Args:
             file_path: Path to file to save the LLM to.
 
-        Example:
-        .. code-block:: python
+        Raises:
+            ValueError: If the file path is not a string or Path object.
 
-            llm.save(file_path="path/llm.yaml")
+        Example:
+
+            .. code-block:: python
+
+                llm.save(file_path="path/llm.yaml")
+
         """
         # Convert file to Path object.
-        if isinstance(file_path, str):
-            save_path = Path(file_path)
-        else:
-            save_path = file_path
+        save_path = Path(file_path)
 
         directory_path = save_path.parent
         directory_path.mkdir(parents=True, exist_ok=True)
@@ -1208,17 +1430,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         prompt_dict = self.dict()
 
         if save_path.suffix == ".json":
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with open(file_path, "w") as f:
+            with save_path.open("w") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
-            raise ValueError(f"{save_path} must be json or yaml")
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
 
 class LLM(BaseLLM):
-    """This class exposes a simple interface for implementing a custom LLM.
+    """Simple interface for implementing a custom LLM.
 
     You should subclass this class and implement the following:
 
@@ -1240,13 +1463,18 @@ class LLM(BaseLLM):
         `astream` will use `_astream` if provided, otherwise it will implement
         a fallback behavior that will use `_stream` if `_stream` is implemented,
         and use `_acall` if `_stream` is not implemented.
+
+    Please see the following guide for more information on how to
+    implement a custom LLM:
+
+    https://python.langchain.com/docs/how_to/custom_llm/
     """
 
     @abstractmethod
     def _call(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -1270,7 +1498,7 @@ class LLM(BaseLLM):
     async def _acall(
         self,
         prompt: str,
-        stop: Optional[List[str]] = None,
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -1303,8 +1531,8 @@ class LLM(BaseLLM):
 
     def _generate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
@@ -1323,12 +1551,12 @@ class LLM(BaseLLM):
 
     async def _agenerate(
         self,
-        prompts: List[str],
-        stop: Optional[List[str]] = None,
+        prompts: list[str],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
+        """Async run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:

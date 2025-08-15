@@ -1,36 +1,45 @@
 from enum import Enum
-from typing import Any, Dict, List, Type
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
-from langchain_core.pydantic_v1 import root_validator
+from langchain_core.utils import pre_init
+from typing_extensions import override
 
 
-class EnumOutputParser(BaseOutputParser):
+class EnumOutputParser(BaseOutputParser[Enum]):
     """Parse an output that is one of a set of values."""
 
-    enum: Type[Enum]
+    enum: type[Enum]
     """The enum to parse. Its values must be strings."""
 
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
+    @pre_init
+    def _raise_deprecation(cls, values: dict) -> dict:
         enum = values["enum"]
         if not all(isinstance(e.value, str) for e in enum):
-            raise ValueError("Enum values must be strings")
+            msg = "Enum values must be strings"
+            raise ValueError(msg)
         return values
 
     @property
-    def _valid_values(self) -> List[str]:
+    def _valid_values(self) -> list[str]:
         return [e.value for e in self.enum]
 
-    def parse(self, response: str) -> Any:
+    @override
+    def parse(self, response: str) -> Enum:
         try:
             return self.enum(response.strip())
-        except ValueError:
-            raise OutputParserException(
+        except ValueError as e:
+            msg = (
                 f"Response '{response}' is not one of the "
                 f"expected values: {self._valid_values}"
             )
+            raise OutputParserException(msg) from e
 
+    @override
     def get_format_instructions(self) -> str:
         return f"Select one of the following options: {', '.join(self._valid_values)}"
+
+    @property
+    @override
+    def OutputType(self) -> type[Enum]:
+        return self.enum

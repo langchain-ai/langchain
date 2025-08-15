@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
 
 
 class SpacyTextSplitter(TextSplitter):
     """Splitting text using Spacy package.
-
 
     Per default, Spacy's `en_core_web_sm` model is used and
     its default max_length is 1000000 (it is the length of maximum character
@@ -20,6 +19,8 @@ class SpacyTextSplitter(TextSplitter):
         separator: str = "\n\n",
         pipeline: str = "en_core_web_sm",
         max_length: int = 1_000_000,
+        *,
+        strip_whitespace: bool = True,
         **kwargs: Any,
     ) -> None:
         """Initialize the spacy text splitter."""
@@ -28,10 +29,14 @@ class SpacyTextSplitter(TextSplitter):
             pipeline, max_length=max_length
         )
         self._separator = separator
+        self._strip_whitespace = strip_whitespace
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
-        splits = (s.text for s in self._tokenizer(text).sents)
+        splits = (
+            s.text if self._strip_whitespace else s.text_with_ws
+            for s in self._tokenizer(text).sents
+        )
         return self._merge_splits(splits, self._separator)
 
 
@@ -40,10 +45,9 @@ def _make_spacy_pipeline_for_splitting(
 ) -> Any:  # avoid importing spacy
     try:
         import spacy
-    except ImportError:
-        raise ImportError(
-            "Spacy is not installed, please install it with `pip install spacy`."
-        )
+    except ImportError as err:
+        msg = "Spacy is not installed, please install it with `pip install spacy`."
+        raise ImportError(msg) from err
     if pipeline == "sentencizer":
         from spacy.lang.en import English
 

@@ -1,5 +1,23 @@
-from langchain_community.retrievers.elastic_search_bm25 import (
-    ElasticSearchBM25Retriever,
-)
+from typing import TYPE_CHECKING, Any
 
-__all__ = ["ElasticSearchBM25Retriever"]
+from langchain._api import create_importer
+
+if TYPE_CHECKING:
+    from langchain_community.retrievers import ElasticSearchBM25Retriever
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {"ElasticSearchBM25Retriever": "langchain_community.retrievers"}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
+
+
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
+
+
+__all__ = [
+    "ElasticSearchBM25Retriever",
+]

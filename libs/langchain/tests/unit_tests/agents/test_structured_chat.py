@@ -1,6 +1,7 @@
 """Unittests for langchain.agents.chat package."""
+
 from textwrap import dedent
-from typing import Any, Tuple
+from typing import Any
 
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.prompts.chat import (
@@ -16,14 +17,14 @@ from langchain.agents.structured_chat.output_parser import StructuredChatOutputP
 output_parser = StructuredChatOutputParser()
 
 
-def get_action_and_input(text: str) -> Tuple[str, str]:
+def get_action_and_input(text: str) -> tuple[str, str]:
     output = output_parser.parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    elif isinstance(output, AgentFinish):
+    if isinstance(output, AgentFinish):
         return output.return_values["output"], output.log
-    else:
-        raise ValueError("Unexpected output type")
+    msg = "Unexpected output type"
+    raise ValueError(msg)
 
 
 def test_parse_with_language() -> None:
@@ -62,7 +63,7 @@ def test_parse_with_language_and_spaces() -> None:
     llm_output = """I can use the `foo` tool to achieve the goal.
 
     Action:
-    ```json     
+    ```json
 
     {
       "action": "foo",
@@ -120,7 +121,7 @@ class TestCreatePrompt:
     # Test: Output should be a ChatPromptTemplate with sys and human messages.
     def test_create_prompt_output(self) -> None:
         prompt = StructuredChatAgent.create_prompt(
-            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
+            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)],
         )
 
         assert isinstance(prompt, ChatPromptTemplate)
@@ -131,31 +132,31 @@ class TestCreatePrompt:
     # Test: Format with a single tool.
     def test_system_message_single_tool(self) -> None:
         prompt: Any = StructuredChatAgent.create_prompt(
-            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)]
+            [Tool(name="foo", description="Test tool FOO", func=lambda x: x)],
         )
         actual = prompt.messages[0].prompt.format()
 
         expected = dedent(
             """
             Respond to the human as helpfully and accurately as possible. You have access to the following tools:
-            
+
             foo: Test tool FOO, args: {'tool_input': {'type': 'string'}}
-        
+
             Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
-            
+
             Valid "action" values: "Final Answer" or foo
-            
+
             Provide only ONE action per $JSON_BLOB, as shown:
-            
+
             ```
             {
               "action": $TOOL_NAME,
               "action_input": $INPUT
             }
             ```
-            
+
             Follow this format:
-            
+
             Question: input question to answer
             Thought: consider previous and subsequent steps
             Action:
@@ -172,10 +173,10 @@ class TestCreatePrompt:
               "action_input": "Final response to human"
             }
             ```
-        
+
             Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
             Thought:
-            """  # noqa: E501
+            """,  # noqa: E501
         ).strip()
 
         assert actual == expected
@@ -196,7 +197,7 @@ class TestCreatePrompt:
             [
                 Tool(name="foo", description="Test tool FOO", func=lambda x: x),
                 Tool(name="bar", description="Test tool BAR", func=lambda x: x),
-            ]
+            ],
         )
 
         actual = prompt.messages[0].prompt.format()
@@ -204,25 +205,25 @@ class TestCreatePrompt:
         expected = dedent(
             """
             Respond to the human as helpfully and accurately as possible. You have access to the following tools:
-            
+
             foo: Test tool FOO, args: {'tool_input': {'type': 'string'}}
             bar: Test tool BAR, args: {'tool_input': {'type': 'string'}}
-        
+
             Use a json blob to specify a tool by providing an action key (tool name) and an action_input key (tool input).
-            
+
             Valid "action" values: "Final Answer" or foo, bar
-            
+
             Provide only ONE action per $JSON_BLOB, as shown:
-            
+
             ```
             {
               "action": $TOOL_NAME,
               "action_input": $INPUT
             }
             ```
-            
+
             Follow this format:
-            
+
             Question: input question to answer
             Thought: consider previous and subsequent steps
             Action:
@@ -239,10 +240,10 @@ class TestCreatePrompt:
               "action_input": "Final response to human"
             }
             ```
-        
+
             Begin! Reminder to ALWAYS respond with a valid json blob of a single action. Use tools if necessary. Respond directly if appropriate. Format is Action:```$JSON_BLOB```then Observation:.
             Thought:
-            """  # noqa: E501
+            """,  # noqa: E501
         ).strip()
 
         assert actual == expected

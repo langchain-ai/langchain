@@ -1,10 +1,21 @@
 # DingoDB
 
-This page covers how to use the DingoDB ecosystem within LangChain.
-It is broken into two parts: installation and setup, and then references to specific DingoDB wrappers.
+>[DingoDB](https://github.com/dingodb) is a distributed multi-modal vector
+> database. It combines the features of a data lake and a vector database,
+> allowing for the storage of any type of data (key-value, PDF, audio,
+> video, etc.) regardless of its size. Utilizing DingoDB, you can construct
+> your own Vector Ocean (the next-generation data architecture following data
+> warehouse and data lake). This enables
+> the analysis of both structured and unstructured data through
+> a singular SQL with exceptionally low latency in real time.
 
 ## Installation and Setup
-- Install the Python SDK with `pip install dingodb`
+
+Install the Python SDK
+
+```bash
+pip install dingodb
+```
 
 ## VectorStore
 
@@ -12,6 +23,7 @@ There exists a wrapper around DingoDB indexes, allowing you to use it as a vecto
 whether for semantic search or example selection.
 
 To import this vectorstore:
+
 ```python
 from langchain_community.vectorstores import Dingo
 ```

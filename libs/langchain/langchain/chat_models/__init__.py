@@ -16,11 +16,13 @@ an interface where "chat messages" are the inputs and outputs.
 
     AIMessage, BaseMessage, HumanMessage
 """  # noqa: E501
+
 import warnings
 
 from langchain_core._api import LangChainDeprecationWarning
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api.interactive_env import is_interactive_env
+from langchain.chat_models.base import init_chat_model
 
 
 def __getattr__(name: str) -> None:
@@ -34,6 +36,7 @@ def __getattr__(name: str) -> None:
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.chat_models import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
+            stacklevel=2,
             category=LangChainDeprecationWarning,
         )
 
@@ -41,34 +44,35 @@ def __getattr__(name: str) -> None:
 
 
 __all__ = [
-    "ChatOpenAI",
-    "BedrockChat",
     "AzureChatOpenAI",
-    "FakeListChatModel",
-    "PromptLayerChatOpenAI",
+    "BedrockChat",
+    "ChatAnthropic",
+    "ChatAnyscale",
+    "ChatBaichuan",
+    "ChatCohere",
     "ChatDatabricks",
     "ChatEverlyAI",
-    "ChatAnthropic",
-    "ChatCohere",
+    "ChatFireworks",
     "ChatGooglePalm",
-    "ChatMlflow",
-    "ChatMLflowAIGateway",
-    "ChatOllama",
-    "ChatVertexAI",
-    "JinaChat",
-    "HumanInputChatModel",
-    "MiniMaxChat",
-    "ChatAnyscale",
-    "ChatLiteLLM",
-    "ErnieBotChat",
+    "ChatHunyuan",
     "ChatJavelinAIGateway",
     "ChatKonko",
-    "PaiEasChatEndpoint",
-    "QianfanChatEndpoint",
-    "ChatFireworks",
+    "ChatLiteLLM",
+    "ChatMLflowAIGateway",
+    "ChatMlflow",
+    "ChatOllama",
+    "ChatOpenAI",
+    "ChatVertexAI",
     "ChatYandexGPT",
-    "ChatBaichuan",
-    "ChatHunyuan",
+    "ErnieBotChat",
+    "FakeListChatModel",
     "GigaChat",
+    "HumanInputChatModel",
+    "JinaChat",
+    "MiniMaxChat",
+    "PaiEasChatEndpoint",
+    "PromptLayerChatOpenAI",
+    "QianfanChatEndpoint",
     "VolcEngineMaasChat",
+    "init_chat_model",
 ]

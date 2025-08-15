@@ -1,14 +1,10 @@
 """Toolkit for interacting with a vector store."""
-from typing import List
 
-from langchain_community.tools.vectorstore.tool import (
-    VectorStoreQATool,
-    VectorStoreQAWithSourcesTool,
-)
 from langchain_core.language_models import BaseLanguageModel
-from langchain_core.pydantic_v1 import BaseModel, Field
-from langchain_core.tools import BaseTool, BaseToolkit
+from langchain_core.tools import BaseTool
+from langchain_core.tools.base import BaseToolkit
 from langchain_core.vectorstores import VectorStore
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class VectorStoreInfo(BaseModel):
@@ -18,10 +14,9 @@ class VectorStoreInfo(BaseModel):
     name: str
     description: str
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class VectorStoreToolkit(BaseToolkit):
@@ -30,15 +25,23 @@ class VectorStoreToolkit(BaseToolkit):
     vectorstore_info: VectorStoreInfo = Field(exclude=True)
     llm: BaseLanguageModel
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> list[BaseTool]:
         """Get the tools in the toolkit."""
+        try:
+            from langchain_community.tools.vectorstore.tool import (
+                VectorStoreQATool,
+                VectorStoreQAWithSourcesTool,
+            )
+        except ImportError as e:
+            msg = "You need to install langchain-community to use this toolkit."
+            raise ImportError(msg) from e
         description = VectorStoreQATool.get_description(
-            self.vectorstore_info.name, self.vectorstore_info.description
+            self.vectorstore_info.name,
+            self.vectorstore_info.description,
         )
         qa_tool = VectorStoreQATool(
             name=self.vectorstore_info.name,
@@ -47,7 +50,8 @@ class VectorStoreToolkit(BaseToolkit):
             llm=self.llm,
         )
         description = VectorStoreQAWithSourcesTool.get_description(
-            self.vectorstore_info.name, self.vectorstore_info.description
+            self.vectorstore_info.name,
+            self.vectorstore_info.description,
         )
         qa_with_sources_tool = VectorStoreQAWithSourcesTool(
             name=f"{self.vectorstore_info.name}_with_sources",
@@ -61,20 +65,27 @@ class VectorStoreToolkit(BaseToolkit):
 class VectorStoreRouterToolkit(BaseToolkit):
     """Toolkit for routing between Vector Stores."""
 
-    vectorstores: List[VectorStoreInfo] = Field(exclude=True)
+    vectorstores: list[VectorStoreInfo] = Field(exclude=True)
     llm: BaseLanguageModel
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
-        arbitrary_types_allowed = True
-
-    def get_tools(self) -> List[BaseTool]:
+    def get_tools(self) -> list[BaseTool]:
         """Get the tools in the toolkit."""
-        tools: List[BaseTool] = []
+        tools: list[BaseTool] = []
+        try:
+            from langchain_community.tools.vectorstore.tool import (
+                VectorStoreQATool,
+            )
+        except ImportError as e:
+            msg = "You need to install langchain-community to use this toolkit."
+            raise ImportError(msg) from e
         for vectorstore_info in self.vectorstores:
             description = VectorStoreQATool.get_description(
-                vectorstore_info.name, vectorstore_info.description
+                vectorstore_info.name,
+                vectorstore_info.description,
             )
             qa_tool = VectorStoreQATool(
                 name=vectorstore_info.name,

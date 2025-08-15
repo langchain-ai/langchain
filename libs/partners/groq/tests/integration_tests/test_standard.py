@@ -1,26 +1,39 @@
-"""Standard LangChain interface tests"""
-
-from typing import Type
+"""Standard LangChain interface tests."""
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_core.tools import BaseTool
+from langchain_tests.integration_tests import (
+    ChatModelIntegrationTests,
+)
 
 from langchain_groq import ChatGroq
 
+rate_limiter = InMemoryRateLimiter(requests_per_second=0.2)
 
-class TestMistralStandard(ChatModelIntegrationTests):
-    @pytest.fixture
-    def chat_model_class(self) -> Type[BaseChatModel]:
+
+class BaseTestGroq(ChatModelIntegrationTests):
+    @property
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq
 
     @pytest.mark.xfail(reason="Not yet implemented.")
     def test_tool_message_histories_list_content(
-        self,
-        chat_model_class: Type[BaseChatModel],
-        chat_model_params: dict,
-        chat_model_has_tool_calling: bool,
+        self, model: BaseChatModel, my_adder_tool: BaseTool
     ) -> None:
-        super().test_tool_message_histories_list_content(
-            chat_model_class, chat_model_params, chat_model_has_tool_calling
-        )
+        super().test_tool_message_histories_list_content(model, my_adder_tool)
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
+
+
+class TestGroqGemma(BaseTestGroq):
+    @property
+    def chat_model_params(self) -> dict:
+        return {"model": "gemma2-9b-it", "rate_limiter": rate_limiter}
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True

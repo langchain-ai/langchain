@@ -7,6 +7,7 @@ from uuid import UUID
 from langchain_core.exceptions import TracerException
 from langchain_core.tracers.stdout import FunctionCallbackHandler
 from langchain_core.utils.input import get_bolded_text, get_colored_text
+from typing_extensions import override
 
 
 class LoggingCallbackHandler(FunctionCallbackHandler):
@@ -21,6 +22,15 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
         extra: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
+        """
+        Initialize the LoggingCallbackHandler.
+
+        Args:
+            logger: the logger to use for logging
+            log_level: the logging level (default: logging.INFO)
+            extra: the extra context to log (default: None)
+            **kwargs:
+        """
         log_method = getattr(logger, logging.getLevelName(level=log_level).lower())
 
         def callback(text: str) -> None:
@@ -28,19 +38,20 @@ class LoggingCallbackHandler(FunctionCallbackHandler):
 
         super().__init__(function=callback, **kwargs)
 
+    @override
     def on_text(
         self,
         text: str,
         *,
         run_id: UUID,
-        parent_run_id: Optional[UUID] = None,  # noqa: ARG002
-        **kwargs: Any,  # noqa: ARG002
+        parent_run_id: Optional[UUID] = None,
+        **kwargs: Any,
     ) -> None:
         try:
             crumbs_str = f"[{self.get_breadcrumbs(run=self._get_run(run_id=run_id))}] "
         except TracerException:
             crumbs_str = ""
         self.function_callback(
-            f'{get_colored_text("[text]", color="blue")}'
-            f' {get_bolded_text(f"{crumbs_str}New text:")}\n{text}'
+            f"{get_colored_text('[text]', color='blue')}"
+            f" {get_bolded_text(f'{crumbs_str}New text:')}\n{text}",
         )

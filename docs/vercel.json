@@ -1,1198 +1,166 @@
 {
+  "buildCommand": "yarn build",
+  "outputDirectory": "build",
+  "ignoreCommand": "bash ignore-step.sh",
   "trailingSlash": true,
-  "redirects": [
-    {
-      "source": "/docs/integrations/llms/titan_takeoff_pro",
-      "destination": "/docs/integrations/llms/titan_takeoff"
-    },
-    {
-      "source": "/docs/integrations/providers/optimum_intel(/?)",
-      "destination": "/docs/integrations/providers/intel/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/diffbot_graphtransformer(/?)",
-      "destination": "/docs/integrations/graphs/diffbot/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_arangodb_qa(/?)",
-      "destination": "/docs/integrations/graphs/arangodb/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_cypher_qa(/?)",
-      "destination": "/docs/integrations/graphs/neo4j_cypher/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_falkordb_qa(/?)",
-      "destination": "/docs/integrations/graphs/falkordb/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_gremlin_cosmosdb_qa(/?)",
-      "destination": "/docs/integrations/graphs/azure_cosmosdb_gremlin/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_hugegraph_qa(/?)",
-      "destination": "/docs/integrations/graphs/hugegraph/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_kuzu_qa(/?)",
-      "destination": "/docs/integrations/graphs/kuzu_db/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_memgraph_qa(/?)",
-      "destination": "/docs/integrations/graphs/memgraph/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_nebula_qa(/?)",
-      "destination": "/docs/integrations/graphs/nebula_graph/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_networkx_qa(/?)",
-      "destination": "/docs/integrations/graphs/networkx/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_ontotext_graphdb_qa(/?)",
-      "destination": "/docs/integrations/graphs/ontotext/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/graph_sparql_qa(/?)",
-      "destination": "/docs/integrations/graphs/rdflib_sparql/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/neptune_cypher_qa(/?)",
-      "destination": "/docs/integrations/graphs/amazon_neptune_open_cypher/"
-    },
-    {
-      "source": "/docs/use_cases/graph/integrations/neptune_sparql_qa(/?)",
-      "destination": "/docs/integrations/graphs/amazon_neptune_sparql/"
-    },
-    {
-      "source": "/docs/integrations/providers/facebook_chat(/?)",
-      "destination": "/docs/integrations/providers/facebook/"
-    },
-    {
-      "source": "/docs/integrations/providers/facebook_faiss(/?)",
-      "destination": "/docs/integrations/providers/facebook/"
-    },
-    {
-      "source": "/docs/use_cases/graph/diffbot_graphtransformer(/?)",
-      "destination": "/docs/use_cases/graph/integrations/diffbot_graphtransformer/"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_arangodb_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_arangodb_qa/"
-    },
-    {
-      "source":  "/docs/use_cases/graph/graph_cypher_qa(/?)",
-      "destination":  "/docs/use_cases/graph/integrations/graph_cypher_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_falkordb_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_falkordb_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_gremlin_cosmosdb_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_gremlin_cosmosdb_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_hugegraph_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_hugegraph_qa"
-    },
-    {
-      "source":  "/docs/use_cases/graph/graph_kuzu_qa(/?)",
-      "destination":  "/docs/use_cases/graph/integrations/graph_kuzu_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_memgraph_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_memgraph_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_nebula_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_nebula_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_networkx_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_networkx_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_ontotext_graphdb_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_ontotext_graphdb_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/graph_sparql_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/graph_sparql_qa"
-    },
-    {
-      "source": "/docs/use_cases/graph/neptune_cypher_qa.ipynb(/?)",
-      "destination": "/docs/use_cases/graph/integrations/neptune_cypher_qa.ipynb"
-    },
-    {
-      "source": "/docs/use_cases/graph/neptune_sparql_qa(/?)",
-      "destination": "/docs/use_cases/graph/integrations/neptune_sparql_qa"
-    },
-    {
-      "source": "/docs/integrations/memory/google_cloud_sql_mssql(/?)",
-      "destination": "/docs/integrations/memory/google_sql_mssql"
-    },
-    {
-      "source": "/docs/integrations/memory/google_cloud_sql_mysql(/?)",
-      "destination": "/docs/integrations/memory/google_sql_mysql"
-    },
-    {
-      "source": "/docs/integrations/memory/google_cloud_sql_pg(/?)",
-      "destination": "/docs/integrations/memory/google_sql_pg"
-    },
-    {
-      "source": "/docs/integrations/memory/google_datastore(/?)",
-      "destination": "/docs/integrations/memory/google_firestore_datastore"
-    },
-    {
-      "source": "/docs/integrations/llms/huggingface_textgen_inference(/?)",
-      "destination": "/docs/integrations/llms/huggingface_endpoint"
-    },
-    {
-      "source": "/docs/integrations/llms/huggingface_hub(/?)",
-      "destination": "/docs/integrations/llms/huggingface_endpoint"
-    },
-    {
-      "source": "/docs/integrations/llms/bigdl(/?)",
-      "destination": "/docs/integrations/llms/ipex_llm"
-    },
-    {
-      "source": "/docs/integrations/llms/watsonxllm(/?)",
-      "destination": "/docs/integrations/llms/ibm_watsonx"
-    },
-    {
-      "source": "/docs/integrations/llms/pai_eas_endpoint(/?)",
-      "destination": "/docs/integrations/llms/alibabacloud_pai_eas_endpoint"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/hanavector(/?)",
-      "destination": "/docs/integrations/vectorstores/sap_hanavector"
-    },
-    {
-      "source": "/docs/use_cases/qa_structured/sql(/?)",
-      "destination": "/docs/use_cases/sql/"
-    },
-    {
-      "source": "/docs/contributing/packages(/?)",
-      "destination": "/docs/packages"
-    },
-    {
-      "source": "/docs/community(/?)",
-      "destination": "/docs/contributing"
-    },
-    {
-      "source": "/docs/modules/chains/(.+)(/?)",
-      "destination": "/docs/modules/chains"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/custom_llm_agent(/?)",
-      "destination": "/docs/modules/agents/how_to/custom_agent"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/custom-functions-with-openai-functions-agent(/?)",
-      "destination": "/docs/modules/agents/how_to/custom_agent"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/custom_llm_chat_agent(/?)",
-      "destination": "/docs/modules/agents/how_to/custom_agent"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/custom_mrkl_agent(/?)",
-      "destination": "/docs/modules/agents/how_to/custom_agent"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/streaming_stdout_final_only(/?)",
-      "destination": "/docs/modules/agents/how_to/streaming"
-    },
-    {
-      "source": "/docs/modules/data_connection/document_transformers/text_splitters(/?)",
-      "destination": "/docs/modules/data_connection/document_transformers/"
-    },
-    {
-      "source": "/docs/modules/data_connection/document_transformers/text_splitters/:path*(/?)",
-      "destination": "/docs/modules/data_connection/document_transformers/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
-      "destination": "/docs/modules/model_io/prompts/"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/prompts_pipelining(/?)",
-      "destination": "/docs/modules/model_io/prompts/composition"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/prompt_templates/:path*(/?)",
-      "destination": "/docs/modules/model_io/prompts/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/comma_separated(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/comma_separated"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/enum(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/enum"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/output_fixing_parser(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/output_fixing_parser"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/pandas_dataframe(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/pandas_dataframe"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/structured(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/structured"
-    },
-    {
-      "source": "/docs/modules/model_io/output_parsers/xml(/?)",
-      "destination": "/docs/modules/model_io/output_parsers/types/xml"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/code_understanding(/?)",
-      "destination": "/docs/use_cases/code_understanding"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/document-context-aware-QA(/?)",
-      "destination": "/docs/modules/data_connection/document_transformers/"
-    },
-    {
-      "source": "/docs/integrations/providers/alibabacloud_opensearch(/?)",
-      "destination": "/docs/integrations/providers/alibaba_cloud"
-    },
-    {
-      "source": "/docs/integrations/chat/pai_eas_chat_endpoint(/?)",
-      "destination": "/docs/integrations/chat/alibaba_cloud_pai_eas"
-    },
-    {
-      "source": "/docs/integrations/providers/tencentvectordb(/?)",
-      "destination": "/docs/integrations/providers/tencent"
-    },
-    {
-      "source": "/docs/integrations/chat/hunyuan(/?)",
-      "destination": "/docs/integrations/chat/tencent_hunyuan"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/excel(/?)",
-      "destination": "/docs/integrations/document_loaders/microsoft_excel"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/onenote(/?)",
-      "destination": "/docs/integrations/document_loaders/microsoft_onenote"
-    },
-    {
-      "source": "/docs/integrations/providers/aws_dynamodb(/?)",
-      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
-    },
-    {
-      "source": "/docs/integrations/providers/scann(/?)",
-      "destination": "/docs/integrations/platforms/google#google-scann"
-    },
-    {
-      "source": "/docs/integrations/toolkits/google_drive(/?)",
-      "destination": "/docs/integrations/tools/google_drive"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/analyze_document(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/qa_citations(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/chat_vector_db(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/in_memory_question_answering(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/multi_retrieval_qa_router(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/multiple_retrieval(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/vector_db_qa(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/vector_db_text_generation(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/modules/agents/toolkits(/?)",
-      "destination": "/docs/modules/agents/tools/toolkits"
-    },
-    {
-      "source": "/docs/modules/model_io/models(/?)",
-      "destination": "/docs/modules/model_io/"
-    },
-    {
-      "source": "/docs/modules/model_io/models/:path*(/?)",
-      "destination": "/docs/modules/model_io/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/fake_llm(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/human_input_llm(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/human_input_chat_model(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/llm_chain(/?)",
-      "destination": "/docs/modules/chains/foundational/llm_chain"
-    },
-    {
-      "source": "/docs/guides/langsmith(/?)",
-      "destination": "/docs/langsmith/"
-    },
-    {
-      "source": "/docs/guides/langsmith/walkthrough(/?)",
-      "destination": "/docs/langsmith/walkthrough"
-    },
-    {
-      "source": "/docs/modules/data_connection/retrievers/self_query/:path+(/?)",
-      "destination": "/docs/integrations/retrievers/self_query/:path+"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents/:path*(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations/:path*(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/code/code-analysis-deeplake(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing/cpal(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents/custom_agent_with_plugin_retrieval(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents/custom_agent_with_plugin_retrieval_using_plugnplai(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/qa_structured/integrations/databricks(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/qa_structured/integrations/elasticsearch(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/flare(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/hyde(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/learned_prompt_optimization(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing/llm_bash(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/self_check/llm_checker(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing/llm_math(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/self_check/llm_summarization_checker(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing/llm_symbolic_math(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/multi_modal/multi_modal_output_agent(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/qa_structured/integrations/myscale_vector_sql(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/integrations/openai_functions_retrieval_qa(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/code_writing/pal(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents/sales_agent_with_context(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/integrations/semantic-search-over-chat(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/self_check/smart_llm(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/qa_structured/integrations/sqlite(/?)",
-      "destination": "/docs/use_cases/sql/"
-    },
-    {
-      "source": "/docs/use_cases/more/graph/tot(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/code/twitter-the-algorithm-analysis-deeplake(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents/wikibase_agent(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/data_generation(/?)",
-      "destination": "/docs/use_cases/data_generation"
-    },
-    {
-      "source": "/docs/use_cases/more/graph/:path*(/?)",
-      "destination": "/docs/use_cases/graph/:path*"
-    },
-    {
-      "source": "/docs/use_cases/more/graph(/?)",
-      "destination": "/docs/use_cases/graph/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/chat_vector_db(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/conversational_retrieval_agents(/?)",
-      "destination": "/docs/use_cases/question_answering/conversational_retrieval_agents"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/question_answering(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/local_retrieval_qa(/?)",
-      "destination": "/docs/use_cases/question_answering/local_retrieval_qa"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/qa_citations(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/question_answering(/?)",
-      "destination": "/docs/use_cases/question_answering/"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agent_simulations(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/agents/camel_role_playing(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/agents/autonomous_agents(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/more/self_check(/?)(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/analyze_document(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/use_cases/question_answering/how_to/code/(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/docs/modules/agents/agents/examples/mrkl_chat(.html?)(/?)",
-      "destination": "/docs/modules/agents/"
-    },
+  "rewrites": [
     {
       "source": "/docs/integrations(/?)",
-      "destination": "/docs/integrations/providers/"
+      "destination": "/docs/integrations/platforms/"
     },
     {
-      "source": "/docs/expression_language/cookbook/routing(/?)",
-      "destination": "/docs/expression_language/how_to/routing"
+      "source": "/v0.1",
+      "destination": "https://langchain-v01.vercel.app/v0.1"
     },
     {
-      "source": "/docs/guides/expression_language(/?)",
-      "destination": "/docs/expression_language/"
+      "source": "/v0.1/:path(.*/?)*",
+      "destination": "https://langchain-v01.vercel.app/v0.1/:path*"
     },
     {
-      "source": "/docs/integrations/providers/amazon_api_gateway(/?)",
-      "destination": "/docs/integrations/platforms/aws"
+      "source": "/v0.2",
+      "destination": "https://langchain-v02.vercel.app/v0.2"
     },
     {
-      "source": "/docs/integrations/providers/huggingface(/?)",
-      "destination": "/docs/integrations/platforms/huggingface"
-    },
-    {
-      "source": "/docs/integrations/providers/azure_blob_storage(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/google_vertexai_matchingengine(/?)",
-      "destination": "/docs/integrations/platforms/google"
-    },
-    {
-      "source": "/docs/integrations/providers/aws_s3(/?)",
-      "destination": "/docs/integrations/platforms/aws"
-    },
-    {
-      "source": "/docs/integrations/providers/azure_openai(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/azure_blob_storage(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/azure_cognitive_search_(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/bedrock(/?)",
-      "destination": "/docs/integrations/platforms/aws"
-    },
-    {
-      "source": "/docs/integrations/providers/google_bigquery(/?)",
-      "destination": "/docs/integrations/platforms/google"
-    },
-    {
-      "source": "/docs/integrations/providers/google_cloud_storage(/?)",
-      "destination": "/docs/integrations/platforms/google"
-    },
-    {
-      "source": "/docs/integrations/providers/google_drive(/?)",
-      "destination": "/docs/integrations/platforms/google"
-    },
-    {
-      "source": "/docs/integrations/providers/google_search(/?)",
-      "destination": "/docs/integrations/platforms/google"
-    },
-    {
-      "source": "/docs/integrations/providers/microsoft_onedrive(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/microsoft_powerpoint(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/microsoft_word(/?)",
-      "destination": "/docs/integrations/platforms/microsoft"
-    },
-    {
-      "source": "/docs/integrations/providers/sagemaker_endpoint(/?)",
-      "destination": "/docs/integrations/platforms/aws"
-    },
-    {
-      "source": "/docs/integrations/providers/sagemaker_tracking(/?)",
-      "destination": "/docs/integrations/callbacks/sagemaker_tracking"
-    },
-    {
-      "source": "/docs/integrations/providers/openai(/?)",
-      "destination": "/docs/integrations/platforms/openai"
-    },
-    {
-      "source": "/docs/integrations/cassandra(/?)",
-      "destination": "/docs/integrations/providers/cassandra"
-    },
-    {
-      "source": "/docs/integrations/providers/providers/semadb(/?)",
-      "destination": "/docs/integrations/providers/semadb"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/vectorstores/semadb(/?)",
-      "destination": "/docs/integrations/vectorstores/semadb"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/async_faiss(/?)",
-      "destination": "/docs/integrations/vectorstores/faiss_async"
-    },
-    {
-      "source": "/docs/integrations/vectorstores/matchingengine(/?)",
-      "destination": "/docs/integrations/vectorstores/google_vertex_ai_vector_search"
-    },
-
-    {
-      "source": "/docs/integrations/tools/sqlite(/?)",
-      "destination": "/docs/use_cases/sql"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/pdf-amazonTextractPDFLoader(/?)",
-      "destination": "/docs/integrations/document_loaders/amazon_textract"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/Etherscan(/?)",
-      "destination": "/docs/integrations/document_loaders/etherscan"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/merge_doc_loader(/?)",
-      "destination": "/docs/integrations/document_loaders/merge_doc"
-    },
-    {
-      "source": "/docs/integrations/document_loaders/recursive_url_loader(/?)",
-      "destination": "/docs/integrations/document_loaders/recursive_url"
-    },
-    {
-      "source": "/en/latest/modules/indexes/text_splitters/examples/markdown_header_metadata.html(/?)",
-      "destination": "/docs/modules/data_connection/document_transformers/text_splitters/markdown_header_metadata"
-    },
-    {
-      "source": "/docs/integrations/providers/aws_dynamodb(/?)",
-      "destination": "/docs/integrations/platforms/aws#aws-dynamodb"
-    },
-    {
-      "source": "/docs/integrations/providers/google_document_ai(/?)",
-      "destination": "/docs/integrations/platforms/google#google-document-ai"
-    },
-    {
-      "source": "/docs/integrations/providers/scann(/?)",
-      "destination": "/docs/integrations/platforms/google#google-scann"
-    },
-    {
-      "source": "/docs/integrations/memory/motorhead_memory_managed(/?)",
-      "destination": "/docs/integrations/memory/motorhead_memory"
-    },
-    {
-      "source": "/docs/integrations/memory/dynamodb_chat_message_history(/?)",
-      "destination": "/docs/integrations/memory/aws_dynamodb"
-    },
-    {
-      "source": "/docs/integrations/memory/entity_memory_with_sqlite(/?)",
-      "destination": "/docs/integrations/memory/sqlite"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/anthropic(/?)",
-      "destination": "/docs/integrations/chat/anthropic"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/azure_chat_openai(/?)",
-      "destination": "/docs/integrations/chat/azure_chat_openai"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/google_vertex_ai_palm(/?)",
-      "destination": "/docs/integrations/chat/google_vertex_ai_palm"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/openai(/?)",
-      "destination": "/docs/integrations/chat/openai"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/promptlayer_chatopenai(/?)",
-      "destination": "/docs/integrations/chat/promptlayer_chatopenai"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/ai21(/?)",
-      "destination": "/docs/integrations/llms/ai21"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/aleph_alpha(/?)",
-      "destination": "/docs/integrations/llms/aleph_alpha"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/anyscale(/?)",
-      "destination": "/docs/integrations/llms/anyscale"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/azure_openai_example(/?)",
-      "destination": "/docs/integrations/llms/azure_openai_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/banana(/?)",
-      "destination": "/docs/integrations/llms/banana"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/baseten(/?)",
-      "destination": "/docs/integrations/llms/baseten"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/beam(/?)",
-      "destination": "/docs/integrations/llms/beam"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/bedrock(/?)",
-      "destination": "/docs/integrations/llms/bedrock"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/cerebriumai_example(/?)",
-      "destination": "/docs/integrations/llms/cerebriumai_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/cohere(/?)",
-      "destination": "/docs/integrations/llms/cohere"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/ctransformers(/?)",
-      "destination": "/docs/integrations/llms/ctransformers"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/databricks(/?)",
-      "destination": "/docs/integrations/llms/databricks"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/deepinfra_example(/?)",
-      "destination": "/docs/integrations/llms/deepinfra_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/forefrontai_example(/?)",
-      "destination": "/docs/integrations/llms/forefrontai_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/google_vertex_ai_palm(/?)",
-      "destination": "/docs/integrations/llms/google_vertex_ai_palm"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/gooseai_example(/?)",
-      "destination": "/docs/integrations/llms/gooseai_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/huggingface_hub(/?)",
-      "destination": "/docs/integrations/llms/huggingface_hub"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/huggingface_pipelines(/?)",
-      "destination": "/docs/integrations/llms/huggingface_pipelines"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/huggingface_textgen_inference(/?)",
-      "destination": "/docs/integrations/llms/huggingface_textgen_inference"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/jsonformer_experimental(/?)",
-      "destination": "/docs/integrations/llms/jsonformer_experimental"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/llamacpp(/?)",
-      "destination": "/docs/integrations/llms/llamacpp"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/llm_caching(/?)",
-      "destination": "/docs/integrations/llms/llm_caching"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/manifest(/?)",
-      "destination": "/docs/integrations/llms/manifest"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/modal(/?)",
-      "destination": "/docs/integrations/llms/modal"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/mosaicml(/?)",
-      "destination": "/docs/integrations/llms/mosaicml"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/nlpcloud(/?)",
-      "destination": "/docs/integrations/llms/nlpcloud"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/openai(/?)",
-      "destination": "/docs/integrations/llms/openai"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/openlm(/?)",
-      "destination": "/docs/integrations/llms/openlm"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/petals_example(/?)",
-      "destination": "/docs/integrations/llms/petals_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/pipelineai_example(/?)",
-      "destination": "/docs/integrations/llms/pipelineai_example"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/predictionguard(/?)",
-      "destination": "/docs/integrations/llms/predictionguard"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/promptlayer_openai(/?)",
-      "destination": "/docs/integrations/llms/promptlayer_openai"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/rellm_experimental(/?)",
-      "destination": "/docs/integrations/llms/rellm_experimental"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/replicate(/?)",
-      "destination": "/docs/integrations/llms/replicate"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/runhouse(/?)",
-      "destination": "/docs/integrations/llms/runhouse"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/sagemaker(/?)",
-      "destination": "/docs/integrations/llms/sagemaker"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/stochasticai(/?)",
-      "destination": "/docs/integrations/llms/stochasticai"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/writer(/?)",
-      "destination": "/docs/integrations/llms/writer"
-    },
-    {
-      "source": "/en/latest/use_cases/agent_simulations/:path*(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/baby_agi.html",
-      "destination": "/docs/use_cases/agents/baby_agi"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/baby_agi_with_agent.html",
-      "destination": "/docs/use_cases/agents/baby_agi_with_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/camel_role_playing.html",
-      "destination": "/docs/use_cases/agents/camel_role_playing"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/custom_agent_with_plugin_retrieval.html",
-      "destination": "/docs/use_cases/agents/custom_agent_with_plugin_retrieval"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/custom_agent_with_plugin_retrieval_using_plugnplai.html",
-      "destination": "/docs/use_cases/agents/custom_agent_with_plugin_retrieval_using_plugnplai"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/multi_modal_output_agent.html",
-      "destination": "/docs/use_cases/agents/multi_modal_output_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/sales_agent_with_context.html",
-      "destination": "/docs/use_cases/agents/sales_agent_with_context"
-    },
-    {
-      "source": "/en/latest/use_cases/agents/wikibase_agent.html",
-      "destination": "/docs/use_cases/agents/wikibase_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/apis.html",
-      "destination": "/docs/use_cases/apis"
-    },
-    {
-      "source": "/en/latest/use_cases/autonomous_agents/:path*(/?)",
-      "destination": "/cookbook"
-    },
-    {
-      "source": "/en/latest/use_cases/chatbots/voice_assistant.html",
-      "destination": "/docs/use_cases/chatbots/voice_assistant"
-    },
-    {
-      "source": "/en/latest/use_cases/code/code-analysis-deeplake.html",
-      "destination": "/docs/use_cases/code/code-analysis-deeplake"
-    },
-    {
-      "source": "/en/latest/use_cases/code/twitter-the-algorithm-analysis-deeplake.html",
-      "destination": "/docs/use_cases/code/twitter-the-algorithm-analysis-deeplake"
-    },
-    {
-      "source": "/en/latest/use_cases/extraction.html",
-      "destination": "/docs/use_cases/extraction"
-    },
-    {
-      "source": "/en/latest/use_cases/multi_modal/image_agent.html",
-      "destination": "/docs/use_cases/multi_modal/image_agent"
-    },
-    {
-      "source": "/en/latest/use_cases/question_answering/semantic-search-over-chat.html",
-      "destination": "/docs/use_cases/question_answering/semantic-search-over-chat"
-    },
-    {
-      "source": "/en/latest/use_cases/summarization.html",
-      "destination": "/docs/use_cases/summarization"
-    },
-    {
-      "source": "/en/latest/use_cases/tabular.html",
-      "destination": "/docs/use_cases/sql"
-    },
-    {
-      "source": "/en/latest/youtube.html",
-      "destination": "/docs/additional_resources/youtube"
-    },
-    {
-      "source": "/en/latest/modules/agents/agents/wikibase_agent.html",
-      "destination": "/docs/use_cases/agents/wikibase_agent"
-    },
-    {
-      "source": "/en/latest/modules/indexes/retrievers/examples/twitter-the-algorithm-analysis-deeplake.html",
-      "destination": "/docs/use_cases/code/twitter-the-algorithm-analysis-deeplake"
-    },
-    {
-      "source": "/en/latest/explanation/tools.html",
-      "destination": "/docs/modules/agents/tools"
-    },
-    {
-      "source": "/docs",
-      "destination": "/"
-    },
-    {
-      "source": "/docs/",
-      "destination": "/"
-    },
-    {
-      "source": "/en/latest",
-      "destination": "/"
-    },
-    {
-      "source": "/en/latest/",
-      "destination": "/"
-    },
-    {
-      "source": "/en/latest/index.html",
-      "destination": "/"
-    },
-    {
-      "source": "/en/latest/modules/indexes/retrievers/examples/self_query_retriever.html",
-      "destination": "/docs/modules/data_connection/retrievers/how_to/self_query/"
-    },
-    {
-      "source": "/en/latest/modules/indexes/retrievers/examples/:path*(/?)",
-      "destination": "/docs/integrations/retrievers/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/how_to/:path*(/?)",
-      "destination": "/docs/modules/model_io/chat/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/how_to/:path*(/?)",
-      "destination": "/docs/modules/model_io/llms/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/llms/integrations/:path*(/?)",
-      "destination": "/docs/integrations/llms/:path*"
-    },
-    {
-      "source": "/docs/modules/model_io/chat/integrations/:path*(/?)",
-      "destination": "/docs/integrations/chat/:path*"
-    },
-    {
-      "source": "/en/latest/modules/models.html(/?)",
-      "destination": "/docs/modules/model_io/"
-    },
-    {
-      "source": "/en/latest/modules/models/:path*(/?)",
-      "destination": "/docs/modules/model_io/:path*"
-    },
-    {
-      "source": "/docs/integrations/retrievers/google_cloud_enterprise_search(/?)",
-      "destination": "/docs/integrations/retrievers/google_vertex_ai_search"
-    },
-    {
-      "source": "/docs/integrations/providers/google_document_ai(/?)",
-      "destination": "/docs/integrations/platforms/google#google-document-ai"
-    },
-    {
-      "source": "/docs/integrations/tools/metaphor_search(/?)",
-      "destination": "/docs/integrations/tools/exa_search"
-    },
-    {
-      "source": "/docs/expression_language/how_to/fallbacks(/?)",
-      "destination": "/docs/guides/productionization/fallbacks"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/retrieval(/?)",
-      "destination": "/docs/use_cases/question_answering"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/agent(/?)",
-      "destination": "/docs/modules/agents/agent_types/xml_agent"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/message_prompts(/?)",
-      "destination": "/docs/modules/model_io/prompts/quick_start#message-prompts"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/pipeline(/?)",
-      "destination": "/docs/modules/model_io/prompts/composition#using-pipelineprompt"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/memory(/?)",
-      "destination": "/docs/modules/memory"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/tools(/?)",
-      "destination": "/docs/use_cases/tool_use/quickstart"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/sql_db(/?)",
-      "destination": "/docs/use_cases/sql/quickstart"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/moderation(/?)",
-      "destination": "/docs/guides/productionization/safety/moderation"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/embedding_router(/?)",
-      "destination": "/docs/expression_language/how_to/routing"
-    },
-    {
-      "source": "/docs/modules/model_io/prompts/example_selector_types/:path*(/?)",
-      "destination": "/docs/modules/model_io/prompts/example_selectors/:path*"
-    },
-    {
-      "source": "/docs/modules/agents/tools/:path*(/?)",
-      "destination": "/docs/modules/tools/:path*"
-    },
-    {
-      "source": "/docs/guides/structured_output(/?)",
-      "destination": "/docs/modules/model_io/chat/structured_output"
-    },
-    {
-      "source": "/docs/modules/agents/how_to/structured_tools(/?)",
-      "destination": "/docs/modules/tools"
-    },
-    {
-      "source": "/docs/use_cases/csv(/?)",
-      "destination": "/docs/use_cases/sql/csv"
-    },
-    {
-      "source": "/docs/guides/debugging(/?)",
-      "destination": "/docs/guides/development/debugging"
-    },
-    {
-      "source": "/docs/guides/deployments/:path*(/?)",
-      "destination": "/docs/guides/productionization/deployments/:path*"
-    },
-    {
-      "source": "/docs/guides/evaluation/:path*",
-      "destination": "/docs/guides/productionization/evaluation/:path*"
-    },
-    {
-      "source": "/docs/guides/extending_langchain(/?)",
-      "destination": "/docs/guides/development/extending_langchain"
-    },
-    {
-      "source": "/docs/guides/fallbacks(/?)",
-      "destination": "/docs/guides/productionization/fallbacks"
-    },
-    {
-      "source": "/docs/guides/privacy/:path*(/?)",
-      "destination": "/docs/guides/productionization/safety/:path*"
-    },
-    {
-      "source": "/docs/guides/safety/:path*(/?)",
-      "destination": "/docs/guides/productionization/safety/:path*"
-    },
-    {
-      "source": "/docs/guides/model_laboratory(/?)",
-      "destination": "/docs/guides/productionization/evaluation"
-    },
-    {
-      "source": "/docs/guides/pydantic_compatibility(/?)",
-      "destination": "/docs/guides/development/pydantic_compatibility"
-    },
-    {
-      "source": "/docs/guides/local_llms(/?)",
-      "destination": "/docs/guides/development/local_llms"
-    },
-    {
-      "source": "/docs/modules/model_io/quick_start(/?)",
-      "destination": "/docs/modules/model_io"
-    },
-    {
-      "source": "/docs/expression_language/how_to/generators(/?)",
-      "destination": "/docs/expression_language/primitives/functions"
-    },
-    {
-      "source": "/docs/expression_language/how_to/functions(/?)",
-      "destination": "/docs/expression_language/primitives/functions"
-    },
-    {
-      "source": "/docs/expression_language/how_to/passthrough(/?)",
-      "destination": "/docs/expression_language/primitives/passthrough"
-    },
-    {
-      "source": "/docs/expression_language/how_to/map(/?)",
-      "destination": "/docs/expression_language/primitives/parallel"
-    },
-    {
-      "source": "/docs/expression_language/how_to/binding(/?)",
-      "destination": "/docs/expression_language/primitives/binding"
-    },
-    {
-      "source": "/docs/expression_language/how_to/configure(/?)",
-      "destination": "/docs/expression_language/primitives/configure"
-    },
-    {
-      "source": "/docs/expression_language/cookbook/prompt_llm_parser(/?)",
-      "destination": "/docs/expression_language/get_started"
-    },
+      "source": "/v0.2/:path(.*/?)*",
+      "destination": "https://langchain-v02.vercel.app/v0.2/:path*"
+    }
+  ],
+  "redirects": [
     {
-      "source": "/docs/contributing/documentation(/?)",
-      "destination": "/docs/contributing/documentation/technical_logistics"
+      "source": "/v0.3/docs/:path(.*/?)*",
+      "destination": "/docs/:path*"
     },
     {
       "source": "/docs/modules/agents/tools/custom_tools(/?)",
-      "destination": "/docs/modules/tools/custom_tools/"
+      "destination": "/docs/how_to/custom_tools/"
     },
     {
-      "source": "/docs/expression_language/cookbook(/?)",
-      "destination": "/docs/expression_language/"
+      "source": "/docs/expression_language(/?)",
+      "destination": "/docs/concepts/lcel"
     },
     {
-      "source": "/docs/guides/evaluation(/?)",
-      "destination": "/docs/guides/productionization/evaluation/"
+      "source": "/docs/expression_language/interface(/?)",
+      "destination": "/docs/concepts/runnables"
     },
     {
-      "source": "/docs/guides/evaluation/:path*(/?)",
-      "destination": "/docs/guides/productionization/evaluation/:path*/"
+      "source": "/docs/versions/overview(/?)",
+      "destination": "/docs/versions/v0_2/overview/"
     },
     {
-      "source": "/docs/integrations/text_embedding/solar(/?)",
-      "destination": "/docs/integrations/text_embedding/upstage"
+      "source": "/docs/how_to/tool_calls_multi_modal(/?)",
+      "destination": "/docs/how_to/multimodal_inputs/"
     },
     {
-      "source": "/docs/integrations/chat/solar(/?)",
-      "destination": "/docs/integrations/chat/upstage"
+      "source": "/docs/tutorials/pdf_qa",
+      "destination": "/docs/tutorials/retrievers/"
+    },
+    {
+      "source": "/docs/tutorials/query_analysis",
+      "destination": "/docs/tutorials/rag#query-analysis"
+    },
+    {
+      "source": "/docs/tutorials/local_rag",
+      "destination": "/docs/tutorials/rag"
+    },
+    {
+      "source": "/docs/how_to/graph_mapping(/?)",
+      "destination": "/docs/tutorials/graph#query-validation"
+    },
+    {
+      "source": "/docs/how_to/graph_prompting(/?)",
+      "destination": "/docs/tutorials/graph#few-shot-prompting"
+    },
+    {
+      "source": "/docs/how_to/HTML_header_metadata_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlheadertextsplitter"
+    },
+    {
+      "source": "/docs/how_to/HTML_section_aware_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlsectionsplitter"
+    },
+    {
+      "source": "/docs/tutorials/data_generation",
+      "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
+    },
+    {
+      "source": "/docs/langsmith(/?)",
+      "destination": "https://docs.smith.langchain.com/"
+    },
+    {
+      "source": "/docs/langgraph(/?)",
+      "destination": "https://langchain-ai.github.io/langgraph"
+    },
+    {
+      "source": "/",
+      "destination": "/docs/introduction/"
+    },
+    {
+      "source": "/docs(/?)",
+      "destination": "/docs/introduction/"
+    },
+    {
+      "source": "/docs/get_started/introduction(/?)",
+      "destination": "/docs/introduction/"
+    },
+    {
+      "source": "/docs/how_to/migrate_chains(/?)",
+      "destination": "/docs/versions/migrating_chains"
+    },
+    {
+      "source": "/v0.2/docs/templates/:path(.*/?)*",
+      "destination": "https://github.com/langchain-ai/langchain/tree/v0.2/templates/:path*"
+    },
+    {
+      "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
+      "destination": "/docs/integrations/providers/mlflow/"
+    },
+    {
+      "source": "/docs/integrations/platforms/:path((?:anthropic|aws|google|huggingface|microsoft|openai)?/?)*",
+      "destination": "/docs/integrations/providers/:path*"
+    },
+    {
+      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS|INVALID_CHAT_HISTORY)/?)*",
+      "destination": "https://langchain-ai.github.io/langgraph/troubleshooting/errors/:path*"
+    },
+    {
+      "source": "/docs/contributing/:path((?:code|documentation|integrations|testing)(?:/|/.*/?)?)",
+      "destination": "/docs/contributing/how_to/:path"
+    },
+    {
+      "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
+      "destination": "/docs/contributing/reference/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/weaviate-hybrid(/?)",
+      "destination": "/docs/integrations/vectorstores/weaviate/#search-mechanism"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/singlestoredb/"
+    },
+    {
+      "source": "/docs/integrations/providers/singlestoredb(/?)",
+      "destination": "/docs/integrations/providers/singlestore/"
+    },
+    {
+      "source": "/docs/integrations/retrievers/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/singlestoredb/"
+    },
+    {
+      "source": "/docs/integrations/providers/dspy(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/providers/dspy/"
+    },
+    {
+      "source": "/api_reference/mongodb/:path(.*/?)*",
+      "destination": "https://langchain-mongodb.readthedocs.io/en/latest/langchain_mongodb/api_docs.html"
+    },
+    {
+      "source": "/api_reference/tests/:path(.*/?)*",
+      "destination": "/api_reference/standard_tests/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/milvus_hybrid_search(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/"
     }
   ]
 }

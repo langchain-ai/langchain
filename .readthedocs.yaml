@@ -1,11 +1,6 @@
 # Read the Docs configuration file
 # See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
-
-# Required
 version: 2
-
-formats:
-  - pdf
 
 # Set the version of Python and other tools you might need
 build:
@@ -15,15 +10,16 @@ build:
   commands:
     - mkdir -p $READTHEDOCS_OUTPUT
     - cp -r api_reference_build/* $READTHEDOCS_OUTPUT
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
-   configuration: docs/api_reference/conf.py
+  configuration: docs/api_reference/conf.py
 
 # If using Sphinx, optionally build your docs in additional formats such as PDF
-# formats:
-#    - pdf
+formats:
+  - pdf
 
 # Optionally declare the Python requirements required to build your docs
 python:
-   install:
-   - requirements: docs/api_reference/requirements.txt
+  install:
+    - requirements: docs/api_reference/requirements.txt

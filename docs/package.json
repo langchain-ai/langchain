@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "start": "rm -rf ./docs/api && docusaurus start",
-    "build": "bash vercel_build.sh && rm -rf ./build && docusaurus build",
+    "build": "make vercel-build",
     "swizzle": "docusaurus swizzle",
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
@@ -19,22 +19,27 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,md,mdx}\"",
     "gen": "yarn gen:supabase",
     "gen:supabase": "npx supabase gen types typescript --project-id 'xsqpnijvmbodcxyapnyq' --schema public > ./src/supabase.d.ts",
-    "check-broken-links": "bash vercel_build.sh && node ./scripts/check-broken-links.js"
+    "check-broken-links": "make vercel-build && node ./scripts/check-broken-links.js"
   },
   "dependencies": {
-    "@docusaurus/core": "2.4.3",
-    "@docusaurus/preset-classic": "2.4.3",
-    "@docusaurus/remark-plugin-npm2yarn": "^2.4.3",
-    "@docusaurus/theme-mermaid": "2.4.3",
-    "@mdx-js/react": "^1.6.22",
+    "@docusaurus/core": "3.5.2",
+    "@docusaurus/plugin-google-tag-manager": "^3.8.1",
+    "@docusaurus/preset-classic": "3.5.2",
+    "@docusaurus/remark-plugin-npm2yarn": "^3.5.2",
+    "@docusaurus/theme-mermaid": "3.5.2",
+    "@mdx-js/react": "^3",
     "@supabase/supabase-js": "^2.39.7",
     "clsx": "^1.2.1",
     "cookie": "^0.6.0",
+    "isomorphic-dompurify": "^2.7.0",
     "json-loader": "^0.5.7",
+    "prism-react-renderer": "^2.1.0",
     "process": "^0.11.10",
-    "react": "^17.0.2",
-    "react-dom": "^17.0.2",
-    "typescript": "^5.1.3",
+    "raw-loader": "^4.0.2",
+    "react": "^18",
+    "react-dom": "^18",
+    "typescript": "^5.2.2",
+    "uuid": "^9.0.0",
     "webpack": "^5.75.0"
   },
   "devDependencies": {
@@ -50,6 +55,7 @@
     "eslint-plugin-jsx-a11y": "^6.6.0",
     "eslint-plugin-react": "^7.30.1",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "marked": "^12.0.1",
     "prettier": "^2.7.1",
     "supabase": "^1.148.6",
     "typedoc": "^0.24.4",
@@ -73,5 +79,6 @@
   },
   "engines": {
     "node": ">=18"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

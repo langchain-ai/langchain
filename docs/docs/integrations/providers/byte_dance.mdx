@@ -8,15 +8,23 @@ Get the access token.
 You can find the access instructions [here](https://open.larksuite.com/document)
 
 
-## Document Loader
+## Document Loaders
 
-### Lark Suite
-
->[Lark Suite](https://www.larksuite.com/) is an enterprise collaboration platform 
+>[Lark Suite](https://www.larksuite.com/) is an enterprise collaboration platform
 > developed by `ByteDance`.
 
-See a [usage example](/docs/integrations/document_loaders/larksuite).
+### Lark Suite for Document
+
+See a [usage example](/docs/integrations/document_loaders/larksuite/#load-from-document).
 
 ```python
 from langchain_community.document_loaders.larksuite import LarkSuiteDocLoader
+```
+
+### Lark Suite for Wiki
+
+See a [usage example](/docs/integrations/document_loaders/larksuite/#load-from-wiki).
+
+```python
+from langchain_community.document_loaders.larksuite import LarkSuiteWikiLoader
 ```

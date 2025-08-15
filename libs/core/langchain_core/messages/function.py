@@ -1,4 +1,8 @@
-from typing import Any, List, Literal
+"""Function Message."""
+
+from typing import Any, Literal
+
+from typing_extensions import override
 
 from langchain_core.messages.base import (
     BaseMessage,
@@ -9,20 +13,21 @@ from langchain_core.utils._merge import merge_dicts
 
 
 class FunctionMessage(BaseMessage):
-    """Message for passing the result of executing a function back to a model."""
+    """Message for passing the result of executing a tool back to a model.
+
+    FunctionMessage are an older version of the ToolMessage schema, and
+    do not contain the tool_call_id field.
+
+    The tool_call_id field is used to associate the tool call request with the
+    tool call response. This is useful in situations where a chat model is able
+    to request multiple tool calls in parallel.
+    """
 
     name: str
     """The name of the function that was executed."""
 
     type: Literal["function"] = "function"
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
-
-FunctionMessage.update_forward_refs()
+    """The type of the message (used for serialization). Defaults to "function"."""
 
 
 class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
@@ -32,18 +37,15 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     # to make sure that the chunk variant can be discriminated from the
     # non-chunk variant.
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
+    """The type of the message (used for serialization).
+    Defaults to "FunctionMessageChunk"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "messages"]
-
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore
+    @override
+    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
         if isinstance(other, FunctionMessageChunk):
             if self.name != other.name:
-                raise ValueError(
-                    "Cannot concatenate FunctionMessageChunks with different names."
-                )
+                msg = "Cannot concatenate FunctionMessageChunks with different names."
+                raise ValueError(msg)
 
             return self.__class__(
                 name=self.name,

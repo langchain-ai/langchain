@@ -1,5 +1,4 @@
 .vs/
-.vscode/
 .idea/
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -59,6 +58,7 @@ coverage.xml
 *.py,cover
 .hypothesis/
 .pytest_cache/
+.codspeed/
 
 # Translations
 *.mo
@@ -133,6 +133,7 @@ env.bak/
 
 # mypy
 .mypy_cache/
+.mypy_cache_test/
 .dmypy.json
 dmypy.json
 
@@ -166,11 +167,14 @@ docs/.docusaurus/
 docs/.cache-loader/
 docs/_dist
 docs/api_reference/*api_reference.rst
+docs/api_reference/*.md
 docs/api_reference/_build
 docs/api_reference/*/
 !docs/api_reference/_static/
 !docs/api_reference/templates/
 !docs/api_reference/themes/
+!docs/api_reference/_extensions/
+!docs/api_reference/scripts/
 docs/docs/build
 docs/docs/node_modules
 docs/docs/yarn.lock
@@ -178,3 +182,4 @@ _dist
 docs/docs/templates
 
 prof
+virtualenv/

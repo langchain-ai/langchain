@@ -1,12 +1,10 @@
 """Prompt for trajectory evaluation chain."""
-# flake8: noqa
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
 )
-
 
 EVAL_TEMPLATE = """An AI language model has been given access to the following set of tools to help answer a user's question.
 
@@ -38,7 +36,7 @@ i. Is the final answer helpful?
 ii. Does the AI language use a logical sequence of tools to answer the question?
 iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
-v. Are the appropriate tools used to answer the question?"""
+v. Are the appropriate tools used to answer the question?"""  # noqa: E501
 
 EXAMPLE_INPUT = """An AI language model has been given access to the following set of tools to help answer a user's question.
 
@@ -83,7 +81,7 @@ i. Is the final answer helpful?
 ii. Does the AI language use a logical sequence of tools to answer the question?
 iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
-v. Are the appropriate tools used to answer the question?"""
+v. Are the appropriate tools used to answer the question?"""  # noqa: E501
 
 EXAMPLE_OUTPUT = """First, let's evaluate the final answer. The final uses good reasoning but is wrong. 2,857 divided by 305 is not 17.5.\
 The model should have used the calculator to figure this out. Second does the model use a logical sequence of tools to answer the question?\
@@ -91,10 +89,10 @@ The way model uses the search is not helpful. The model should have used the sea
 The model didn't use the calculator tool and gave an incorrect answer. The search API should be used for current events or specific questions.\
 The tools were not used in a helpful way. The model did not use too many steps to answer the question.\
 The model did not use the appropriate tools to answer the question.\
-    
+
 Judgment: Given the good reasoning in the final answer but otherwise poor performance, we give the model a score of 2.
 
-Score: 2"""
+Score: 2"""  # noqa: E501
 
 EVAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(
     messages=[
@@ -133,7 +131,7 @@ i. Is the final answer helpful?
 ii. Does the AI language use a logical sequence of tools to answer the question?
 iii. Does the AI language model use the tools in a helpful way?
 iv. Does the AI language model use too many steps to answer the question?
-v. Are the appropriate tools used to answer the question?"""
+v. Are the appropriate tools used to answer the question?"""  # noqa: E501
 
 
 TOOL_FREE_EVAL_CHAT_PROMPT = ChatPromptTemplate.from_messages(

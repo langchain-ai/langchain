@@ -1,17 +1,17 @@
 """Base classes for scoring the output of a model on a scale of 1-10."""
+
 from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 
-from langchain_community.chat_models.azure_openai import AzureChatOpenAI
-from langchain_community.chat_models.openai import ChatOpenAI
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -51,7 +51,7 @@ _SUPPORTED_CRITERIA = {
 
 
 def resolve_criteria(
-    criteria: Optional[Union[CRITERIA_TYPE, str, List[CRITERIA_TYPE]]],
+    criteria: Optional[Union[CRITERIA_TYPE, str, list[CRITERIA_TYPE]]],
 ) -> dict:
     """Resolve the criteria for the pairwise evaluator.
 
@@ -70,7 +70,7 @@ def resolve_criteria(
             Criteria.DEPTH,
         ]
         return {k.value: _SUPPORTED_CRITERIA[k] for k in _default_criteria}
-    elif isinstance(criteria, Criteria):
+    if isinstance(criteria, Criteria):
         criteria_ = {criteria.value: _SUPPORTED_CRITERIA[criteria]}
     elif isinstance(criteria, str):
         if criteria in _SUPPORTED_CRITERIA:
@@ -87,11 +87,12 @@ def resolve_criteria(
         }
     else:
         if not criteria:
-            raise ValueError(
+            msg = (
                 "Criteria cannot be empty. "
                 "Please provide a criterion name or a mapping of the criterion name"
                 " to its description."
             )
+            raise ValueError(msg)
         criteria_ = dict(criteria)
     return criteria_
 
@@ -114,7 +115,7 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         """
         return "pairwise_string_result"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
         Args:
@@ -132,12 +133,13 @@ class ScoreStringResultOutputParser(BaseOutputParser[dict]):
         if match:
             verdict = match.group(1)
 
-        if not match or verdict not in list("123456789") + ["10"]:
-            raise ValueError(
+        if not match or verdict not in [*list("123456789"), "10"]:
+            msg = (
                 f"Invalid output: {text}. "
                 "Output must contain a double bracketed string\
                  with the verdict between 1 and 10."
             )
+            raise ValueError(msg)
 
         return {
             "reasoning": text,
@@ -173,19 +175,19 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     output_key: str = "results"  #: :meta private:
     output_parser: BaseOutputParser = Field(
-        default_factory=ScoreStringResultOutputParser
+        default_factory=ScoreStringResultOutputParser,
     )
     normalize_by: Optional[float] = None
     """The value to normalize the score by, if specified."""
     criterion_name: str
     """The name of the criterion being evaluated."""
 
-    class Config:
-        """Configuration for the ScoreStringEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -258,22 +260,20 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             ValueError: If the input variables are not as expected.
 
         """
-        if not (
-            isinstance(llm, (ChatOpenAI, AzureChatOpenAI))
-            and llm.model_name.startswith("gpt-4")
-        ):
+        if not (hasattr(llm, "model_name") and not llm.model_name.startswith("gpt-4")):
             logger.warning(
                 "This chain was only tested with GPT-4. \
-Performance may be significantly worse with other models."
+Performance may be significantly worse with other models.",
             )
 
         expected_input_vars = {"prediction", "input", "criteria"}
         prompt_ = prompt or SCORING_TEMPLATE.partial(reference="")
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_criteria(criteria)
         criteria_str = "\n".join(
             f"{k}: {v}" if v else k for k, v in criteria_.items()
@@ -294,7 +294,7 @@ Performance may be significantly worse with other models."
     def _prepare_input(
         self,
         prediction: str,
-        input: Optional[str],
+        input_: Optional[str],
         reference: Optional[str],
     ) -> dict:
         """Prepare the input for the chain.
@@ -302,20 +302,20 @@ Performance may be significantly worse with other models."
         Args:
             prediction (str): The output string from the first model.
             prediction_b (str): The output string from the second model.
-            input (str, optional): The input or task string.
+            input_ (str, optional): The input or task string.
             reference (str, optional): The reference string, if any.
 
         Returns:
             dict: The prepared input for the chain.
 
         """
-        input_ = {
+        input_dict = {
             "prediction": prediction,
-            "input": input,
+            "input": input_,
         }
         if self.requires_reference:
-            input_["reference"] = reference
-        return input_
+            input_dict["reference"] = reference
+        return input_dict
 
     def _prepare_output(self, result: dict) -> dict:
         """Prepare the output."""
@@ -326,6 +326,7 @@ Performance may be significantly worse with other models."
             parsed["score"] = parsed["score"] / self.normalize_by
         return parsed
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -333,8 +334,8 @@ Performance may be significantly worse with other models."
         input: Optional[str] = None,
         reference: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -363,15 +364,16 @@ Performance may be significantly worse with other models."
         )
         return self._prepare_output(result)
 
-    async def _aevaluate_string_pairs(
+    @override
+    async def _aevaluate_strings(
         self,
         *,
         prediction: str,
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -444,7 +446,7 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         Raises:
             ValueError: If the input variables are not as expected.
 
-        """  # noqa: E501
+        """
         expected_input_vars = {
             "prediction",
             "input",
@@ -453,10 +455,11 @@ class LabeledScoreStringEvalChain(ScoreStringEvalChain):
         }
         prompt_ = prompt or SCORING_TEMPLATE_WITH_REFERENCE
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         criteria_ = resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items()).strip()
         criteria_str = (

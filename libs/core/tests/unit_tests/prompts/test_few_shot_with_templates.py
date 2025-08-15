@@ -1,5 +1,7 @@
 """Test few shot prompt template."""
 
+import re
+
 import pytest
 
 from langchain_core.prompts.few_shot_with_templates import FewShotPromptWithTemplates
@@ -58,7 +60,10 @@ def test_prompttemplate_validation() -> None:
         {"question": "foo", "answer": "bar"},
         {"question": "baz", "answer": "foo"},
     ]
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Got input_variables=[], but based on prefix/suffix expected"),
+    ):
         FewShotPromptWithTemplates(
             suffix=suffix,
             prefix=prefix,

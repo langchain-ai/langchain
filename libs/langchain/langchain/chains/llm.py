@@ -1,8 +1,10 @@
 """Chain that just formats a prompt and calls an LLM."""
+
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from collections.abc import Sequence
+from typing import Any, Optional, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -16,13 +18,11 @@ from langchain_core.language_models import (
     BaseLanguageModel,
     LanguageModelInput,
 )
-from langchain_core.load.dump import dumpd
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers import BaseLLMOutputParser, StrOutputParser
 from langchain_core.outputs import ChatGeneration, Generation, LLMResult
 from langchain_core.prompt_values import PromptValue
 from langchain_core.prompts import BasePromptTemplate, PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
 from langchain_core.runnables import (
     Runnable,
     RunnableBinding,
@@ -31,6 +31,8 @@ from langchain_core.runnables import (
 )
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
+from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -38,7 +40,7 @@ from langchain.chains.base import Chain
 @deprecated(
     since="0.1.17",
     alternative="RunnableSequence, e.g., `prompt | llm`",
-    removal="0.3.0",
+    removal="1.0",
 )
 class LLMChain(Chain):
     """Chain to run queries against LLMs.
@@ -48,6 +50,7 @@ class LLMChain(Chain):
 
         .. code-block:: python
 
+            from langchain_core.output_parsers import StrOutputParser
             from langchain_core.prompts import PromptTemplate
             from langchain_openai import OpenAI
 
@@ -56,7 +59,7 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = OpenAI()
-            chain = prompt | llm
+            chain = prompt | llm | StrOutputParser()
 
             chain.invoke("your adjective here")
 
@@ -71,36 +74,38 @@ class LLMChain(Chain):
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
+    @override
     def is_lc_serializable(self) -> bool:
         return True
 
     prompt: BasePromptTemplate
     """Prompt object to use."""
     llm: Union[
-        Runnable[LanguageModelInput, str], Runnable[LanguageModelInput, BaseMessage]
+        Runnable[LanguageModelInput, str],
+        Runnable[LanguageModelInput, BaseMessage],
     ]
     """Language model to call."""
     output_key: str = "text"  #: :meta private:
     output_parser: BaseLLMOutputParser = Field(default_factory=StrOutputParser)
     """Output parser to use.
-    Defaults to one that takes the most likely string but does not change it 
+    Defaults to one that takes the most likely string but does not change it
     otherwise."""
     return_final_only: bool = True
     """Whether to return only the final parsed result. Defaults to True.
     If false, will return a bunch of extra information about the generation."""
     llm_kwargs: dict = Field(default_factory=dict)
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Will be whatever keys the prompt expects.
 
         :meta private:
@@ -108,27 +113,26 @@ class LLMChain(Chain):
         return self.prompt.input_variables
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Will always return text key.
 
         :meta private:
         """
         if self.return_final_only:
             return [self.output_key]
-        else:
-            return [self.output_key, "full_generation"]
+        return [self.output_key, "full_generation"]
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         response = self.generate([inputs], run_manager=run_manager)
         return self.create_outputs(response)[0]
 
     def generate(
         self,
-        input_list: List[Dict[str, Any]],
+        input_list: list[dict[str, Any]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> LLMResult:
         """Generate LLM result from inputs."""
@@ -141,21 +145,21 @@ class LLMChain(Chain):
                 callbacks=callbacks,
                 **self.llm_kwargs,
             )
-        else:
-            results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-                cast(List, prompts), {"callbacks": callbacks}
-            )
-            generations: List[List[Generation]] = []
-            for res in results:
-                if isinstance(res, BaseMessage):
-                    generations.append([ChatGeneration(message=res)])
-                else:
-                    generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+        results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
+            cast("list", prompts),
+            {"callbacks": callbacks},
+        )
+        generations: list[list[Generation]] = []
+        for res in results:
+            if isinstance(res, BaseMessage):
+                generations.append([ChatGeneration(message=res)])
+            else:
+                generations.append([Generation(text=res)])
+        return LLMResult(generations=generations)
 
     async def agenerate(
         self,
-        input_list: List[Dict[str, Any]],
+        input_list: list[dict[str, Any]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> LLMResult:
         """Generate LLM result from inputs."""
@@ -168,23 +172,23 @@ class LLMChain(Chain):
                 callbacks=callbacks,
                 **self.llm_kwargs,
             )
-        else:
-            results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-                cast(List, prompts), {"callbacks": callbacks}
-            )
-            generations: List[List[Generation]] = []
-            for res in results:
-                if isinstance(res, BaseMessage):
-                    generations.append([ChatGeneration(message=res)])
-                else:
-                    generations.append([Generation(text=res)])
-            return LLMResult(generations=generations)
+        results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
+            cast("list", prompts),
+            {"callbacks": callbacks},
+        )
+        generations: list[list[Generation]] = []
+        for res in results:
+            if isinstance(res, BaseMessage):
+                generations.append([ChatGeneration(message=res)])
+            else:
+                generations.append([Generation(text=res)])
+        return LLMResult(generations=generations)
 
     def prep_prompts(
         self,
-        input_list: List[Dict[str, Any]],
+        input_list: list[dict[str, Any]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+    ) -> tuple[list[PromptValue], Optional[list[str]]]:
         """Prepare prompts from inputs."""
         stop = None
         if len(input_list) == 0:
@@ -200,17 +204,16 @@ class LLMChain(Chain):
             if run_manager:
                 run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
+                msg = "If `stop` is present in any inputs, should be present in all."
+                raise ValueError(msg)
             prompts.append(prompt)
         return prompts, stop
 
     async def aprep_prompts(
         self,
-        input_list: List[Dict[str, Any]],
+        input_list: list[dict[str, Any]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Tuple[List[PromptValue], Optional[List[str]]]:
+    ) -> tuple[list[PromptValue], Optional[list[str]]]:
         """Prepare prompts from inputs."""
         stop = None
         if len(input_list) == 0:
@@ -226,48 +229,57 @@ class LLMChain(Chain):
             if run_manager:
                 await run_manager.on_text(_text, end="\n", verbose=self.verbose)
             if "stop" in inputs and inputs["stop"] != stop:
-                raise ValueError(
-                    "If `stop` is present in any inputs, should be present in all."
-                )
+                msg = "If `stop` is present in any inputs, should be present in all."
+                raise ValueError(msg)
             prompts.append(prompt)
         return prompts, stop
 
     def apply(
-        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> List[Dict[str, str]]:
+        self,
+        input_list: list[dict[str, Any]],
+        callbacks: Callbacks = None,
+    ) -> list[dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
         callback_manager = CallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks,
+            self.callbacks,
+            self.verbose,
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input_list": input_list},
+            name=self.get_name(),
         )
         try:
             response = self.generate(input_list, run_manager=run_manager)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         run_manager.on_chain_end({"outputs": outputs})
         return outputs
 
     async def aapply(
-        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> List[Dict[str, str]]:
+        self,
+        input_list: list[dict[str, Any]],
+        callbacks: Callbacks = None,
+    ) -> list[dict[str, str]]:
         """Utilize the LLM generate method for speed gains."""
         callback_manager = AsyncCallbackManager.configure(
-            callbacks, self.callbacks, self.verbose
+            callbacks,
+            self.callbacks,
+            self.verbose,
         )
         run_manager = await callback_manager.on_chain_start(
-            dumpd(self),
+            None,
             {"input_list": input_list},
+            name=self.get_name(),
         )
         try:
             response = await self.agenerate(input_list, run_manager=run_manager)
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         await run_manager.on_chain_end({"outputs": outputs})
         return outputs
@@ -276,7 +288,7 @@ class LLMChain(Chain):
     def _run_output_key(self) -> str:
         return self.output_key
 
-    def create_outputs(self, llm_result: LLMResult) -> List[Dict[str, Any]]:
+    def create_outputs(self, llm_result: LLMResult) -> list[dict[str, Any]]:
         """Create outputs from response."""
         result = [
             # Get the text of the top generated string.
@@ -292,9 +304,9 @@ class LLMChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         response = await self.agenerate([inputs], run_manager=run_manager)
         return self.create_outputs(response)[0]
 
@@ -312,6 +324,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -329,66 +342,77 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 
     def predict_and_parse(
-        self, callbacks: Callbacks = None, **kwargs: Any
-    ) -> Union[str, List[str], Dict[str, Any]]:
+        self,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Union[str, list[str], dict[str, Any]]:
         """Call predict and then parse the results."""
         warnings.warn(
             "The predict_and_parse method is deprecated, "
-            "instead pass an output parser directly to LLMChain."
+            "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = self.predict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
-        else:
-            return result
+        return result
 
     async def apredict_and_parse(
-        self, callbacks: Callbacks = None, **kwargs: Any
-    ) -> Union[str, List[str], Dict[str, str]]:
+        self,
+        callbacks: Callbacks = None,
+        **kwargs: Any,
+    ) -> Union[str, list[str], dict[str, str]]:
         """Call apredict and then parse the results."""
         warnings.warn(
             "The apredict_and_parse method is deprecated, "
-            "instead pass an output parser directly to LLMChain."
+            "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = await self.apredict(callbacks=callbacks, **kwargs)
         if self.prompt.output_parser is not None:
             return self.prompt.output_parser.parse(result)
-        else:
-            return result
+        return result
 
     def apply_and_parse(
-        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        self,
+        input_list: list[dict[str, Any]],
+        callbacks: Callbacks = None,
+    ) -> Sequence[Union[str, list[str], dict[str, str]]]:
         """Call apply and then parse the results."""
         warnings.warn(
             "The apply_and_parse method is deprecated, "
-            "instead pass an output parser directly to LLMChain."
+            "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = self.apply(input_list, callbacks=callbacks)
         return self._parse_generation(result)
 
     def _parse_generation(
-        self, generation: List[Dict[str, str]]
-    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        self,
+        generation: list[dict[str, str]],
+    ) -> Sequence[Union[str, list[str], dict[str, str]]]:
         if self.prompt.output_parser is not None:
             return [
                 self.prompt.output_parser.parse(res[self.output_key])
                 for res in generation
             ]
-        else:
-            return generation
+        return generation
 
     async def aapply_and_parse(
-        self, input_list: List[Dict[str, Any]], callbacks: Callbacks = None
-    ) -> Sequence[Union[str, List[str], Dict[str, str]]]:
+        self,
+        input_list: list[dict[str, Any]],
+        callbacks: Callbacks = None,
+    ) -> Sequence[Union[str, list[str], dict[str, str]]]:
         """Call apply and then parse the results."""
         warnings.warn(
             "The aapply_and_parse method is deprecated, "
-            "instead pass an output parser directly to LLMChain."
+            "instead pass an output parser directly to LLMChain.",
+            stacklevel=2,
         )
         result = await self.aapply(input_list, callbacks=callbacks)
         return self._parse_generation(result)
@@ -410,14 +434,14 @@ class LLMChain(Chain):
 def _get_language_model(llm_like: Runnable) -> BaseLanguageModel:
     if isinstance(llm_like, BaseLanguageModel):
         return llm_like
-    elif isinstance(llm_like, RunnableBinding):
+    if isinstance(llm_like, RunnableBinding):
         return _get_language_model(llm_like.bound)
-    elif isinstance(llm_like, RunnableWithFallbacks):
+    if isinstance(llm_like, RunnableWithFallbacks):
         return _get_language_model(llm_like.runnable)
-    elif isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
+    if isinstance(llm_like, (RunnableBranch, DynamicRunnable)):
         return _get_language_model(llm_like.default)
-    else:
-        raise ValueError(
-            f"Unable to extract BaseLanguageModel from llm_like object of type "
-            f"{type(llm_like)}"
-        )
+    msg = (
+        f"Unable to extract BaseLanguageModel from llm_like object of type "
+        f"{type(llm_like)}"
+    )
+    raise ValueError(msg)

@@ -1,3 +1,5 @@
+"""Script to check if python modules can be imported."""
+
 import random
 import string
 import sys

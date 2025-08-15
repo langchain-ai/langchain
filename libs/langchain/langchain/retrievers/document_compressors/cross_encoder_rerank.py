@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import operator
-from typing import Optional, Sequence
+from collections.abc import Sequence
+from typing import Optional
 
-from langchain_community.cross_encoders import BaseCrossEncoder
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
+from typing_extensions import override
+
+from langchain.retrievers.document_compressors.cross_encoder import BaseCrossEncoder
 
 
 class CrossEncoderReranker(BaseDocumentCompressor):
@@ -18,12 +21,12 @@ class CrossEncoderReranker(BaseDocumentCompressor):
     top_n: int = 3
     """Number of documents to return."""
 
-    class Config:
-        """Configuration for this pydantic object."""
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-
+    @override
     def compress_documents(
         self,
         documents: Sequence[Document],

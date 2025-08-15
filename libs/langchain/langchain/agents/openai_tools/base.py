@@ -1,4 +1,5 @@
-from typing import Sequence
+from collections.abc import Sequence
+from typing import Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts.chat import ChatPromptTemplate
@@ -13,7 +14,10 @@ from langchain.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputP
 
 
 def create_openai_tools_agent(
-    llm: BaseLanguageModel, tools: Sequence[BaseTool], prompt: ChatPromptTemplate
+    llm: BaseLanguageModel,
+    tools: Sequence[BaseTool],
+    prompt: ChatPromptTemplate,
+    strict: Optional[bool] = None,  # noqa: FBT001
 ) -> Runnable:
     """Create an agent that uses OpenAI tools.
 
@@ -27,6 +31,9 @@ def create_openai_tools_agent(
         A Runnable sequence representing an agent. It takes as input all the same input
         variables as the prompt passed in does. It returns as output either an
         AgentAction or AgentFinish.
+
+    Raises:
+        ValueError: If the prompt is missing required variables.
 
     Example:
 
@@ -77,23 +84,26 @@ def create_openai_tools_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
-    llm_with_tools = llm.bind(tools=[convert_to_openai_tool(tool) for tool in tools])
+    llm_with_tools = llm.bind(
+        tools=[convert_to_openai_tool(tool, strict=strict) for tool in tools],
+    )
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
             agent_scratchpad=lambda x: format_to_openai_tool_messages(
-                x["intermediate_steps"]
-            )
+                x["intermediate_steps"],
+            ),
         )
         | prompt
         | llm_with_tools
         | OpenAIToolsAgentOutputParser()
     )
-    return agent

@@ -1,5 +1,6 @@
 from enum import Enum
 
+import pytest
 from langchain_core.exceptions import OutputParserException
 
 from langchain.output_parsers.enum import EnumOutputParser
@@ -25,8 +26,10 @@ def test_enum_output_parser_parse() -> None:
     assert result == Colors.BLUE
 
     # Test invalid input
-    try:
+    with pytest.raises(OutputParserException):
         parser.parse("INVALID")
-        assert False, "Should have raised OutputParserException"
-    except OutputParserException:
-        pass
+
+
+def test_enum_output_parser_output_type() -> None:
+    """Test the output type of the enum output parser is the expected enum."""
+    assert EnumOutputParser(enum=Colors).OutputType is Colors

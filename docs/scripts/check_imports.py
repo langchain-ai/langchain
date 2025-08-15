@@ -1,4 +1,5 @@
 """This script checks documentation for broken import statements."""
+
 import importlib
 import json
 import logging
@@ -127,4 +128,4 @@ def check_notebooks(directory: str) -> list:
 if __name__ == "__main__":
     bad_files = check_notebooks(DOCS_DIR)
     if bad_files:
-        raise ImportError("Found bad imports:\n" f"{_serialize_bad_imports(bad_files)}")
+        raise ImportError(f"Found bad imports:\n{_serialize_bad_imports(bad_files)}")

@@ -7,11 +7,11 @@ import pytest
 from langchain.agents.openai_assistant import OpenAIAssistantRunnable
 
 
-def _create_mock_client(*args: Any, use_async: bool = False, **kwargs: Any) -> Any:
+def _create_mock_client(*_: Any, use_async: bool = False, **__: Any) -> Any:
     client = AsyncMock() if use_async else MagicMock()
     mock_assistant = MagicMock()
     mock_assistant.id = "abc123"
-    client.beta.assistants.create.return_value = mock_assistant  # type: ignore
+    client.beta.assistants.create.return_value = mock_assistant
     return client
 
 

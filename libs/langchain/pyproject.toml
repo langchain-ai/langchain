@@ -1,361 +1,224 @@
-[tool.poetry]
-name = "langchain"
-version = "0.1.16"
-description = "Building applications with LLMs through composability"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
 authors = []
-license = "MIT"
+license = { text = "MIT" }
+requires-python = ">=3.9, <4.0"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.72",
+    "langchain-text-splitters<1.0.0,>=0.3.9",
+    "langsmith>=0.1.17",
+    "pydantic<3.0.0,>=2.7.4",
+    "SQLAlchemy<3,>=1.4",
+    "requests<3,>=2",
+    "PyYAML>=5.3",
+    "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
+]
+name = "langchain"
+version = "0.3.27"
+description = "Building applications with LLMs through composability"
 readme = "README.md"
+
+[project.optional-dependencies]
+community = ["langchain-community"]
+anthropic = ["langchain-anthropic"]
+openai = ["langchain-openai"]
+# azure-ai = ["langchain-azure-ai"]
+# cohere = ["langchain-cohere"]
+# google-vertexai = ["langchain-google-vertexai"]
+google-genai = ["langchain-google-genai"]
+fireworks = ["langchain-fireworks"]
+ollama = ["langchain-ollama"]
+together = ["langchain-together"]
+mistralai = ["langchain-mistralai"]
+huggingface = ["langchain-huggingface"]
+groq = ["langchain-groq"]
+# aws = ["langchain-aws"]
+deepseek = ["langchain-deepseek"]
+# xai = ["langchain-xai"]
+perplexity = ["langchain-perplexity"]
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.scripts]
-langchain-server = "langchain.server:main"
-
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.42"
-langchain-text-splitters = ">=0.0.1,<0.1"
-langchain-community = ">=0.0.32,<0.1"
-langsmith = "^0.1.17"
-pydantic = ">=1,<3"
-SQLAlchemy = ">=1.4,<3"
-requests = "^2"
-PyYAML = ">=5.3"
-numpy = "^1"
-aiohttp = "^3.8.3"
-tenacity = "^8.1.0"
-jsonpatch = "^1.33"
-azure-core = {version = "^1.26.4", optional=true}
-tqdm = {version = ">=4.48.0", optional = true}
-openapi-pydantic = {version = "^0.3.2", optional = true}
-faiss-cpu = {version = "^1", optional = true}
-manifest-ml = {version = "^0.0.1", optional = true}
-transformers = {version = "^4", optional = true}
-beautifulsoup4 = {version = "^4", optional = true}
-torch = {version = ">=1,<3", optional = true}
-jinja2 = {version = "^3", optional = true}
-tiktoken = {version = ">=0.3.2,<0.6.0", optional = true, python=">=3.9"}
-qdrant-client = {version = "^1.3.1", optional = true, python = ">=3.8.1,<3.12"}
-dataclasses-json = ">= 0.5.7, < 0.7"
-cohere = {version = ">=4,<6", optional = true}
-openai = {version = "<2", optional = true}
-nlpcloud = {version = "^1", optional = true}
-huggingface_hub = {version = "^0", optional = true}
-sentence-transformers = {version = "^2", optional = true}
-arxiv = {version = "^1.4", optional = true}
-pypdf = {version = "^3.4.0", optional = true}
-aleph-alpha-client = {version="^2.15.0", optional = true}
-pgvector = {version = "^0.1.6", optional = true}
-async-timeout = {version = "^4.0.0", python = "<3.11"}
-azure-identity = {version = "^1.12.0", optional=true}
-atlassian-python-api = {version = "^3.36.0", optional=true}
-html2text = {version="^2020.1.16", optional=true}
-numexpr = {version="^2.8.6", optional=true}
-azure-cosmos = {version="^4.4.0b1", optional=true}
-jq = {version = "^1.4.1", optional = true}
-pdfminer-six = {version = "^20221105", optional = true}
-docarray = {version="^0.32.0", extras=["hnswlib"], optional=true}
-lxml = {version = ">=4.9.3,<6.0", optional = true}
-pymupdf = {version = "^1.22.3", optional = true}
-rapidocr-onnxruntime = {version = "^1.3.2", optional = true, python = ">=3.8.1,<3.12"}
-pypdfium2 = {version = "^4.10.0", optional = true}
-gql = {version = "^3.4.1", optional = true}
-pandas = {version = "^2.0.1", optional = true}
-telethon = {version = "^1.28.5", optional = true}
-chardet = {version="^5.1.0", optional=true}
-requests-toolbelt = {version = "^1.0.0", optional = true}
-openlm = {version = "^0.0.5", optional = true}
-scikit-learn = {version = "^1.2.2", optional = true}
-azure-ai-formrecognizer = {version = "^3.2.1", optional = true}
-azure-cognitiveservices-speech = {version = "^1.28.0", optional = true}
-py-trello = {version = "^0.19.0", optional = true}
-bibtexparser = {version = "^1.4.0", optional = true}
-pyspark = {version = "^3.4.0", optional = true}
-clarifai = {version = ">=9.1.0", optional = true}
-mwparserfromhell = {version = "^0.6.4", optional = true}
-mwxml = {version = "^0.3.3", optional = true}
-azure-search-documents = {version = "11.4.0b8", optional = true}
-esprima = {version = "^4.0.1", optional = true}
-streamlit = {version = "^1.18.0", optional = true, python = ">=3.8.1,<3.9.7 || >3.9.7,<4.0"}
-psychicapi = {version = "^0.8.0", optional = true}
-cassio = {version = "^0.1.0", optional = true}
-sympy = {version = "^1.12", optional = true}
-rapidfuzz = {version = "^3.1.1", optional = true}
-jsonschema = {version = ">1", optional = true}
-rank-bm25 = {version = "^0.2.2", optional = true}
-geopandas = {version = "^0.13.1", optional = true}
-gitpython = {version = "^3.1.32", optional = true}
-feedparser = {version = "^6.0.10", optional = true}
-newspaper3k = {version = "^0.2.8", optional = true}
-xata = {version = "^1.0.0a7", optional = true}
-xmltodict = {version = "^0.13.0", optional = true}
-markdownify = {version = "^0.11.6", optional = true}
-assemblyai = {version = "^0.17.0", optional = true}
-dashvector = {version = "^1.0.1", optional = true}
-sqlite-vss = {version = "^0.1.2", optional = true}
-motor = {version = "^3.3.1", optional = true}
-timescale-vector = {version = "^0.0.1", optional = true}
-typer = {version= "^0.9.0", optional = true}
-anthropic = {version = "^0.3.11", optional = true}
-aiosqlite = {version = "^0.19.0", optional = true}
-rspace_client = {version = "^2.5.0", optional = true}
-upstash-redis = {version = "^0.15.0", optional = true}
-azure-ai-textanalytics = {version = "^5.3.0", optional = true}
-google-cloud-documentai = {version = "^2.20.1", optional = true}
-fireworks-ai = {version = "^0.9.0", optional = true}
-javelin-sdk = {version = "^0.1.8", optional = true}
-hologres-vector = {version = "^0.0.6", optional = true}
-praw = {version = "^7.7.1", optional = true}
-msal = {version = "^1.25.0", optional = true}
-databricks-vectorsearch = {version = "^0.21", optional = true}
-couchbase = {version = "^4.1.9", optional = true}
-dgml-utils = {version = "^0.3.0", optional = true}
-datasets = {version = "^2.15.0", optional = true}
-langchain-openai = {version = ">=0.0.2,<0.1", optional = true}
-rdflib = {version = "7.0.0", optional = true}
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-# The only dependencies that should be added are
-# dependencies used for running tests (e.g., pytest, freezegun, response).
-# Any dependencies that do not meet that criteria will be removed.
-pytest = "^7.3.0"
-pytest-cov = "^4.0.0"
-pytest-dotenv = "^0.5.2"
-duckdb-engine = "^0.9.2"
-pytest-watcher = "^0.2.6"
-freezegun = "^1.2.2"
-responses = "^0.22.0"
-pytest-asyncio = "^0.23.2"
-lark = "^1.1.5"
-pandas = "^2.0.0"
-pytest-mock  = "^3.10.0"
-pytest-socket = "^0.6.0"
-syrupy = "^4.0.2"
-requests-mock = "^1.11.0"
-langchain-core = {path = "../core", develop = true}
-langchain-text-splitters = {path = "../text-splitters", develop = true}
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-# Do not add dependencies in the test_integration group
-# Instead:
-# 1. Add an optional dependency to the main group
-#       poetry add --optional [package name]
-# 2. Add the package name to the extended_testing extra (find it below)
-# 3. Relock the poetry file
-#       poetry lock --no-update
-# 4. Favor unit tests not integration tests.
-#    Use the @pytest.mark.requires(pkg_name) decorator in unit_tests.
-#    Your tests should not rely on network access, as it prevents other
-#    developers from being able to easily run them.
-#    Instead write unit tests that use the `responses` library or mock.patch with
-#    fixtures. Keep the fixtures minimal.
-# See the Contributing Guide for more instructions on working with optional dependencies.
-# https://python.langchain.com/docs/contributing/code#working-with-optional-dependencies
-pytest-vcr = "^1.0.2"
-wrapt = "^1.15.0"
-openai = "^1"
-python-dotenv = "^1.0.0"
-cassio = "^0.1.0"
-tiktoken = ">=0.3.2,<0.6.0"
-anthropic = "^0.3.11"
-langchain-core = {path = "../core", develop = true}
-langchain-community = {path = "../community", develop = true}
-langchain-text-splitters = {path = "../text-splitters", develop = true}
-langchainhub = "^0.1.15"
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing]
-optional = true
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1"
-types-pyyaml = "^6.0.12.2"
-types-requests = "^2.28.11.5"
-types-toml = "^0.10.8.1"
-types-redis = "^4.3.21.6"
-types-pytz = "^2023.3.0.0"
-types-chardet = "^5.0.4.6"
-mypy-protobuf = "^3.0.0"
-langchain-core = {path = "../core", develop = true}
-langchain-community = {path = "../community", develop = true}
-langchain-text-splitters = {path = "../text-splitters", develop = true}
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-playwright = "^1.28.0"
-setuptools = "^67.6.1"
-langchain-core = {path = "../core", develop = true}
-langchain-community = {path = "../community", develop = true}
-langchain-text-splitters = {path = "../text-splitters", develop = true}
-
-[tool.poetry.extras]
-llms = ["clarifai", "cohere", "openai", "openlm", "nlpcloud", "huggingface_hub", "manifest-ml", "torch", "transformers"]
-qdrant = ["qdrant-client"]
-openai = ["openai", "tiktoken"]
-text_helpers = ["chardet"]
-clarifai = ["clarifai"]
-cohere = ["cohere"]
-docarray = ["docarray"]
-embeddings = ["sentence-transformers"]
-javascript = ["esprima"]
-azure = [
-    "azure-identity",
-    "azure-cosmos",
-    "openai",
-    "azure-core",
-    "azure-ai-formrecognizer",
-    "azure-cognitiveservices-speech",
-    "azure-search-documents",
-    "azure-ai-textanalytics",
+[dependency-groups]
+test = [
+    "pytest<9,>=8",
+    "pytest-cov<5.0.0,>=4.0.0",
+    "pytest-dotenv<1.0.0,>=0.5.2",
+    "duckdb-engine<1.0.0,>=0.9.2",
+    "pytest-watcher<1.0.0,>=0.2.6",
+    "freezegun<2.0.0,>=1.2.2",
+    "responses<1.0.0,>=0.22.0",
+    "pytest-asyncio<1.0.0,>=0.23.2",
+    "lark<2.0.0,>=1.1.5",
+    "pandas<3.0.0,>=2.0.0",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "pytest-socket<1.0.0,>=0.6.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "requests-mock<2.0.0,>=1.11.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "blockbuster<1.6,>=1.5.18",
+    "cffi<1.17.1; python_version < \"3.10\"",
+    "cffi; python_version >= \"3.10\"",
+    "langchain-tests",
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-openai",
+    "toml>=0.10.2",
+    "packaging>=24.2",
+    "numpy>=1.26.4; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
 ]
-all = []
-cli = ["typer"]
-
-# An extra used to be able to add extended testing.
-# Please use new-line on formatting to make it easier to add new packages without
-# merge-conflicts
-extended_testing = [
- "aleph-alpha-client",
- "aiosqlite",
- "assemblyai",
- "beautifulsoup4",
- "bibtexparser",
- "cassio",
- "chardet",
- "datasets",
- "google-cloud-documentai",
- "esprima",
- "jq",
- "pdfminer-six",
- "pgvector",
- "pypdf",
- "pymupdf",
- "pypdfium2",
- "tqdm",
- "lxml",
- "atlassian-python-api",
- "mwparserfromhell",
- "mwxml",
- "msal",
- "pandas",
- "telethon",
- "psychicapi",
- "gql",
- "requests-toolbelt",
- "html2text",
- "numexpr",
- "py-trello",
- "scikit-learn",
- "streamlit",
- "pyspark",
- "openai",
- "sympy",
- "rapidfuzz",
- "jsonschema",
- "openai",
- "rank-bm25",
- "geopandas",
- "jinja2",
- "gitpython",
- "newspaper3k",
- "feedparser",
- "xata",
- "xmltodict",
- "faiss-cpu",
- "openapi-pydantic",
- "markdownify",
- "arxiv",
- "dashvector",
- "sqlite-vss",
- "rapidocr-onnxruntime",
- "motor",
- "timescale-vector",
- "anthropic",
- "upstash-redis",
- "rspace_client",
- "fireworks-ai",
- "javelin-sdk",
- "hologres-vector",
- "praw",
- "databricks-vectorsearch",
- "couchbase",
- "dgml-utils",
- "cohere",
- "langchain-openai",
- "rdflib",
+codespell = ["codespell<3.0.0,>=2.2.0"]
+test_integration = [
+    "vcrpy>=7.0",
+    "urllib3<2; python_version < \"3.10\"",
+    "wrapt<2.0.0,>=1.15.0",
+    "python-dotenv<2.0.0,>=1.0.0",
+    "cassio<1.0.0,>=0.1.0",
+    "langchainhub<1.0.0,>=0.1.16",
+    "langchain-core",
+    "langchain-text-splitters",
 ]
+lint = [
+    "ruff<0.13,>=0.12.2",
+    "cffi<1.17.1; python_version < \"3.10\"",
+    "cffi; python_version >= \"3.10\"",
+]
+typing = [
+    "mypy<1.16,>=1.15",
+    "types-pyyaml<7.0.0.0,>=6.0.12.2",
+    "types-requests<3.0.0.0,>=2.28.11.5",
+    "types-toml<1.0.0.0,>=0.10.8.1",
+    "types-redis<5.0.0.0,>=4.3.21.6",
+    "types-pytz<2024.0.0.0,>=2023.3.0.0",
+    "types-chardet<6.0.0.0,>=5.0.4.6",
+    "mypy-protobuf<4.0.0,>=3.0.0",
+    "langchain-core",
+    "langchain-text-splitters",
+    "numpy>=1.26.4; python_version < '3.13'",
+    "numpy>=2.1.0; python_version >= '3.13'",
+]
+dev = [
+    "jupyter<2.0.0,>=1.0.0",
+    "playwright<2.0.0,>=1.28.0",
+    "setuptools<68.0.0,>=67.6.1",
+    "langchain-core",
+    "langchain-text-splitters",
+]
+
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain-tests = { path = "../standard-tests", editable = true }
+langchain-text-splitters = { path = "../text-splitters", editable = true }
+langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-exclude = [
-  "tests/integration_tests/examples/non-utf8-encoding.py",
-]
-
-[tool.ruff.lint]
-select = [
-  "E",  # pycodestyle
-  "F",  # pyflakes
-  "I",  # isort
-  "T201", # print
-]
+target-version = "py39"
+exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
+strict = "True"
+strict_bytes = "True"
 ignore_missing_imports = "True"
-disallow_untyped_defs = "True"
-exclude = ["notebooks", "examples", "example_data"]
+enable_error_code = "deprecated"
+report_deprecated_as_note = "True"
 
-[tool.coverage.run]
-omit = [
-    "tests/*",
-]
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
-addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
-markers = [
-  "requires: mark tests as requiring a specific library",
-  "scheduled: mark tests to run in scheduled testing",
-  "compile: mark placeholder test used to compile integration tests without running them"
-]
-asyncio_mode = "auto"
+# TODO: activate for 'strict' checking
+disallow_untyped_calls = "False"
+disallow_any_generics = "False"
+disallow_untyped_decorators = "False"
+warn_return_any = "False"
+strict_equality = "False"
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig'
-# Ignore latin etc
-ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
-# whats is a typo but used frequently in queries so kept as is
-# aapply - async apply
-# unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin'
+skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
+ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
+ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
+
+[tool.ruff.lint]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+    "D100",    # pydocstyle: missing docstring in public module
+    "D104",    # pydocstyle: missing docstring in public package
+    "D2",
+    "D3",
+    "D4",
+    "ERA",
+    "N",
+    "PLC0415", # pylint: import-outside-top-level
+    "TRY301",  # tryceratops: raise-within-try
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "D1",      # Docstrings not mandatory in tests
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001",  # Private member access in tests
+    "PLR2004", # Magic value comparisons
+]
+"tests/integration_tests/examples/*.py" = [
+    "INP001",   # Not a package
+    "EXE001",   # Only examples
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]
+"langchain/chains/constitutional_ai/principles.py" = [
+    "E501", # Line too long
+]
+"**/retrievers/*time_weighted_retriever.py" = [
+    "DTZ001", # Use of non timezone-aware datetime
+    "DTZ005", # Use of non timezone-aware datetime
+    "DTZ006", # Use of non timezone-aware datetime
+]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]

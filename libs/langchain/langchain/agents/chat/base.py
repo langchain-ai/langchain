@@ -1,4 +1,5 @@
-from typing import Any, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction
@@ -10,9 +11,11 @@ from langchain_core.prompts.chat import (
     HumanMessagePromptTemplate,
     SystemMessagePromptTemplate,
 )
-from langchain_core.pydantic_v1 import Field
 from langchain_core.tools import BaseTool
+from pydantic import Field
+from typing_extensions import override
 
+from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
 from langchain.agents.chat.output_parser import ChatOutputParser
 from langchain.agents.chat.prompt import (
@@ -25,7 +28,11 @@ from langchain.agents.utils import validate_tools_single_input
 from langchain.chains.llm import LLMChain
 
 
-@deprecated("0.1.0", alternative="create_react_agent", removal="0.2.0")
+@deprecated(
+    "0.1.0",
+    message=AGENT_DEPRECATION_WARNING,
+    removal="1.0",
+)
 class ChatAgent(Agent):
     """Chat Agent."""
 
@@ -43,21 +50,23 @@ class ChatAgent(Agent):
         return "Thought:"
 
     def _construct_scratchpad(
-        self, intermediate_steps: List[Tuple[AgentAction, str]]
+        self,
+        intermediate_steps: list[tuple[AgentAction, str]],
     ) -> str:
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
-            raise ValueError("agent_scratchpad should be of type string.")
+            msg = "agent_scratchpad should be of type string."
+            raise ValueError(msg)  # noqa: TRY004
         if agent_scratchpad:
             return (
                 f"This was your previous work "
                 f"(but I haven't seen any of it! I only see what "
                 f"you return as final answer):\n{agent_scratchpad}"
             )
-        else:
-            return agent_scratchpad
+        return agent_scratchpad
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
 
@@ -67,7 +76,7 @@ class ChatAgent(Agent):
         validate_tools_single_input(class_name=cls.__name__, tools=tools)
 
     @property
-    def _stop(self) -> List[str]:
+    def _stop(self) -> list[str]:
         return ["Observation:"]
 
     @classmethod
@@ -78,26 +87,36 @@ class ChatAgent(Agent):
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
     ) -> BasePromptTemplate:
+        """Create a prompt from a list of tools.
+
+        Args:
+            tools: A list of tools.
+            system_message_prefix: The system message prefix.
+                Default is SYSTEM_MESSAGE_PREFIX.
+            system_message_suffix: The system message suffix.
+                Default is SYSTEM_MESSAGE_SUFFIX.
+            human_message: The human message. Default is HUMAN_MESSAGE.
+            format_instructions: The format instructions.
+                Default is FORMAT_INSTRUCTIONS.
+            input_variables: The input variables. Default is None.
+
+        Returns:
+            A prompt template.
+        """
+
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = "\n\n".join(
-            [
-                system_message_prefix,
-                tool_strings,
-                format_instructions,
-                system_message_suffix,
-            ]
-        )
+        template = f"{system_message_prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{system_message_suffix}"  # noqa: E501
         messages = [
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template(human_message),
         ]
         if input_variables is None:
             input_variables = ["input", "agent_scratchpad"]
-        return ChatPromptTemplate(input_variables=input_variables, messages=messages)  # type: ignore[arg-type]
+        return ChatPromptTemplate(input_variables=input_variables, messages=messages)
 
     @classmethod
     def from_llm_and_tools(
@@ -110,10 +129,29 @@ class ChatAgent(Agent):
         system_message_suffix: str = SYSTEM_MESSAGE_SUFFIX,
         human_message: str = HUMAN_MESSAGE,
         format_instructions: str = FORMAT_INSTRUCTIONS,
-        input_variables: Optional[List[str]] = None,
+        input_variables: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Agent:
-        """Construct an agent from an LLM and tools."""
+        """Construct an agent from an LLM and tools.
+
+        Args:
+            llm: The language model.
+            tools: A list of tools.
+            callback_manager: The callback manager. Default is None.
+            output_parser: The output parser. Default is None.
+            system_message_prefix: The system message prefix.
+                Default is SYSTEM_MESSAGE_PREFIX.
+            system_message_suffix: The system message suffix.
+                Default is SYSTEM_MESSAGE_SUFFIX.
+            human_message: The human message. Default is HUMAN_MESSAGE.
+            format_instructions: The format instructions.
+                Default is FORMAT_INSTRUCTIONS.
+            input_variables: The input variables. Default is None.
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            An agent.
+        """
         cls._validate_tools(tools)
         prompt = cls.create_prompt(
             tools,

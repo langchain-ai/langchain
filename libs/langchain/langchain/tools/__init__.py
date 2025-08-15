@@ -16,20 +16,30 @@ tool for the job.
 
     CallbackManagerForToolRun, AsyncCallbackManagerForToolRun
 """
+
 import warnings
 from typing import Any
 
 from langchain_core._api import LangChainDeprecationWarning
-from langchain_core.tools import BaseTool, StructuredTool, Tool, tool
+from langchain_core.tools import (
+    BaseTool as BaseTool,
+)
+from langchain_core.tools import (
+    StructuredTool as StructuredTool,
+)
+from langchain_core.tools import (
+    Tool as Tool,
+)
+from langchain_core.tools.convert import tool as tool
 
-from langchain.utils.interactive_env import is_interactive_env
+from langchain._api.interactive_env import is_interactive_env
 
 # Used for internal purposes
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 
 def _import_python_tool_PythonAstREPLTool() -> Any:
-    raise ImportError(
+    msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
@@ -37,10 +47,11 @@ def _import_python_tool_PythonAstREPLTool() -> Any:
         "To keep using this code as is, install langchain experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
+    raise ImportError(msg)
 
 
 def _import_python_tool_PythonREPLTool() -> Any:
-    raise ImportError(
+    msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
         "For best practices make sure to sandbox this tool. "
@@ -48,29 +59,30 @@ def _import_python_tool_PythonREPLTool() -> Any:
         "To keep using this code as is, install langchain experimental and "
         "update relevant imports replacing 'langchain' with 'langchain_experimental'"
     )
+    raise ImportError(msg)
 
 
 def __getattr__(name: str) -> Any:
     if name == "PythonAstREPLTool":
         return _import_python_tool_PythonAstREPLTool()
-    elif name == "PythonREPLTool":
+    if name == "PythonREPLTool":
         return _import_python_tool_PythonREPLTool()
-    else:
-        from langchain_community import tools
+    from langchain_community import tools
 
-        # If not in interactive env, raise warning.
-        if not is_interactive_env():
-            warnings.warn(
-                "Importing tools from langchain is deprecated. Importing from "
-                "langchain will no longer be supported as of langchain==0.2.0. "
-                "Please import from langchain-community instead:\n\n"
-                f"`from langchain_community.tools import {name}`.\n\n"
-                "To install langchain-community run "
-                "`pip install -U langchain-community`.",
-                category=LangChainDeprecationWarning,
-            )
+    # If not in interactive env, raise warning.
+    if not is_interactive_env():
+        warnings.warn(
+            "Importing tools from langchain is deprecated. Importing from "
+            "langchain will no longer be supported as of langchain==0.2.0. "
+            "Please import from langchain-community instead:\n\n"
+            f"`from langchain_community.tools import {name}`.\n\n"
+            "To install langchain-community run "
+            "`pip install -U langchain-community`.",
+            stacklevel=2,
+            category=LangChainDeprecationWarning,
+        )
 
-        return getattr(tools, name)
+    return getattr(tools, name)
 
 
 __all__ = [
@@ -127,8 +139,6 @@ __all__ = [
     "GoogleSearchRun",
     "GoogleSerperResults",
     "GoogleSerperRun",
-    "SearchAPIResults",
-    "SearchAPIRun",
     "HumanInputRun",
     "IFTTTWebhook",
     "InfoPowerBITool",
@@ -155,20 +165,21 @@ __all__ = [
     "OpenAPISpec",
     "OpenWeatherMapQueryRun",
     "PubmedQueryRun",
-    "RedditSearchRun",
     "QueryCheckerTool",
     "QueryPowerBITool",
     "QuerySQLCheckerTool",
     "QuerySQLDataBaseTool",
     "QuerySparkSQLTool",
     "ReadFileTool",
+    "RedditSearchRun",
     "RequestsDeleteTool",
     "RequestsGetTool",
     "RequestsPatchTool",
     "RequestsPostTool",
     "RequestsPutTool",
-    "SteamWebAPIQueryRun",
     "SceneXplainTool",
+    "SearchAPIResults",
+    "SearchAPIRun",
     "SearxSearchResults",
     "SearxSearchRun",
     "ShellTool",
@@ -177,8 +188,9 @@ __all__ = [
     "SlackScheduleMessage",
     "SlackSendMessage",
     "SleepTool",
-    "StdInInquireTool",
     "StackExchangeTool",
+    "StdInInquireTool",
+    "SteamWebAPIQueryRun",
     "SteamshipImageGenerationTool",
     "StructuredTool",
     "Tool",

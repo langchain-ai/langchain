@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Mapping
 from enum import Enum
-from typing import Any, Dict, List, Mapping, Optional, Union
+from typing import Any, Optional, Union
 
-from langchain_core.callbacks.manager import Callbacks
+from langchain_core.callbacks import Callbacks
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field
+from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain.chains.llm import LLMChain
@@ -68,7 +70,7 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
     def _type(self) -> str:
         return "criteria_result"
 
-    def parse(self, text: str) -> Dict[str, Any]:
+    def parse(self, text: str) -> dict[str, Any]:
         """Parse the output text.
 
         Args:
@@ -121,7 +123,7 @@ CRITERIA_TYPE = Union[
 
 def resolve_criteria(
     criteria: Optional[Union[CRITERIA_TYPE, str]],
-) -> Dict[str, str]:
+) -> dict[str, str]:
     """Resolve the criteria to evaluate.
 
     Parameters
@@ -142,7 +144,7 @@ def resolve_criteria(
     >>> criterion = "relevance"
     >>> CriteriaEvalChain.resolve_criteria(criteria)
     {'relevance': 'Is the submission referring to a real quote from the text?'}
-    """  # noqa: E501
+    """
     if criteria is None:
         return {
             "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS],
@@ -155,11 +157,12 @@ def resolve_criteria(
         criteria_ = {criteria.name: criteria.critique_request}
     else:
         if not criteria:
-            raise ValueError(
+            msg = (
                 "Criteria cannot be empty. "
                 "Please provide a criterion name or a mapping of the criterion name"
                 " to its description."
             )
+            raise ValueError(msg)
         criteria_ = dict(criteria)
     return criteria_
 
@@ -233,13 +236,13 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     output_key: str = "results"  #: :meta private:
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
-    class Config:
-        """Configuration for the QAEvalChain."""
-
-        extra = Extra.ignore
+    model_config = ConfigDict(
+        extra="ignore",
+    )
 
     @property
     def requires_reference(self) -> bool:
@@ -247,6 +250,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         return False
 
     @property
+    @override
     def requires_input(self) -> bool:
         return True
 
@@ -271,22 +275,24 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria"}
         prompt_ = prompt or PROMPT
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         return prompt_
 
     @classmethod
     def resolve_criteria(
         cls,
         criteria: Optional[Union[CRITERIA_TYPE, str]],
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """Resolve the criteria to evaluate.
 
         Parameters
@@ -307,7 +313,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         >>> criterion = "relevance"
         >>> CriteriaEvalChain.resolve_criteria(criteria)
         {'relevance': 'Is the submission referring to a real quote from the text?'}
-        """  # noqa: E501
+        """
         return resolve_criteria(criteria)
 
     @classmethod
@@ -360,12 +366,13 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """
         prompt_ = cls._resolve_prompt(prompt)
         if criteria == Criteria.CORRECTNESS:
-            raise ValueError(
+            msg = (
                 "Correctness should not be used in the reference-free"
                 " 'criteria' evaluator (CriteriaEvalChain)."
                 " Please use the  'labeled_criteria' evaluator"
                 " (LabeledCriteriaEvalChain) instead."
             )
+            raise ValueError(msg)
         criteria_ = cls.resolve_criteria(criteria)
         criteria_str = "\n".join(f"{k}: {v}" for k, v in criteria_.items())
         prompt_ = prompt_.partial(criteria=criteria_str)
@@ -380,16 +387,16 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         self,
         prediction: str,
         reference: Optional[str],
-        input: Optional[str],
+        input_: Optional[str],
     ) -> dict:
         """Get the evaluation input."""
-        input_ = {
-            "input": input,
+        input_dict = {
+            "input": input_,
             "output": prediction,
         }
         if self.requires_reference:
-            input_["reference"] = reference
-        return input_
+            input_dict["reference"] = reference
+        return input_dict
 
     def _prepare_output(self, result: dict) -> dict:
         """Prepare the output."""
@@ -398,6 +405,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             parsed[RUN_KEY] = result[RUN_KEY]
         return parsed
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -405,8 +413,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -453,6 +461,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -460,8 +469,8 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
@@ -513,6 +522,7 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
     """Criteria evaluation chain that requires references."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -523,15 +533,17 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
 
     @classmethod
     def _resolve_prompt(
-        cls, prompt: Optional[BasePromptTemplate] = None
+        cls,
+        prompt: Optional[BasePromptTemplate] = None,
     ) -> BasePromptTemplate:
         expected_input_vars = {"input", "output", "criteria", "reference"}
         prompt_ = prompt or PROMPT_WITH_REFERENCES
         if expected_input_vars != set(prompt_.input_variables):
-            raise ValueError(
+            msg = (
                 f"Input variables should be {expected_input_vars}, "
                 f"but got {prompt_.input_variables}"
             )
+            raise ValueError(msg)
         return prompt_
 
     @classmethod

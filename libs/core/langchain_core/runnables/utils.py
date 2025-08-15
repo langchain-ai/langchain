@@ -1,43 +1,51 @@
 """Utility code for runnables."""
+
 from __future__ import annotations
 
 import ast
 import asyncio
 import inspect
 import textwrap
+from collections.abc import Mapping, Sequence
+from contextvars import Context
 from functools import lru_cache
 from inspect import signature
 from itertools import groupby
 from typing import (
+    TYPE_CHECKING,
     Any,
-    AsyncIterable,
     Callable,
-    Coroutine,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
     NamedTuple,
     Optional,
     Protocol,
-    Sequence,
-    Set,
-    Type,
     TypeVar,
     Union,
 )
 
-from langchain_core.pydantic_v1 import BaseConfig, BaseModel
-from langchain_core.pydantic_v1 import create_model as _create_model_base
-from langchain_core.runnables.schema import StreamEvent
+from typing_extensions import TypeGuard, override
 
-Input = TypeVar("Input", contravariant=True)
+# Re-export create-model for backwards compatibility
+from langchain_core.utils.pydantic import create_model  # noqa: F401
+
+if TYPE_CHECKING:
+    from collections.abc import (
+        AsyncIterable,
+        AsyncIterator,
+        Awaitable,
+        Coroutine,
+        Iterable,
+    )
+
+    from langchain_core.runnables.schema import StreamEvent
+
+Input = TypeVar("Input", contravariant=True)  # noqa: PLC0105
 # Output type should implement __concat__, as eg str, list, dict do
-Output = TypeVar("Output", covariant=True)
+Output = TypeVar("Output", covariant=True)  # noqa: PLC0105
 
 
 async def gated_coro(semaphore: asyncio.Semaphore, coro: Coroutine) -> Any:
     """Run a coroutine with a semaphore.
+
     Args:
         semaphore: The semaphore to use.
         coro: The coroutine to run.
@@ -54,7 +62,7 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
 
     Args:
         n: The number of coroutines to run concurrently.
-        coros: The coroutines to run.
+        *coros: The coroutines to run.
 
     Returns:
         The results of the coroutines.
@@ -67,38 +75,100 @@ async def gather_with_concurrency(n: Union[int, None], *coros: Coroutine) -> lis
     return await asyncio.gather(*(gated_coro(semaphore, c) for c in coros))
 
 
-def accepts_run_manager(callable: Callable[..., Any]) -> bool:
-    """Check if a callable accepts a run_manager argument."""
+def accepts_run_manager(callable: Callable[..., Any]) -> bool:  # noqa: A002
+    """Check if a callable accepts a run_manager argument.
+
+    Args:
+        callable: The callable to check.
+
+    Returns:
+        bool: True if the callable accepts a run_manager argument, False otherwise.
+    """
     try:
         return signature(callable).parameters.get("run_manager") is not None
     except ValueError:
         return False
 
 
-def accepts_config(callable: Callable[..., Any]) -> bool:
-    """Check if a callable accepts a config argument."""
+def accepts_config(callable: Callable[..., Any]) -> bool:  # noqa: A002
+    """Check if a callable accepts a config argument.
+
+    Args:
+        callable: The callable to check.
+
+    Returns:
+        bool: True if the callable accepts a config argument, False otherwise.
+    """
     try:
         return signature(callable).parameters.get("config") is not None
     except ValueError:
         return False
 
 
-def accepts_context(callable: Callable[..., Any]) -> bool:
-    """Check if a callable accepts a context argument."""
+def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
+    """Check if a callable accepts a context argument.
+
+    Args:
+        callable: The callable to check.
+
+    Returns:
+        bool: True if the callable accepts a context argument, False otherwise.
+    """
     try:
         return signature(callable).parameters.get("context") is not None
     except ValueError:
         return False
 
 
+@lru_cache(maxsize=1)
+def asyncio_accepts_context() -> bool:
+    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
+    return accepts_context(asyncio.create_task)
+
+
+def coro_with_context(
+    coro: Awaitable[Any], context: Context, *, create_task: bool = False
+) -> Awaitable[Any]:
+    """Await a coroutine with a context.
+
+    Args:
+        coro: The coroutine to await.
+        context: The context to use.
+        create_task: Whether to create a task. Defaults to False.
+
+    Returns:
+        The coroutine with the context.
+    """
+    if asyncio_accepts_context():
+        return asyncio.create_task(coro, context=context)  # type: ignore[arg-type,call-arg,unused-ignore]
+    if create_task:
+        return asyncio.create_task(coro)  # type: ignore[arg-type]
+    return coro
+
+
 class IsLocalDict(ast.NodeVisitor):
     """Check if a name is a local dict."""
 
-    def __init__(self, name: str, keys: Set[str]) -> None:
+    def __init__(self, name: str, keys: set[str]) -> None:
+        """Initialize the visitor.
+
+        Args:
+            name: The name to check.
+            keys: The keys to populate.
+        """
         self.name = name
         self.keys = keys
 
+    @override
     def visit_Subscript(self, node: ast.Subscript) -> Any:
+        """Visit a subscript node.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if (
             isinstance(node.ctx, ast.Load)
             and isinstance(node.value, ast.Name)
@@ -109,13 +179,22 @@ class IsLocalDict(ast.NodeVisitor):
             # we've found a subscript access on the name we're looking for
             self.keys.add(node.slice.value)
 
+    @override
     def visit_Call(self, node: ast.Call) -> Any:
+        """Visit a call node.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if (
             isinstance(node.func, ast.Attribute)
             and isinstance(node.func.value, ast.Name)
             and node.func.value.id == self.name
             and node.func.attr == "get"
-            and len(node.args) in (1, 2)
+            and len(node.args) in {1, 2}
             and isinstance(node.args[0], ast.Constant)
             and isinstance(node.args[0].value, str)
         ):
@@ -127,21 +206,49 @@ class IsFunctionArgDict(ast.NodeVisitor):
     """Check if the first argument of a function is a dict."""
 
     def __init__(self) -> None:
-        self.keys: Set[str] = set()
+        """Create a IsFunctionArgDict visitor."""
+        self.keys: set[str] = set()
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        """Visit a lambda function.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if not node.args.args:
             return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        """Visit a function definition.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if not node.args.args:
             return
         input_arg_name = node.args.args[0].arg
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        """Visit an async function definition.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if not node.args.args:
             return
         input_arg_name = node.args.args[0].arg
@@ -152,16 +259,35 @@ class NonLocals(ast.NodeVisitor):
     """Get nonlocal variables accessed."""
 
     def __init__(self) -> None:
-        self.loads: Set[str] = set()
-        self.stores: Set[str] = set()
+        """Create a NonLocals visitor."""
+        self.loads: set[str] = set()
+        self.stores: set[str] = set()
 
+    @override
     def visit_Name(self, node: ast.Name) -> Any:
+        """Visit a name node.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if isinstance(node.ctx, ast.Load):
             self.loads.add(node.id)
         elif isinstance(node.ctx, ast.Store):
             self.stores.add(node.id)
 
+    @override
     def visit_Attribute(self, node: ast.Attribute) -> Any:
+        """Visit an attribute node.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         if isinstance(node.ctx, ast.Load):
             parent = node.value
             attr_expr = node.attr
@@ -171,25 +297,67 @@ class NonLocals(ast.NodeVisitor):
             if isinstance(parent, ast.Name):
                 self.loads.add(parent.id + "." + attr_expr)
                 self.loads.discard(parent.id)
+            elif isinstance(parent, ast.Call):
+                if isinstance(parent.func, ast.Name):
+                    self.loads.add(parent.func.id)
+                else:
+                    parent = parent.func
+                    attr_expr = ""
+                    while isinstance(parent, ast.Attribute):
+                        if attr_expr:
+                            attr_expr = parent.attr + "." + attr_expr
+                        else:
+                            attr_expr = parent.attr
+                        parent = parent.value
+                    if isinstance(parent, ast.Name):
+                        self.loads.add(parent.id + "." + attr_expr)
 
 
 class FunctionNonLocals(ast.NodeVisitor):
     """Get the nonlocal variables accessed of a function."""
 
     def __init__(self) -> None:
-        self.nonlocals: Set[str] = set()
+        """Create a FunctionNonLocals visitor."""
+        self.nonlocals: set[str] = set()
 
+    @override
     def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+        """Visit a function definition.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         visitor = NonLocals()
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+        """Visit an async function definition.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         visitor = NonLocals()
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
+        """Visit a lambda function.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         visitor = NonLocals()
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
@@ -203,22 +371,38 @@ class GetLambdaSource(ast.NodeVisitor):
         self.source: Optional[str] = None
         self.count = 0
 
+    @override
     def visit_Lambda(self, node: ast.Lambda) -> Any:
-        """Visit a lambda function."""
+        """Visit a lambda function.
+
+        Args:
+            node: The node to visit.
+
+        Returns:
+            Any: The result of the visit.
+        """
         self.count += 1
         if hasattr(ast, "unparse"):
             self.source = ast.unparse(node)
 
 
-def get_function_first_arg_dict_keys(func: Callable) -> Optional[List[str]]:
-    """Get the keys of the first argument of a function if it is a dict."""
+def get_function_first_arg_dict_keys(func: Callable) -> Optional[list[str]]:
+    """Get the keys of the first argument of a function if it is a dict.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        Optional[list[str]]: The keys of the first argument if it is a dict,
+            None otherwise.
+    """
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
         visitor = IsFunctionArgDict()
         visitor.visit(tree)
-        return list(visitor.keys) if visitor.keys else None
-    except (SyntaxError, TypeError, OSError):
+        return sorted(visitor.keys) if visitor.keys else None
+    except (SyntaxError, TypeError, OSError, SystemError):
         return None
 
 
@@ -226,10 +410,10 @@ def get_lambda_source(func: Callable) -> Optional[str]:
     """Get the source code of a lambda function.
 
     Args:
-        func: a callable that can be a lambda function
+        func: a Callable that can be a lambda function.
 
     Returns:
-        str: the source code of the lambda function
+        str: the source code of the lambda function.
     """
     try:
         name = func.__name__ if func.__name__ != "<lambda>" else None
@@ -240,20 +424,34 @@ def get_lambda_source(func: Callable) -> Optional[str]:
         tree = ast.parse(textwrap.dedent(code))
         visitor = GetLambdaSource()
         visitor.visit(tree)
-        return visitor.source if visitor.count == 1 else name
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return name
+    return visitor.source if visitor.count == 1 else name
 
 
-def get_function_nonlocals(func: Callable) -> List[Any]:
-    """Get the nonlocal variables accessed by a function."""
+@lru_cache(maxsize=256)
+def get_function_nonlocals(func: Callable) -> list[Any]:
+    """Get the nonlocal variables accessed by a function.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        list[Any]: The nonlocal variables accessed by the function.
+    """
     try:
         code = inspect.getsource(func)
         tree = ast.parse(textwrap.dedent(code))
         visitor = FunctionNonLocals()
         visitor.visit(tree)
-        values: List[Any] = []
-        for k, v in inspect.getclosurevars(func).nonlocals.items():
+        values: list[Any] = []
+        closure = (
+            inspect.getclosurevars(func.__wrapped__)
+            if hasattr(func, "__wrapped__") and callable(func.__wrapped__)
+            else inspect.getclosurevars(func)
+        )
+        candidates = {**closure.globals, **closure.nonlocals}
+        for k, v in candidates.items():
             if k in visitor.nonlocals:
                 values.append(v)
             for kk in visitor.nonlocals:
@@ -262,27 +460,27 @@ def get_function_nonlocals(func: Callable) -> List[Any]:
                     for part in kk.split(".")[1:]:
                         if vv is None:
                             break
-                        else:
-                            try:
-                                vv = getattr(vv, part)
-                            except AttributeError:
-                                break
+                        try:
+                            vv = getattr(vv, part)
+                        except AttributeError:
+                            break
                     else:
                         values.append(vv)
-        return values
-    except (SyntaxError, TypeError, OSError):
+    except (SyntaxError, TypeError, OSError, SystemError):
         return []
+
+    return values
 
 
 def indent_lines_after_first(text: str, prefix: str) -> str:
     """Indent all lines of text after the first line.
 
     Args:
-        text:  The text to indent
-        prefix: Used to determine the number of spaces to indent
+        text: The text to indent.
+        prefix: Used to determine the number of spaces to indent.
 
     Returns:
-        str: The indented text
+        str: The indented text.
     """
     n_spaces = len(prefix)
     spaces = " " * n_spaces
@@ -290,12 +488,15 @@ def indent_lines_after_first(text: str, prefix: str) -> str:
     return "\n".join([lines[0]] + [spaces + line for line in lines[1:]])
 
 
-class AddableDict(Dict[str, Any]):
-    """
-    Dictionary that can be added to another dictionary.
-    """
+class AddableDict(dict[str, Any]):
+    """Dictionary that can be added to another dictionary."""
 
     def __add__(self, other: AddableDict) -> AddableDict:
+        """Add a dictionary to this dictionary.
+
+        Args:
+            other: The other dictionary to add.
+        """
         chunk = AddableDict(self)
         for key in other:
             if key not in chunk or chunk[key] is None:
@@ -309,6 +510,11 @@ class AddableDict(Dict[str, Any]):
         return chunk
 
     def __radd__(self, other: AddableDict) -> AddableDict:
+        """Add this dictionary to another dictionary.
+
+        Args:
+            other: The other dictionary to be added to.
+        """
         chunk = AddableDict(other)
         for key in self:
             if key not in chunk or chunk[key] is None:
@@ -329,37 +535,53 @@ _T_contra = TypeVar("_T_contra", contravariant=True)
 class SupportsAdd(Protocol[_T_contra, _T_co]):
     """Protocol for objects that support addition."""
 
-    def __add__(self, __x: _T_contra) -> _T_co:
-        ...
+    def __add__(self, x: _T_contra, /) -> _T_co:
+        """Add the object to another object."""
 
 
 Addable = TypeVar("Addable", bound=SupportsAdd[Any, Any])
 
 
 def add(addables: Iterable[Addable]) -> Optional[Addable]:
-    """Add a sequence of addable objects together."""
-    final = None
+    """Add a sequence of addable objects together.
+
+    Args:
+        addables: The addable objects to add.
+
+    Returns:
+        Optional[Addable]: The result of adding the addable objects.
+    """
+    final: Optional[Addable] = None
     for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
 async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
-    """Asynchronously add a sequence of addable objects together."""
-    final = None
+    """Asynchronously add a sequence of addable objects together.
+
+    Args:
+        addables: The addable objects to add.
+
+    Returns:
+        Optional[Addable]: The result of adding the addable objects.
+    """
+    final: Optional[Addable] = None
     async for chunk in addables:
-        if final is None:
-            final = chunk
-        else:
-            final = final + chunk
+        final = chunk if final is None else final + chunk
     return final
 
 
 class ConfigurableField(NamedTuple):
-    """Field that can be configured by the user."""
+    """Field that can be configured by the user.
+
+    Parameters:
+        id: The unique identifier of the field.
+        name: The name of the field. Defaults to None.
+        description: The description of the field. Defaults to None.
+        annotation: The annotation of the field. Defaults to None.
+        is_shared: Whether the field is shared. Defaults to False.
+    """
 
     id: str
 
@@ -368,12 +590,22 @@ class ConfigurableField(NamedTuple):
     annotation: Optional[Any] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, self.annotation))
 
 
 class ConfigurableFieldSingleOption(NamedTuple):
-    """Field that can be configured by the user with a default value."""
+    """Field that can be configured by the user with a default value.
+
+    Parameters:
+        id: The unique identifier of the field.
+        options: The options for the field.
+        default: The default value for the field.
+        name: The name of the field. Defaults to None.
+        description: The description of the field. Defaults to None.
+        is_shared: Whether the field is shared. Defaults to False.
+    """
 
     id: str
     options: Mapping[str, Any]
@@ -383,12 +615,22 @@ class ConfigurableFieldSingleOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), self.default))
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
-    """Field that can be configured by the user with multiple default values."""
+    """Field that can be configured by the user with multiple default values.
+
+    Parameters:
+        id: The unique identifier of the field.
+        options: The options for the field.
+        default: The default values for the field.
+        name: The name of the field. Defaults to None.
+        description: The description of the field. Defaults to None.
+        is_shared: Whether the field is shared. Defaults to False.
+    """
 
     id: str
     options: Mapping[str, Any]
@@ -398,6 +640,7 @@ class ConfigurableFieldMultiOption(NamedTuple):
     description: Optional[str] = None
     is_shared: bool = False
 
+    @override
     def __hash__(self) -> int:
         return hash((self.id, tuple(self.options.keys()), tuple(self.default)))
 
@@ -408,7 +651,17 @@ AnyConfigurableField = Union[
 
 
 class ConfigurableFieldSpec(NamedTuple):
-    """Field that can be configured by the user. It is a specification of a field."""
+    """Field that can be configured by the user. It is a specification of a field.
+
+    Parameters:
+        id: The unique identifier of the field.
+        annotation: The annotation of the field.
+        name: The name of the field. Defaults to None.
+        description: The description of the field. Defaults to None.
+        default: The default value for the field. Defaults to None.
+        is_shared: Whether the field is shared. Defaults to False.
+        dependencies: The dependencies of the field. Defaults to None.
+    """
 
     id: str
     annotation: Any
@@ -417,29 +670,38 @@ class ConfigurableFieldSpec(NamedTuple):
     description: Optional[str] = None
     default: Any = None
     is_shared: bool = False
-    dependencies: Optional[List[str]] = None
+    dependencies: Optional[list[str]] = None
 
 
 def get_unique_config_specs(
     specs: Iterable[ConfigurableFieldSpec],
-) -> List[ConfigurableFieldSpec]:
-    """Get the unique config specs from a sequence of config specs."""
+) -> list[ConfigurableFieldSpec]:
+    """Get the unique config specs from a sequence of config specs.
+
+    Args:
+        specs: The config specs.
+
+    Returns:
+        list[ConfigurableFieldSpec]: The unique config specs.
+
+    Raises:
+        ValueError: If the runnable sequence contains conflicting config specs.
+    """
     grouped = groupby(
         sorted(specs, key=lambda s: (s.id, *(s.dependencies or []))), lambda s: s.id
     )
-    unique: List[ConfigurableFieldSpec] = []
-    for id, dupes in grouped:
+    unique: list[ConfigurableFieldSpec] = []
+    for spec_id, dupes in grouped:
         first = next(dupes)
         others = list(dupes)
-        if len(others) == 0:
-            unique.append(first)
-        elif all(o == first for o in others):
+        if len(others) == 0 or all(o == first for o in others):
             unique.append(first)
         else:
-            raise ValueError(
+            msg = (
                 "RunnableSequence contains conflicting config specs"
-                f"for {id}: {[first] + others}"
+                f"for {spec_id}: {[first, *others]}"
             )
+            raise ValueError(msg)
     return unique
 
 
@@ -498,29 +760,37 @@ class _RootEventFilter:
         return include
 
 
-class _SchemaConfig(BaseConfig):
-    arbitrary_types_allowed = True
-    frozen = True
+def is_async_generator(
+    func: Any,
+) -> TypeGuard[Callable[..., AsyncIterator]]:
+    """Check if a function is an async generator.
+
+    Args:
+        func: The function to check.
+
+    Returns:
+        TypeGuard[Callable[..., AsyncIterator]: True if the function is
+            an async generator, False otherwise.
+    """
+    return inspect.isasyncgenfunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
+        and inspect.isasyncgenfunction(func.__call__)
+    )
 
 
-def create_model(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    try:
-        return _create_model_cached(__model_name, **field_definitions)
-    except TypeError:
-        # something in field definitions is not hashable
-        return _create_model_base(
-            __model_name, __config__=_SchemaConfig, **field_definitions
-        )
+def is_async_callable(
+    func: Any,
+) -> TypeGuard[Callable[..., Awaitable]]:
+    """Check if a function is async.
 
+    Args:
+        func: The function to check.
 
-@lru_cache(maxsize=256)
-def _create_model_cached(
-    __model_name: str,
-    **field_definitions: Any,
-) -> Type[BaseModel]:
-    return _create_model_base(
-        __model_name, __config__=_SchemaConfig, **field_definitions
+    Returns:
+        TypeGuard[Callable[..., Awaitable]: True if the function is async,
+            False otherwise.
+    """
+    return asyncio.iscoroutinefunction(func) or (
+        hasattr(func, "__call__")  # noqa: B004
+        and asyncio.iscoroutinefunction(func.__call__)
     )

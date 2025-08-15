@@ -21,13 +21,21 @@ EXPECTED_ALL = [
     "ToolCallChunk",
     "ToolMessage",
     "ToolMessageChunk",
+    "RemoveMessage",
     "convert_to_messages",
     "get_buffer_string",
+    "is_data_content_block",
     "merge_content",
     "message_chunk_to_message",
     "message_to_dict",
     "messages_from_dict",
     "messages_to_dict",
+    "filter_messages",
+    "merge_message_runs",
+    "trim_messages",
+    "convert_to_openai_data_block",
+    "convert_to_openai_image_block",
+    "convert_to_openai_messages",
 ]
 
 

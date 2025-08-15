@@ -12,21 +12,22 @@ Beyond the architecture, our software is designed to empower developers like you
 
 Want more Groq? Check out our [website](https://groq.com) for more resources and join our [Discord community](https://discord.gg/JvNsBDKeCG) to connect with our developers!
 
-
 ## Installation and Setup
+
 Install the integration package:
 
 ```bash
 pip install langchain-groq
 ```
 
-Request an [API key](https://wow.groq.com) and set it as an environment variable
+Request an [API key](https://console.groq.com/login?utm_source=langchain&utm_content=package_readme) and set it as an environment variable
 
 ```bash
 export GROQ_API_KEY=gsk_...
 ```
 
 ## Chat Model
+
 See a [usage example](https://python.langchain.com/docs/integrations/chat/groq).
 
 ## Development
@@ -36,13 +37,13 @@ To develop the `langchain-groq` package, you'll need to follow these instruction
 ### Install dev dependencies
 
 ```bash
-poetry install --with test,test_integration,lint,codespell
+uv sync --group lint --group test
 ```
 
 ### Build the package
 
 ```bash
-poetry build
+uv build
 ```
 
 ### Run unit tests

@@ -1,10 +1,10 @@
 """Chain for question-answering against a vector database."""
+
 from __future__ import annotations
 
 import inspect
-import warnings
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -15,9 +15,10 @@ from langchain_core.callbacks import (
 from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
-from langchain_core.pydantic_v1 import Extra, Field, root_validator
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
+from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -27,6 +28,15 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.chains.question_answering.stuff_prompt import PROMPT_SELECTOR
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class BaseRetrievalQA(Chain):
     """Base class for question-answering chains."""
 
@@ -37,15 +47,14 @@ class BaseRetrievalQA(Chain):
     return_source_documents: bool = False
     """Return the source documents or not."""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
-        allow_population_by_field_name = True
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys.
 
         :meta private:
@@ -53,14 +62,14 @@ class BaseRetrievalQA(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys.
 
         :meta private:
         """
         _output_keys = [self.output_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         return _output_keys
 
     @classmethod
@@ -75,10 +84,14 @@ class BaseRetrievalQA(Chain):
         """Initialize from LLM."""
         _prompt = prompt or PROMPT_SELECTOR.get_prompt(llm)
         llm_chain = LLMChain(
-            llm=llm, prompt=_prompt, callbacks=callbacks, **(llm_chain_kwargs or {})
+            llm=llm,
+            prompt=_prompt,
+            callbacks=callbacks,
+            **(llm_chain_kwargs or {}),
         )
         document_prompt = PromptTemplate(
-            input_variables=["page_content"], template="Context:\n{page_content}"
+            input_variables=["page_content"],
+            template="Context:\n{page_content}",
         )
         combine_documents_chain = StuffDocumentsChain(
             llm_chain=llm_chain,
@@ -104,7 +117,9 @@ class BaseRetrievalQA(Chain):
         """Load chain from chain type."""
         _chain_type_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_chain(
-            llm, chain_type=chain_type, **_chain_type_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_type_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -114,14 +129,14 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents to do question answering over."""
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -132,6 +147,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -143,13 +159,14 @@ class BaseRetrievalQA(Chain):
         else:
             docs = self._get_docs(question)  # type: ignore[call-arg]
         answer = self.combine_documents_chain.run(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
     @abstractmethod
     async def _aget_docs(
@@ -157,14 +174,14 @@ class BaseRetrievalQA(Chain):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get documents to do question answering over."""
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Run get_relevant_text and llm on input query.
 
         If chain has 'return_source_documents' as 'True', returns
@@ -175,6 +192,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -186,16 +204,25 @@ class BaseRetrievalQA(Chain):
         else:
             docs = await self._aget_docs(question)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, question=question, callbacks=_run_manager.get_child()
+            input_documents=docs,
+            question=question,
+            callbacks=_run_manager.get_child(),
         )
 
         if self.return_source_documents:
             return {self.output_key: answer, "source_documents": docs}
-        else:
-            return {self.output_key: answer}
+        return {self.output_key: answer}
 
 
-@deprecated(since="0.1.17", alternative="create_retrieval_chain", removal="0.3.0")
+@deprecated(
+    since="0.1.17",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class RetrievalQA(BaseRetrievalQA):
     """Chain for question-answering against an index.
 
@@ -216,8 +243,8 @@ class RetrievalQA(BaseRetrievalQA):
             system_prompt = (
                 "Use the given context to answer the question. "
                 "If you don't know the answer, say you don't know. "
-                "Use three sentence maximum and keep the answer concise."
-                "\n\n{context}"
+                "Use three sentence maximum and keep the answer concise. "
+                "Context: {context}"
             )
             prompt = ChatPromptTemplate.from_messages(
                 [
@@ -249,10 +276,11 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         return self.retriever.invoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     async def _aget_docs(
@@ -260,10 +288,11 @@ class RetrievalQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         return await self.retriever.ainvoke(
-            question, config={"callbacks": run_manager.get_child()}
+            question,
+            config={"callbacks": run_manager.get_child()},
         )
 
     @property
@@ -272,6 +301,15 @@ class RetrievalQA(BaseRetrievalQA):
         return "retrieval_qa"
 
 
+@deprecated(
+    since="0.2.13",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Use the `create_retrieval_chain` constructor "
+        "instead. See migration guide here: "
+        "https://python.langchain.com/docs/versions/migrating_chains/retrieval_qa/"
+    ),
+)
 class VectorDBQA(BaseRetrievalQA):
     """Chain for question-answering against a vector database."""
 
@@ -281,43 +319,43 @@ class VectorDBQA(BaseRetrievalQA):
     """Number of documents to query for."""
     search_type: str = "similarity"
     """Search type to use over vectorstore. `similarity` or `mmr`."""
-    search_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    search_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Extra search args."""
 
-    @root_validator()
-    def raise_deprecation(cls, values: Dict) -> Dict:
-        warnings.warn(
-            "`VectorDBQA` is deprecated - "
-            "please use `from langchain.chains import RetrievalQA`"
-        )
-        return values
-
-    @root_validator()
-    def validate_search_type(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_search_type(cls, values: dict) -> Any:
         """Validate search type."""
         if "search_type" in values:
             search_type = values["search_type"]
             if search_type not in ("similarity", "mmr"):
-                raise ValueError(f"search_type of {search_type} not allowed.")
+                msg = f"search_type of {search_type} not allowed."
+                raise ValueError(msg)
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
         if self.search_type == "similarity":
             docs = self.vectorstore.similarity_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         elif self.search_type == "mmr":
             docs = self.vectorstore.max_marginal_relevance_search(
-                question, k=self.k, **self.search_kwargs
+                question,
+                k=self.k,
+                **self.search_kwargs,
             )
         else:
-            raise ValueError(f"search_type of {self.search_type} not allowed.")
+            msg = f"search_type of {self.search_type} not allowed."
+            raise ValueError(msg)
         return docs
 
     async def _aget_docs(
@@ -325,9 +363,10 @@ class VectorDBQA(BaseRetrievalQA):
         question: str,
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs."""
-        raise NotImplementedError("VectorDBQA does not support async")
+        msg = "VectorDBQA does not support async"
+        raise NotImplementedError(msg)
 
     @property
     def _chain_type(self) -> str:

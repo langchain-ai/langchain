@@ -1,87 +1,102 @@
+"""Utilities for JSON Schema."""
+
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Sequence, Set
+from typing import TYPE_CHECKING, Any, Optional
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 def _retrieve_ref(path: str, schema: dict) -> dict:
     components = path.split("/")
     if components[0] != "#":
-        raise ValueError(
+        msg = (
             "ref paths are expected to be URI fragments, meaning they should start "
             "with #."
         )
+        raise ValueError(msg)
     out = schema
     for component in components[1:]:
-        if component.isdigit():
-            out = out[int(component)]
-        else:
+        if component in out:
             out = out[component]
+        elif component.isdigit():
+            index = int(component)
+            if (isinstance(out, list) and 0 <= index < len(out)) or (
+                isinstance(out, dict) and index in out
+            ):
+                out = out[index]
+            else:
+                msg = f"Reference '{path}' not found."
+                raise KeyError(msg)
+        else:
+            msg = f"Reference '{path}' not found."
+            raise KeyError(msg)
     return deepcopy(out)
 
 
 def _dereference_refs_helper(
     obj: Any,
-    full_schema: Dict[str, Any],
+    full_schema: dict[str, Any],
+    processed_refs: Optional[set[str]],
     skip_keys: Sequence[str],
-    processed_refs: Optional[Set[str]] = None,
+    shallow_refs: bool,  # noqa: FBT001
 ) -> Any:
+    """Inline every pure {'$ref':...}.
+
+    But:
+    - if shallow_refs=True: only break cycles, do not inline nested refs
+    - if shallow_refs=False: deep-inline all nested refs
+
+    Also skip recursion under any key in skip_keys.
+    """
     if processed_refs is None:
         processed_refs = set()
 
+    # 1) Pure $ref node?
+    if isinstance(obj, dict) and "$ref" in set(obj.keys()):
+        ref_path = obj["$ref"]
+        # cycle?
+        if ref_path in processed_refs:
+            return {}
+        processed_refs.add(ref_path)
+
+        # grab + copy the target
+        target = deepcopy(_retrieve_ref(ref_path, full_schema))
+
+        # deep inlining: recurse into everything
+        result = _dereference_refs_helper(
+            target, full_schema, processed_refs, skip_keys, shallow_refs
+        )
+
+        processed_refs.remove(ref_path)
+        return result
+
+    # 2) Not a pure-$ref: recurse, skipping any keys in skip_keys
     if isinstance(obj, dict):
-        obj_out = {}
+        out: dict[str, Any] = {}
         for k, v in obj.items():
             if k in skip_keys:
-                obj_out[k] = v
-            elif k == "$ref":
-                if v in processed_refs:
-                    continue
-                processed_refs.add(v)
-                ref = _retrieve_ref(v, full_schema)
-                full_ref = _dereference_refs_helper(
-                    ref, full_schema, skip_keys, processed_refs
-                )
-                processed_refs.remove(v)
-                return full_ref
-            elif isinstance(v, (list, dict)):
-                obj_out[k] = _dereference_refs_helper(
-                    v, full_schema, skip_keys, processed_refs
+                # do not recurse under this key
+                out[k] = deepcopy(v)
+            elif isinstance(v, (dict, list)):
+                out[k] = _dereference_refs_helper(
+                    v, full_schema, processed_refs, skip_keys, shallow_refs
                 )
             else:
-                obj_out[k] = v
-        return obj_out
-    elif isinstance(obj, list):
+                out[k] = v
+        return out
+
+    if isinstance(obj, list):
         return [
-            _dereference_refs_helper(el, full_schema, skip_keys, processed_refs)
-            for el in obj
+            _dereference_refs_helper(
+                item, full_schema, processed_refs, skip_keys, shallow_refs
+            )
+            for item in obj
         ]
-    else:
-        return obj
 
-
-def _infer_skip_keys(
-    obj: Any, full_schema: dict, processed_refs: Optional[Set[str]] = None
-) -> List[str]:
-    if processed_refs is None:
-        processed_refs = set()
-
-    keys = []
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            if k == "$ref":
-                if v in processed_refs:
-                    continue
-                processed_refs.add(v)
-                ref = _retrieve_ref(v, full_schema)
-                keys.append(v.split("/")[1])
-                keys += _infer_skip_keys(ref, full_schema, processed_refs)
-            elif isinstance(v, (list, dict)):
-                keys += _infer_skip_keys(v, full_schema, processed_refs)
-    elif isinstance(obj, list):
-        for el in obj:
-            keys += _infer_skip_keys(el, full_schema, processed_refs)
-    return keys
+    return obj
 
 
 def dereference_refs(
@@ -90,12 +105,18 @@ def dereference_refs(
     full_schema: Optional[dict] = None,
     skip_keys: Optional[Sequence[str]] = None,
 ) -> dict:
-    """Try to substitute $refs in JSON Schema."""
+    """Try to substitute $refs in JSON Schema.
 
-    full_schema = full_schema or schema_obj
-    skip_keys = (
-        skip_keys
-        if skip_keys is not None
-        else _infer_skip_keys(schema_obj, full_schema)
-    )
-    return _dereference_refs_helper(schema_obj, full_schema, skip_keys)
+    Args:
+      schema_obj: The fragment to dereference.
+      full_schema: The complete schema (defaults to schema_obj).
+      skip_keys:
+        - If None (the default), we skip recursion under '$defs' *and* only
+            shallow-inline refs.
+        - If provided (even as an empty list), we will recurse under every key and
+            deep-inline all refs.
+    """
+    full = full_schema or schema_obj
+    keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]
+    shallow = skip_keys is None
+    return _dereference_refs_helper(schema_obj, full, None, keys_to_skip, shallow)

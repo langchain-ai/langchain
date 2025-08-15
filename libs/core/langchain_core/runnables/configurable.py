@@ -1,26 +1,29 @@
+"""Runnables that can be dynamically configured."""
+
 from __future__ import annotations
 
 import enum
 import threading
 from abc import abstractmethod
+from collections.abc import (
+    AsyncIterator,
+    Iterator,
+    Sequence,
+)
 from functools import wraps
 from typing import (
+    TYPE_CHECKING,
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 from weakref import WeakValueDictionary
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
+
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -29,7 +32,6 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     merge_configs,
 )
-from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AnyConfigurableField,
     ConfigurableField,
@@ -42,50 +44,69 @@ from langchain_core.runnables.utils import (
     get_unique_config_specs,
 )
 
+if TYPE_CHECKING:
+    from langchain_core.runnables.graph import Graph
+
 
 class DynamicRunnable(RunnableSerializable[Input, Output]):
-    """Serializable Runnable that can be dynamically configured."""
+    """Serializable Runnable that can be dynamically configured.
+
+    A DynamicRunnable should be initiated using the `configurable_fields` or
+    `configurable_alternatives` method of a Runnable.
+
+    Parameters:
+        default: The default Runnable to use.
+        config: The configuration to use.
+    """
 
     default: RunnableSerializable[Input, Output]
 
     config: Optional[RunnableConfig] = None
 
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    @override
+    def get_lc_namespace(cls) -> list[str]:
         return ["langchain", "schema", "runnable"]
 
     @property
-    def InputType(self) -> Type[Input]:
+    @override
+    def InputType(self) -> type[Input]:
         return self.default.InputType
 
     @property
-    def OutputType(self) -> Type[Output]:
+    @override
+    def OutputType(self) -> type[Output]:
         return self.default.OutputType
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         runnable, config = self.prepare(config)
         return runnable.get_input_schema(config)
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         runnable, config = self.prepare(config)
         return runnable.get_output_schema(config)
 
+    @override
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
         runnable, config = self.prepare(config)
         return runnable.get_graph(config)
 
+    @override
     def with_config(
         self,
         config: Optional[RunnableConfig] = None,
@@ -98,38 +119,49 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
     def prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+    ) -> tuple[Runnable[Input, Output], RunnableConfig]:
+        """Prepare the Runnable for invocation.
+
+        Args:
+            config: The configuration to use. Defaults to None.
+
+        Returns:
+            tuple[Runnable[Input, Output], RunnableConfig]: The prepared Runnable and
+            configuration.
+        """
         runnable: Runnable[Input, Output] = self
         while isinstance(runnable, DynamicRunnable):
-            runnable, config = runnable._prepare(merge_configs(runnable.config, config))
-        return runnable, cast(RunnableConfig, config)
+            runnable, config = runnable._prepare(merge_configs(runnable.config, config))  # noqa: SLF001
+        return runnable, cast("RunnableConfig", config)
 
     @abstractmethod
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
-        ...
+    ) -> tuple[Runnable[Input, Output], RunnableConfig]: ...
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         runnable, config = self.prepare(config)
         return runnable.invoke(input, config, **kwargs)
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
         runnable, config = self.prepare(config)
         return await runnable.ainvoke(input, config, **kwargs)
 
+    @override
     def batch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         configs = get_config_list(config, len(inputs))
         prepared = [self.prepare(c) for c in configs]
 
@@ -145,33 +177,34 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             return []
 
         def invoke(
-            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            prepared: tuple[Runnable[Input, Output], RunnableConfig],
+            input_: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return bound.invoke(input, config, **kwargs)
+                    return bound.invoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return bound.invoke(input, config, **kwargs)
+                return bound.invoke(input_, config, **kwargs)
 
         # If there's only one input, don't bother with the executor
         if len(inputs) == 1:
-            return cast(List[Output], [invoke(prepared[0], inputs[0])])
+            return cast("list[Output]", [invoke(prepared[0], inputs[0])])
 
         with get_executor_for_config(configs[0]) as executor:
-            return cast(List[Output], list(executor.map(invoke, prepared, inputs)))
+            return cast("list[Output]", list(executor.map(invoke, prepared, inputs)))
 
+    @override
     async def abatch(
         self,
-        inputs: List[Input],
-        config: Optional[Union[RunnableConfig, List[RunnableConfig]]] = None,
+        inputs: list[Input],
+        config: Optional[Union[RunnableConfig, list[RunnableConfig]]] = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
-    ) -> List[Output]:
+    ) -> list[Output]:
         configs = get_config_list(config, len(inputs))
         prepared = [self.prepare(c) for c in configs]
 
@@ -187,21 +220,22 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
             return []
 
         async def ainvoke(
-            prepared: Tuple[Runnable[Input, Output], RunnableConfig],
-            input: Input,
+            prepared: tuple[Runnable[Input, Output], RunnableConfig],
+            input_: Input,
         ) -> Union[Output, Exception]:
             bound, config = prepared
             if return_exceptions:
                 try:
-                    return await bound.ainvoke(input, config, **kwargs)
+                    return await bound.ainvoke(input_, config, **kwargs)
                 except Exception as e:
                     return e
             else:
-                return await bound.ainvoke(input, config, **kwargs)
+                return await bound.ainvoke(input_, config, **kwargs)
 
         coros = map(ainvoke, prepared, inputs)
         return await gather_with_concurrency(configs[0].get("max_concurrency"), *coros)
 
+    @override
     def stream(
         self,
         input: Input,
@@ -211,6 +245,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         runnable, config = self.prepare(config)
         return runnable.stream(input, config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: Input,
@@ -221,6 +256,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         async for chunk in runnable.astream(input, config, **kwargs):
             yield chunk
 
+    @override
     def transform(
         self,
         input: Iterator[Input],
@@ -230,6 +266,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         runnable, config = self.prepare(config)
         return runnable.transform(input, config, **kwargs)
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[Input],
@@ -240,7 +277,8 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
         async for chunk in runnable.atransform(input, config, **kwargs):
             yield chunk
 
-    def __getattr__(self, name: str) -> Any:
+    @override
+    def __getattr__(self, name: str) -> Any:  # type: ignore[misc]
         attr = getattr(self.default, name)
         if callable(attr):
 
@@ -252,7 +290,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(cast(RunnableConfig, arg))
+                        runnable, config = self.prepare(cast("RunnableConfig", arg))
                         kwargs = {**kwargs, "config": config}
                         return getattr(runnable, name)(*args, **kwargs)
 
@@ -262,7 +300,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
                         and "configurable" in arg
                         and isinstance(arg["configurable"], dict)
                     ):
-                        runnable, config = self.prepare(cast(RunnableConfig, arg))
+                        runnable, config = self.prepare(cast("RunnableConfig", arg))
                         argsl = list(args)
                         argsl[idx] = config
                         return getattr(runnable, name)(*argsl, **kwargs)
@@ -275,8 +313,7 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
 
             return wrapper
 
-        else:
-            return attr
+        return attr
 
 
 class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
@@ -284,6 +321,9 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     A RunnableConfigurableFields should be initiated using the
     `configurable_fields` method of a Runnable.
+
+    Parameters:
+        fields: The configurable fields to use.
 
     Here is an example of using a RunnableConfigurableFields with LLMs:
 
@@ -338,40 +378,45 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
                 {"question": "foo", "context": "bar"},
                 config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
             )
+
     """
 
-    fields: Dict[str, AnyConfigurableField]
-
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
+    fields: dict[str, AnyConfigurableField]
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
-        return get_unique_config_specs(
-            [
-                (
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
+        """Get the configuration specs for the RunnableConfigurableFields.
+
+        Returns:
+            list[ConfigurableFieldSpec]: The configuration specs.
+        """
+        config_specs = []
+
+        default_fields = type(self.default).model_fields
+        for field_name, spec in self.fields.items():
+            if isinstance(spec, ConfigurableField):
+                config_specs.append(
                     ConfigurableFieldSpec(
                         id=spec.id,
                         name=spec.name,
                         description=spec.description
-                        or self.default.__fields__[field_name].field_info.description,
+                        or default_fields[field_name].description,
                         annotation=spec.annotation
-                        or self.default.__fields__[field_name].annotation,
+                        or default_fields[field_name].annotation,
                         default=getattr(self.default, field_name),
                         is_shared=spec.is_shared,
                     )
-                    if isinstance(spec, ConfigurableField)
-                    else make_options_spec(
-                        spec, self.default.__fields__[field_name].field_info.description
-                    )
                 )
-                for field_name, spec in self.fields.items()
-            ]
-            + list(self.default.config_specs)
-        )
+            else:
+                config_specs.append(
+                    make_options_spec(spec, default_fields[field_name].description)
+                )
 
+        config_specs.extend(self.default.config_specs)
+
+        return get_unique_config_specs(config_specs)
+
+    @override
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
@@ -379,7 +424,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+    ) -> tuple[Runnable[Input, Output], RunnableConfig]:
         config = ensure_config(config)
         specs_by_id = {spec.id: (key, spec) for key, spec in self.fields.items()}
         configurable_fields = {
@@ -410,28 +455,25 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             init_params = {
                 k: v
                 for k, v in self.default.__dict__.items()
-                if k in self.default.__fields__
+                if k in type(self.default).model_fields
             }
             return (
                 self.default.__class__(**{**init_params, **configurable}),
                 config,
             )
-        else:
-            return (self.default, config)
+        return (self.default, config)
 
 
 # Before Python 3.11 native StrEnum is not available
 class StrEnum(str, enum.Enum):
     """String enum."""
 
-    pass
-
 
 _enums_for_spec: WeakValueDictionary[
     Union[
         ConfigurableFieldSingleOption, ConfigurableFieldMultiOption, ConfigurableField
     ],
-    Type[StrEnum],
+    type[StrEnum],
 ] = WeakValueDictionary()
 
 _enums_for_spec_lock = threading.Lock()
@@ -494,27 +536,25 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     """  # noqa: E501
 
     which: ConfigurableField
+    """The ConfigurableField to use to choose between alternatives."""
 
-    alternatives: Dict[
+    alternatives: dict[
         str,
         Union[Runnable[Input, Output], Callable[[], Runnable[Input, Output]]],
     ]
+    """The alternatives to choose from."""
 
     default_key: str = "default"
-    """The enum value to use for the default option. Defaults to "default"."""
+    """The enum value to use for the default option. Defaults to ``'default'``."""
 
     prefix_keys: bool
     """Whether to prefix configurable fields of each alternative with a namespace
-    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by 
+    of the form <which.id>==<alternative_key>, eg. a key named "temperature" used by
     the alternative named "gpt3" becomes "model==gpt3/temperature"."""
 
-    @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
-
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    @override
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         with _enums_for_spec_lock:
             if which_enum := _enums_for_spec.get(self.which):
                 pass
@@ -523,10 +563,10 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
                     self.which.name or self.which.id,
                     (
                         (v, v)
-                        for v in list(self.alternatives.keys()) + [self.default_key]
+                        for v in [*list(self.alternatives.keys()), self.default_key]
                     ),
                 )
-                _enums_for_spec[self.which] = cast(Type[StrEnum], which_enum)
+                _enums_for_spec[self.which] = cast("type[StrEnum]", which_enum)
         return get_unique_config_specs(
             # which alternative
             [
@@ -561,6 +601,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             ]
         )
 
+    @override
     def configurable_fields(
         self, **kwargs: AnyConfigurableField
     ) -> RunnableSerializable[Input, Output]:
@@ -574,13 +615,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
     def _prepare(
         self, config: Optional[RunnableConfig] = None
-    ) -> Tuple[Runnable[Input, Output], RunnableConfig]:
+    ) -> tuple[Runnable[Input, Output], RunnableConfig]:
         config = ensure_config(config)
         which = config.get("configurable", {}).get(self.which.id, self.default_key)
         # remap configurable keys for the chosen alternative
         if self.prefix_keys:
             config = cast(
-                RunnableConfig,
+                "RunnableConfig",
                 {
                     **config,
                     "configurable": {
@@ -592,14 +633,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         # return the chosen alternative
         if which == self.default_key:
             return (self.default, config)
-        elif which in self.alternatives:
+        if which in self.alternatives:
             alt = self.alternatives[which]
             if isinstance(alt, Runnable):
                 return (alt, config)
-            else:
-                return (alt(), config)
-        else:
-            raise ValueError(f"Unknown alternative: {which}")
+            return (alt(), config)
+        msg = f"Unknown alternative: {which}"
+        raise ValueError(msg)
 
 
 def _strremoveprefix(s: str, prefix: str) -> str:
@@ -620,7 +660,7 @@ def prefix_config_spec(
         prefix: The prefix to add.
 
     Returns:
-
+        ConfigurableFieldSpec: The prefixed ConfigurableFieldSpec.
     """
     return (
         ConfigurableFieldSpec(
@@ -640,8 +680,15 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
-    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
-    ConfigurableFieldMultiOption."""
+    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
+
+    Args:
+        spec: The ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
+        description: The description to use if the spec does not have one.
+
+    Returns:
+        The ConfigurableFieldSpec.
+    """  # noqa: E501
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass
@@ -650,7 +697,7 @@ def make_options_spec(
                 spec.name or spec.id,
                 ((v, v) for v in list(spec.options.keys())),
             )
-            _enums_for_spec[spec] = cast(Type[StrEnum], enum)
+            _enums_for_spec[spec] = cast("type[StrEnum]", enum)
     if isinstance(spec, ConfigurableFieldSingleOption):
         return ConfigurableFieldSpec(
             id=spec.id,
@@ -660,12 +707,11 @@ def make_options_spec(
             default=spec.default,
             is_shared=spec.is_shared,
         )
-    else:
-        return ConfigurableFieldSpec(
-            id=spec.id,
-            name=spec.name,
-            description=spec.description or description,
-            annotation=Sequence[enum],  # type: ignore[valid-type]
-            default=spec.default,
-            is_shared=spec.is_shared,
-        )
+    return ConfigurableFieldSpec(
+        id=spec.id,
+        name=spec.name,
+        description=spec.description or description,
+        annotation=Sequence[enum],  # type: ignore[valid-type]
+        default=spec.default,
+        is_shared=spec.is_shared,
+    )

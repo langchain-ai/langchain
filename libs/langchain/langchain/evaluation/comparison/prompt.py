@@ -3,8 +3,8 @@
 This prompt is used to compare two responses and evaluate which one best follows the instructions
 and answers the question. The prompt is based on the paper from
 Zheng, et. al. https://arxiv.org/abs/2306.05685
-"""
-# flake8: noqa
+"""  # noqa: E501
+
 from langchain_core.prompts.chat import ChatPromptTemplate
 
 SYSTEM_MESSAGE = 'Please act as an impartial judge and evaluate the quality \

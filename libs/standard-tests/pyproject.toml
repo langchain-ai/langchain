@@ -1,61 +1,74 @@
-[tool.poetry]
-name = "langchain-standard-tests"
-version = "0.1.0"
-description = "Standard tests for LangChain implementations"
-authors = ["Erick Friis <erick@langchain.dev>"]
-readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
-
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-langchain-core = "^0.1.40"
-pytest = ">=7,<9"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-langchain-core = { path = "../core", develop = true }
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-langchain-core = { path = "../core", develop = true }
-
-[tool.ruff.lint]
-select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
-    "T201", # print
+[project]
+authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.63",
+    "pytest<9,>=7",
+    "pytest-asyncio<1,>=0.20",
+    "httpx<1,>=0.25.0",
+    "syrupy<5,>=4",
+    "pytest-socket<1,>=0.6.0",
+    "pytest-benchmark",
+    "pytest-codspeed",
+    "pytest-recording",
+    "vcrpy>=7.0",
+    "numpy>=1.26.2; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
 ]
+name = "langchain-tests"
+version = "0.3.20"
+description = "Standard tests for LangChain implementations"
+readme = "README.md"
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+repository = "https://github.com/langchain-ai/langchain"
+
+[dependency-groups]
+test = ["langchain-core"]
+test_integration = []
+codespell = ["codespell<3.0.0,>=2.2.0"]
+lint = ["ruff<0.13,>=0.12.8"]
+typing = ["mypy<2,>=1", "langchain-core"]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
+[[tool.mypy.overrides]]
+module = "yaml"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "vcr.*"
+ignore_missing_imports = true
+
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["D", "E", "F", "I", "PGH", "T201", "UP",]
+pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1",]
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 -vv"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"

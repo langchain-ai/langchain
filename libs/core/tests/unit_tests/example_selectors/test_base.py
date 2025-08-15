@@ -1,16 +1,16 @@
-from typing import Dict, List, Optional
+from typing import Optional
 
 from langchain_core.example_selectors import BaseExampleSelector
 
 
 class DummyExampleSelector(BaseExampleSelector):
     def __init__(self) -> None:
-        self.example: Optional[Dict[str, str]] = None
+        self.example: Optional[dict[str, str]] = None
 
-    def add_example(self, example: Dict[str, str]) -> None:
+    def add_example(self, example: dict[str, str]) -> None:
         self.example = example
 
-    def select_examples(self, input_variables: Dict[str, str]) -> List[dict]:
+    def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return [input_variables]
 
 

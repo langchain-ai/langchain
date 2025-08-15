@@ -190,10 +190,44 @@ schema4 = {
     "required": ["properties"],
 }
 
+schema5 = {
+    "description": "A list of data.",
+    "items": {
+        "description": "foo",
+        "properties": {
+            "title": {"type": "string", "description": "item title"},
+            "due_date": {"type": "string", "description": "item due date"},
+        },
+        "required": [],
+        "type": "object",
+    },
+    "type": "array",
+}
+
+output5 = {
+    "description": "A list of data.",
+    "items": {
+        "description": "foo",
+        "properties": {
+            "title": {"type": "string", "description": "item title"},
+            "due_date": {"type": "string", "description": "item due date"},
+        },
+        "required": [],
+        "type": "object",
+    },
+    "type": "array",
+}
+
 
 @pytest.mark.parametrize(
-    "schema, output",
-    [(schema1, output1), (schema2, output2), (schema3, output3), (schema4, output4)],
+    ("schema", "output"),
+    [
+        (schema1, output1),
+        (schema2, output2),
+        (schema3, output3),
+        (schema4, output4),
+        (schema5, output5),
+    ],
 )
 def test_rm_titles(schema: dict, output: dict) -> None:
     assert _rm_titles(schema) == output

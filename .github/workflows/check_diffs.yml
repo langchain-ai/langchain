@@ -1,11 +1,12 @@
----
-name: CI
+name: '🔧 CI'
 
 on:
   push:
     branches: [master]
   pull_request:
+  merge_group:
 
+# Optimizes CI performance by canceling redundant workflow runs
 # If another push to the same PR or branch happens while this workflow is still running,
 # cancel the earlier run in favor of the next run.
 #
@@ -16,119 +17,144 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
 
 jobs:
+  # This job analyzes which files changed and creates a dynamic test matrix
+  # to only run tests/lints for the affected packages, improving CI efficiency
   build:
+    name: 'Detect Changes & Set Matrix'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: '📋 Checkout Code'
+        uses: actions/checkout@v4
+      - name: '🐍 Setup Python 3.11'
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
-      - id: files
-        uses: Ana06/get-changed-files@v2.2.0
-      - id: set-matrix
+          python-version: '3.11'
+      - name: '📂 Get Changed Files'
+        id: files
+        uses: Ana06/get-changed-files@v2.3.0
+      - name: '🔍 Analyze Changed Files & Generate Build Matrix'
+        id: set-matrix
         run: |
+          python -m pip install packaging requests
           python .github/scripts/check_diff.py ${{ steps.files.outputs.all }} >> $GITHUB_OUTPUT
     outputs:
-      dirs-to-lint: ${{ steps.set-matrix.outputs.dirs-to-lint }}
-      dirs-to-test: ${{ steps.set-matrix.outputs.dirs-to-test }}
-      dirs-to-extended-test: ${{ steps.set-matrix.outputs.dirs-to-extended-test }}
-      docs-edited: ${{ steps.set-matrix.outputs.docs-edited }}
+      lint: ${{ steps.set-matrix.outputs.lint }}
+      test: ${{ steps.set-matrix.outputs.test }}
+      extended-tests: ${{ steps.set-matrix.outputs.extended-tests }}
+      compile-integration-tests: ${{ steps.set-matrix.outputs.compile-integration-tests }}
+      dependencies: ${{ steps.set-matrix.outputs.dependencies }}
+      test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
+      test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+  # Run linting only on packages that have changed files
   lint:
-    name: cd ${{ matrix.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-lint != '[]' }}
+    if: ${{ needs.build.outputs.lint != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-lint) }}
+        job-configs: ${{ fromJson(needs.build.outputs.lint) }}
+      fail-fast: false
     uses: ./.github/workflows/_lint.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
+  # Run unit tests only on packages that have changed files
   test:
-    name: cd ${{ matrix.working-directory }}
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.test != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
+        job-configs: ${{ fromJson(needs.build.outputs.test) }}
+      fail-fast: false
     uses: ./.github/workflows/_test.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
+  # Test compatibility with different Pydantic versions for affected packages
+  test-pydantic:
+    needs: [ build ]
+    if: ${{ needs.build.outputs.test-pydantic != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.test-pydantic) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_pydantic.yml
+    with:
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      pydantic-version: ${{ matrix.job-configs.pydantic-version }}
     secrets: inherit
 
   test-doc-imports:
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' || needs.build.outputs.docs-edited }}
-    uses: ./.github/workflows/_test_doc_imports.yml
-    secrets: inherit
-
-  compile-integration-tests:
-    name: cd ${{ matrix.working-directory }}
-    needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
+    if: ${{ needs.build.outputs.test-doc-imports != '[]' }}
     strategy:
       matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
+        job-configs: ${{ fromJson(needs.build.outputs.test-doc-imports) }}
+      fail-fast: false
+    uses: ./.github/workflows/_test_doc_imports.yml
+    with:
+      python-version: ${{ matrix.job-configs.python-version }}
+    secrets: inherit
+
+  # Verify integration tests compile without actually running them (faster feedback)
+  compile-integration-tests:
+    needs: [ build ]
+    if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.compile-integration-tests) }}
+      fail-fast: false
     uses: ./.github/workflows/_compile_integration_test.yml
     with:
-      working-directory: ${{ matrix.working-directory }}
+      working-directory: ${{ matrix.job-configs.working-directory }}
+      python-version: ${{ matrix.job-configs.python-version }}
     secrets: inherit
 
-  dependencies:
-    name: cd ${{ matrix.working-directory }}
-    needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-test != '[]' }}
-    strategy:
-      matrix:
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-test) }}
-    uses: ./.github/workflows/_dependencies.yml
-    with:
-      working-directory: ${{ matrix.working-directory }}
-    secrets: inherit
-
+  # Run extended test suites that require additional dependencies
   extended-tests:
-    name: "cd ${{ matrix.working-directory }} / make extended_tests #${{ matrix.python-version }}"
+    name: 'Extended Tests'
     needs: [ build ]
-    if: ${{ needs.build.outputs.dirs-to-extended-test != '[]' }}
+    if: ${{ needs.build.outputs.extended-tests != '[]' }}
     strategy:
       matrix:
         # note different variable for extended test dirs
-        working-directory: ${{ fromJson(needs.build.outputs.dirs-to-extended-test) }}
-        python-version:
-          - "3.8"
-          - "3.9"
-          - "3.10"
-          - "3.11"
+        job-configs: ${{ fromJson(needs.build.outputs.extended-tests) }}
+      fail-fast: false
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     defaults:
       run:
-        working-directory: ${{ matrix.working-directory }}
+        working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python ${{ matrix.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: '🐍 Set up Python ${{ matrix.job-configs.python-version }} + UV'
+        uses: "./.github/actions/uv_setup"
         with:
-          python-version: ${{ matrix.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          working-directory: ${{ matrix.working-directory }}
-          cache-key: extended
+          python-version: ${{ matrix.job-configs.python-version }}
 
-      - name: Install dependencies
+      - name: '📦 Install Dependencies & Run Extended Tests'
         shell: bash
         run: |
-          echo "Running extended tests, installing dependencies with poetry..."
-          poetry install -E extended_testing --with test
+          echo "Running extended tests, installing dependencies with uv..."
+          uv venv
+          uv sync --group test
+          VIRTUAL_ENV=.venv uv pip install -r extended_testing_deps.txt
+          VIRTUAL_ENV=.venv make extended_tests
 
-      - name: Run extended tests
-        run: make extended_tests
-
-      - name: Ensure the tests did not create any additional files
+      - name: '🧹 Verify Clean Working Directory'
         shell: bash
         run: |
           set -eu
@@ -139,9 +165,11 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
+
+  # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
-    name: "CI Success"
-    needs: [build, lint, test, compile-integration-tests, dependencies, extended-tests, test-doc-imports]
+    name: '✅ CI Success'
+    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]
     if: |
       always()
     runs-on: ubuntu-latest
@@ -150,7 +178,7 @@ jobs:
       RESULTS_JSON: ${{ toJSON(needs.*.result) }}
       EXIT_CODE: ${{!contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && '0' || '1'}}
     steps:
-      - name: "CI Success"
+      - name: '🎉 All Checks Passed'
         run: |
           echo $JOBS_JSON
           echo $RESULTS_JSON

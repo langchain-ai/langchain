@@ -1,8 +1,9 @@
 """Test loading functionality."""
+
 import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator
 
 import pytest
 
@@ -14,17 +15,17 @@ EXAMPLE_DIR = (Path(__file__).parent.parent / "examples").absolute()
 
 
 @contextmanager
-def change_directory(dir: Path) -> Iterator:
+def change_directory(dir_path: Path) -> Iterator:
     """Change the working directory to the right folder."""
     origin = Path().absolute()
     try:
-        os.chdir(dir)
+        os.chdir(dir_path)
         yield
     finally:
         os.chdir(origin)
 
 
-def test_loading_from_YAML() -> None:
+def test_loading_from_yaml() -> None:
     """Test loading from yaml file."""
     prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.yaml")
     expected_prompt = PromptTemplate(
@@ -35,7 +36,7 @@ def test_loading_from_YAML() -> None:
     assert prompt == expected_prompt
 
 
-def test_loading_from_JSON() -> None:
+def test_loading_from_json() -> None:
     """Test loading from json file."""
     prompt = load_prompt(EXAMPLE_DIR / "simple_prompt.json")
     expected_prompt = PromptTemplate(
@@ -45,14 +46,14 @@ def test_loading_from_JSON() -> None:
     assert prompt == expected_prompt
 
 
-def test_loading_jinja_from_JSON() -> None:
+def test_loading_jinja_from_json() -> None:
     """Test that loading jinja2 format prompts from JSON raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.json"
     with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
         load_prompt(prompt_path)
 
 
-def test_loading_jinja_from_YAML() -> None:
+def test_loading_jinja_from_yaml() -> None:
     """Test that loading jinja2 format prompts from YAML raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.yaml"
     with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):

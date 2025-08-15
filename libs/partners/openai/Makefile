@@ -1,15 +1,37 @@
-.PHONY: all format lint test tests integration_tests docker_tests help extended_tests
+.PHONY: all format lint test tests integration_tests help extended_tests
 
 # Default target executed when no arguments are given to make.
 all: help
+
+.EXPORT_ALL_VARIABLES:
+UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 
 integration_test integration_tests: TEST_FILE=tests/integration_tests/
 
-test tests integration_test integration_tests:
-	poetry run pytest $(TEST_FILE)
+# unit tests are run with the --disable-socket flag to prevent network calls
+# use tiktoken cache to enable token counting without socket (internet) access
+test tests:
+	mkdir -p tiktoken_cache
+	@if [ ! -f tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 ]; then \
+		curl -o tiktoken_cache/9b5ad71b2ce5302211f9c61530b329a4922fc6a4 https://openaipublic.blob.core.windows.net/encodings/cl100k_base.tiktoken; \
+	fi
+	@if [ ! -f tiktoken_cache/fb374d419588a4632f3f557e76b4b70aebbca790 ]; then \
+		curl -o tiktoken_cache/fb374d419588a4632f3f557e76b4b70aebbca790 https://openaipublic.blob.core.windows.net/encodings/o200k_base.tiktoken; \
+	fi
+	TIKTOKEN_CACHE_DIR=tiktoken_cache uv run --group test pytest --disable-socket --allow-unix-socket $(TEST_FILE)
+
+integration_test integration_tests:
+	uv run --group test --group test_integration pytest -n auto $(TEST_FILE)
+
+test_watch:
+	uv run --group test ptw --snapshot-update --now . -- -vv $(TEST_FILE)
+
+
+make benchmark:
+	uv run --group test pytest ./tests -m benchmark
 
 
 ######################
@@ -26,23 +48,22 @@ lint_tests: PYTHON_FILES=tests
 lint_tests: MYPY_CACHE=.mypy_cache_test
 
 lint lint_diff lint_package lint_tests:
-	poetry run ruff .
-	poetry run ruff format $(PYTHON_FILES) --diff
-	poetry run ruff --select I $(PYTHON_FILES)
-	mkdir $(MYPY_CACHE); poetry run mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES) --diff
+	[ "$(PYTHON_FILES)" = "" ] || mkdir -p $(MYPY_CACHE) && uv run --all-groups mypy $(PYTHON_FILES) --cache-dir $(MYPY_CACHE)
 
 format format_diff:
-	poetry run ruff format $(PYTHON_FILES)
-	poetry run ruff --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
 spell_check:
-	poetry run codespell --toml pyproject.toml
+	uv run --all-groups codespell --toml pyproject.toml
 
 spell_fix:
-	poetry run codespell --toml pyproject.toml -w
+	uv run --all-groups codespell --toml pyproject.toml -w
 
 check_imports: $(shell find langchain_openai -name '*.py')
-	poetry run python ./scripts/check_imports.py $^
+	uv run --all-groups python ./scripts/check_imports.py $^
 
 ######################
 # HELP

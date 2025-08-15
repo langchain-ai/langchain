@@ -31,11 +31,24 @@ def test_boolean_output_parser_parse() -> None:
     assert result is True
 
     # Test ambiguous input
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Ambiguous response. Both YES and NO in received: YES NO."
+    ):
         parser.parse("YES NO")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="Ambiguous response. Both YES and NO in received: NO YES."
+    ):
         parser.parse("NO YES")
     # Bad input
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="BooleanOutputParser expected output value to include either YES or NO. "
+        "Received BOOM.",
+    ):
         parser.parse("BOOM")
+
+
+def test_boolean_output_parser_output_type() -> None:
+    """Test the output type of the boolean output parser is a boolean."""
+    assert BooleanOutputParser().OutputType is bool

@@ -6,8 +6,8 @@ from langchain_core.output_parsers.openai_functions import (
 )
 
 __all__ = [
-    "PydanticOutputFunctionsParser",
-    "PydanticAttrOutputFunctionsParser",
-    "JsonOutputFunctionsParser",
     "JsonKeyOutputFunctionsParser",
+    "JsonOutputFunctionsParser",
+    "PydanticAttrOutputFunctionsParser",
+    "PydanticOutputFunctionsParser",
 ]

@@ -2,11 +2,14 @@ import threading
 import time
 import unittest
 import unittest.mock
-from typing import Any, Dict
+import uuid
+from typing import Any
 from uuid import UUID
 
 import pytest
 from langsmith import Client
+from langsmith.run_trees import RunTree
+from langsmith.utils import get_env_var, get_tracer_project
 
 from langchain_core.outputs import LLMResult
 from langchain_core.tracers.langchain import LangChainTracer
@@ -59,9 +62,27 @@ def test_example_id_assignment_threadsafe() -> None:
         assert example_ids == expected_example_ids
 
 
+def test_tracer_with_run_tree_parent() -> None:
+    mock_session = unittest.mock.MagicMock()
+    client = Client(session=mock_session, api_key="test")
+    parent = RunTree(name="parent", inputs={"input": "foo"}, ls_client=client)
+    run_id = uuid.uuid4()
+    tracer = LangChainTracer(client=client)
+    tracer.order_map[parent.id] = (parent.trace_id, parent.dotted_order)
+    tracer.run_map[str(parent.id)] = parent
+    tracer.on_chain_start(
+        {"name": "child"}, {"input": "bar"}, run_id=run_id, parent_run_id=parent.id
+    )
+    tracer.on_chain_end({}, run_id=run_id)
+    assert parent.child_runs
+    assert len(parent.child_runs) == 1
+    assert parent.child_runs[0].id == run_id
+    assert parent.child_runs[0].trace_id == parent.id
+    assert parent.child_runs[0].parent_run_id == parent.id
+
+
 def test_log_lock() -> None:
     """Test that example assigned at callback start/end is honored."""
-
     client = unittest.mock.MagicMock(spec=Client)
     tracer = LangChainTracer(client=client)
 
@@ -73,63 +94,54 @@ def test_log_lock() -> None:
         tracer.wait_for_futures()
 
 
-class LangChainProjectNameTest(unittest.TestCase):
-    """
-    Test that the project name is set correctly for runs.
-    """
+@pytest.mark.parametrize(
+    ("envvars", "expected_project_name"),
+    [
+        (
+            {},
+            "default",
+        ),
+        (
+            {"LANGCHAIN_SESSION": "old_timey_session"},
+            "old_timey_session",
+        ),
+        (
+            {
+                "LANGCHAIN_SESSION": "old_timey_session",
+                "LANGCHAIN_PROJECT": "modern_session",
+            },
+            "modern_session",
+        ),
+    ],
+    ids=[
+        "default to 'default' when no project provided",
+        "use session_name for legacy tracers",
+        "use LANGCHAIN_PROJECT over SESSION_NAME",
+    ],
+)
+def test_correct_get_tracer_project(
+    envvars: dict[str, str], expected_project_name: str
+) -> None:
+    get_env_var.cache_clear()
+    get_tracer_project.cache_clear()
+    with pytest.MonkeyPatch.context() as mp:
+        for k, v in envvars.items():
+            mp.setenv(k, v)
 
-    class SetProperTracerProjectTestCase:
-        def __init__(
-            self, test_name: str, envvars: Dict[str, str], expected_project_name: str
-        ):
-            self.test_name = test_name
-            self.envvars = envvars
-            self.expected_project_name = expected_project_name
+        client = unittest.mock.MagicMock(spec=Client)
+        tracer = LangChainTracer(client=client)
+        projects = []
 
-    def test_correct_get_tracer_project(self) -> None:
-        cases = [
-            self.SetProperTracerProjectTestCase(
-                test_name="default to 'default' when no project provided",
-                envvars={},
-                expected_project_name="default",
-            ),
-            self.SetProperTracerProjectTestCase(
-                test_name="use session_name for legacy tracers",
-                envvars={"LANGCHAIN_SESSION": "old_timey_session"},
-                expected_project_name="old_timey_session",
-            ),
-            self.SetProperTracerProjectTestCase(
-                test_name="use LANGCHAIN_PROJECT over SESSION_NAME",
-                envvars={
-                    "LANGCHAIN_SESSION": "old_timey_session",
-                    "LANGCHAIN_PROJECT": "modern_session",
-                },
-                expected_project_name="modern_session",
-            ),
-        ]
+        def mock_create_run(**kwargs: Any) -> Any:
+            projects.append(kwargs.get("session_name"))
+            return unittest.mock.MagicMock()
 
-        for case in cases:
-            with self.subTest(msg=case.test_name):
-                with pytest.MonkeyPatch.context() as mp:
-                    for k, v in case.envvars.items():
-                        mp.setenv(k, v)
+        client.create_run = mock_create_run
 
-                    client = unittest.mock.MagicMock(spec=Client)
-                    tracer = LangChainTracer(client=client)
-                    projects = []
-
-                    def mock_create_run(**kwargs: Any) -> Any:
-                        projects.append(kwargs.get("project_name"))
-                        return unittest.mock.MagicMock()
-
-                    client.create_run = mock_create_run
-
-                    tracer.on_llm_start(
-                        {"name": "example_1"},
-                        ["foo"],
-                        run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
-                    )
-                    tracer.wait_for_futures()
-                    assert (
-                        len(projects) == 1 and projects[0] == case.expected_project_name
-                    )
+        tracer.on_llm_start(
+            {"name": "example_1"},
+            ["foo"],
+            run_id=UUID("9d878ab3-e5ca-4218-aef6-44cbdc90160a"),
+        )
+        tracer.wait_for_futures()
+        assert projects == [expected_project_name]

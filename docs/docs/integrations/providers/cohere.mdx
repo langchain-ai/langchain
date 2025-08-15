@@ -45,8 +45,60 @@ llm = Cohere()
 print(llm.invoke("Come up with a pet name"))
 ```
 
-Usage of the Cohere (legacy) [LLM model](/docs/integrations/llms/cohere) 
+Usage of the Cohere (legacy) [LLM model](/docs/integrations/llms/cohere)
+
+### Tool calling
+```python
+from langchain_cohere import ChatCohere
+from langchain_core.messages import (
+    HumanMessage,
+    ToolMessage,
+)
+from langchain_core.tools import tool
+
+@tool
+def magic_function(number: int) -> int:
+    """Applies a magic operation to an integer
+
+    Args:
+        number: Number to have magic operation performed on
+    """
+    return number + 10
+
+def invoke_tools(tool_calls, messages):
+    for tool_call in tool_calls:
+        selected_tool = {"magic_function":magic_function}[
+            tool_call["name"].lower()
+        ]
+        tool_output = selected_tool.invoke(tool_call["args"])
+        messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
+    return messages
+
+tools = [magic_function]
+
+llm = ChatCohere()
+llm_with_tools = llm.bind_tools(tools=tools)
+messages = [
+    HumanMessage(
+        content="What is the value of magic_function(2)?"
+    )
+]
+
+res = llm_with_tools.invoke(messages)
+while res.tool_calls:
+    messages.append(res)
+    messages = invoke_tools(res.tool_calls, messages)
+    res = llm_with_tools.invoke(messages)
+
+print(res.content)
+```
+Tool calling with Cohere LLM can be done by binding the necessary tools to the llm as seen above.
+An alternative, is to support multi hop tool calling with the ReAct agent as seen below.
+
 ### ReAct Agent
+
+The agent is based on the paper
+[ReAct: Synergizing Reasoning and Acting in Language Models](https://arxiv.org/abs/2210.03629).
 
 ```python
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -74,6 +126,7 @@ agent_executor.invoke({
     "input": "In what year was the company that was founded as Sound of Music added to the S&P 500?",
 })
 ```
+The ReAct agent can be used to call multiple tools in sequence.
 
 ### RAG Retriever
 

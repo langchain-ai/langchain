@@ -1,9 +1,14 @@
 """Pass input through a moderation endpoint."""
-from typing import Any, Dict, List, Optional
 
-from langchain_core.callbacks import CallbackManagerForChainRun
-from langchain_core.pydantic_v1 import root_validator
-from langchain_core.utils import get_from_dict_or_env
+from typing import Any, Optional
+
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForChainRun,
+    CallbackManagerForChainRun,
+)
+from langchain_core.utils import check_package_version, get_from_dict_or_env
+from pydantic import Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -22,9 +27,11 @@ class OpenAIModerationChain(Chain):
 
             from langchain.chains import OpenAIModerationChain
             moderation = OpenAIModerationChain()
+
     """
 
-    client: Any  #: :meta private:
+    client: Any = None  #: :meta private:
+    async_client: Any = None  #: :meta private:
     model_name: Optional[str] = None
     """Moderation model name to use."""
     error: bool = False
@@ -33,12 +40,16 @@ class OpenAIModerationChain(Chain):
     output_key: str = "output"  #: :meta private:
     openai_api_key: Optional[str] = None
     openai_organization: Optional[str] = None
+    openai_pre_1_0: bool = Field(default=False)
 
-    @root_validator()
-    def validate_environment(cls, values: Dict) -> Dict:
+    @model_validator(mode="before")
+    @classmethod
+    def validate_environment(cls, values: dict) -> Any:
         """Validate that api key and python package exists in environment."""
         openai_api_key = get_from_dict_or_env(
-            values, "openai_api_key", "OPENAI_API_KEY"
+            values,
+            "openai_api_key",
+            "OPENAI_API_KEY",
         )
         openai_organization = get_from_dict_or_env(
             values,
@@ -52,16 +63,27 @@ class OpenAIModerationChain(Chain):
             openai.api_key = openai_api_key
             if openai_organization:
                 openai.organization = openai_organization
-            values["client"] = openai.Moderation  # type: ignore
-        except ImportError:
-            raise ImportError(
+            values["openai_pre_1_0"] = False
+            try:
+                check_package_version("openai", gte_version="1.0")
+            except ValueError:
+                values["openai_pre_1_0"] = True
+            if values["openai_pre_1_0"]:
+                values["client"] = openai.Moderation  # type: ignore[attr-defined]
+            else:
+                values["client"] = openai.OpenAI(api_key=openai_api_key)
+                values["async_client"] = openai.AsyncOpenAI(api_key=openai_api_key)
+
+        except ImportError as e:
+            msg = (
                 "Could not import openai python package. "
                 "Please install it with `pip install openai`."
             )
+            raise ImportError(msg) from e
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -69,28 +91,45 @@ class OpenAIModerationChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
         """
         return [self.output_key]
 
-    def _moderate(self, text: str, results: dict) -> str:
-        if results["flagged"]:
+    def _moderate(self, text: str, results: Any) -> str:
+        condition = results["flagged"] if self.openai_pre_1_0 else results.flagged
+        if condition:
             error_str = "Text was found that violates OpenAI's content policy."
             if self.error:
                 raise ValueError(error_str)
-            else:
-                return error_str
+            return error_str
         return text
 
+    @override
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, Any]:
         text = inputs[self.input_key]
-        results = self.client.create(text)
-        output = self._moderate(text, results["results"][0])
+        if self.openai_pre_1_0:
+            results = self.client.create(text)
+            output = self._moderate(text, results["results"][0])
+        else:
+            results = self.client.moderations.create(input=text)
+            output = self._moderate(text, results.results[0])
+        return {self.output_key: output}
+
+    async def _acall(
+        self,
+        inputs: dict[str, Any],
+        run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+    ) -> dict[str, Any]:
+        if self.openai_pre_1_0:
+            return await super()._acall(inputs, run_manager=run_manager)
+        text = inputs[self.input_key]
+        results = await self.async_client.moderations.create(input=text)
+        output = self._moderate(text, results.results[0])
         return {self.output_key: output}

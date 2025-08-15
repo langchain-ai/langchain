@@ -1,50 +1,38 @@
-import json
-from typing import Generic, List, Type, TypeVar, Union
+"""Output parsers using Pydantic."""
 
-import pydantic  # pydantic: ignore
+import json
+from typing import Annotated, Generic, Optional
+
+import pydantic
+from pydantic import SkipValidation
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
-
-if PYDANTIC_MAJOR_VERSION < 2:
-    PydanticBaseModel = pydantic.BaseModel
-
-else:
-    from pydantic.v1 import BaseModel  # pydantic: ignore
-
-    # Union type needs to be last assignment to PydanticBaseModel to make mypy happy.
-    PydanticBaseModel = Union[BaseModel, pydantic.BaseModel]  # type: ignore
-
-TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
+from langchain_core.utils.pydantic import (
+    PydanticBaseModel,
+    TBaseModel,
+)
 
 
 class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """Parse an output using a pydantic model."""
 
-    pydantic_object: Type[TBaseModel]  # type: ignore
+    pydantic_object: Annotated[type[TBaseModel], SkipValidation()]
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
-        if PYDANTIC_MAJOR_VERSION == 2:
-            try:
-                if issubclass(self.pydantic_object, pydantic.BaseModel):
-                    return self.pydantic_object.model_validate(obj)
-                elif issubclass(self.pydantic_object, pydantic.v1.BaseModel):
-                    return self.pydantic_object.parse_obj(obj)
-                else:
-                    raise OutputParserException(
-                        f"Unsupported model version for PydanticOutputParser: \
-                            {self.pydantic_object.__class__}"
-                    )
-            except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
-                raise self._parser_exception(e, obj)
-        else:  # pydantic v1
-            try:
+        try:
+            if issubclass(self.pydantic_object, pydantic.BaseModel):
+                return self.pydantic_object.model_validate(obj)
+            if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                 return self.pydantic_object.parse_obj(obj)
-            except pydantic.ValidationError as e:
-                raise self._parser_exception(e, obj)
+            msg = f"Unsupported model version for PydanticOutputParser: \
+                        {self.pydantic_object.__class__}"
+            raise OutputParserException(msg)
+        except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
+            raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
         self, e: Exception, json_object: dict
@@ -55,17 +43,47 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return OutputParserException(msg, llm_output=json_string)
 
     def parse_result(
-        self, result: List[Generation], *, partial: bool = False
-    ) -> TBaseModel:
-        json_object = super().parse_result(result)
-        return self._parse_obj(json_object)
+        self, result: list[Generation], *, partial: bool = False
+    ) -> Optional[TBaseModel]:
+        """Parse the result of an LLM call to a pydantic object.
+
+        Args:
+            result: The result of the LLM call.
+            partial: Whether to parse partial JSON objects.
+                If True, the output will be a JSON object containing
+                all the keys that have been returned so far.
+                Defaults to False.
+
+        Returns:
+            The parsed pydantic object.
+        """
+        try:
+            json_object = super().parse_result(result)
+            return self._parse_obj(json_object)
+        except OutputParserException:
+            if partial:
+                return None
+            raise
 
     def parse(self, text: str) -> TBaseModel:
+        """Parse the output of an LLM call to a pydantic object.
+
+        Args:
+            text: The output of the LLM call.
+
+        Returns:
+            The parsed pydantic object.
+        """
         return super().parse(text)
 
     def get_format_instructions(self) -> str:
+        """Return the format instructions for the JSON output.
+
+        Returns:
+            The format instructions for the JSON output.
+        """
         # Copy schema to avoid altering original Pydantic schema.
-        schema = {k: v for k, v in self.pydantic_object.schema().items()}
+        schema = dict(self.pydantic_object.model_json_schema().items())
 
         # Remove extraneous fields.
         reduced_schema = schema
@@ -74,7 +92,7 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         if "type" in reduced_schema:
             del reduced_schema["type"]
         # Ensure json in context is well-formed with double quotes.
-        schema_str = json.dumps(reduced_schema)
+        schema_str = json.dumps(reduced_schema, ensure_ascii=False)
 
         return _PYDANTIC_FORMAT_INSTRUCTIONS.format(schema=schema_str)
 
@@ -83,7 +101,8 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
         return "pydantic"
 
     @property
-    def OutputType(self) -> Type[TBaseModel]:
+    @override
+    def OutputType(self) -> type[TBaseModel]:
         """Return the pydantic model."""
         return self.pydantic_object
 
@@ -97,3 +116,10 @@ Here is the output schema:
 ```
 {schema}
 ```"""  # noqa: E501
+
+# Re-exporting types for backwards compatibility
+__all__ = [
+    "PydanticBaseModel",
+    "PydanticOutputParser",
+    "TBaseModel",
+]

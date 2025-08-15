@@ -1,19 +1,21 @@
-import importlib
-from typing import Optional
+"""LangChain CLI."""
+
+from typing import Annotated, Optional
 
 import typer
-from typing_extensions import Annotated
 
+from langchain_cli._version import __version__
 from langchain_cli.namespaces import app as app_namespace
 from langchain_cli.namespaces import integration as integration_namespace
 from langchain_cli.namespaces import template as template_namespace
+from langchain_cli.namespaces.migrate import main as migrate_namespace
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
-
-__version__ = "0.0.22rc0"
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 app.add_typer(
-    template_namespace.package_cli, name="template", help=template_namespace.__doc__
+    template_namespace.package_cli,
+    name="template",
+    help=template_namespace.__doc__,
 )
 app.add_typer(app_namespace.app_cli, name="app", help=app_namespace.__doc__)
 app.add_typer(
@@ -22,31 +24,36 @@ app.add_typer(
     help=integration_namespace.__doc__,
 )
 
+app.command(
+    name="migrate",
+    context_settings={
+        # Let Grit handle the arguments
+        "allow_extra_args": True,
+        "ignore_unknown_options": True,
+    },
+)(
+    migrate_namespace.migrate,
+)
 
-# If libcst is installed, add the migrate namespace
-if importlib.util.find_spec("libcst"):
-    from langchain_cli.namespaces.migrate import main as migrate_namespace
 
-    app.add_typer(migrate_namespace.app, name="migrate", help=migrate_namespace.__doc__)
-
-
-def version_callback(show_version: bool) -> None:
+def _version_callback(*, show_version: bool) -> None:
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
-        raise typer.Exit()
+        raise typer.Exit
 
 
 @app.callback()
-def main(
+def _main(
+    *,
     version: bool = typer.Option(
-        False,
+        False,  # noqa: FBT003
         "--version",
         "-v",
         help="Print the current CLI version.",
-        callback=version_callback,
+        callback=_version_callback,
         is_eager=True,
     ),
-):
+) -> None:
     pass
 
 
@@ -54,22 +61,20 @@ def main(
 def serve(
     *,
     port: Annotated[
-        Optional[int], typer.Option(help="The port to run the server on")
+        Optional[int],
+        typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str], typer.Option(help="The host to run the server on")
+        Optional[str],
+        typer.Option(help="The host to run the server on"),
     ] = None,
 ) -> None:
-    """
-    Start the LangServe app, whether it's a template or an app.
-    """
-
-    # see if is a template
+    """Start the LangServe app, whether it's a template or an app."""
     try:
         project_dir = get_package_root()
         pyproject = project_dir / "pyproject.toml"
         get_langserve_export(pyproject)
-    except KeyError:
+    except (KeyError, FileNotFoundError):
         # not a template
         app_namespace.serve(port=port, host=host)
     else:

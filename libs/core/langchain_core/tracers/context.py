@@ -1,3 +1,5 @@
+"""Context management for tracers."""
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -5,48 +7,47 @@ from contextvars import ContextVar
 from typing import (
     TYPE_CHECKING,
     Any,
-    Generator,
-    List,
+    Literal,
     Optional,
-    Tuple,
-    Type,
     Union,
     cast,
 )
 from uuid import UUID
 
+from langsmith import run_helpers as ls_rh
 from langsmith import utils as ls_utils
-from langsmith.run_helpers import get_run_tree_context
 
 from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.run_collector import RunCollectorCallbackHandler
-from langchain_core.tracers.schemas import TracerSessionV1
-from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from langsmith import Client as LangSmithClient
 
     from langchain_core.callbacks.base import BaseCallbackHandler, Callbacks
     from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
+    from langchain_core.tracers.schemas import TracerSessionV1
 
 # for backwards partial compatibility if this is imported by users but unused
 tracing_callback_var: Any = None
 tracing_v2_callback_var: ContextVar[Optional[LangChainTracer]] = ContextVar(
     "tracing_callback_v2", default=None
-)  # noqa: E501
+)
 run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVar(
     "run_collector", default=None
-)  # noqa: E501
+)
 
 
 @contextmanager
 def tracing_enabled(
-    session_name: str = "default",
+    session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
-    """Throws an error because this has been replaced by tracing_v2_enabled."""
-    raise RuntimeError(
+    """Throw an error because this has been replaced by tracing_v2_enabled."""
+    msg = (
         "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
     )
+    raise RuntimeError(msg)
 
 
 @contextmanager
@@ -54,23 +55,23 @@ def tracing_v2_enabled(
     project_name: Optional[str] = None,
     *,
     example_id: Optional[Union[str, UUID]] = None,
-    tags: Optional[List[str]] = None,
+    tags: Optional[list[str]] = None,
     client: Optional[LangSmithClient] = None,
 ) -> Generator[LangChainTracer, None, None]:
     """Instruct LangChain to log all runs in context to LangSmith.
 
     Args:
         project_name (str, optional): The name of the project.
-            Defaults to "default".
+            Defaults to ``'default'``.
         example_id (str or UUID, optional): The ID of the example.
             Defaults to None.
-        tags (List[str], optional): The tags to add to the run.
+        tags (list[str], optional): The tags to add to the run.
             Defaults to None.
         client (LangSmithClient, optional): The client of the langsmith.
             Defaults to None.
 
-    Returns:
-        None
+    Yields:
+        LangChainTracer: The LangChain tracer.
 
     Example:
         >>> with tracing_v2_enabled():
@@ -90,18 +91,18 @@ def tracing_v2_enabled(
         tags=tags,
         client=client,
     )
+    token = tracing_v2_callback_var.set(cb)
     try:
-        tracing_v2_callback_var.set(cb)
         yield cb
     finally:
-        tracing_v2_callback_var.set(None)
+        tracing_v2_callback_var.reset(token)
 
 
 @contextmanager
 def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
     """Collect all run traces in context.
 
-    Returns:
+    Yields:
         run_collector.RunCollectorCallbackHandler: The run collector callback handler.
 
     Example:
@@ -110,9 +111,11 @@ def collect_runs() -> Generator[RunCollectorCallbackHandler, None, None]:
                 run_id = runs_cb.traced_runs[0].id
     """
     cb = RunCollectorCallbackHandler()
-    run_collector_var.set(cb)
-    yield cb
-    run_collector_var.set(None)
+    token = run_collector_var.set(cb)
+    try:
+        yield cb
+    finally:
+        run_collector_var.reset(token)
 
 
 def _get_trace_callbacks(
@@ -127,15 +130,13 @@ def _get_trace_callbacks(
             example_id=example_id,
         )
         if callback_manager is None:
-            from langchain_core.callbacks.base import Callbacks
-
-            cb = cast(Callbacks, [tracer])
+            cb = cast("Callbacks", [tracer])
         else:
             if not any(
                 isinstance(handler, LangChainTracer)
                 for handler in callback_manager.handlers
             ):
-                callback_manager.add_handler(tracer, True)
+                callback_manager.add_handler(tracer)
                 # If it already has a LangChainTracer, we don't need to add another one.
                 # this would likely mess up the trace hierarchy.
             cb = callback_manager
@@ -144,18 +145,17 @@ def _get_trace_callbacks(
     return cb
 
 
-def _tracing_v2_is_enabled() -> bool:
-    return (
-        env_var_is_set("LANGCHAIN_TRACING_V2")
-        or env_var_is_set("LANGSMITH_TRACING")
-        or env_var_is_set("LANGSMITH_TRACING_V2")
-        or tracing_v2_callback_var.get() is not None
-        or get_run_tree_context() is not None
-    )
+def _tracing_v2_is_enabled() -> Union[bool, Literal["local"]]:
+    if tracing_v2_callback_var.get() is not None:
+        return True
+    return ls_utils.tracing_is_enabled()
 
 
 def _get_tracer_project() -> str:
-    run_tree = get_run_tree_context()
+    tracing_context = ls_rh.get_tracing_context()
+    run_tree = tracing_context["parent"]
+    if run_tree is None and tracing_context["project_name"] is not None:
+        return tracing_context["project_name"]
     return getattr(
         run_tree,
         "session_name",
@@ -174,11 +174,11 @@ def _get_tracer_project() -> str:
     )
 
 
-_configure_hooks: List[
-    Tuple[
+_configure_hooks: list[
+    tuple[
         ContextVar[Optional[BaseCallbackHandler]],
         bool,
-        Optional[Type[BaseCallbackHandler]],
+        Optional[type[BaseCallbackHandler]],
         Optional[str],
     ]
 ] = []
@@ -186,8 +186,8 @@ _configure_hooks: List[
 
 def register_configure_hook(
     context_var: ContextVar[Optional[Any]],
-    inheritable: bool,
-    handle_class: Optional[Type[BaseCallbackHandler]] = None,
+    inheritable: bool,  # noqa: FBT001
+    handle_class: Optional[type[BaseCallbackHandler]] = None,
     env_var: Optional[str] = None,
 ) -> None:
     """Register a configure hook.
@@ -204,16 +204,14 @@ def register_configure_hook(
           to a non-None value.
     """
     if env_var is not None and handle_class is None:
-        raise ValueError(
-            "If env_var is set, handle_class must also be set to a non-None value."
-        )
-    from langchain_core.callbacks.base import BaseCallbackHandler
+        msg = "If env_var is set, handle_class must also be set to a non-None value."
+        raise ValueError(msg)
 
     _configure_hooks.append(
         (
             # the typings of ContextVar do not have the generic arg set as covariant
             # so we have to cast it
-            cast(ContextVar[Optional[BaseCallbackHandler]], context_var),
+            cast("ContextVar[Optional[BaseCallbackHandler]]", context_var),
             inheritable,
             handle_class,
             env_var,
@@ -221,4 +219,4 @@ def register_configure_hook(
     )
 
 
-register_configure_hook(run_collector_var, False)
+register_configure_hook(run_collector_var, inheritable=False)

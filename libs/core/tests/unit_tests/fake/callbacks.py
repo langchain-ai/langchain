@@ -1,11 +1,14 @@
 """A fake callback handler for testing purposes."""
+
 from itertools import chain
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
+
+from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import BaseModel
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -14,7 +17,7 @@ class BaseFakeCallbackHandler(BaseModel):
     starts: int = 0
     ends: int = 0
     errors: int = 0
-    errors_args: List[Any] = []
+    errors_args: list[Any] = []
     text: int = 0
     ignore_llm_: bool = False
     ignore_chain_: bool = False
@@ -22,7 +25,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
 
-    # to allow for similar callback handlers that are not technicall equal
+    # to allow for similar callback handlers that are not technically equal
     fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
@@ -136,6 +139,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         """Whether to ignore retriever callbacks."""
         return self.ignore_retriever_
 
+    @override
     def on_llm_start(
         self,
         *args: Any,
@@ -143,6 +147,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_start_common()
 
+    @override
     def on_llm_new_token(
         self,
         *args: Any,
@@ -150,6 +155,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_new_token_common()
 
+    @override
     def on_llm_end(
         self,
         *args: Any,
@@ -157,6 +163,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_end_common()
 
+    @override
     def on_llm_error(
         self,
         *args: Any,
@@ -164,6 +171,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_llm_error_common(*args, **kwargs)
 
+    @override
     def on_retry(
         self,
         *args: Any,
@@ -171,6 +179,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retry_common()
 
+    @override
     def on_chain_start(
         self,
         *args: Any,
@@ -178,6 +187,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_start_common()
 
+    @override
     def on_chain_end(
         self,
         *args: Any,
@@ -185,6 +195,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_end_common()
 
+    @override
     def on_chain_error(
         self,
         *args: Any,
@@ -192,6 +203,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_chain_error_common()
 
+    @override
     def on_tool_start(
         self,
         *args: Any,
@@ -199,6 +211,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_start_common()
 
+    @override
     def on_tool_end(
         self,
         *args: Any,
@@ -206,6 +219,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_end_common()
 
+    @override
     def on_tool_error(
         self,
         *args: Any,
@@ -213,6 +227,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_tool_error_common()
 
+    @override
     def on_agent_action(
         self,
         *args: Any,
@@ -220,6 +235,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_agent_action_common()
 
+    @override
     def on_agent_finish(
         self,
         *args: Any,
@@ -227,6 +243,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_agent_finish_common()
 
+    @override
     def on_text(
         self,
         *args: Any,
@@ -234,6 +251,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_text_common()
 
+    @override
     def on_retriever_start(
         self,
         *args: Any,
@@ -241,6 +259,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_start_common()
 
+    @override
     def on_retriever_end(
         self,
         *args: Any,
@@ -248,6 +267,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_end_common()
 
+    @override
     def on_retriever_error(
         self,
         *args: Any,
@@ -255,15 +275,17 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
     ) -> Any:
         self.on_retriever_error_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
+    # Overriding since BaseModel has __deepcopy__ method as well
+    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":  # type: ignore[override]
         return self
 
 
 class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
+    @override
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -291,6 +313,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
 
+    @override
     async def on_retry(
         self,
         *args: Any,
@@ -298,6 +321,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> Any:
         self.on_retry_common()
 
+    @override
     async def on_llm_start(
         self,
         *args: Any,
@@ -305,6 +329,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_start_common()
 
+    @override
     async def on_llm_new_token(
         self,
         *args: Any,
@@ -312,6 +337,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_new_token_common()
 
+    @override
     async def on_llm_end(
         self,
         *args: Any,
@@ -319,6 +345,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_end_common()
 
+    @override
     async def on_llm_error(
         self,
         *args: Any,
@@ -326,6 +353,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_llm_error_common(*args, **kwargs)
 
+    @override
     async def on_chain_start(
         self,
         *args: Any,
@@ -333,6 +361,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_start_common()
 
+    @override
     async def on_chain_end(
         self,
         *args: Any,
@@ -340,6 +369,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_end_common()
 
+    @override
     async def on_chain_error(
         self,
         *args: Any,
@@ -347,6 +377,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_chain_error_common()
 
+    @override
     async def on_tool_start(
         self,
         *args: Any,
@@ -354,6 +385,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_start_common()
 
+    @override
     async def on_tool_end(
         self,
         *args: Any,
@@ -361,6 +393,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_end_common()
 
+    @override
     async def on_tool_error(
         self,
         *args: Any,
@@ -368,6 +401,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_tool_error_common()
 
+    @override
     async def on_agent_action(
         self,
         *args: Any,
@@ -375,6 +409,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_agent_action_common()
 
+    @override
     async def on_agent_finish(
         self,
         *args: Any,
@@ -382,6 +417,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_agent_finish_common()
 
+    @override
     async def on_text(
         self,
         *args: Any,
@@ -389,5 +425,6 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
     ) -> None:
         self.on_text_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":
+    # Overriding since BaseModel has __deepcopy__ method as well
+    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":  # type: ignore[override]
         return self

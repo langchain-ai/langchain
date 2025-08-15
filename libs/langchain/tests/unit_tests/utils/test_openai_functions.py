@@ -1,6 +1,5 @@
-from langchain_core.pydantic_v1 import BaseModel, Field
-
-from langchain.utils.openai_functions import convert_pydantic_to_openai_function
+from langchain_core.utils.function_calling import convert_pydantic_to_openai_function
+from pydantic import BaseModel, Field
 
 
 def test_convert_pydantic_to_openai_function() -> None:
@@ -64,7 +63,7 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
                         },
                     },
                     "required": ["key"],
-                }
+                },
             },
             "required": ["data"],
         },

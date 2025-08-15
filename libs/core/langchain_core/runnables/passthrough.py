@@ -5,23 +5,19 @@ from __future__ import annotations
 import asyncio
 import inspect
 import threading
+from collections.abc import Awaitable
 from typing import (
     TYPE_CHECKING,
     Any,
-    AsyncIterator,
-    Awaitable,
     Callable,
-    Dict,
-    Iterator,
-    List,
-    Mapping,
     Optional,
-    Type,
     Union,
     cast,
 )
 
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel, RootModel
+from typing_extensions import override
+
 from langchain_core.runnables.base import (
     Other,
     Runnable,
@@ -36,36 +32,52 @@ from langchain_core.runnables.config import (
     get_executor_for_config,
     patch_config,
 )
-from langchain_core.runnables.graph import Graph
 from langchain_core.runnables.utils import (
     AddableDict,
     ConfigurableFieldSpec,
-    create_model,
 )
 from langchain_core.utils.aiter import atee, py_anext
 from langchain_core.utils.iter import safetee
+from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator, Mapping
+
     from langchain_core.callbacks.manager import (
         AsyncCallbackManagerForChainRun,
         CallbackManagerForChainRun,
     )
+    from langchain_core.runnables.graph import Graph
 
 
 def identity(x: Other) -> Other:
-    """Identity function"""
+    """Identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 async def aidentity(x: Other) -> Other:
-    """Async identity function"""
+    """Async identity function.
+
+    Args:
+        x (Other): input.
+
+    Returns:
+        Other: output.
+    """
     return x
 
 
 class RunnablePassthrough(RunnableSerializable[Other, Other]):
     """Runnable to passthrough inputs unchanged or with additional keys.
 
-    This runnable behaves almost like the identity function, except that it
+    This Runnable behaves almost like the identity function, except that it
     can be configured to add additional keys to the output, if the input is a
     dict.
 
@@ -120,9 +132,10 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
             runnable.invoke('hello')
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
+
     """
 
-    input_type: Optional[Type[Other]] = None
+    input_type: Optional[type[Other]] = None
 
     func: Optional[
         Union[Callable[[Other], None], Callable[[Other, RunnableConfig], None]]
@@ -135,6 +148,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         ]
     ] = None
 
+    @override
     def __repr_args__(self) -> Any:
         # Without this repr(self) raises a RecursionError
         # See https://github.com/pydantic/pydantic/issues/7327
@@ -158,9 +172,16 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             ]
         ] = None,
         *,
-        input_type: Optional[Type[Other]] = None,
+        input_type: Optional[type[Other]] = None,
         **kwargs: Any,
     ) -> None:
+        """Create e RunnablePassthrough.
+
+        Args:
+            func: Function to be called with the input.
+            afunc: Async function to be called with the input.
+            input_type: Type of the input.
+        """
         if inspect.iscoroutinefunction(func):
             afunc = func
             func = None
@@ -168,45 +189,51 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    @override
+    def get_lc_namespace(cls) -> list[str]:
         return ["langchain", "schema", "runnable"]
 
     @property
+    @override
     def InputType(self) -> Any:
         return self.input_type or Any
 
     @property
+    @override
     def OutputType(self) -> Any:
         return self.input_type or Any
 
     @classmethod
+    @override
     def assign(
         cls,
         **kwargs: Union[
-            Runnable[Dict[str, Any], Any],
-            Callable[[Dict[str, Any]], Any],
+            Runnable[dict[str, Any], Any],
+            Callable[[dict[str, Any]], Any],
             Mapping[
                 str,
-                Union[Runnable[Dict[str, Any], Any], Callable[[Dict[str, Any]], Any]],
+                Union[Runnable[dict[str, Any], Any], Callable[[dict[str, Any]], Any]],
             ],
         ],
-    ) -> "RunnableAssign":
+    ) -> RunnableAssign:
         """Merge the Dict input with the output produced by the mapping argument.
 
         Args:
-            mapping: A mapping from keys to runnables or callables.
+            **kwargs: Runnable, Callable or a Mapping from keys to Runnables
+                or Callables.
 
         Returns:
-            A runnable that merges the Dict input with the output produced by the
+            A Runnable that merges the Dict input with the output produced by the
             mapping argument.
         """
-        return RunnableAssign(RunnableParallel(kwargs))
+        return RunnableAssign(RunnableParallel[dict[str, Any]](kwargs))
 
+    @override
     def invoke(
         self, input: Other, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Other:
@@ -216,6 +243,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             )
         return self._call_with_config(identity, input, config)
 
+    @override
     async def ainvoke(
         self,
         input: Other,
@@ -232,6 +260,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             )
         return await self._acall_with_config(aidentity, input, config)
 
+    @override
     def transform(
         self,
         input: Iterator[Other],
@@ -262,6 +291,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                     self.func, final, ensure_config(config), **kwargs
                 )
 
+    @override
     async def atransform(
         self,
         input: AsyncIterator[Other],
@@ -304,6 +334,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
                 elif self.func is not None:
                     call_func_with_variable_args(self.func, final, config, **kwargs)
 
+    @override
     def stream(
         self,
         input: Other,
@@ -312,6 +343,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
     ) -> Iterator[Other]:
         return self.transform(iter([input]), config, **kwargs)
 
+    @override
     async def astream(
         self,
         input: Other,
@@ -328,9 +360,8 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 _graph_passthrough: RunnablePassthrough = RunnablePassthrough()
 
 
-class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """
-    A runnable that assigns key-value pairs to Dict[str, Any] inputs.
+class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
+    """Runnable that assigns key-value pairs to dict[str, Any] inputs.
 
     The `RunnableAssign` class takes input dictionaries and, through a
     `RunnableParallel` instance, applies transformations, then combines
@@ -341,14 +372,13 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         .. code-block:: python
 
             # This is a RunnableAssign
-            from typing import Dict
             from langchain_core.runnables.passthrough import (
                 RunnableAssign,
                 RunnableParallel,
             )
             from langchain_core.runnables.base import RunnableLambda
 
-            def add_ten(x: Dict[str, int]) -> Dict[str, int]:
+            def add_ten(x: dict[str, int]) -> dict[str, int]:
                 return {"added": x["input"] + 10}
 
             mapper = RunnableParallel(
@@ -364,22 +394,31 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             # Asynchronous example
             await runnable_assign.ainvoke({"input": 5})
             # returns {'input': 5, 'add_step': {'added': 15}}
+
     """
 
-    mapper: RunnableParallel[Dict[str, Any]]
+    mapper: RunnableParallel
 
-    def __init__(self, mapper: RunnableParallel[Dict[str, Any]], **kwargs: Any) -> None:
+    def __init__(self, mapper: RunnableParallel[dict[str, Any]], **kwargs: Any) -> None:
+        """Create a RunnableAssign.
+
+        Args:
+            mapper: A ``RunnableParallel`` instance that will be used to transform the
+                input dictionary.
+        """
         super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    @override
+    def get_lc_namespace(cls) -> list[str]:
         return ["langchain", "schema", "runnable"]
 
+    @override
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
@@ -390,35 +429,36 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         )
         return super().get_name(suffix, name=name)
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
-        if not map_input_schema.__custom_root_type__:
+        if not issubclass(map_input_schema, RootModel):
             # ie. it's a dict
             return map_input_schema
 
         return super().get_input_schema(config)
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
-    ) -> Type[BaseModel]:
+    ) -> type[BaseModel]:
         map_input_schema = self.mapper.get_input_schema(config)
         map_output_schema = self.mapper.get_output_schema(config)
-        if (
-            not map_input_schema.__custom_root_type__
-            and not map_output_schema.__custom_root_type__
+        if not issubclass(map_input_schema, RootModel) and not issubclass(
+            map_output_schema, RootModel
         ):
-            # ie. both are dicts
-            return create_model(  # type: ignore[call-overload]
-                "RunnableAssignOutput",
-                **{
-                    k: (v.type_, v.default)
-                    for s in (map_input_schema, map_output_schema)
-                    for k, v in s.__fields__.items()
-                },
-            )
-        elif not map_output_schema.__custom_root_type__:
+            fields = {}
+
+            for name, field_info in map_input_schema.model_fields.items():
+                fields[name] = (field_info.annotation, field_info.default)
+
+            for name, field_info in map_output_schema.model_fields.items():
+                fields[name] = (field_info.annotation, field_info.default)
+
+            return create_model_v2("RunnableAssignOutput", field_definitions=fields)
+        if not issubclass(map_output_schema, RootModel):
             # ie. only map output is a dict
             # ie. input type is either unknown or inferred incorrectly
             return map_output_schema
@@ -426,9 +466,11 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         return super().get_output_schema(config)
 
     @property
-    def config_specs(self) -> List[ConfigurableFieldSpec]:
+    @override
+    def config_specs(self) -> list[ConfigurableFieldSpec]:
         return self.mapper.config_specs
 
+    @override
     def get_graph(self, config: RunnableConfig | None = None) -> Graph:
         # get graph from mapper
         graph = self.mapper.get_graph(config)
@@ -443,71 +485,73 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
 
     def _invoke(
         self,
-        input: Dict[str, Any],
+        value: dict[str, Any],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+    ) -> dict[str, Any]:
+        if not isinstance(value, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
-            **input,
+            **value,
             **self.mapper.invoke(
-                input,
+                value,
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             ),
         }
 
+    @override
     def invoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
-        input: Dict[str, Any],
+        value: dict[str, Any],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+    ) -> dict[str, Any]:
+        if not isinstance(value, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         return {
-            **input,
+            **value,
             **await self.mapper.ainvoke(
-                input,
+                value,
                 patch_config(config, callbacks=run_manager.get_child()),
                 **kwargs,
             ),
         }
 
+    @override
     async def ainvoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     def _transform(
         self,
-        input: Iterator[Dict[str, Any]],
+        values: Iterator[dict[str, Any]],
         run_manager: CallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         # collect mapper keys
         mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
-        for_passthrough, for_map = safetee(input, 2, lock=threading.Lock())
+        for_passthrough, for_map = safetee(values, 2, lock=threading.Lock())
 
         # create map output stream
         map_output = self.mapper.transform(
@@ -524,14 +568,14 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             # start map output stream
             first_map_chunk_future = executor.submit(
                 next,
-                map_output,  # type: ignore
+                map_output,
                 None,
             )
             # consume passthrough stream
             for chunk in for_passthrough:
-                assert isinstance(
-                    chunk, dict
-                ), "The input to RunnablePassthrough.assign() must be a dict."
+                if not isinstance(chunk, dict):
+                    msg = "The input to RunnablePassthrough.assign() must be a dict."
+                    raise ValueError(msg)  # noqa: TRY004
                 # remove mapper keys from passthrough chunk, to be overwritten by map
                 filtered = AddableDict(
                     {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -539,31 +583,32 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
                 if filtered:
                     yield filtered
             # yield map output
-            yield cast(Dict[str, Any], first_map_chunk_future.result())
+            yield cast("dict[str, Any]", first_map_chunk_future.result())
             for chunk in map_output:
                 yield chunk
 
+    @override
     def transform(
         self,
-        input: Iterator[Dict[str, Any]],
+        input: Iterator[dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any | None,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
 
     async def _atransform(
         self,
-        input: AsyncIterator[Dict[str, Any]],
+        values: AsyncIterator[dict[str, Any]],
         run_manager: AsyncCallbackManagerForChainRun,
         config: RunnableConfig,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
         # collect mapper keys
         mapper_keys = set(self.mapper.steps__.keys())
         # create two streams, one for the map and one for the passthrough
-        for_passthrough, for_map = atee(input, 2, lock=asyncio.Lock())
+        for_passthrough, for_map = atee(values, 2, lock=asyncio.Lock())
         # create map output stream
         map_output = self.mapper.atransform(
             for_map,
@@ -579,9 +624,10 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         )
         # consume passthrough stream
         async for chunk in for_passthrough:
-            assert isinstance(
-                chunk, dict
-            ), "The input to RunnablePassthrough.assign() must be a dict."
+            if not isinstance(chunk, dict):
+                msg = "The input to RunnablePassthrough.assign() must be a dict."
+                raise ValueError(msg)  # noqa: TRY004
+
             # remove mapper keys from passthrough chunk, to be overwritten by map output
             filtered = AddableDict(
                 {k: v for k, v in chunk.items() if k not in mapper_keys}
@@ -593,47 +639,50 @@ class RunnableAssign(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         async for chunk in map_output:
             yield chunk
 
+    @override
     async def atransform(
         self,
-        input: AsyncIterator[Dict[str, Any]],
+        input: AsyncIterator[dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
         ):
             yield chunk
 
+    @override
     def stream(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         return self.transform(iter([input]), config, **kwargs)
 
+    @override
     async def astream(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
-        async def input_aiter() -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
+        async def input_aiter() -> AsyncIterator[dict[str, Any]]:
             yield input
 
         async for chunk in self.atransform(input_aiter(), config, **kwargs):
             yield chunk
 
 
-class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
-    """Runnable that picks keys from Dict[str, Any] inputs.
+class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
+    """Runnable that picks keys from dict[str, Any] inputs.
 
-    RunnablePick class represents a runnable that selectively picks keys from a
+    RunnablePick class represents a Runnable that selectively picks keys from a
     dictionary input. It allows you to specify one or more keys to extract
     from the input dictionary. It returns a new dictionary containing only
     the selected keys.
 
-    Example :
+    Example:
         .. code-block:: python
 
             from langchain_core.runnables.passthrough import RunnablePick
@@ -650,22 +699,31 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
             output_data = runnable.invoke(input_data)
 
             print(output_data)  # Output: {'name': 'John', 'age': 30}
+
     """
 
-    keys: Union[str, List[str]]
+    keys: Union[str, list[str]]
 
-    def __init__(self, keys: Union[str, List[str]], **kwargs: Any) -> None:
+    def __init__(self, keys: Union[str, list[str]], **kwargs: Any) -> None:
+        """Create a RunnablePick.
+
+        Args:
+            keys: A single key or a list of keys to pick from the input dictionary.
+        """
         super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
+    @override
+    def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
         return ["langchain", "schema", "runnable"]
 
+    @override
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
@@ -676,102 +734,106 @@ class RunnablePick(RunnableSerializable[Dict[str, Any], Dict[str, Any]]):
         )
         return super().get_name(suffix, name=name)
 
-    def _pick(self, input: Dict[str, Any]) -> Any:
-        assert isinstance(
-            input, dict
-        ), "The input to RunnablePassthrough.assign() must be a dict."
+    def _pick(self, value: dict[str, Any]) -> Any:
+        if not isinstance(value, dict):
+            msg = "The input to RunnablePassthrough.assign() must be a dict."
+            raise ValueError(msg)  # noqa: TRY004
 
         if isinstance(self.keys, str):
-            return input.get(self.keys)
-        else:
-            picked = {k: input.get(k) for k in self.keys if k in input}
-            if picked:
-                return AddableDict(picked)
-            else:
-                return None
+            return value.get(self.keys)
+        picked = {k: value.get(k) for k in self.keys if k in value}
+        if picked:
+            return AddableDict(picked)
+        return None
 
     def _invoke(
         self,
-        input: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        return self._pick(input)
+        value: dict[str, Any],
+    ) -> dict[str, Any]:
+        return self._pick(value)
 
+    @override
     def invoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return self._call_with_config(self._invoke, input, config, **kwargs)
 
     async def _ainvoke(
         self,
-        input: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        return self._pick(input)
+        value: dict[str, Any],
+    ) -> dict[str, Any]:
+        return self._pick(value)
 
+    @override
     async def ainvoke(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return await self._acall_with_config(self._ainvoke, input, config, **kwargs)
 
     def _transform(
         self,
-        input: Iterator[Dict[str, Any]],
-    ) -> Iterator[Dict[str, Any]]:
-        for chunk in input:
+        chunks: Iterator[dict[str, Any]],
+    ) -> Iterator[dict[str, Any]]:
+        for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
                 yield picked
 
+    @override
     def transform(
         self,
-        input: Iterator[Dict[str, Any]],
+        input: Iterator[dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         yield from self._transform_stream_with_config(
             input, self._transform, config, **kwargs
         )
 
     async def _atransform(
         self,
-        input: AsyncIterator[Dict[str, Any]],
-    ) -> AsyncIterator[Dict[str, Any]]:
-        async for chunk in input:
+        chunks: AsyncIterator[dict[str, Any]],
+    ) -> AsyncIterator[dict[str, Any]]:
+        async for chunk in chunks:
             picked = self._pick(chunk)
             if picked is not None:
                 yield picked
 
+    @override
     async def atransform(
         self,
-        input: AsyncIterator[Dict[str, Any]],
+        input: AsyncIterator[dict[str, Any]],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
         async for chunk in self._atransform_stream_with_config(
             input, self._atransform, config, **kwargs
         ):
             yield chunk
 
+    @override
     def stream(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> Iterator[Dict[str, Any]]:
+    ) -> Iterator[dict[str, Any]]:
         return self.transform(iter([input]), config, **kwargs)
 
+    @override
     async def astream(
         self,
-        input: Dict[str, Any],
+        input: dict[str, Any],
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Dict[str, Any]]:
-        async def input_aiter() -> AsyncIterator[Dict[str, Any]]:
+    ) -> AsyncIterator[dict[str, Any]]:
+        async def input_aiter() -> AsyncIterator[dict[str, Any]]:
             yield input
 
         async for chunk in self.atransform(input_aiter(), config, **kwargs):

@@ -1,8 +1,6 @@
 # Astra DB
 
-> [DataStax Astra DB](https://docs.datastax.com/en/astra/home/astra.html) is a serverless 
-> vector-capable database built on `Apache Cassandra®`and made conveniently available
-> through an easy-to-use JSON API.
+> [DataStax Astra DB](https://docs.datastax.com/en/astra-db-serverless/index.html) is a serverless AI-ready database built on `Apache Cassandra®` and made conveniently available through an easy-to-use JSON API.
 
 See a [tutorial provided by DataStax](https://docs.datastax.com/en/astra/astra-db-vector/tutorials/chatbot.html).
 
@@ -10,18 +8,20 @@ See a [tutorial provided by DataStax](https://docs.datastax.com/en/astra/astra-d
 
 Install the following Python package:
 ```bash
-pip install "langchain-astradb>=0.1.0"
+pip install "langchain-astradb>=0.6,<0.7"
 ```
 
-Get the [connection secrets](https://docs.datastax.com/en/astra/astra-db-vector/get-started/quickstart.html).
-Set up the following environment variables:
+Create a database (if needed) and get the [connection secrets](https://docs.datastax.com/en/astra-db-serverless/get-started/quickstart.html#create-a-database-and-store-your-credentials).
+Set the following variables:
 
 ```python
-ASTRA_DB_APPLICATION_TOKEN="TOKEN"
 ASTRA_DB_API_ENDPOINT="API_ENDPOINT"
+ASTRA_DB_APPLICATION_TOKEN="TOKEN"
 ```
 
 ## Vector Store
+
+A few typical initialization patterns are shown here:
 
 ```python
 from langchain_astradb import AstraDBVectorStore
@@ -32,7 +32,55 @@ vector_store = AstraDBVectorStore(
     api_endpoint=ASTRA_DB_API_ENDPOINT,
     token=ASTRA_DB_APPLICATION_TOKEN,
 )
+
+
+from astrapy.info import VectorServiceOptions
+
+vector_store_vectorize = AstraDBVectorStore(
+    collection_name="my_vectorize_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+    collection_vector_service_options=VectorServiceOptions(
+        provider="nvidia",
+        model_name="NV-Embed-QA",
+    ),
+)
+
+
+from astrapy.info import (
+    CollectionLexicalOptions,
+    CollectionRerankOptions,
+    RerankServiceOptions,
+    VectorServiceOptions,
+)
+
+vector_store_hybrid = AstraDBVectorStore(
+    collection_name="my_hybrid_store",
+    api_endpoint=ASTRA_DB_API_ENDPOINT,
+    token=ASTRA_DB_APPLICATION_TOKEN,
+    collection_vector_service_options=VectorServiceOptions(
+        provider="nvidia",
+        model_name="NV-Embed-QA",
+    ),
+    collection_lexical=CollectionLexicalOptions(analyzer="standard"),
+    collection_rerank=CollectionRerankOptions(
+        service=RerankServiceOptions(
+            provider="nvidia",
+            model_name="nvidia/llama-3.2-nv-rerankqa-1b-v2",
+        ),
+    ),
+)
 ```
+
+Notable features of class `AstraDBVectorStore`:
+
+- native async API;
+- metadata filtering in search;
+- MMR (maximum marginal relevance) search;
+- server-side embedding computation (["vectorize"](https://docs.datastax.com/en/astra-db-serverless/databases/embedding-generation.html) in Astra DB parlance);
+- auto-detect its settings from an existing, pre-populated Astra DB collection;
+- [hybrid search](https://docs.datastax.com/en/astra-db-serverless/databases/hybrid-search.html#the-hybrid-search-process) (vector + BM25 and then a rerank step);
+- support for non-Astra Data API (e.g. self-hosted [HCD](https://docs.datastax.com/en/hyper-converged-database/1.1/get-started/get-started-hcd.html) deployments);
 
 Learn more in the [example notebook](/docs/integrations/vectorstores/astradb).
 
@@ -64,7 +112,7 @@ set_llm_cache(AstraDBCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the Astra DB section).
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the Astra DB section).
 
 
 ## Semantic LLM Cache
@@ -80,9 +128,7 @@ set_llm_cache(AstraDBSemanticCache(
 ))
 ```
 
-Learn more in the [example notebook](/docs/integrations/llms/llm_caching#astra-db-caches) (scroll to the appropriate section).
-
-Learn more in the [example notebook](/docs/integrations/memory/astradb_chat_message_history).
+Learn more in the [example notebook](/docs/integrations/llm_caching#astra-db-caches) (scroll to the appropriate section).
 
 ## Document loader
 
@@ -133,7 +179,7 @@ store = AstraDBStore(
 )
 ```
 
-Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbstore).
+See the API Reference for the [AstraDBStore](https://python.langchain.com/api_reference/astradb/storage/langchain_astradb.storage.AstraDBStore.html).
 
 ## Byte Store
 
@@ -147,4 +193,4 @@ store = AstraDBByteStore(
 )
 ```
 
-Learn more in the [example notebook](/docs/integrations/stores/astradb#astradbbytestore).
+See the API reference for the [AstraDBByteStore](https://python.langchain.com/api_reference/astradb/storage/langchain_astradb.storage.AstraDBByteStore.html).

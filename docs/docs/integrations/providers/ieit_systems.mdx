@@ -1,0 +1,31 @@
+# IEIT Systems
+
+>[IEIT Systems](https://en.ieisystem.com/) is a Chinese information technology company
+> established in 1999. It provides the IT infrastructure products, solutions,
+> and services, innovative IT products and solutions across cloud computing,
+> big data, and artificial intelligence.
+
+
+## LLMs
+
+See a [usage example](/docs/integrations/llms/yuan2).
+
+```python
+from langchain_community.llms.yuan2 import Yuan2
+```
+
+## Chat models
+
+See the [installation instructions](/docs/integrations/chat/yuan2/#setting-up-your-api-server).
+
+Yuan2.0 provided an OpenAI compatible API, and ChatYuan2 is integrated into langchain by using `OpenAI client`.
+Therefore, ensure the `openai` package is installed.
+
+```bash
+pip install openai
+```
+See a [usage example](/docs/integrations/chat/yuan2).
+
+```python
+from langchain_community.chat_models import ChatYuan2
+```

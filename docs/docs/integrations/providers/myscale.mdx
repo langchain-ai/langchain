@@ -35,11 +35,11 @@ There are two ways to set up parameters for myscale index.
 
     ```python
     from langchain_community.vectorstores import MyScale, MyScaleSettings
-    config = MyScaleSetting(host="<your-backend-url>", port=8443, ...)
+    config = MyScaleSettings(host="<your-backend-url>", port=8443, ...)
     index = MyScale(embedding_function, config)
     index.add_documents(...)
     ```
-  
+
 ## Wrappers
 supported functions:
 - `add_texts`

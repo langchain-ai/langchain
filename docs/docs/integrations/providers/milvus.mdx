@@ -9,17 +9,15 @@
 Install the Python SDK:
 
 ```bash
-pip install pymilvus
+pip install langchain-milvus
 ```
 
 ## Vector Store
 
-There exists a wrapper around `Milvus` indexes, allowing you to use it as a vectorstore,
-whether for semantic search or example selection.
+See a [usage example](/docs/integrations/vectorstores/milvus).
 
 To import this vectorstore:
 ```python
-from langchain_community.vectorstores import Milvus
+from langchain_milvus import Milvus
 ```
 
-For a more detailed walkthrough of the `Miluvs` wrapper, see [this notebook](/docs/integrations/vectorstores/milvus)

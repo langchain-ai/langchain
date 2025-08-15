@@ -1,6 +1,7 @@
 import datetime
 import warnings
-from typing import Any, Literal, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union
 
 from langchain_core.utils import check_package_version
 from typing_extensions import TypedDict
@@ -10,12 +11,12 @@ try:
     from lark import Lark, Transformer, v_args
 except ImportError:
 
-    def v_args(*args: Any, **kwargs: Any) -> Any:  # type: ignore
+    def v_args(*_: Any, **__: Any) -> Any:  # type: ignore[misc]
         """Dummy decorator for when lark is not installed."""
         return lambda _: None
 
-    Transformer = object  # type: ignore
-    Lark = object  # type: ignore
+    Transformer = object  # type: ignore[assignment,misc]
+    Lark = object  # type: ignore[assignment,misc]
 
 from langchain_core.structured_query import (
     Comparator,
@@ -35,6 +36,7 @@ GRAMMAR = r"""
     ?value: SIGNED_INT -> int
         | SIGNED_FLOAT -> float
         | DATE -> date
+        | DATETIME -> datetime
         | list
         | string
         | ("false" | "False" | "FALSE") -> false
@@ -42,6 +44,7 @@ GRAMMAR = r"""
 
     args: expr ("," expr)*
     DATE.2: /["']?(\d{4}-[01]\d-[0-3]\d)["']?/
+    DATETIME.2: /["']?\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d[Zz]?["']?/
     string: /'[^']*'/ | ESCAPED_STRING
     list: "[" [args] "]"
 
@@ -61,9 +64,16 @@ class ISO8601Date(TypedDict):
     type: Literal["date"]
 
 
+class ISO8601DateTime(TypedDict):
+    """A datetime in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)."""
+
+    datetime: str
+    type: Literal["datetime"]
+
+
 @v_args(inline=True)
 class QueryTransformer(Transformer):
-    """Transforms a query string into an intermediate representation."""
+    """Transform a query string into an intermediate representation."""
 
     def __init__(
         self,
@@ -73,84 +83,166 @@ class QueryTransformer(Transformer):
         allowed_attributes: Optional[Sequence[str]] = None,
         **kwargs: Any,
     ):
+        """Initialize the QueryTransformer.
+
+        Args:
+            allowed_comparators: Optional sequence of allowed comparators.
+            allowed_operators: Optional sequence of allowed operators.
+            allowed_attributes: Optional sequence of allowed attributes for comparators.
+            **kwargs: Additional keyword arguments.
+        """
         super().__init__(*args, **kwargs)
         self.allowed_comparators = allowed_comparators
         self.allowed_operators = allowed_operators
         self.allowed_attributes = allowed_attributes
 
     def program(self, *items: Any) -> tuple:
+        """Transform the items into a tuple."""
         return items
 
     def func_call(self, func_name: Any, args: list) -> FilterDirective:
+        """Transform a function name and args into a FilterDirective.
+
+        Args:
+            func_name: The name of the function.
+            args: The arguments passed to the function.
+        Returns:
+            FilterDirective: The filter directive.
+        Raises:
+            ValueError: If the function is a comparator and the first arg is not in the
+            allowed attributes.
+        """
         func = self._match_func_name(str(func_name))
         if isinstance(func, Comparator):
             if self.allowed_attributes and args[0] not in self.allowed_attributes:
-                raise ValueError(
+                msg = (
                     f"Received invalid attributes {args[0]}. Allowed attributes are "
                     f"{self.allowed_attributes}"
                 )
+                raise ValueError(msg)
             return Comparison(comparator=func, attribute=args[0], value=args[1])
-        elif len(args) == 1 and func in (Operator.AND, Operator.OR):
+        if len(args) == 1 and func in (Operator.AND, Operator.OR):
             return args[0]
-        else:
-            return Operation(operator=func, arguments=args)
+        return Operation(operator=func, arguments=args)
 
     def _match_func_name(self, func_name: str) -> Union[Operator, Comparator]:
         if func_name in set(Comparator):
-            if self.allowed_comparators is not None:
-                if func_name not in self.allowed_comparators:
-                    raise ValueError(
-                        f"Received disallowed comparator {func_name}. Allowed "
-                        f"comparators are {self.allowed_comparators}"
-                    )
+            if (
+                self.allowed_comparators is not None
+                and func_name not in self.allowed_comparators
+            ):
+                msg = (
+                    f"Received disallowed comparator {func_name}. Allowed "
+                    f"comparators are {self.allowed_comparators}"
+                )
+                raise ValueError(msg)
             return Comparator(func_name)
-        elif func_name in set(Operator):
-            if self.allowed_operators is not None:
-                if func_name not in self.allowed_operators:
-                    raise ValueError(
-                        f"Received disallowed operator {func_name}. Allowed operators"
-                        f" are {self.allowed_operators}"
-                    )
+        if func_name in set(Operator):
+            if (
+                self.allowed_operators is not None
+                and func_name not in self.allowed_operators
+            ):
+                msg = (
+                    f"Received disallowed operator {func_name}. Allowed operators"
+                    f" are {self.allowed_operators}"
+                )
+                raise ValueError(msg)
             return Operator(func_name)
-        else:
-            raise ValueError(
-                f"Received unrecognized function {func_name}. Valid functions are "
-                f"{list(Operator) + list(Comparator)}"
-            )
+        msg = (
+            f"Received unrecognized function {func_name}. Valid functions are "
+            f"{list(Operator) + list(Comparator)}"
+        )
+        raise ValueError(msg)
 
     def args(self, *items: Any) -> tuple:
+        """Transforms items into a tuple.
+
+        Args:
+            items: The items to transform.
+        """
         return items
 
     def false(self) -> bool:
+        """Returns false."""
         return False
 
     def true(self) -> bool:
+        """Returns true."""
         return True
 
     def list(self, item: Any) -> list:
+        """Transforms an item into a list.
+
+        Args:
+            item: The item to transform.
+        """
         if item is None:
             return []
         return list(item)
 
     def int(self, item: Any) -> int:
+        """Transforms an item into an int.
+
+        Args:
+            item: The item to transform.
+        """
         return int(item)
 
     def float(self, item: Any) -> float:
+        """Transforms an item into a float.
+
+        Args:
+            item: The item to transform.
+        """
         return float(item)
 
     def date(self, item: Any) -> ISO8601Date:
+        """Transforms an item into a ISO8601Date object.
+
+        Args:
+            item: The item to transform.
+        Raises:
+            ValueError: If the item is not in ISO 8601 date format.
+        """
         item = str(item).strip("\"'")
         try:
-            datetime.datetime.strptime(item, "%Y-%m-%d")
+            datetime.datetime.strptime(item, "%Y-%m-%d")  # noqa: DTZ007
         except ValueError:
             warnings.warn(
                 "Dates are expected to be provided in ISO 8601 date format "
-                "(YYYY-MM-DD)."
+                "(YYYY-MM-DD).",
+                stacklevel=3,
             )
         return {"date": item, "type": "date"}
 
+    def datetime(self, item: Any) -> ISO8601DateTime:
+        """Transforms an item into a ISO8601DateTime object.
+
+        Args:
+            item: The item to transform.
+        Raises:
+            ValueError: If the item is not in ISO 8601 datetime format.
+        """
+        item = str(item).strip("\"'")
+        try:
+            # Parse full ISO 8601 datetime format
+            datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S%z")
+        except ValueError:
+            try:
+                datetime.datetime.strptime(item, "%Y-%m-%dT%H:%M:%S")  # noqa: DTZ007
+            except ValueError as e:
+                msg = "Datetime values are expected to be in ISO 8601 format."
+                raise ValueError(msg) from e
+        return {"datetime": item, "type": "datetime"}
+
     def string(self, item: Any) -> str:
-        # Remove escaped quotes
+        """Transforms an item into a string.
+
+        Removes escaped quotes.
+
+        Args:
+            item: The item to transform.
+        """
         return str(item).strip("\"'")
 
 
@@ -159,8 +251,7 @@ def get_parser(
     allowed_operators: Optional[Sequence[Operator]] = None,
     allowed_attributes: Optional[Sequence[str]] = None,
 ) -> Lark:
-    """
-    Returns a parser for the query language.
+    """Return a parser for the query language.
 
     Args:
         allowed_comparators: Optional[Sequence[Comparator]]
@@ -171,9 +262,8 @@ def get_parser(
     """
     # QueryTransformer is None when Lark cannot be imported.
     if QueryTransformer is None:
-        raise ImportError(
-            "Cannot import lark, please install it with 'pip install lark'."
-        )
+        msg = "Cannot import lark, please install it with 'pip install lark'."
+        raise ImportError(msg)
     transformer = QueryTransformer(
         allowed_comparators=allowed_comparators,
         allowed_operators=allowed_operators,

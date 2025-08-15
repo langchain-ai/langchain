@@ -1,17 +1,12 @@
--e libs/experimental
--e libs/langchain
--e libs/core
--e libs/community
-pydantic<2
-autodoc_pydantic==1.8.0
-myst_parser
-nbsphinx==0.8.9
-sphinx>=5
-sphinx-autobuild==2021.3.14
-sphinx_rtd_theme==1.0.0
-sphinx-typlog-theme==0.8.0
-sphinx-panels
-toml
-myst_nb
-sphinx_copybutton
-pydata-sphinx-theme==0.13.1
+autodoc_pydantic>=2,<3
+sphinx>=8,<9
+myst-parser>=3
+sphinx-autobuild>=2024
+pydata-sphinx-theme>=0.15
+toml>=0.10.2
+myst-nb>=1.1.1
+pyyaml
+sphinx-design
+sphinx-copybutton
+beautifulsoup4
+sphinxcontrib-googleanalytics

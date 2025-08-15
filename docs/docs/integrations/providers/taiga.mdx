@@ -1,0 +1,49 @@
+# Taiga
+
+> [Taiga](https://docs.taiga.io/) is an open-source project management platform designed for agile teams, offering features like Kanban, Scrum, and issue tracking.
+
+## Installation and Setup
+
+Install the `langchain-taiga` package:
+
+```bash
+pip install langchain-taiga
+```
+
+You must provide a logins via environment variable so the tools can authenticate.
+
+```bash
+export TAIGA_URL="https://taiga.xyz.org/"
+export TAIGA_API_URL="https://taiga.xyz.org/"
+export TAIGA_USERNAME="username"
+export TAIGA_PASSWORD="pw"
+export OPENAI_API_KEY="OPENAI_API_KEY"
+```
+
+
+---
+
+## Tools
+
+See a [usage example](/docs/integrations/tools/taiga)
+
+---
+
+## Toolkit
+
+`TaigaToolkit` groups multiple Taiga-related tools into a single interface.
+
+```python
+from langchain_taiga.toolkits import TaigaToolkit
+
+toolkit = TaigaToolkit()
+tools = toolkit.get_tools()
+
+```
+
+---
+
+## Future Integrations
+
+
+Check the [Taiga Developer Docs](https://docs.taiga.io/) for more information, and watch for updates or advanced usage examples in the [langchain_taiga GitHub repo](https://github.com/Shikenso-Analytics/langchain-taiga).

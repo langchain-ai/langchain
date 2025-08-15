@@ -22,9 +22,10 @@ Example:
     #    "However, it does not provide an explanation of what the formula means."
     # }
 """
+
 from langchain.evaluation.scoring.eval_chain import (
     LabeledScoreStringEvalChain,
     ScoreStringEvalChain,
 )
 
-__all__ = ["ScoreStringEvalChain", "LabeledScoreStringEvalChain"]
+__all__ = ["LabeledScoreStringEvalChain", "ScoreStringEvalChain"]

@@ -1,43 +1,43 @@
-import random
-from datetime import datetime, timedelta
-from typing import List
+from datetime import datetime, timedelta, timezone
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import comma_list
 
 
-def _generate_random_datetime_strings(
-    pattern: str,
-    n: int = 3,
-    start_date: datetime = datetime(1, 1, 1),
-    end_date: datetime = datetime.now() + timedelta(days=3650),
-) -> List[str]:
-    """Generates n random datetime strings conforming to the
-    given pattern within the specified date range.
-
-    Pattern should be a string containing the desired format codes.
-    start_date and end_date should be datetime objects representing
-    the start and end of the date range.
-    """
-    examples = []
-    delta = end_date - start_date
-    for i in range(n):
-        random_delta = random.uniform(0, delta.total_seconds())
-        dt = start_date + timedelta(seconds=random_delta)
-        date_string = dt.strftime(pattern)
-        examples.append(date_string)
-    return examples
-
-
 class DatetimeOutputParser(BaseOutputParser[datetime]):
     """Parse the output of an LLM call to a datetime."""
 
     format: str = "%Y-%m-%dT%H:%M:%S.%fZ"
-    """The string value that used as the datetime format."""
+    """The string value that is used as the datetime format.
+
+    Update this to match the desired datetime format for your application.
+    """
 
     def get_format_instructions(self) -> str:
-        examples = comma_list(_generate_random_datetime_strings(self.format))
+        """Returns the format instructions for the given format."""
+        if self.format == "%Y-%m-%dT%H:%M:%S.%fZ":
+            examples = comma_list(
+                [
+                    "2023-07-04T14:30:00.000000Z",
+                    "1999-12-31T23:59:59.999999Z",
+                    "2025-01-01T00:00:00.000000Z",
+                ],
+            )
+        else:
+            try:
+                now = datetime.now(tz=timezone.utc)
+                examples = comma_list(
+                    [
+                        now.strftime(self.format),
+                        (now.replace(year=now.year - 1)).strftime(self.format),
+                        (now - timedelta(days=1)).strftime(self.format),
+                    ],
+                )
+            except ValueError:
+                # Fallback if the format is very unusual
+                examples = f"e.g., a valid string in the format {self.format}"
+
         return (
             f"Write a datetime string that matches the "
             f"following pattern: '{self.format}'.\n\n"
@@ -46,12 +46,12 @@ class DatetimeOutputParser(BaseOutputParser[datetime]):
         )
 
     def parse(self, response: str) -> datetime:
+        """Parse a string into a datetime object."""
         try:
-            return datetime.strptime(response.strip(), self.format)
+            return datetime.strptime(response.strip(), self.format)  # noqa: DTZ007
         except ValueError as e:
-            raise OutputParserException(
-                f"Could not parse datetime string: {response}"
-            ) from e
+            msg = f"Could not parse datetime string: {response}"
+            raise OutputParserException(msg) from e
 
     @property
     def _type(self) -> str:

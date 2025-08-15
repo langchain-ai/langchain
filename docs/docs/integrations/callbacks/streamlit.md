@@ -1,7 +1,7 @@
 # Streamlit
 
 > **[Streamlit](https://streamlit.io/) is a faster way to build and share data apps.**
-> Streamlit turns data scripts into shareable web apps in minutes. All in pure Python. No front‑end experience required.
+> Streamlit turns data scripts into shareable web apps in minutes. All in pure Python. No front-end experience required.
 > See more examples at [streamlit.io/generative-ai](https://streamlit.io/generative-ai).
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/langchain-ai/streamlit-agent?quickstart=1)
@@ -37,7 +37,7 @@ st_callback = StreamlitCallbackHandler(st.container())
 ```
 
 Additional keyword arguments to customize the display behavior are described in the
-[API reference](https://api.python.langchain.com/en/latest/callbacks/langchain.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html).
+[API reference](https://python.langchain.com/api_reference/langchain/callbacks/langchain.callbacks.streamlit.streamlit_callback_handler.StreamlitCallbackHandler.html).
 
 ### Scenario 1: Using an Agent with Tools
 

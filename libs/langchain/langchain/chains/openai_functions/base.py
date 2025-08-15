@@ -1,11 +1,10 @@
 """Methods for creating chains that use OpenAI function-calling APIs."""
+
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
-    Dict,
     Optional,
-    Sequence,
-    Type,
     Union,
 )
 
@@ -18,11 +17,11 @@ from langchain_core.output_parsers.openai_functions import (
     PydanticAttrOutputFunctionsParser,
 )
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import (
     PYTHON_TO_JSON_TYPES,
     convert_to_openai_function,
 )
+from pydantic import BaseModel
 
 from langchain.chains import LLMChain
 from langchain.chains.structured_output.base import (
@@ -32,19 +31,19 @@ from langchain.chains.structured_output.base import (
 )
 
 __all__ = [
-    "get_openai_output_parser",
-    "create_openai_fn_runnable",
-    "create_structured_output_runnable",  # deprecated
-    "create_openai_fn_chain",  # deprecated
-    "create_structured_output_chain",  # deprecated
     "PYTHON_TO_JSON_TYPES",  # backwards compatibility
     "convert_to_openai_function",  # backwards compatibility
+    "create_openai_fn_chain",  # deprecated
+    "create_openai_fn_runnable",
+    "create_structured_output_chain",  # deprecated
+    "create_structured_output_runnable",  # deprecated
+    "get_openai_output_parser",
 ]
 
 
-@deprecated(since="0.1.1", removal="0.2.0", alternative="create_openai_fn_runnable")
+@deprecated(since="0.1.1", removal="1.0", alternative="create_openai_fn_runnable")
 def create_openai_fn_chain(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
@@ -52,7 +51,7 @@ def create_openai_fn_chain(
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:  # type: ignore[valid-type]
+) -> LLMChain:
     """[Legacy] Create an LLM chain that uses OpenAI functions.
 
     Args:
@@ -92,7 +91,7 @@ def create_openai_fn_chain(
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
 
                 class RecordPerson(BaseModel):
@@ -122,17 +121,19 @@ def create_openai_fn_chain(
                 chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        msg = "Need to pass in at least one function. Received zero."
+        raise ValueError(msg)
     openai_functions = [convert_to_openai_function(f) for f in functions]
     output_parser = output_parser or get_openai_output_parser(functions)
-    llm_kwargs: Dict[str, Any] = {
+    llm_kwargs: dict[str, Any] = {
         "functions": openai_functions,
     }
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs["function_call"] = {"name": openai_functions[0]["name"]}
-    llm_chain = LLMChain(  # type: ignore[misc]
+    return LLMChain(
         llm=llm,
         prompt=prompt,
         output_parser=output_parser,
@@ -140,21 +141,22 @@ def create_openai_fn_chain(
         output_key=output_key,
         **kwargs,
     )
-    return llm_chain
 
 
 @deprecated(
-    since="0.1.1", removal="0.2.0", alternative="ChatOpenAI.with_structured_output"
+    since="0.1.1",
+    removal="1.0",
+    alternative="ChatOpenAI.with_structured_output",
 )
 def create_structured_output_chain(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: BaseLanguageModel,
     prompt: BasePromptTemplate,
     *,
     output_key: str = "function",
     output_parser: Optional[BaseLLMOutputParser] = None,
     **kwargs: Any,
-) -> LLMChain:  # type: ignore[valid-type]
+) -> LLMChain:
     """[Legacy] Create an LLMChain that uses an OpenAI function to get a structured output.
 
     Args:
@@ -182,7 +184,7 @@ def create_structured_output_chain(
                 from langchain_community.chat_models import ChatOpenAI
                 from langchain_core.prompts import ChatPromptTemplate
 
-                from langchain_core.pydantic_v1 import BaseModel, Field
+                from pydantic import BaseModel, Field
 
                 class Dog(BaseModel):
                     \"\"\"Identifying information about a dog.\"\"\"
@@ -202,6 +204,7 @@ def create_structured_output_chain(
                 chain = create_structured_output_chain(Dog, llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {
@@ -217,11 +220,12 @@ def create_structured_output_chain(
         class _OutputFormatter(BaseModel):
             """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
 
-            output: output_schema  # type: ignore
+            output: output_schema  # type: ignore[valid-type]
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_chain(
         [function],

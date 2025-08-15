@@ -1,14 +1,16 @@
 """Tests for verifying that testing utility code works as expected."""
+
 from itertools import cycle
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
+from typing_extensions import override
 
 from tests.unit_tests.llms.fake_chat_model import GenericFakeChatModel
-from tests.unit_tests.stubs import AnyStr
+from tests.unit_tests.stubs import _AnyIdAIMessage, _AnyIdAIMessageChunk
 
 
 def test_generic_fake_chat_model_invoke() -> None:
@@ -16,11 +18,11 @@ def test_generic_fake_chat_model_invoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = model.invoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
     response = model.invoke("kitty")
-    assert response == AIMessage(content="goodbye", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="goodbye")
     response = model.invoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
 
 
 async def test_generic_fake_chat_model_ainvoke() -> None:
@@ -28,11 +30,11 @@ async def test_generic_fake_chat_model_ainvoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = await model.ainvoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
     response = await model.ainvoke("kitty")
-    assert response == AIMessage(content="goodbye", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="goodbye")
     response = await model.ainvoke("meow")
-    assert response == AIMessage(content="hello", id=AnyStr())
+    assert response == _AnyIdAIMessage(content="hello")
 
 
 async def test_generic_fake_chat_model_stream() -> None:
@@ -40,21 +42,21 @@ async def test_generic_fake_chat_model_stream() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
 
-    chunks = [chunk for chunk in model.stream("meow")]
+    chunks = list(model.stream("meow"))
     assert chunks == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
 
     # Test streaming of additional kwargs.
@@ -63,8 +65,8 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        AIMessageChunk(content="", additional_kwargs={"foo": 42}, id=AnyStr()),
-        AIMessageChunk(content="", additional_kwargs={"bar": 24}, id=AnyStr()),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
+        _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
     ]
 
     message = AIMessage(
@@ -75,7 +77,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
     model = GenericFakeChatModel(messages=cycle([message]))
@@ -91,17 +93,19 @@ async def test_generic_fake_chat_model_stream() -> None:
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '{\n  "source_path": "foo"'}
+                "function_call": {"arguments": '{\n  "source_path": "foo"'},
             },
         ),
         AIMessageChunk(
-            id="a1", content="", additional_kwargs={"function_call": {"arguments": ","}}
+            id="a1",
+            content="",
+            additional_kwargs={"function_call": {"arguments": ","}},
         ),
         AIMessageChunk(
             id="a1",
             content="",
             additional_kwargs={
-                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'}
+                "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
         ),
     ]
@@ -121,7 +125,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
         },
     )
 
@@ -135,9 +139,9 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     ]
     final = log_patches[-1]
     assert final.state["streamed_output"] == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
 
 
@@ -145,24 +149,25 @@ async def test_callback_handlers() -> None:
     """Verify that model is implemented correctly with handlers working."""
 
     class MyCustomAsyncHandler(AsyncCallbackHandler):
-        def __init__(self, store: List[str]) -> None:
+        def __init__(self, store: list[str]) -> None:
             self.store = store
 
         async def on_chat_model_start(
             self,
-            serialized: Dict[str, Any],
-            messages: List[List[BaseMessage]],
+            serialized: dict[str, Any],
+            messages: list[list[BaseMessage]],
             *,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
-            metadata: Optional[Dict[str, Any]] = None,
+            tags: Optional[list[str]] = None,
+            metadata: Optional[dict[str, Any]] = None,
             **kwargs: Any,
         ) -> Any:
             # Do nothing
             # Required to implement since this is an abstract method
             pass
 
+        @override
         async def on_llm_new_token(
             self,
             token: str,
@@ -170,7 +175,7 @@ async def test_callback_handlers() -> None:
             chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
             run_id: UUID,
             parent_run_id: Optional[UUID] = None,
-            tags: Optional[List[str]] = None,
+            tags: Optional[list[str]] = None,
             **kwargs: Any,
         ) -> None:
             self.store.append(token)
@@ -178,15 +183,21 @@ async def test_callback_handlers() -> None:
     infinite_cycle = cycle(
         [
             AIMessage(content="hello goodbye"),
-        ]
+        ],
     )
     model = GenericFakeChatModel(messages=infinite_cycle)
-    tokens: List[str] = []
+    tokens: list[str] = []
     # New model
-    results = list(model.stream("meow", {"callbacks": [MyCustomAsyncHandler(tokens)]}))
+    results = [
+        chunk
+        async for chunk in model.astream(
+            "meow",
+            {"callbacks": [MyCustomAsyncHandler(tokens)]},
+        )
+    ]
     assert results == [
-        AIMessageChunk(content="hello", id=AnyStr()),
-        AIMessageChunk(content=" ", id=AnyStr()),
-        AIMessageChunk(content="goodbye", id=AnyStr()),
+        _AnyIdAIMessageChunk(content="hello"),
+        _AnyIdAIMessageChunk(content=" "),
+        _AnyIdAIMessageChunk(content="goodbye"),
     ]
     assert tokens == ["hello", " ", "goodbye"]

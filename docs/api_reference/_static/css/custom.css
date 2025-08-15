@@ -1,25 +1,396 @@
-pre {
-  white-space: break-spaces;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+/*******************************************************************************
+* master color map. Only the colors that actually differ between light and dark
+* themes are specified separately.
+*
+* To see the full list of colors see https://www.figma.com/file/rUrrHGhUBBIAAjQ82x6pz9/PyData-Design-system---proposal-for-implementation-(2)?node-id=1234%3A765&t=ifcFT1JtnrSshGfi-1
+*/
+/**
+* Function to get items from nested maps
+*/
+/* Assign base colors for the PyData theme */
+:root {
+  --pst-teal-50: #f4fbfc;
+  --pst-teal-100: #e9f6f8;
+  --pst-teal-200: #d0ecf1;
+  --pst-teal-300: #abdde6;
+  --pst-teal-400: #3fb1c5;
+  --pst-teal-500: #0a7d91;
+  --pst-teal-600: #085d6c;
+  --pst-teal-700: #064752;
+  --pst-teal-800: #042c33;
+  --pst-teal-900: #021b1f;
+  --pst-violet-50: #f4eefb;
+  --pst-violet-100: #e0c7ff;
+  --pst-violet-200: #d5b4fd;
+  --pst-violet-300: #b780ff;
+  --pst-violet-400: #9c5ffd;
+  --pst-violet-500: #8045e5;
+  --pst-violet-600: #6432bd;
+  --pst-violet-700: #4b258f;
+  --pst-violet-800: #341a61;
+  --pst-violet-900: #1e0e39;
+  --pst-gray-50: #f9f9fa;
+  --pst-gray-100: #f3f4f5;
+  --pst-gray-200: #e5e7ea;
+  --pst-gray-300: #d1d5da;
+  --pst-gray-400: #9ca4af;
+  --pst-gray-500: #677384;
+  --pst-gray-600: #48566b;
+  --pst-gray-700: #29313d;
+  --pst-gray-800: #222832;
+  --pst-gray-900: #14181e;
+  --pst-pink-50: #fcf8fd;
+  --pst-pink-100: #fcf0fa;
+  --pst-pink-200: #f8dff5;
+  --pst-pink-300: #f3c7ee;
+  --pst-pink-400: #e47fd7;
+  --pst-pink-500: #c132af;
+  --pst-pink-600: #912583;
+  --pst-pink-700: #6e1c64;
+  --pst-pink-800: #46123f;
+  --pst-pink-900: #2b0b27;
+  --pst-foundation-white: #ffffff;
+  --pst-foundation-black: #14181e;
+  --pst-green-10: #f1fdfd;
+  --pst-green-50: #E0F7F6;
+  --pst-green-100: #B3E8E6;
+  --pst-green-200: #80D6D3;
+  --pst-green-300: #4DC4C0;
+  --pst-green-400: #4FB2AD;
+  --pst-green-500: #287977;
+  --pst-green-600: #246161;
+  --pst-green-700: #204F4F;
+  --pst-green-800: #1C3C3C;
+  --pst-green-900: #0D2427;
+  --pst-lilac-50: #f4eefb;
+  --pst-lilac-100: #DAD6FE;
+  --pst-lilac-200: #BCB2FD;
+  --pst-lilac-300: #9F8BFA;
+  --pst-lilac-400: #7F5CF6;
+  --pst-lilac-500: #6F3AED;
+  --pst-lilac-600: #6028D9;
+  --pst-lilac-700: #5021B6;
+  --pst-lilac-800: #431D95;
+  --pst-lilac-900: #1e0e39;
+  --pst-header-height: 2.5rem;
 }
 
-@media (min-width: 1200px) {
-  .container,
-  .container-lg,
-  .container-md,
-  .container-sm,
-  .container-xl {
-    max-width: 2560px !important;
-  }
+html {
+    --pst-font-family-base: 'Inter';
+    --pst-font-family-heading: 'Inter Tight', sans-serif;
+
+    --pst-icon-versionmodified-deprecated: var(--pst-icon-exclamation-triangle);
 }
 
-#my-component-root *, #headlessui-portal-root * {
-  z-index: 10000;
+/*******************************************************************************
+* write the color rules for each theme (light/dark)
+*/
+/* NOTE:
+ * Mixins enable us to reuse the same definitions for the different modes
+ * https://sass-lang.com/documentation/at-rules/mixin
+ * something inserts a variable into a CSS selector or property name
+ * https://sass-lang.com/documentation/interpolation
+ */
+/* Defaults to light mode if data-theme is not set */
+html:not([data-theme]), html[data-theme=light] {
+  --pst-color-primary: #287977;
+  --pst-color-primary-bg: #80D6D3;
+  --pst-color-secondary: #6F3AED;
+  --pst-color-secondary-bg: #DAD6FE;
+  --pst-color-accent: #c132af;
+  --pst-color-accent-bg: #f8dff5;
+  --pst-color-info: #276be9;
+  --pst-color-info-bg: #dce7fc;
+  --pst-color-warning: #f66a0a;
+  --pst-color-warning-bg: #f8e3d0;
+  --pst-color-success: #00843f;
+  --pst-color-success-bg: #d6ece1;
+  --pst-color-attention: var(--pst-color-warning);
+  --pst-color-attention-bg: var(--pst-color-warning-bg);
+  --pst-color-danger: #d72d47;
+  --pst-color-danger-bg: #f9e1e4;
+  --pst-color-text-base: #222832;
+  --pst-color-text-muted: #48566b;
+  --pst-color-heading-color: #ffffff;
+  --pst-color-shadow: rgba(0, 0, 0, 0.1);
+  --pst-color-border: #d1d5da;
+  --pst-color-border-muted: rgba(23, 23, 26, 0.2);
+  --pst-color-inline-code: #912583;
+  --pst-color-inline-code-links: #246161;
+  --pst-color-target: #f3cf95;
+  --pst-color-background: #ffffff;
+  --pst-color-on-background: #F4F9F8;
+  --pst-color-surface: #F4F9F8;
+  --pst-color-on-surface: #222832;
+  --pst-color-deprecated: #f47d2e;
+  --pst-color-deprecated-bg: #fff3e8;
 }
 
-table.longtable code {
-  white-space: normal;
+html[data-theme=dark] {
+  --pst-color-primary: #4FB2AD;
+  --pst-color-primary-bg: #1C3C3C;
+  --pst-color-secondary: #7F5CF6;
+  --pst-color-secondary-bg: #431D95;
+  --pst-color-accent: #e47fd7;
+  --pst-color-accent-bg: #46123f;
+  --pst-color-info: #79a3f2;
+  --pst-color-info-bg: #06245d;
+  --pst-color-warning: #ff9245;
+  --pst-color-warning-bg: #652a02;
+  --pst-color-success: #5fb488;
+  --pst-color-success-bg: #002f17;
+  --pst-color-attention: var(--pst-color-warning);
+  --pst-color-attention-bg: var(--pst-color-warning-bg);
+  --pst-color-danger: #e78894;
+  --pst-color-danger-bg: #4e111b;
+  --pst-color-text-base: #ced6dd;
+  --pst-color-text-muted: #9ca4af;
+  --pst-color-heading-color: #14181e;
+  --pst-color-shadow: rgba(0, 0, 0, 0.2);
+  --pst-color-border: #48566b;
+  --pst-color-border-muted: #29313d;
+  --pst-color-inline-code: #f3c7ee;
+  --pst-color-inline-code-links: #4FB2AD;
+  --pst-color-target: #675c04;
+  --pst-color-background: #14181e;
+  --pst-color-on-background: #222832;
+  --pst-color-surface: #29313d;
+  --pst-color-on-surface: #f3f4f5;
+  --pst-color-deprecated: #b46f3e;
+  --pst-color-deprecated-bg: #341906;
+  /* Adjust images in dark mode (unless they have class .only-dark or
+   * .dark-light, in which case assume they're already optimized for dark
+   * mode).
+   */
+  /* Give images a light background in dark mode in case they have
+  *  transparency and black text (unless they have class .only-dark or .dark-light, in
+  *  which case assume they're already optimized for dark mode).
+  */
+  color-scheme: dark;
 }
 
-table.longtable td {
-  max-width: 600px;
+html:not([data-theme]) {
+  --pst-color-link: var(--pst-color-primary);
+  --pst-color-link-hover: var(--pst-color-secondary);
+}
+html:not([data-theme]) .only-dark,
+html:not([data-theme]) .only-dark ~ figcaption {
+  display: none !important;
+}
+
+/* NOTE: @each {...} is like a for-loop
+ * https://sass-lang.com/documentation/at-rules/control/each
+ */
+html[data-theme=light] {
+  color-scheme: light;
+}
+html[data-theme=light] {
+  --pst-color-link: var(--pst-color-primary);
+  --pst-color-link-hover: var(--pst-color-secondary);
+}
+html[data-theme=light] .only-dark,
+html[data-theme=light] .only-dark ~ figcaption {
+  display: none !important;
+}
+html[data-theme=dark] {
+  --pst-color-link: var(--pst-color-primary);
+  --pst-color-link-hover: var(--pst-color-secondary);
+}
+html[data-theme=dark] .only-light,
+html[data-theme=dark] .only-light ~ figcaption {
+  display: none !important;
+}
+html[data-theme=dark] img:not(.only-dark):not(.dark-light) {
+  filter: brightness(0.8) contrast(1.2);
+}
+html[data-theme=dark] .bd-content img:not(.only-dark):not(.dark-light) {
+  background: rgb(255, 255, 255);
+  border-radius: 0.25rem;
+}
+html[data-theme=dark] .MathJax_SVG * {
+  fill: var(--pst-color-text-base);
+}
+
+.pst-color-primary {
+  color: var(--pst-color-primary);
+}
+
+.pst-color-secondary {
+  color: var(--pst-color-secondary);
+}
+
+.pst-color-accent {
+  color: var(--pst-color-accent);
+}
+
+.pst-color-info {
+  color: var(--pst-color-info);
+}
+
+.pst-color-warning {
+  color: var(--pst-color-warning);
+}
+
+.pst-color-success {
+  color: var(--pst-color-success);
+}
+
+.pst-color-attention {
+  color: var(--pst-color-attention);
+}
+
+.pst-color-danger {
+  color: var(--pst-color-danger);
+}
+
+.pst-color-text-base {
+  color: var(--pst-color-text-base);
+}
+
+.pst-color-text-muted {
+  color: var(--pst-color-text-muted);
+}
+
+.pst-color-heading-color {
+  color: var(--pst-color-heading-color);
+}
+
+.pst-color-shadow {
+  color: var(--pst-color-shadow);
+}
+
+.pst-color-border {
+  color: var(--pst-color-border);
+}
+
+.pst-color-border-muted {
+  color: var(--pst-color-border-muted);
+}
+
+.pst-color-inline-code {
+  color: var(--pst-color-inline-code);
+}
+
+.pst-color-inline-code-links {
+  color: var(--pst-color-inline-code-links);
+}
+
+.pst-color-target {
+  color: var(--pst-color-target);
+}
+
+.pst-color-background {
+  color: var(--pst-color-background);
+}
+
+.pst-color-on-background {
+  color: var(--pst-color-on-background);
+}
+
+.pst-color-surface {
+  color: var(--pst-color-surface);
+}
+
+.pst-color-on-surface {
+  color: var(--pst-color-on-surface);
+}
+
+
+
+/* Adjust the height of the navbar */
+.bd-header .bd-header__inner{
+    height: 52px; /* Adjust this value as needed */
+}
+
+.navbar-nav > li > a {
+    line-height: 52px; /* Vertically center the navbar links */
+}
+
+/* Make sure the navbar items align properly */
+.navbar-nav {
+    display: flex;
+}
+
+
+.bd-header .navbar-header-items__start{
+  margin-left: 0rem
+}
+
+.bd-header button.primary-toggle {
+  margin-right: 0rem;
+}
+
+.bd-header ul.navbar-nav .dropdown .dropdown-menu {
+  overflow-y: auto; /* Enable vertical scrolling */
+  max-height: 80vh
+}
+
+.bd-sidebar-primary {
+    width: max-content;  /* Adjust this value to your preference */
+    line-height: 1.4;
+}
+
+.bd-sidebar-secondary {
+    line-height: 1.4;
+}
+
+.toc-entry a.nav-link, .toc-entry a>code {  
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.bd-sidebar-primary code{
+  background-color: transparent;
+  border-color: transparent;
+}
+
+
+.toctree-wrapper li[class^=toctree-l1]>a {
+  font-size: 1.3em
+}
+
+.toctree-wrapper li[class^=toctree-l1] {
+  margin-bottom: 2em;
+}
+
+.toctree-wrapper li[class^=toctree-l]>ul {
+  margin-top: 0.5em;
+  font-size: 0.9em;
+}
+
+*, :after, :before {
+  font-style: normal;
+}
+
+div.deprecated {
+  margin-top: 0.5em;
+  margin-bottom: 2em;
+
+  background-color: var(--pst-color-deprecated-bg);
+  border-color: var(--pst-color-deprecated);
+}
+
+span.versionmodified.deprecated:before {
+  color: var(--pst-color-deprecated);
+}
+
+.admonition-beta.admonition, div.admonition-beta.admonition {
+  border-color: var(--pst-color-warning);
+  margin-top:0.5em;
+  margin-bottom: 2em;
+}
+
+.admonition-beta>.admonition-title, div.admonition-beta>.admonition-title {
+  background-color: var(--pst-color-warning-bg);
+}
+
+dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) dd {
+  margin-left: 1rem;
+}
+
+p {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }

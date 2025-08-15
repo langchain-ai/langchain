@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from operator import itemgetter
-from typing import Any, Callable, List, Mapping, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
@@ -22,7 +23,7 @@ class OpenAIFunction(TypedDict):
 class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
     """A runnable that routes to the selected function."""
 
-    functions: Optional[List[OpenAIFunction]]
+    functions: Optional[list[OpenAIFunction]]
 
     def __init__(
         self,
@@ -33,11 +34,21 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
                 Callable[[dict], Any],
             ],
         ],
-        functions: Optional[List[OpenAIFunction]] = None,
+        functions: Optional[list[OpenAIFunction]] = None,
     ):
+        """Initialize the OpenAIFunctionsRouter.
+
+        Args:
+            runnables: A mapping of function names to runnables.
+            functions: Optional list of functions to check against the runnables.
+        """
         if functions is not None:
-            assert len(functions) == len(runnables)
-            assert all(func["name"] in runnables for func in functions)
+            if len(functions) != len(runnables):
+                msg = "The number of functions does not match the number of runnables."
+                raise ValueError(msg)
+            if not all(func["name"] in runnables for func in functions):
+                msg = "One or more function names are not found in runnables."
+                raise ValueError(msg)
         router = (
             JsonOutputFunctionsParser(args_only=False)
             | {"key": itemgetter("name"), "input": itemgetter("arguments")}

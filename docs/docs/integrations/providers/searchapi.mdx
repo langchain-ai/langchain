@@ -52,12 +52,12 @@ self_ask_with_search.run("Who lived longer: Plato, Socrates, or Aristotle?")
 Follow up: How old was Plato when he died?
 Intermediate answer: eighty
 Follow up: How old was Socrates when he died?
-Intermediate answer: | Socrates | 
-| -------- | 
-| Born | c. 470 BC Deme Alopece, Athens | 
-| Died | 399 BC (aged approximately 71) Athens | 
-| Cause of death | Execution by forced suicide by poisoning | 
-| Spouse(s) | Xanthippe, Myrto | 
+Intermediate answer: | Socrates |
+| -------- |
+| Born | c. 470 BC Deme Alopece, Athens |
+| Died | 399 BC (aged approximately 71) Athens |
+| Cause of death | Execution by forced suicide by poisoning |
+| Spouse(s) | Xanthippe, Myrto |
 
 Follow up: How old was Aristotle when he died?
 Intermediate answer: 62 years
@@ -73,8 +73,8 @@ You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
 
 ```python
-from langchain.agents import load_tools
+from langchain_community.agent_toolkits.load_tools import load_tools
 tools = load_tools(["searchapi"])
 ```
 
-For more information on tools, see [this page](/docs/modules/tools/).
+For more information on tools, see [this page](/docs/how_to/tools_builtin).

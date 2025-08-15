@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable, List, Optional, Protocol, Tuple
+from typing import Any, Callable, Optional, Protocol
 
+from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import Document
-from langchain_core.pydantic_v1 import Extra
+from pydantic import ConfigDict
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 
@@ -14,20 +15,23 @@ from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 class CombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+    def __call__(self, docs: list[Document], **kwargs: Any) -> str:
         """Interface for the combine_docs method."""
 
 
 class AsyncCombineDocsProtocol(Protocol):
     """Interface for the combine_docs method."""
 
-    async def __call__(self, docs: List[Document], **kwargs: Any) -> str:
+    async def __call__(self, docs: list[Document], **kwargs: Any) -> str:
         """Async interface for the combine_docs method."""
 
 
 def split_list_of_docs(
-    docs: List[Document], length_func: Callable, token_max: int, **kwargs: Any
-) -> List[List[Document]]:
+    docs: list[Document],
+    length_func: Callable,
+    token_max: int,
+    **kwargs: Any,
+) -> list[list[Document]]:
     """Split Documents into subsets that each meet a cumulative length constraint.
 
     Args:
@@ -47,10 +51,11 @@ def split_list_of_docs(
         _num_tokens = length_func(_sub_result_docs, **kwargs)
         if _num_tokens > token_max:
             if len(_sub_result_docs) == 1:
-                raise ValueError(
+                msg = (
                     "A single document was longer than the context length,"
                     " we cannot handle this."
                 )
+                raise ValueError(msg)
             new_result_doc_list.append(_sub_result_docs[:-1])
             _sub_result_docs = _sub_result_docs[-1:]
     new_result_doc_list.append(_sub_result_docs)
@@ -58,7 +63,7 @@ def split_list_of_docs(
 
 
 def collapse_docs(
-    docs: List[Document],
+    docs: list[Document],
     combine_document_func: CombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
@@ -90,7 +95,7 @@ def collapse_docs(
 
 
 async def acollapse_docs(
-    docs: List[Document],
+    docs: list[Document],
     combine_document_func: AsyncCombineDocsProtocol,
     **kwargs: Any,
 ) -> Document:
@@ -121,6 +126,15 @@ async def acollapse_docs(
     return Document(page_content=result, metadata=combined_metadata)
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0",
+    message=(
+        "This class is deprecated. Please see the migration guide here for "
+        "a recommended replacement: "
+        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
+    ),
+)
 class ReduceDocumentsChain(BaseCombineDocumentsChain):
     """Combine documents by recursively reducing them.
 
@@ -187,6 +201,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
                 combine_documents_chain=combine_documents_chain,
                 collapse_documents_chain=collapse_documents_chain,
             )
+
     """
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -205,26 +220,24 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     If None, it will keep trying to collapse documents to fit token_max.
     Otherwise, after it reaches the max number, it will throw an error"""
 
-    class Config:
-        """Configuration for this pydantic object."""
-
-        extra = Extra.forbid
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        extra="forbid",
+    )
 
     @property
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
         if self.collapse_documents_chain is not None:
             return self.collapse_documents_chain
-        else:
-            return self.combine_documents_chain
+        return self.combine_documents_chain
 
     def combine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Combine multiple documents recursively.
 
         Args:
@@ -241,19 +254,24 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = self._collapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return self.combine_documents_chain.combine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     async def acombine_docs(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[str, dict]:
+    ) -> tuple[str, dict]:
         """Async combine multiple documents recursively.
 
         Args:
@@ -270,80 +288,93 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             element returned is a dictionary of other keys to return.
         """
         result_docs, extra_return_dict = await self._acollapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return await self.combine_documents_chain.acombine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     def _collapse(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[List[Document], dict]:
+    ) -> tuple[list[Document], dict]:
         result_docs = docs
         length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+        def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return self._collapse_chain.run(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                collapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     async def _acollapse(
         self,
-        docs: List[Document],
+        docs: list[Document],
         token_max: Optional[int] = None,
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Tuple[List[Document], dict]:
+    ) -> tuple[list[Document], dict]:
         result_docs = docs
         length_func = self.combine_documents_chain.prompt_length
         num_tokens = length_func(result_docs, **kwargs)
 
-        async def _collapse_docs_func(docs: List[Document], **kwargs: Any) -> str:
+        async def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return await self._collapse_chain.arun(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = await acollapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                await acollapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     @property

@@ -1,85 +1,27 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING, Any
 
-from typing import Optional, Sequence, Tuple
+from langchain._api import create_importer
 
-from langchain_core.structured_query import (
-    Comparator,
-    Comparison,
-    Operation,
-    Operator,
-    StructuredQuery,
-    Visitor,
-)
+if TYPE_CHECKING:
+    from langchain_community.query_constructors.tencentvectordb import (
+        TencentVectorDBTranslator,
+    )
+
+# Create a way to dynamically look up deprecated imports.
+# Used to consolidate logic for raising deprecation warnings and
+# handling optional imports.
+DEPRECATED_LOOKUP = {
+    "TencentVectorDBTranslator": (
+        "langchain_community.query_constructors.tencentvectordb"
+    ),
+}
+
+_import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)
 
 
-class TencentVectorDBTranslator(Visitor):
-    COMPARATOR_MAP = {
-        Comparator.EQ: "=",
-        Comparator.NE: "!=",
-        Comparator.GT: ">",
-        Comparator.GTE: ">=",
-        Comparator.LT: "<",
-        Comparator.LTE: "<=",
-        Comparator.IN: "in",
-        Comparator.NIN: "not in",
-    }
+def __getattr__(name: str) -> Any:
+    """Look up attributes dynamically."""
+    return _import_attribute(name)
 
-    allowed_comparators: Optional[Sequence[Comparator]] = list(COMPARATOR_MAP.keys())
-    allowed_operators: Optional[Sequence[Operator]] = [
-        Operator.AND,
-        Operator.OR,
-        Operator.NOT,
-    ]
 
-    def __init__(self, meta_keys: Optional[Sequence[str]] = None):
-        self.meta_keys = meta_keys or []
-
-    def visit_operation(self, operation: Operation) -> str:
-        if operation.operator in (Operator.AND, Operator.OR):
-            ret = f" {operation.operator.value} ".join(
-                [arg.accept(self) for arg in operation.arguments]
-            )
-            if operation.operator == Operator.OR:
-                ret = f"({ret})"
-            return ret
-        else:
-            return f"not ({operation.arguments[0].accept(self)})"
-
-    def visit_comparison(self, comparison: Comparison) -> str:
-        if self.meta_keys and comparison.attribute not in self.meta_keys:
-            raise ValueError(
-                f"Expr Filtering found Unsupported attribute: {comparison.attribute}"
-            )
-
-        if comparison.comparator in self.COMPARATOR_MAP:
-            if comparison.comparator in [Comparator.IN, Comparator.NIN]:
-                value = map(
-                    lambda x: f'"{x}"' if isinstance(x, str) else x, comparison.value
-                )
-                return (
-                    f"{comparison.attribute}"
-                    f" {self.COMPARATOR_MAP[comparison.comparator]} "
-                    f"({', '.join(value)})"
-                )
-            if isinstance(comparison.value, str):
-                return (
-                    f"{comparison.attribute} "
-                    f"{self.COMPARATOR_MAP[comparison.comparator]}"
-                    f' "{comparison.value}"'
-                )
-            return (
-                f"{comparison.attribute}"
-                f" {self.COMPARATOR_MAP[comparison.comparator]} "
-                f"{comparison.value}"
-            )
-        else:
-            raise ValueError(f"Unsupported comparator {comparison.comparator}")
-
-    def visit_structured_query(
-        self, structured_query: StructuredQuery
-    ) -> Tuple[str, dict]:
-        if structured_query.filter is None:
-            kwargs = {}
-        else:
-            kwargs = {"expr": structured_query.filter.accept(self)}
-        return structured_query.query, kwargs
+__all__ = ["TencentVectorDBTranslator"]

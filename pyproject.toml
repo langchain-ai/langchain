@@ -1,87 +1,115 @@
-[tool.poetry]
+[project]
+authors = []
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = []
 name = "langchain-monorepo"
 version = "0.0.1"
 description = "LangChain mono-repo"
-authors = []
-license = "MIT"
 readme = "README.md"
+
+[project.urls]
 repository = "https://www.github.com/langchain-ai/langchain"
 
+[dependency-groups]
+lint = ["ruff<0.13,>=0.12.2"]
+dev = [
+    "langchain-core",
+    "langchain-text-splitters",
+    "langchain-community",
+    "langchain",
+    "langchain-openai",
+    "ipykernel<7.0.0,>=6.29.2",
+]
+codespell = [
+    "codespell<3.0.0,>=2.2.0",
+    "tomli>=2.2.1",
+]
+typing = []
+test = [
+    "langchain-experimental @ git+https://github.com/langchain-ai/langchain-experimental.git#subdirectory=libs/experimental",
+    "langchain-anthropic",
+    "langchain-aws @ git+https://github.com/langchain-ai/langchain-aws.git#subdirectory=libs/aws",
+    "langchain-chroma",
+    "langchain-fireworks",
+    "langchain-google-vertexai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/vertexai",
+    "langchain-google-genai @ git+https://github.com/langchain-ai/langchain-google.git#subdirectory=libs/genai",
+    "langchain-groq",
+    "langchain-mistralai",
+    "langchain-tavily",
+    "langchain-together @ git+https://github.com/langchain-ai/langchain-together.git#subdirectory=libs/together",
+    "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
+    "langgraph",
+    "msgpack",
+    "jupyter<2.0.0,>=1.1.1",
+    "click<9.0.0,>=8.1.7",
+    "aiofiles<25.0.0,>=24.1.0",
+    "faiss-cpu<2.0.0,>=1.7.4",
+    "grandalf<1.0,>=0.8",
+    "lark<2.0.0,>=1.1.9",
+    "pandas<3,>=2",
+    "rank-bm25<1.0.0,>=0.2.2",
+    "tabulate<1.0.0,>=0.9.0",
+    "unstructured[md]<1.0.0,>=0.16.11; python_version < \"3.13\"",
+    "wikipedia<2.0.0,>=1.4.0",
+    "pypdf<6.0.0,>=5.0.0",
+    "vcrpy<7.0.0,>=6.0.1",
+    "linkchecker>=10.5.0",
+]
+docs = [
+    "toml>=0.10.2",
+    "autodoc-pydantic>=2,<3",
+    "sphinx>=6,<8",
+    "myst-parser>=3",
+    "sphinx-autobuild>=2024",
+    "pydata-sphinx-theme>=0.15",
+    "myst-nb>=1.1.1",
+    "pyyaml",
+    "sphinx-design",
+    "sphinx-copybutton",
+    "beautifulsoup4",
+    "sphinxcontrib-googleanalytics",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-black = "^24.2.0"
+[tool.uv.sources]
+langchain-core = { path = "./libs/core", editable = true }
+langchain-text-splitters = { path = "./libs/text-splitters", editable = true }
+langchain-tests = { path = "./libs/standard-tests", editable = true }
+langchain = { path = "./libs/langchain", editable = true }
+langchain-openai = { path = "./libs/partners/openai", editable = true }
+langchain-anthropic = { path = "./libs/partners/anthropic", editable = true }
+langchain-chroma = { path = "./libs/partners/chroma", editable = true }
+langchain-fireworks = { path = "./libs/partners/fireworks", editable = true }
+langchain-groq = { path = "./libs/partners/groq", editable = true }
+langchain-mistralai = { path = "./libs/partners/mistralai", editable = true }
 
-[tool.poetry.group.docs.dependencies]
-langchain = { path = "libs/langchain/", develop = true }
-autodoc_pydantic = "^1.8.0"
-myst_parser = "^0.18.1"
-nbsphinx = "^0.8.9"
-sphinx = "^4.5.0"
-sphinx-autobuild = "^2021.3.14"
-sphinx_book_theme = "^0.3.3"
-sphinx_rtd_theme = "^1.0.0"
-sphinx-typlog-theme = "^0.8.0"
-sphinx-panels = "^0.6.0"
-toml = "^0.10.2"
-myst-nb = "^0.17.1"
-linkchecker = "^10.2.1"
-sphinx-copybutton = "^0.5.1"
-nbdoc = "^0.0.82"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-langchain-core = { path = "libs/core/", develop = true }
-langchain-text-splitters = { path = "libs/text-splitters", develop = true }
-langchain-community = { path = "libs/community/", develop = true }
-langchain = { path = "libs/langchain/", develop = true }
-langchain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-
-[tool.poetry.group.dev.dependencies]
-langchain-core = { path = "libs/core/", develop = true }
-langchain-text-splitters = { path = "libs/text-splitters", develop = true }
-langchain-community = { path = "libs/community/", develop = true }
-langchain = { path = "libs/langchain/", develop = true }
-langchain-experimental = { path = "libs/experimental/", develop = true }
-langchain-openai = { path = "libs/partners/openai", develop = true }
-ipykernel = "^6.29.2"
-
-[tool.poetry.group.test.dependencies]
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.typing.dependencies]
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig'
+skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig,*cache*,*.msgpack.zlib,*.csv,*.lock,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.ico,*.webp,*.tiff,*.mp4,*.mp3,*.wav,*.avi,*.mov,*.zip,*.tar,*.gz,*.rar,*.7z,*.exe,*.dll,*.so,*.dylib,*.bin,*.dat,*.db,*.sqlite'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
 # aapply - async apply
 # unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin'
+ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann'
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
-extend-exclude = [
-    "docs/docs/expression_language/why.ipynb"  # TODO: look into why linter errors
-]
+
+[tool.ruff.lint]
+select = ["D"] # global select for pydocstyle
+pydocstyle = { convention = "google" }
 
 [tool.ruff.lint.per-file-ignores]
 "**/{cookbook,docs}/*" = [
-    "E402",  # allow imports to appear anywhere in docs
-    "F401",  # allow "imported but unused" example code
-    "F811",  # allow re-importing the same module, so that cells can stay independent
-    "F841",  # allow assignments to variables that are never read -- it's example code
+    "E402", # allow imports to appear anywhere in docs
+    "F401", # allow "imported but unused" example code
+    "F811", # allow re-importing the same module, so that cells can stay independent
+    "F841", # allow assignments to variables that are never read -- it's example code
+
 ]
-
-# These files were failing the listed rules at the time ruff was adopted for notebooks.
-# Don't require them to change at once, though we should look into them eventually.
-"cookbook/gymnasium_agent_simulation.ipynb" = ["F821"]
-"docs/docs/integrations/document_loaders/tensorflow_datasets.ipynb" = ["F821"]
-
+"!libs/langchain/langchain/model_laboratory.py" = ["D"]

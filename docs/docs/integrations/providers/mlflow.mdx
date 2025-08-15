@@ -1,12 +1,12 @@
-# MLflow Deployments for LLMs
+# MLflow AI Gateway for LLMs
 
->[The MLflow Deployments for LLMs](https://www.mlflow.org/docs/latest/llms/deployments/index.html) is a powerful tool designed to streamline the usage and management of various large
+>[The MLflow AI Gateway for LLMs](https://www.mlflow.org/docs/latest/llms/deployments/index.html) is a powerful tool designed to streamline the usage and management of various large
 > language model (LLM) providers, such as OpenAI and Anthropic, within an organization. It offers a high-level interface
 > that simplifies the interaction with these services by providing a unified endpoint to handle specific LLM related requests.
 
 ## Installation and Setup
 
-Install `mlflow` with MLflow Deployments dependencies:
+Install `mlflow` with MLflow GenAI dependencies:
 
 ```sh
 pip install 'mlflow[genai]'
@@ -39,10 +39,10 @@ endpoints:
         openai_api_key: $OPENAI_API_KEY
 ```
 
-Start the deployments server:
+Start the gateway server:
 
 ```sh
-mlflow deployments start-server --config-path /path/to/config.yaml
+mlflow gateway start --config-path /path/to/config.yaml
 ```
 
 ## Example provided by `MLflow`

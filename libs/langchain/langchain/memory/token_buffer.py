@@ -1,13 +1,27 @@
-from typing import Any, Dict, List
+from typing import Any
 
+from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.messages import BaseMessage, get_buffer_string
+from typing_extensions import override
 
 from langchain.memory.chat_memory import BaseChatMemory
 
 
+@deprecated(
+    since="0.3.1",
+    removal="1.0.0",
+    message=(
+        "Please see the migration guide at: "
+        "https://python.langchain.com/docs/versions/migrating_memory/"
+    ),
+)
 class ConversationTokenBufferMemory(BaseChatMemory):
-    """Conversation chat memory with token limit."""
+    """Conversation chat memory with token limit.
+
+    Keeps only the most recent messages in the conversation under the constraint
+    that the total number of tokens in the conversation does not exceed a certain limit.
+    """
 
     human_prefix: str = "Human"
     ai_prefix: str = "AI"
@@ -30,23 +44,24 @@ class ConversationTokenBufferMemory(BaseChatMemory):
         )
 
     @property
-    def buffer_as_messages(self) -> List[BaseMessage]:
+    def buffer_as_messages(self) -> list[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is True."""
         return self.chat_memory.messages
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer. Pruned."""
         super().save_context(inputs, outputs)
         # Prune buffer if it exceeds max token limit

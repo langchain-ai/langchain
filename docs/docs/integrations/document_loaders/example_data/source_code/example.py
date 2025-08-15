@@ -3,7 +3,7 @@ class MyClass:
         self.name = name
 
     def greet(self):
-        print(f"Hello, {self.name}!")  # noqa: T201
+        print(f"Hello, {self.name}!")
 
 
 def main():

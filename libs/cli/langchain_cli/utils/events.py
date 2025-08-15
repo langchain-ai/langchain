@@ -1,16 +1,28 @@
+"""Events utilities."""
+
 import http.client
 import json
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, Optional, TypedDict
+
+import typer
 
 WRITE_KEY = "310apTK0HUFl4AOv"
 
 
 class EventDict(TypedDict):
+    """Event data structure for analytics tracking.
+
+    Attributes:
+        event: The name of the event.
+        properties: Optional dictionary of event properties.
+    """
+
     event: str
-    properties: Optional[Dict[str, Any]]
+    properties: Optional[dict[str, Any]]
 
 
-def create_events(events: List[EventDict]) -> Optional[Any]:
+def create_events(events: list[EventDict]) -> Optional[Any]:
+    """Create events."""
     try:
         data = {
             "events": [
@@ -20,7 +32,7 @@ def create_events(events: List[EventDict]) -> Optional[Any]:
                     "properties": event.get("properties"),
                 }
                 for event in events
-            ]
+            ],
         }
 
         conn = http.client.HTTPSConnection("app.firstpartyhq.com")
@@ -37,5 +49,6 @@ def create_events(events: List[EventDict]) -> Optional[Any]:
         res = conn.getresponse()
 
         return json.loads(res.read())
-    except Exception:
+    except (http.client.HTTPException, OSError, json.JSONDecodeError) as exc:
+        typer.echo(f"Error sending events: {exc}")
         return None

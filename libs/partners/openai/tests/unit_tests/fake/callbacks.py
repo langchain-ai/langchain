@@ -1,11 +1,12 @@
 """A fake callback handler for testing purposes."""
+
 from itertools import chain
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackHandler
 from langchain_core.messages import BaseMessage
-from langchain_core.pydantic_v1 import BaseModel
+from pydantic import BaseModel
 
 
 class BaseFakeCallbackHandler(BaseModel):
@@ -14,7 +15,7 @@ class BaseFakeCallbackHandler(BaseModel):
     starts: int = 0
     ends: int = 0
     errors: int = 0
-    errors_args: List[Any] = []
+    errors_args: list[Any] = []
     text: int = 0
     ignore_llm_: bool = False
     ignore_chain_: bool = False
@@ -22,7 +23,7 @@ class BaseFakeCallbackHandler(BaseModel):
     ignore_retriever_: bool = False
     ignore_chat_model_: bool = False
 
-    # to allow for similar callback handlers that are not technicall equal
+    # to allow for similar callback handlers that are not technically equal
     fake_id: Union[str, None] = None
 
     # add finer-grained counters for easier debugging of failing tests
@@ -136,134 +137,66 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         """Whether to ignore retriever callbacks."""
         return self.ignore_retriever_
 
-    def on_llm_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_llm_start(self, *args: Any, **kwargs: Any) -> Any:
         self.on_llm_start_common()
 
-    def on_llm_new_token(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_llm_new_token(self, *args: Any, **kwargs: Any) -> Any:
         self.on_llm_new_token_common()
 
-    def on_llm_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_llm_end(self, *args: Any, **kwargs: Any) -> Any:
         self.on_llm_end_common()
 
-    def on_llm_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_llm_error(self, *args: Any, **kwargs: Any) -> Any:
         self.on_llm_error_common(*args, **kwargs)
 
-    def on_retry(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_retry(self, *args: Any, **kwargs: Any) -> Any:
         self.on_retry_common()
 
-    def on_chain_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_chain_start(self, *args: Any, **kwargs: Any) -> Any:
         self.on_chain_start_common()
 
-    def on_chain_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_chain_end(self, *args: Any, **kwargs: Any) -> Any:
         self.on_chain_end_common()
 
-    def on_chain_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_chain_error(self, *args: Any, **kwargs: Any) -> Any:
         self.on_chain_error_common()
 
-    def on_tool_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_tool_start(self, *args: Any, **kwargs: Any) -> Any:
         self.on_tool_start_common()
 
-    def on_tool_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_tool_end(self, *args: Any, **kwargs: Any) -> Any:
         self.on_tool_end_common()
 
-    def on_tool_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_tool_error(self, *args: Any, **kwargs: Any) -> Any:
         self.on_tool_error_common()
 
-    def on_agent_action(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_agent_action(self, *args: Any, **kwargs: Any) -> Any:
         self.on_agent_action_common()
 
-    def on_agent_finish(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_agent_finish(self, *args: Any, **kwargs: Any) -> Any:
         self.on_agent_finish_common()
 
-    def on_text(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_text(self, *args: Any, **kwargs: Any) -> Any:
         self.on_text_common()
 
-    def on_retriever_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_retriever_start(self, *args: Any, **kwargs: Any) -> Any:
         self.on_retriever_start_common()
 
-    def on_retriever_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_retriever_end(self, *args: Any, **kwargs: Any) -> Any:
         self.on_retriever_end_common()
 
-    def on_retriever_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    def on_retriever_error(self, *args: Any, **kwargs: Any) -> Any:
         self.on_retriever_error_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":
+    def __deepcopy__(self, memo: dict) -> "FakeCallbackHandler":  # type: ignore[override]
         return self
 
 
 class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -291,103 +224,47 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         """Whether to ignore agent callbacks."""
         return self.ignore_agent_
 
-    async def on_retry(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
+    async def on_retry(self, *args: Any, **kwargs: Any) -> Any:
         self.on_retry_common()
 
-    async def on_llm_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_llm_start(self, *args: Any, **kwargs: Any) -> None:
         self.on_llm_start_common()
 
-    async def on_llm_new_token(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_llm_new_token(self, *args: Any, **kwargs: Any) -> None:
         self.on_llm_new_token_common()
 
-    async def on_llm_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_llm_end(self, *args: Any, **kwargs: Any) -> None:
         self.on_llm_end_common()
 
-    async def on_llm_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_llm_error(self, *args: Any, **kwargs: Any) -> None:
         self.on_llm_error_common(*args, **kwargs)
 
-    async def on_chain_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_chain_start(self, *args: Any, **kwargs: Any) -> None:
         self.on_chain_start_common()
 
-    async def on_chain_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_chain_end(self, *args: Any, **kwargs: Any) -> None:
         self.on_chain_end_common()
 
-    async def on_chain_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_chain_error(self, *args: Any, **kwargs: Any) -> None:
         self.on_chain_error_common()
 
-    async def on_tool_start(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_tool_start(self, *args: Any, **kwargs: Any) -> None:
         self.on_tool_start_common()
 
-    async def on_tool_end(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_tool_end(self, *args: Any, **kwargs: Any) -> None:
         self.on_tool_end_common()
 
-    async def on_tool_error(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_tool_error(self, *args: Any, **kwargs: Any) -> None:
         self.on_tool_error_common()
 
-    async def on_agent_action(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_agent_action(self, *args: Any, **kwargs: Any) -> None:
         self.on_agent_action_common()
 
-    async def on_agent_finish(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_agent_finish(self, *args: Any, **kwargs: Any) -> None:
         self.on_agent_finish_common()
 
-    async def on_text(
-        self,
-        *args: Any,
-        **kwargs: Any,
-    ) -> None:
+    async def on_text(self, *args: Any, **kwargs: Any) -> None:
         self.on_text_common()
 
-    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":
+    def __deepcopy__(self, memo: dict) -> "FakeAsyncCallbackHandler":  # type: ignore[override]
         return self

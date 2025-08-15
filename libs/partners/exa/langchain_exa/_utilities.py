@@ -1,11 +1,10 @@
-import os
-from typing import Dict
+import os  # type: ignore[import-not-found]
 
-from exa_py import Exa  # type: ignore
+from exa_py import Exa
 from langchain_core.utils import convert_to_secret_str
 
 
-def initialize_client(values: Dict) -> Dict:
+def initialize_client(values: dict) -> dict:
     """Initialize the client."""
     exa_api_key = values.get("exa_api_key") or os.environ.get("EXA_API_KEY") or ""
     values["exa_api_key"] = convert_to_secret_str(exa_api_key)

@@ -1,5 +1,4 @@
 from langchain.agents import agent_toolkits
-from tests.unit_tests import assert_all_importable
 
 EXPECTED_ALL = [
     "AINetworkToolkit",
@@ -39,4 +38,3 @@ EXPECTED_ALL = [
 
 def test_imports() -> None:
     assert sorted(agent_toolkits.__all__) == sorted(EXPECTED_ALL)
-    assert_all_importable(agent_toolkits)

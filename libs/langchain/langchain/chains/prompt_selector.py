@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Tuple
+from typing import Callable
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.prompts import BasePromptTemplate
-from langchain_core.pydantic_v1 import BaseModel, Field
+from pydantic import BaseModel, Field
 
 
 class BasePromptSelector(BaseModel, ABC):
@@ -21,8 +21,8 @@ class ConditionalPromptSelector(BasePromptSelector):
 
     default_prompt: BasePromptTemplate
     """Default prompt to use if no conditionals match."""
-    conditionals: List[
-        Tuple[Callable[[BaseLanguageModel], bool], BasePromptTemplate]
+    conditionals: list[
+        tuple[Callable[[BaseLanguageModel], bool], BasePromptTemplate]
     ] = Field(default_factory=list)
     """List of conditionals and prompts to use if the conditionals match."""
 

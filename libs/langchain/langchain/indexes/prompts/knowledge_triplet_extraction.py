@@ -1,7 +1,6 @@
-# flake8: noqa
-
-from langchain_community.graphs.networkx_graph import KG_TRIPLE_DELIMITER
 from langchain_core.prompts.prompt import PromptTemplate
+
+KG_TRIPLE_DELIMITER = "<|>"
 
 _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "You are a networked intelligence helping a human track knowledge triples"
@@ -24,7 +23,7 @@ _DEFAULT_KNOWLEDGE_TRIPLE_EXTRACTION_TEMPLATE = (
     "END OF EXAMPLE\n\n"
     "EXAMPLE\n"
     "Oh huh. I know Descartes likes to drive antique scooters and play the mandolin.\n"
-    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"
+    f"Output: (Descartes, likes to drive, antique scooters){KG_TRIPLE_DELIMITER}(Descartes, plays, mandolin)\n"  # noqa: E501
     "END OF EXAMPLE\n\n"
     "EXAMPLE\n"
     "{text}"

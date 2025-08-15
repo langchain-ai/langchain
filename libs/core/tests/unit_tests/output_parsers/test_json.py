@@ -1,14 +1,17 @@
 import json
-from typing import Any, AsyncIterator, Iterator, Tuple
+from collections.abc import AsyncIterator, Iterator
+from typing import Any
 
 import pytest
+from pydantic import BaseModel, Field
 
+from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
 )
-from langchain_core.pydantic_v1 import BaseModel
 from langchain_core.utils.function_calling import convert_to_openai_function
 from langchain_core.utils.json import parse_json_markdown, parse_partial_json
+from tests.unit_tests.pydantic_utils import _schema
 
 GOOD_JSON = """```json
 {
@@ -133,7 +136,7 @@ WITHOUT_END_BRACKET = """Here is a response formatted as schema:
 ```json
 {
   "foo": "bar"
-  
+
 
 """
 
@@ -143,7 +146,7 @@ WITH_END_BRACKET = """Here is a response formatted as schema:
 {
   "foo": "bar"
 }
-  
+
 """
 
 WITH_END_TICK = """Here is a response formatted as schema:
@@ -152,7 +155,7 @@ WITH_END_TICK = """Here is a response formatted as schema:
 {
   "foo": "bar"
 }
-``` 
+```
 """
 
 WITH_END_TEXT = """Here is a response formatted as schema:
@@ -161,8 +164,8 @@ WITH_END_TEXT = """Here is a response formatted as schema:
 {
   "foo": "bar"
 
-``` 
-This should do the trick 
+```
+This should do the trick
 """
 
 TEST_CASES = [
@@ -239,11 +242,12 @@ TEST_CASES_PARTIAL = [
     ('{"foo": "bar", "bar":', '{"foo": "bar"}'),
     ('{"foo": "bar", "bar"', '{"foo": "bar"}'),
     ('{"foo": "bar", ', '{"foo": "bar"}'),
+    ('{"foo":"bar\\', '{"foo": "bar"}'),
 ]
 
 
 @pytest.mark.parametrize("json_strings", TEST_CASES_PARTIAL)
-def test_parse_partial_json(json_strings: Tuple[str, str]) -> None:
+def test_parse_partial_json(json_strings: tuple[str, str]) -> None:
     case, expected = json_strings
     parsed = parse_partial_json(case)
     assert parsed == json.loads(expected)
@@ -492,8 +496,7 @@ EXPECTED_STREAMED_JSON_DIFF = [
 
 def test_partial_text_json_output_parser() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser()
 
@@ -502,8 +505,7 @@ def test_partial_text_json_output_parser() -> None:
 
 def test_partial_text_json_output_parser_diff() -> None:
     def input_iter(_: Any) -> Iterator[str]:
-        for token in STREAMED_TOKENS:
-            yield token
+        yield from STREAMED_TOKENS
 
     chain = input_iter | SimpleJsonOutputParser(diff=True)
 
@@ -532,7 +534,7 @@ async def test_partial_text_json_output_parser_diff_async() -> None:
 
 def test_raises_error() -> None:
     parser = SimpleJsonOutputParser()
-    with pytest.raises(Exception):
+    with pytest.raises(OutputParserException):
         parser.invoke("hi")
 
 
@@ -575,8 +577,7 @@ def test_partial_text_json_output_parser_with_json_code_block() -> None:
     """Test json parser works correctly when the response contains a json code-block."""
 
     def input_iter(_: Any) -> Iterator[str]:
-        for token in TOKENS_WITH_JSON_CODE_BLOCK:
-            yield token
+        yield from TOKENS_WITH_JSON_CODE_BLOCK
 
     chain = input_iter | SimpleJsonOutputParser()
 
@@ -596,10 +597,23 @@ def test_base_model_schema_consistency() -> None:
         setup: str
         punchline: str
 
-    initial_joke_schema = {k: v for k, v in Joke.schema().items()}
+    initial_joke_schema = dict(_schema(Joke).items())
     SimpleJsonOutputParser(pydantic_object=Joke)
     openai_func = convert_to_openai_function(Joke)
-    retrieved_joke_schema = {k: v for k, v in Joke.schema().items()}
+    retrieved_joke_schema = dict(_schema(Joke).items())
 
     assert initial_joke_schema == retrieved_joke_schema
     assert openai_func.get("name", None) is not None
+
+
+def test_unicode_handling() -> None:
+    """Tests if the JsonOutputParser is able to process unicodes."""
+
+    class Sample(BaseModel):
+        title: str = Field(description="科学文章的标题")
+
+    parser = SimpleJsonOutputParser(pydantic_object=Sample)
+    format_instructions = parser.get_format_instructions()
+    assert "科学文章的标题" in format_instructions, (
+        "Unicode characters should not be escaped"
+    )

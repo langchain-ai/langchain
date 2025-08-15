@@ -1,71 +1,90 @@
-[tool.poetry]
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "typer[all]<1.0.0,>=0.9.0",
+    "gitpython<4,>=3",
+    "langserve[all]>=0.0.51",
+    "uvicorn<1.0,>=0.23",
+    "tomlkit>=0.12",
+    "gritql<1.0.0,>=0.2.0",
+]
 name = "langchain-cli"
-version = "0.0.22rc1"
+version = "0.0.36"
 description = "CLI for interacting with LangChain"
-authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
 
-[tool.poetry.urls]
+[project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/cli"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-cli%3D%3D0%22&expanded=true"
+repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-typer = { extras = ["all"], version = "^0.9.0" }
-gitpython = "^3.1.40"
-langserve = { extras = ["all"], version = ">=0.0.51" }
-uvicorn = "^0.23.2"
-tomlkit = "^0.12.2"
-libcst = { version = "^1.3.1", python = "^3.9" }
-
-[tool.poetry.scripts]
+[project.scripts]
 langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
-[tool.poetry.group.dev.dependencies]
-poethepoet = "^0.24.1"
-pytest = "^7.4.2"
-pytest-watch = "^4.2.0"
+[dependency-groups]
+dev = ["pytest<8.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<2.0.0,>=1.13.0"]
+test = ["langchain-core", "langchain"]
+typing = ["langchain"]
+test_integration = []
 
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain = { path = "../langchain", editable = true }
 
-[tool.poetry.group.test.dependencies]
-
-[tool.poetry.group.typing.dependencies]
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.extras]
-# For langserve
-serve = []
-
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
+[tool.ruff]
+target-version = "py39"
+exclude = [
+    "langchain_cli/integration_template",
+    "langchain_cli/package_template",
+    "langchain_cli/project_template",
 ]
 
-[tool.poe.tasks]
-test = "poetry run pytest tests"
-watch = "poetry run ptw"
-version = "poetry version --short"
-bump = ["_bump_1", "_bump_2"]
-lint = ["_lint", "_check_formatting"]
-format = ["_lint_fix", "_format"]
+[tool.ruff.lint]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
 
-_bump_2.shell = """sed -i "" "/^__version__ =/c\\ \n__version__ = \\"$version\\"\n" langchain_cli/cli.py"""
-_bump_2.uses = { version = "version" }
+    # TODO rules
+    "ANN401",
+    "BLE",
+    "D1",
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
 
-_bump_1 = "poetry version patch"
-_check_formatting = "poetry run ruff format . --diff"
-_lint = "poetry run ruff ."
-_format = "poetry run ruff format ."
-_lint_fix = "poetry run ruff . --fix"
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1", "S", "SLF",]
+"scripts/**" = [ "INP", "S",]
+
+[tool.mypy]
+exclude = [
+    "langchain_cli/integration_template",
+    "langchain_cli/package_template",
+]

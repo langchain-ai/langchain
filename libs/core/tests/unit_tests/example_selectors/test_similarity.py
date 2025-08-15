@@ -1,4 +1,7 @@
-from typing import Any, Iterable, List, Optional, cast
+from collections.abc import Iterable
+from typing import Any, Optional
+
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
@@ -11,8 +14,8 @@ from langchain_core.vectorstores import VectorStore
 
 class DummyVectorStore(VectorStore):
     def __init__(self, init_arg: Optional[str] = None):
-        self.texts: List[str] = []
-        self.metadatas: List[dict] = []
+        self.texts: list[str] = []
+        self.metadatas: list[dict] = []
         self._embeddings: Optional[Embeddings] = None
         self.init_arg = init_arg
 
@@ -20,26 +23,29 @@ class DummyVectorStore(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self._embeddings
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         self.texts.extend(texts)
         if metadatas:
             self.metadatas.extend(metadatas)
         return ["dummy_id"]
 
+    @override
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [
             Document(
                 page_content=query, metadata={"query": query, "k": k, "other": "other"}
             )
         ] * k
 
+    @override
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -47,7 +53,7 @@ class DummyVectorStore(VectorStore):
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         return [
             Document(
                 page_content=query,
@@ -58,9 +64,9 @@ class DummyVectorStore(VectorStore):
     @classmethod
     def from_texts(
         cls,
-        texts: List[str],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         **kwargs: Any,
     ) -> "DummyVectorStore":
         store = DummyVectorStore(**kwargs)
@@ -126,7 +132,7 @@ def test_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -152,7 +158,7 @@ async def test_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -206,7 +212,7 @@ def test_mmr_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -234,7 +240,7 @@ async def test_mmr_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
