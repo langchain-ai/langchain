@@ -1,15 +1,16 @@
 """Internal tracers used for stream_log and astream events implementations."""
 
-import abc
+import typing
 from collections.abc import AsyncIterator, Iterator
-from typing import TypeVar
 from uuid import UUID
 
-T = TypeVar("T")
+T = typing.TypeVar("T")
 
 
-class _StreamingCallbackHandler(abc.ABC):
-    """For internal use.
+# THIS IS USED IN LANGGRAPH.
+@typing.runtime_checkable
+class _StreamingCallbackHandler(typing.Protocol[T]):
+    """Types for streaming callback handlers.
 
     This is a common mixin that the callback handlers
     for both astream events and astream log inherit from.
@@ -18,13 +19,11 @@ class _StreamingCallbackHandler(abc.ABC):
     to produce callbacks for intermediate results.
     """
 
-    @abc.abstractmethod
     def tap_output_aiter(
         self, run_id: UUID, output: AsyncIterator[T]
     ) -> AsyncIterator[T]:
         """Used for internal astream_log and astream events implementations."""
 
-    @abc.abstractmethod
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
         """Used for internal astream_log and astream events implementations."""
 
