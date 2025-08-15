@@ -1040,6 +1040,7 @@ def test_tool_message_content() -> None:
     ToolMessage(["foo"], tool_call_id="1")
     ToolMessage([{"foo": "bar"}], tool_call_id="1")
 
+    # Ignoring since we're testing that tuples get converted to lists in `coerce_args`
     assert ToolMessage(("a", "b", "c"), tool_call_id="1").content == ["a", "b", "c"]  # type: ignore[call-overload]
     assert ToolMessage(5, tool_call_id="1").content == "5"  # type: ignore[call-overload]
     assert ToolMessage(5.1, tool_call_id="1").content == "5.1"  # type: ignore[call-overload]
