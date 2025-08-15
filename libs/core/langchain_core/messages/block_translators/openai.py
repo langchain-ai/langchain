@@ -340,7 +340,4 @@ def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]
     """Derive standard content blocks from a message chunk with OpenAI content."""
     if isinstance(message.content, str):
         return _convert_to_v1_from_chat_completions_chunk(message)
-        # TODO: for block in blocks: assign ID
-    # TODO: for block in blocks: assign ID
-    # handle splitting apart built-in tools
     return _convert_to_v1_from_responses(message)
