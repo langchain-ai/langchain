@@ -26,18 +26,6 @@ from langchain_core.utils.usage import _dict_int_op
 
 logger = logging.getLogger(__name__)
 
-_LC_AUTO_PREFIX = "lc_"
-"""LangChain auto-generated ID prefix for messages and content blocks."""
-
-_LC_ID_PREFIX = f"{_LC_AUTO_PREFIX}run-"
-"""Internal tracing/callback system identifier.
-
-Used for:
-- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
-  gets a unique run_id (UUID)
-- Enables tracking parent-child relationships between operations
-"""
-
 
 class InputTokenDetails(TypedDict, total=False):
     """Breakdown of input token counts.
@@ -523,15 +511,15 @@ def add_ai_message_chunks(
     for id_ in candidates:
         if (
             id_
-            and not id_.startswith(_LC_ID_PREFIX)
-            and not id_.startswith(_LC_AUTO_PREFIX)
+            and not id_.startswith(types.LC_ID_PREFIX)
+            and not id_.startswith(types.LC_AUTO_PREFIX)
         ):
             chunk_id = id_
             break
     else:
         # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_ and id_.startswith(_LC_ID_PREFIX):
+            if id_ and id_.startswith(types.LC_ID_PREFIX):
                 chunk_id = id_
                 break
         else:

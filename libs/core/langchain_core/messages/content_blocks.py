@@ -135,6 +135,18 @@ from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
 
+LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
+
+LC_ID_PREFIX = f"{LC_AUTO_PREFIX}run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
+
 
 def _ensure_id(id_val: Optional[str]) -> str:
     """Ensure the ID is a valid string, generating a new UUID if not provided.
@@ -148,7 +160,7 @@ def _ensure_id(id_val: Optional[str]) -> str:
     Returns:
         A string ID, either the validated provided value or a newly generated UUID4.
     """
-    return id_val or str(f"lc_{uuid4()}")
+    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")
 
 
 class Citation(TypedDict):
