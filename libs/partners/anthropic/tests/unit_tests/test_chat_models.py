@@ -1172,3 +1172,19 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+
+
+def test_anthropic_model_params() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    ls_params = llm._get_ls_params()
+    assert ls_params == {
+        "ls_provider": "anthropic",
+        "ls_model_type": "chat",
+        "ls_model_name": "claude-3-5-haiku-latest",
+        "ls_max_tokens": 1024,
+        "ls_temperature": None,
+    }
+
+    ls_params = llm._get_ls_params(model="claude-3-5-sonnet-20241022")
+    assert ls_params["ls_model_name"] == "claude-3-5-sonnet-20241022"
