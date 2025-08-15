@@ -201,7 +201,7 @@ class AIMessage(BaseMessage):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             # If there are tool calls in content_blocks, but not in tool_calls, add them
             content_tool_calls = [

@@ -63,7 +63,7 @@ class HumanMessage(BaseMessage):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             super().__init__(
                 content=cast("Union[str, list[Union[str, dict]]]", content_blocks),

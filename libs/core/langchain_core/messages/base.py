@@ -83,7 +83,7 @@ class BaseMessage(Serializable):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             super().__init__(content=content_blocks, **kwargs)
         else:
@@ -108,17 +108,18 @@ class BaseMessage(Serializable):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return the content as a list of standard ContentBlocks.
+        """Return the content as a list of standard ``ContentBlock``s.
 
         To use this property, the corresponding chat model must support
-        ``message_version="v1"`` or higher:
+        ``message_version='v1'`` or higher:
 
         .. code-block:: python
 
             from langchain.chat_models import init_chat_model
             llm = init_chat_model("...", message_version="v1")
 
-        otherwise, does best-effort parsing to standard types.
+        Otherwise, does best-effort parsing to standard types.
+
         """
         blocks: list[types.ContentBlock] = []
         content = (
