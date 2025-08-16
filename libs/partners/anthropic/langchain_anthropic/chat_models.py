@@ -369,7 +369,7 @@ def _format_messages(
                                 args = tool_input
                             elif "partial_json" in block:
                                 try:
-                                    args = json.loads(block.get("partial_json", "{}"))
+                                    args = json.loads(block["partial_json"] or "{}")
                                 except json.JSONDecodeError:
                                     args = {}
                             else:
