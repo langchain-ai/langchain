@@ -58,16 +58,13 @@ class JsonValidityEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
         Args:
-            prediction (str): The prediction string to evaluate.
-            input (str, optional): Not used in this evaluator. Defaults to None.
-            reference (str, optional): Not used in this evaluator. Defaults to None.
+            prediction: The prediction string to evaluate.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
             dict: A dictionary containing the evaluation score. The score is 1 if
@@ -84,8 +81,10 @@ class JsonValidityEvaluator(StringEvaluator):
 
 
 class JsonEqualityEvaluator(StringEvaluator):
-    """Evaluate whether the prediction is equal to the reference after
-        parsing both as JSON.
+    """Json Equality Evaluator.
+
+    Evaluate whether the prediction is equal to the reference after
+    parsing both as JSON.
 
     This evaluator checks if the prediction, after parsing as JSON, is equal
         to the reference,
@@ -151,19 +150,18 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
         Args:
-            prediction (str): The prediction string to evaluate.
-            input (str, optional): Not used in this evaluator.
-            reference (str): The reference string to compare against.
+            prediction: The prediction string to evaluate.
+            reference: The reference string to compare against.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: A dictionary containing the evaluation score.
+            A dictionary containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
         label = self._parse_json(cast("str", reference))

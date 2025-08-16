@@ -21,6 +21,7 @@ def _create_tool_message(
     Args:
         agent_action: the tool invocation request from the agent.
         observation: the result of the tool invocation.
+
     Returns:
         ToolMessage that corresponds to the original tool invocation.
 
