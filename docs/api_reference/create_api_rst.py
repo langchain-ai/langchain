@@ -97,7 +97,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
-                kind: ClassKind = "TypedDict"
+                kind = "TypedDict"
             elif (
                 issubclass(type_, Runnable)
                 and issubclass(type_, BaseModel)
@@ -189,7 +189,7 @@ def _load_package_modules(
         if isinstance(package_directory, str)
         else package_directory
     )
-    modules_by_namespace = {}
+    modules_by_namespace: Dict[str, ModuleMembers] = {}
 
     # Get the high level package name
     package_name = package_path.name
@@ -283,7 +283,7 @@ def _construct_doc(
 .. toctree::
     :hidden:
     :maxdepth: 2
-    
+
 """
     index_autosummary = """
 """
@@ -365,9 +365,9 @@ def _construct_doc(
 
                 module_doc += f"""\
     :template: {template}
-    
+
     {class_["qualified_name"]}
-    
+
 """
                 index_autosummary += f"""
     {class_["qualified_name"]}
@@ -545,13 +545,20 @@ def _build_index(dirs: List[str]) -> None:
         "ai21": "AI21",
         "ibm": "IBM",
     }
-    ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
+    ordered = [
+        "core",
+        "langchain",
+        "text-splitters",
+        "community",
+        "experimental",
+        "standard-tests",
+    ]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     doc = """# LangChain Python API Reference
 
-Welcome to the LangChain Python API reference. This is a reference for all 
-`langchain-x` packages. 
+Welcome to the LangChain Python API reference. This is a reference for all
+`langchain-x` packages.
 
 For user guides see [https://python.langchain.com](https://python.langchain.com).
 

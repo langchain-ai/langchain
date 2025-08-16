@@ -874,8 +874,13 @@ def test_get_num_tokens_from_messages() -> None:
         ),
         ToolMessage("foobar", tool_call_id="foo"),
     ]
-    expected = 176
-    actual = llm.get_num_tokens_from_messages(messages)
+    expected = 431  # Updated to match token count with mocked 100x100 image
+
+    # Mock _url_to_size to avoid PIL dependency in unit tests
+    with patch("langchain_openai.chat_models.base._url_to_size") as mock_url_to_size:
+        mock_url_to_size.return_value = (100, 100)  # 100x100 pixel image
+        actual = llm.get_num_tokens_from_messages(messages)
+
     assert expected == actual
 
     # Test file inputs
@@ -1129,6 +1134,74 @@ def test_init_o1() -> None:
     with pytest.warns(None) as record:  # type: ignore[call-overload]
         ChatOpenAI(model="o1", reasoning_effort="medium")
     assert len(record) == 0
+
+
+def test_init_minimal_reasoning_effort() -> None:
+    with pytest.warns(None) as record:  # type: ignore[call-overload]
+        ChatOpenAI(model="gpt-5", reasoning_effort="minimal")
+    assert len(record) == 0
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+@pytest.mark.parametrize("use_max_completion_tokens", [True, False])
+def test_minimal_reasoning_effort_payload(
+    use_max_completion_tokens: bool, use_responses_api: bool
+) -> None:
+    """Test that minimal reasoning effort is included in request payload."""
+    if use_max_completion_tokens:
+        kwargs = {"max_completion_tokens": 100}
+    else:
+        kwargs = {"max_tokens": 100}
+
+    init_kwargs: dict[str, Any] = {
+        "model": "gpt-5",
+        "reasoning_effort": "minimal",
+        "use_responses_api": use_responses_api,
+        **kwargs,
+    }
+
+    if use_responses_api:
+        init_kwargs["output_version"] = "responses/v1"
+
+    llm = ChatOpenAI(**init_kwargs)
+
+    messages = [
+        {"role": "developer", "content": "respond with just 'test'"},
+        {"role": "user", "content": "hello"},
+    ]
+
+    payload = llm._get_request_payload(messages, stop=None)
+
+    # When using responses API, reasoning_effort becomes reasoning.effort
+    if use_responses_api:
+        assert "reasoning" in payload
+        assert payload["reasoning"]["effort"] == "minimal"
+        # For responses API, tokens param becomes max_output_tokens
+        assert payload["max_output_tokens"] == 100
+    else:
+        # For non-responses API, reasoning_effort remains as is
+        assert payload["reasoning_effort"] == "minimal"
+        if use_max_completion_tokens:
+            assert payload["max_completion_tokens"] == 100
+        else:
+            # max_tokens gets converted to max_completion_tokens in non-responses API
+            assert payload["max_completion_tokens"] == 100
+
+
+def test_verbosity_parameter_payload() -> None:
+    """Test verbosity parameter is included in request payload for Responses API."""
+    llm = ChatOpenAI(
+        model="gpt-5",
+        verbosity="high",
+        use_responses_api=True,
+        output_version="responses/v1",
+    )
+
+    messages = [{"role": "user", "content": "hello"}]
+    payload = llm._get_request_payload(messages, stop=None)
+
+    assert payload["text"]["verbosity"] == "high"
+    assert payload["text"]["format"]["type"] == "text"
 
 
 def test_structured_output_old_model() -> None:
@@ -2198,7 +2271,9 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert messages_copy == messages
 
     # Test dict messages
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     message_dicts: list = [
         {"role": "developer", "content": "This is a developer message."},
         {
@@ -2239,7 +2314,9 @@ class FakeTracer(BaseTracer):
 
 def test_mcp_tracing() -> None:
     # Test we exclude sensitive information from traces
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
 
     tracer = FakeTracer()
     mock_client = MagicMock()
@@ -2430,7 +2507,9 @@ def test_get_last_messages() -> None:
 
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version="responses/v1"
+    )
     messages = [
         HumanMessage("Hello"),
         AIMessage("Hi there!", response_metadata={"id": "resp_123"}),

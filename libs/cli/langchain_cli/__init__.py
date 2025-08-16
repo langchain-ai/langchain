@@ -1,3 +1,5 @@
+"""LangChain CLI."""
+
 from langchain_cli._version import __version__
 
 __all__ = [
