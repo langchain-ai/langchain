@@ -1,3 +1,5 @@
+"""Document compressors."""
+
 import importlib
 from typing import Any
 

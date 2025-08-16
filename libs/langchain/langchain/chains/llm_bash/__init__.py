@@ -1,3 +1,6 @@
+"""Moved to langchain_experimental.llm_bash."""
+
+
 def __getattr__(_: str = "") -> None:
     """Raise an error on import since is deprecated."""
     msg = (

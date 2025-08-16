@@ -1,3 +1,5 @@
+"""Moved to langchain_core.tracers."""
+
 from langchain_core.tracers.log_stream import (
     LogEntry,
     LogStreamCallbackHandler,

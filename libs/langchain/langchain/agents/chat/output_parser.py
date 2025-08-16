@@ -1,3 +1,5 @@
+"""Chat agent output parser."""
+
 import json
 import re
 from re import Pattern
