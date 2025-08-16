@@ -61,8 +61,8 @@ def _dereference_refs_helper(
     if processed_refs is None:
         processed_refs = set()
 
-    # 1) Pure $ref node?
-    if isinstance(obj, dict) and "$ref" in set(obj.keys()):
+    # 1) Pure $ref node (only contains $ref, no other properties)?
+    if isinstance(obj, dict) and set(obj.keys()) == {"$ref"}:
         ref_path = obj["$ref"]
         # cycle?
         if ref_path in processed_refs:
@@ -80,7 +80,48 @@ def _dereference_refs_helper(
         processed_refs.remove(ref_path)
         return result
 
-    # 2) Not a pure-$ref: recurse, skipping any keys in skip_keys
+    # 2) Mixed $ref node (contains $ref plus other properties)?
+    if isinstance(obj, dict) and "$ref" in obj:
+        ref_path = obj["$ref"]
+        # cycle?
+        if ref_path in processed_refs:
+            # For mixed refs, return the non-ref properties to avoid infinite recursion
+            other_props = {k: v for k, v in obj.items() if k != "$ref"}
+            return _dereference_refs_helper(
+                other_props, full_schema, processed_refs, skip_keys, shallow_refs
+            )
+
+        processed_refs.add(ref_path)
+
+        # grab + copy the target
+        target = deepcopy(_retrieve_ref(ref_path, full_schema))
+
+        # Merge the resolved reference with other properties
+        result_dict = {}
+
+        # First, process the resolved reference
+        resolved_ref = _dereference_refs_helper(
+            target, full_schema, processed_refs, skip_keys, shallow_refs
+        )
+        if isinstance(resolved_ref, dict):
+            result_dict.update(resolved_ref)
+
+        # Then add/override with the other properties from the original object
+        other_props = {k: v for k, v in obj.items() if k != "$ref"}
+        for k, v in other_props.items():
+            if k in skip_keys:
+                result_dict[k] = deepcopy(v)
+            elif isinstance(v, (dict, list)):
+                result_dict[k] = _dereference_refs_helper(
+                    v, full_schema, processed_refs, skip_keys, shallow_refs
+                )
+            else:
+                result_dict[k] = v
+
+        processed_refs.remove(ref_path)
+        return result_dict
+
+    # 3) Not a $ref: recurse, skipping any keys in skip_keys
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
