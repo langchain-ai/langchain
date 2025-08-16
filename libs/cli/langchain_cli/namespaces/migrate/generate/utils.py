@@ -22,7 +22,7 @@ class ImportExtractor(ast.NodeVisitor):
 
     def __init__(self, *, from_package: Optional[str] = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
-        self.imports: list = []
+        self.imports: list[tuple[str, str]] = []
         self.package = from_package
 
     def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
