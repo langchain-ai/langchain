@@ -444,3 +444,140 @@ def test_dereference_refs_list_index() -> None:
 
     actual_dict_key = dereference_refs(schema_dict_key)
     assert actual_dict_key == expected_dict_key
+
+
+def test_dereference_refs_mixed_ref_with_properties() -> None:
+    """Test dereferencing refs that have $ref plus other properties."""
+    # This pattern can cause infinite recursion if not handled correctly
+    schema = {
+        "type": "object",
+        "properties": {
+            "data": {
+                "$ref": "#/$defs/BaseType",
+                "description": "Additional description",
+                "example": "some example",
+            }
+        },
+        "$defs": {"BaseType": {"type": "string", "minLength": 1}},
+    }
+
+    expected = {
+        "type": "object",
+        "properties": {
+            "data": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Additional description",
+                "example": "some example",
+            }
+        },
+        "$defs": {"BaseType": {"type": "string", "minLength": 1}},
+    }
+
+    actual = dereference_refs(schema)
+    assert actual == expected
+
+
+def test_dereference_refs_complex_apollo_mcp_pattern() -> None:
+    """Test pattern that caused infinite recursion in Apollo MCP server schemas."""
+    # Simplified version of the problematic pattern from the issue
+    schema = {
+        "type": "object",
+        "properties": {
+            "query": {"$ref": "#/$defs/Query", "additionalProperties": False}
+        },
+        "$defs": {
+            "Query": {
+                "type": "object",
+                "properties": {"user": {"$ref": "#/$defs/User"}},
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "profile": {"$ref": "#/$defs/UserProfile", "nullable": True},
+                },
+            },
+            "UserProfile": {
+                "type": "object",
+                "properties": {"bio": {"type": "string"}},
+            },
+        },
+    }
+
+    # This should not cause infinite recursion
+    actual = dereference_refs(schema)
+
+    # The mixed $ref should be properly resolved and merged
+    expected_user_profile = {
+        "type": "object",
+        "properties": {"bio": {"type": "string"}},
+    }
+
+    expected_user = {
+        "type": "object",
+        "properties": {
+            "id": {"type": "string"},
+            "profile": {
+                "type": "object",
+                "properties": {"bio": {"type": "string"}},
+                "nullable": True,
+            },
+        },
+    }
+
+    expected_query = {
+        "type": "object",
+        "properties": {"user": expected_user},
+        "additionalProperties": False,
+    }
+
+    expected = {
+        "type": "object",
+        "properties": {"query": expected_query},
+        "$defs": {
+            "Query": {
+                "type": "object",
+                "properties": {"user": {"$ref": "#/$defs/User"}},
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "profile": {"$ref": "#/$defs/UserProfile", "nullable": True},
+                },
+            },
+            "UserProfile": expected_user_profile,
+        },
+    }
+
+    assert actual == expected
+
+
+def test_dereference_refs_cyclical_mixed_refs() -> None:
+    """Test cyclical references with mixed $ref properties don't cause loops."""
+    schema = {
+        "type": "object",
+        "properties": {"node": {"$ref": "#/$defs/Node"}},
+        "$defs": {
+            "Node": {
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string"},
+                    "parent": {"$ref": "#/$defs/Node", "nullable": True},
+                    "children": {"type": "array", "items": {"$ref": "#/$defs/Node"}},
+                },
+            }
+        },
+    }
+
+    # This should handle cycles gracefully
+    actual = dereference_refs(schema)
+
+    # The self-referencing should be broken with empty objects
+
+    # Verify the structure is correct and doesn't cause infinite recursion
+    assert "properties" in actual
+    assert "node" in actual["properties"]
+    assert isinstance(actual["properties"]["node"], dict)
+    assert "type" in actual["properties"]["node"]
