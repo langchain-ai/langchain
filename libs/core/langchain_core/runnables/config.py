@@ -90,6 +90,13 @@ class RunnableConfig(TypedDict, total=False):
         will be generated.
     """
 
+    inherit_run_name: bool
+    """
+    Whether to inherit the run_name to child runs. Defaults to False for backward
+    compatibility. When set to True, the run_name will be preserved when creating
+    child runs, allowing dynamic run names to propagate through the entire chain.
+    """
+
 
 CONFIG_KEYS = [
     "tags",
@@ -100,6 +107,7 @@ CONFIG_KEYS = [
     "recursion_limit",
     "configurable",
     "run_id",
+    "inherit_run_name",
 ]
 
 COPIABLE_KEYS = [
@@ -294,6 +302,14 @@ def patch_config(
 ) -> RunnableConfig:
     """Patch a config with new values.
 
+    By default, when callbacks are replaced, the run_name and run_id are removed
+    from the config to ensure they only apply to the run with the original callbacks.
+    This maintains backward compatibility.
+
+    To preserve run_name across child runs (e.g., for consistent tracing), set
+    ``inherit_run_name=True`` in the config. This allows dynamic run names to
+    propagate through complex runnable chains.
+
     Args:
         config (Optional[RunnableConfig]): The config to patch.
         callbacks (Optional[BaseCallbackManager], optional): The callbacks to set.
@@ -308,16 +324,29 @@ def patch_config(
 
     Returns:
         RunnableConfig: The patched config.
+
+    Note:
+        The ``inherit_run_name`` config key (default: False) controls whether
+        run_name is preserved when creating child runs. When True, the run_name
+        will be inherited by all child runnables in the chain, useful for
+        maintaining consistent naming in tracing systems.
     """
     config = ensure_config(config)
     if callbacks is not None:
-        # If we're replacing callbacks, we need to unset run_name
-        # As that should apply only to the same run as the original callbacks
+        # Check if run_name should be inherited to child runs
+        inherit_run_name = config.get("inherit_run_name", False)
+
         config["callbacks"] = callbacks
-        if "run_name" in config:
-            del config["run_name"]
-        if "run_id" in config:
-            del config["run_id"]
+
+        # Only delete run_name/run_id if inherit_run_name is False (default behavior)
+        # This preserves backward compatibility while allowing opt-in inheritance
+        if not inherit_run_name:
+            # If we're replacing callbacks, we need to unset run_name
+            # As that should apply only to the same run as the original callbacks
+            if "run_name" in config:
+                del config["run_name"]
+            if "run_id" in config:
+                del config["run_id"]
     if recursion_limit is not None:
         config["recursion_limit"] = recursion_limit
     if max_concurrency is not None:
