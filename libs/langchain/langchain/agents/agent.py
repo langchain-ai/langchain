@@ -1377,7 +1377,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
@@ -1521,7 +1521,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
