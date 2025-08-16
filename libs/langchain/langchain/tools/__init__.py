@@ -38,7 +38,7 @@ from langchain._api.interactive_env import is_interactive_env
 _DEPRECATED_TOOLS = {"PythonAstREPLTool", "PythonREPLTool"}
 
 
-def _import_python_tool_PythonAstREPLTool() -> Any:
+def _import_python_tool_python_ast_repl_tool() -> Any:
     msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
@@ -50,7 +50,7 @@ def _import_python_tool_PythonAstREPLTool() -> Any:
     raise ImportError(msg)
 
 
-def _import_python_tool_PythonREPLTool() -> Any:
+def _import_python_tool_python_repl_tool() -> Any:
     msg = (
         "This tool has been moved to langchain experiment. "
         "This tool has access to a python REPL. "
@@ -64,9 +64,9 @@ def _import_python_tool_PythonREPLTool() -> Any:
 
 def __getattr__(name: str) -> Any:
     if name == "PythonAstREPLTool":
-        return _import_python_tool_PythonAstREPLTool()
+        return _import_python_tool_python_ast_repl_tool()
     if name == "PythonREPLTool":
-        return _import_python_tool_PythonREPLTool()
+        return _import_python_tool_python_repl_tool()
     from langchain_community import tools
 
     # If not in interactive env, raise warning.
