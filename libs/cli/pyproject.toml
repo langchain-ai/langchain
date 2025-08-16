@@ -63,9 +63,7 @@ ignore = [
     "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
     "BLE",
-    "D1",
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
