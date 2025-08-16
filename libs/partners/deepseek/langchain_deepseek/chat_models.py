@@ -187,7 +187,9 @@ class ChatDeepSeek(BaseChatOpenAI):
         return {"api_key": "DEEPSEEK_API_KEY"}
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any,
+        self,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
     ) -> LangSmithParams:
         ls_params = super()._get_ls_params(stop=stop, **kwargs)
         ls_params["ls_provider"] = "deepseek"
