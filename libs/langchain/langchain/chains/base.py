@@ -750,7 +750,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # -> {"_type": "foo", "verbose": False, ...}
 
         """
-        _dict = super().dict(**kwargs)
+        _dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             _dict["_type"] = self._chain_type
         return _dict
