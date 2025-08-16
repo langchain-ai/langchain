@@ -420,8 +420,23 @@ class VectorStore(ABC):
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
-        """Normalize the distance to a score on a scale [0, 1]."""
-        return 1.0 - distance
+        """Normalize the distance to a score on a scale [0, 1].
+
+        Note: Despite the name "distance", some vector stores (like FAISS with
+        IndexFlatIP) may actually return cosine similarity values in the range
+        [-1, 1] rather than cosine distance values in the range [0, 2].
+
+        Based on reported issues with FAISS, this function now treats inputs as cosine
+        similarity values by default, which is more common in practice:
+        - Cosine similarity [-1, 1] -> relevance score [0, 1]: (similarity + 1) / 2
+
+        For true cosine distance [0, 2], use: 1 - distance/2
+        """
+        # Convert cosine similarity [-1, 1] to relevance score [0, 1]
+        # This handles the common case where vector stores return similarity values
+        # rather than distance values (e.g., FAISS IndexFlatIP with normalized
+        # embeddings)
+        return (distance + 1.0) / 2.0
 
     @staticmethod
     def _max_inner_product_relevance_score_fn(distance: float) -> float:
