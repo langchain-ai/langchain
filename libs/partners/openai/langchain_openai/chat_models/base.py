@@ -4050,7 +4050,9 @@ def _convert_responses_chunk_to_generation_chunk(
         _advance(chunk.output_index, chunk.content_index)
         content.append({"type": "text", "text": chunk.delta, "index": current_index})
     elif chunk.type == "response.output_text.annotation.added":
-        _advance(chunk.output_index, chunk.content_index)
+        # Do not advance sub-index for annotations; they annotate existing content.
+        # Advancing sub-index here can increment current_index and desync tool args.
+        _advance(chunk.output_index)
         if isinstance(chunk.annotation, dict):
             # Appears to be a breaking change in openai==1.82.0
             annotation = chunk.annotation
