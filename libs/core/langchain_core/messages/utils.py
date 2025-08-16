@@ -182,7 +182,7 @@ def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
 
-def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     """Convert a message chunk to a message.
 
     Args:
