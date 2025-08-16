@@ -47,17 +47,17 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     X = np.array(X)
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
-        raise ValueError(
+        msg = (
             f"Number of columns in X and Y must be the same. X has shape {X.shape} "
             f"and Y has shape {Y.shape}."
         )
+        raise ValueError(msg)
     try:
         import simsimd as simd
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
-        Z = 1 - np.array(simd.cdist(X, Y, metric="cosine"))
-        return Z
+        return 1 - np.array(simd.cdist(X, Y, metric="cosine"))
     except ImportError:
         X_norm = np.linalg.norm(X, axis=1)
         Y_norm = np.linalg.norm(Y, axis=1)

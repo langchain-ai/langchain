@@ -455,9 +455,9 @@ def test_message_chunk_to_message() -> None:
         tool_calls=[
             create_tool_call(name="tool1", args={"a": 1}, id="1"),
             create_tool_call(name="tool2", args={}, id="2"),
+            create_tool_call(name="tool3", args={}, id="3"),
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
             create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
@@ -1019,6 +1019,11 @@ def test_tool_message_str() -> None:
         ("foo", [["bar"]], ["foo", "bar"]),
         (["foo"], ["bar"], ["foobar"]),
         (["foo"], [["bar"]], ["foo", "bar"]),
+        (
+            [{"text": "foo"}],
+            [[{"index": 0, "text": "bar"}]],
+            [{"text": "foo"}, {"index": 0, "text": "bar"}],
+        ),
     ],
 )
 def test_merge_content(

@@ -70,6 +70,20 @@ class AnthropicTool(TypedDict):
     cache_control: NotRequired[dict[str, str]]
 
 
+class _CombinedUsage(BaseModel):
+    """Combined usage model for deferred token counting in streaming.
+
+    This mimics the Anthropic Usage structure while combining stored input usage
+    with final output usage for accurate token reporting during streaming.
+    """
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cache_creation_input_tokens: Optional[int] = None
+    cache_read_input_tokens: Optional[int] = None
+    cache_creation: Optional[dict[str, Any]] = None
+
+
 def _is_builtin_tool(tool: Any) -> bool:
     if not isinstance(tool, dict):
         return False
@@ -502,6 +516,9 @@ class ChatAnthropic(BaseChatModel):
     Key init args — client params:
         timeout: Optional[float]
             Timeout for requests.
+        anthropic_proxy: Optional[str]
+            Proxy to use for the Anthropic clients, will be used for every API call.
+            If not passed in will be read from env var ``ANTHROPIC_PROXY``.
         max_retries: int
             Max number of retries if a request fails.
         api_key: Optional[str]
@@ -916,8 +933,13 @@ class ChatAnthropic(BaseChatModel):
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
 
     Prompt caching:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
-        for more detail.
+        Prompt caching reduces processing time and costs for repetitive tasks or prompts
+        with consistent elements
+
+        .. note::
+            Only certain models support prompt caching.
+            See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
+            for a full list.
 
         .. code-block:: python
 
@@ -953,6 +975,18 @@ class ChatAnthropic(BaseChatModel):
 
             {'cache_read': 0, 'cache_creation': 1458}
 
+        Alternatively, you may enable prompt caching at invocation time. You may want to
+        conditionally cache based on runtime conditions, such as the length of the
+        context. Alternatively, this is useful for app-level decisions about what to
+        cache.
+
+        .. code-block:: python
+
+            response = llm.invoke(
+                messages,
+                cache_control={"type": "ephemeral"},
+            )
+
         .. dropdown:: Extended caching
 
             .. versionadded:: 0.3.15
@@ -969,6 +1003,10 @@ class ChatAnthropic(BaseChatModel):
                 )
 
             and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+
+            .. important::
+                Specifying a `ttl` key under `cache_control` will not work unless the
+                beta header is set!
 
             Details of cached token counts will be included on the ``InputTokenDetails``
             of response's ``usage_metadata``:
@@ -994,6 +1032,41 @@ class ChatAnthropic(BaseChatModel):
 
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
             for detail.
+
+    Extended context windows (beta):
+        Claude Sonnet 4 supports a 1-million token context window, available in beta for
+        organizations in usage tier 4 and organizations with custom rate limits.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-sonnet-4-20250514",
+                betas=["context-1m-2025-08-07"],  # Enable 1M context beta
+            )
+
+            long_document = \"\"\"
+            This is a very long document that would benefit from the extended 1M
+            context window...
+            [imagine this continues for hundreds of thousands of tokens]
+            \"\"\"
+
+            messages = [
+                HumanMessage(f\"\"\"
+            Please analyze this document and provide a summary:
+
+            {long_document}
+
+            What are the key themes and main conclusions?
+            \"\"\")
+            ]
+
+            response = llm.invoke(messages)
+
+        See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/context-windows#1m-token-context-window>`__
+        for detail.
+
 
     Token-efficient tool use (beta):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
@@ -1033,7 +1106,7 @@ class ChatAnthropic(BaseChatModel):
             Total tokens: 408
 
     Built-in tools:
-        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/>`__
+        See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
         .. dropdown::  Web search
@@ -1189,6 +1262,14 @@ class ChatAnthropic(BaseChatModel):
     )
     """Automatically read from env var ``ANTHROPIC_API_KEY`` if not provided."""
 
+    anthropic_proxy: Optional[str] = Field(
+        default_factory=from_env("ANTHROPIC_PROXY", default=None)
+    )
+    """Proxy to use for the Anthropic clients, will be used for every API call.
+
+    If not provided, will attempt to read from the ``ANTHROPIC_PROXY`` environment
+    variable."""
+
     default_headers: Optional[Mapping[str, str]] = None
     """Headers to pass to the Anthropic clients, will be used for every API call."""
 
@@ -1304,6 +1385,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
+        if self.anthropic_proxy:
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1317,6 +1400,8 @@ class ChatAnthropic(BaseChatModel):
         http_client_params = {"base_url": client_params["base_url"]}
         if "timeout" in client_params:
             http_client_params["timeout"] = client_params["timeout"]
+        if self.anthropic_proxy:
+            http_client_params["anthropic_proxy"] = self.anthropic_proxy
         http_client = _get_default_async_httpx_client(**http_client_params)
         params = {
             **client_params,
@@ -1333,6 +1418,46 @@ class ChatAnthropic(BaseChatModel):
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
         system, formatted_messages = _format_messages(messages)
+
+        # If cache_control is provided in kwargs, add it to last message
+        # and content block.
+        if "cache_control" in kwargs and formatted_messages:
+            cache_control = kwargs["cache_control"]
+
+            # Validate TTL usage requires extended cache TTL beta header
+            if (
+                isinstance(cache_control, dict)
+                and "ttl" in cache_control
+                and (
+                    not self.betas or "extended-cache-ttl-2025-04-11" not in self.betas
+                )
+            ):
+                msg = (
+                    "Specifying a 'ttl' under 'cache_control' requires enabling "
+                    "the 'extended-cache-ttl-2025-04-11' beta header. "
+                    "Set betas=['extended-cache-ttl-2025-04-11'] when initializing "
+                    "ChatAnthropic."
+                )
+                warnings.warn(msg, stacklevel=2)
+            if isinstance(formatted_messages[-1]["content"], list):
+                formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
+                    "cache_control"
+                )
+            elif isinstance(formatted_messages[-1]["content"], str):
+                formatted_messages[-1]["content"] = [
+                    {
+                        "type": "text",
+                        "text": formatted_messages[-1]["content"],
+                        "cache_control": kwargs.pop("cache_control"),
+                    }
+                ]
+            else:
+                pass
+
+        # If cache_control remains in kwargs, it would be passed as a top-level param
+        # to the API, but Anthropic expects it nested within a message
+        _ = kwargs.pop("cache_control", None)
+
         payload = {
             "model": self.model,
             "max_tokens": self.max_tokens,
@@ -1382,12 +1507,18 @@ class ChatAnthropic(BaseChatModel):
                 and not _thinking_in_params(payload)
             )
             block_start_event = None
+            stored_input_usage = None
             for event in stream:
-                msg, block_start_event = _make_message_chunk_from_anthropic_event(
+                (
+                    msg,
+                    block_start_event,
+                    stored_input_usage,
+                ) = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stored_input_usage=stored_input_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -1418,12 +1549,18 @@ class ChatAnthropic(BaseChatModel):
                 and not _thinking_in_params(payload)
             )
             block_start_event = None
+            stored_input_usage = None
             async for event in stream:
-                msg, block_start_event = _make_message_chunk_from_anthropic_event(
+                (
+                    msg,
+                    block_start_event,
+                    stored_input_usage,
+                ) = _make_message_chunk_from_anthropic_event(
                     event,
                     stream_usage=stream_usage,
                     coerce_content_to_string=coerce_content_to_string,
                     block_start_event=block_start_event,
+                    stored_input_usage=stored_input_usage,
                 )
                 if msg is not None:
                     chunk = ChatGenerationChunk(message=msg)
@@ -2056,22 +2193,40 @@ def _make_message_chunk_from_anthropic_event(
     stream_usage: bool = True,
     coerce_content_to_string: bool,
     block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
-) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
-    """Convert Anthropic event to AIMessageChunk.
+    stored_input_usage: Optional[BaseModel] = None,
+) -> tuple[
+    Optional[AIMessageChunk],
+    Optional[anthropic.types.RawMessageStreamEvent],
+    Optional[BaseModel],
+]:
+    """Convert Anthropic event to ``AIMessageChunk``.
 
     Note that not all events will result in a message chunk. In these cases
     we return ``None``.
+
+    Args:
+        event: The Anthropic streaming event to convert.
+        stream_usage: Whether to include usage metadata in the chunk.
+        coerce_content_to_string: Whether to coerce content blocks to strings.
+        block_start_event: Previous content block start event for context.
+        stored_input_usage: Usage metadata from ``message_start`` event to be used
+            in ``message_delta`` event for accurate input token counts.
+
+    Returns:
+        Tuple of ``(message_chunk, block_start_event, stored_usage)``
+
     """
     message_chunk: Optional[AIMessageChunk] = None
+    updated_stored_usage = stored_input_usage
     # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
     if event.type == "message_start" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.message.usage)
-        # We pick up a cumulative count of output_tokens at the end of the stream,
-        # so here we zero out to avoid double counting.
-        usage_metadata["total_tokens"] = (
-            usage_metadata["total_tokens"] - usage_metadata["output_tokens"]
+        # Store input usage for later use in message_delta but don't emit tokens yet
+        updated_stored_usage = event.message.usage
+        usage_metadata = UsageMetadata(
+            input_tokens=0,
+            output_tokens=0,
+            total_tokens=0,
         )
-        usage_metadata["output_tokens"] = 0
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
@@ -2159,11 +2314,37 @@ def _make_message_chunk_from_anthropic_event(
                 tool_call_chunks=tool_call_chunks,
             )
     elif event.type == "message_delta" and stream_usage:
-        usage_metadata = UsageMetadata(
-            input_tokens=0,
-            output_tokens=event.usage.output_tokens,
-            total_tokens=event.usage.output_tokens,
-        )
+        # Create usage metadata combining stored input usage with final output usage
+        #
+        # Per Anthropic docs: "The token counts shown in the usage field of the
+        # message_delta event are cumulative." Thus, when MCP tools are called
+        # mid-stream, `input_tokens` may be updated with a higher cumulative count.
+        # We prioritize `event.usage.input_tokens` when available to handle this case.
+        if stored_input_usage is not None:
+            # Create a combined usage object that mimics the Anthropic Usage structure
+            combined_usage = _CombinedUsage(
+                input_tokens=event.usage.input_tokens
+                or getattr(stored_input_usage, "input_tokens", 0),
+                output_tokens=event.usage.output_tokens,
+                cache_creation_input_tokens=getattr(
+                    stored_input_usage, "cache_creation_input_tokens", None
+                ),
+                cache_read_input_tokens=getattr(
+                    stored_input_usage, "cache_read_input_tokens", None
+                ),
+                cache_creation=getattr(stored_input_usage, "cache_creation", None)
+                if hasattr(stored_input_usage, "cache_creation")
+                else None,
+            )
+            usage_metadata = _create_usage_metadata(combined_usage)
+        else:
+            # Fallback to just output tokens if no stored usage
+            usage_metadata = UsageMetadata(
+                input_tokens=event.usage.input_tokens or 0,
+                output_tokens=event.usage.output_tokens,
+                total_tokens=(event.usage.input_tokens or 0)
+                + event.usage.output_tokens,
+            )
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
@@ -2175,7 +2356,7 @@ def _make_message_chunk_from_anthropic_event(
     else:
         pass
 
-    return message_chunk, block_start_event
+    return message_chunk, block_start_event, updated_stored_usage
 
 
 @deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")

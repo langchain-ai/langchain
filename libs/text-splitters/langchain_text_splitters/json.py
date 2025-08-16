@@ -23,7 +23,7 @@ class RecursiveJsonSplitter:
 
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
-    ):
+    ) -> None:
         """Initialize the chunk size configuration for text processing.
 
         This constructor sets up the maximum and minimum chunk sizes, ensuring that
@@ -75,7 +75,7 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: dict[str, Any],
+        data: Any,
         current_path: Optional[list[str]] = None,
         chunks: Optional[list[dict[str, Any]]] = None,
     ) -> list[dict[str, Any]]:

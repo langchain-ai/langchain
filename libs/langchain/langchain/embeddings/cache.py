@@ -336,7 +336,7 @@ class CacheBackedEmbeddings(Embeddings):
                 )
                 raise ValueError(msg)
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
