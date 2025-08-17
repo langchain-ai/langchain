@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    List,
     Literal,
     Optional,
     TypeVar,
@@ -36,8 +35,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        batched_length_function: Optional[Callable[[
-            List[str]], List[int]]] = None,
+        batched_length_function: Optional[Callable[[list[str]], list[int]]] = None,
         keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
@@ -120,8 +118,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             if not isinstance(texts, list):
                 texts = list(texts)
             lengths = self._batched_length_function(texts)
-            for _len in lengths:
-                yield _len
+            yield from lengths
         else:
             for text in texts:
                 yield self._length_function(text)
@@ -131,14 +128,14 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         splits: Iterable[str],
         separator: str,
         lengths: Optional[Iterable[int]] = None,
-    ) -> List[str]:
+    ) -> list[str]:
         # We now want to combine these smaller pieces into medium size
         # chunks to send to the LLM.
         separator_len = self._text_length(separator)
 
         docs = []
-        current_doc: List[str] = []
-        current_doc_lengths: List[int] = []
+        current_doc: list[str] = []
+        current_doc_lengths: list[int] = []
         total = 0
         split_lengths = lengths or self._iter_text_lengths(splits)
         for d, _len in zip(splits, split_lengths):
@@ -159,8 +156,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len +
-                            (separator_len if len(current_doc) > 0 else 0)
+                        total + _len + (separator_len if len(current_doc) > 0 else 0)
                         > self._chunk_size
                         and total > 0
                     ):
@@ -184,38 +180,43 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
     @classmethod
     def from_huggingface_tokenizer(
-        cls, tokenizer: Any, batched: Optional[bool] = None, **kwargs: Any
+        cls, tokenizer: Any, *, batched: Optional[bool] = None, **kwargs: Any
     ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         try:
-            from transformers import PreTrainedTokenizerBase, PreTrainedTokenizerFast
+            from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+            from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
 
             if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                raise ValueError(
+                msg = (
                     "Tokenizer received was not an instance of PreTrainedTokenizerBase"
                 )
+                raise ValueError(msg)
+
             if batched is None and isinstance(tokenizer, PreTrainedTokenizerFast):
                 # Take advantage of huggingface's fast tokenizers
                 # by batching tokenization of splits
                 batched = True
 
             def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.encode(text))
+                return len(tokenizer.tokenize(text))
 
-            def _huggingface_tokenizer_batched_length(texts: List[str]) -> List[int]:
+            def _huggingface_tokenizer_batched_length(texts: list[str]) -> Any:
                 return tokenizer(texts, truncation=False, return_length=True).length
 
-        except ImportError:
-            raise ValueError(
+        except ImportError as err:
+            msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
+            raise ValueError(msg) from err
         return cls(
             length_function=_huggingface_tokenizer_length,
             batched_length_function=_huggingface_tokenizer_batched_length
             if batched
             else None,
-            **kwargs,)
+            **kwargs,
+        )
 
     @classmethod
     def from_tiktoken_encoder(

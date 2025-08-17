@@ -3,7 +3,7 @@
 import random
 import re
 import string
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable
 
 import pytest
 from langchain_core.documents import Document
@@ -386,12 +386,13 @@ Bye!\n\n-H."""
     ]
     assert output == expected_output
 
+
 def test_batched_recursive_character_text_splitter() -> None:
     """Test recursive text splitter with batched length."""
     num_batched_length_calls = 0
     num_unbatched_length_calls = 0
 
-    def _batched_length(texts: List[str]) -> List[int]:
+    def _batched_length(texts: list[str]) -> list[int]:
         nonlocal num_batched_length_calls
         num_batched_length_calls += 1
         return [len(text) for text in texts]
@@ -401,12 +402,12 @@ def test_batched_recursive_character_text_splitter() -> None:
         num_unbatched_length_calls += 1
         return len(text)
 
-    kwargs: Dict[str, Any] = dict(
-        separators=["\n", " "],
-        keep_separator=False,
-        chunk_size=3,
-        chunk_overlap=0,
-    )
+    kwargs: dict[str, Any] = {
+        "separators": ["\n", " "],
+        "keep_separator": False,
+        "chunk_size": 3,
+        "chunk_overlap": 0,
+    }
     batched_text_splitter = RecursiveCharacterTextSplitter(
         batched_length_function=_batched_length,
         **kwargs,
@@ -421,6 +422,7 @@ def test_batched_recursive_character_text_splitter() -> None:
     assert batched_output == ["a b", "c d"]
     assert batched_output == unbatched_output
     assert num_batched_length_calls < num_unbatched_length_calls
+
 
 def test_split_documents() -> None:
     """Test split_documents."""
