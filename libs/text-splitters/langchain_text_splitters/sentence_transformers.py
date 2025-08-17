@@ -26,7 +26,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
                 "This is needed in order to for SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install transformers`."
             )
-            raise ImportError(msg)
+            raise ImportError(msg) from None
 
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
