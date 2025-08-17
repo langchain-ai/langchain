@@ -30,11 +30,23 @@ def test_huggingface_type_check() -> None:
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
+    from transformers.models.gpt2 import GPT2Tokenizer
+
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
+        tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
+    )
+    output = text_splitter.split_text("foo bar")
+    assert output == ["foo", "bar"]
+
+
+def test_huggingface_tokenizer_fast() -> None:
+    """Test text splitter that uses a HuggingFace tokenizer."""
     from transformers import GPT2TokenizerFast
 
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
-        tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
+        tokenizer, batched=True, separator=" ", chunk_size=1, chunk_overlap=0
     )
     output = text_splitter.split_text("foo bar")
     assert output == ["foo", "bar"]
