@@ -1388,7 +1388,6 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=None,
                 callbacks=run_manager.get_child() if run_manager else None,
-                metadata= self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
             yield AgentStep(action=output, observation=observation)
@@ -1434,7 +1433,6 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
-                metadata= self.metadata if self.metadata else None,
                 **tool_run_kwargs,
             )
         else:
@@ -1668,6 +1666,7 @@ class AgentExecutor(Chain):
         self,
         inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> dict[str, str]:
         """Async run text through and get agent response."""
         # Construct a mapping of tool name to tool for easy lookup
@@ -1692,6 +1691,7 @@ class AgentExecutor(Chain):
                         inputs,
                         intermediate_steps,
                         run_manager=run_manager,
+			            config = config
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(
