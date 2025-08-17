@@ -41,7 +41,7 @@ def test_huggingface_tokenizer() -> None:
 
 
 def test_huggingface_tokenizer_fast() -> None:
-    """Test text splitter that uses a HuggingFace tokenizer."""
+    """Test text splitter that uses a fast HuggingFace tokenizer with batched=True."""
     from transformers import GPT2TokenizerFast
 
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
