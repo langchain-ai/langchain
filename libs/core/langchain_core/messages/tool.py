@@ -14,19 +14,20 @@ from langchain_core.utils._merge import merge_dicts, merge_obj
 class ToolOutputMixin:
     """Mixin for objects that tools can return directly.
 
-    If a custom BaseTool is invoked with a ToolCall and the output of custom code is
-    not an instance of ToolOutputMixin, the output will automatically be coerced to a
-    string and wrapped in a ToolMessage.
+    If a custom BaseTool is invoked with a ``ToolCall`` and the output of custom code is
+    not an instance of ``ToolOutputMixin``, the output will automatically be coerced to
+    a string and wrapped in a ``ToolMessage``.
+
     """
 
 
 class ToolMessage(BaseMessage, ToolOutputMixin):
     """Message for passing the result of executing a tool back to a model.
 
-    ToolMessages contain the result of a tool invocation. Typically, the result
-    is encoded inside the `content` field.
+    ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+    is encoded inside the ``content`` field.
 
-    Example: A ToolMessage representing a result of 42 from a tool call with id
+    Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
 
         .. code-block:: python
 
@@ -35,7 +36,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
 
 
-    Example: A ToolMessage where only part of the tool output is sent to the model
+    Example: A ``ToolMessage`` where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
         .. versionadded:: 0.2.17
@@ -57,7 +58,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
                 tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
             )
 
-    The tool_call_id field is used to associate the tool call request with the
+    The ``tool_call_id`` field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
@@ -67,7 +68,11 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     """Tool call that this message is responding to."""
 
     type: Literal["tool"] = "tool"
-    """The type of the message (used for serialization). Defaults to "tool"."""
+    """The type of the message (used for serialization).
+
+    Defaults to ``'tool'``.
+
+    """
 
     artifact: Any = None
     """Artifact of the Tool execution which is not meant to be sent to the model.
@@ -77,12 +82,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     output is needed in other parts of the code.
 
     .. versionadded:: 0.2.17
+
     """
 
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation.
 
     .. versionadded:: 0.2.24
+
     """
 
     additional_kwargs: dict = Field(default_factory=dict, repr=False)
@@ -97,6 +104,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
 
         Args:
             values: The model arguments.
+
         """
         content = values["content"]
         if isinstance(content, tuple):
@@ -187,8 +195,8 @@ class ToolCall(TypedDict):
 
             {"name": "foo", "args": {"a": 1}, "id": "123"}
 
-        This represents a request to call the tool named "foo" with arguments {"a": 1}
-        and an identifier of "123".
+        This represents a request to call the tool named ``'foo'`` with arguments
+        ``{"a": 1}`` and an identifier of ``'123'``.
 
     """
 
@@ -201,6 +209,7 @@ class ToolCall(TypedDict):
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
+
     """
     type: NotRequired[Literal["tool_call"]]
 
@@ -227,9 +236,9 @@ def tool_call(
 class ToolCallChunk(TypedDict):
     """A chunk of a tool call (e.g., as part of a stream).
 
-    When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+    When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
     all string attributes are concatenated. Chunks are only merged if their
-    values of `index` are equal and not None.
+    values of ``index`` are equal and not None.
 
     Example:
 
@@ -282,7 +291,7 @@ def tool_call_chunk(
 class InvalidToolCall(TypedDict):
     """Allowance for errors made by LLM.
 
-    Here we add an `error` key to surface errors made during generation
+    Here we add an ``error`` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
     """
 

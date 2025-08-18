@@ -57,8 +57,11 @@ class BaseMessage(Serializable):
     """
 
     id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
-    """An optional unique identifier for the message. This should ideally be
-    provided by the provider/model which created the message."""
+    """An optional unique identifier for the message.
+
+    This should ideally be provided by the provider/model which created the message.
+
+    """
 
     model_config = ConfigDict(
         extra="allow",
