@@ -65,6 +65,9 @@ def test_stream() -> None:
     assert chunks_with_model_name == 1
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
+    assert len(full.content_blocks) == 1
+    assert full.content_blocks[0]["type"] == "text"
+    assert full.content_blocks[0]["text"]
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
     assert full.usage_metadata["output_tokens"] > 0
@@ -105,6 +108,9 @@ async def test_astream() -> None:
         )
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
+    assert len(full.content_blocks) == 1
+    assert full.content_blocks[0]["type"] == "text"
+    assert full.content_blocks[0]["text"]
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
     assert full.usage_metadata["output_tokens"] > 0
@@ -421,6 +427,14 @@ def test_tool_use() -> None:
     assert isinstance(tool_call["args"], dict)
     assert "location" in tool_call["args"]
 
+    content_blocks = response.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call"
+    assert content_blocks[1]["name"] == "get_weather"
+    assert content_blocks[1]["args"] == tool_call["args"]
+
     # Test streaming
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
@@ -440,6 +454,8 @@ def test_tool_use() -> None:
             first = False
         else:
             gathered = gathered + chunk  # type: ignore[assignment]
+        for block in chunk.content_blocks:
+            assert block["type"] in ("text", "tool_call_chunk")
     assert len(chunks) > 1
     assert isinstance(gathered.content, list)
     assert len(gathered.content) == 2
@@ -460,6 +476,14 @@ def test_tool_use() -> None:
     assert isinstance(tool_call["args"], dict)
     assert "location" in tool_call["args"]
     assert tool_call["id"] is not None
+
+    content_blocks = gathered.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call_chunk"
+    assert content_blocks[1]["name"] == "get_weather"
+    assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
     # https://docs.anthropic.com/en/docs/build-with-claude/tool-use/token-efficient-tool-use
@@ -499,6 +523,13 @@ def test_builtin_tools() -> None:
     )
     assert isinstance(response, AIMessage)
     assert response.tool_calls
+
+    content_blocks = response.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call"
+    assert content_blocks[1]["name"] == "str_replace_editor"
 
 
 class GenerateUsername(BaseModel):
