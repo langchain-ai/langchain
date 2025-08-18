@@ -5,6 +5,17 @@ echo "VERCEL_GIT_COMMIT_REF: $VERCEL_GIT_COMMIT_REF"
 echo "VERCEL_GIT_REPO_OWNER: $VERCEL_GIT_REPO_OWNER"
 echo "VERCEL_GIT_REPO_SLUG: $VERCEL_GIT_REPO_SLUG"
 
+# Check for skip-preview tags in commit message or PR
+echo "Checking for skip-preview tags..."
+COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+echo "Commit message: $COMMIT_MESSAGE"
+
+# Check if commit message contains skip-preview tags
+if [[ "$COMMIT_MESSAGE" == *"[skip-preview]"* ]] || [[ "$COMMIT_MESSAGE" == *"[no-preview]"* ]] || [[ "$COMMIT_MESSAGE" == *"[skip-deploy]"* ]]; then
+    echo "🛑 Skip-preview tag found in commit message - skipping preview deployment"
+    exit 0
+fi
+
 
 if  { \
         [ "$VERCEL_ENV" == "production" ] || \
