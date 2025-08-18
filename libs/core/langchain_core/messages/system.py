@@ -33,7 +33,11 @@ class SystemMessage(BaseMessage):
     """
 
     type: Literal["system"] = "system"
-    """The type of the message (used for serialization). Defaults to "system"."""
+    """The type of the message (used for serialization).
+
+    Defaults to ``'system'``.
+
+    """
 
     @overload
     def __init__(
@@ -74,4 +78,7 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     # non-chunk variant.
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for serialization).
-    Defaults to "SystemMessageChunk"."""
+
+    Defaults to ``'SystemMessageChunk'``.
+
+    """

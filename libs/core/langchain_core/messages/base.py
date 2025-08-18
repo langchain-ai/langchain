@@ -58,8 +58,11 @@ class BaseMessage(Serializable):
     """
 
     id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
-    """An optional unique identifier for the message. This should ideally be
-    provided by the provider/model which created the message."""
+    """An optional unique identifier for the message.
+
+    This should ideally be provided by the provider/model which created the message.
+
+    """
 
     model_config = ConfigDict(
         extra="allow",
@@ -72,25 +75,11 @@ class BaseMessage(Serializable):
         **kwargs: Any,
     ) -> None: ...
 
-    @overload
-    def __init__(
-        self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
-        **kwargs: Any,
-    ) -> None: ...
+        Args:
+            content: The string contents of the message.
 
-    def __init__(
-        self,
-        content: Optional[Union[str, list[Union[str, dict]]]] = None,
-        content_blocks: Optional[list[types.ContentBlock]] = None,
-        **kwargs: Any,
-    ) -> None:
-        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
-        if content_blocks is not None:
-            super().__init__(content=content_blocks, **kwargs)
-        else:
-            super().__init__(content=content, **kwargs)
+        """
+        super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -106,6 +95,7 @@ class BaseMessage(Serializable):
         """Get the namespace of the langchain object.
 
         Default is ``['langchain', 'schema', 'messages']``.
+
         """
         return ["langchain", "schema", "messages"]
 
