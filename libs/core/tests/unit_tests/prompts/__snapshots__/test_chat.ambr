@@ -768,8 +768,15 @@
             'title': 'Id',
           }),
           'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
             'title': 'Index',
-            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -1036,8 +1043,15 @@
             'title': 'Id',
           }),
           'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
             'title': 'Index',
-            'type': 'integer',
           }),
           'name': dict({
             'title': 'Name',
@@ -2225,8 +2239,15 @@
             'title': 'Id',
           }),
           'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
             'title': 'Index',
-            'type': 'integer',
           }),
           'name': dict({
             'anyOf': list([
@@ -2493,8 +2514,15 @@
             'title': 'Id',
           }),
           'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
             'title': 'Index',
-            'type': 'integer',
           }),
           'name': dict({
             'title': 'Name',
