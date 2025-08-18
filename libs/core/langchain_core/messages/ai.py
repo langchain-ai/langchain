@@ -227,6 +227,11 @@ class AIMessage(BaseMessage):
 
             return openai.translate_content(self)
 
+        if model_provider == "anthropic":
+            from langchain_core.messages.block_translators import anthropic
+
+            return anthropic.translate_content(self)
+
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
@@ -373,6 +378,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             from langchain_core.messages.block_translators import openai
 
             return openai.translate_content_chunk(self)
+
+        if model_provider == "anthropic":
+            from langchain_core.messages.block_translators import anthropic
+
+            return anthropic.translate_content(self)
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
