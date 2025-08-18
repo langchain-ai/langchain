@@ -2284,11 +2284,6 @@ def _make_message_chunk_from_anthropic_event(
             or event.delta.type == "signature_delta"
         ):
             content_block = event.delta.model_dump()
-            # `text` isn't specified to exist on either `thinking_delta` or
-            # `signature_delta`, so we need to handle it separately.
-            # TODO: remove this once we verify that it doesn't introduce issues
-            if "text" in content_block and content_block["text"] is None:
-                content_block.pop("text")
             content_block["index"] = event.index
             content_block["type"] = "thinking"
             message_chunk = AIMessageChunk(content=[content_block])
