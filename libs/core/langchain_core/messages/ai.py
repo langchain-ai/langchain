@@ -8,7 +8,7 @@ from typing import Any, Literal, Optional, Union, cast, overload
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.tool import (
     InvalidToolCall,
