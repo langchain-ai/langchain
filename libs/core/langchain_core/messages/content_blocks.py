@@ -130,7 +130,7 @@ Factory functions offer benefits such as:
 """  # noqa: E501
 
 import warnings
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
@@ -647,7 +647,7 @@ class ImageContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the image data itself."""
 
 
 class VideoContentBlock(TypedDict):
@@ -694,7 +694,7 @@ class VideoContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the video data itself."""
 
 
 class AudioContentBlock(TypedDict):
@@ -740,7 +740,7 @@ class AudioContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the audio data itself."""
 
 
 class PlainTextContentBlock(TypedDict):
@@ -796,7 +796,7 @@ class PlainTextContentBlock(TypedDict):
     """Context for the text, e.g., a description or summary of the text's content."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the data itself."""
 
 
 class FileContentBlock(TypedDict):
@@ -850,7 +850,7 @@ class FileContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the file data itself."""
 
 
 # Future modalities to consider:
@@ -950,8 +950,24 @@ KNOWN_BLOCK_TYPES = {
 }
 
 
+def _get_data_content_block_types() -> tuple[str, ...]:
+    """Get type literals from DataContentBlock union members dynamically."""
+    data_block_types = []
+
+    for block_type in get_args(DataContentBlock):
+        hints = get_type_hints(block_type)
+        if "type" in hints:
+            type_annotation = hints["type"]
+            if hasattr(type_annotation, "__args__"):
+                # This is a Literal type, get the literal value
+                literal_value = type_annotation.__args__[0]
+                data_block_types.append(literal_value)
+
+    return tuple(data_block_types)
+
+
 def is_data_content_block(block: dict) -> bool:
-    """Check if the content block is a standard data content block.
+    """Check if the provided content block is a standard v1 data content block.
 
     Args:
         block: The content block to check.
@@ -960,20 +976,19 @@ def is_data_content_block(block: dict) -> bool:
         True if the content block is a data content block, False otherwise.
 
     """
-    return block.get("type") in (
-        "audio",
-        "image",
-        "video",
-        "file",
-        "text-plain",
-    ) and any(
+    return block.get("type") in _get_data_content_block_types() and any(
+        # Check if at least one non-type key is present to signify presence of data
         key in block
         for key in (
             "url",
             "base64",
             "file_id",
             "text",
-            "source_type",  # backwards compatibility
+            "source_type",  # for backwards compatibility with v0 content blocks
+            # TODO: should we verify that if source_type is present, at least one of
+            # url, base64, or file_id is also present? Otherwise, source_type could be
+            # present without any actual data? Need to confirm whether this was ever
+            # possible in v0 content blocks in the first place.
         )
     )
 
@@ -1032,6 +1047,7 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 def convert_to_openai_data_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
+    # TODO: make sure this supports new v1
     if block["type"] == "image":
         formatted_block = convert_to_openai_image_block(block)
 

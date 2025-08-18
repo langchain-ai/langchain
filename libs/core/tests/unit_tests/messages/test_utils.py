@@ -1215,9 +1215,11 @@ def test_convert_to_openai_messages_developer() -> None:
 
 
 def test_convert_to_openai_messages_multimodal() -> None:
+    """v0 and v1 content to OpenAI messages conversion."""
     messages = [
         HumanMessage(
             content=[
+                # Prior v0 blocks
                 {"type": "text", "text": "Text message"},
                 {
                     "type": "image",
@@ -1225,25 +1227,9 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 },
                 {
                     "type": "image",
-                    "source_type": "url",  # backward compatibility
-                    "url": "https://example.com/test.png",
-                },
-                {
-                    "type": "image",
-                    "base64": "<base64 string>",
-                    "mime_type": "image/png",
-                },
-                {
-                    "type": "image",
                     "source_type": "base64",
                     "data": "<base64 string>",
                     "mime_type": "image/png",
-                },
-                {
-                    "type": "file",
-                    "base64": "<base64 string>",
-                    "mime_type": "application/pdf",
-                    "filename": "test.pdf",
                 },
                 {
                     "type": "file",
@@ -1253,6 +1239,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
                     "filename": "test.pdf",
                 },
                 {
+                    # OpenAI Chat Completions file format
                     "type": "file",
                     "file": {
                         "filename": "draconomicon.pdf",
@@ -1261,17 +1248,8 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 },
                 {
                     "type": "file",
-                    "file_id": "file-abc123",
-                },
-                {
-                    "type": "file",
                     "source_type": "id",
                     "id": "file-abc123",
-                },
-                {
-                    "type": "audio",
-                    "base64": "<base64 string>",
-                    "mime_type": "audio/wav",
                 },
                 {
                     "type": "audio",
@@ -1286,6 +1264,32 @@ def test_convert_to_openai_messages_multimodal() -> None:
                         "format": "wav",
                     },
                 },
+                # v1 Additions
+                {
+                    "type": "image",
+                    "source_type": "url",  # backward compatibility v0 block field
+                    "url": "https://example.com/test.png",
+                },
+                {
+                    "type": "image",
+                    "base64": "<base64 string>",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "file",
+                    "base64": "<base64 string>",
+                    "mime_type": "application/pdf",
+                    "filename": "test.pdf",  # backward compatibility v0 block field
+                },
+                {
+                    "type": "file",
+                    "file_id": "file-abc123",
+                },
+                {
+                    "type": "audio",
+                    "base64": "<base64 string>",
+                    "mime_type": "audio/wav",
+                },
             ]
         )
     ]
@@ -1294,7 +1298,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
     message = result[0]
     assert len(message["content"]) == 13
 
-    # Test adding filename
+    # Test auto-adding filename
     messages = [
         HumanMessage(
             content=[
@@ -1313,6 +1317,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
     assert len(message["content"]) == 1
     block = message["content"][0]
     assert block == {
+        # OpenAI Chat Completions file format
         "type": "file",
         "file": {
             "file_data": "data:application/pdf;base64,<base64 string>",

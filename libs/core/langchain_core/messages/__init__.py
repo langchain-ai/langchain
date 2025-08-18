@@ -21,6 +21,7 @@ from langchain_core._import_utils import import_attr
 
 if TYPE_CHECKING:
     from langchain_core.messages.ai import (
+        _LC_ID_PREFIX,
         AIMessage,
         AIMessageChunk,
     )
@@ -90,6 +91,7 @@ if TYPE_CHECKING:
 __all__ = (
     "LC_AUTO_PREFIX",
     "LC_ID_PREFIX",
+    "_LC_ID_PREFIX",
     "AIMessage",
     "AIMessageChunk",
     "Annotation",
@@ -174,6 +176,9 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
+    "LC_AUTO_PREFIX": "content_blocks",
+    "LC_ID_PREFIX": "content_blocks",
+    "_LC_ID_PREFIX": "ai",
     "NonStandardAnnotation": "content_blocks",
     "NonStandardContentBlock": "content_blocks",
     "PlainTextContentBlock": "content_blocks",
