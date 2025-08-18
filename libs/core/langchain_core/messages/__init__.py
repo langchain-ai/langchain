@@ -18,6 +18,7 @@
 from typing import TYPE_CHECKING
 
 from langchain_core._import_utils import import_attr
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, ensure_id
 
 if TYPE_CHECKING:
     from langchain_core.messages.ai import (
@@ -25,11 +26,8 @@ if TYPE_CHECKING:
         AIMessageChunk,
     )
     from langchain_core.messages.base import (
-        LC_AUTO_PREFIX,
-        LC_ID_PREFIX,
         BaseMessage,
         BaseMessageChunk,
-        ensure_id,
         merge_content,
         message_to_dict,
         messages_to_dict,
@@ -151,7 +149,6 @@ __all__ = (
 )
 
 _dynamic_imports = {
-    "ensure_id": "base",
     "AIMessage": "ai",
     "AIMessageChunk": "ai",
     "Annotation": "content",
@@ -174,8 +171,6 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
-    "LC_AUTO_PREFIX": "base",
-    "LC_ID_PREFIX": "base",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "PlainTextContentBlock": "content",
