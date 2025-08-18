@@ -397,14 +397,23 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            content.append(
-                                {
-                                    k: v
-                                    for k, v in block.items()
-                                    if k
-                                    in ("type", "text", "cache_control", "citations")
-                                },
-                            )
+                            formatted_block = {
+                                k: v
+                                for k, v in block.items()
+                                if k in ("type", "text", "cache_control", "citations")
+                            }
+                            # Clean up citations to remove null file_id fields
+                            if formatted_block.get("citations"):
+                                cleaned_citations = []
+                                for citation in formatted_block["citations"]:
+                                    cleaned_citation = {
+                                        k: v
+                                        for k, v in citation.items()
+                                        if not (k == "file_id" and v is None)
+                                    }
+                                    cleaned_citations.append(cleaned_citation)
+                                formatted_block["citations"] = cleaned_citations
+                            content.append(formatted_block)
                     elif block["type"] == "thinking":
                         content.append(
                             {
