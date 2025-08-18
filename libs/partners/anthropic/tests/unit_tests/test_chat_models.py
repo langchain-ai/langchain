@@ -1230,7 +1230,7 @@ def test_anthropic_model_params() -> None:
     ls_params = llm._get_ls_params(model="claude-opus-4-1-20250805")
     assert ls_params["ls_model_name"] == "claude-opus-4-1-20250805"
 
-    
+
 def test_streaming_cache_token_reporting() -> None:
     """Test that cache tokens are properly reported in streaming events."""
     from unittest.mock import MagicMock
