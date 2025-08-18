@@ -444,9 +444,6 @@ class HTMLSectionSplitter:
         Returns:
             str: The transformed HTML content as a string.
         """
-        if self.xslt_path is None:
-            return html_content
-
         try:
             from lxml import etree
         except ImportError as e:
