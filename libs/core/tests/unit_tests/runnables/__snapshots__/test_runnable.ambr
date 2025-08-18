@@ -97,7 +97,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -227,7 +227,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['baz, qux'])",
+          "repr": "FakeListChatModel(responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -346,7 +346,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         },
         {
@@ -457,7 +457,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['baz, qux'])",
+          "repr": "FakeListChatModel(responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -482,273 +482,6 @@
   list([
     RunTree(id=00000000-0000-4000-8000-000000000000, name='RunnableSequence', run_type='chain', dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
-# ---
-# name: test_configurable_fields[schema2]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema3]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema4]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema5]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'other_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'Other Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_example[schema7]
-  dict({
-    '$defs': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/$defs/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm': dict({
-            '$ref': '#/$defs/LLM',
-            'default': 'default',
-          }),
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/$defs/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_prefix_keys[schema6]
-  dict({
-    'definitions': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_sleep': dict({
-            'anyOf': list([
-              dict({
-                'type': 'number',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Chat Sleep',
-          }),
-          'llm': dict({
-            '$ref': '#/definitions/LLM',
-            'default': 'default',
-          }),
-          'llm==chat/responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/definitions/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm==default/responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/definitions/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/definitions/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
 # ---
 # name: test_each
   '''
@@ -1009,7 +742,7 @@
 # name: test_prompt_with_chat_model
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo'])
+  | FakeListChatModel(responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model.1
@@ -1109,7 +842,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(output_version='v0', responses=['foo'])",
+        "repr": "FakeListChatModel(responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1220,7 +953,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -1249,7 +982,7 @@
 # name: test_prompt_with_chat_model_async
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo'])
+  | FakeListChatModel(responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model_async.1
@@ -1349,7 +1082,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(output_version='v0', responses=['foo'])",
+        "repr": "FakeListChatModel(responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -2334,10 +2067,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -2467,7 +2200,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -2699,10 +2432,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2713,17 +2442,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -2742,10 +2460,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -2955,8 +2672,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -2995,9 +2712,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -3075,10 +2792,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -3087,7 +2804,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -3108,7 +2825,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -3823,10 +3540,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -3956,7 +3673,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -4188,10 +3905,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -4202,17 +3915,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -4231,10 +3933,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -4463,8 +4164,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -4503,9 +4204,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -4583,10 +4284,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -4595,7 +4296,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -4616,7 +4317,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -5343,10 +5044,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -5476,7 +5177,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -5708,10 +5409,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -5722,17 +5419,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -5751,10 +5437,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -5983,8 +5668,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -6023,9 +5708,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -6103,10 +5788,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -6115,7 +5800,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -6136,7 +5821,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -6738,10 +6423,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -6871,7 +6556,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -7103,10 +6788,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -7117,17 +6798,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -7146,10 +6816,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -7359,8 +7028,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -7399,9 +7068,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -7479,10 +7148,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -7491,7 +7160,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -7512,7 +7181,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -8269,10 +7938,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -8402,7 +8071,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -8634,10 +8303,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -8648,17 +8313,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -8677,10 +8331,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -8909,8 +8562,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -8949,9 +8602,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -9029,10 +8682,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -9041,7 +8694,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -9062,7 +8715,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -9709,10 +9362,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -9842,7 +9495,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -10074,10 +9727,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -10088,17 +9737,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -10117,10 +9755,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -10330,8 +9967,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -10370,9 +10007,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -10450,10 +10087,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -10462,7 +10099,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -10483,7 +10120,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -11148,10 +10785,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -11281,7 +10918,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -11513,10 +11150,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -11527,17 +11160,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -11556,10 +11178,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -11799,8 +11420,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -11839,9 +11460,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -11919,10 +11540,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -11931,7 +11552,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -11952,7 +11573,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -12629,10 +12250,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          FunctionMessage are an older version of the ToolMessage schema, and
-          do not contain the tool_call_id field.
+          ``FunctionMessage`` are an older version of the ``ToolMessage`` schema, and
+          do not contain the ``tool_call_id`` field.
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -12762,7 +12383,7 @@
         'description': '''
           Message from a human.
           
-          HumanMessages are messages that are passed in from a human to the model.
+          ``HumanMessage``s are messages that are passed in from a human to the model.
           
           Example:
           
@@ -12994,10 +12615,6 @@
             ]),
             'title': 'Error',
           }),
-          'extras': dict({
-            'title': 'Extras',
-            'type': 'object',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -13008,17 +12625,6 @@
               }),
             ]),
             'title': 'Id',
-          }),
-          'index': dict({
-            'anyOf': list([
-              dict({
-                'type': 'integer',
-              }),
-              dict({
-                'type': 'string',
-              }),
-            ]),
-            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -13037,10 +12643,9 @@
           }),
         }),
         'required': list([
-          'type',
-          'id',
           'name',
           'args',
+          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -13269,8 +12874,8 @@
                       "id": "123"
                   }
           
-              This represents a request to call the tool named "foo" with arguments {"a": 1}
-              and an identifier of "123".
+              This represents a request to call the tool named ``'foo'`` with arguments
+              ``{"a": 1}`` and an identifier of ``'123'``.
         ''',
         'properties': dict({
           'args': dict({
@@ -13309,9 +12914,9 @@
         'description': '''
           A chunk of a tool call (e.g., as part of a stream).
           
-          When merging ToolCallChunks (e.g., via AIMessageChunk.__add__),
+          When merging ``ToolCallChunk``s (e.g., via ``AIMessageChunk.__add__``),
           all string attributes are concatenated. Chunks are only merged if their
-          values of `index` are equal and not None.
+          values of ``index`` are equal and not None.
           
           Example:
           
@@ -13389,10 +12994,10 @@
         'description': '''
           Message for passing the result of executing a tool back to a model.
           
-          ToolMessages contain the result of a tool invocation. Typically, the result
-          is encoded inside the `content` field.
+          ``ToolMessage``s contain the result of a tool invocation. Typically, the result
+          is encoded inside the ``content`` field.
           
-          Example: A ToolMessage representing a result of 42 from a tool call with id
+          Example: A ``ToolMessage`` representing a result of ``42`` from a tool call with id
           
               .. code-block:: python
           
@@ -13401,7 +13006,7 @@
                   ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
           
           
-          Example: A ToolMessage where only part of the tool output is sent to the model
+          Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
               .. versionadded:: 0.2.17
@@ -13422,7 +13027,7 @@
                       tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
                   )
           
-          The tool_call_id field is used to associate the tool call request with the
+          The ``tool_call_id`` field is used to associate the tool call request with the
           tool call response. This is useful in situations where a chat model is able
           to request multiple tool calls in parallel.
         ''',
@@ -13655,7 +13260,7 @@
     just_to_test_lambda: RunnableLambda(...)
   }
   | ChatPromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, template='Context:\n{documents}\n\nQuestion:\n{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo, bar'])
+  | FakeListChatModel(responses=['foo, bar'])
   | CommaSeparatedListOutputParser()
   '''
 # ---
@@ -13858,7 +13463,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -13884,7 +13489,7 @@
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
   | RunnableLambda(...)
   | {
-      chat: FakeListChatModel(output_version='v0', responses=["i'm a chatbot"]),
+      chat: FakeListChatModel(responses=["i'm a chatbot"]),
       llm: FakeListLLM(responses=["i'm a textbot"])
     }
   '''
@@ -14010,7 +13615,7 @@
                 "fake_chat_models",
                 "FakeListChatModel"
               ],
-              "repr": "FakeListChatModel(output_version='v0', responses=[\"i'm a chatbot\"])",
+              "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
               "name": "FakeListChatModel"
             },
             "llm": {
@@ -14028,181 +13633,6 @@
           }
         },
         "name": "RunnableParallel<chat,llm>"
-      }
-    },
-    "name": "RunnableSequence"
-  }
-  '''
-# ---
-# name: test_seq_prompt_map
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableSequence"
-    ],
-    "kwargs": {
-      "first": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "prompts",
-          "chat",
-          "ChatPromptTemplate"
-        ],
-        "kwargs": {
-          "input_variables": [
-            "question"
-          ],
-          "messages": [
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "SystemMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [],
-                    "template": "You are a nice assistant.",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            },
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "HumanMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [
-                      "question"
-                    ],
-                    "template": "{question}",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            }
-          ]
-        },
-        "name": "ChatPromptTemplate"
-      },
-      "middle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "langchain_core",
-            "runnables",
-            "base",
-            "RunnableLambda"
-          ],
-          "repr": "RunnableLambda(...)"
-        }
-      ],
-      "last": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "schema",
-          "runnable",
-          "RunnableParallel"
-        ],
-        "kwargs": {
-          "steps__": {
-            "chat": {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "schema",
-                "runnable",
-                "RunnableBinding"
-              ],
-              "kwargs": {
-                "bound": {
-                  "lc": 1,
-                  "type": "not_implemented",
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "repr": "FakeListChatModel(output_version='v0', responses=[\"i'm a chatbot\"])",
-                  "name": "FakeListChatModel"
-                },
-                "kwargs": {
-                  "stop": [
-                    "Thought:"
-                  ]
-                },
-                "config": {}
-              },
-              "name": "FakeListChatModel"
-            },
-            "llm": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "language_models",
-                "fake",
-                "FakeListLLM"
-              ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
-              "name": "FakeListLLM"
-            },
-            "passthrough": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "runnables",
-                "base",
-                "RunnableLambda"
-              ],
-              "repr": "RunnableLambda(...)"
-            }
-          }
-        },
-        "name": "RunnableParallel<chat,llm,passthrough>"
       }
     },
     "name": "RunnableSequence"
