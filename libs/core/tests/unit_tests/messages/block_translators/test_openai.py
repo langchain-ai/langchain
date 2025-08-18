@@ -154,7 +154,7 @@ def test_convert_to_v1_from_responses_chunk() -> None:
     ]
     expected_chunks = [
         AIMessageChunk(
-            content=[{"type": "reasoning", "id": "abc123", "index": "lc_rs_0_0"}],
+            content=[{"type": "reasoning", "id": "abc123", "index": "lc_rs_305f30"}],
             response_metadata={"model_provider": "openai"},
         ),
         AIMessageChunk(
@@ -163,7 +163,7 @@ def test_convert_to_v1_from_responses_chunk() -> None:
                     "type": "reasoning",
                     "id": "abc234",
                     "reasoning": "foo ",
-                    "index": "lc_rs_1_0",
+                    "index": "lc_rs_315f30",
                 }
             ],
             response_metadata={"model_provider": "openai"},
@@ -174,7 +174,7 @@ def test_convert_to_v1_from_responses_chunk() -> None:
                     "type": "reasoning",
                     "id": "abc234",
                     "reasoning": "bar",
-                    "index": "lc_rs_1_0",
+                    "index": "lc_rs_315f30",
                 }
             ],
             response_metadata={"model_provider": "openai"},
@@ -185,7 +185,7 @@ def test_convert_to_v1_from_responses_chunk() -> None:
                     "type": "reasoning",
                     "id": "abc234",
                     "reasoning": "baz",
-                    "index": "lc_rs_1_1",
+                    "index": "lc_rs_315f31",
                 }
             ],
             response_metadata={"model_provider": "openai"},
@@ -214,13 +214,18 @@ def test_convert_to_v1_from_responses_chunk() -> None:
     assert full.content == expected_content
 
     expected_content_blocks = [
-        {"type": "reasoning", "id": "abc123", "index": "lc_rs_0_0"},
+        {"type": "reasoning", "id": "abc123", "index": "lc_rs_305f30"},
         {
             "type": "reasoning",
             "id": "abc234",
             "reasoning": "foo bar",
-            "index": "lc_rs_1_0",
+            "index": "lc_rs_315f30",
         },
-        {"type": "reasoning", "id": "abc234", "reasoning": "baz", "index": "lc_rs_1_1"},
+        {
+            "type": "reasoning",
+            "id": "abc234",
+            "reasoning": "baz",
+            "index": "lc_rs_315f31",
+        },
     ]
     assert full.content_blocks == expected_content_blocks

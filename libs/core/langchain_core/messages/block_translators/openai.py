@@ -143,7 +143,8 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
         # [{'id': 'rs_...', 'summary': [], 'type': 'reasoning', 'index': 0}]
         block = {k: v for k, v in block.items() if k != "summary"}
         if "index" in block:
-            block["index"] = f"lc_rs_{block['index']}_0"
+            meaningful_idx = f"{block['index']}_0"
+            block["index"] = f"lc_rs_{meaningful_idx.encode().hex()}"
         yield cast("types.ReasoningContentBlock", block)
         return
 
@@ -160,7 +161,8 @@ def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContent
             new_block.update(first_only)
         if "index" in new_block:
             summary_index = part.get("index", 0)
-            new_block["index"] = f"lc_rs_{new_block['index']}_{summary_index}"
+            meaningful_idx = f"{new_block['index']}_{summary_index}"
+            new_block["index"] = f"lc_rs_{meaningful_idx.encode().hex()}"
 
         yield cast("types.ReasoningContentBlock", new_block)
 
@@ -183,7 +185,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         _convert_annotation_to_v1(a) for a in block["annotations"]
                     ]
                 if "index" in block:
-                    block["index"] = f"lc_t_{block['index']}"
+                    block["index"] = f"lc_txt_{block['index']}"
                 yield cast("types.TextContentBlock", block)
 
             elif block_type == "reasoning":
