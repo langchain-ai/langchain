@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
-from uuid import uuid4
 
 from pydantic import ConfigDict, Field
 
@@ -17,18 +16,6 @@ if TYPE_CHECKING:
 
     from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
-
-LC_AUTO_PREFIX = "lc_"
-"""LangChain auto-generated ID prefix for messages and content blocks."""
-
-LC_ID_PREFIX = f"{LC_AUTO_PREFIX}run-"
-"""Internal tracing/callback system identifier.
-
-Used for:
-- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
-  gets a unique run_id (UUID)
-- Enables tracking parent-child relationships between operations
-"""
 
 
 class BaseMessage(Serializable):
@@ -357,18 +344,3 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
     if bold:
         padded = get_bolded_text(padded)
     return f"{sep}{padded}{second_sep}"
-
-
-def ensure_id(id_val: Optional[str]) -> str:
-    """Ensure the ID is a valid string, generating a new UUID if not provided.
-
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
-    LangChain-generated IDs.
-
-    Args:
-        id_val: Optional string ID value to validate.
-
-    Returns:
-        A string ID, either the validated provided value or a newly generated UUID4.
-    """
-    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")

@@ -10,8 +10,6 @@ from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import (
-    LC_AUTO_PREFIX,
-    LC_ID_PREFIX,
     BaseMessage,
     BaseMessageChunk,
     merge_content,
@@ -29,6 +27,7 @@ from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chu
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 
 logger = logging.getLogger(__name__)
 
