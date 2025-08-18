@@ -769,7 +769,7 @@ def test__format_messages_with_cache_control() -> None:
     assert expected_system == actual_system
     assert expected_messages == actual_messages
 
-    # Test standard multi-modal format
+    # Test standard multi-modal format (v0)
     messages = [
         HumanMessage(
             [
@@ -782,6 +782,88 @@ def test__format_messages_with_cache_control() -> None:
                     "source_type": "base64",
                     "mime_type": "application/pdf",
                     "data": "<base64 data>",
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
+                    "extras": {"cache_control": {"type": "ephemeral"}},
+                },
+            ],
+        ),
+    ]
+    actual_system, actual_messages = _format_messages(messages)
+    assert actual_system is None
+    expected_messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "document",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "application/pdf",
+                        "data": "<base64 data>",
+                    },
+                    "cache_control": {"type": "ephemeral"},
+                },
+            ],
+        },
+    ]
+    assert actual_messages == expected_messages
+
+    # Test standard multi-modal format (v1, unpacked extras)
+    messages = [
+        HumanMessage(
+            [
+                {
+                    "type": "text",
+                    "text": "Summarize this document:",
+                },
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 data>",
                     "cache_control": {"type": "ephemeral"},
                 },
             ],

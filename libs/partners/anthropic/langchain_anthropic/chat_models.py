@@ -186,7 +186,7 @@ def _merge_messages(
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
-        if block["source_type"] == "url":
+        if "url" in block:
             if block["url"].startswith("data:"):
                 # Data URI
                 formatted_block = {
@@ -198,16 +198,16 @@ def _format_data_content_block(block: dict) -> dict:
                     "type": "image",
                     "source": {"type": "url", "url": block["url"]},
                 }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": block["mime_type"],
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "id":
+        elif "id" in block:
             formatted_block = {
                 "type": "image",
                 "source": {
@@ -217,7 +217,7 @@ def _format_data_content_block(block: dict) -> dict:
             }
         else:
             msg = (
-                "Anthropic only supports 'url' and 'base64' source_type for image "
+                "Anthropic only supports 'url', 'base64', or 'id' keys for image "
                 "content blocks."
             )
             raise ValueError(
@@ -225,7 +225,7 @@ def _format_data_content_block(block: dict) -> dict:
             )
 
     elif block["type"] == "file":
-        if block["source_type"] == "url":
+        if "url" in block:
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -233,16 +233,16 @@ def _format_data_content_block(block: dict) -> dict:
                     "url": block["url"],
                 },
             }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "document",
                 "source": {
                     "type": "base64",
                     "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "text":
+        elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -251,7 +251,7 @@ def _format_data_content_block(block: dict) -> dict:
                     "data": block["text"],
                 },
             }
-        elif block["source_type"] == "id":
+        elif "id" in block:
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -259,6 +259,22 @@ def _format_data_content_block(block: dict) -> dict:
                     "file_id": block["id"],
                 },
             }
+        else:
+            msg = (
+                "Anthropic only supports 'url', 'base64', or 'id' keys for file "
+                "content blocks."
+            )
+            raise ValueError(msg)
+
+    elif block["type"] == "text-plain":
+        formatted_block = {
+            "type": "document",
+            "source": {
+                "type": "text",
+                "media_type": block.get("mime_type") or "text/plain",
+                "data": block["text"],
+            },
+        }
 
     else:
         msg = f"Block of type {block['type']} is not supported."
@@ -268,7 +284,10 @@ def _format_data_content_block(block: dict) -> dict:
         for key in ["cache_control", "citations", "title", "context"]:
             if key in block:
                 formatted_block[key] = block[key]
+            elif (metadata := block.get("extras")) and key in metadata:
+                formatted_block[key] = metadata[key]
             elif (metadata := block.get("metadata")) and key in metadata:
+                # Backward compat
                 formatted_block[key] = metadata[key]
 
     return formatted_block
@@ -691,13 +710,11 @@ class ChatAnthropic(BaseChatModel):
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -731,7 +748,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "image",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -760,9 +776,8 @@ class ChatAnthropic(BaseChatModel):
                             "Summarize this document.",
                             {
                                 "type": "file",
-                                "source_type": "base64",
                                 "mime_type": "application/pdf",
-                                "data": data,
+                                "base64": data,
                             },
                         ]
                     )
@@ -796,7 +811,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "file",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -1567,6 +1581,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        llm_output["model_provider"] = "anthropic"
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -2286,6 +2301,8 @@ def _make_message_chunk_from_anthropic_event(
     else:
         pass
 
+    if message_chunk:
+        message_chunk.response_metadata["model_provider"] = "anthropic"
     return message_chunk, block_start_event
 
 
