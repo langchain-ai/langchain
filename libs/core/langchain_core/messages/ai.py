@@ -10,6 +10,7 @@ from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages.common import LC_AUTO_PREFIX, LC_ID_PREFIX
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -523,15 +524,15 @@ def add_ai_message_chunks(
     for id_ in candidates:
         if (
             id_
-            and not id_.startswith(types.LC_ID_PREFIX)
-            and not id_.startswith(types.LC_AUTO_PREFIX)
+            and not id_.startswith(LC_ID_PREFIX)
+            and not id_.startswith(LC_AUTO_PREFIX)
         ):
             chunk_id = id_
             break
     else:
         # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_ and id_.startswith(types.LC_ID_PREFIX):
+            if id_ and id_.startswith(LC_ID_PREFIX):
                 chunk_id = id_
                 break
         else:

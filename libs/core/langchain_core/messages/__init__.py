@@ -32,9 +32,8 @@ if TYPE_CHECKING:
         messages_to_dict,
     )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+    from langchain_core.messages.common import LC_AUTO_PREFIX, LC_ID_PREFIX, ensure_id
     from langchain_core.messages.content import (
-        LC_AUTO_PREFIX,
-        LC_ID_PREFIX,
         Annotation,
         AudioContentBlock,
         Citation,
@@ -55,7 +54,6 @@ if TYPE_CHECKING:
         WebSearchResult,
         convert_to_openai_data_block,
         convert_to_openai_image_block,
-        ensure_id,
         is_data_content_block,
         is_reasoning_block,
         is_text_block,
@@ -151,7 +149,7 @@ __all__ = (
 )
 
 _dynamic_imports = {
-    "ensure_id": "content",
+    "ensure_id": "common",
     "AIMessage": "ai",
     "AIMessageChunk": "ai",
     "Annotation": "content",
@@ -174,8 +172,8 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
-    "LC_AUTO_PREFIX": "content",
-    "LC_ID_PREFIX": "content",
+    "LC_AUTO_PREFIX": "common",
+    "LC_ID_PREFIX": "common",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "PlainTextContentBlock": "content",
