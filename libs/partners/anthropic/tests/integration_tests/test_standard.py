@@ -11,6 +11,8 @@ from langchain_anthropic import ChatAnthropic
 
 REPO_ROOT_DIR = Path(__file__).parents[5]
 
+MODEL = "claude-3-5-haiku-latest"
+
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
     @property
@@ -19,7 +21,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     @property
     def chat_model_params(self) -> dict:
-        return {"model": "claude-3-5-sonnet-latest"}
+        return {"model": MODEL}
 
     @property
     def supports_image_inputs(self) -> bool:
@@ -67,7 +69,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
-            model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
+            model=MODEL,  # type: ignore[call-arg]
         )
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
@@ -95,7 +97,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
-            model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
+            model=MODEL,  # type: ignore[call-arg]
         )
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
