@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal, Optional, TypedDict
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
-from langchain_core.messages.content_blocks import (
+from langchain_core.messages.content import (
     KNOWN_BLOCK_TYPES,
     ContentBlock,
     create_audio_block,
