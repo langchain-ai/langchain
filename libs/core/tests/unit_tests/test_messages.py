@@ -31,7 +31,7 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.messages.content_blocks import KNOWN_BLOCK_TYPES, ContentBlock
+from langchain_core.messages.content import KNOWN_BLOCK_TYPES, ContentBlock
 from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk

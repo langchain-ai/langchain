@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
+from uuid import uuid4
 
 from pydantic import ConfigDict, Field
 
 from langchain_core.language_models._utils import _convert_openai_format_to_data_block
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import content_blocks as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -16,7 +16,20 @@ from langchain_core.utils.interactive_env import is_interactive_env
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
+
+LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
+
+LC_ID_PREFIX = f"{LC_AUTO_PREFIX}run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
 
 
 class BaseMessage(Serializable):
@@ -122,6 +135,8 @@ class BaseMessage(Serializable):
         Otherwise, does best-effort parsing to standard types.
 
         """
+        from langchain_core.messages import content as types
+
         blocks: list[types.ContentBlock] = []
         content = (
             [self.content]
@@ -349,3 +364,18 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
     if bold:
         padded = get_bolded_text(padded)
     return f"{sep}{padded}{second_sep}"
+
+
+def ensure_id(id_val: Optional[str]) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A string ID, either the validated provided value or a newly generated UUID4.
+    """
+    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")

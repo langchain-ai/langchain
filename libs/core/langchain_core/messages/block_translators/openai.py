@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 
 
 # v1 / Chat Completions
