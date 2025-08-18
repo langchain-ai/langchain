@@ -31,8 +31,8 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-opus-4-1-20250805"
-IMAGE_MODEL_NAME = "claude-opus-4-1-20250805"
+MODEL_NAME = "claude-3-5-haiku-latest"
+IMAGE_MODEL_NAME = "claude-3-5-haiku-latest"
 
 
 def test_stream() -> None:
