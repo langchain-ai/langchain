@@ -75,7 +75,7 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: dict[str, Any],
+        data: Any,
         current_path: Optional[list[str]] = None,
         chunks: Optional[list[dict[str, Any]]] = None,
     ) -> list[dict[str, Any]]:

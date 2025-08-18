@@ -7,7 +7,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Callable, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated
@@ -59,6 +59,32 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+_MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
+    "claude-opus-4-1": 32000,
+    "claude-opus-4": 32000,
+    "claude-sonnet-4": 64000,
+    "claude-3-7-sonnet": 64000,
+    "claude-3-5-sonnet": 8192,
+    "claude-3-5-haiku": 8192,
+    "claude-3-haiku": 4096,
+}
+_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
+
+
+def _default_max_tokens_for(model: str | None) -> int:
+    """Return the default max output tokens for an Anthropic model (with fallback).
+
+    Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
+    """
+    if not model:
+        return _FALLBACK_MAX_OUTPUT_TOKENS
+
+    parts = model.split("-")
+    family = "-".join(parts[:-1]) if len(parts) > 1 else model
+
+    return _MODEL_DEFAULT_MAX_OUTPUT_TOKENS.get(family, _FALLBACK_MAX_OUTPUT_TOKENS)
 
 
 class AnthropicTool(TypedDict):
@@ -1205,7 +1231,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
+    max_tokens: Optional[int] = Field(default=None, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -1342,6 +1368,15 @@ class ChatAnthropic(BaseChatModel):
         if ls_stop := stop or params.get("stop", None):
             ls_params["ls_stop"] = ls_stop
         return ls_params
+
+    @model_validator(mode="before")
+    @classmethod
+    def set_default_max_tokens(cls, values: dict[str, Any]) -> Any:
+        """Set default max_tokens."""
+        if values.get("max_tokens") is None:
+            model = values.get("model") or values.get("model_name")
+            values["max_tokens"] = _default_max_tokens_for(model)
+        return values
 
     @model_validator(mode="before")
     @classmethod
