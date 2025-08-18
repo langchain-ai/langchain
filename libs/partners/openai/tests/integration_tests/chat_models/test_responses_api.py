@@ -22,7 +22,7 @@ from langchain_openai import ChatOpenAI, custom_tool
 MODEL_NAME = "gpt-4o-mini"
 
 
-def _check_response(response: Optional[BaseMessage], output_version: str) -> None:
+def _check_response(response: Optional[BaseMessage]) -> None:
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
     for block in response.content:
@@ -65,7 +65,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
     )
-    _check_response(first_response, output_version)
+    _check_response(first_response)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None  # type: ignore[no-redef]
@@ -75,7 +75,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     ):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
-    _check_response(full, output_version)
+    _check_response(full)
 
     # Use OpenAI's stateful API
     response = llm.invoke(
@@ -83,7 +83,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
         tools=[{"type": "web_search_preview"}],
         previous_response_id=first_response.response_metadata["id"],  # type: ignore[typeddict-item]
     )
-    _check_response(response, output_version)
+    _check_response(response)
 
     # Manually pass in chat history
     response = llm.invoke(
@@ -94,13 +94,13 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
         ],
         tools=[{"type": "web_search_preview"}],
     )
-    _check_response(response, output_version)
+    _check_response(response)
 
     # Bind tool
     response = llm.bind_tools([{"type": "web_search_preview"}]).invoke(
         "What was a positive news story from today?"
     )
-    _check_response(response, output_version)
+    _check_response(response)
 
     for msg in [first_response, full, response]:
         assert msg is not None
@@ -118,7 +118,7 @@ async def test_web_search_async() -> None:
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
     )
-    _check_response(response, "v0")
+    _check_response(response)
     assert response.response_metadata["status"]
 
     # Test streaming
@@ -130,7 +130,7 @@ async def test_web_search_async() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    _check_response(full, "v0")
+    _check_response(full)
 
     for msg in [response, full]:
         assert msg.additional_kwargs["tool_outputs"]
@@ -163,7 +163,7 @@ def test_function_calling(output_version: Literal["v0", "responses/v1", "v1"]) -
     assert set(full.tool_calls[0]["args"]) == {"x", "y"}
 
     response = bound_llm.invoke("What was a positive news story from today?")
-    _check_response(response, output_version)
+    _check_response(response)
 
 
 class Foo(BaseModel):
@@ -373,14 +373,14 @@ def test_file_search() -> None:
 
     input_message = {"role": "user", "content": "What is deep research by OpenAI?"}
     response = llm.invoke([input_message], tools=[tool])
-    _check_response(response, "v0")
+    _check_response(response)
 
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message], tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    _check_response(full, "v0")
+    _check_response(full)
 
     next_message = {"role": "user", "content": "Thank you."}
     _ = llm.invoke([input_message, full, next_message])
@@ -441,7 +441,7 @@ def test_stream_reasoning_summary(
                 total_reasoning_blocks += 1
                 assert isinstance(block["id"], str) and block["id"].startswith("rs_")
                 assert isinstance(block["reasoning"], str)
-                assert isinstance(block["index"], int)
+                assert isinstance(block["index"], str)
         assert (
             total_reasoning_blocks > 1
         )  # This query typically generates multiple reasoning blocks
@@ -468,7 +468,7 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
     }
     response = llm_with_tools.invoke([input_message])
     assert isinstance(response, AIMessage)
-    _check_response(response, output_version)
+    _check_response(response)
     if output_version == "v0":
         tool_outputs = [
             item
@@ -501,7 +501,10 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
 
     # Test streaming
     # Use same container
-    container_id = tool_outputs[0]["container_id"]
+    container_id = (
+        tool_outputs[0].get("container_id")
+        or tool_outputs[0].get("extras")["container_id"]
+    )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": container_id}]
     )
@@ -746,22 +749,14 @@ def test_image_generation_streaming(
         assert complete_ai_message.additional_kwargs["tool_outputs"]
         tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
         assert set(tool_output.keys()).issubset(expected_keys)
-    elif output_version == "responses/v1":
+    else:
+        # "responses/v1"
         tool_output = next(
             block
             for block in complete_ai_message.content
             if isinstance(block, dict) and block["type"] == "image_generation_call"
         )
         assert set(tool_output.keys()).issubset(expected_keys)
-    else:
-        # v1
-        standard_keys = {"type", "base64", "id", "status", "index"}
-        tool_output = next(
-            block
-            for block in complete_ai_message.content
-            if isinstance(block, dict) and block["type"] == "image"
-        )
-        assert set(standard_keys).issubset(tool_output.keys())
 
 
 @pytest.mark.default_cassette("test_image_generation_streaming.yaml.gz")
@@ -829,7 +824,7 @@ def test_image_generation_multi_turn(
     ]
     ai_message = llm_with_tools.invoke(chat_history)
     assert isinstance(ai_message, AIMessage)
-    _check_response(ai_message, output_version)
+    _check_response(ai_message)
 
     expected_keys = {
         "id",
@@ -895,26 +890,19 @@ def test_image_generation_multi_turn(
 
     ai_message2 = llm_with_tools.invoke(chat_history)
     assert isinstance(ai_message2, AIMessage)
-    _check_response(ai_message2, output_version)
+    _check_response(ai_message2)
 
     if output_version == "v0":
         tool_output = ai_message2.additional_kwargs["tool_outputs"][0]
         assert set(tool_output.keys()).issubset(expected_keys)
-    elif output_version == "responses/v1":
+    else:
+        # "responses/v1"
         tool_output = next(
             block
             for block in ai_message2.content
             if isinstance(block, dict) and block["type"] == "image_generation_call"
         )
         assert set(tool_output.keys()).issubset(expected_keys)
-    else:
-        standard_keys = {"type", "base64", "id", "status"}
-        tool_output = next(
-            block
-            for block in ai_message2.content
-            if isinstance(block, dict) and block["type"] == "image"
-        )
-        assert set(standard_keys).issubset(tool_output.keys())
 
 
 @pytest.mark.default_cassette("test_image_generation_multi_turn.yaml.gz")
@@ -938,7 +926,7 @@ def test_image_generation_multi_turn_v1() -> None:
     ]
     ai_message = llm_with_tools.invoke(chat_history)
     assert isinstance(ai_message, AIMessage)
-    _check_response(ai_message, "v1")
+    _check_response(ai_message)
 
     standard_keys = {"type", "base64", "mime_type", "id"}
     extra_keys = {
@@ -975,7 +963,7 @@ def test_image_generation_multi_turn_v1() -> None:
 
     ai_message2 = llm_with_tools.invoke(chat_history)
     assert isinstance(ai_message2, AIMessage)
-    _check_response(ai_message2, "v1")
+    _check_response(ai_message2)
 
     tool_output = next(
         block

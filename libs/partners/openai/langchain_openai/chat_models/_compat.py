@@ -66,9 +66,9 @@ formats. The functions are used internally by ChatOpenAI.
 
 import json
 from collections.abc import Iterable, Iterator
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Literal, Union, cast
 
-from langchain_core.messages import AIMessage, AIMessageChunk, is_data_content_block
+from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content_blocks as types
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
@@ -262,46 +262,6 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
 
 
 # v1 / Chat Completions
-def _convert_to_v1_from_chat_completions(message: AIMessage) -> AIMessage:
-    """Mutate a Chat Completions message to v1 format."""
-    if isinstance(message.content, str):
-        if message.content:
-            message.content = [{"type": "text", "text": message.content}]
-        else:
-            message.content = []
-
-    for tool_call in message.tool_calls:
-        message.content.append(cast(dict, tool_call))
-
-    if "tool_calls" in message.additional_kwargs:
-        _ = message.additional_kwargs.pop("tool_calls")
-
-    if "token_usage" in message.response_metadata:
-        _ = message.response_metadata.pop("token_usage")
-
-    return message
-
-
-def _convert_to_v1_from_chat_completions_chunk(chunk: AIMessageChunk) -> AIMessageChunk:
-    """Mutate a Chat Completions chunk to v1 format."""
-    if isinstance(chunk.content, str):
-        if chunk.content:
-            chunk.content = [{"type": "text", "text": chunk.content}]
-        else:
-            chunk.content = []
-
-    for tool_call_chunk in chunk.tool_call_chunks:
-        chunk.content.append(cast(dict, tool_call_chunk))
-
-    if "tool_calls" in chunk.additional_kwargs:
-        _ = chunk.additional_kwargs.pop("tool_calls")
-
-    if "token_usage" in chunk.response_metadata:
-        _ = chunk.response_metadata.pop("token_usage")
-
-    return chunk
-
-
 def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
     """Convert a v1 message to the Chat Completions format."""
     if isinstance(message.content, list):
@@ -324,230 +284,6 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
 
 
 # v1 / Responses
-def _convert_annotation_to_v1(annotation: dict[str, Any]) -> types.Annotation:
-    annotation_type = annotation.get("type")
-
-    if annotation_type == "url_citation":
-        known_fields = {
-            "type",
-            "url",
-            "title",
-            "cited_text",
-            "start_index",
-            "end_index",
-        }
-        url_citation = cast(types.Citation, {})
-        for field in ("end_index", "start_index", "title"):
-            if field in annotation:
-                url_citation[field] = annotation[field]
-        url_citation["type"] = "citation"
-        url_citation["url"] = annotation["url"]
-        for field in annotation:
-            if field not in known_fields:
-                if "extras" not in url_citation:
-                    url_citation["extras"] = {}
-                url_citation["extras"][field] = annotation[field]
-        return url_citation
-
-    elif annotation_type == "file_citation":
-        known_fields = {"type", "title", "cited_text", "start_index", "end_index"}
-        document_citation: types.Citation = {"type": "citation"}
-        if "filename" in annotation:
-            document_citation["title"] = annotation.pop("filename")
-        for field in annotation:
-            if field not in known_fields:
-                if "extras" not in document_citation:
-                    document_citation["extras"] = {}
-                document_citation["extras"][field] = annotation[field]
-
-        return document_citation
-
-    # TODO: standardise container_file_citation?
-    else:
-        non_standard_annotation: types.NonStandardAnnotation = {
-            "type": "non_standard_annotation",
-            "value": annotation,
-        }
-        return non_standard_annotation
-
-
-def _explode_reasoning(block: dict[str, Any]) -> Iterable[types.ReasoningContentBlock]:
-    if "summary" not in block:
-        yield cast(types.ReasoningContentBlock, block)
-        return
-
-    known_fields = {"type", "reasoning", "id", "index"}
-    unknown_fields = [
-        field for field in block if field != "summary" and field not in known_fields
-    ]
-    if unknown_fields:
-        block["extras"] = {}
-    for field in unknown_fields:
-        block["extras"][field] = block.pop(field)
-
-    if not block["summary"]:
-        _ = block.pop("summary", None)
-        yield cast(types.ReasoningContentBlock, block)
-        return
-
-    # Common part for every exploded line, except 'summary'
-    common = {k: v for k, v in block.items() if k in known_fields}
-
-    # Optional keys that must appear only in the first exploded item
-    first_only = block.pop("extras", None)
-
-    for idx, part in enumerate(block["summary"]):
-        new_block = dict(common)
-        new_block["reasoning"] = part.get("text", "")
-        if idx == 0 and first_only:
-            new_block.update(first_only)
-        yield cast(types.ReasoningContentBlock, new_block)
-
-
-def _convert_to_v1_from_responses(
-    content: list[dict[str, Any]],
-    tool_calls: Optional[list[types.ToolCall]] = None,
-    invalid_tool_calls: Optional[list[types.InvalidToolCall]] = None,
-) -> list[types.ContentBlock]:
-    """Mutate a Responses message to v1 format."""
-
-    def _iter_blocks() -> Iterable[types.ContentBlock]:
-        for block in content:
-            if not isinstance(block, dict):
-                continue
-            block_type = block.get("type")
-
-            if block_type == "text":
-                if "annotations" in block:
-                    block["annotations"] = [
-                        _convert_annotation_to_v1(a) for a in block["annotations"]
-                    ]
-                yield cast(types.TextContentBlock, block)
-
-            elif block_type == "reasoning":
-                yield from _explode_reasoning(block)
-
-            elif block_type == "image_generation_call" and (
-                result := block.get("result")
-            ):
-                new_block = {"type": "image", "base64": result}
-                if output_format := block.get("output_format"):
-                    new_block["mime_type"] = f"image/{output_format}"
-                if "id" in block:
-                    new_block["id"] = block["id"]
-                if "index" in block:
-                    new_block["index"] = block["index"]
-                for extra_key in (
-                    "status",
-                    "background",
-                    "output_format",
-                    "quality",
-                    "revised_prompt",
-                    "size",
-                ):
-                    if extra_key in block:
-                        if "extras" not in new_block:
-                            new_block["extras"] = {}
-                        new_block["extras"][extra_key] = block[extra_key]
-                yield cast(types.ImageContentBlock, new_block)
-
-            elif block_type == "function_call":
-                tool_call_block: Optional[
-                    Union[types.ToolCall, types.InvalidToolCall]
-                ] = None
-                call_id = block.get("call_id", "")
-                if call_id:
-                    for tool_call in tool_calls or []:
-                        if tool_call.get("id") == call_id:
-                            tool_call_block = cast(types.ToolCall, tool_call.copy())
-                            break
-                    else:
-                        for invalid_tool_call in invalid_tool_calls or []:
-                            if invalid_tool_call.get("id") == call_id:
-                                tool_call_block = cast(
-                                    types.InvalidToolCall, invalid_tool_call.copy()
-                                )
-                                break
-                if tool_call_block:
-                    if "id" in block:
-                        if "extras" not in tool_call_block:
-                            tool_call_block["extras"] = {}
-                        tool_call_block["extras"]["item_id"] = block["id"]  # type: ignore[typeddict-item]
-                    if "index" in block:
-                        tool_call_block["index"] = block["index"]
-                    yield tool_call_block
-
-            elif block_type == "web_search_call":
-                web_search_call = {"type": "web_search_call", "id": block["id"]}
-                if "index" in block:
-                    web_search_call["index"] = block["index"]
-                if (
-                    "action" in block
-                    and isinstance(block["action"], dict)
-                    and block["action"].get("type") == "search"
-                    and "query" in block["action"]
-                ):
-                    web_search_call["query"] = block["action"]["query"]
-                for key in block:
-                    if key not in ("type", "id"):
-                        web_search_call[key] = block[key]
-
-                web_search_result = {"type": "web_search_result", "id": block["id"]}
-                if "index" in block:
-                    web_search_result["index"] = block["index"] + 1
-                yield cast(types.WebSearchCall, web_search_call)
-                yield cast(types.WebSearchResult, web_search_result)
-
-            elif block_type == "code_interpreter_call":
-                code_interpreter_call = {
-                    "type": "code_interpreter_call",
-                    "id": block["id"],
-                }
-                if "code" in block:
-                    code_interpreter_call["code"] = block["code"]
-                if "container_id" in block:
-                    code_interpreter_call["container_id"] = block["container_id"]
-                if "index" in block:
-                    code_interpreter_call["index"] = block["index"]
-
-                code_interpreter_result = {
-                    "type": "code_interpreter_result",
-                    "id": block["id"],
-                }
-                if "outputs" in block:
-                    code_interpreter_result["outputs"] = block["outputs"]
-                    for output in block["outputs"]:
-                        if (
-                            isinstance(output, dict)
-                            and (output_type := output.get("type"))
-                            and output_type == "logs"
-                        ):
-                            if "output" not in code_interpreter_result:
-                                code_interpreter_result["output"] = []
-                            code_interpreter_result["output"].append(
-                                {
-                                    "type": "code_interpreter_output",
-                                    "stdout": output.get("logs", ""),
-                                }
-                            )
-
-                if "status" in block:
-                    code_interpreter_result["status"] = block["status"]
-                if "index" in block:
-                    code_interpreter_result["index"] = block["index"] + 1
-
-                yield cast(types.CodeInterpreterCall, code_interpreter_call)
-                yield cast(types.CodeInterpreterResult, code_interpreter_result)
-
-            else:
-                new_block = {"type": "non_standard", "value": block}
-                if "index" in new_block["value"]:
-                    new_block["index"] = new_block["value"].pop("index")
-                yield cast(types.NonStandardContentBlock, new_block)
-
-    return list(_iter_blocks())
-
-
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     if annotation["type"] == "citation":
         new_ann: dict[str, Any] = {}
@@ -678,10 +414,18 @@ def _consolidate_calls(
                 for key in ("code", "container_id"):
                     if key in current:
                         collapsed[key] = current[key]
+                    elif key in current.get("extras", {}):
+                        collapsed[key] = current["extras"][key]
+                    else:
+                        pass
 
                 for key in ("outputs", "status"):
                     if key in nxt:
                         collapsed[key] = nxt[key]
+                    elif key in nxt.get("extras", {}):
+                        collapsed[key] = nxt["extras"][key]
+                    else:
+                        pass
                 collapsed["type"] = "code_interpreter_call"
 
             yield collapsed
