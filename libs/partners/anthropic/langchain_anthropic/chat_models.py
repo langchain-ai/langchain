@@ -365,8 +365,23 @@ def _format_messages(
                                 ),
                             )
                         else:
-                            block.pop("text", None)
-                            content.append(block)
+                            if tool_input := block.get("input"):
+                                args = tool_input
+                            elif "partial_json" in block:
+                                try:
+                                    args = json.loads(block["partial_json"] or "{}")
+                                except json.JSONDecodeError:
+                                    args = {}
+                            else:
+                                args = {}
+                            content.append(
+                                _AnthropicToolUse(
+                                    type="tool_use",
+                                    name=block["name"],
+                                    input=args,
+                                    id=block["id"],
+                                )
+                            )
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
                             k: v
