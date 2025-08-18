@@ -134,7 +134,7 @@ from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
 
-from langchain_core.messages.common import ensure_id
+from langchain_core.messages.base import ensure_id
 
 
 class Citation(TypedDict):

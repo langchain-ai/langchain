@@ -25,14 +25,16 @@ if TYPE_CHECKING:
         AIMessageChunk,
     )
     from langchain_core.messages.base import (
+        LC_AUTO_PREFIX,
+        LC_ID_PREFIX,
         BaseMessage,
         BaseMessageChunk,
+        ensure_id,
         merge_content,
         message_to_dict,
         messages_to_dict,
     )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
-    from langchain_core.messages.common import LC_AUTO_PREFIX, LC_ID_PREFIX, ensure_id
     from langchain_core.messages.content import (
         Annotation,
         AudioContentBlock,
@@ -149,7 +151,7 @@ __all__ = (
 )
 
 _dynamic_imports = {
-    "ensure_id": "common",
+    "ensure_id": "base",
     "AIMessage": "ai",
     "AIMessageChunk": "ai",
     "Annotation": "content",
@@ -172,8 +174,8 @@ _dynamic_imports = {
     "FunctionMessageChunk": "function",
     "HumanMessage": "human",
     "HumanMessageChunk": "human",
-    "LC_AUTO_PREFIX": "common",
-    "LC_ID_PREFIX": "common",
+    "LC_AUTO_PREFIX": "base",
+    "LC_ID_PREFIX": "base",
     "NonStandardAnnotation": "content",
     "NonStandardContentBlock": "content",
     "PlainTextContentBlock": "content",
