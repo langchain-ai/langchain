@@ -8,6 +8,7 @@ import string
 from typing import Any, Callable
 
 import pytest
+from bs4 import Tag
 from langchain_core.documents import Document
 
 from langchain_text_splitters import (
@@ -3252,7 +3253,7 @@ def test_visualbasic6_code_splitter() -> None:
     ]
 
 
-def custom_iframe_extractor(iframe_tag: Any) -> str:
+def custom_iframe_extractor(iframe_tag: Tag) -> str:
     iframe_src = iframe_tag.get("src", "")
     return f"[iframe:{iframe_src}]({iframe_src})"
 

@@ -18,7 +18,7 @@ def test_huggingface_type_check() -> None:
         ValueError,
         match="Tokenizer received was not an instance of PreTrainedTokenizerBase",
     ):
-        CharacterTextSplitter.from_huggingface_tokenizer("foo")
+        CharacterTextSplitter.from_huggingface_tokenizer("foo")  # type: ignore[arg-type]
 
 
 def test_huggingface_tokenizer() -> None:

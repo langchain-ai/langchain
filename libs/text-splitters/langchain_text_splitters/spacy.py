@@ -9,6 +9,7 @@ from langchain_text_splitters.base import TextSplitter
 try:
     import spacy
     from spacy.lang.en import English
+    from spacy.language import Language
 
     _HAS_SPACY = True
 except ImportError:
@@ -52,12 +53,12 @@ class SpacyTextSplitter(TextSplitter):
 
 def _make_spacy_pipeline_for_splitting(
     pipeline: str, *, max_length: int = 1_000_000
-) -> Any:  # avoid importing spacy
+) -> Language:
     if not _HAS_SPACY:
         msg = "Spacy is not installed, please install it with `pip install spacy`."
         raise ImportError(msg)
     if pipeline == "sentencizer":
-        sentencizer: Any = English()
+        sentencizer: Language = English()
         sentencizer.add_pipe("sentencizer")
     else:
         sentencizer = spacy.load(pipeline, exclude=["ner", "tagger"])

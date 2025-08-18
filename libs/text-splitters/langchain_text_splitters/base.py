@@ -172,7 +172,9 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         return docs
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
+    def from_huggingface_tokenizer(
+        cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
+    ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
         if not _HAS_TRANSFORMERS:
             msg = (
@@ -182,7 +184,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             raise ValueError(msg)
 
         if not isinstance(tokenizer, PreTrainedTokenizerBase):
-            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"
+            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
             raise ValueError(msg)  # noqa: TRY004
 
         def _huggingface_tokenizer_length(text: str) -> int:
