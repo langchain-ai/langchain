@@ -1,6 +1,6 @@
 from typing import Optional
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content_blocks as types
 
 
@@ -79,8 +79,14 @@ def test_convert_to_v1_from_anthropic() -> None:
 
 def test_convert_to_v1_from_anthropic_chunk() -> None:
     chunks = [
-        AIMessageChunk(content=[{"text": "Looking ", "type": "text", "index": 0}]),
-        AIMessageChunk(content=[{"text": "now.", "type": "text", "index": 0}]),
+        AIMessageChunk(
+            content=[{"text": "Looking ", "type": "text", "index": 0}],
+            response_metadata={"model_provider": "anthropic"},
+        ),
+        AIMessageChunk(
+            content=[{"text": "now.", "type": "text", "index": 0}],
+            response_metadata={"model_provider": "anthropic"},
+        ),
         AIMessageChunk(
             content=[
                 {
@@ -226,3 +232,122 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
         },
     ]
     assert full.content_blocks == expected_content_blocks
+
+
+def test_convert_to_v1_from_anthropic_input() -> None:
+    message = HumanMessage(
+        [
+            {"type": "text", "text": "foo"},
+            {
+                "type": "document",
+                "source": {
+                    "type": "base64",
+                    "data": "<base64 data>",
+                    "media_type": "application/pdf",
+                },
+            },
+            {
+                "type": "document",
+                "source": {
+                    "type": "url",
+                    "url": "<document url>",
+                },
+            },
+            {
+                "type": "document",
+                "source": {
+                    "type": "content",
+                    "content": [
+                        {"type": "text", "text": "The grass is green"},
+                        {"type": "text", "text": "The sky is blue"},
+                    ],
+                },
+                "citations": {"enabled": True},
+            },
+            {
+                "type": "document",
+                "source": {
+                    "type": "text",
+                    "data": "<plain text data>",
+                    "media_type": "text/plain",
+                },
+            },
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/jpeg",
+                    "data": "<base64 image data>",
+                },
+            },
+            {
+                "type": "image",
+                "source": {
+                    "type": "url",
+                    "url": "<image url>",
+                },
+            },
+            {
+                "type": "image",
+                "source": {
+                    "type": "file",
+                    "file_id": "<image file id>",
+                },
+            },
+            {
+                "type": "document",
+                "source": {"type": "file", "file_id": "<pdf file id>"},
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {"type": "text", "text": "foo"},
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+        },
+        {
+            "type": "file",
+            "url": "<document url>",
+        },
+        {
+            "type": "non_standard",
+            "value": {
+                "type": "document",
+                "source": {
+                    "type": "content",
+                    "content": [
+                        {"type": "text", "text": "The grass is green"},
+                        {"type": "text", "text": "The sky is blue"},
+                    ],
+                },
+                "citations": {"enabled": True},
+            },
+        },
+        {
+            "type": "text-plain",
+            "text": "<plain text data>",
+            "mime_type": "text/plain",
+        },
+        {
+            "type": "image",
+            "base64": "<base64 image data>",
+            "mime_type": "image/jpeg",
+        },
+        {
+            "type": "image",
+            "url": "<image url>",
+        },
+        {
+            "type": "image",
+            "id": "<image file id>",
+        },
+        {
+            "type": "file",
+            "id": "<pdf file id>",
+        },
+    ]
+
+    assert message.content_blocks == expected

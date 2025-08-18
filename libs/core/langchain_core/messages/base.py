@@ -8,6 +8,9 @@ from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content_blocks as types
+from langchain_core.messages.block_translators.anthropic_input import (
+    _convert_to_v1_from_anthropic_input,
+)
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -122,6 +125,8 @@ class BaseMessage(Serializable):
 
         """
         blocks: list[types.ContentBlock] = []
+
+        # First pass converting to standard blocks
         content = (
             [self.content]
             if isinstance(self.content, str) and self.content
@@ -133,17 +138,16 @@ class BaseMessage(Serializable):
             elif isinstance(item, dict):
                 item_type = item.get("type")
                 if item_type not in types.KNOWN_BLOCK_TYPES:
-                    msg = (
-                        f"Non-standard content block type '{item_type}'. Ensure "
-                        "the model supports `output_version='v1'` or higher and "
-                        "that this attribute is set on initialization."
-                    )
-                    raise ValueError(msg)
-                blocks.append(cast("types.ContentBlock", item))
+                    blocks.append({"type": "non_standard", "value": item})
+                else:
+                    blocks.append(cast("types.ContentBlock", item))
             else:
                 pass
 
-        return blocks
+        # Subsequent passes attempt to unpack non-standard blocks
+        blocks = _convert_to_v1_from_anthropic_input(blocks)
+
+        return blocks  # noqa: RET504
 
     def text(self) -> str:
         """Get the text content of the message.
