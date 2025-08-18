@@ -597,6 +597,47 @@ def test__format_messages_with_tool_calls() -> None:
     assert expected == actual
 
 
+def test__format_tool_use_block() -> None:
+    # Test we correctly format tool_use blocks when there is no corresponding tool_call.
+    message = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {},
+                "partial_json": '{"bar_2": "baz_2"}',
+                "index": 1,
+            },
+        ]
+    )
+    result = _format_messages([message])
+    expected = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {"bar_2": "baz_2"},
+            },
+        ],
+    }
+    assert result == (None, [expected])
+
+
 def test__format_messages_with_str_content_and_tool_calls() -> None:
     system = SystemMessage("fuzz")  # type: ignore[misc]
     human = HumanMessage("foo")  # type: ignore[misc]
