@@ -5,7 +5,7 @@
 
 ## Tracing LangGraph
 
-Confident AI provides a [`CallbackHandler`](https://documentation.confident-ai.com/docs/llm-tracing/integrations/langchain) that can be used to trace LangGraph’s execution. Therefore, you can trace the entire execution of your agent by creating nested spans of every step that your agent takes to complete the task. 
+Confident AI provides a [`CallbackHandler`](https://documentation.confident-ai.com/docs/llm-tracing/integrations/langchain) that can be used to trace LangGraph’s execution. Therefore, you can trace the entire execution of your agent by creating nested spans of every step that your agent takes to complete the task.
 
 ### Quickstart
 
@@ -21,27 +21,27 @@ Log in with your [API key](https://app.confident-ai.com/auth/signup) and configu
 import os
 import time
 from langgraph.prebuilt import create_react_agent
- 
+
 from deepeval.integrations.langchain.callback import CallbackHandler
 import deepeval
- 
+
 os.environ["OPENAI_API_KEY"] = "<your-openai-api-key>"
 deepeval.login_with_confident_api_key("<your-confident-api-key>")
- 
+
 def get_weather(city: str) -> str:
     """Returns the weather in a city"""
     return f"It's always sunny in {city}!"
- 
+
 agent = create_react_agent(
-    model="openai:gpt-4o-mini",  
-    tools=[get_weather],  
-    prompt="You are a helpful assistant"  
+    model="openai:gpt-4o-mini",
+    tools=[get_weather],
+    prompt="You are a helpful assistant"
 )
- 
+
 def my_llm_app(input: str) -> str:
 
     result = agent.invoke(
-        input = {"messages": [{"role": "user", "content": input}]}, 
+        input = {"messages": [{"role": "user", "content": input}]},
         config = {"callbacks": [CallbackHandler()]}
     )
 
@@ -58,7 +58,7 @@ python main.py
 ```
 
 ### View traces in the Observatory
-On the Confident AI dashboard, go to Observatory > Traces and click on the latest trace. 
+On the Confident AI dashboard, go to Observatory > Traces and click on the latest trace.
 
 ![Confident AI Observatory](https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing%3Alangchain.png)
 
@@ -72,24 +72,24 @@ With DeepEval, you can run end-to-end evaluations on your agent by creating metr
 ```python
 from deepeval.metrics import TaskCompletionMetric
 from deepeval.dataset import Golden, EvaluationDataset
- 
+
 ...
- 
+
 # Create a metric
 task_completion = TaskCompletionMetric(
     threshold=0.7,
     model="gpt-4o-mini",
     include_reason=True
 )
- 
+
 # Create goldens
 goldens = [
     Golden(input="What is the weather in Bogotá, Colombia?"),
     Golden(input="What is the weather in Paris, France?"),
 ]
- 
+
 dataset = EvaluationDataset(goldens=goldens)
- 
+
 # Run evaluation for each golden
 for golden in dataset.evals_iterator():
     agent.invoke(
@@ -104,24 +104,24 @@ for golden in dataset.evals_iterator():
 from deepeval.metrics import TaskCompletionMetric
 from deepeval.dataset import Golden, EvaluationDataset
 from deepeval.evaluate import test_run
- 
+
 ...
- 
+
 # Create a metric
 task_completion = TaskCompletionMetric(
     threshold=0.7,
     model="gpt-4o-mini",
     include_reason=True
 )
- 
+
 # Create goldens
 goldens = [
     Golden(input="What is the weather in Bogotá, Colombia?"),
     Golden(input="What is the weather in Paris, France?"),
 ]
- 
+
 dataset = EvaluationDataset(goldens=goldens)
- 
+
 # Run evaluation for each golden
 for golden in dataset.evals_iterator():
     task = asyncio.create_task(
@@ -141,7 +141,7 @@ Confident AI provides metric collection on the platform. Running evals in produc
 ```python
 from deepeval.integrations.langchain import CallbackHandler
 ...
- 
+
 # Invoke your agent with the metric collection name
 agent.invoke(
     input = {"messages": [{"role": "user", "content": "what is the weather in sf"}]},
