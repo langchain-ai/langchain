@@ -1,0 +1,96 @@
+# Google Bigtable
+
+Google Cloud Bigtable is a scalable, fully managed NoSQL wide-column database suitable for both real-time access and analytics workloads. This page provides an overview of the LangChain integrations for Google Bigtable.
+
+**Client Library Documentation:** [cloud.google.com/python/docs/reference/langchain-google-bigtable/latest](https://cloud.google.com/python/docs/reference/langchain-google-bigtable/latest)
+**Product Documentation:** [cloud.google.com/bigtable](https://cloud.google.com/bigtable)
+
+## Quick Start
+
+To use this library, you first need to:
+1.  Select or create a Cloud Platform project.
+2.  Enable billing for your project.
+3.  Enable the Google Cloud Bigtable API.
+4.  Set up Authentication.
+
+## Installation
+
+The main package for this integration is `langchain-google-bigtable`.
+
+```bash
+pip install -U langchain-google-bigtable
+```
+
+## Integrations
+
+The `langchain-google-bigtable` package provides the following integrations:
+
+### Key-value Store
+
+Use `BigtableByteStore` as a persistent, scalable key-value store for caching, session management, or other storage needs. It supports both synchronous and asynchronous operations.
+
+```python
+from langchain_google_bigtable import BigtableByteStore
+
+# Initialize the store
+store = await BigtableByteStore.create(
+    project_id="your-project-id",
+    instance_id="your-instance-id",
+    table_id="your-table-id",
+)
+
+# Set and get values
+await store.amset([("key1", b"value1")])
+retrieved = await store.amget(["key1"])
+```
+
+Learn more in the [Key-value Store how-to guide](https://cloud.google.com/python/docs/reference/langchain-google-bigtable/latest/key-value-store).
+
+### Document Loader
+
+Use the `BigtableLoader` to load data from a Bigtable table and represent it as LangChain `Document` objects.
+
+```python
+from langchain_google_bigtable import BigtableLoader
+
+loader = BigtableLoader(
+    project_id="your-project-id",
+    instance_id="your-instance-id",
+    table_id="your-table-name"
+)
+docs = loader.load()
+```
+
+Learn more in the [Document Loader how-to guide](https://cloud.google.com/python/docs/reference/langchain-google-bigtable/latest/document-loader).
+
+### Chat Message History
+
+Use `BigtableChatMessageHistory` to store conversation histories, enabling stateful chains and agents.
+
+```python
+from langchain_google_bigtable import BigtableChatMessageHistory
+
+history = BigtableChatMessageHistory(
+    project_id="your-project-id",
+    instance_id="your-instance-id",
+    table_id="your-message-store",
+    session_id="user-session-123"
+)
+
+history.add_user_message("Hello!")
+history.add_ai_message("Hi there!")
+```
+
+Learn more in the [Chat Message History how-to guide](https://cloud.google.com/python/docs/reference/langchain-google-bigtable/latest/chat-message-history).
+
+## Contributions
+
+Contributions to this library are welcome. Please see the CONTRIBUTING guide for more details.
+
+## License
+
+This project is licensed under the Apache 2.0 License - see the LICENSE file for details.
+
+## Disclaimer
+
+This is not an officially supported Google product.

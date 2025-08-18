@@ -733,4 +733,7 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-
+- name: langchain-google-bigtable
+  name_title: Bigtable
+  repo: googleapis/langchain-google-bigtable-python
+  path: .
