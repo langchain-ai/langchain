@@ -1731,7 +1731,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
                 # -> AIMessage(
@@ -1739,7 +1739,7 @@ class ChatAnthropic(BaseChatModel):
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
                 #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
                 #     ],
-                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
@@ -1761,7 +1761,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -1784,7 +1784,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -1816,7 +1816,7 @@ class ChatAnthropic(BaseChatModel):
                 # We need to pass in extra headers to enable use of the beta cache
                 # control API.
                 llm = ChatAnthropic(
-                    model="claude-3-5-sonnet-20240620",
+                    model="claude-3-5-sonnet-latest",
                     temperature=0,
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
@@ -1826,13 +1826,13 @@ class ChatAnthropic(BaseChatModel):
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
+                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
 
             If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
+                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
         formatted_tools = [
@@ -1929,7 +1929,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1951,7 +1951,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1979,7 +1979,7 @@ class ChatAnthropic(BaseChatModel):
                         "required": ["answer", "justification"]
                     }
                 }
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
