@@ -68,7 +68,6 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
             model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
-            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
         )
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
@@ -97,7 +96,6 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
         llm = ChatAnthropic(
             model="claude-3-5-sonnet-20240620",  # type: ignore[call-arg]
-            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},  # type: ignore[call-arg]
         )
         with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
