@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import Optional
+from typing import Optional, TypeVar
 
 from langchain_core.messages import BaseMessage
 
@@ -138,3 +138,18 @@ def _normalize_messages(messages: Sequence[BaseMessage]) -> list[BaseMessage]:
         formatted_messages.append(formatted_message)
 
     return formatted_messages
+
+
+T = TypeVar("T", bound=BaseMessage)
+
+
+def _update_message_content_to_blocks(message: T, output_version: str) -> T:
+    return message.model_copy(
+        update={
+            "content": message.content_blocks,
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": output_version,
+            },
+        }
+    )
