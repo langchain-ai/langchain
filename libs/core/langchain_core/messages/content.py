@@ -905,22 +905,27 @@ ContentBlock = Union[
 
 
 KNOWN_BLOCK_TYPES = {
+    # Text output
     "text",
-    "text-plain",
+    "reasoning",
+    # Tools
     "tool_call",
     "invalid_tool_call",
     "tool_call_chunk",
-    "reasoning",
-    "non_standard",
+    # Multimodal data
     "image",
     "audio",
     "file",
+    "text-plain",
     "video",
+    # Server-side tool calls
     "code_interpreter_call",
     "code_interpreter_output",
     "code_interpreter_result",
     "web_search_call",
     "web_search_result",
+    # Catch-all
+    "non_standard",
 }
 
 
