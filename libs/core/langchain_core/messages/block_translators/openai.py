@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 
 
 # v1 / Chat Completions
@@ -343,3 +343,16 @@ def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]
     if isinstance(message.content, str):
         return _convert_to_v1_from_chat_completions_chunk(message)
     return _convert_to_v1_from_responses(message)
+
+
+def _register_openai_translator() -> None:
+    """Register the OpenAI translator with the central registry.
+
+    Run automatically when the module is imported.
+    """
+    from langchain_core.messages.block_translators import register_translator
+
+    register_translator("openai", translate_content, translate_content_chunk)
+
+
+_register_openai_translator()

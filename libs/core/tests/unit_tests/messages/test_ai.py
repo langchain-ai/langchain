@@ -1,6 +1,6 @@
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,

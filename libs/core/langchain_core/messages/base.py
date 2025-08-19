@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.anthropic_input import (
     _convert_to_v1_from_anthropic_input,
 )
@@ -124,6 +124,8 @@ class BaseMessage(Serializable):
         Otherwise, does best-effort parsing to standard types.
 
         """
+        from langchain_core.messages import content as types
+
         blocks: list[types.ContentBlock] = []
 
         # First pass converting to standard blocks

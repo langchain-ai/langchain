@@ -27,7 +27,10 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models._utils import (
+    _normalize_messages,
+    _update_message_content_to_blocks,
+)
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -46,7 +49,6 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
-from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -66,6 +68,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -334,16 +337,23 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
     """
 
-    output_version: str = "v0"
-    """Version of ``AIMessage`` output format to use.
+    output_version: str = Field(
+        default_factory=from_env("LC_OUTPUT_VERSION", default="v0")
+    )
+    """Version of ``AIMessage`` output format to store in message content.
 
-    This field is used to roll-out new output formats for chat model ``AIMessage``s
-    in a backwards-compatible way.
+    ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into a
+    standard format. This flag can be used to additionally store the standard format
+    in message content, e.g., for serialization purposes.
 
-    ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
-    recommend this for new applications.
+    Supported values:
 
-    All chat models currently support the default of ``'v0'``.
+    - ``"v0"``: provider-specific format in content (can lazily-parse with
+      ``.content_blocks``)
+    - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
+
+    Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
+    new content formats in a backward-compatible way.
 
     .. versionadded:: 1.0
 
@@ -540,11 +550,16 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
-                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+                run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                    if self.output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -633,7 +648,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
-            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+            run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -642,6 +657,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 if chunk.message.id is None:
                     chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
                 )
@@ -1099,7 +1119,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+                    if self.output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1112,10 +1137,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
+        if self.output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1172,7 +1204,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+                    if self.output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1185,10 +1222,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
 
+        if self.output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )

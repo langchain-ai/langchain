@@ -55,7 +55,7 @@ to be included without breaking the standard structure.
 
         .. code-block:: python
 
-            from langchain_core.messages.content_blocks import TextContentBlock
+            from langchain_core.messages.content import TextContentBlock
 
             # Create a text content block with provider-specific fields
             my_block: TextContentBlock = {
@@ -97,7 +97,7 @@ The module defines several types of content blocks, including:
 .. code-block:: python
 
     # Direct construction:
-    from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
+    from langchain_core.messages.content import TextContentBlock, ImageContentBlock
 
     multimodal_message: AIMessage(content_blocks=
         [
@@ -111,7 +111,7 @@ The module defines several types of content blocks, including:
     )
 
     # Using factories:
-    from langchain_core.messages.content_blocks import create_text_block, create_image_block
+    from langchain_core.messages.content import create_text_block, create_image_block
 
     multimodal_message: AIMessage(content=
         [
@@ -127,40 +127,14 @@ Factory functions offer benefits such as:
 - Automatic ID generation (when not provided)
 - No need to manually specify the ``type`` field
 
-"""  # noqa: E501
+"""
 
 import warnings
 from typing import Any, Literal, Optional, Union, get_args, get_type_hints
-from uuid import uuid4
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
 
-LC_AUTO_PREFIX = "lc_"
-"""LangChain auto-generated ID prefix for messages and content blocks."""
-
-LC_ID_PREFIX = f"{LC_AUTO_PREFIX}run-"
-"""Internal tracing/callback system identifier.
-
-Used for:
-- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
-  gets a unique run_id (UUID)
-- Enables tracking parent-child relationships between operations
-"""
-
-
-def ensure_id(id_val: Optional[str]) -> str:
-    """Ensure the ID is a valid string, generating a new UUID if not provided.
-
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
-    LangChain-generated IDs.
-
-    Args:
-        id_val: Optional string ID value to validate.
-
-    Returns:
-        A string ID, either the validated provided value or a newly generated UUID4.
-    """
-    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")
+from langchain_core.utils.utils import ensure_id
 
 
 class Citation(TypedDict):

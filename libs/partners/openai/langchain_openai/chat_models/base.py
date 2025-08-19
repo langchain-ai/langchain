@@ -69,10 +69,6 @@ from langchain_core.messages.ai import (
     OutputTokenDetails,
     UsageMetadata,
 )
-from langchain_core.messages.block_translators.openai import (
-    translate_content,
-    translate_content_chunk,
-)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -719,11 +715,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     - ``'v0'``: AIMessage format as of langchain-openai 0.3.x.
     - ``'responses/v1'``: Formats Responses API output
-      items into AIMessage content blocks.
+      items into AIMessage content blocks (Responses API only)
     - ``"v1"``: v1 of LangChain cross-provider standard.
-
-    Currently only impacts the Responses API. ``output_version='v1'`` is
-    recommended.
 
     .. versionadded:: 0.3.25
 
@@ -956,13 +949,6 @@ class BaseChatOpenAI(BaseChatModel):
 
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
-
-        if self.output_version == "v1":
-            message_chunk.content = cast(
-                "Union[str, list[Union[str, dict]]]",
-                translate_content_chunk(cast(AIMessageChunk, message_chunk)),
-            )
-            message_chunk.response_metadata["output_version"] = "v1"
 
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
@@ -1329,13 +1315,6 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
 
-        if self.output_version == "v1":
-            generations[0].message.content = cast(
-                Union[str, list[Union[str, dict]]],
-                translate_content(cast(AIMessage, generations[0].message)),
-            )
-            generations[0].message.response_metadata["output_version"] = "v1"
-
         return ChatResult(generations=generations, llm_output=llm_output)
 
     async def _astream(
@@ -1550,7 +1529,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def get_num_tokens_from_messages(
         self,
-        messages: list[BaseMessage],
+        messages: Sequence[BaseMessage],
         tools: Optional[
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
@@ -4091,13 +4070,7 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
-    elif output_version == "v1":
-        message.content = cast(
-            Union[str, list[Union[str, dict]]], translate_content(message)
-        )
-        message.response_metadata["output_version"] = "v1"
-    else:
-        pass
+
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -4163,6 +4136,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = metadata
     else:
         response_metadata = {}
+    response_metadata["model_provider"] = "openai"
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
@@ -4324,13 +4298,7 @@ def _convert_responses_chunk_to_generation_chunk(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
         )
-    elif output_version == "v1":
-        message.content = cast(
-            Union[str, list[Union[str, dict]]], translate_content_chunk(message)
-        )
-        message.response_metadata["output_version"] = "v1"
-    else:
-        pass
+
     return (
         current_index,
         current_output_index,
