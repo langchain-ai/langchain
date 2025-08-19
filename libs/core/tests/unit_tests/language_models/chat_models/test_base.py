@@ -537,82 +537,157 @@ def test_trace_content_blocks_with_no_type_key() -> None:
 
 
 def test_extend_support_to_openai_multimodal_formats() -> None:
-    """Test that chat models normalize OpenAI audio, image, and file inputs to v1."""
-    llm = ParrotFakeChatModel()
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "Hello"},
-                {  # image-url
-                    "type": "image_url",
-                    "image_url": {"url": "https://example.com/image.png"},
+    """Test normalizing OpenAI audio, image, and file inputs to v1."""
+    # Audio and file only (chat model default)
+    messages = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello"},
+            {  # audio-base64
+                "type": "input_audio",
+                "audio": {
+                    "format": "wav",
+                    "data": "data:audio/wav;base64,<base64 string>",
                 },
-                {  # image-base64
-                    "type": "image_url",
-                    "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+            },
+            {  # file-base64
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
                 },
-                {  # audio-base64
-                    "type": "input_audio",
-                    "audio": {
-                        "format": "wav",
-                        "data": "data:audio/wav;base64,<base64 string>",
-                    },
-                },
-                {  # file-base64
-                    "type": "file",
-                    "file": {
-                        "filename": "draconomicon.pdf",
-                        "file_data": "data:application/pdf;base64,<base64 string>",
-                    },
-                },
-                {  # file-id
-                    "type": "file",
-                    "file": {"file_id": "<file id>"},
-                },
-            ],
-        },
-    ]
-    expected_content = [
-        {"type": "text", "text": "Hello"},  # TextContentBlock
-        {  # Chat Completions Image becomes ImageContentBlock after invoke
-            "type": "image",
-            "url": "https://example.com/image.png",
-        },
-        {  # ...
-            "type": "image",
-            "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-            "mime_type": "image/jpeg",
-        },
-        {  # AudioContentBlock
-            "type": "audio",
-            "base64": "data:audio/wav;base64,<base64 string>",
-            "mime_type": "audio/wav",
-        },
-        {  # FileContentBlock
-            "type": "file",
-            "base64": "data:application/pdf;base64,<base64 string>",
-            "mime_type": "application/pdf",
-            "extras": {"filename": "draconomicon.pdf"},
-        },
-        {  # ...
-            "type": "file",
-            "file_id": "<file id>",
-        },
-    ]
-    response = llm.invoke(messages)
+            },
+            {  # file-id
+                "type": "file",
+                "file": {"file_id": "<file id>"},
+            },
+        ]
+    )
+
+    expected_content_messages = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello"},  # TextContentBlock
+            {  # AudioContentBlock
+                "type": "audio",
+                "base64": "data:audio/wav;base64,<base64 string>",
+                "mime_type": "audio/wav",
+            },
+            {  # FileContentBlock
+                "type": "file",
+                "base64": "data:application/pdf;base64,<base64 string>",
+                "mime_type": "application/pdf",
+                "extras": {"filename": "draconomicon.pdf"},
+            },
+            {  # ...
+                "type": "file",
+                "file_id": "<file id>",
+            },
+        ]
+    )
+
+    normalized_content = _normalize_messages([messages])
 
     # Check structure, ignoring auto-generated IDs
-    actual_content = response.content
-    assert len(actual_content) == len(expected_content)
+    assert len(normalized_content) == 1
+    normalized_message = normalized_content[0]
+    assert len(normalized_message.content) == len(expected_content_messages.content)
 
-    for i, (actual, expected) in enumerate(zip(actual_content, expected_content)):
-        if isinstance(actual, dict) and "id" in actual:
+    for i, (actual_block, expected_block) in enumerate(
+        zip(normalized_message.content, expected_content_messages.content)
+    ):
+        if isinstance(actual_block, dict) and "id" in actual_block:
             # Remove auto-generated id for comparison
-            actual_without_id = {k: v for k, v in actual.items() if k != "id"}
-            assert actual_without_id == expected, f"Mismatch at index {i}"
+            actual_without_id = {k: v for k, v in actual_block.items() if k != "id"}
+            assert actual_without_id == expected_block, f"Mismatch at index {i}"
         else:
-            assert actual == expected, f"Mismatch at index {i}"
+            assert actual_block == expected_block, f"Mismatch at index {i}"
+
+    # TODO: do we need to handle nested role structure? e.g.:
+    # {
+    #     "role": "user",
+    #     "content": [
+    #         {"type": "text", "text": "Hello"},
+    #     ]
+    # }
+
+    # All (image, audio, file)
+    messages = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello"},
+            {  # image-url
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
+            },
+            {  # image-base64
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+            },
+            {  # audio-base64
+                "type": "input_audio",
+                "audio": {
+                    "format": "wav",
+                    "data": "data:audio/wav;base64,<base64 string>",
+                },
+            },
+            {  # file-base64
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
+                },
+            },
+            {  # file-id
+                "type": "file",
+                "file": {"file_id": "<file id>"},
+            },
+        ]
+    )
+
+    expected_content_messages = AIMessage(
+        content=[
+            {"type": "text", "text": "Hello"},  # TextContentBlock
+            {  # Chat Completions Image becomes ImageContentBlock after invoke
+                "type": "image",
+                "url": "https://example.com/image.png",
+            },
+            {  # ...
+                "type": "image",
+                "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+                "mime_type": "image/jpeg",
+            },
+            {  # AudioContentBlock
+                "type": "audio",
+                "base64": "data:audio/wav;base64,<base64 string>",
+                "mime_type": "audio/wav",
+            },
+            {  # FileContentBlock
+                "type": "file",
+                "base64": "data:application/pdf;base64,<base64 string>",
+                "mime_type": "application/pdf",
+                "extras": {"filename": "draconomicon.pdf"},
+            },
+            {  # ...
+                "type": "file",
+                "file_id": "<file id>",
+            },
+        ]
+    )
+
+    normalized_content = _normalize_messages([messages], convert_all=True)
+
+    # Check structure, ignoring auto-generated IDs
+    assert len(normalized_content) == 1
+    normalized_message = normalized_content[0]
+    assert len(normalized_message.content) == len(expected_content_messages.content)
+
+    for i, (actual_block, expected_block) in enumerate(
+        zip(normalized_message.content, expected_content_messages.content)
+    ):
+        if isinstance(actual_block, dict) and "id" in actual_block:
+            # Remove auto-generated id for comparison
+            actual_without_id = {k: v for k, v in actual_block.items() if k != "id"}
+            assert actual_without_id == expected_block, f"Mismatch at index {i}"
+        else:
+            assert actual_block == expected_block, f"Mismatch at index {i}"
 
 
 def test_normalize_messages_edge_cases() -> None:
@@ -668,14 +743,6 @@ def test_normalize_messages_edge_cases() -> None:
                     "type": "input_file",
                     "file_data": "uri",
                     "filename": "file-name",
-                },
-                {
-                    "type": "input_audio",
-                    "input_audio": "uri",
-                },
-                {
-                    "type": "input_image",
-                    "image_url": "uri",
                 },
             ]
         )
