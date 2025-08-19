@@ -26,7 +26,7 @@ from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -43,6 +43,7 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
@@ -1233,7 +1234,7 @@ def test_structured_outputs_parser() -> None:
     serialized = dumps(llm_output)
     deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
