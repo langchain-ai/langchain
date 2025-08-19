@@ -21,7 +21,7 @@ from openai.types.responses import (
     ResponseTextDeltaEvent,
     ResponseTextDoneEvent,
 )
-from openai.types.responses.response import Response, ResponseUsage
+from openai.types.responses.response import Response
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -33,6 +33,7 @@ from openai.types.responses.response_reasoning_summary_part_done_event import (
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
