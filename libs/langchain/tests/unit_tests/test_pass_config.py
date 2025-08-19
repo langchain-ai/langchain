@@ -1,17 +1,17 @@
-"""Verify that RunnableConfig is threaded to a decorator-defined tool."""
-
 import logging
-from typing import Any
+from typing import Any, Union
 
 import pytest
 from langchain.agents import AgentExecutor, BaseMultiActionAgent
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables.utils import accepts_config
 
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
-    from langchain.tools import tool  # fallback for older installs
+    from langchain.tools import tool  # type: ignore[assignment]
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -52,7 +52,7 @@ class MinimalAgent(BaseMultiActionAgent):
         self,
         intermediate_steps: list[Any],
         **_kwargs: Any,
-    ) -> list[AgentAction] | AgentFinish:
+    ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
             return [
                 AgentAction(
@@ -67,7 +67,7 @@ class MinimalAgent(BaseMultiActionAgent):
         self,
         intermediate_steps: list[Any],
         **_kwargs: Any,
-    ) -> list[AgentAction] | AgentFinish:
+    ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
             return [
                 AgentAction(
