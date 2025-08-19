@@ -1,37 +1,26 @@
-# --- keep this small sys.path tweak so running inside a folder named "langchain" doesn't shadow the package ---
-import os, sys
-_here = os.path.abspath(os.path.dirname(__file__))
-_repo_root = os.path.abspath(os.path.join(_here, ".."))
-# If the repo root itself is named "langchain", remove it from sys.path so `import langchain` resolves to the installed package.
-if os.path.basename(_repo_root) == "langchain" and _repo_root in sys.path:
-    sys.path.remove(_repo_root)
+"""Verify that RunnableConfig is threaded to a decorator-defined tool."""
 
-import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any
 
 import pytest
-from langchain.agents import BaseMultiActionAgent
-from langchain.agents import AgentExecutor
+from langchain.agents import AgentExecutor, BaseMultiActionAgent
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.utils import accepts_config
 
-# Prefer the new core tool decorator; fall back if your version is older.
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
     from langchain.tools import tool  # type: ignore
 
+
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("demo")
 
-SEEN: Dict[str, Any] = {}  # global capture for assertions / debug
+SEEN: dict[str, Any] = {}
 
 
-# ---- Decorator-defined tool that accepts RunnableConfig ----
 @tool("capture")
-
 async def capture(a: int, *, config: RunnableConfig) -> str:
     """Capture tool that records the config it receives."""
     SEEN.clear()
@@ -44,19 +33,22 @@ async def capture(a: int, *, config: RunnableConfig) -> str:
         }
     )
     logger.info(
-        f"[tool] got a={a}, metadata={SEEN['metadata']}, "
-        f"tags={SEEN['tags']}, run_name={SEEN['run_name']}"
+        "[tool] a=%s metadata=%s tags=%s run_name=%s",
+        a,
+        SEEN["metadata"],
+        SEEN["tags"],
+        SEEN["run_name"],
     )
     return f"ok : {a}"
 
 
-# ---- Minimal agent that calls the tool once, then finishes ----
 class MinimalAgent(BaseMultiActionAgent):
+    """Agent that calls the 'capture' tool once, then finishes."""
+
     @property
-    def input_keys(self):
+    def input_keys(self) -> list[str]:
         return ["input"]
 
-    # async plan used by _acall/ainvoke
     async def aplan(self, intermediate_steps, **kwargs):
         if not intermediate_steps:
             return [
@@ -68,7 +60,6 @@ class MinimalAgent(BaseMultiActionAgent):
             ]
         return AgentFinish(return_values={"output": "done"}, log="finished")
 
-    # sync plan for compatibility (Executor may call it in some versions)
     def plan(self, intermediate_steps, **kwargs):
         if not intermediate_steps:
             return [
@@ -80,9 +71,9 @@ class MinimalAgent(BaseMultiActionAgent):
             ]
         return AgentFinish(return_values={"output": "done"}, log="finished")
 
-#@pytest.mark.asyncio
+
+@pytest.mark.asyncio
 async def test_minimal_agent_capture_tool_config():
-    
     agent = MinimalAgent()
     executor = AgentExecutor(agent=agent, tools=[capture], verbose=False)
 
@@ -92,25 +83,20 @@ async def test_minimal_agent_capture_tool_config():
         "run_name": "agent-run",
     }
 
-    # Try your patched private path first; fall back to public ainvoke if needed
     try:
-        result = await executor._acall(
-            {"input": "call capture tool with input a = 5"}, config=cfg  # type: ignore[attr-defined]
+        result = await executor._acall(  # type: ignore[attr-defined]
+            {"input": "call capture tool with input a = 5"},
+            config=cfg,
         )
     except (TypeError, AttributeError):
         result = await executor.ainvoke(
-            {"input": "call capture tool with input a = 5"}, config=cfg
+            {"input": "call capture tool with input a = 5"},
+            config=cfg,
         )
 
-    # ----- Assertions -----
     assert isinstance(result, dict)
-    assert result.get("output") == "done"  # agent finishes after the tool call
-    assert SEEN.get("a") == 7              # MinimalAgent hardcodes a=7
-
-    # These validate that your executor correctly threads RunnableConfig to the tool.
+    assert result.get("output") == "done"
+    assert SEEN.get("a") == 7
     assert SEEN.get("metadata") == {"tenant": "T1", "session_id": "S1"}
     assert "unit" in (SEEN.get("tags") or [])
     assert SEEN.get("run_name") == "agent-run"
-
-if __name__ == "__main__":
-    asyncio.run(test_minimal_agent_capture_tool_config())
