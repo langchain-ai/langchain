@@ -2,6 +2,7 @@ import logging
 from typing import Any, Union
 
 import pytest
+
 from langchain.agents import AgentExecutor, BaseMultiActionAgent
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import RunnableConfig
