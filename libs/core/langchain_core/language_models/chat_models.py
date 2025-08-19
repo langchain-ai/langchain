@@ -68,7 +68,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from langchain_core.utils.utils import LC_ID_PREFIX, from_env
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -165,6 +165,57 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace
+
+
+def _normalize_messages_for_cache(messages: list[BaseMessage]) -> list[BaseMessage]:
+    """Normalize messages for caching by removing auto-generated IDs.
+
+    Auto-generated IDs (those starting with LC_AUTO_PREFIX) are stripped from
+    messages and content blocks to ensure cache keys remain consistent across
+    multiple invocations with the same semantic content.
+
+    Args:
+        messages: List of messages to normalize for caching.
+
+    Returns:
+        List of messages with auto-generated IDs removed for caching purposes.
+    """
+    normalized_messages = []
+
+    for message in messages:
+        # Create a copy of the message
+        normalized_message = message.model_copy(deep=True)
+
+        # Remove auto-generated ID from message level
+        if (
+            hasattr(normalized_message, "id")
+            and normalized_message.id
+            and normalized_message.id.startswith(LC_AUTO_PREFIX)
+        ):
+            normalized_message.id = None
+
+        # Process content if it's a list (multimodal content)
+        if isinstance(normalized_message.content, list):
+            normalized_content = []
+            for block in normalized_message.content:
+                if isinstance(block, dict):
+                    # Create a copy of the block
+                    normalized_block = block.copy()
+                    # Remove auto-generated ID from content block
+                    if (
+                        "id" in normalized_block
+                        and normalized_block["id"]
+                        and normalized_block["id"].startswith(LC_AUTO_PREFIX)
+                    ):
+                        del normalized_block["id"]
+                    normalized_content.append(normalized_block)
+                else:
+                    normalized_content.append(block)
+            normalized_message.content = normalized_content
+
+        normalized_messages.append(normalized_message)
+
+    return normalized_messages
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -1090,7 +1141,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                prompt = dumps(_normalize_messages_for_cache(messages))
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1175,7 +1226,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                prompt = dumps(_normalize_messages_for_cache(messages))
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
