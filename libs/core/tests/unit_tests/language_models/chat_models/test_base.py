@@ -430,8 +430,8 @@ class FakeChatModelStartTracer(FakeTracer):
         )
 
 
-def test_trace_images_in_openai_format() -> None:
-    """Test that images are traced in OpenAI format."""
+def test_trace_images_in_openai_format_v0() -> None:
+    """Test images are traced in OpenAI Chat Completions fmt w/ v0 output (default)."""
     llm = ParrotFakeChatModel()
     messages = [
         {
@@ -462,7 +462,65 @@ def test_trace_images_in_openai_format() -> None:
             ]
         ]
     ]
-    # Passing in a v0 should return a v1
+    # With v0 output_version, .content should preserve the original v0 format
+    assert response.content == [
+        {
+            "type": "image",
+            "source_type": "url",
+            "url": "https://example.com/image.png",
+        }
+    ]
+    # But .content_blocks should perform v1 transformation
+    assert len(response.content_blocks) == 1
+    content_block = response.content_blocks[0]
+    if isinstance(content_block, dict) and "id" in content_block:
+        # Remove auto-generated id for comparison
+        content_without_id = {k: v for k, v in content_block.items() if k != "id"}
+        expected_content = {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
+        assert content_without_id == expected_content
+    else:
+        assert content_block == {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
+
+
+def test_trace_images_in_openai_format_v1() -> None:
+    """Test that images are traced in OpenAI Chat Completions format with v1 output."""
+    llm = ParrotFakeChatModel(output_version="v1")
+    messages = [
+        {
+            "role": "user",
+            # v0 format
+            "content": [
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/image.png",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+    # With v1 output_version, .content should be transformed
     # Check structure, ignoring auto-generated IDs
     assert len(response.content) == 1
     content_block = response.content[0]

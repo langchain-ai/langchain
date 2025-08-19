@@ -512,3 +512,86 @@ def _update_message_content_to_blocks(message: T, output_version: str) -> T:
             },
         }
     )
+
+
+def _convert_legacy_v0_content_block_to_v1(block: dict) -> ContentBlock:
+    """Convert a LangChain v0 content block to v1 format.
+
+    This handles conversion of v0 format blocks like:
+    {"type": "image", "source_type": "url", "url": "..."}
+
+    To v1 format blocks like:
+    {"type": "image", "url": "...", "id": "lc_..."}
+
+    Preserves unknown keys as extras to avoid data loss.
+    """
+
+    def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
+        """Extract unknown keys from v0 block to preserve as extras."""
+        return {k: v for k, v in block_dict.items() if k not in known_keys}
+
+    if block.get("type") == "image":
+        source_type = block.get("source_type")
+        if source_type == "url":
+            known_keys = {"type", "source_type", "url", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_image_block(
+                url=block["url"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "base64":
+            known_keys = {"type", "source_type", "data", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_image_block(
+                base64=block["data"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "id":
+            known_keys = {"type", "source_type", "id"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_image_block(file_id=block["id"], **extras)
+    elif block.get("type") == "audio":
+        source_type = block.get("source_type")
+        if source_type == "url":
+            known_keys = {"type", "source_type", "url", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_audio_block(
+                url=block["url"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "base64":
+            known_keys = {"type", "source_type", "data", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_audio_block(
+                base64=block["data"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "id":
+            known_keys = {"type", "source_type", "id"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_audio_block(file_id=block["id"], **extras)
+    elif block.get("type") == "file":
+        source_type = block.get("source_type")
+        if source_type == "url":
+            known_keys = {"type", "source_type", "url", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_file_block(
+                url=block["url"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "base64":
+            known_keys = {"type", "source_type", "data", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_file_block(
+                base64=block["data"], mime_type=block.get("mime_type"), **extras
+            )
+        if source_type == "id":
+            known_keys = {"type", "source_type", "id"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_file_block(file_id=block["id"], **extras)
+        if source_type == "text":
+            known_keys = {"type", "source_type", "url", "mime_type"}
+            extras = _extract_v0_extras(block, known_keys)
+            return create_plaintext_block(
+                # In v0, URL points to the text file content
+                text=block["url"],
+                **extras,
+            )
+
+    # If we can't convert, return the block as-is
+    return cast("ContentBlock", block)

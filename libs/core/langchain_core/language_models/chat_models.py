@@ -600,7 +600,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 self.rate_limiter.acquire(blocking=True)
 
             try:
-                input_messages = _normalize_messages(messages)
+                input_messages = (
+                    _normalize_messages(messages)
+                    if self.output_version == "v1"
+                    else messages
+                )
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -698,7 +702,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         chunks: list[ChatGenerationChunk] = []
 
         try:
-            input_messages = _normalize_messages(messages)
+            input_messages = (
+                _normalize_messages(messages)
+                if self.output_version == "v1"
+                else messages
+            )
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
@@ -924,7 +932,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         results = []
         input_messages = [
-            _normalize_messages(message_list) for message_list in messages
+            _normalize_messages(message_list)
+            if self.output_version == "v1"
+            else message_list
+            for message_list in messages
         ]
         for i, m in enumerate(input_messages):
             try:
@@ -1040,7 +1051,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         input_messages = [
-            _normalize_messages(message_list) for message_list in messages
+            _normalize_messages(message_list)
+            if self.output_version == "v1"
+            else message_list
+            for message_list in messages
         ]
         results = await asyncio.gather(
             *[

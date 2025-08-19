@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
 
-from langchain_core.language_models._utils import _convert_openai_format_to_data_block
+from langchain_core.language_models._utils import (
+    _convert_legacy_v0_content_block_to_v1,
+    _convert_openai_format_to_data_block,
+    _is_openai_data_block,
+)
 from langchain_core.load.serializable import Serializable
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
@@ -137,12 +141,14 @@ class BaseMessage(Serializable):
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
-                if item_type in {"image_url", "input_audio"}:
+                if item_type in {
+                    "image_url",
+                    "input_audio",
+                    "file",
+                } and _is_openai_data_block(item):
+                    # Handle OpenAI Chat Completions format
                     blocks.append(_convert_openai_format_to_data_block(item))
-                if item_type == "file" and "file_id" in item.get("file", {}):
-                    # OpenAI-specific file content block, handled separately since
-                    # v1 content blocks share `file` key
-                    blocks.append(_convert_openai_format_to_data_block(item))
+                    continue
                 if item_type is None:
                     # Handle blocks without a type key - wrap as non_standard
                     blocks.append(
@@ -170,7 +176,12 @@ class BaseMessage(Serializable):
                         "that this attribute is set on initialization."
                     )
                     raise ValueError(msg)
-                blocks.append(cast("types.ContentBlock", item))
+                # Handle v0 format content blocks and convert to v1
+                if item_type == "image" and "source_type" in item:
+                    # Convert v0 image format to v1
+                    blocks.append(_convert_legacy_v0_content_block_to_v1(item))
+                else:
+                    blocks.append(cast("types.ContentBlock", item))
             else:
                 pass
 
