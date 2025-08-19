@@ -228,7 +228,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,  # type: ignore[arg-type]
+            args_schema=args_schema,
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
