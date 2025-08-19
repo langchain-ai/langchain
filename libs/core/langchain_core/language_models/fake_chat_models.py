@@ -19,7 +19,7 @@ from langchain_core.runnables import RunnableConfig
 
 
 class FakeMessagesListChatModel(BaseChatModel):
-    """Fake ChatModel for testing purposes."""
+    """Fake ``ChatModel`` for testing purposes."""
 
     responses: list[BaseMessage]
     """List of responses to **cycle** through in order."""
@@ -211,10 +211,11 @@ class GenericFakeChatModel(BaseChatModel):
     """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
-    * Invokes on_llm_new_token to allow for testing of callback related code for new
+    * Invokes ``on_llm_new_token`` to allow for testing of callback related code for new
       tokens.
     * Includes logic to break messages into message chunk to facilitate testing of
       streaming.
+
     """
 
     messages: Iterator[Union[AIMessage, str]]
@@ -229,6 +230,7 @@ class GenericFakeChatModel(BaseChatModel):
     .. warning::
         Streaming is not implemented yet. We should try to implement it in the future by
         delegating to invoke and then breaking the resulting output into message chunks.
+
     """
 
     @override
@@ -352,6 +354,7 @@ class ParrotFakeChatModel(BaseChatModel):
     """Generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
+
     """
 
     @override
