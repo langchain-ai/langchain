@@ -211,6 +211,8 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     "type": "reasoning",
                     "reasoning": block.get("thinking", ""),
                 }
+                if "index" in block:
+                    reasoning_block["index"] = block["index"]
                 known_fields = {"type", "thinking", "index", "extras"}
                 for key in block:
                     if key not in known_fields:

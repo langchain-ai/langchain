@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from inspect import signature
 import json
 from typing import Any, Optional, cast
 
@@ -132,6 +133,16 @@ def _convert_from_v1_to_anthropic(
                     "id": block.get("id", ""),
                 }
             )
+
+        elif block["type"] == "reasoning" and model_provider == "anthropic":
+            new_block = {}
+            if "reasoning" in block:
+                new_block["thinking"] = block["reasoning"]
+            new_block["type"] = "thinking"
+            if signature := block.get("extras", {}).get("signature"):
+                new_block["signature"] = signature
+
+            new_content.append(new_block)
 
         elif (
             block["type"] == "non_standard"
