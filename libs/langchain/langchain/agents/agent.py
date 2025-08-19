@@ -1465,7 +1465,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
-                    config=config
+                    config=config,
                 )
             ],
         )
@@ -1550,7 +1550,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
-                    config=config
+                    config=config,
                 )
                 for agent_action in actions
             ],
@@ -1689,7 +1689,7 @@ class AgentExecutor(Chain):
                         inputs,
                         intermediate_steps,
                         run_manager=run_manager,
-                        config=config
+                        config=config,
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(
