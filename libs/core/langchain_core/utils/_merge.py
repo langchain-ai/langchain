@@ -116,11 +116,20 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        new_e = (
-                            {k: v for k, v in e.items() if k != "type"}
-                            if "type" in e
-                            else e
-                        )
+                        if merged[to_merge[0]].get("type") != "non_standard" and (
+                            e.get("type") == "non_standard" and "value" in e
+                        ):
+                            new_e = {
+                                "extras": {
+                                    k: v for k, v in e["value"].items() if k != "type"
+                                }
+                            }
+                        else:
+                            new_e = (
+                                {k: v for k, v in e.items() if k != "type"}
+                                if "type" in e
+                                else e
+                            )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)

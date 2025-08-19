@@ -1,7 +1,7 @@
 """Derivations of standard content blocks from Anthropic content."""
 
-from collections.abc import Iterable
 import json
+from collections.abc import Iterable
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from inspect import signature
 import json
 from typing import Any, Optional, cast
 
@@ -15,13 +14,20 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     if annotation["type"] == "citation":
         if "url" in annotation:
             # web_search_result_location
-            out: dict[str, Any] = {"type": "web_search_result_location"}
-            for field in ["url", "cited_text", "title"]:
-                if value := annotation.get(field):
-                    out[field] = value
+            out = {}
+            if cited_text := annotation.get("cited_text"):
+                out["cited_text"] = cited_text
+            if "encrypted_index" in annotation.get("extras", {}):
+                out["encrypted_index"] = annotation["extras"]["encrypted_index"]
+            if "title" in annotation:
+                out["title"] = annotation["title"]
+            out["type"] = "web_search_result_location"
+            if "url" in annotation:
+                out["url"] = annotation["url"]
 
             for key, value in annotation.get("extras", {}).items():
-                out[key] = value  # noqa: PERF403
+                if key not in out:
+                    out[key] = value
 
             return out
 
@@ -94,7 +100,6 @@ def _convert_from_v1_to_anthropic(
 ) -> list[dict[str, Any]]:
     new_content: list = []
     for block in content:
-
         if block["type"] == "text":
             if model_provider == "anthropic" and "annotations" in block:
                 new_block: dict[str, Any] = {"type": "text"}
@@ -142,6 +147,31 @@ def _convert_from_v1_to_anthropic(
             if signature := block.get("extras", {}).get("signature"):
                 new_block["signature"] = signature
 
+            new_content.append(new_block)
+
+        elif block["type"] == "web_search_call" and model_provider == "anthropic":
+            new_block = {}
+            if "id" in block:
+                new_block["id"] = block["id"]
+
+            if input_ := block.get("extras", {}).get("input"):
+                new_block["input"] = input_
+            elif partial_json := block.get("extras", {}).get("partial_json"):
+                new_block["input"] = {}
+                new_block["partial_json"] = partial_json
+            else:
+                pass
+            new_block["name"] = "web_search"
+            new_block["type"] = "server_tool_use"
+            new_content.append(new_block)
+
+        elif block["type"] == "web_search_result" and model_provider == "anthropic":
+            new_block = {}
+            if "content" in block.get("extras", {}):
+                new_block["content"] = block["extras"]["content"]
+            if "id" in block:
+                new_block["tool_use_id"] = block["id"]
+            new_block["type"] = "web_search_tool_result"
             new_content.append(new_block)
 
         elif (

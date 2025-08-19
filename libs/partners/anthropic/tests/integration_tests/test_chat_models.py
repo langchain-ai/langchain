@@ -752,7 +752,9 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
         return "It's sunny."
 
     llm = ChatAnthropic(
-        model="claude-3-5-haiku-latest", streaming=True, output_version=output_version  # type: ignore[call-arg]
+        model="claude-3-5-haiku-latest",
+        streaming=True,
+        output_version=output_version,  # type: ignore[call-arg]
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
@@ -923,7 +925,10 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
         assert isinstance(block, dict)
         if block["type"] == "redacted_thinking":
             value = block
-        elif block["type"] == "non_standard" and block["value"]["type"] == "redacted_thinking":
+        elif (
+            block["type"] == "non_standard"
+            and block["value"]["type"] == "redacted_thinking"
+        ):
             value = block["value"]
         else:
             pass
@@ -945,7 +950,10 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
             value = block
             assert set(value.keys()) == {"type", "data", "index"}
             assert "index" in block
-        elif block["type"] == "non_standard" and block["value"]["type"] == "redacted_thinking":
+        elif (
+            block["type"] == "non_standard"
+            and block["value"]["type"] == "redacted_thinking"
+        ):
             value = block["value"]
             assert set(value.keys()) == {"type", "data"}
             assert "index" in block
