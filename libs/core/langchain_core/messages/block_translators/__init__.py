@@ -43,3 +43,39 @@ def get_translator(
         functions, or None if no translator is registered for the provider.
     """
     return PROVIDER_TRANSLATORS.get(provider)
+
+
+def _auto_register_translators() -> None:
+    """Automatically register all available block translators."""
+    import contextlib
+    import importlib
+    import pkgutil
+    from pathlib import Path
+
+    package_path = Path(__file__).parent
+
+    # Discover all sub-modules
+    for module_info in pkgutil.iter_modules([str(package_path)]):
+        module_name = module_info.name
+
+        # Skip the __init__ module and any private modules
+        if module_name.startswith("_"):
+            continue
+
+        if module_info.ispkg:
+            # For subpackages, discover their submodules
+            subpackage_path = package_path / module_name
+            for submodule_info in pkgutil.iter_modules([str(subpackage_path)]):
+                submodule_name = submodule_info.name
+                if not submodule_name.startswith("_"):
+                    with contextlib.suppress(ImportError, AttributeError):
+                        importlib.import_module(
+                            f".{module_name}.{submodule_name}", package=__name__
+                        )
+        else:
+            # Import top-level translator modules
+            with contextlib.suppress(ImportError, AttributeError):
+                importlib.import_module(f".{module_name}", package=__name__)
+
+
+_auto_register_translators()
