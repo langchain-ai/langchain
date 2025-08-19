@@ -33,6 +33,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
@@ -51,6 +52,7 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -1476,6 +1478,23 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: dict,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
+
+        for idx, message in enumerate(messages):
+            # Translate v1 content
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_anthropic(
+                            cast(list[types.ContentBlock], message.content),
+                            message.tool_calls,
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         system, formatted_messages = _format_messages(messages)
 
         # If cache_control is provided in kwargs, add it to last message

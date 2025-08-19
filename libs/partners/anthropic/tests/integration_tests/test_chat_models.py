@@ -6,7 +6,7 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from typing import Optional, cast
+from typing import Literal, Optional, cast
 
 import httpx
 import pytest
@@ -713,8 +713,11 @@ def test_pdf_document_input() -> None:
     assert len(result.content) > 0
 
 
-def test_citations() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
+@pytest.mark.default_cassette("test_citations.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_citations(output_version: Literal["v0", "v1"]) -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
     messages = [
         {
             "role": "user",
@@ -737,7 +740,10 @@ def test_citations() -> None:
     response = llm.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
-    assert any("citations" in block for block in response.content)
+    if output_version == "v1":
+        assert any("annotations" in block for block in response.content)
+    else:
+        assert any("citations" in block for block in response.content)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -745,8 +751,11 @@ def test_citations() -> None:
         full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
-    assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
+    if output_version == "v1":
+        assert any("annotations" in block for block in full.content)
+    else:
+        assert any("citations" in block for block in full.content)
 
     # Test pass back in
     next_message = {
