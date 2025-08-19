@@ -5,13 +5,11 @@ import pytest
 from langchain.agents import AgentExecutor, BaseMultiActionAgent
 from langchain_core.agents import AgentAction, AgentFinish
 from langchain_core.runnables import RunnableConfig
-from langchain_core.runnables.utils import accepts_config
 
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
     from langchain.tools import tool  # type: ignore[assignment]
-
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -83,13 +81,11 @@ class MinimalAgent(BaseMultiActionAgent):
 async def test_minimal_agent_capture_tool_config() -> None:
     agent = MinimalAgent()
     executor = AgentExecutor(agent=agent, tools=[capture], verbose=False)
-
     cfg: RunnableConfig = {
         "metadata": {"tenant": "T1", "session_id": "S1"},
         "tags": ["unit", "tool:capture"],
         "run_name": "agent-run",
     }
-
     try:
         result = await executor._acall(  # type: ignore[attr-defined]
             {"input": "call capture tool with input a = 5"},
