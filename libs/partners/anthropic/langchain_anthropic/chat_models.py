@@ -351,8 +351,23 @@ def _format_messages(
                                 ),
                             )
                         else:
-                            block.pop("text", None)
-                            content.append(block)
+                            if tool_input := block.get("input"):
+                                args = tool_input
+                            elif "partial_json" in block:
+                                try:
+                                    args = json.loads(block["partial_json"] or "{}")
+                                except json.JSONDecodeError:
+                                    args = {}
+                            else:
+                                args = {}
+                            content.append(
+                                _AnthropicToolUse(
+                                    type="tool_use",
+                                    name=block["name"],
+                                    input=args,
+                                    id=block["id"],
+                                )
+                            )
                     elif block["type"] in ("server_tool_use", "mcp_tool_use"):
                         formatted_block = {
                             k: v
@@ -382,14 +397,23 @@ def _format_messages(
                         # accepted.
                         # https://github.com/anthropics/anthropic-sdk-python/issues/461
                         if text.strip():
-                            content.append(
-                                {
-                                    k: v
-                                    for k, v in block.items()
-                                    if k
-                                    in ("type", "text", "cache_control", "citations")
-                                },
-                            )
+                            formatted_block = {
+                                k: v
+                                for k, v in block.items()
+                                if k in ("type", "text", "cache_control", "citations")
+                            }
+                            # Clean up citations to remove null file_id fields
+                            if formatted_block.get("citations"):
+                                cleaned_citations = []
+                                for citation in formatted_block["citations"]:
+                                    cleaned_citation = {
+                                        k: v
+                                        for k, v in citation.items()
+                                        if not (k == "file_id" and v is None)
+                                    }
+                                    cleaned_citations.append(cleaned_citation)
+                                formatted_block["citations"] = cleaned_citations
+                            content.append(formatted_block)
                     elif block["type"] == "thinking":
                         content.append(
                             {
@@ -1707,7 +1731,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
                 # -> AIMessage(
@@ -1715,7 +1739,7 @@ class ChatAnthropic(BaseChatModel):
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
                 #         {'text': None, 'type': 'tool_use', 'id': 'toolu_01SCgExKzQ7eqSkMHfygvYuu', 'name': 'GetWeather', 'input': {'location': 'San Francisco, CA'}}
                 #     ],
-                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
+                #     response_metadata={'id': 'msg_01GM3zQtoFv8jGQMW7abLnhi', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 487, 'output_tokens': 145}},
                 #     id='run-87b1331e-9251-4a68-acef-f0a018b639cc-0'
                 # )
 
@@ -1737,7 +1761,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -1760,7 +1784,7 @@ class ChatAnthropic(BaseChatModel):
                     product: str = Field(..., description="The product to look up.")
 
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
                 llm_with_tools.invoke("what is the weather like in San Francisco",)
 
@@ -1792,7 +1816,7 @@ class ChatAnthropic(BaseChatModel):
                 # We need to pass in extra headers to enable use of the beta cache
                 # control API.
                 llm = ChatAnthropic(
-                    model="claude-3-5-sonnet-20240620",
+                    model="claude-3-5-sonnet-latest",
                     temperature=0,
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
@@ -1802,13 +1826,13 @@ class ChatAnthropic(BaseChatModel):
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
+                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
 
             If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-20240620', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
+                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
 
         """  # noqa: E501
         formatted_tools = [
@@ -1905,7 +1929,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1927,7 +1951,7 @@ class ChatAnthropic(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -1955,7 +1979,7 @@ class ChatAnthropic(BaseChatModel):
                         "required": ["answer", "justification"]
                     }
                 }
-                llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=0)
+                llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(schema)
 
                 structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
@@ -2168,47 +2192,65 @@ def _make_message_chunk_from_anthropic_event(
     coerce_content_to_string: bool,
     block_start_event: Optional[anthropic.types.RawMessageStreamEvent] = None,
 ) -> tuple[Optional[AIMessageChunk], Optional[anthropic.types.RawMessageStreamEvent]]:
-    """Convert Anthropic event to AIMessageChunk.
+    """Convert Anthropic streaming event to `AIMessageChunk`.
 
-    Note that not all events will result in a message chunk. In these cases
-    we return ``None``.
+    Args:
+        event: Raw streaming event from Anthropic SDK
+        stream_usage: Whether to include usage metadata in the output chunks.
+        coerce_content_to_string: Whether to convert structured content to plain
+            text strings. When True, only text content is preserved; when False,
+            structured content like tool calls and citations are maintained.
+        block_start_event: Previous content block start event, used for tracking
+            tool use blocks and maintaining context across related events.
+
+    Returns:
+        Tuple containing:
+        - AIMessageChunk: Converted message chunk with appropriate content and
+          metadata, or None if the event doesn't produce a chunk
+        - RawMessageStreamEvent: Updated `block_start_event` for tracking content
+          blocks across sequential events, or None if not applicable
+
+    Note:
+        Not all Anthropic events result in message chunks. Events like internal
+        state changes return None for the message chunk while potentially
+        updating the `block_start_event` for context tracking.
+
     """
     message_chunk: Optional[AIMessageChunk] = None
-    # See https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
+    # Reference: Anthropic SDK streaming implementation
+    # https://github.com/anthropics/anthropic-sdk-python/blob/main/src/anthropic/lib/streaming/_messages.py  # noqa: E501
+
     if event.type == "message_start" and stream_usage:
-        usage_metadata = _create_usage_metadata(event.message.usage)
-        # We pick up a cumulative count of output_tokens at the end of the stream,
-        # so here we zero out to avoid double counting.
-        usage_metadata["total_tokens"] = (
-            usage_metadata["total_tokens"] - usage_metadata["output_tokens"]
-        )
-        usage_metadata["output_tokens"] = 0
+        # Capture model name, but don't include usage_metadata yet
+        # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
             response_metadata = {"model_name": event.message.model}
         else:
             response_metadata = {}
+
         message_chunk = AIMessageChunk(
             content="" if coerce_content_to_string else [],
-            usage_metadata=usage_metadata,
             response_metadata=response_metadata,
         )
+
     elif (
         event.type == "content_block_start"
         and event.content_block is not None
         and event.content_block.type
         in (
-            "tool_use",
-            "code_execution_tool_result",
+            "tool_use",  # Standard tool usage
+            "code_execution_tool_result",  # Built-in code execution results
             "document",
             "redacted_thinking",
             "mcp_tool_use",
             "mcp_tool_result",
-            "server_tool_use",
-            "web_search_tool_result",
+            "server_tool_use",  # Server-side tool usage
+            "web_search_tool_result",  # Built-in web search results
         )
     ):
         if coerce_content_to_string:
             warnings.warn("Received unexpected tool content block.", stacklevel=2)
+
         content_block = event.content_block.model_dump()
         content_block["index"] = event.index
         if event.content_block.type == "tool_use":
@@ -2226,35 +2268,47 @@ def _make_message_chunk_from_anthropic_event(
             tool_call_chunks=tool_call_chunks,
         )
         block_start_event = event
+
+    # Process incremental content updates
     elif event.type == "content_block_delta":
+        # Text and citation deltas (incremental text content)
         if event.delta.type in ("text_delta", "citations_delta"):
             if coerce_content_to_string and hasattr(event.delta, "text"):
-                text = event.delta.text
+                text = getattr(event.delta, "text", "")
                 message_chunk = AIMessageChunk(content=text)
             else:
                 content_block = event.delta.model_dump()
                 content_block["index"] = event.index
+
+                # All citation deltas are part of a text block
                 content_block["type"] = "text"
                 if "citation" in content_block:
+                    # Assign citations to a list if present
                     content_block["citations"] = [content_block.pop("citation")]
                 message_chunk = AIMessageChunk(content=[content_block])
+
+        # Reasoning
         elif (
             event.delta.type == "thinking_delta"
             or event.delta.type == "signature_delta"
         ):
             content_block = event.delta.model_dump()
-            if "text" in content_block and content_block["text"] is None:
-                content_block.pop("text")
             content_block["index"] = event.index
             content_block["type"] = "thinking"
             message_chunk = AIMessageChunk(content=[content_block])
+
+        # Tool input JSON (streaming tool arguments)
         elif event.delta.type == "input_json_delta":
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
+            start_event_block = (
+                getattr(block_start_event, "content_block", None)
+                if block_start_event
+                else None
+            )
             if (
-                (block_start_event is not None)
-                and hasattr(block_start_event, "content_block")
-                and (block_start_event.content_block.type == "tool_use")
+                start_event_block is not None
+                and getattr(start_event_block, "type", None) == "tool_use"
             ):
                 tool_call_chunk = create_tool_call_chunk(
                     index=event.index,
@@ -2269,12 +2323,10 @@ def _make_message_chunk_from_anthropic_event(
                 content=[content_block],
                 tool_call_chunks=tool_call_chunks,
             )
+
+    # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
-        usage_metadata = UsageMetadata(
-            input_tokens=0,
-            output_tokens=event.usage.output_tokens,
-            total_tokens=event.usage.output_tokens,
-        )
+        usage_metadata = _create_usage_metadata(event.usage)
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
@@ -2283,6 +2335,8 @@ def _make_message_chunk_from_anthropic_event(
                 "stop_sequence": event.delta.stop_sequence,
             },
         )
+    # Unhandled event types (e.g., `content_block_stop`, `ping` events)
+    # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
     else:
         pass
 
@@ -2295,26 +2349,38 @@ class ChatAnthropicMessages(ChatAnthropic):
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:
+    """Create LangChain `UsageMetadata` from Anthropic `Usage` data.
+
+    Note: Anthropic's `input_tokens` excludes cached tokens, so we manually add
+    `cache_read` and `cache_creation` tokens to get the true total.
+
+    """
     input_token_details: dict = {
         "cache_read": getattr(anthropic_usage, "cache_read_input_tokens", None),
         "cache_creation": getattr(anthropic_usage, "cache_creation_input_tokens", None),
     }
-    # Add (beta) cache TTL information if available
+
+    # Add cache TTL information if provided (5-minute and 1-hour ephemeral cache)
     cache_creation = getattr(anthropic_usage, "cache_creation", None)
-    cache_creation_keys = ("ephemeral_1h_input_tokens", "ephemeral_5m_input_tokens")
+
+    # Currently just copying over the 5m and 1h keys, but if more are added in the
+    # future we'll need to expand this tuple
+    cache_creation_keys = ("ephemeral_5m_input_tokens", "ephemeral_1h_input_tokens")
     if cache_creation:
         if isinstance(cache_creation, BaseModel):
             cache_creation = cache_creation.model_dump()
         for k in cache_creation_keys:
             input_token_details[k] = cache_creation.get(k)
 
-    # Anthropic input_tokens exclude cached token counts.
+    # Calculate total input tokens: Anthropic's `input_tokens` excludes cached tokens,
+    # so we need to add them back to get the true total input token count
     input_tokens = (
-        (getattr(anthropic_usage, "input_tokens", 0) or 0)
-        + (input_token_details["cache_read"] or 0)
-        + (input_token_details["cache_creation"] or 0)
+        (getattr(anthropic_usage, "input_tokens", 0) or 0)  # Base input tokens
+        + (input_token_details["cache_read"] or 0)  # Tokens read from cache
+        + (input_token_details["cache_creation"] or 0)  # Tokens used to create cache
     )
     output_tokens = getattr(anthropic_usage, "output_tokens", 0) or 0
+
     return UsageMetadata(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
