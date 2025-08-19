@@ -11,8 +11,7 @@ from langchain_core.runnables import RunnableConfig
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
-    from langchain.tools import tool
-
+    from langchain.tools import tool  # fallback for older installs
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -49,7 +48,11 @@ class MinimalAgent(BaseMultiActionAgent):
     def input_keys(self) -> list[str]:
         return ["input"]
 
-    async def aplan(self, intermediate_steps, **kwargs):
+    async def aplan(
+        self,
+        intermediate_steps: list[Any],
+        **_kwargs: Any,
+    ) -> list[AgentAction] | AgentFinish:
         if not intermediate_steps:
             return [
                 AgentAction(
@@ -60,7 +63,11 @@ class MinimalAgent(BaseMultiActionAgent):
             ]
         return AgentFinish(return_values={"output": "done"}, log="finished")
 
-    def plan(self, intermediate_steps, **kwargs):
+    def plan(
+        self,
+        intermediate_steps: list[Any],
+        **_kwargs: Any,
+    ) -> list[AgentAction] | AgentFinish:
         if not intermediate_steps:
             return [
                 AgentAction(
@@ -73,7 +80,7 @@ class MinimalAgent(BaseMultiActionAgent):
 
 
 @pytest.mark.asyncio
-async def test_minimal_agent_capture_tool_config():
+async def test_minimal_agent_capture_tool_config() -> None:
     agent = MinimalAgent()
     executor = AgentExecutor(agent=agent, tools=[capture], verbose=False)
 
