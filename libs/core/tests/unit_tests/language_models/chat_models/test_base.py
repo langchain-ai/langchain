@@ -682,6 +682,45 @@ def test_normalize_messages_edge_cases() -> None:
     assert expected_messages == _normalize_messages(input_messages)
 
 
+def test_normalize_messages_v1_content_blocks_unchanged() -> None:
+    """Test passing v1 content blocks to `_normalize_messages()` leaves unchanged."""
+    input_messages = [
+        HumanMessage(
+            content=[
+                {
+                    "type": "text",
+                    "text": "Hello world",
+                },
+                {
+                    "type": "image",
+                    "url": "https://example.com/image.png",
+                    "mime_type": "image/png",
+                },
+                {
+                    "type": "audio",
+                    "base64": "base64encodedaudiodata",
+                    "mime_type": "audio/wav",
+                },
+                {
+                    "type": "file",
+                    "id": "file_123",
+                },
+                {
+                    "type": "reasoning",
+                    "text": "Let me think about this...",
+                },
+            ]
+        )
+    ]
+
+    result = _normalize_messages(input_messages)
+
+    # Verify the result is identical to the input (message should not be copied)
+    assert len(result) == 1
+    assert result[0] is input_messages[0]
+    assert result[0].content == input_messages[0].content
+
+
 def test_output_version_invoke(monkeypatch: Any) -> None:
     messages = [AIMessage("hello")]
 
