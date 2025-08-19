@@ -1465,7 +1465,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
-                    config = config
+                    config=config
                 )
             ],
         )
@@ -1550,7 +1550,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
-                    config = config
+                    config=config
                 )
                 for agent_action in actions
             ],
@@ -1588,7 +1588,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
-                config = config,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1689,7 +1689,7 @@ class AgentExecutor(Chain):
                         inputs,
                         intermediate_steps,
                         run_manager=run_manager,
-			            config = config
+                        config=config
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(

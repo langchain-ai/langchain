@@ -11,7 +11,7 @@ from langchain_core.runnables import RunnableConfig
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
-    from langchain.tools import tool  # type: ignore
+    from langchain.tools import tool
 
 
 logger = logging.getLogger(__name__)
