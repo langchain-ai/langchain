@@ -49,7 +49,7 @@ class MinimalAgent(BaseMultiActionAgent):
 
     async def aplan(
         self,
-        intermediate_steps: list[Any],
+        intermediate_steps: list[tuple[AgentAction, str]],
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
@@ -64,7 +64,7 @@ class MinimalAgent(BaseMultiActionAgent):
 
     def plan(
         self,
-        intermediate_steps: list[Any],
+        intermediate_steps: list[tuple[AgentAction, str]],
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
