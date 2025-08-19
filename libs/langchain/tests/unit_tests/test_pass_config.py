@@ -3,6 +3,7 @@ from typing import Any, Union
 
 import pytest
 from langchain_core.agents import AgentAction, AgentFinish
+from langchain_core.callbacks import BaseCallbackHandler, BaseCallbackManager
 from langchain_core.runnables import RunnableConfig
 
 from langchain.agents import AgentExecutor, BaseMultiActionAgent
@@ -50,6 +51,7 @@ class MinimalAgent(BaseMultiActionAgent):
     async def aplan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
+        callbacks: Union[list[BaseCallbackHandler], BaseCallbackManager, None] = None,
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
@@ -65,6 +67,7 @@ class MinimalAgent(BaseMultiActionAgent):
     def plan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
+        callbacks: Union[list[BaseCallbackHandler], BaseCallbackManager, None] = None,
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         if not intermediate_steps:
