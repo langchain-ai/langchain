@@ -2399,7 +2399,7 @@ class Runnable(ABC, Generic[Input, Output]):
             description: The description of the tool. Defaults to None.
             arg_types: A dictionary of argument names to types. Defaults to None.
             message_version: Version of ``ToolMessage`` to return given
-            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+            :class:`~langchain_core.messages.content.ToolCall` input.
 
         Returns:
             A ``BaseTool`` instance.

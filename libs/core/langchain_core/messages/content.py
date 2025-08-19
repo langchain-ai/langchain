@@ -4,17 +4,15 @@
     This module is under active development. The API is unstable and subject to
     change in future releases.
 
-This module provides a standardized data structure for representing inputs to and
-outputs from LLMs. The core abstraction is the **Content Block**, a ``TypedDict`` that
-can represent a piece of text, an image, a tool call, or other structured data.
+This module provides standardized data structures for representing inputs to and
+outputs from LLMs. The core abstraction is the **Content Block**, a ``TypedDict``.
 
 **Rationale**
 
 Different LLM providers use distinct and incompatible API schemas. This module
-introduces a unified, provider-agnostic format to standardize these interactions. A
-message to or from a model is simply a ``list`` of ``ContentBlock`` objects, allowing
-for the natural interleaving of text, images, and other content in a single, ordered
-sequence.
+provides a unified, provider-agnostic format to facilitate these interactions. A
+message to or from a model is simply a list of content blocks, allowing for the natural
+interleaving of text, images, and other content in a single ordered sequence.
 
 An adapter for a specific provider is responsible for translating this standard list of
 blocks into the format required by its API.
@@ -29,116 +27,114 @@ Furthermore, provider-specific fields **within** a standard block are fully supp
 by default in the ``extras`` field of each block. This allows for additional metadata
 to be included without breaking the standard structure.
 
-Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we will add
-``extra_items=Any`` as a param to Content Blocks. This will signify to type checkers
-that additional provider-specific fields are allowed outside of the ``extras`` field,
-and that will become the new standard approach to adding provider-specific metadata.
-
 .. warning::
     Do not heavily rely on the ``extras`` field for provider-specific data! This field
     is subject to deprecation in future releases as we move towards PEP 728.
 
-**Example with PEP 728 provider-specific fields:**
-
-.. code-block:: python
-
-    # Content block definition
-    # NOTE: `extra_items=Any`
-    class TextContentBlock(TypedDict, extra_items=Any):
-        type: Literal["text"]
-        id: NotRequired[str]
-        text: str
-        annotations: NotRequired[list[Annotation]]
-        index: NotRequired[int]
-
-.. code-block:: python
-
-    from langchain_core.messages.content_blocks import TextContentBlock
-
-    # Create a text content block with provider-specific fields
-    my_block: TextContentBlock = {
-        # Add required fields
-        "type": "text",
-        "text": "Hello, world!",
-        # Additional fields not specified in the TypedDict
-        # These are valid with PEP 728 and are typed as Any
-        "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
-        "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
-        "custom_field": "any value",
-    }
-
-    # Mutating an existing block to add provider-specific fields
-    openai_data = my_block["openai_metadata"]  # Type: Any
-
 .. note::
-    PEP 728 is enabled with ``# type: ignore[call-arg]`` comments to suppress warnings
-    from type checkers that don't yet support it. The functionality works correctly
-    in Python 3.13+ and will be fully supported as the ecosystem catches up.
+    Following widespread adoption of `PEP 728 <https://peps.python.org/pep-0728/>`__, we
+    will add ``extra_items=Any`` as a param to Content Blocks. This will signify to type
+    checkers that additional provider-specific fields are allowed outside of the
+    ``extras`` field, and that will become the new standard approach to adding
+    provider-specific metadata.
+
+    .. dropdown::
+
+        **Example with PEP 728 provider-specific fields:**
+
+        .. code-block:: python
+
+            # Content block definition
+            # NOTE: `extra_items=Any`
+            class TextContentBlock(TypedDict, extra_items=Any):
+                type: Literal["text"]
+                id: NotRequired[str]
+                text: str
+                annotations: NotRequired[list[Annotation]]
+                index: NotRequired[int]
+
+        .. code-block:: python
+
+            from langchain_core.messages.content import TextContentBlock
+
+            # Create a text content block with provider-specific fields
+            my_block: TextContentBlock = {
+                # Add required fields
+                "type": "text",
+                "text": "Hello, world!",
+                # Additional fields not specified in the TypedDict
+                # These are valid with PEP 728 and are typed as Any
+                "openai_metadata": {"model": "gpt-4", "temperature": 0.7},
+                "anthropic_usage": {"input_tokens": 10, "output_tokens": 20},
+                "custom_field": "any value",
+            }
+
+            # Mutating an existing block to add provider-specific fields
+            openai_data = my_block["openai_metadata"]  # Type: Any
+
+        PEP 728 is enabled with ``# type: ignore[call-arg]`` comments to suppress
+        warnings from type checkers that don't yet support it. The functionality works
+        correctly in Python 3.13+ and will be fully supported as the ecosystem catches
+        up.
 
 **Key Block Types**
 
 The module defines several types of content blocks, including:
 
-- ``TextContentBlock``: Standard text.
-- ``ImageContentBlock``, ``Audio...``, ``Video...``, ``PlainText...``, ``File...``: For multimodal data.
+- ``TextContentBlock``: Standard text output.
+- ``Citation``: For annotations that link text output to a source document.
 - ``ToolCallContentBlock``: For function calling.
 - ``ReasoningContentBlock``: To capture a model's thought process.
-- ``Citation``: For annotations that link generated text to a source document.
+- Multimodal data:
+    - ``ImageContentBlock``
+    - ``AudioContentBlock``
+    - ``VideoContentBlock``
+    - ``PlainTextContentBlock`` (e.g. .txt or .md files)
+    - ``FileContentBlock`` (e.g. PDFs, etc.)
 
 **Example Usage**
 
 .. code-block:: python
 
     # Direct construction:
-    from langchain_core.messages.content_blocks import TextContentBlock, ImageContentBlock
+    from langchain_core.messages.content import TextContentBlock, ImageContentBlock
 
-    multimodal_message: AIMessage = [
-        TextContentBlock(type="text", text="What is shown in this image?"),
-        ImageContentBlock(
-            type="image",
-            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
-            mime_type="image/png",
-        ),
-    ]
+    multimodal_message: AIMessage(content_blocks=
+        [
+            TextContentBlock(type="text", text="What is shown in this image?"),
+            ImageContentBlock(
+                type="image",
+                url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+                mime_type="image/png",
+            ),
+        ]
+    )
 
-    from langchain_core.messages.content_blocks import create_text_block, create_image_block
+    # Using factories:
+    from langchain_core.messages.content import create_text_block, create_image_block
 
-    # Using factory functions:
-    multimodal_message: AIMessage = [
-        create_text_block("What is shown in this image?"),
-        create_image_block(
-            url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
-            mime_type="image/png",
-        ),
-    ]
+    multimodal_message: AIMessage(content=
+        [
+            create_text_block("What is shown in this image?"),
+            create_image_block(
+                url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
+                mime_type="image/png",
+            ),
+        ]
+    )
 
-Factory functions like ``create_text_block`` and ``create_image_block`` are provided
-and offer benefits such as:
+Factory functions offer benefits such as:
 - Automatic ID generation (when not provided)
 - No need to manually specify the ``type`` field
 
-"""  # noqa: E501
+"""
 
 import warnings
-from typing import Any, Literal, Optional, Union
-from uuid import uuid4
+from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
 
-
-def _ensure_id(id_val: Optional[str]) -> str:
-    """Ensure the ID is a valid string, generating a new UUID if not provided.
-
-    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
-    LangChain-generated IDs.
-
-    Args:
-        id_val: Optional string ID value to validate.
-
-    Returns:
-        A valid string ID, either the provided value or a new UUID.
-    """
-    return id_val or str(f"lc_{uuid4()}")
+from langchain_core.utils.utils import ensure_id
 
 
 class Citation(TypedDict):
@@ -166,17 +162,11 @@ class Citation(TypedDict):
 
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     url: NotRequired[str]
     """URL of the document source."""
-
-    # For future consideration, if needed:
-    # provenance: NotRequired[str]
-    # """Provenance of the document, e.g., ``'Wikipedia'``, ``'arXiv'``, etc.
-
-    # Included for future compatibility; not currently implemented.
-    # """
 
     title: NotRequired[str]
     """Source document title.
@@ -185,12 +175,10 @@ class Citation(TypedDict):
     """
 
     start_index: NotRequired[int]
-    """Start index of the **response text** (``TextContentBlock.text``) for which the
-    annotation applies."""
+    """Start index of the **response text** (``TextContentBlock.text``)."""
 
     end_index: NotRequired[int]
-    """End index of the **response text** (``TextContentBlock.text``) for which the
-    annotation applies."""
+    """End index of the **response text** (``TextContentBlock.text``)"""
 
     cited_text: NotRequired[str]
     """Excerpt of source text being cited."""
@@ -212,10 +200,12 @@ class NonStandardAnnotation(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     value: dict[str, Any]
@@ -244,10 +234,12 @@ class TextContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     text: str
@@ -256,7 +248,7 @@ class TextContentBlock(TypedDict):
     annotations: NotRequired[list[Annotation]]
     """``Citation``s and other annotations."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -296,6 +288,7 @@ class ToolCall(TypedDict):
 
     An identifier is needed to associate a tool call request with a tool
     call result in events when multiple concurrent tool calls are made.
+
     """
     # TODO: Consider making this NotRequired[str] in the future.
 
@@ -305,7 +298,7 @@ class ToolCall(TypedDict):
     args: dict[str, Any]
     """The arguments to the tool call."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -330,6 +323,7 @@ class ToolCallChunk(TypedDict):
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
         ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+
     """
 
     # TODO: Consider making fields NotRequired[str] in the future.
@@ -338,7 +332,12 @@ class ToolCallChunk(TypedDict):
     """Used for serialization."""
 
     id: Optional[str]
-    """An identifier associated with the tool call."""
+    """An identifier associated with the tool call.
+
+    An identifier is needed to associate a tool call request with a tool
+    call result in events when multiple concurrent tool calls are made.
+
+    """
 
     name: Optional[str]
     """The name of the tool to be called."""
@@ -346,7 +345,7 @@ class ToolCallChunk(TypedDict):
     args: Optional[str]
     """The arguments to the tool call."""
 
-    index: Optional[int]
+    index: NotRequired[Union[int, str]]
     """The index of the tool call in a sequence."""
 
     extras: NotRequired[dict[str, Any]]
@@ -358,6 +357,7 @@ class InvalidToolCall(TypedDict):
 
     Here we add an ``error`` key to surface errors made during generation
     (e.g., invalid JSON arguments.)
+
     """
 
     # TODO: Consider making fields NotRequired[str] in the future.
@@ -366,7 +366,12 @@ class InvalidToolCall(TypedDict):
     """Used for discrimination."""
 
     id: Optional[str]
-    """An identifier associated with the tool call."""
+    """An identifier associated with the tool call.
+
+    An identifier is needed to associate a tool call request with a tool
+    call result in events when multiple concurrent tool calls are made.
+
+    """
 
     name: Optional[str]
     """The name of the tool to be called."""
@@ -377,15 +382,13 @@ class InvalidToolCall(TypedDict):
     error: Optional[str]
     """An error message associated with the tool call."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
     """Provider-specific metadata."""
 
 
-# Note: These are not standard tool calls, but rather provider-specific built-in tools.
-# Web search
 class WebSearchCall(TypedDict):
     """Built-in web search tool call."""
 
@@ -393,16 +396,18 @@ class WebSearchCall(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     query: NotRequired[str]
     """The search query used in the web search tool call."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -416,16 +421,18 @@ class WebSearchResult(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     urls: NotRequired[list[str]]
     """List of URLs returned by the web search tool call."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -439,10 +446,12 @@ class CodeInterpreterCall(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     language: NotRequired[str]
@@ -451,7 +460,7 @@ class CodeInterpreterCall(TypedDict):
     code: NotRequired[str]
     """The code to be executed by the code interpreter."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -463,22 +472,26 @@ class CodeInterpreterOutput(TypedDict):
 
     Full output of a code interpreter tool call is represented by
     ``CodeInterpreterResult`` which is a list of these blocks.
+
     """
 
     type: Literal["code_interpreter_output"]
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     return_code: NotRequired[int]
     """Return code of the executed code.
 
     Example: ``0`` for success, non-zero for failure.
+
     """
 
     stderr: NotRequired[str]
@@ -490,7 +503,7 @@ class CodeInterpreterOutput(TypedDict):
     file_ids: NotRequired[list[str]]
     """List of file IDs generated by the code interpreter."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -504,16 +517,18 @@ class CodeInterpreterResult(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     output: list[CodeInterpreterOutput]
     """List of outputs from the code interpreter tool call."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -536,10 +551,12 @@ class ReasoningContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     reasoning: NotRequired[str]
@@ -547,9 +564,10 @@ class ReasoningContentBlock(TypedDict):
 
     Either the thought summary or the raw reasoning text itself. This is often parsed
     from ``<think>`` tags in the model's response.
+
     """
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     extras: NotRequired[dict[str, Any]]
@@ -575,10 +593,12 @@ class ImageContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     file_id: NotRequired[str]
@@ -588,9 +608,10 @@ class ImageContentBlock(TypedDict):
     """MIME type of the image. Required for base64.
 
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#image>`__
+
     """
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -600,7 +621,7 @@ class ImageContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the image data itself."""
 
 
 class VideoContentBlock(TypedDict):
@@ -619,10 +640,12 @@ class VideoContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     file_id: NotRequired[str]
@@ -632,9 +655,10 @@ class VideoContentBlock(TypedDict):
     """MIME type of the video. Required for base64.
 
     `Examples from IANA <https://www.iana.org/assignments/media-types/media-types.xhtml#video>`__
+
     """
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -644,7 +668,7 @@ class VideoContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the video data itself."""
 
 
 class AudioContentBlock(TypedDict):
@@ -662,10 +686,12 @@ class AudioContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     file_id: NotRequired[str]
@@ -678,7 +704,7 @@ class AudioContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -688,7 +714,7 @@ class AudioContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the audio data itself."""
 
 
 class PlainTextContentBlock(TypedDict):
@@ -711,10 +737,12 @@ class PlainTextContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     file_id: NotRequired[str]
@@ -723,7 +751,7 @@ class PlainTextContentBlock(TypedDict):
     mime_type: Literal["text/plain"]
     """MIME type of the file. Required for base64."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -742,7 +770,7 @@ class PlainTextContentBlock(TypedDict):
     """Context for the text, e.g., a description or summary of the text's content."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the data itself."""
 
 
 class FileContentBlock(TypedDict):
@@ -768,10 +796,12 @@ class FileContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     file_id: NotRequired[str]
@@ -784,7 +814,7 @@ class FileContentBlock(TypedDict):
 
     """
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
     url: NotRequired[str]
@@ -794,7 +824,7 @@ class FileContentBlock(TypedDict):
     """Data as a base64 string."""
 
     extras: NotRequired[dict[str, Any]]
-    """Provider-specific metadata."""
+    """Provider-specific metadata. This shouldn't be used for the file data itself."""
 
 
 # Future modalities to consider:
@@ -812,6 +842,9 @@ class NonStandardContentBlock(TypedDict):
     the adapter's job to parse that payload and emit the corresponding standard
     ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
 
+    Has no ``extras`` field, as provider-specific data should be included in the
+    ``value`` field.
+
     .. note::
         ``create_non_standard_block`` may also be used as a factory to create a
         ``NonStandardContentBlock``. Benefits include:
@@ -825,16 +858,18 @@ class NonStandardContentBlock(TypedDict):
     """Type of the content block. Used for discrimination."""
 
     id: NotRequired[str]
-    """Content block identifier. Either:
+    """Content block identifier.
 
+    Either:
     - Generated by the provider (e.g., OpenAI's file ID)
     - Generated by LangChain upon creation (``UUID4`` prefixed with ``'lc_'``))
+
     """
 
     value: dict[str, Any]
     """Provider-specific data."""
 
-    index: NotRequired[int]
+    index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
 
 
@@ -889,29 +924,45 @@ KNOWN_BLOCK_TYPES = {
 }
 
 
+def _get_data_content_block_types() -> tuple[str, ...]:
+    """Get type literals from DataContentBlock union members dynamically."""
+    data_block_types = []
+
+    for block_type in get_args(DataContentBlock):
+        hints = get_type_hints(block_type)
+        if "type" in hints:
+            type_annotation = hints["type"]
+            if hasattr(type_annotation, "__args__"):
+                # This is a Literal type, get the literal value
+                literal_value = type_annotation.__args__[0]
+                data_block_types.append(literal_value)
+
+    return tuple(data_block_types)
+
+
 def is_data_content_block(block: dict) -> bool:
-    """Check if the content block is a standard data content block.
+    """Check if the provided content block is a standard v1 data content block.
 
     Args:
         block: The content block to check.
 
     Returns:
         True if the content block is a data content block, False otherwise.
+
     """
-    return block.get("type") in (
-        "audio",
-        "image",
-        "video",
-        "file",
-        "text-plain",
-    ) and any(
+    return block.get("type") in _get_data_content_block_types() and any(
+        # Check if at least one non-type key is present to signify presence of data
         key in block
         for key in (
             "url",
             "base64",
             "file_id",
             "text",
-            "source_type",  # backwards compatibility
+            "source_type",  # for backwards compatibility with v0 content blocks
+            # TODO: should we verify that if source_type is present, at least one of
+            # url, base64, or file_id is also present? Otherwise, source_type could be
+            # present without any actual data? Need to confirm whether this was ever
+            # possible in v0 content blocks in the first place.
         )
     )
 
@@ -944,7 +995,7 @@ def is_invalid_tool_call_block(
 
 
 def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert image content block to format expected by OpenAI Chat Completions API."""
+    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
     if "url" in block:
         return {
             "type": "image_url",
@@ -970,6 +1021,7 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 def convert_to_openai_data_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
+    # TODO: make sure this supports new v1
     if block["type"] == "image":
         formatted_block = convert_to_openai_image_block(block)
 
@@ -1022,7 +1074,8 @@ def create_text_block(
     *,
     id: Optional[str] = None,
     annotations: Optional[list[Annotation]] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> TextContentBlock:
     """Create a ``TextContentBlock``.
 
@@ -1043,12 +1096,17 @@ def create_text_block(
     block = TextContentBlock(
         type="text",
         text=text,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
     if annotations is not None:
         block["annotations"] = annotations
     if index is not None:
         block["index"] = index
+
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1059,7 +1117,8 @@ def create_image_block(
     file_id: Optional[str] = None,
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> ImageContentBlock:
     """Create an ``ImageContentBlock``.
 
@@ -1087,7 +1146,7 @@ def create_image_block(
         msg = "Must provide one of: url, base64, or file_id"
         raise ValueError(msg)
 
-    block = ImageContentBlock(type="image", id=_ensure_id(id))
+    block = ImageContentBlock(type="image", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1100,6 +1159,10 @@ def create_image_block(
     if index is not None:
         block["index"] = index
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1110,7 +1173,8 @@ def create_video_block(
     file_id: Optional[str] = None,
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> VideoContentBlock:
     """Create a ``VideoContentBlock``.
 
@@ -1142,7 +1206,7 @@ def create_video_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = VideoContentBlock(type="video", id=_ensure_id(id))
+    block = VideoContentBlock(type="video", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1155,6 +1219,10 @@ def create_video_block(
     if index is not None:
         block["index"] = index
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1165,7 +1233,8 @@ def create_audio_block(
     file_id: Optional[str] = None,
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> AudioContentBlock:
     """Create an ``AudioContentBlock``.
 
@@ -1197,7 +1266,7 @@ def create_audio_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = AudioContentBlock(type="audio", id=_ensure_id(id))
+    block = AudioContentBlock(type="audio", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1210,6 +1279,10 @@ def create_audio_block(
     if index is not None:
         block["index"] = index
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1220,7 +1293,8 @@ def create_file_block(
     file_id: Optional[str] = None,
     mime_type: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> FileContentBlock:
     """Create a ``FileContentBlock``.
 
@@ -1252,7 +1326,7 @@ def create_file_block(
         msg = "mime_type is required when using base64 data"
         raise ValueError(msg)
 
-    block = FileContentBlock(type="file", id=_ensure_id(id))
+    block = FileContentBlock(type="file", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1265,6 +1339,10 @@ def create_file_block(
     if index is not None:
         block["index"] = index
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1276,7 +1354,8 @@ def create_plaintext_block(
     title: Optional[str] = None,
     context: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> PlainTextContentBlock:
     """Create a ``PlainTextContentBlock``.
 
@@ -1301,7 +1380,7 @@ def create_plaintext_block(
     block = PlainTextContentBlock(
         type="text-plain",
         mime_type="text/plain",
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if text is not None:
@@ -1319,6 +1398,10 @@ def create_plaintext_block(
     if index is not None:
         block["index"] = index
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1327,7 +1410,8 @@ def create_tool_call(
     args: dict[str, Any],
     *,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> ToolCall:
     """Create a ``ToolCall``.
 
@@ -1349,11 +1433,15 @@ def create_tool_call(
         type="tool_call",
         name=name,
         args=args,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:
         block["index"] = index
+
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1361,7 +1449,8 @@ def create_tool_call(
 def create_reasoning_block(
     reasoning: Optional[str] = None,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
+    **kwargs: Any,
 ) -> ReasoningContentBlock:
     """Create a ``ReasoningContentBlock``.
 
@@ -1381,11 +1470,15 @@ def create_reasoning_block(
     block = ReasoningContentBlock(
         type="reasoning",
         reasoning=reasoning or "",
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:
         block["index"] = index
+
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
 
     return block
 
@@ -1398,6 +1491,7 @@ def create_citation(
     end_index: Optional[int] = None,
     cited_text: Optional[str] = None,
     id: Optional[str] = None,
+    **kwargs: Any,
 ) -> Citation:
     """Create a ``Citation``.
 
@@ -1417,7 +1511,7 @@ def create_citation(
         prefixed with ``'lc_'`` to indicate it is a LangChain-generated ID.
 
     """
-    block = Citation(type="citation", id=_ensure_id(id))
+    block = Citation(type="citation", id=ensure_id(id))
 
     if url is not None:
         block["url"] = url
@@ -1430,6 +1524,10 @@ def create_citation(
     if cited_text is not None:
         block["cited_text"] = cited_text
 
+    extras = {k: v for k, v in kwargs.items() if v is not None}
+    if extras:
+        block["extras"] = extras
+
     return block
 
 
@@ -1437,7 +1535,7 @@ def create_non_standard_block(
     value: dict[str, Any],
     *,
     id: Optional[str] = None,
-    index: Optional[int] = None,
+    index: Optional[Union[int, str]] = None,
 ) -> NonStandardContentBlock:
     """Create a ``NonStandardContentBlock``.
 
@@ -1457,7 +1555,7 @@ def create_non_standard_block(
     block = NonStandardContentBlock(
         type="non_standard",
         value=value,
-        id=_ensure_id(id),
+        id=ensure_id(id),
     )
 
     if index is not None:

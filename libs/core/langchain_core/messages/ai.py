@@ -8,8 +8,12 @@ from typing import Any, Literal, Optional, Union, cast, overload
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages import content_blocks as types
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages import content as types
+from langchain_core.messages.base import (
+    BaseMessage,
+    BaseMessageChunk,
+    merge_content,
+)
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -23,20 +27,9 @@ from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chu
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 
 logger = logging.getLogger(__name__)
-
-_LC_AUTO_PREFIX = "lc_"
-"""LangChain auto-generated ID prefix for messages and content blocks."""
-
-_LC_ID_PREFIX = f"{_LC_AUTO_PREFIX}run-"
-"""Internal tracing/callback system identifier.
-
-Used for:
-- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
-  gets a unique run_id (UUID)
-- Enables tracking parent-child relationships between operations
-"""
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -201,7 +194,7 @@ class AIMessage(BaseMessage):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             # If there are tool calls in content_blocks, but not in tool_calls, add them
             content_tool_calls = [
@@ -228,27 +221,40 @@ class AIMessage(BaseMessage):
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
         """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider:
+            from langchain_core.messages.block_translators import get_translator
+
+            translator = get_translator(model_provider)
+            if translator:
+                return translator["translate_content"](self)
+
+        # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
-        # Add from tool_calls if missing from content
-        content_tool_call_ids = {
-            block.get("id")
-            for block in self.content
-            if isinstance(block, dict) and block.get("type") == "tool_call"
-        }
-        for tool_call in self.tool_calls:
-            if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
-                tool_call_block: types.ToolCall = {
-                    "type": "tool_call",
-                    "id": id_,
-                    "name": tool_call["name"],
-                    "args": tool_call["args"],
-                }
-                if "index" in tool_call:
-                    tool_call_block["index"] = tool_call["index"]
-                if "extras" in tool_call:
-                    tool_call_block["extras"] = tool_call["extras"]
-                blocks.append(tool_call_block)
+        if self.tool_calls:
+            # Add from tool_calls if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call"
+            }
+            for tool_call in self.tool_calls:
+                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_block: types.ToolCall = {
+                        "type": "tool_call",
+                        "id": id_,
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                    }
+                    if "index" in tool_call:
+                        tool_call_block["index"] = tool_call["index"]
+                    if "extras" in tool_call:
+                        tool_call_block["extras"] = tool_call["extras"]
+                    blocks.append(tool_call_block)
 
         return blocks
 
@@ -361,6 +367,42 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider:
+            from langchain_core.messages.block_translators import get_translator
+
+            translator = get_translator(model_provider)
+            if translator:
+                return translator["translate_content_chunk"](self)
+
+        # Otherwise, use best-effort parsing
+        blocks = super().content_blocks
+
+        if self.tool_call_chunks and not self.content:
+            blocks = [
+                block
+                for block in blocks
+                if block["type"] not in ("tool_call", "invalid_tool_call")
+            ]
+            for tool_call_chunk in self.tool_call_chunks:
+                tc: types.ToolCallChunk = {
+                    "type": "tool_call_chunk",
+                    "id": tool_call_chunk.get("id"),
+                    "name": tool_call_chunk.get("name"),
+                    "args": tool_call_chunk.get("args"),
+                }
+                if (idx := tool_call_chunk.get("index")) is not None:
+                    tc["index"] = idx
+                blocks.append(tc)
+
+        return blocks
+
     @model_validator(mode="after")
     def init_tool_calls(self) -> Self:
         """Initialize tool calls from tool call chunks.
@@ -413,7 +455,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
+                if chunk["args"] is not None and chunk["args"] != "":
+                    args_ = parse_partial_json(chunk["args"])
+                else:
+                    args_ = {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
@@ -487,15 +532,15 @@ def add_ai_message_chunks(
     for id_ in candidates:
         if (
             id_
-            and not id_.startswith(_LC_ID_PREFIX)
-            and not id_.startswith(_LC_AUTO_PREFIX)
+            and not id_.startswith(LC_ID_PREFIX)
+            and not id_.startswith(LC_AUTO_PREFIX)
         ):
             chunk_id = id_
             break
     else:
         # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_ and id_.startswith(_LC_ID_PREFIX):
+            if id_ and id_.startswith(LC_ID_PREFIX):
                 chunk_id = id_
                 break
         else:

@@ -14,11 +14,9 @@ pip install langchain-text-splitters
 LangChain Text Splitters contains utilities for splitting into chunks a wide variety of text documents.
 
 For full documentation see the [API reference](https://python.langchain.com/api_reference/text_splitters/index.html)
-and the [Text Splitters](https://python.langchain.com/docs/modules/data_connection/document_transformers/) module in the main docs.
+and the [Text Splitters](https://python.langchain.com/docs/how_to/#text-splitters) module in the main docs.
 
 ## 📕 Releases & Versioning
-
-`langchain-text-splitters` is currently on version `0.0.x`.
 
 Minor version increases will occur for:
 

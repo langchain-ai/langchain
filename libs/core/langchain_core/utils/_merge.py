@@ -68,6 +68,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
+                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
+                    right_k in ("id", "output_version", "model_provider")
+                    and merged[right_k] == right_v
+                ):
+                    continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
@@ -104,7 +109,16 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
             merged = other.copy()
         else:
             for e in other:
-                if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                if (
+                    isinstance(e, dict)
+                    and "index" in e
+                    and (
+                        isinstance(e["index"], int)
+                        or (
+                            isinstance(e["index"], str) and e["index"].startswith("lc_")
+                        )
+                    )
+                ):
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)

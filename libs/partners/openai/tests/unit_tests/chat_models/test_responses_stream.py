@@ -21,7 +21,7 @@ from openai.types.responses import (
     ResponseTextDeltaEvent,
     ResponseTextDoneEvent,
 )
-from openai.types.responses.response import Response, ResponseUsage
+from openai.types.responses.response import Response
 from openai.types.responses.response_output_text import ResponseOutputText
 from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_reasoning_summary_part_added_event import (
@@ -33,6 +33,7 @@ from openai.types.responses.response_reasoning_summary_part_done_event import (
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from openai.types.shared.reasoning import Reasoning
 from openai.types.shared.response_format_text import ResponseFormatText
@@ -676,19 +677,24 @@ def _strip_none(obj: Any) -> Any:
                     "type": "reasoning",
                     "reasoning": "reasoning block one",
                     "id": "rs_123",
-                    "index": 0,
+                    "index": "lc_rs_305f30",
                 },
                 {
                     "type": "reasoning",
                     "reasoning": "another reasoning block",
                     "id": "rs_123",
-                    "index": 1,
+                    "index": "lc_rs_305f31",
                 },
-                {"type": "text", "text": "text block one", "index": 2, "id": "msg_123"},
+                {
+                    "type": "text",
+                    "text": "text block one",
+                    "index": "lc_txt_1",
+                    "id": "msg_123",
+                },
                 {
                     "type": "text",
                     "text": "another text block",
-                    "index": 3,
+                    "index": "lc_txt_2",
                     "id": "msg_123",
                 },
                 {
@@ -696,16 +702,16 @@ def _strip_none(obj: Any) -> Any:
                     "reasoning": "more reasoning",
                     "id": "rs_234",
                     "extras": {"encrypted_content": "encrypted-content"},
-                    "index": 4,
+                    "index": "lc_rs_335f30",
                 },
                 {
                     "type": "reasoning",
                     "reasoning": "still more reasoning",
                     "id": "rs_234",
-                    "index": 5,
+                    "index": "lc_rs_335f31",
                 },
-                {"type": "text", "text": "more", "index": 6, "id": "msg_234"},
-                {"type": "text", "text": "text", "index": 7, "id": "msg_234"},
+                {"type": "text", "text": "more", "index": "lc_txt_4", "id": "msg_234"},
+                {"type": "text", "text": "text", "index": "lc_txt_5", "id": "msg_234"},
             ],
         ),
     ],

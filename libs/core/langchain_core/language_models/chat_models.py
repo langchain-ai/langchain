@@ -47,7 +47,6 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
-from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -67,6 +66,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.utils import LC_ID_PREFIX
 
 if TYPE_CHECKING:
     import uuid
@@ -336,17 +336,18 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """
 
     output_version: str = "v0"
-    """Version of AIMessage output format to use.
+    """Version of ``AIMessage`` output format to use.
 
-    This field is used to roll-out new output formats for chat model AIMessages
+    This field is used to roll-out new output formats for chat model ``AIMessage``s
     in a backwards-compatible way.
 
     ``'v1'`` standardizes output format using a list of typed ContentBlock dicts. We
     recommend this for new applications.
 
-    All chat models currently support the default of ``"v0"``.
+    All chat models currently support the default of ``'v0'``.
 
     .. versionadded:: 1.0
+
     """
 
     @model_validator(mode="before")
@@ -605,7 +606,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
-                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+                run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(
                     input_messages,
                     stop=stop,
@@ -731,7 +732,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
-            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+            run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -1210,7 +1211,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     chunk.message.additional_kwargs["output_version"] = output_version
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1232,7 +1233,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1297,7 +1298,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     chunk.message.additional_kwargs["output_version"] = output_version
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1319,7 +1320,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )

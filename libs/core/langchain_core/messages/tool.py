@@ -7,10 +7,10 @@ from uuid import UUID
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict, override
 
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
-from langchain_core.messages.content_blocks import InvalidToolCall as InvalidToolCall
-from langchain_core.messages.content_blocks import ToolCall as ToolCall
+from langchain_core.messages.content import InvalidToolCall as InvalidToolCall
+from langchain_core.messages.content import ToolCall as ToolCall
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -157,7 +157,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             super().__init__(
                 content=cast("Union[str, list[Union[str, dict]]]", content_blocks),

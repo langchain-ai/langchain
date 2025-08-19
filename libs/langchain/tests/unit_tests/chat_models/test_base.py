@@ -262,7 +262,7 @@ def test_configurable_with_default() -> None:
             "disable_streaming": False,
             "model": "claude-3-7-sonnet-20250219",
             "mcp_servers": None,
-            "max_tokens": 1024,
+            "max_tokens": 64000,
             "temperature": None,
             "thinking": None,
             "top_k": None,
@@ -278,6 +278,7 @@ def test_configurable_with_default() -> None:
             "model_kwargs": {},
             "streaming": False,
             "stream_usage": True,
+            "output_version": "v0",
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

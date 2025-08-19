@@ -1,6 +1,6 @@
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
@@ -284,3 +284,29 @@ def test_content_blocks() -> None:
         {"type": "tool_call", "name": "foo", "args": {"a": "b"}, "id": "abc_123"},
         missing_tool_call,
     ]
+
+    # Chunks
+    message = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "foo",
+                "args": "",
+                "id": "abc_123",
+                "index": 0,
+            }
+        ],
+    )
+    assert len(message.content_blocks) == 1
+    assert message.content_blocks[0]["type"] == "tool_call_chunk"
+    assert message.content_blocks == [
+        {
+            "type": "tool_call_chunk",
+            "name": "foo",
+            "args": "",
+            "id": "abc_123",
+            "index": 0,
+        }
+    ]
+    assert message.content == ""

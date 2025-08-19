@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import content_blocks as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -15,6 +14,7 @@ from langchain_core.utils.interactive_env import is_interactive_env
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -83,7 +83,7 @@ class BaseMessage(Serializable):
         content_blocks: Optional[list[types.ContentBlock]] = None,
         **kwargs: Any,
     ) -> None:
-        """Specify content as a positional arg or content_blocks for typing support."""
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
         if content_blocks is not None:
             super().__init__(content=content_blocks, **kwargs)
         else:
@@ -108,18 +108,21 @@ class BaseMessage(Serializable):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return the content as a list of standard ContentBlocks.
+        """Return the content as a list of standard ``ContentBlock``s.
 
         To use this property, the corresponding chat model must support
-        ``message_version="v1"`` or higher:
+        ``message_version='v1'`` or higher:
 
         .. code-block:: python
 
             from langchain.chat_models import init_chat_model
             llm = init_chat_model("...", message_version="v1")
 
-        otherwise, does best-effort parsing to standard types.
+        Otherwise, does best-effort parsing to standard types.
+
         """
+        from langchain_core.messages import content as types
+
         blocks: list[types.ContentBlock] = []
         content = (
             [self.content]

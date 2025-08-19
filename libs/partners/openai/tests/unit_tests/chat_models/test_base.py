@@ -20,14 +20,13 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.messages import content_blocks as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -44,6 +43,7 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
@@ -55,7 +55,6 @@ from langchain_openai.chat_models._compat import (
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
-    _convert_to_v1_from_responses,
 )
 from langchain_openai.chat_models.base import (
     _construct_lc_result_from_responses_api,
@@ -1235,7 +1234,7 @@ def test_structured_outputs_parser() -> None:
     serialized = dumps(llm_output)
     deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
@@ -2583,114 +2582,6 @@ def test_convert_from_v1_to_responses(
 
     # Check no mutation
     assert message_v1 != result
-
-
-@pytest.mark.parametrize(
-    "responses_content, tool_calls, expected_content",
-    [
-        (
-            [
-                {"type": "reasoning", "id": "abc123", "summary": []},
-                {
-                    "type": "reasoning",
-                    "id": "abc234",
-                    "summary": [
-                        {"type": "summary_text", "text": "foo "},
-                        {"type": "summary_text", "text": "bar"},
-                    ],
-                },
-                {
-                    "type": "function_call",
-                    "call_id": "call_123",
-                    "name": "get_weather",
-                    "arguments": '{"location": "San Francisco"}',
-                },
-                {
-                    "type": "function_call",
-                    "call_id": "call_234",
-                    "name": "get_weather_2",
-                    "arguments": '{"location": "New York"}',
-                    "id": "fc_123",
-                },
-                {"type": "text", "text": "Hello "},
-                {
-                    "type": "text",
-                    "text": "world",
-                    "annotations": [
-                        {"type": "url_citation", "url": "https://example.com"},
-                        {
-                            "type": "file_citation",
-                            "filename": "my doc",
-                            "index": 1,
-                            "file_id": "file_123",
-                        },
-                        {"bar": "baz"},
-                    ],
-                },
-                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
-                {"type": "something_else", "foo": "bar"},
-            ],
-            [
-                {
-                    "type": "tool_call",
-                    "id": "call_123",
-                    "name": "get_weather",
-                    "args": {"location": "San Francisco"},
-                },
-                {
-                    "type": "tool_call",
-                    "id": "call_234",
-                    "name": "get_weather_2",
-                    "args": {"location": "New York"},
-                },
-            ],
-            [
-                {"type": "reasoning", "id": "abc123"},
-                {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
-                {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
-                {
-                    "type": "tool_call",
-                    "id": "call_123",
-                    "name": "get_weather",
-                    "args": {"location": "San Francisco"},
-                },
-                {
-                    "type": "tool_call",
-                    "id": "call_234",
-                    "name": "get_weather_2",
-                    "args": {"location": "New York"},
-                    "extras": {"item_id": "fc_123"},
-                },
-                {"type": "text", "text": "Hello "},
-                {
-                    "type": "text",
-                    "text": "world",
-                    "annotations": [
-                        {"type": "citation", "url": "https://example.com"},
-                        {
-                            "type": "citation",
-                            "title": "my doc",
-                            "extras": {"file_id": "file_123", "index": 1},
-                        },
-                        {"type": "non_standard_annotation", "value": {"bar": "baz"}},
-                    ],
-                },
-                {"type": "image", "base64": "...", "id": "ig_123"},
-                {
-                    "type": "non_standard",
-                    "value": {"type": "something_else", "foo": "bar"},
-                },
-            ],
-        )
-    ],
-)
-def test_convert_to_v1_from_responses(
-    responses_content: list[dict[str, Any]],
-    tool_calls: list[ToolCall],
-    expected_content: list[types.ContentBlock],
-) -> None:
-    result = _convert_to_v1_from_responses(responses_content, tool_calls)
-    assert result == expected_content
 
 
 def test_get_last_messages() -> None:
