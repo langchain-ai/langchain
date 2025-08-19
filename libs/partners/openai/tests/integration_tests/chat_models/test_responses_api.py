@@ -28,8 +28,9 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     for block in response.content:
         assert isinstance(block, dict)
         if block["type"] == "text":
-            assert isinstance(block["text"], str)  # type: ignore[typeddict-item]
-            for annotation in block["annotations"]:  # type: ignore[typeddict-item]
+            assert isinstance(block.get("text"), str)
+            annotations = block.get("annotations", [])
+            for annotation in annotations:
                 if annotation["type"] == "file_citation":
                     assert all(
                         key in annotation
@@ -60,7 +61,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
 def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)  # type: ignore[assignment]
+    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -68,7 +69,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     _check_response(first_response)
 
     # Test streaming
-    full: Optional[BaseMessageChunk] = None  # type: ignore[no-redef]
+    full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -81,7 +82,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
     response = llm.invoke(
         "what about a negative one",
         tools=[{"type": "web_search_preview"}],
-        previous_response_id=first_response.response_metadata["id"],  # type: ignore[typeddict-item]
+        previous_response_id=first_response.response_metadata["id"],
     )
     _check_response(response)
 
@@ -439,9 +440,11 @@ def test_stream_reasoning_summary(
         for block in response_1.content_blocks:
             if block["type"] == "reasoning":
                 total_reasoning_blocks += 1
-                assert isinstance(block["id"], str) and block["id"].startswith("rs_")
-                assert isinstance(block["reasoning"], str)
-                assert isinstance(block["index"], str)
+                assert isinstance(block.get("id"), str) and block.get(
+                    "id", ""
+                ).startswith("rs_")
+                assert isinstance(block.get("reasoning"), str)
+                assert isinstance(block.get("index"), str)
         assert (
             total_reasoning_blocks > 1
         )  # This query typically generates multiple reasoning blocks
@@ -501,10 +504,9 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
 
     # Test streaming
     # Use same container
-    container_id = (
-        tool_outputs[0].get("container_id")
-        or tool_outputs[0].get("extras")["container_id"]
-    )
+    container_id = tool_outputs[0].get("container_id") or tool_outputs[0].get(
+        "extras", {}
+    ).get("container_id")
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": container_id}]
     )
