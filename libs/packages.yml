@@ -733,7 +733,7 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-- name: composio-langchain
+- name: composio_langchain
   repo: composiohq/composio
   path: ./python/providers/langchain
 
