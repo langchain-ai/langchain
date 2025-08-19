@@ -29,6 +29,7 @@ from langchain_core.callbacks import (
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._utils import (
     _normalize_messages,
+    _normalize_messages_v0,
     _update_message_content_to_blocks,
 )
 from langchain_core.language_models.base import (
@@ -603,7 +604,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 input_messages = (
                     _normalize_messages(messages)
                     if self.output_version == "v1"
-                    else messages
+                    else _normalize_messages_v0(messages)
                 )
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
@@ -705,7 +706,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             input_messages = (
                 _normalize_messages(messages)
                 if self.output_version == "v1"
-                else messages
+                else _normalize_messages_v0(messages)
             )
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
@@ -934,7 +935,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input_messages = [
             _normalize_messages(message_list)
             if self.output_version == "v1"
-            else message_list
+            else _normalize_messages_v0(message_list)
             for message_list in messages
         ]
         for i, m in enumerate(input_messages):
@@ -1053,7 +1054,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         input_messages = [
             _normalize_messages(message_list)
             if self.output_version == "v1"
-            else message_list
+            else _normalize_messages_v0(message_list)
             for message_list in messages
         ]
         results = await asyncio.gather(
