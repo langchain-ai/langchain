@@ -14,11 +14,15 @@ from langchain_core.language_models import (
     ParrotFakeChatModel,
 )
 from langchain_core.language_models._utils import _normalize_messages
-from langchain_core.language_models.fake_chat_models import FakeListChatModelError
+from langchain_core.language_models.fake_chat_models import (
+    FakeListChatModelError,
+    GenericFakeChatModel,
+)
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
+    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
 )
@@ -664,13 +668,139 @@ def test_normalize_messages_edge_cases() -> None:
                     "file_data": "uri",
                     "filename": "file-name",
                 },
+                {
+                    "type": "input_audio",
+                    "input_audio": "uri",
+                },
+                {
+                    "type": "input_image",
+                    "image_url": "uri",
+                },
             ]
         )
     ]
+    assert expected_messages == _normalize_messages(input_messages)
 
-    assert _normalize_messages(input_messages) == expected_messages
+
+def test_output_version_invoke(monkeypatch: Any) -> None:
+    messages = [AIMessage("hello")]
+
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    response = llm.invoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = llm.invoke("hello")
+    assert response.content == "hello"
+
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = llm.invoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
 
 
-# TODO: add test
-# def test_normalize_pass_through_v1_blocks() -> None:
-#     """Test that v1 blocks are passed through unchanged."""
+async def test_output_version_ainvoke(monkeypatch: Any) -> None:
+    messages = [AIMessage("hello")]
+
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    response = await llm.ainvoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = await llm.ainvoke("hello")
+    assert response.content == "hello"
+
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    response = await llm.ainvoke("hello")
+    assert response.content == [{"type": "text", "text": "hello"}]
+    assert response.response_metadata["output_version"] == "v1"
+
+
+def test_output_version_stream(monkeypatch: Any) -> None:
+    messages = [AIMessage("foo bar")]
+
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["output_version"] == "v1"
+
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)
+        assert chunk.content
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "foo bar"
+
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    for chunk in llm.stream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["output_version"] == "v1"
+
+
+async def test_output_version_astream(monkeypatch: Any) -> None:
+    messages = [AIMessage("foo bar")]
+
+    llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
+    full: Optional[BaseMessageChunk] = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["output_version"] == "v1"
+
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, str)
+        assert chunk.content
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.content == "foo bar"
+
+    monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
+    llm = GenericFakeChatModel(messages=iter(messages))
+    full = None
+    async for chunk in llm.astream("hello"):
+        assert isinstance(chunk, AIMessageChunk)
+        assert isinstance(chunk.content, list)
+        assert len(chunk.content) == 1
+        block = chunk.content[0]
+        assert isinstance(block, dict)
+        assert block["type"] == "text"
+        assert block["text"]
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata["output_version"] == "v1"

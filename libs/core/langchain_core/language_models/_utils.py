@@ -1,9 +1,8 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, Optional, TypedDict
+from typing import Literal, Optional, TypedDict, TypeVar
 
-if TYPE_CHECKING:
-    from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage
 from langchain_core.messages.content import (
     KNOWN_BLOCK_TYPES,
     ContentBlock,
@@ -417,3 +416,18 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
         formatted_messages.append(formatted_message)
 
     return formatted_messages
+
+
+T = TypeVar("T", bound=BaseMessage)
+
+
+def _update_message_content_to_blocks(message: T, output_version: str) -> T:
+    return message.model_copy(
+        update={
+            "content": message.content_blocks,
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": output_version,
+            },
+        }
+    )
