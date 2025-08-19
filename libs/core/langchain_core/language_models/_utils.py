@@ -1,6 +1,6 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, Optional, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, TypeVar, cast
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
@@ -12,6 +12,7 @@ from langchain_core.messages.content import (
     create_image_block,
     create_non_standard_block,
     create_plaintext_block,
+    create_text_block,
 )
 
 
@@ -115,53 +116,118 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     - File -> `FileContentBlock`
 
     """
-    # TODO: if an incoming block has extra keys, should we ignore them or stuff
-    # into extras?
+
+    # Extract extra keys to put them in `extras`
+    def _extract_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
+        """Extract unknown keys from block to preserve as extras."""
+        return {k: v for k, v in block_dict.items() if k not in known_keys}
 
     # base64-style image block
     if (block["type"] == "image_url") and (
         parsed := _parse_data_uri(block["image_url"]["url"])
     ):
+        known_keys = {"type", "image_url"}
+        extras = _extract_extras(block, known_keys)
+
+        # Also extract extras from nested image_url dict
+        image_url_known_keys = {"url"}
+        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
+
+        # Merge extras
+        all_extras = {**extras}
+        for key, value in image_url_extras.items():
+            if key == "detail":  # Don't rename
+                all_extras["detail"] = value
+            else:
+                all_extras[f"image_url_{key}"] = value
+
         return create_image_block(
             # Even though this is labeled as `url`, it can be base64-encoded
             base64=block["image_url"]["url"],
             mime_type=parsed["mime_type"],
-            detail=block["image_url"].get("detail"),  # Optional, specific to OpenAI
+            **all_extras,
         )
 
     # url-style image block
     if (block["type"] == "image_url") and isinstance(
         block["image_url"].get("url"), str
     ):
+        known_keys = {"type", "image_url"}
+        extras = _extract_extras(block, known_keys)
+
+        image_url_known_keys = {"url"}
+        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
+
+        all_extras = {**extras}
+        for key, value in image_url_extras.items():
+            if key == "detail":  # Don't rename
+                all_extras["detail"] = value
+            else:
+                all_extras[f"image_url_{key}"] = value
+
         return create_image_block(
             url=block["image_url"]["url"],
-            detail=block["image_url"].get("detail"),  # Optional, specific to OpenAI
+            **all_extras,
         )
 
     # base64-style audio block
     # audio is only represented via raw data, no url or ID option
     if block["type"] == "input_audio":
+        known_keys = {"type", "audio"}
+        extras = _extract_extras(block, known_keys)
+
+        # Also extract extras from nested audio dict
+        audio_known_keys = {"data", "format"}
+        audio_extras = _extract_extras(block["audio"], audio_known_keys)
+
+        all_extras = {**extras}
+        for key, value in audio_extras.items():
+            all_extras[f"audio_{key}"] = value
+
         return create_audio_block(
             base64=block["audio"]["data"],
             mime_type=f"audio/{block['audio']['format']}",
+            **all_extras,
         )
 
     # id-style file block
     if block.get("type") == "file" and "file_id" in block.get("file", {}):
+        known_keys = {"type", "file"}
+        extras = _extract_extras(block, known_keys)
+
+        file_known_keys = {"file_id"}
+        file_extras = _extract_extras(block["file"], file_known_keys)
+
+        all_extras = {**extras}
+        for key, value in file_extras.items():
+            all_extras[f"file_{key}"] = value
+
         return create_file_block(
             file_id=block["file"]["file_id"],
+            **all_extras,
         )
 
     # base64-style file block
     if (block["type"] == "file") and (
         parsed := _parse_data_uri(block["file"]["file_data"])
     ):
+        known_keys = {"type", "file"}
+        extras = _extract_extras(block, known_keys)
+
+        file_known_keys = {"file_data", "filename"}
+        file_extras = _extract_extras(block["file"], file_known_keys)
+
+        all_extras = {**extras}
+        for key, value in file_extras.items():
+            all_extras[f"file_{key}"] = value
+
         mime_type = parsed["mime_type"]
         filename = block["file"].get("filename")
         return create_file_block(
             base64=block["file"]["file_data"],
             mime_type=mime_type,
             filename=filename,
+            **all_extras,
         )
 
     # Escape hatch for non-standard content blocks
@@ -170,11 +236,16 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     )
 
 
-def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
+def _normalize_messages(
+    messages: Sequence["BaseMessage"],
+    convert_all: bool = False,  # noqa: FBT001, FBT002
+) -> list["BaseMessage"]:
     """Normalize message formats to LangChain v1 standard content blocks.
 
     Chat models already implement support for:
     - Images in OpenAI Chat Completions format
+        These will be passed through unchanged unless `convert_all` is True, in which
+        case they will be converted to LangChain v1 standard content blocks.
     - LangChain v1 standard content blocks
 
     This function extends support to:
@@ -289,16 +360,12 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                 # Shallow-copy the content string so we can modify it
                 formatted_message.content = str(formatted_message.content)
             formatted_message.content = [
-                {
-                    "type": "text",
-                    "text": message.content,
-                },
-                # TODO: decide
-                # could use factory instead, to auto-gen an ID for the block?
-                #
-                # create_text_block(
-                #     text=message.content,
-                # ),
+                cast(
+                    "dict",
+                    create_text_block(
+                        text=message.content,
+                    ),
+                ),
             ]
 
         elif isinstance(message.content, list):
@@ -308,8 +375,7 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         formatted_message = message.model_copy()
                         formatted_message.content = list(formatted_message.content)
 
-                    # TODO: same as above, could use factory instead
-                    formatted_message.content[idx] = {"type": "text", "text": block}  # type: ignore[index]  # mypy confused by .model_copy
+                    formatted_message.content[idx] = {create_text_block(block)}  # type: ignore[call-overload, index]  # mypy confused by .model_copy
 
                 # OpenAI Chat Completions multimodal data blocks to v1 standard
                 if (
@@ -322,11 +388,15 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         formatted_message = message.model_copy()
                         formatted_message.content = list(formatted_message.content)
 
-                    # Convert OpenAI image/audio/file block to LC v1 std content
-                    formatted_message.content[idx] = (  # type: ignore[call-overload,index]
-                        _convert_openai_format_to_data_block(block)
-                        # Note: this may assign a NonStandardCB if parsing fails
-                    )
+                    # Convert OpenAI audio/file block to LC v1 std content
+                    # unless `all` is True, in which case we also conver images
+                    if convert_all or block["type"] != "image_url":
+                        formatted_message.content[idx] = (  # type: ignore[call-overload, index]
+                            _convert_openai_format_to_data_block(block)
+                        )
+                    else:
+                        # If `all` is False, we pass through images unchanged
+                        formatted_message.content[idx] = block  # type: ignore[call-overload, index]
 
                 # Convert LangChain v0 to v1 standard content blocks
                 elif (
@@ -351,58 +421,68 @@ def _normalize_messages(messages: Sequence["BaseMessage"]) -> list["BaseMessage"
                         formatted_message.content = list(formatted_message.content)
 
                     if block["source_type"] == "url" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "base64" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "id" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
                             id=block["id"],
                         )
                     elif block["source_type"] == "url" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "base64" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "id" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
                             id=block["id"],
                         )
                     elif block["source_type"] == "url" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
                             url=block["url"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "base64" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
                             base64=block["data"],
                             mime_type=block.get("mime_type"),
                         )
                     elif block["source_type"] == "id" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
                             id=block["id"],
                         )
                     elif block["source_type"] == "text" and block["type"] == "file":
-                        formatted_message.content[idx] = create_plaintext_block(  # type: ignore[call-overload,index]
+                        formatted_message.content[idx] = create_plaintext_block(  # type: ignore[call-overload, index]
                             # In v0, URL points to the text file content
                             text=block["url"],
                         )
-                    else:
-                        # Unsupported or malformed v0 content block
-                        formatted_message.content[idx] = {  # type: ignore[index]
-                            "type": "non_standard",
-                            "value": block,
-                        }
+                    continue
+
+                # Handle blocks with no type key but exactly one key
+                elif (
+                    isinstance(block, dict) and "type" not in block and len(block) == 1
+                ):
+                    if formatted_message is message:
+                        formatted_message = message.model_copy()
+                        formatted_message.content = list(formatted_message.content)
+
+                    # Use the key name as the type
+                    key_name = next(iter(block.keys()))
+                    formatted_message.content[idx] = {  # type: ignore[call-overload, index]
+                        "type": key_name,
+                        key_name: block[key_name],
+                    }
 
                 # Pass through blocks that look like they have v1 format unchanged
                 elif isinstance(block, dict) and block.get("type") in KNOWN_BLOCK_TYPES:

@@ -213,14 +213,42 @@ async def test_callback_handlers() -> None:
 
 def test_chat_model_inputs() -> None:
     fake = ParrotFakeChatModel(output_version="v1")
-    assert fake.invoke("hello") == _any_id_human_message(
-        content=[{"type": "text", "text": "hello"}]
+
+    result = fake.invoke("hello")
+    # Remove the `id` from content blocks for comparison
+    result_content_clean = [
+        {k: v for k, v in result.content[0].items() if k != "id"}
+        if isinstance(result.content[0], dict)
+        else result.content[0]
+    ]
+    result_clean = result.model_copy(update={"content": result_content_clean})
+    assert result_clean == _any_id_human_message(
+        content=[{"type": "text", "text": "hello"}],
+        response_metadata={"output_version": "v1"},
     )
-    assert fake.invoke([("ai", "blah")]) == _any_id_ai_message(
-        content=[{"type": "text", "text": "blah"}]
+
+    result2 = fake.invoke([("ai", "blah")])  # AIMessage
+    result2_content_clean = [
+        {k: v for k, v in result2.content[0].items() if k != "id"}
+        if isinstance(result2.content[0], dict)
+        else result2.content[0]
+    ]
+    result2_clean = result2.model_copy(update={"content": result2_content_clean})
+    assert result2_clean == _any_id_ai_message(
+        content=[{"type": "text", "text": "blah"}],
+        response_metadata={"output_version": "v1"},
     )
-    assert fake.invoke([AIMessage(content="blah")]) == _any_id_ai_message(
-        content=[{"type": "text", "text": "blah"}]
+
+    result3 = fake.invoke([AIMessage(content="blah")])
+    result3_content_clean = [
+        {k: v for k, v in result3.content[0].items() if k != "id"}
+        if isinstance(result3.content[0], dict)
+        else result3.content[0]
+    ]
+    result3_clean = result3.model_copy(update={"content": result3_content_clean})
+    assert result3_clean == _any_id_ai_message(
+        content=[{"type": "text", "text": "blah"}],
+        response_metadata={"output_version": "v1"},
     )
 
 

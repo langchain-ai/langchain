@@ -143,7 +143,27 @@ class BaseMessage(Serializable):
                     # OpenAI-specific file content block, handled separately since
                     # v1 content blocks share `file` key
                     blocks.append(_convert_openai_format_to_data_block(item))
+                if item_type is None:
+                    # Handle blocks without a type key - wrap as non_standard
+                    blocks.append(
+                        cast(
+                            "types.ContentBlock",
+                            {"type": "non_standard", "value": item},
+                        )
+                    )
+                    continue
                 if item_type not in types.KNOWN_BLOCK_TYPES:
+                    # Check if this is a single-key block that was normalized
+                    # (e.g., {"type": "cachePoint", "cachePoint": ...})
+                    if (
+                        len(item) == 2  # type + one other key
+                        and item_type in item  # key name matches type
+                    ):
+                        # Convert back to original format
+                        blocks.append(
+                            cast("types.ContentBlock", {item_type: item[item_type]})
+                        )
+                        continue
                     msg = (
                         f"Non-standard content block type '{item_type}'. Ensure "
                         "the model supports `output_version='v1'` or higher and "
