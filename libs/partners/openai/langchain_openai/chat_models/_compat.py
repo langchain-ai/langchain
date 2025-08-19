@@ -69,7 +69,7 @@ from collections.abc import Iterable, Iterator
 from typing import Any, Literal, Union, cast
 
 from langchain_core.messages import AIMessage, is_data_content_block
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 
 _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 

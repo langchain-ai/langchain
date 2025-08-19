@@ -7,10 +7,10 @@ from uuid import UUID
 from pydantic import Field, model_validator
 from typing_extensions import NotRequired, TypedDict, override
 
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
-from langchain_core.messages.content_blocks import InvalidToolCall as InvalidToolCall
-from langchain_core.messages.content_blocks import ToolCall as ToolCall
+from langchain_core.messages.content import InvalidToolCall as InvalidToolCall
+from langchain_core.messages.content import ToolCall as ToolCall
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 

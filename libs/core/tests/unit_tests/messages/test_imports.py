@@ -25,7 +25,6 @@ EXPECTED_ALL = [
     "HumanMessageChunk",
     "ImageContentBlock",
     "InvalidToolCall",
-    "_LC_ID_PREFIX",
     "LC_AUTO_PREFIX",
     "LC_ID_PREFIX",
     "NonStandardAnnotation",

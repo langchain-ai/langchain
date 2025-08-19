@@ -38,6 +38,7 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
+    LC_ID_PREFIX,
     AIMessage,
     AnyMessage,
     BaseMessage,
@@ -49,7 +50,6 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
-from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -551,7 +551,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
-                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+                run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -649,7 +649,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
-            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+            run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -1120,7 +1120,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
@@ -1148,7 +1148,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1205,7 +1205,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
@@ -1233,7 +1233,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )

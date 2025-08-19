@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages import content_blocks as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -15,6 +14,7 @@ from langchain_core.utils.interactive_env import is_interactive_env
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
+    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -121,6 +121,8 @@ class BaseMessage(Serializable):
         Otherwise, does best-effort parsing to standard types.
 
         """
+        from langchain_core.messages import content as types
+
         blocks: list[types.ContentBlock] = []
         content = (
             [self.content]

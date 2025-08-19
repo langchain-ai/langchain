@@ -2,7 +2,7 @@
 
 from typing import Any, Literal, Optional, Union, cast, overload
 
-from langchain_core.messages import content_blocks as types
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 

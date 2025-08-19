@@ -8,8 +8,12 @@ from typing import Any, Literal, Optional, Union, cast, overload
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
-from langchain_core.messages import content_blocks as types
-from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
+from langchain_core.messages import content as types
+from langchain_core.messages.base import (
+    BaseMessage,
+    BaseMessageChunk,
+    merge_content,
+)
 from langchain_core.messages.tool import (
     InvalidToolCall,
     ToolCall,
@@ -23,10 +27,9 @@ from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chu
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 
 logger = logging.getLogger(__name__)
-
-_LC_ID_PREFIX = types.LC_ID_PREFIX
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -525,15 +528,15 @@ def add_ai_message_chunks(
     for id_ in candidates:
         if (
             id_
-            and not id_.startswith(types.LC_ID_PREFIX)
-            and not id_.startswith(types.LC_AUTO_PREFIX)
+            and not id_.startswith(LC_ID_PREFIX)
+            and not id_.startswith(LC_AUTO_PREFIX)
         ):
             chunk_id = id_
             break
     else:
         # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_ and id_.startswith(types.LC_ID_PREFIX):
+            if id_ and id_.startswith(LC_ID_PREFIX):
                 chunk_id = id_
                 break
         else:
