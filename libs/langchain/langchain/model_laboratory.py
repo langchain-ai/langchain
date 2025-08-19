@@ -34,7 +34,7 @@ class ModelLaboratory:
         """
         for chain in chains:
             if not isinstance(chain, Chain):
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     "ModelLaboratory should now be initialized with Chains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"
