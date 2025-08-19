@@ -177,8 +177,8 @@ class BaseMessage(Serializable):
                     )
                     raise ValueError(msg)
                 # Handle v0 format content blocks and convert to v1
-                if item_type == "image" and "source_type" in item:
-                    # Convert v0 image format to v1
+                if item_type in {"image", "audio", "file"} and "source_type" in item:
+                    # Convert v0 format to v1
                     blocks.append(_convert_legacy_v0_content_block_to_v1(item))
                 else:
                     blocks.append(cast("types.ContentBlock", item))
