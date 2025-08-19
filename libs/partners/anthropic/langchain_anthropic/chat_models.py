@@ -2400,7 +2400,7 @@ def _make_message_chunk_from_anthropic_event(
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
             response_metadata={
                 "stop_reason": event.delta.stop_reason,

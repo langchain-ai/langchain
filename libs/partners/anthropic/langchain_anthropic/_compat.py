@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Optional, cast
 
 from langchain_core.messages import content as types
@@ -92,6 +93,7 @@ def _convert_from_v1_to_anthropic(
 ) -> list[dict[str, Any]]:
     new_content: list = []
     for block in content:
+
         if block["type"] == "text":
             if model_provider == "anthropic" and "annotations" in block:
                 new_block: dict[str, Any] = {"type": "text"}
@@ -103,25 +105,33 @@ def _convert_from_v1_to_anthropic(
             else:
                 new_block = {"text": block.get("text", ""), "type": "text"}
             new_content.append(new_block)
-        # elif block["type"] == "tool_call":
-        #     new_block = {"type": "function_call", "call_id": block["id"]}
-        #     if "extras" in block and "item_id" in block["extras"]:
-        #         new_block["id"] = block["extras"]["item_id"]
-        #     if "name" in block:
-        #         new_block["name"] = block["name"]
-        #     if "extras" in block and "arguments" in block["extras"]:
-        #         new_block["arguments"] = block["extras"]["arguments"]
-        #     if any(key not in block for key in ("name", "arguments")):
-        #         matching_tool_calls = [
-        #             call for call in tool_calls if call["id"] == block["id"]
-        #         ]
-        #         if matching_tool_calls:
-        #             tool_call = matching_tool_calls[0]
-        #             if "name" not in block:
-        #                 new_block["name"] = tool_call["name"]
-        #             if "arguments" not in block:
-        #                 new_block["arguments"] = json.dumps(tool_call["args"])
-        #     new_content.append(new_block)
+
+        elif block["type"] == "tool_call":
+            new_content.append(
+                {
+                    "type": "tool_use",
+                    "name": block.get("name", ""),
+                    "input": block.get("args", {}),
+                    "id": block.get("id", ""),
+                }
+            )
+
+        elif block["type"] == "tool_call_chunk":
+            if isinstance(block["args"], str):
+                try:
+                    input_ = json.loads(block["args"] or "{}")
+                except json.JSONDecodeError:
+                    input_ = {}
+            else:
+                input_ = block.get("args") or {}
+            new_content.append(
+                {
+                    "type": "tool_use",
+                    "name": block.get("name", ""),
+                    "input": input_,
+                    "id": block.get("id", ""),
+                }
+            )
 
         elif (
             block["type"] == "non_standard"

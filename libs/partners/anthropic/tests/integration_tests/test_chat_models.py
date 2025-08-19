@@ -713,6 +713,73 @@ def test_pdf_document_input() -> None:
     assert len(result.content) > 0
 
 
+@pytest.mark.default_cassette("test_agent_loop.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_agent_loop(output_version: Literal["v0", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = llm_with_tools.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
+
+
+@pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest", streaming=True, output_version=output_version  # type: ignore[call-arg]
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+
+    tool_call_message: Optional[BaseMessageChunk] = None
+    chunks = []
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        tool_call_message = chunk if tool_call_message is None else tool_call_message + chunk
+        chunks.append(chunk)
+    assert isinstance(tool_call_message, AIMessage)
+
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
+
+
 @pytest.mark.default_cassette("test_citations.yaml.gz")
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
