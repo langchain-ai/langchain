@@ -212,21 +212,7 @@ async def test_callback_handlers() -> None:
 
 
 def test_chat_model_inputs() -> None:
-    # Do we need to parameterize over both versions?
-    # fake = ParrotFakeChatModel()
-
-    # assert fake.invoke("hello") == _any_id_human_message(
-    #     content=[{"type": "text", "text": "hello"}]
-    # )
-    # assert fake.invoke([("ai", "blah")]) == _any_id_ai_message(
-    #     content=[{"type": "text", "text": "blah"}]
-    # )
-    # assert fake.invoke([AIMessage(content="blah")]) == _any_id_ai_message(
-    #     content=[{"type": "text", "text": "blah"}]
-    # )
-
     fake = ParrotFakeChatModel(output_version="v1")
-
     assert fake.invoke("hello") == _any_id_human_message(
         content=[{"type": "text", "text": "hello"}]
     )

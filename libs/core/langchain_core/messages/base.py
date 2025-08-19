@@ -130,8 +130,10 @@ class BaseMessage(Serializable):
             if isinstance(self.content, str) and self.content
             else self.content
         )
+        # TODO: can't the entire block below use _normalize_messages?
         for item in content:
             if isinstance(item, str):
+                # TODO: use factory here to include auto-ID generation?
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")

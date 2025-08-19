@@ -141,7 +141,7 @@ async def test_stream_error_callback() -> None:
 
 
 async def test_astream_fallback_to_ainvoke() -> None:
-    """Test astream uses appropriate implementation."""
+    """Test `astream()` uses appropriate implementation."""
 
     class ModelWithGenerate(BaseChatModel):
         @override
@@ -473,7 +473,7 @@ def test_trace_content_blocks_with_no_type_key() -> None:
     # TODO: Confirm expected behavior for blocks without 'type' key
     # Currently, these blocks are passed through as-is rather than being wrapped as
     # non-standard blocks.
-    llm = ParrotFakeChatModel()
+    llm = ParrotFakeChatModel(output_version="v1")
     messages = [
         {
             "role": "user",
@@ -499,7 +499,7 @@ def test_trace_content_blocks_with_no_type_key() -> None:
                             "type": "text",
                             "text": "Hello",
                         },
-                        {  # For tracing, we are concerned with how messages are _sent_
+                        {
                             "type": "cachePoint",  # TODO: how is this decided?
                             "cachePoint": {"type": "default"},
                         },
@@ -508,7 +508,6 @@ def test_trace_content_blocks_with_no_type_key() -> None:
             ]
         ]
     ]
-    # TODO: Should this be wrapped as non_standard? Current behavior passes through
     assert response.content == [
         {
             "type": "text",
@@ -518,41 +517,53 @@ def test_trace_content_blocks_with_no_type_key() -> None:
             "cachePoint": {"type": "default"},
         },
     ]
+    assert response.content_blocks == [
+        {
+            "type": "text",
+            "text": "Hello",
+        },
+        {
+            "type": "non_standard",
+            "value": {
+                "cachePoint": {"type": "default"},
+            },
+        },
+    ]
 
 
 def test_extend_support_to_openai_multimodal_formats() -> None:
-    """Test that chat models normalize OpenAI file and audio inputs to v1."""
+    """Test that chat models normalize OpenAI audio, image, and file inputs to v1."""
     llm = ParrotFakeChatModel()
     messages = [
         {
             "role": "user",
             "content": [
                 {"type": "text", "text": "Hello"},
-                {
+                {  # image-url
                     "type": "image_url",
                     "image_url": {"url": "https://example.com/image.png"},
                 },
-                {
+                {  # image-base64
                     "type": "image_url",
                     "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
                 },
-                {
+                {  # audio-base64
+                    "type": "input_audio",
+                    "audio": {
+                        "format": "wav",
+                        "data": "data:audio/wav;base64,<base64 string>",
+                    },
+                },
+                {  # file-base64
                     "type": "file",
                     "file": {
                         "filename": "draconomicon.pdf",
                         "file_data": "data:application/pdf;base64,<base64 string>",
                     },
                 },
-                {
+                {  # file-id
                     "type": "file",
                     "file": {"file_id": "<file id>"},
-                },
-                {
-                    "type": "input_audio",
-                    "audio": {
-                        "format": "wav",
-                        "data": "data:audio/wav;base64,<base64 string>",
-                    },
                 },
             ],
         },
@@ -568,6 +579,11 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
             "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
             "mime_type": "image/jpeg",
         },
+        {  # AudioContentBlock
+            "type": "audio",
+            "base64": "data:audio/wav;base64,<base64 string>",
+            "mime_type": "audio/wav",
+        },
         {  # FileContentBlock
             "type": "file",
             "base64": "data:application/pdf;base64,<base64 string>",
@@ -577,11 +593,6 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         {  # ...
             "type": "file",
             "file_id": "<file id>",
-        },
-        {  # AudioContentBlock
-            "type": "audio",
-            "base64": "data:audio/wav;base64,<base64 string>",
-            "mime_type": "audio/wav",
         },
     ]
     response = llm.invoke(messages)
@@ -600,29 +611,32 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
 
 
 def test_normalize_messages_edge_cases() -> None:
-    # Test behavior of malformed/unrecognized OpenAI content blocks
+    # Test behavior of malformed/unrecognized content blocks
+
     # TODO: Confirm expected behavior for malformed OpenAI blocks
     # Currently, these blocks are passed through as-is rather than being wrapped as
     # non-standard blocks. This behavior may need clarification/change.
+
     input_messages = [
         HumanMessage(
             content=[
                 {
+                    "type": "input_image",  # Responses API type; not handled
+                    "image_url": "uri",
+                },
+                {
+                    # Standard OpenAI Chat Completions type but malformed structure
+                    "type": "input_audio",
+                    "input_audio": "uri",  # Should be nested in `audio`
+                },
+                {
                     "type": "file",
-                    "file": "uri",  # Malformed OpenAI file block
+                    "file": "uri",  # `file` should be a dict for Chat Completions
                 },
                 {
-                    "type": "input_file",  # Non-standard type, not in KNOWN_BLOCK_TYPES
-                    "file_data": "uri",  # Malformed base64
+                    "type": "input_file",  # Responses API type; not handled
+                    "file_data": "uri",
                     "filename": "file-name",
-                },
-                {
-                    "type": "input_audio",  # Standard OpenAI type but malformed struct
-                    "input_audio": "uri",  # Not nested in `audio`
-                },
-                {
-                    "type": "input_image",  # Non-standard type not in KNOWN_BLOCK_TYPES
-                    "image_url": "uri",  # Not nested in `image_url`
                 },
             ]
         )
@@ -634,27 +648,29 @@ def test_normalize_messages_edge_cases() -> None:
         HumanMessage(
             content=[
                 {
-                    "type": "non_standard",
-                    "value": {
-                        "type": "file",
-                        "file": "uri",
-                    },
-                },
-                {
-                    "type": "input_file",
-                    "file_data": "uri",
-                    "filename": "file-name",
+                    "type": "input_image",
+                    "image_url": "uri",
                 },
                 {
                     "type": "input_audio",
                     "input_audio": "uri",
                 },
                 {
-                    "type": "input_image",
-                    "image_url": "uri",
+                    "type": "file",
+                    "file": "uri",
+                },
+                {
+                    "type": "input_file",
+                    "file_data": "uri",
+                    "filename": "file-name",
                 },
             ]
         )
     ]
 
     assert _normalize_messages(input_messages) == expected_messages
+
+
+# TODO: add test
+# def test_normalize_pass_through_v1_blocks() -> None:
+#     """Test that v1 blocks are passed through unchanged."""
