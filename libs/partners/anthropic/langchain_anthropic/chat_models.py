@@ -1640,7 +1640,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
-        llm_output["model_provider"] = "anthropic"
+        response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -1648,15 +1648,18 @@ class ChatAnthropic(BaseChatModel):
             and content[0]["type"] == "text"
             and not content[0].get("citations")
         ):
-            msg = AIMessage(content=content[0]["text"])
+            msg = AIMessage(
+                content=content[0]["text"], response_metadata=response_metadata
+            )
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
             msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
+                response_metadata=response_metadata,
             )
         else:
-            msg = AIMessage(content=content)
+            msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
