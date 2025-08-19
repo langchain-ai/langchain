@@ -38,7 +38,6 @@ from langchain_core.language_models.base import (
 )
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
-    LC_ID_PREFIX,
     AIMessage,
     AnyMessage,
     BaseMessage,
@@ -69,7 +68,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from langchain_core.utils.utils import from_env
+from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
