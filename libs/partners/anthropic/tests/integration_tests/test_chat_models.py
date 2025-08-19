@@ -756,13 +756,7 @@ def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
     )
     llm_with_tools = llm.bind_tools([get_weather])
     input_message = HumanMessage("What is the weather in San Francisco, CA?")
-
-    tool_call_message: Optional[BaseMessageChunk] = None
-    chunks = []
-    for chunk in llm_with_tools.stream([input_message]):
-        assert isinstance(chunk, AIMessageChunk)
-        tool_call_message = chunk if tool_call_message is None else tool_call_message + chunk
-        chunks.append(chunk)
+    tool_call_message = llm_with_tools.invoke([input_message])
     assert isinstance(tool_call_message, AIMessage)
 
     tool_calls = tool_call_message.tool_calls

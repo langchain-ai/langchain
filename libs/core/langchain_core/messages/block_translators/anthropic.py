@@ -197,7 +197,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 if citations := block.get("citations"):
                     text_block: types.TextContentBlock = {
                         "type": "text",
-                        "text": block["text"],
+                        "text": block.get("text", ""),
                         "annotations": [_convert_citation_to_v1(a) for a in citations],
                     }
                 else:
@@ -230,6 +230,14 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     if "type" not in tool_call_chunk:
                         tool_call_chunk["type"] = "tool_call_chunk"
                     yield tool_call_chunk
+                elif (
+                    not isinstance(message, AIMessageChunk)
+                    and len(message.tool_calls) == 1
+                ):
+                    tool_call_block = message.tool_calls[0]
+                    if "index" in block:
+                        tool_call_block["index"] = block["index"]
+                    yield tool_call_block
                 else:
                     tool_call_block: types.ToolCall = {
                         "type": "tool_call",
