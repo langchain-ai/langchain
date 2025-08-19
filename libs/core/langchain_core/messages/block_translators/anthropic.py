@@ -1,6 +1,7 @@
 """Derivations of standard content blocks from Anthropic content."""
 
 from collections.abc import Iterable
+import json
 from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
@@ -241,7 +242,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         tool_call_block["index"] = block["index"]
                     yield tool_call_block
                 else:
-                    tool_call_block: types.ToolCall = {
+                    tool_call_block = {
                         "type": "tool_call",
                         "name": block.get("name", ""),
                         "args": block.get("input", {}),
@@ -260,6 +261,55 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 if "type" not in tool_call_chunk:
                     tool_call_chunk["type"] = "tool_call_chunk"
                 yield tool_call_chunk
+
+            elif block_type == "server_tool_use":
+                if block.get("name") == "web_search":
+                    web_search_call: types.WebSearchCall = {"type": "web_search_call"}
+
+                    if query := block.get("input", {}).get("query"):
+                        web_search_call["query"] = query
+
+                    elif block.get("input") == {} and "partial_json" in block:
+                        try:
+                            input_ = json.loads(block["partial_json"])
+                            if isinstance(input_, dict) and "query" in input_:
+                                web_search_call["query"] = input_["query"]
+                        except json.JSONDecodeError:
+                            pass
+
+                    if "id" in block:
+                        web_search_call["id"] = block["id"]
+                    if "index" in block:
+                        web_search_call["index"] = block["index"]
+                    known_fields = {"type", "name", "input", "id", "index"}
+                    for key, value in block.items():
+                        if key not in known_fields:
+                            if "extras" not in web_search_call:
+                                web_search_call["extras"] = {}
+                            web_search_call["extras"][key] = value
+                    yield web_search_call
+
+            elif block_type == "web_search_tool_result":
+                web_search_result: types.WebSearchResult = {"type": "web_search_result"}
+                if "tool_use_id" in block:
+                    web_search_result["id"] = block["tool_use_id"]
+                if "index" in block:
+                    web_search_result["index"] = block["index"]
+
+                if web_search_result_content := block.get("content", []):
+                    if "extras" not in web_search_result:
+                        web_search_result["extras"] = {}
+                    urls = []
+                    extra_content = []
+                    for result_content in web_search_result_content:
+                        if isinstance(result_content, dict):
+                            if "url" in result_content:
+                                urls.append(result_content["url"])
+                            extra_content.append(result_content)
+                    web_search_result["extras"]["content"] = extra_content
+                    if urls:
+                        web_search_result["urls"] = urls
+                yield web_search_result
 
             else:
                 new_block: types.NonStandardContentBlock = {

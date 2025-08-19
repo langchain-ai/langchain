@@ -1057,11 +1057,14 @@ def test_image_tool_calling() -> None:
     llm.bind_tools([color_picker]).invoke(messages)
 
 
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
-def test_web_search() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
         model="claude-3-5-sonnet-latest",  # type: ignore[call-arg]
         max_tokens=1024,
+        output_version=output_version,
     )
 
     tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
@@ -1079,7 +1082,10 @@ def test_web_search() -> None:
     response = llm_with_tools.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    else:
+        assert block_types == {"text", "web_search_call", "web_search_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1089,7 +1095,10 @@ def test_web_search() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    else:
+        assert block_types == {"text", "web_search_call", "web_search_result"}
 
     # Test we can pass back in
     next_message = {

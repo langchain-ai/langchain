@@ -31,6 +31,32 @@ def test_convert_to_v1_from_anthropic() -> None:
                     {"bar": "baz"},
                 ],
             },
+            {
+                "type": "server_tool_use",
+                "name": "web_search",
+                "input": {"query": "web search query"},
+                "id": "srvtoolu_abc123",
+            },
+            {
+                "type": "web_search_tool_result",
+                "tool_use_id": "srvtoolu_abc123",
+                "content": [
+                    {
+                        "type": "web_search_result",
+                        "title": "Page Title 1",
+                        "url": "<page url 1>",
+                        "page_age": "January 1, 2025",
+                        "encrypted_content": "<encrypted content 1>",
+                    },
+                    {
+                        "type": "web_search_result",
+                        "title": "Page Title 2",
+                        "url": "<page url 2>",
+                        "page_age": "January 2, 2025",
+                        "encrypted_content": "<encrypted content 2>",
+                    },
+                ],
+            },
             {"type": "something_else", "foo": "bar"},
         ],
         response_metadata={"model_provider": "anthropic"},
@@ -65,6 +91,34 @@ def test_convert_to_v1_from_anthropic() -> None:
                 },
                 {"type": "non_standard_annotation", "value": {"bar": "baz"}},
             ],
+        },
+        {
+            "type": "web_search_call",
+            "id": "srvtoolu_abc123",
+            "query": "web search query",
+        },
+        {
+            "type": "web_search_result",
+            "id": "srvtoolu_abc123",
+            "urls": ["<page url 1>", "<page url 2>"],
+            "extras": {
+                "content": [
+                    {
+                        "type": "web_search_result",
+                        "title": "Page Title 1",
+                        "url": "<page url 1>",
+                        "page_age": "January 1, 2025",
+                        "encrypted_content": "<encrypted content 1>",
+                    },
+                    {
+                        "type": "web_search_result",
+                        "title": "Page Title 2",
+                        "url": "<page url 2>",
+                        "page_age": "January 2, 2025",
+                        "encrypted_content": "<encrypted content 2>",
+                    },
+                ]
+            },
         },
         {
             "type": "non_standard",
