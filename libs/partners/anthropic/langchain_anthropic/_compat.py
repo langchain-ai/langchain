@@ -14,7 +14,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
     if annotation["type"] == "citation":
         if "url" in annotation:
             # web_search_result_location
-            out = {}
+            out: dict[str, Any] = {}
             if cited_text := annotation.get("cited_text"):
                 out["cited_text"] = cited_text
             if "encrypted_index" in annotation.get("extras", {}):
