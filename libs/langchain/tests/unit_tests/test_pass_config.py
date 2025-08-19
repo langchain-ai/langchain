@@ -10,7 +10,7 @@ from langchain.agents import AgentExecutor, BaseMultiActionAgent
 try:
     from langchain_core.tools import tool
 except Exception:  # pragma: no cover
-    from langchain.tools import tool  # type: ignore[assignment]
+    from langchain.tools import tool
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -88,7 +88,7 @@ async def test_minimal_agent_capture_tool_config() -> None:
         "run_name": "agent-run",
     }
     try:
-        result = await executor._acall(  # type: ignore[attr-defined]
+        result = await executor._acall(
             {"input": "call capture tool with input a = 5"},
             config=cfg,
         )
