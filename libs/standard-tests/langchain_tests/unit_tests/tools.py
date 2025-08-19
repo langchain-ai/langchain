@@ -1,3 +1,5 @@
+"""Tools unit tests."""
+
 import os
 from abc import abstractmethod
 from typing import Union
@@ -11,9 +13,11 @@ from langchain_tests.base import BaseStandardTests
 
 
 class ToolsTests(BaseStandardTests):
-    """:private:
-    Base class for testing tools. This won't show in the documentation, but
-    the docstrings will be inherited by subclasses.
+    """Base class for testing tools.
+
+    :private:
+    This won't show in the documentation, but the docstrings will be inherited by
+    subclasses.
     """
 
     @property
@@ -38,7 +42,10 @@ class ToolsTests(BaseStandardTests):
 
     @pytest.fixture
     def tool(self) -> BaseTool:
-        """:private:"""
+        """Tool fixture.
+
+        :private:
+        """
         if isinstance(self.tool_constructor, BaseTool):
             if self.tool_constructor_params != {}:
                 msg = (
@@ -55,13 +62,17 @@ class ToolsUnitTests(ToolsTests):
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
-        """Return env vars, init args, and expected instance attrs for initializing
+        """Init from env params.
+
+        Return env vars, init args, and expected instance attrs for initializing
         from env vars.
         """
         return {}, {}, {}
 
     def test_init(self) -> None:
-        """Test that the tool can be initialized with :attr:`tool_constructor` and
+        """Test init.
+
+        Test that the tool can be initialized with :attr:`tool_constructor` and
         :attr:`tool_constructor_params`. If this fails, check that the
         keyword args defined in :attr:`tool_constructor_params` are valid.
         """
@@ -72,6 +83,7 @@ class ToolsUnitTests(ToolsTests):
         assert tool is not None
 
     def test_init_from_env(self) -> None:
+        """Test that the tool can be initialized from environment variables."""
         env_params, tools_params, expected_attrs = self.init_from_env_params
         if env_params:
             with mock.patch.dict(os.environ, env_params):

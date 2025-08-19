@@ -231,6 +231,13 @@ ${llmVarName} = ChatWatsonx(
       model: "llama-3.1-sonar-small-128k-online",
       apiKeyName: "PPLX_API_KEY",
       packageName: "langchain-perplexity",
+    },
+    {
+      value: "deepseek",
+      label: "DeepSeek",
+      model: "deepseek-chat",
+      apiKeyName: "DEEPSEEK_API_KEY",
+      packageName: "langchain-deepseek",
     }
   ].map((item) => ({
     ...item,

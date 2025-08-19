@@ -58,7 +58,7 @@ class GenericFakeChatModel(BaseChatModel):
     """A generic fake chat model that can be used to test the chat model interface.
 
     * Chat model should be usable in both sync and async tests
-    * Invokes on_llm_new_token to allow for testing of callback related code for new
+    * Invokes ``on_llm_new_token`` to allow for testing of callback related code for new
       tokens.
     * Includes logic to break messages into message chunk to facilitate testing of
       streaming.
@@ -67,14 +67,16 @@ class GenericFakeChatModel(BaseChatModel):
     messages: Iterator[AIMessage]
     """Get an iterator over messages.
 
-    This can be expanded to accept other types like Callables / dicts / strings
+    This can be expanded to accept other types like ``Callables`` / dicts / strings
     to make the interface more generic if needed.
 
-    Note: if you want to pass a list, you can use `iter` to convert it to an iterator.
+    .. note::
+        If you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    Please note that streaming is not implemented yet. We should try to implement it
-    in the future by delegating to invoke and then breaking the resulting output
-    into message chunks.
+    .. warning::
+        Streaming is not implemented yet. We should try to implement it in the future by
+        delegating to invoke and then breaking the resulting output into message chunks.
+
     """
 
     @override
@@ -105,7 +107,7 @@ class GenericFakeChatModel(BaseChatModel):
             **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )

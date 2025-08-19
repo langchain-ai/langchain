@@ -1465,6 +1465,127 @@ def test_md_header_text_splitter_with_invisible_characters(characters: str) -> N
     assert output == expected_output
 
 
+def test_md_header_text_splitter_with_custom_headers() -> None:
+    """Test markdown splitter with custom header patterns like **Header**."""
+    markdown_document = """**Chapter 1**
+
+This is the content for chapter 1.
+
+***Section 1.1***
+
+This is the content for section 1.1.
+
+**Chapter 2**
+
+This is the content for chapter 2.
+
+***Section 2.1***
+
+This is the content for section 2.1.
+"""
+
+    headers_to_split_on = [
+        ("**", "Bold Header"),
+        ("***", "Bold Italic Header"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,  # Level 1 headers
+        "***": 2,  # Level 2 headers
+    }
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="This is the content for chapter 1.",
+            metadata={"Bold Header": "Chapter 1"},
+        ),
+        Document(
+            page_content="This is the content for section 1.1.",
+            metadata={"Bold Header": "Chapter 1", "Bold Italic Header": "Section 1.1"},
+        ),
+        Document(
+            page_content="This is the content for chapter 2.",
+            metadata={"Bold Header": "Chapter 2"},
+        ),
+        Document(
+            page_content="This is the content for section 2.1.",
+            metadata={"Bold Header": "Chapter 2", "Bold Italic Header": "Section 2.1"},
+        ),
+    ]
+
+    assert output == expected_output
+
+
+def test_md_header_text_splitter_mixed_headers() -> None:
+    """Test markdown splitter with both standard and custom headers."""
+    markdown_document = """# Standard Header 1
+
+Content under standard header.
+
+**Custom Header 1**
+
+Content under custom header.
+
+## Standard Header 2
+
+Content under standard header 2.
+
+***Custom Header 2***
+
+Content under custom header 2.
+"""
+
+    headers_to_split_on = [
+        ("#", "Header 1"),
+        ("##", "Header 2"),
+        ("**", "Bold Header"),
+        ("***", "Bold Italic Header"),
+    ]
+
+    custom_header_patterns = {
+        "**": 1,  # Same level as #
+        "***": 2,  # Same level as ##
+    }
+
+    markdown_splitter = MarkdownHeaderTextSplitter(
+        headers_to_split_on=headers_to_split_on,
+        custom_header_patterns=custom_header_patterns,
+    )
+    output = markdown_splitter.split_text(markdown_document)
+
+    expected_output = [
+        Document(
+            page_content="Content under standard header.",
+            metadata={"Header 1": "Standard Header 1"},
+        ),
+        Document(
+            page_content="Content under custom header.",
+            metadata={"Bold Header": "Custom Header 1"},
+        ),
+        Document(
+            page_content="Content under standard header 2.",
+            metadata={
+                "Bold Header": "Custom Header 1",
+                "Header 2": "Standard Header 2",
+            },
+        ),
+        Document(
+            page_content="Content under custom header 2.",
+            metadata={
+                "Bold Header": "Custom Header 1",
+                "Bold Italic Header": "Custom Header 2",
+            },
+        ),
+    ]
+
+    assert output == expected_output
+
+
 EXPERIMENTAL_MARKDOWN_DOCUMENT = (
     "# My Header 1\n"
     "Content for header 1\n"
@@ -3053,18 +3174,18 @@ End Function
 Public Sub Main()
     Dim i As Integer
     Dim limit As Integer
-    
+
     i = 0
     limit = 50
-    
+
     While i < limit
         i = SumTwoIntegers(i, 1)
-        
+
         If i = limit \\ 2 Then
             MsgBox "Halfway there! i = " & i
         End If
     Wend
-    
+
     MsgBox "Done! Final value of i: " & i
 End Sub
 """
