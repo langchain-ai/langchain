@@ -225,10 +225,12 @@ class AIMessage(BaseMessage):
             return cast("list[types.ContentBlock]", self.content)
 
         model_provider = self.response_metadata.get("model_provider")
-        if model_provider == "openai":
-            from langchain_core.messages.block_translators import openai
+        if model_provider:
+            from langchain_core.messages.block_translators import get_translator
 
-            return openai.translate_content(self)
+            translator = get_translator(model_provider)
+            if translator:
+                return translator["translate_content"](self)
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
@@ -372,10 +374,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             return cast("list[types.ContentBlock]", self.content)
 
         model_provider = self.response_metadata.get("model_provider")
-        if model_provider == "openai":
-            from langchain_core.messages.block_translators import openai
+        if model_provider:
+            from langchain_core.messages.block_translators import get_translator
 
-            return openai.translate_content_chunk(self)
+            translator = get_translator(model_provider)
+            if translator:
+                return translator["translate_content_chunk"](self)
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
