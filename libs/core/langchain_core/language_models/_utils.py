@@ -396,7 +396,7 @@ def _normalize_messages(
                         )
                     else:
                         # If `all` is False, we pass through images unchanged
-                        formatted_message.content[idx] = block  # type: ignore[call-overload, index]
+                        formatted_message.content[idx] = block  # type: ignore[index]
 
                 # Convert LangChain v0 to v1 standard content blocks
                 elif (
@@ -479,7 +479,7 @@ def _normalize_messages(
 
                     # Use the key name as the type
                     key_name = next(iter(block.keys()))
-                    formatted_message.content[idx] = {  # type: ignore[call-overload, index]
+                    formatted_message.content[idx] = {  # type: ignore[index]
                         "type": key_name,
                         key_name: block[key_name],
                     }

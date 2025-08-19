@@ -196,7 +196,7 @@ def _normalize_messages_for_cache(messages: list[BaseMessage]) -> list[BaseMessa
 
         # Process content if it's a list (multimodal content)
         if isinstance(normalized_message.content, list):
-            normalized_content = []
+            normalized_content: list[str | dict[Any, Any]] = []
             for block in normalized_message.content:
                 if isinstance(block, dict):
                     # Create a copy of the block

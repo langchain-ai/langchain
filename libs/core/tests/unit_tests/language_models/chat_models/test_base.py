@@ -916,7 +916,7 @@ def test_output_version_stream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full: Optional[BaseMessageChunk] = None
+    full_v1: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -925,14 +925,14 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
-    assert isinstance(full, AIMessageChunk)
-    assert full.response_metadata["output_version"] == "v1"
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.response_metadata["output_version"] == "v1"
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
     llm = GenericFakeChatModel(messages=iter(messages))
-    full = None
+    full_env = None
     for chunk in llm.stream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -941,9 +941,9 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
-    assert isinstance(full, AIMessageChunk)
-    assert full.response_metadata["output_version"] == "v1"
+        full_env = chunk if full_env is None else full_env + chunk  # type: ignore[assignment]
+    assert isinstance(full_env, AIMessageChunk)
+    assert full_env.response_metadata["output_version"] == "v1"
 
 
 async def test_output_version_astream(monkeypatch: Any) -> None:
@@ -962,7 +962,7 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
 
     # v1
     llm = GenericFakeChatModel(messages=iter(messages), output_version="v1")
-    full: Optional[BaseMessageChunk] = None
+    full_v1: Optional[BaseMessageChunk] = None
     async for chunk in llm.astream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -971,14 +971,14 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
-    assert isinstance(full, AIMessageChunk)
-    assert full.response_metadata["output_version"] == "v1"
+        full_v1 = chunk if full_v1 is None else full_v1 + chunk
+    assert isinstance(full_v1, AIMessageChunk)
+    assert full_v1.response_metadata["output_version"] == "v1"
 
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
     llm = GenericFakeChatModel(messages=iter(messages))
-    full = None
+    full_env = None
     async for chunk in llm.astream("hello"):
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, list)
@@ -987,6 +987,6 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
-    assert isinstance(full, AIMessageChunk)
-    assert full.response_metadata["output_version"] == "v1"
+        full_env = chunk if full_env is None else full_env + chunk  # type: ignore[assignment]
+    assert isinstance(full_env, AIMessageChunk)
+    assert full_env.response_metadata["output_version"] == "v1"
