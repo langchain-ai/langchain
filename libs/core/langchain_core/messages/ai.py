@@ -232,11 +232,6 @@ class AIMessage(BaseMessage):
             if translator:
                 return translator["translate_content"](self)
 
-        if model_provider == "anthropic":
-            from langchain_core.messages.block_translators import anthropic
-
-            return anthropic.translate_content(self)
-
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
@@ -385,11 +380,6 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             translator = get_translator(model_provider)
             if translator:
                 return translator["translate_content_chunk"](self)
-
-        if model_provider == "anthropic":
-            from langchain_core.messages.block_translators import anthropic
-
-            return anthropic.translate_content(self)
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
