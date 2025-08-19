@@ -51,7 +51,9 @@ class MinimalAgent(BaseMultiActionAgent):
     async def aplan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
-        callbacks: Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]] = None,
+        callbacks: Optional[
+            Union[list[BaseCallbackHandler], BaseCallbackManager]
+        ] = None,
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         _ = callbacks
@@ -68,7 +70,9 @@ class MinimalAgent(BaseMultiActionAgent):
     def plan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
-        callbacks: Optional[Union[list[BaseCallbackHandler], BaseCallbackManager]] = None,
+        callbacks: Optional[
+            Union[list[BaseCallbackHandler], BaseCallbackManager]
+        ] = None,
         **_kwargs: Any,
     ) -> Union[list[AgentAction], AgentFinish]:
         _ = callbacks
