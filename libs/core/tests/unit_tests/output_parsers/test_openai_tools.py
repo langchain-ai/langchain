@@ -810,7 +810,7 @@ def test_parse_with_different_pydantic_2_v1() -> None:
 
     # Can't get pydantic to work here due to the odd typing of tryig to support
     # both v1 and v2 in the same codebase.
-    parser = PydanticToolsParser(tools=[Forecast])  # type: ignore[list-item]
+    parser = PydanticToolsParser(tools=[Forecast])
     message = AIMessage(
         content="",
         tool_calls=[
