@@ -30,7 +30,7 @@ langchain-cli = "langchain_cli.cli:app"
 
 [dependency-groups]
 dev = ["pytest<8.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
-lint = ["ruff<0.13,>=0.12.2", "mypy<2.0.0,>=1.13.0"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<1.18,>=1.17.1"]
 test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []
@@ -84,6 +84,11 @@ pyupgrade.keep-runtime-typing = true
 "scripts/**" = [ "INP", "S",]
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
 exclude = [
     "langchain_cli/integration_template",
     "langchain_cli/package_template",
