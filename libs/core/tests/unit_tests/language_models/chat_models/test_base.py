@@ -432,44 +432,53 @@ class FakeChatModelStartTracer(FakeTracer):
 
 def test_trace_images_in_openai_format() -> None:
     """Test that images are traced in OpenAI format."""
-    # TODO: trace in new format, or add way to trace in both formats?
-    # llm = ParrotFakeChatModel()
-    # messages = [
-    #     {
-    #         "role": "user",
-    #         # v0 format
-    #         "content": [
-    #             {
-    #                 "type": "image",
-    #                 "source_type": "url",
-    #                 "url": "https://example.com/image.png",
-    #             }
-    #         ],
-    #     }
-    # ]
-    # tracer = FakeChatModelStartTracer()
-    # response = llm.invoke(messages, config={"callbacks": [tracer]})
-    # assert tracer.messages == [
-    #     [
-    #         [
-    #             HumanMessage(
-    #                 content=[
-    #                     {
-    #                         "type": "image_url",
-    #                         "image_url": {"url": "https://example.com/image.png"},
-    #                     }
-    #                 ]
-    #             )
-    #         ]
-    #     ]
-    # ]
-    # # Passing in a v0 should return a v1
-    # assert response.content == [
-    #     {
-    #         "type": "image",
-    #         "url": "https://example.com/image.png",
-    #     }
-    # ]
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            # v0 format
+            "content": [
+                {
+                    "type": "image",
+                    "source_type": "url",
+                    "url": "https://example.com/image.png",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+    # Passing in a v0 should return a v1
+    # Check structure, ignoring auto-generated IDs
+    assert len(response.content) == 1
+    content_block = response.content[0]
+    if isinstance(content_block, dict) and "id" in content_block:
+        # Remove auto-generated id for comparison
+        content_without_id = {k: v for k, v in content_block.items() if k != "id"}
+        expected_content = {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
+        assert content_without_id == expected_content
+    else:
+        assert content_block == {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        }
 
 
 def test_trace_content_blocks_with_no_type_key() -> None:

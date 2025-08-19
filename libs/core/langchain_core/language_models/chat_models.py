@@ -170,7 +170,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
 def _normalize_messages_for_cache(messages: list[BaseMessage]) -> list[BaseMessage]:
     """Normalize messages for caching by removing auto-generated IDs.
 
-    Auto-generated IDs (those starting with LC_AUTO_PREFIX) are stripped from
+    Auto-generated IDs (those starting with `LC_AUTO_PREFIX`) are stripped from
     messages and content blocks to ensure cache keys remain consistent across
     multiple invocations with the same semantic content.
 
