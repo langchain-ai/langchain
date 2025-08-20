@@ -1389,7 +1389,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tools to the model.
 
         Args:
