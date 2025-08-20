@@ -705,14 +705,6 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         normalized_message.content, expected_content_messages.content
     )
 
-    # TODO: do we need to handle nested role structure? e.g.:
-    # {
-    #     "role": "user",
-    #     "content": [
-    #         {"type": "text", "text": "Hello"},
-    #     ]
-    # }
-
     # All (image, audio, file)
     messages = HumanMessage(
         content=[
