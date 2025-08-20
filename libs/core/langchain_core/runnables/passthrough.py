@@ -186,7 +186,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
 
     @classmethod
     @override
@@ -406,7 +406,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             mapper: A ``RunnableParallel`` instance that will be used to transform the
                 input dictionary.
         """
-        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
+        super().__init__(mapper=mapper, **kwargs)
 
     @classmethod
     @override
@@ -710,7 +710,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         Args:
             keys: A single key or a list of keys to pick from the input dictionary.
         """
-        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
+        super().__init__(keys=keys, **kwargs)
 
     @classmethod
     @override

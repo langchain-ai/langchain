@@ -120,4 +120,4 @@ class LLMChainExtractor(BaseDocumentCompressor):
         else:
             parser = StrOutputParser()
         llm_chain = _prompt | llm | parser
-        return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]
+        return cls(llm_chain=llm_chain, get_input=_get_input)
