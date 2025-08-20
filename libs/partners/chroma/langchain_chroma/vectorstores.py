@@ -486,7 +486,16 @@ class Chroma(VectorStore):
             return base64.b64encode(image_file.read()).decode("utf-8")
 
     def fork(self, new_name: str) -> Chroma:
-        forked_collection = self._chroma_collection.fork(new_name=new_name)
+        """Fork this vector store.
+
+        Args:
+            new_name: New name for the forked store.
+
+        Returns:
+            A new Chroma store forked from this vector store.
+
+        """
+        forked_collection = self._collection.fork(new_name=new_name)
         return Chroma(
             client=self._client,
             embedding_function=self._embedding_function,
