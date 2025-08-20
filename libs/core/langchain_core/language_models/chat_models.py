@@ -168,8 +168,8 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
 
 
 def _strip_ids_from_messages(
-    messages: list[BaseMessage], *, strip_all_ids: bool = False
-) -> list[BaseMessage]:
+    messages: Sequence[BaseMessage], *, strip_all_ids: bool = False
+) -> Sequence[BaseMessage]:
     """Normalize messages for caching by removing auto-generated IDs.
 
     Auto-generated IDs (those starting with `LC_AUTO_PREFIX`) are stripped from
