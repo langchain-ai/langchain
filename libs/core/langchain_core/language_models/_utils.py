@@ -243,64 +243,6 @@ def _convert_openai_format_to_data_block(
     return block
 
 
-def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
-    """Normalize messages using the legacy v0 logic.
-
-    Ensures backward compatibility with partner packages that expect v0 format.
-
-    Only converts OpenAI file and audio formats to v0 format.
-
-    """
-    formatted_messages = []
-    for message in messages:
-        formatted_message = message
-        if isinstance(message.content, list):
-            for idx, block in enumerate(message.content):
-                if (
-                    isinstance(block, dict)
-                    # Subset to (PDF) files and audio, as most relevant chat models
-                    # support images in OAI format (and some may not yet support the
-                    # standard data block format)
-                    and block.get("type") in {"file", "input_audio"}
-                    and _is_openai_data_block(block)
-                ):
-                    formatted_message = _ensure_message_copy(message, formatted_message)
-
-                    converted_block = _convert_openai_to_v0_format(block)
-                    _update_content_block(formatted_message, idx, converted_block)
-        formatted_messages.append(formatted_message)
-
-    return formatted_messages
-
-
-def _convert_openai_to_v0_format(block: dict) -> dict:
-    """Convert OpenAI format to v0."""
-    if block["type"] == "file":
-        parsed = _parse_data_uri(block["file"]["file_data"])
-        if parsed is not None:
-            result = dict(parsed)
-            result["type"] = "file"
-            if filename := block["file"].get("filename"):
-                result["filename"] = filename
-            return result
-        return block
-
-    if block["type"] == "input_audio":
-        audio = block.get("input_audio", {})
-        data = audio.get("data")
-        audio_format = audio.get("format")
-        if data and audio_format:
-            return {
-                "type": "audio",
-                "source_type": "base64",
-                "data": data,
-                "mime_type": f"audio/{audio_format}",
-            }
-        return block
-
-    return block
-
-
 def _normalize_messages(
     messages: Sequence["BaseMessage"],
     convert_all: bool = False,  # noqa: FBT001, FBT002

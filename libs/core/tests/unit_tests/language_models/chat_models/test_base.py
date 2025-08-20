@@ -705,7 +705,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         normalized_message.content, expected_content_messages.content
     )
 
-    # All (image, audio, file)
+    # `convert_all = True` (image, audio, file)
     messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},

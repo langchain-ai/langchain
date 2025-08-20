@@ -29,7 +29,6 @@ from langchain_core.callbacks import (
 from langchain_core.globals import get_llm_cache
 from langchain_core.language_models._utils import (
     _normalize_messages,
-    _normalize_messages_v0,
     _update_message_content_to_blocks,
 )
 from langchain_core.language_models.base import (
@@ -601,11 +600,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 self.rate_limiter.acquire(blocking=True)
 
             try:
-                input_messages = (
-                    _normalize_messages(messages)
-                    if self.output_version == "v1"
-                    else _normalize_messages_v0(messages)
-                )
+                input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
@@ -703,11 +698,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         chunks: list[ChatGenerationChunk] = []
 
         try:
-            input_messages = (
-                _normalize_messages(messages)
-                if self.output_version == "v1"
-                else _normalize_messages_v0(messages)
-            )
+            input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             async for chunk in self._astream(
                 input_messages,
@@ -933,10 +924,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
         results = []
         input_messages = [
-            _normalize_messages(message_list)
-            if self.output_version == "v1"
-            else _normalize_messages_v0(message_list)
-            for message_list in messages
+            _normalize_messages(message_list) for message_list in messages
         ]
         for i, m in enumerate(input_messages):
             try:
@@ -1052,10 +1040,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         )
 
         input_messages = [
-            _normalize_messages(message_list)
-            if self.output_version == "v1"
-            else _normalize_messages_v0(message_list)
-            for message_list in messages
+            _normalize_messages(message_list) for message_list in messages
         ]
         results = await asyncio.gather(
             *[
