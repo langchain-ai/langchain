@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 from langchain_core.messages.content import (
     KNOWN_BLOCK_TYPES,
     ContentBlock,
+    ImageContentBlock,
     create_audio_block,
     create_file_block,
     create_image_block,
@@ -474,19 +475,56 @@ def _convert_legacy_v0_content_block_to_v1(block: dict) -> ContentBlock:
         if source_type == "url":
             known_keys = {"type", "source_type", "url", "mime_type"}
             extras = _extract_v0_extras(block, known_keys)
-            return create_image_block(
-                url=block["url"], mime_type=block.get("mime_type"), **extras
-            )
+            if "id" in block:
+                return create_image_block(
+                    url=block["url"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            # Don't construct with an ID if not present in original block
+            v1_block = ImageContentBlock(type="image", url=block["url"])
+            if block.get("mime_type"):
+                v1_block["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_block["extras"] = {}
+                    v1_block["extras"][key] = value
+            return v1_block
         if source_type == "base64":
             known_keys = {"type", "source_type", "data", "mime_type"}
             extras = _extract_v0_extras(block, known_keys)
-            return create_image_block(
-                base64=block["data"], mime_type=block.get("mime_type"), **extras
-            )
+            if "id" in block:
+                return create_image_block(
+                    base64=block["data"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            v1_block = ImageContentBlock(type="image", base64=block["data"])
+            if block.get("mime_type"):
+                v1_block["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_block["extras"] = {}
+                    v1_block["extras"][key] = value
+            return v1_block
         if source_type == "id":
             known_keys = {"type", "source_type", "id"}
             extras = _extract_v0_extras(block, known_keys)
-            return create_image_block(file_id=block["id"], **extras)
+            # For id `source_type`, `id` is the file reference, not block ID
+            v1_block = ImageContentBlock(type="image", file_id=block["id"])
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_block["extras"] = {}
+                    v1_block["extras"][key] = value
+
+            return v1_block
     elif block.get("type") == "audio":
         source_type = block.get("source_type")
         if source_type == "url":
