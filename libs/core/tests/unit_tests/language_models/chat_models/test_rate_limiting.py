@@ -178,8 +178,7 @@ async def test_rate_limit_astream() -> None:
     assert 0.1 < toc - tic < 0.2
 
 
-@pytest.mark.parametrize("output_version", ["v0", "v1"])
-def test_rate_limit_skips_cache(output_version: str) -> None:
+def test_rate_limit_skips_cache() -> None:
     """Test that rate limiting does not rate limit cache look ups."""
     cache = InMemoryCache()
     model = GenericFakeChatModel(
@@ -191,7 +190,6 @@ def test_rate_limit_skips_cache(output_version: str) -> None:
             # At 20 requests per second we see a refresh every 0.05 seconds
         ),
         cache=cache,
-        output_version=output_version,
     )
 
     tic = time.time()
@@ -213,16 +211,11 @@ def test_rate_limit_skips_cache(output_version: str) -> None:
     # Test verifies that there's only a single key
     # Test also verifies that rate_limiter information is not part of the
     # cache key
-    expected_content = (
-        '"content": "foo"'
-        if output_version == "v0"
-        else '"content": [{"type": "text", "text": "foo"}]'
-    )
     assert list(cache._cache) == [
         (
-            f'[{{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
-            f'"messages", "HumanMessage"], "kwargs": {{{expected_content}, '
-            f'"type": "human"}}}}]',
+            '[{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
+            '"messages", "HumanMessage"], "kwargs": {"content": "foo", '
+            '"type": "human"}}]',
             "[('_type', 'generic-fake-chat-model'), ('stop', None)]",
         )
     ]

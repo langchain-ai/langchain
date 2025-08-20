@@ -539,13 +539,14 @@ def test_trace_images_in_openai_format_v1() -> None:
         }
 
 
-def test_trace_content_blocks_with_no_type_key() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_trace_content_blocks_with_no_type_key(output_version: str) -> None:
     """Test behavior of content blocks that don't have a `type` key.
 
     Only for blocks with one key, in which case, the name of the key is used as `type`.
 
     """
-    llm = ParrotFakeChatModel(output_version="v1")
+    llm = ParrotFakeChatModel(output_version=output_version)
     messages = [
         {
             "role": "user",
@@ -580,15 +581,31 @@ def test_trace_content_blocks_with_no_type_key() -> None:
             ]
         ]
     ]
-    assert response.content == [
-        {
-            "type": "text",
-            "text": "Hello",
-        },
-        {
-            "cachePoint": {"type": "default"},
-        },
-    ]
+
+    if output_version == "v0":
+        assert response.content == [
+            {
+                "type": "text",
+                "text": "Hello",
+            },
+            {
+                "cachePoint": {"type": "default"},
+            },
+        ]
+    else:
+        assert response.content == [
+            {
+                "type": "text",
+                "text": "Hello",
+            },
+            {
+                "type": "non_standard",
+                "value": {
+                    "cachePoint": {"type": "default"},
+                },
+            },
+        ]
+
     assert response.content_blocks == [
         {
             "type": "text",

@@ -20,7 +20,6 @@ from langchain_core.messages.content import (
     create_file_block,
     create_image_block,
     create_plaintext_block,
-    create_text_block,
 )
 
 
@@ -425,29 +424,8 @@ def _normalize_messages(
         # them to remain unchanged. We only create a copy if we need to translate.
         formatted_message = message
 
-        if isinstance(message.content, str):
-            if formatted_message is message:
-                formatted_message = message.model_copy()
-                # Shallow-copy the content string so we can modify it
-                formatted_message.content = str(formatted_message.content)
-            formatted_message.content = [
-                cast(
-                    "dict",
-                    create_text_block(
-                        text=message.content,
-                    ),
-                ),
-            ]
-
-        elif isinstance(message.content, list):
+        if isinstance(message.content, list):
             for idx, block in enumerate(message.content):
-                if isinstance(block, str):
-                    if formatted_message is message:
-                        formatted_message = message.model_copy()
-                        formatted_message.content = list(formatted_message.content)
-
-                    formatted_message.content[idx] = {create_text_block(block)}  # type: ignore[call-overload, index]  # mypy confused by .model_copy
-
                 # OpenAI Chat Completions multimodal data blocks to v1 standard
                 if (
                     isinstance(block, dict)
@@ -462,14 +440,14 @@ def _normalize_messages(
                     # Convert OpenAI audio/file block to LC v1 std content
                     # unless `all` is True, in which case we also conver images
                     if convert_all or block["type"] != "image_url":
-                        formatted_message.content[idx] = (  # type: ignore[call-overload, index]
-                            _convert_openai_format_to_data_block(block)
+                        formatted_message.content[idx] = (  # type: ignore[index]
+                            _convert_openai_format_to_data_block(block)  # type: ignore[assignment]
                         )
                     else:
                         # If `all` is False, we pass through images unchanged
                         formatted_message.content[idx] = block  # type: ignore[index]
 
-                # Convert LangChain v0 to v1 standard content blocks
+                # Convert multimodal LangChain v0 to v1 standard content blocks
                 elif (
                     isinstance(block, dict)
                     and block.get("type")
@@ -540,31 +518,16 @@ def _normalize_messages(
                         )
                     continue
 
-                # Handle blocks with no type key but exactly one key
-                elif (
-                    isinstance(block, dict) and "type" not in block and len(block) == 1
-                ):
-                    if formatted_message is message:
-                        formatted_message = message.model_copy()
-                        formatted_message.content = list(formatted_message.content)
-
-                    # Use the key name as the type
-                    key_name = next(iter(block.keys()))
-                    formatted_message.content[idx] = {  # type: ignore[index]
-                        "type": key_name,
-                        key_name: block[key_name],
-                    }
-
                 # Pass through blocks that look like they have v1 format unchanged
                 elif isinstance(block, dict) and block.get("type") in KNOWN_BLOCK_TYPES:
                     formatted_message.content[idx] = block  # type: ignore[index]
 
         # If we didn't modify the message, skip creating a new instance
+        # e.g. passing through content that is just `str`
         if formatted_message is message:
             formatted_messages.append(message)
             continue
 
-        # At this point, `content` will be a list of v1 standard content blocks.
         formatted_messages.append(formatted_message)
 
     return formatted_messages
