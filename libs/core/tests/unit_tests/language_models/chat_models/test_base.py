@@ -623,7 +623,7 @@ def test_trace_content_blocks_with_no_type_key(output_version: str) -> None:
 def test_extend_support_to_openai_multimodal_formats() -> None:
     """Test normalizing OpenAI audio, image, and file inputs to v1."""
     # Audio and file only (chat model default)
-    messages = AIMessage(
+    messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},
             {  # audio-base64
@@ -647,7 +647,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         ]
     )
 
-    expected_content_messages = AIMessage(
+    expected_content_messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},  # TextContentBlock
             {  # AudioContentBlock
@@ -694,7 +694,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
     # }
 
     # All (image, audio, file)
-    messages = AIMessage(
+    messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},
             {  # image-url
@@ -726,7 +726,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         ]
     )
 
-    expected_content_messages = AIMessage(
+    expected_content_messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},  # TextContentBlock
             {  # Chat Completions Image becomes ImageContentBlock after invoke
