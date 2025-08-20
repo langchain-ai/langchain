@@ -211,6 +211,7 @@ def test__format_output() -> None:
             "total_tokens": 3,
             "input_token_details": {},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
     actual = llm._format_output(anthropic_msg)
@@ -241,6 +242,7 @@ def test__format_output_cached() -> None:
             "total_tokens": 10,
             "input_token_details": {"cache_creation": 3, "cache_read": 4},
         },
+        response_metadata={"model_provider": "anthropic"},
     )
 
     llm = ChatAnthropic(model="test", anthropic_api_key="test")  # type: ignore[call-arg, call-arg]
