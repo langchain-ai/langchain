@@ -2,7 +2,7 @@
 
 import time
 from itertools import cycle
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 from uuid import UUID
 
 from typing_extensions import override
@@ -214,7 +214,9 @@ async def test_callback_handlers() -> None:
 def test_chat_model_inputs() -> None:
     fake = ParrotFakeChatModel()
 
-    assert fake.invoke("hello") == _any_id_human_message(content="hello")
+    assert cast("HumanMessage", fake.invoke("hello")) == _any_id_human_message(
+        content="hello"
+    )
     assert fake.invoke([("ai", "blah")]) == _any_id_ai_message(content="blah")
     assert fake.invoke([AIMessage(content="blah")]) == _any_id_ai_message(
         content="blah"
