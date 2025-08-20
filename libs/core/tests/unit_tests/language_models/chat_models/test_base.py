@@ -842,7 +842,7 @@ def test_normalize_messages_v1_content_blocks_unchanged() -> None:
                 },
                 {
                     "type": "reasoning",
-                    "text": "Let me think about this...",
+                    "reasoning": "Let me think about this...",
                 },
             ]
         )

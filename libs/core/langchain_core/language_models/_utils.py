@@ -1,6 +1,15 @@
 import re
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    Optional,
+    TypedDict,
+    TypeVar,
+    Union,
+    cast,
+)
 
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
@@ -10,7 +19,6 @@ from langchain_core.messages.content import (
     create_audio_block,
     create_file_block,
     create_image_block,
-    create_non_standard_block,
     create_plaintext_block,
     create_text_block,
 )
@@ -38,7 +46,7 @@ def _is_openai_data_block(block: dict) -> bool:
             # Ignore `'detail'` since it's optional and specific to OpenAI
 
     elif block.get("type") == "input_audio":
-        if (audio := block.get("audio")) and isinstance(audio, dict):
+        if (audio := block.get("input_audio")) and isinstance(audio, dict):
             audio_data = audio.get("data")
             audio_format = audio.get("format")
             # Both required per OpenAI spec
@@ -102,7 +110,9 @@ def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
     }
 
 
-def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
+def _convert_openai_format_to_data_block(
+    block: dict,
+) -> Union[ContentBlock, dict[Any, Any]]:
     """Convert OpenAI image/audio/file content block to respective v1 multimodal block.
 
     We expect that the incoming block is verified to be in OpenAI Chat Completions
@@ -173,20 +183,20 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
     # base64-style audio block
     # audio is only represented via raw data, no url or ID option
     if block["type"] == "input_audio":
-        known_keys = {"type", "audio"}
+        known_keys = {"type", "input_audio"}
         extras = _extract_extras(block, known_keys)
 
         # Also extract extras from nested audio dict
         audio_known_keys = {"data", "format"}
-        audio_extras = _extract_extras(block["audio"], audio_known_keys)
+        audio_extras = _extract_extras(block["input_audio"], audio_known_keys)
 
         all_extras = {**extras}
         for key, value in audio_extras.items():
             all_extras[f"audio_{key}"] = value
 
         return create_audio_block(
-            base64=block["audio"]["data"],
-            mime_type=f"audio/{block['audio']['format']}",
+            base64=block["input_audio"]["data"],
+            mime_type=f"audio/{block['input_audio']['format']}",
             **all_extras,
         )
 
@@ -230,10 +240,8 @@ def _convert_openai_format_to_data_block(block: dict) -> ContentBlock:
             **all_extras,
         )
 
-    # Escape hatch for non-standard content blocks
-    return create_non_standard_block(
-        value=block,
-    )
+    # Escape hatch
+    return block
 
 
 def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
@@ -242,7 +250,7 @@ def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessa
     This replicates the exact normalization logic that was in master branch
     to ensure backward compatibility with partner packages that expect v0 format.
 
-    Only converts OpenAI file and input_audio formats to v0 format.
+    Only converts OpenAI file and audio formats to v0 format.
     """
     formatted_messages = []
     for message in messages:
@@ -284,7 +292,7 @@ def _convert_openai_to_v0_format(block: dict) -> dict:
         return block
 
     if block["type"] == "input_audio":
-        audio = block.get("audio", {})
+        audio = block.get("input_audio", {})
         data = audio.get("data")
         audio_format = audio.get("format")
         if data and audio_format:
@@ -391,7 +399,7 @@ def _normalize_messages(
     # Chat Completions audio:
     # {
     #     "type": Literal['input_audio'],
-    #     "audio": {
+    #     "input_audio": {
     #         "format": Literal['wav', 'mp3'],
     #         "data": str = "$BASE64_ENCODED_AUDIO",
     #     },

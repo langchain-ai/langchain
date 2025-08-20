@@ -168,7 +168,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
     return messages_to_trace
 
 
-def _normalize_messages_for_cache(messages: list[BaseMessage]) -> list[BaseMessage]:
+def _strip_ids_from_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
     """Normalize messages for caching by removing auto-generated IDs.
 
     Auto-generated IDs (those starting with `LC_AUTO_PREFIX`) are stripped from
@@ -1156,7 +1156,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(_normalize_messages_for_cache(messages))
+                prompt = dumps(_strip_ids_from_messages(messages))
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1241,7 +1241,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(_normalize_messages_for_cache(messages))
+                prompt = dumps(_strip_ids_from_messages(messages))
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
