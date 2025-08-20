@@ -253,7 +253,7 @@ class ContextSet(RunnableSerializable):
         """
         if key is not None:
             kwargs[key] = value
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             keys={
                 k: _coerce_set_value(v) if v is not None else None
                 for k, v in kwargs.items()
