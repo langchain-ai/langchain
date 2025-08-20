@@ -611,7 +611,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
             {"type": "text", "text": "Hello"},
             {  # audio-base64
                 "type": "input_audio",
-                "audio": {
+                "input_audio": {
                     "format": "wav",
                     "data": "data:audio/wav;base64,<base64 string>",
                 },
@@ -690,7 +690,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
             },
             {  # audio-base64
                 "type": "input_audio",
-                "audio": {
+                "input_audio": {
                     "format": "wav",
                     "data": "data:audio/wav;base64,<base64 string>",
                 },
