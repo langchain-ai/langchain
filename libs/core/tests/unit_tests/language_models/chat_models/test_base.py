@@ -44,6 +44,37 @@ if TYPE_CHECKING:
     from langchain_core.outputs.llm_result import LLMResult
 
 
+def _content_blocks_equal_ignore_id(
+    actual: Union[str, list[Any]], expected: Union[str, list[Any]]
+) -> bool:
+    """Compare content blocks, ignoring auto-generated `id` fields.
+
+    Args:
+        actual: Actual content from response (string or list of content blocks).
+        expected: Expected content to compare against (string or list of blocks).
+
+    Returns:
+        True if content matches (excluding `id` fields), False otherwise.
+
+    """
+    if isinstance(actual, str) or isinstance(expected, str):
+        return actual == expected
+
+    if len(actual) != len(expected):
+        return False
+    for actual_block, expected_block in zip(actual, expected):
+        actual_without_id = (
+            {k: v for k, v in actual_block.items() if k != "id"}
+            if isinstance(actual_block, dict) and "id" in actual_block
+            else actual_block
+        )
+
+        if actual_without_id != expected_block:
+            return False
+
+    return True
+
+
 @pytest.fixture
 def messages() -> list:
     return [
@@ -472,20 +503,15 @@ def test_trace_images_in_openai_format_v0() -> None:
     ]
     # But .content_blocks should perform v1 transformation
     assert len(response.content_blocks) == 1
-    content_block = response.content_blocks[0]
-    if isinstance(content_block, dict) and "id" in content_block:
-        # Remove auto-generated id for comparison
-        content_without_id = {k: v for k, v in content_block.items() if k != "id"}
-        expected_content = {
+    expected_content_blocks = [
+        {
             "type": "image",
             "url": "https://example.com/image.png",
         }
-        assert content_without_id == expected_content
-    else:
-        assert content_block == {
-            "type": "image",
-            "url": "https://example.com/image.png",
-        }
+    ]
+    assert _content_blocks_equal_ignore_id(
+        response.content_blocks, expected_content_blocks
+    )
 
 
 def test_trace_images_in_openai_format_v1() -> None:
@@ -675,15 +701,9 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
     normalized_message = normalized_content[0]
     assert len(normalized_message.content) == len(expected_content_messages.content)
 
-    for i, (actual_block, expected_block) in enumerate(
-        zip(normalized_message.content, expected_content_messages.content)
-    ):
-        if isinstance(actual_block, dict) and "id" in actual_block:
-            # Remove auto-generated id for comparison
-            actual_without_id = {k: v for k, v in actual_block.items() if k != "id"}
-            assert actual_without_id == expected_block, f"Mismatch at index {i}"
-        else:
-            assert actual_block == expected_block, f"Mismatch at index {i}"
+    assert _content_blocks_equal_ignore_id(
+        normalized_message.content, expected_content_messages.content
+    )
 
     # TODO: do we need to handle nested role structure? e.g.:
     # {
@@ -763,15 +783,9 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
     normalized_message = normalized_content[0]
     assert len(normalized_message.content) == len(expected_content_messages.content)
 
-    for i, (actual_block, expected_block) in enumerate(
-        zip(normalized_message.content, expected_content_messages.content)
-    ):
-        if isinstance(actual_block, dict) and "id" in actual_block:
-            # Remove auto-generated id for comparison
-            actual_without_id = {k: v for k, v in actual_block.items() if k != "id"}
-            assert actual_without_id == expected_block, f"Mismatch at index {i}"
-        else:
-            assert actual_block == expected_block, f"Mismatch at index {i}"
+    assert _content_blocks_equal_ignore_id(
+        normalized_message.content, expected_content_messages.content
+    )
 
 
 def test_normalize_messages_edge_cases() -> None:
