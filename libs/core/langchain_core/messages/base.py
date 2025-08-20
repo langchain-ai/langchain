@@ -23,6 +23,94 @@ if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
+def _convert_to_v1_from_chat_completions_input(
+    blocks: list[types.ContentBlock],
+) -> list[types.ContentBlock]:
+    """Convert OpenAI Chat Completions format blocks to v1 format.
+
+    Processes non_standard blocks that might be OpenAI format and converts them
+    to proper ContentBlocks. If conversion fails, leaves them as non_standard.
+
+    Args:
+        blocks: List of content blocks to process.
+
+    Returns:
+        Updated list with OpenAI blocks converted to v1 format.
+    """
+    from langchain_core.messages import content as types
+
+    converted_blocks = []
+    for block in blocks:
+        if (
+            isinstance(block, dict)
+            and block.get("type") == "non_standard"
+            and "value" in block
+            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
+        ):
+            # We know this is a NonStandardContentBlock, so we can safely access value
+            value = cast("Any", block)["value"]
+            # Check if this looks like OpenAI format
+            if value.get("type") in {
+                "image_url",
+                "input_audio",
+                "file",
+            } and _is_openai_data_block(value):
+                converted_block = _convert_openai_format_to_data_block(value)
+                # If conversion succeeded, use it; otherwise keep as non_standard
+                if (
+                    isinstance(converted_block, dict)
+                    and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
+                ):
+                    converted_blocks.append(cast("types.ContentBlock", converted_block))
+                else:
+                    converted_blocks.append(block)
+            else:
+                converted_blocks.append(block)
+        else:
+            converted_blocks.append(block)
+
+    return converted_blocks
+
+
+def _convert_to_v1_from_v0_multimodal_input(
+    blocks: list[types.ContentBlock],
+) -> list[types.ContentBlock]:
+    """Convert v0 multimodal blocks to v1 format.
+
+    Processes non_standard blocks that might be v0 format and converts them
+    to proper v1 ContentBlocks.
+
+    Args:
+        blocks: List of content blocks to process.
+
+    Returns:
+        Updated list with v0 blocks converted to v1 format.
+    """
+    converted_blocks = []
+    for block in blocks:
+        if (
+            isinstance(block, dict)
+            and block.get("type") == "non_standard"
+            and "value" in block
+            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
+        ):
+            # We know this is a NonStandardContentBlock, so we can safely access value
+            value = cast("Any", block)["value"]
+            # Check if this looks like v0 format
+            if (
+                value.get("type") in {"image", "audio", "file"}
+                and "source_type" in value
+            ):
+                converted_block = _convert_legacy_v0_content_block_to_v1(value)
+                converted_blocks.append(converted_block)
+            else:
+                converted_blocks.append(block)
+        else:
+            converted_blocks.append(block)
+
+    return converted_blocks
+
+
 class BaseMessage(Serializable):
     """Base abstract message class.
 
@@ -129,63 +217,37 @@ class BaseMessage(Serializable):
         from langchain_core.messages import content as types
 
         blocks: list[types.ContentBlock] = []
+
+        # First pass: convert to standard blocks
         content = (
             [self.content]
             if isinstance(self.content, str) and self.content
             else self.content
         )
-        # TODO: can't the entire block below use _normalize_messages?
         for item in content:
             if isinstance(item, str):
-                # TODO: use factory here to include auto-ID generation?
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
-                if item_type in {
-                    "image_url",
-                    "input_audio",
-                    "file",
-                } and _is_openai_data_block(item):
-                    # Handle OpenAI Chat Completions format
-                    blocks.append(_convert_openai_format_to_data_block(item))
-                    continue
-                if item_type is None:
-                    # Handle blocks without a type key - wrap as non_standard
+                # Check for v0 format blocks first
+                if item_type in {"image", "audio", "file"} and "source_type" in item:
+                    blocks.append(_convert_legacy_v0_content_block_to_v1(item))
+                elif item_type is None or item_type not in types.KNOWN_BLOCK_TYPES:
                     blocks.append(
                         cast(
                             "types.ContentBlock",
                             {"type": "non_standard", "value": item},
                         )
                     )
-                    continue
-                if item_type not in types.KNOWN_BLOCK_TYPES:
-                    # Check if this is a single-key block that was normalized
-                    # (e.g., {"type": "cachePoint", "cachePoint": ...})
-                    if (
-                        len(item) == 2  # type + one other key
-                        and item_type in item  # key name matches type
-                    ):
-                        # Convert back to original format
-                        blocks.append(
-                            cast("types.ContentBlock", {item_type: item[item_type]})
-                        )
-                        continue
-                    msg = (
-                        f"Non-standard content block type '{item_type}'. Ensure "
-                        "the model supports `output_version='v1'` or higher and "
-                        "that this attribute is set on initialization."
-                    )
-                    raise ValueError(msg)
-                # Handle v0 format content blocks and convert to v1
-                if item_type in {"image", "audio", "file"} and "source_type" in item:
-                    # Convert v0 format to v1
-                    blocks.append(_convert_legacy_v0_content_block_to_v1(item))
                 else:
                     blocks.append(cast("types.ContentBlock", item))
-            else:
-                pass
 
-        return blocks
+        # Subsequent passes: attempt to unpack non-standard blocks
+        blocks = _convert_to_v1_from_v0_multimodal_input(blocks)
+        # blocks = _convert_to_v1_from_anthropic_input(blocks)
+        # ...
+
+        return _convert_to_v1_from_chat_completions_input(blocks)
 
     def text(self) -> str:
         """Get the text content of the message.
@@ -251,7 +313,9 @@ def merge_content(
     Returns:
         The merged content.
     """
-    merged = first_content
+    merged: Union[str, list[Union[str, dict]]]
+    merged = "" if first_content is None else first_content
+
     for content in contents:
         # If current is a string
         if isinstance(merged, str):
@@ -272,8 +336,8 @@ def merge_content(
         # If second content is an empty string, treat as a no-op
         elif content == "":
             pass
-        else:
-            # Otherwise, add the second content as a new element of the list
+        # Otherwise, add the second content as a new element of the list
+        elif merged:
             merged.append(content)
     return merged
 
