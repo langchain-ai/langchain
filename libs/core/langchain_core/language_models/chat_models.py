@@ -124,7 +124,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     if (
                         block.get("type") == "image"
                         and is_data_content_block(block)
-                        and not("file_id" in block or block.get("source_type") == "id")
+                        and not ("file_id" in block or block.get("source_type") == "id")
                     ):
                         if message_to_trace is message:
                             # Shallow copy
