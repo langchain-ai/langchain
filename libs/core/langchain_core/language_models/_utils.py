@@ -264,14 +264,11 @@ def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessa
                     and block.get("type") in {"file", "input_audio"}
                     and _is_openai_data_block(block)
                 ):
-                    if formatted_message is message:
-                        formatted_message = message.model_copy()
-                        # Also shallow-copy content
-                        formatted_message.content = list(formatted_message.content)
+                    formatted_message = _ensure_message_copy(message, formatted_message)
 
                     # Convert using the original master logic
                     converted_block = _convert_openai_to_v0_format(block)
-                    formatted_message.content[idx] = converted_block  # type: ignore[index]
+                    _update_content_block(formatted_message, idx, converted_block)
         formatted_messages.append(formatted_message)
 
     return formatted_messages
@@ -433,19 +430,16 @@ def _normalize_messages(
                     # Discriminate between OpenAI/LC format since they share `'type'`
                     and _is_openai_data_block(block)
                 ):
-                    if formatted_message is message:
-                        formatted_message = message.model_copy()
-                        formatted_message.content = list(formatted_message.content)
+                    formatted_message = _ensure_message_copy(message, formatted_message)
 
                     # Convert OpenAI audio/file block to LC v1 std content
                     # unless `all` is True, in which case we also conver images
                     if convert_all or block["type"] != "image_url":
-                        formatted_message.content[idx] = (  # type: ignore[index]
-                            _convert_openai_format_to_data_block(block)  # type: ignore[assignment]
-                        )
+                        converted_block = _convert_openai_format_to_data_block(block)
+                        _update_content_block(formatted_message, idx, converted_block)
                     else:
                         # If `all` is False, we pass through images unchanged
-                        formatted_message.content[idx] = block  # type: ignore[index]
+                        _update_content_block(formatted_message, idx, block)
 
                 # Convert multimodal LangChain v0 to v1 standard content blocks
                 elif (
@@ -464,18 +458,16 @@ def _normalize_messages(
                         "text",
                     }
                 ):
-                    if formatted_message is message:
-                        formatted_message = message.model_copy()
-                        formatted_message.content = list(formatted_message.content)
+                    formatted_message = _ensure_message_copy(message, formatted_message)
 
-                    formatted_message.content[idx] = (  # type: ignore[index, call-overload]
-                        _convert_legacy_v0_content_block_to_v1(block)
-                    )
+                    converted_block = _convert_legacy_v0_content_block_to_v1(block)
+                    _update_content_block(formatted_message, idx, converted_block)
                     continue
 
                 # Pass through blocks that look like they have v1 format unchanged
                 elif isinstance(block, dict) and block.get("type") in KNOWN_BLOCK_TYPES:
-                    formatted_message.content[idx] = block  # type: ignore[index]
+                    # No conversion needed for v1 blocks, so no need to copy
+                    pass
 
         # If we didn't modify the message, skip creating a new instance
         # e.g. passing through content that is just `str`
@@ -489,6 +481,29 @@ def _normalize_messages(
 
 
 T = TypeVar("T", bound="BaseMessage")
+
+
+def _ensure_message_copy(message: T, formatted_message: T) -> T:
+    """Create a copy of the message if it hasn't been copied yet."""
+    if formatted_message is message:
+        formatted_message = message.model_copy()
+        # Shallow-copy content list to allow modifications
+        formatted_message.content = list(formatted_message.content)
+    return formatted_message
+
+
+def _update_content_block(
+    formatted_message: "BaseMessage", idx: int, new_block: Union[ContentBlock, dict]
+) -> None:
+    """Update a content block at the given index, handling type issues."""
+    # Type ignore needed because:
+    # - `BaseMessage.content` is typed as `Union[str, list[Union[str, dict]]]`
+    # - When content is str, indexing fails (index error)
+    # - When content is list, the items are `Union[str, dict]` but we're assigning
+    #   `Union[ContentBlock, dict]` where ContentBlock is richer than dict
+    # - This is safe because we only call this when we've verified content is a list and
+    #   we're doing content block conversions
+    formatted_message.content[idx] = new_block  # type: ignore[index, assignment]
 
 
 def _update_message_content_to_blocks(message: T, output_version: str) -> T:
