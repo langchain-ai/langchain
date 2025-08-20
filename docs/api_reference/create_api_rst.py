@@ -545,16 +545,19 @@ def _build_index(dirs: List[str]) -> None:
         "ai21": "AI21",
         "ibm": "IBM",
     }
+    # Separate standard-tests from main packages for better visibility
+    # Per issue #32395: standard-tests needs its own dedicated section
     ordered = [
         "core",
         "langchain",
         "text-splitters",
         "community",
         "experimental",
-        "standard-tests",
     ]
+    testing = ["standard-tests"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
-    integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
+    testing_ = [dir_ for dir_ in testing if dir_ in dirs]
+    integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_ and dir_ not in testing_)
     doc = """# LangChain Python API Reference
 
 Welcome to the LangChain Python API reference. This is a reference for all
@@ -592,6 +595,36 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
 :caption: Base packages
 
 {main_tree}
+```
+"""
+    # Add dedicated section for testing packages
+    if testing_:
+        testing_headers = [
+            " ".join(custom_names.get(x, x.title()) for x in dir_.split("-"))
+            for dir_ in testing_
+        ]
+        testing_tree = "\n".join(
+            f"{header_name}<{dir_.replace('-', '_')}/index>"
+            for header_name, dir_ in zip(testing_headers, testing_)
+        )
+        testing_grid = "\n".join(
+            f'- header: "**{header_name}**"\n  content: "{_package_namespace(dir_).replace("_", "-")}: {_get_package_version(_package_dir(dir_))}"\n  link: {dir_.replace("-", "_")}/index.html'
+            for header_name, dir_ in zip(testing_headers, testing_)
+        )
+        doc += f"""## Testing
+
+```{{gallery-grid}}
+:grid-columns: "1 2 2 3"
+
+{testing_grid}
+```
+
+```{{toctree}}
+:maxdepth: 2
+:hidden:
+:caption: Testing
+
+{testing_tree}
 ```
 """
     if integrations:
