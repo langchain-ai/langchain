@@ -973,6 +973,101 @@ def test__format_messages_with_cache_control() -> None:
     ]
     assert actual_messages == expected_messages
 
+    # Also test file inputs
+    ## Images
+    for block in [
+        # v1
+        {
+            "type": "image",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "image",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this image:",
+                    },
+                    {
+                        "type": "image",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
+
+    ## Documents
+    for block in [
+        # v1
+        {
+            "type": "file",
+            "file_id": "abc123",
+        },
+        # v0
+        {
+            "type": "file",
+            "source_type": "id",
+            "id": "abc123",
+        },
+    ]:
+        messages = [
+            HumanMessage(
+                [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    block,
+                ],
+            ),
+        ]
+        actual_system, actual_messages = _format_messages(messages)
+        assert actual_system is None
+        expected_messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Summarize this document:",
+                    },
+                    {
+                        "type": "document",
+                        "source": {
+                            "type": "file",
+                            "file_id": "abc123",
+                        },
+                    },
+                ],
+            },
+        ]
+        assert actual_messages == expected_messages
+
 
 def test__format_messages_with_citations() -> None:
     input_messages = [

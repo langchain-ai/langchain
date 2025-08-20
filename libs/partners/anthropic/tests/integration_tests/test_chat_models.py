@@ -1270,8 +1270,7 @@ def test_files_api_image(block_format: str) -> None:
         # standard block format
         block = {
             "type": "image",
-            "source_type": "id",
-            "id": image_file_id,
+            "file_id": image_file_id,
         }
     input_message = {
         "role": "user",
@@ -1298,8 +1297,7 @@ def test_files_api_pdf(block_format: str) -> None:
         # standard block format
         block = {
             "type": "file",
-            "source_type": "id",
-            "id": pdf_file_id,
+            "file_id": pdf_file_id,
         }
     input_message = {
         "role": "user",
