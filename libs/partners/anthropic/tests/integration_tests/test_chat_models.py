@@ -1183,8 +1183,10 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_remote_mcp.yaml.gz")
 @pytest.mark.vcr
-def test_remote_mcp() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     mcp_servers = [
         {
             "type": "url",
@@ -1200,6 +1202,7 @@ def test_remote_mcp() -> None:
         betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
         max_tokens=10_000,  # type: ignore[call-arg]
+        output_version=output_version,
     )
 
     input_message = {
@@ -1217,7 +1220,10 @@ def test_remote_mcp() -> None:
     response = llm.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    else:
+        assert block_types == {"text", "non_standard"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1228,7 +1234,10 @@ def test_remote_mcp() -> None:
     assert isinstance(full.content, list)
     assert all(isinstance(block, dict) for block in full.content)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    else:
+        assert block_types == {"text", "non_standard"}
 
     # Test we can pass back in
     next_message = {
