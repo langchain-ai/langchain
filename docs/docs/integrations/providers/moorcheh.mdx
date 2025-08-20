@@ -1,0 +1,71 @@
+---
+keywords: [moorcheh, vectorstore, semantic-search, embeddings]
+---
+
+# Moorcheh
+
+>[Moorcheh](https://www.moorcheh.ai/) is a lightning-fast semantic search engine and vector store. Instead of using simple distance metrics like L2 or Cosine, Moorcheh uses Maximally Informative Binarization (MIB) and Information-Theoretic Score (ITS) to retrieve accurate document chunks.
+
+This page covers how to use Moorcheh within LangChain for vector storage, semantic search, and generative AI responses.
+
+## Installation and Setup
+
+Install the Python integration package:
+
+```bash
+pip install langchain-moorcheh
+```
+
+Get a Moorcheh API key from the [Moorcheh Console](https://console.moorcheh.ai/) and set it as an environment variable:
+
+```bash
+export MOORCHEH_API_KEY="your-api-key-here"
+```
+
+## Vector Store
+
+Moorcheh provides a vector store wrapper that allows you to store, search, and retrieve document embeddings efficiently.
+
+See a [detailed usage example](/docs/integrations/vectorstores/moorcheh).
+
+```python
+from langchain_moorcheh import MoorchehVectorStore
+
+# Initialize the vector store
+store = MoorchehVectorStore(
+    api_key="your-api-key",
+    namespace="your_namespace",
+    namespace_type="text"  # or "vector"
+)
+
+# Add documents
+from langchain_core.documents import Document
+documents = [
+    Document(page_content="Your document content here", metadata={"source": "example"})
+]
+store.add_documents(documents=documents)
+```
+
+## Generative AI
+
+Moorcheh supports generative AI responses using various LLM models including Claude 3, allowing you to get AI-generated answers based on your stored documents.
+
+```python
+# Get an AI-generated answer based on your documents
+query = "What are the main topics covered in the documents?"
+answer = store.generative_answer(
+    query,
+    ai_model="anthropic.claude-3-7-sonnet-20250219-v1:0"
+)
+print(answer)
+```
+
+## Core Features
+
+- **Document Management**: Add and delete documents with unique IDs
+- **Semantic Search**: Find relevant documents using natural language queries
+- **Generative AI**: Get AI-generated answers using various LLM models
+- **Namespace Organization**: Organize your data into separate namespaces
+- **Metadata Support**: Store and retrieve documents with custom metadata
+
+For more detailed examples and advanced usage, see the [Moorcheh vectorstore integration](/docs/integrations/vectorstores/moorcheh).
