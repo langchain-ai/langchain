@@ -557,7 +557,9 @@ def _build_index(dirs: List[str]) -> None:
     testing = ["standard-tests"]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     testing_ = [dir_ for dir_ in testing if dir_ in dirs]
-    integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_ and dir_ not in testing_)
+    integrations = sorted(
+        dir_ for dir_ in dirs if dir_ not in main_ and dir_ not in testing_
+    )
     doc = """# LangChain Python API Reference
 
 Welcome to the LangChain Python API reference. This is a reference for all
