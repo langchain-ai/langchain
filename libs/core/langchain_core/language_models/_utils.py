@@ -244,12 +244,12 @@ def _convert_openai_format_to_data_block(
 
 
 def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessage"]:
-    """Normalize messages using the legacy v0 logic from master.
+    """Normalize messages using the legacy v0 logic.
 
-    This replicates the exact normalization logic that was in master branch
-    to ensure backward compatibility with partner packages that expect v0 format.
+    Ensures backward compatibility with partner packages that expect v0 format.
 
     Only converts OpenAI file and audio formats to v0 format.
+
     """
     formatted_messages = []
     for message in messages:
@@ -266,7 +266,6 @@ def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessa
                 ):
                     formatted_message = _ensure_message_copy(message, formatted_message)
 
-                    # Convert using the original master logic
                     converted_block = _convert_openai_to_v0_format(block)
                     _update_content_block(formatted_message, idx, converted_block)
         formatted_messages.append(formatted_message)
@@ -275,11 +274,10 @@ def _normalize_messages_v0(messages: Sequence["BaseMessage"]) -> list["BaseMessa
 
 
 def _convert_openai_to_v0_format(block: dict) -> dict:
-    """Convert OpenAI format to v0 format using master's original logic."""
+    """Convert OpenAI format to v0."""
     if block["type"] == "file":
         parsed = _parse_data_uri(block["file"]["file_data"])
         if parsed is not None:
-            # Create a new dict with the parsed data plus additional fields
             result = dict(parsed)
             result["type"] = "file"
             if filename := block["file"].get("filename"):
