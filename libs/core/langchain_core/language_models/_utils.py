@@ -376,8 +376,8 @@ def _normalize_messages(
                 url: str,
             }
 
-    (Untested): if a v1 message is passed in, it will be returned as-is, meaning it is
-    safe to always pass in v1 messages to this function for assurance.
+    If a v1 message is passed in, it will be returned as-is, meaning it is safe to
+    always pass in v1 messages to this function for assurance.
 
     """
     # For posterity, here are the OpenAI Chat Completions schemas we expect:
