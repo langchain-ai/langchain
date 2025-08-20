@@ -485,6 +485,14 @@ class Chroma(VectorStore):
         with open(uri, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
 
+    def fork(self, new_name: str) -> Chroma:
+        forked_collection = self._chroma_collection.fork(new_name=new_name)
+        return Chroma(
+            client=self._client,
+            embedding_function=self._embedding_function,
+            collection_name=forked_collection.name,
+        )
+
     def add_images(
         self,
         uris: list[str],

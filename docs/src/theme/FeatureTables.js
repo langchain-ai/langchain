@@ -1029,6 +1029,7 @@ const FEATURE_TABLES = {
             { title: "Passes Standard Tests", formatter: (item) => item.passesStandardTests ? "✅" : "❌" },
             { title: "Multi Tenancy", formatter: (item) => item.multiTenancy ? "✅" : "❌" },
             { title: "IDs in add Documents", formatter: (item) => item.idsInAddDocuments ? "✅" : "❌" },
+            { title: "Forking", formatter: (item) => item.forking ? "✅" : "❌" },
             // {title: "Local/Cloud", formatter: (item) => item.local ? "Local" : "Cloud"},
         ],
         items: [
@@ -1044,6 +1045,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "Chroma",
@@ -1057,6 +1059,7 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
+                forking: true,
             },
             {
                 name: "Clickhouse",
@@ -1070,6 +1073,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "CouchbaseSearchVectorStore",
@@ -1083,6 +1087,7 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "DatabricksVectorSearch",
@@ -1096,6 +1101,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: false,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "ElasticsearchStore",
@@ -1109,6 +1115,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "FAISS",
@@ -1122,6 +1129,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "InMemoryVectorStore",
@@ -1135,6 +1143,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "Milvus",
@@ -1148,6 +1157,7 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "MongoDBAtlasVectorSearch",
@@ -1161,6 +1171,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "openGauss",
@@ -1174,6 +1185,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "PGVector",
@@ -1187,19 +1199,21 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
-              name: "PGVectorStore",
-              link: "pgvectorstore",
-              deleteById: true,
-              filtering: true,
-              searchByVector: true,
-              searchWithScore: true,
-              async: true,
-              passesStandardTests: true,
-              multiTenancy: false,
-              local: true,
-              idsInAddDocuments: true,
+                name: "PGVectorStore",
+                link: "pgvectorstore",
+                deleteById: true,
+                filtering: true,
+                searchByVector: true,
+                searchWithScore: true,
+                async: true,
+                passesStandardTests: true,
+                multiTenancy: false,
+                local: true,
+                idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "PineconeVectorStore",
@@ -1213,6 +1227,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "QdrantVectorStore",
@@ -1226,6 +1241,7 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "Redis",
@@ -1239,6 +1255,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "Weaviate",
@@ -1252,6 +1269,7 @@ const FEATURE_TABLES = {
                 multiTenancy: true,
                 local: true,
                 idsInAddDocuments: true,
+                forking: false,
             },
             {
                 name: "SQLServer",
@@ -1265,6 +1283,7 @@ const FEATURE_TABLES = {
                 multiTenancy: false,
                 local: false,
                 idsInAddDocuments: true,
+                forking: false,
             },
         ],
     }
