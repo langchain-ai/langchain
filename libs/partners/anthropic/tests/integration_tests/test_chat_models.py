@@ -29,6 +29,7 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
 MODEL_NAME = "claude-3-5-haiku-latest"
@@ -1362,6 +1363,11 @@ def test_search_result_tool_message() -> None:
     assert isinstance(result.content, list)
     assert any("citations" in block for block in result.content)
 
+    assert (
+        _convert_from_v1_to_anthropic(result.content_blocks, [], "anthropic")
+        == result.content
+    )
+
 
 def test_search_result_top_level() -> None:
     llm = ChatAnthropic(
@@ -1407,6 +1413,11 @@ def test_search_result_top_level() -> None:
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, list)
     assert any("citations" in block for block in result.content)
+
+    assert (
+        _convert_from_v1_to_anthropic(result.content_blocks, [], "anthropic")
+        == result.content
+    )
 
 
 def test_async_shared_client() -> None:
