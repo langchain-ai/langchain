@@ -18,6 +18,10 @@ from langchain_core.utils.pydantic import is_basemodel_subclass
 from pydantic import BaseModel, Field, SecretStr, model_validator
 from typing_extensions import Literal, Self
 
+from langchain_openai.chat_models._client_utils import (
+    _get_default_async_httpx_client,
+    _get_default_httpx_client,
+)
 from langchain_openai.chat_models.base import BaseChatOpenAI
 
 logger = logging.getLogger(__name__)
@@ -662,11 +666,29 @@ class AzureChatOpenAI(BaseChatOpenAI):
             client_params["max_retries"] = self.max_retries
 
         if not self.client:
-            sync_specific = {"http_client": self.http_client}
+            # Use cached client if not explicitly provided
+            if self.http_client is None:
+                sync_specific = {
+                    "http_client": _get_default_httpx_client(
+                        base_url=self.azure_endpoint or self.openai_api_base,
+                        timeout=self.request_timeout,
+                    )
+                }
+            else:
+                sync_specific = {"http_client": self.http_client}
             self.root_client = openai.AzureOpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
         if not self.async_client:
-            async_specific = {"http_client": self.http_async_client}
+            # Use cached async client if not explicitly provided
+            if self.http_async_client is None:
+                async_specific = {
+                    "http_client": _get_default_async_httpx_client(
+                        base_url=self.azure_endpoint or self.openai_api_base,
+                        timeout=self.request_timeout,
+                    )
+                }
+            else:
+                async_specific = {"http_client": self.http_async_client}
 
             if self.azure_ad_async_token_provider:
                 client_params["azure_ad_token_provider"] = (

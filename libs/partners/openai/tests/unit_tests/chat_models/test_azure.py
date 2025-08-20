@@ -8,6 +8,10 @@ from langchain_core.messages import HumanMessage
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
+from langchain_openai.chat_models._client_utils import (
+    _cached_async_httpx_client,
+    _cached_sync_httpx_client,
+)
 
 
 def test_initialize_azure_openai() -> None:
@@ -99,3 +103,37 @@ def test_max_completion_tokens_in_payload() -> None:
         "stream": False,
         "max_completion_tokens": 300,
     }
+
+
+def test_http_client_reuse() -> None:
+    """Test that multiple AzureChatOpenAI instances reuse the same HTTP client."""
+    # Clear the cache first
+    _cached_sync_httpx_client.cache_clear()
+    _cached_async_httpx_client.cache_clear()
+
+    # Create multiple instances with the same configuration
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+    )
+
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+    )
+
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="my-base-url",
+    )
+
+    # Verify that the HTTP clients are the same instance (cached)
+    assert llm1.root_client._client is llm2.root_client._client
+    assert llm2.root_client._client is llm3.root_client._client
+
+    # Verify async clients are also cached
+    assert llm1.root_async_client._client is llm2.root_async_client._client
+    assert llm2.root_async_client._client is llm3.root_async_client._client
