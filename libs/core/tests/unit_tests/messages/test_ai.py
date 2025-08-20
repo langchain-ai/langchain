@@ -331,6 +331,43 @@ def test_content_blocks() -> None:
         {"type": "non_standard", "index": 0, "value": {"foo": "bar baz"}},
     ]
 
+    # Test non-standard + non-standard
+    chunk_1 = AIMessageChunk(
+        content=[
+            {
+                "type": "non_standard",
+                "index": 0,
+                "value": {"type": "non_standard_tool", "foo": "bar"},
+            }
+        ]
+    )
+    chunk_2 = AIMessageChunk(
+        content=[
+            {
+                "type": "non_standard",
+                "index": 0,
+                "value": {"type": "input_json_delta", "partial_json": "a"},
+            }
+        ]
+    )
+    chunk_3 = AIMessageChunk(
+        content=[
+            {
+                "type": "non_standard",
+                "index": 0,
+                "value": {"type": "input_json_delta", "partial_json": "b"},
+            }
+        ]
+    )
+    merged_chunk = chunk_1 + chunk_2 + chunk_3
+    assert merged_chunk.content == [
+        {
+            "type": "non_standard",
+            "index": 0,
+            "value": {"type": "non_standard_tool", "foo": "bar", "partial_json": "ab"},
+        }
+    ]
+
     # Test standard + non-standard with same index
     standard_content_1 = [
         {"type": "web_search_call", "id": "ws_123", "query": "web query", "index": 0}
