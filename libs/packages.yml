@@ -734,6 +734,8 @@ packages:
   repo: scrapeless-ai/langchain-scrapeless
   path: .
 - name: composio_langchain
+  name_title: Composio LangChain
   repo: composiohq/composio
   path: ./python/providers/langchain
+  provider_page: composio_langchain
 
