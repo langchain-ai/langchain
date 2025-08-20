@@ -154,7 +154,9 @@ def _convert_from_v1_to_anthropic(
             if "id" in block:
                 new_block["id"] = block["id"]
 
-            if input_ := block.get("extras", {}).get("input"):
+            if (query := block.get("query")) and "input" not in block:
+                new_block["input"] = {"query": query}
+            elif input_ := block.get("extras", {}).get("input"):
                 new_block["input"] = input_
             elif partial_json := block.get("extras", {}).get("partial_json"):
                 new_block["input"] = {}
