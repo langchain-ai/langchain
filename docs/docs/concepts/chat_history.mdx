@@ -40,6 +40,23 @@ Understanding correct conversation structure is essential for being able to prop
 [memory](https://langchain-ai.github.io/langgraph/concepts/memory/) in chat models.
 :::
 
+### System messages and persistence
+
+When working with system messages in applications that maintain conversation state, it's important to understand how they behave with and without persistence mechanisms (like checkpointers):
+
+**Without a checkpointer/persistence:**
+- You need to include **all messages** (including system, user, and assistant messages) with each invocation
+- The system message must be re-sent with every request to maintain context
+- Each invocation is stateless - the model has no memory of previous interactions
+
+**With a checkpointer/persistence (e.g., using LangGraph with MemorySaver):**
+- The conversation state, including the system message, is automatically persisted
+- You only need to send the system message once at the beginning of the conversation
+- Subsequent invocations only require new user messages - the system message and conversation history are maintained automatically
+- Use the same `thread_id` to continue the conversation with preserved context
+
+This distinction is crucial for applications that need to maintain consistent behavior across multiple turns of conversation. See the [message history guide](/docs/how_to/message_history) for implementation examples with checkpointers.
+
 ## Related resources
 
 - [How to trim messages](/docs/how_to/trim_messages/)
