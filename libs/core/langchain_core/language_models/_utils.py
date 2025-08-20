@@ -452,7 +452,6 @@ def _normalize_messages(
                     isinstance(block, dict)
                     and block.get("type")
                     in {
-                        # Superset of possible v0 content block `type`s
                         "image",
                         "audio",
                         "file",
@@ -469,53 +468,9 @@ def _normalize_messages(
                         formatted_message = message.model_copy()
                         formatted_message.content = list(formatted_message.content)
 
-                    if block["source_type"] == "url" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
-                            url=block["url"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "base64" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
-                            base64=block["data"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "id" and block["type"] == "image":
-                        formatted_message.content[idx] = create_image_block(  # type: ignore[call-overload, index]
-                            id=block["id"],
-                        )
-                    elif block["source_type"] == "url" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
-                            url=block["url"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "base64" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
-                            base64=block["data"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "id" and block["type"] == "audio":
-                        formatted_message.content[idx] = create_audio_block(  # type: ignore[call-overload, index]
-                            id=block["id"],
-                        )
-                    elif block["source_type"] == "url" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
-                            url=block["url"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "base64" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
-                            base64=block["data"],
-                            mime_type=block.get("mime_type"),
-                        )
-                    elif block["source_type"] == "id" and block["type"] == "file":
-                        formatted_message.content[idx] = create_file_block(  # type: ignore[call-overload, index]
-                            id=block["id"],
-                        )
-                    elif block["source_type"] == "text" and block["type"] == "file":
-                        formatted_message.content[idx] = create_plaintext_block(  # type: ignore[call-overload, index]
-                            # In v0, URL points to the text file content
-                            text=block["url"],
-                        )
+                    formatted_message.content[idx] = (  # type: ignore[index, call-overload]
+                        _convert_legacy_v0_content_block_to_v1(block)
+                    )
                     continue
 
                 # Pass through blocks that look like they have v1 format unchanged
@@ -551,13 +506,8 @@ def _update_message_content_to_blocks(message: T, output_version: str) -> T:
 def _convert_legacy_v0_content_block_to_v1(block: dict) -> ContentBlock:
     """Convert a LangChain v0 content block to v1 format.
 
-    This handles conversion of v0 format blocks like:
-    {"type": "image", "source_type": "url", "url": "..."}
-
-    To v1 format blocks like:
-    {"type": "image", "url": "...", "id": "lc_..."}
-
     Preserves unknown keys as extras to avoid data loss.
+
     """
 
     def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
