@@ -791,11 +791,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
 def test_normalize_messages_edge_cases() -> None:
     # Test behavior of malformed/unrecognized content blocks
 
-    # TODO: Confirm expected behavior for malformed OpenAI blocks
-    # Currently, these blocks are passed through as-is rather than being wrapped as
-    # non-standard blocks. This behavior may need clarification/change.
-
-    input_messages = [
+    messages = [
         HumanMessage(
             content=[
                 {
@@ -820,32 +816,7 @@ def test_normalize_messages_edge_cases() -> None:
         )
     ]
 
-    # TODO: Should malformed blocks be wrapped as non_standard?
-    # Current behavior passes them through unchanged
-    expected_messages = [
-        HumanMessage(
-            content=[
-                {
-                    "type": "input_image",
-                    "image_url": "uri",
-                },
-                {
-                    "type": "input_audio",
-                    "input_audio": "uri",
-                },
-                {
-                    "type": "file",
-                    "file": "uri",
-                },
-                {
-                    "type": "input_file",
-                    "file_data": "uri",
-                    "filename": "file-name",
-                },
-            ]
-        )
-    ]
-    assert expected_messages == _normalize_messages(input_messages)
+    assert messages == _normalize_messages(messages)
 
 
 def test_normalize_messages_v1_content_blocks_unchanged() -> None:
