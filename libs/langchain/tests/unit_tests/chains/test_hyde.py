@@ -22,12 +22,12 @@ class FakeEmbeddings(Embeddings):
     @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Return random floats."""
-        return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
+        return [list(np.random.default_rng().uniform(0, 1, 10)) for _ in range(10)]
 
     @override
     def embed_query(self, text: str) -> list[float]:
         """Return random floats."""
-        return list(np.random.uniform(0, 1, 10))
+        return list(np.random.default_rng().uniform(0, 1, 10))
 
 
 class FakeLLM(BaseLLM):

@@ -136,7 +136,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         super().__init__(
             branches=branches_,
             default=default_,
-        )  # type: ignore[call-arg]
+        )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

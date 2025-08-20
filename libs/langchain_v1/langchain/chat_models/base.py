@@ -224,7 +224,7 @@ def init_chat_model(
                 "what's your name",
                 config={
                     "configurable": {
-                        "foo_model": "anthropic:claude-3-5-sonnet-20240620",
+                        "foo_model": "anthropic:claude-3-5-sonnet-latest",
                         "foo_temperature": 0.6
                     }
                 }
@@ -266,7 +266,7 @@ def init_chat_model(
 
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?",
-                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
             )
             # Claude-3.5 sonnet response with tools
 
