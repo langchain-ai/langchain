@@ -57,6 +57,22 @@ def test_convert_to_v1_from_anthropic() -> None:
                     },
                 ],
             },
+            {
+                "type": "server_tool_use",
+                "id": "srvtoolu_def456",
+                "name": "code_execution",
+                "input": {"code": "import numpy as np..."},
+            },
+            {
+                "type": "code_execution_tool_result",
+                "tool_use_id": "srvtoolu_def456",
+                "content": {
+                    "type": "code_execution_result",
+                    "stdout": "Mean: 5.5\nStandard deviation...",
+                    "stderr": "",
+                    "return_code": 0,
+                },
+            },
             {"type": "something_else", "foo": "bar"},
         ],
         response_metadata={"model_provider": "anthropic"},
@@ -119,6 +135,22 @@ def test_convert_to_v1_from_anthropic() -> None:
                     },
                 ]
             },
+        },
+        {
+            "type": "code_interpreter_call",
+            "id": "srvtoolu_def456",
+            "code": "import numpy as np...",
+        },
+        {
+            "type": "code_interpreter_result",
+            "id": "srvtoolu_def456",
+            "output": [
+                {
+                    "type": "code_interpreter_output",
+                    "return_code": 0,
+                    "stdout": "Mean: 5.5\nStandard deviation...",
+                }
+            ],
         },
         {
             "type": "non_standard",

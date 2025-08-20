@@ -289,6 +289,34 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                             web_search_call["extras"][key] = value
                     yield web_search_call
 
+                elif block.get("name") == "code_execution":
+                    code_interpreter_call: types.CodeInterpreterCall = {
+                        "type": "code_interpreter_call"
+                    }
+
+                    if code := block.get("input", {}).get("code"):
+                        code_interpreter_call["code"] = code
+
+                    elif block.get("input") == {} and "partial_json" in block:
+                        try:
+                            input_ = json.loads(block["partial_json"])
+                            if isinstance(input_, dict) and "code" in input_:
+                                code_interpreter_call["code"] = input_["code"]
+                        except json.JSONDecodeError:
+                            pass
+
+                    if "id" in block:
+                        code_interpreter_call["id"] = block["id"]
+                    if "index" in block:
+                        code_interpreter_call["index"] = block["index"]
+                    known_fields = {"type", "name", "input", "id", "index"}
+                    for key, value in block.items():
+                        if key not in known_fields:
+                            if "extras" not in code_interpreter_call:
+                                code_interpreter_call["extras"] = {}
+                            code_interpreter_call["extras"][key] = value
+                    yield code_interpreter_call
+
                 else:
                     new_block: types.NonStandardContentBlock = {
                         "type": "non_standard",
@@ -319,6 +347,59 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     if urls:
                         web_search_result["urls"] = urls
                 yield web_search_result
+
+            elif block_type == "code_execution_tool_result":
+                code_interpreter_result: types.CodeInterpreterResult = {
+                    "type": "code_interpreter_result",
+                    "output": [],
+                }
+                if "tool_use_id" in block:
+                    code_interpreter_result["id"] = block["tool_use_id"]
+                if "index" in block:
+                    code_interpreter_result["index"] = block["index"]
+
+                code_interpreter_output: types.CodeInterpreterOutput = {
+                    "type": "code_interpreter_output"
+                }
+
+                code_execution_content = block.get("content", {})
+                if code_execution_content.get("type") == "code_execution_result":
+                    if "return_code" in code_execution_content:
+                        code_interpreter_output["return_code"] = code_execution_content[
+                            "return_code"
+                        ]
+                    if "stdout" in code_execution_content:
+                        code_interpreter_output["stdout"] = code_execution_content[
+                            "stdout"
+                        ]
+                    if stderr := code_execution_content.get("stderr"):
+                        code_interpreter_output["stderr"] = stderr
+                    if (
+                        output := code_interpreter_output.get("content")
+                    ) and isinstance(output, list):
+                        if "extras" not in code_interpreter_result:
+                            code_interpreter_result["extras"] = {}
+                        code_interpreter_result["extras"]["content"] = output
+                        for output_block in output:
+                            if "file_id" in output_block:
+                                if "file_ids" not in code_interpreter_output:
+                                    code_interpreter_output["file_ids"] = []
+                                code_interpreter_output["file_ids"].append(
+                                    output_block["file_id"]
+                                )
+                    code_interpreter_result["output"].append(code_interpreter_output)
+
+                elif (
+                    code_execution_content.get("type")
+                    == "code_execution_tool_result_error"
+                ):
+                    if "extras" not in code_interpreter_result:
+                        code_interpreter_result["extras"] = {}
+                    code_interpreter_result["extras"]["error_code"] = (
+                        code_execution_content.get("error_code")
+                    )
+
+                yield code_interpreter_result
 
             else:
                 new_block = {"type": "non_standard", "value": block}
