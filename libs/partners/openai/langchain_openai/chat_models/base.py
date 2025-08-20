@@ -142,6 +142,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict.get("role")
     name = _dict.get("name")
     id_ = _dict.get("id")
+    reasoning = _dict.get("reasoning")
+
     if role == "user":
         return HumanMessage(content=_dict.get("content", ""), id=id_, name=name)
     elif role == "assistant":
@@ -166,6 +168,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             additional_kwargs["audio"] = audio
         return AIMessage(
             content=content,
+            reasoning=reasoning,
             additional_kwargs=additional_kwargs,
             name=name,
             id=id_,

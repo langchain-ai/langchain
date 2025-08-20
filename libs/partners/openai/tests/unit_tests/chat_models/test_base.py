@@ -2673,3 +2673,14 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+def test_convert_dict_preserves_reasoning() -> None:
+    """Test that _convert_dict_to_message preserves the 'reasoning' field."""
+    raw = {
+        "role": "assistant",
+        "content": "Hello!",
+        "reasoning": "I thought about greeting the user.",
+    }
+    msg = _convert_dict_to_message(raw)
+    assert isinstance(msg, AIMessage)
+    assert msg.reasoning == "I thought about greeting the user."

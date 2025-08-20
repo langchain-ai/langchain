@@ -167,6 +167,13 @@ class AIMessage(BaseMessage):
     At the moment, this is ignored by most models. Usage is discouraged.
     """
 
+    reasoning: Optional[str] = None
+    """An optional reasoning field for the message.
+
+    For example, in the case of a chain of thought model, this would be the reasoning
+    behind the output.
+    """
+
     tool_calls: list[ToolCall] = []
     """If provided, tool calls associated with the message."""
     invalid_tool_calls: list[InvalidToolCall] = []
