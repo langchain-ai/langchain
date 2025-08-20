@@ -116,8 +116,10 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        if merged[to_merge[0]].get("type") != "non_standard" and (
-                            e.get("type") == "non_standard" and "value" in e
+                        if (
+                            (left_type := merged[to_merge[0]].get("type"))
+                            and left_type != "non_standard"
+                            and (e.get("type") == "non_standard" and "value" in e)
                         ):
                             new_e = {
                                 "extras": {

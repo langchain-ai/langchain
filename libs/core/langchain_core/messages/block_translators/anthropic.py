@@ -289,6 +289,15 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                             web_search_call["extras"][key] = value
                     yield web_search_call
 
+                else:
+                    new_block: types.NonStandardContentBlock = {
+                        "type": "non_standard",
+                        "value": block,
+                    }
+                    if "index" in new_block["value"]:
+                        new_block["index"] = new_block["value"].pop("index")
+                    yield new_block
+
             elif block_type == "web_search_tool_result":
                 web_search_result: types.WebSearchResult = {"type": "web_search_result"}
                 if "tool_use_id" in block:
@@ -312,10 +321,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 yield web_search_result
 
             else:
-                new_block: types.NonStandardContentBlock = {
-                    "type": "non_standard",
-                    "value": block,
-                }
+                new_block = {"type": "non_standard", "value": block}
                 if "index" in new_block["value"]:
                     new_block["index"] = new_block["value"].pop("index")
                 yield new_block
