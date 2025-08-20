@@ -2674,6 +2674,7 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
 
+
 def test_convert_dict_preserves_reasoning() -> None:
     """Test that _convert_dict_to_message preserves the 'reasoning' field."""
     raw = {
