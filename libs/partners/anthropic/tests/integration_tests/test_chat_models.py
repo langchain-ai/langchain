@@ -1118,12 +1118,15 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution.yaml.gz")
 @pytest.mark.vcr
-def test_code_execution() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
         betas=["code-execution-2025-05-22"],
         max_tokens=10_000,  # type: ignore[call-arg]
+        output_version=output_version,
     )
 
     tool = {"type": "code_execution_20250522", "name": "code_execution"}
@@ -1144,7 +1147,14 @@ def test_code_execution() -> None:
     response = llm_with_tools.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    else:
+        assert block_types == {
+            "text",
+            "code_interpreter_call",
+            "code_interpreter_result",
+        }
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1154,7 +1164,14 @@ def test_code_execution() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    else:
+        assert block_types == {
+            "text",
+            "code_interpreter_call",
+            "code_interpreter_result",
+        }
 
     # Test we can pass back in
     next_message = {

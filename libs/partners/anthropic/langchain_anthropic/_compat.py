@@ -176,6 +176,63 @@ def _convert_from_v1_to_anthropic(
             new_block["type"] = "web_search_tool_result"
             new_content.append(new_block)
 
+        elif block["type"] == "code_interpreter_call" and model_provider == "anthropic":
+            new_block = {}
+            if "id" in block:
+                new_block["id"] = block["id"]
+            if (code := block.get("code")) and "input" not in block:
+                new_block["input"] = {"code": code}
+            elif input_ := block.get("extras", {}).get("input"):
+                new_block["input"] = input_
+            elif partial_json := block.get("extras", {}).get("partial_json"):
+                new_block["input"] = {}
+                new_block["partial_json"] = partial_json
+            else:
+                pass
+            new_block["name"] = "code_execution"
+            new_block["type"] = "server_tool_use"
+            new_content.append(new_block)
+
+        elif (
+            block["type"] == "code_interpreter_result" and model_provider == "anthropic"
+        ):
+            new_block = {}
+            if (output := block.get("output", [])) and len(output) == 1:
+                code_interpreter_output = output[0]
+                code_execution_content = {}
+                if "content" in block.get("extras", {}):
+                    code_execution_content["content"] = block["extras"]["content"]
+                elif (file_ids := block.get("file_ids")) and isinstance(file_ids, list):
+                    code_execution_content["content"] = [
+                        {"file_id": file_id, "type": "code_execution_output"}
+                        for file_id in file_ids
+                    ]
+                else:
+                    code_execution_content["content"] = []
+                if "return_code" in code_interpreter_output:
+                    code_execution_content["return_code"] = code_interpreter_output[
+                        "return_code"
+                    ]
+                code_execution_content["stderr"] = code_interpreter_output.get(
+                    "stderr", ""
+                )
+                if "stdout" in code_interpreter_output:
+                    code_execution_content["stdout"] = code_interpreter_output["stdout"]
+                code_execution_content["type"] = "code_execution_result"
+                new_block["content"] = code_execution_content
+            elif "error_code" in block.get("extras", {}):
+                code_execution_content = {
+                    "error_code": block["extras"]["error_code"],
+                    "type": "code_execution_tool_result_error",
+                }
+                new_block["content"] = code_execution_content
+            else:
+                pass
+            if "id" in block:
+                new_block["tool_use_id"] = block["id"]
+            new_block["type"] = "code_execution_tool_result"
+            new_content.append(new_block)
+
         elif (
             block["type"] == "non_standard"
             and "value" in block
