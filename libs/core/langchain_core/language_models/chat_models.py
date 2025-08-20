@@ -167,7 +167,9 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
     return messages_to_trace
 
 
-def _strip_ids_from_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
+def _strip_ids_from_messages(
+    messages: list[BaseMessage], *, strip_all_ids: bool = False
+) -> list[BaseMessage]:
     """Normalize messages for caching by removing auto-generated IDs.
 
     Auto-generated IDs (those starting with `LC_AUTO_PREFIX`) are stripped from
@@ -176,10 +178,39 @@ def _strip_ids_from_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
 
     Args:
         messages: List of messages to normalize for caching.
+        strip_all_ids: If True, remove ALL IDs regardless of prefix. If False,
+            only remove IDs starting with `LC_AUTO_PREFIX`.
 
     Returns:
         List of messages with auto-generated IDs removed for caching purposes.
     """
+
+    def _should_strip_id(id_value: str | None) -> bool:
+        """Determine if an ID should be stripped based on current settings."""
+        if not id_value:
+            return False
+        if strip_all_ids:
+            return True
+        return id_value.startswith(LC_AUTO_PREFIX)
+
+    def _normalize_content_block(block: dict[str, Any]) -> dict[str, Any]:
+        """Normalize a single content block by removing appropriate IDs."""
+        normalized_block = block.copy()
+
+        # Remove ID from content block if it should be stripped
+        if "id" in normalized_block and _should_strip_id(normalized_block.get("id")):
+            del normalized_block["id"]
+
+        # Handle tool calls within content blocks
+        if (
+            normalized_block.get("type") == "tool_call"
+            and "id" in normalized_block
+            and _should_strip_id(normalized_block.get("id"))
+        ):
+            del normalized_block["id"]
+
+        return normalized_block
+
     normalized_messages = []
 
     for message in messages:
@@ -187,31 +218,62 @@ def _strip_ids_from_messages(messages: list[BaseMessage]) -> list[BaseMessage]:
         normalized_message = message.model_copy(deep=True)
 
         # Remove auto-generated ID from message level
-        if (
-            hasattr(normalized_message, "id")
-            and normalized_message.id
-            and normalized_message.id.startswith(LC_AUTO_PREFIX)
+        if hasattr(normalized_message, "id") and _should_strip_id(
+            normalized_message.id
         ):
             normalized_message.id = None
+
+        # Handle ToolMessage's tool_call_id field
+        if hasattr(normalized_message, "tool_call_id") and _should_strip_id(
+            normalized_message.tool_call_id
+        ):
+            normalized_message.tool_call_id = None
 
         # Process content if it's a list (multimodal content)
         if isinstance(normalized_message.content, list):
             normalized_content: list[str | dict[Any, Any]] = []
             for block in normalized_message.content:
                 if isinstance(block, dict):
-                    # Create a copy of the block
-                    normalized_block = block.copy()
-                    # Remove auto-generated ID from content block
-                    if (
-                        "id" in normalized_block
-                        and normalized_block["id"]
-                        and normalized_block["id"].startswith(LC_AUTO_PREFIX)
-                    ):
-                        del normalized_block["id"]
+                    normalized_block = _normalize_content_block(block)
                     normalized_content.append(normalized_block)
                 else:
                     normalized_content.append(block)
             normalized_message.content = normalized_content
+
+        # Handle tool_calls attribute in AIMessage
+        if hasattr(normalized_message, "tool_calls") and normalized_message.tool_calls:
+            normalized_tool_calls = []
+            for tool_call in normalized_message.tool_calls:
+                if isinstance(tool_call, dict):
+                    # Handle tool call dict
+                    normalized_tool_call = tool_call.copy()
+                    if "id" in normalized_tool_call and _should_strip_id(
+                        normalized_tool_call.get("id")
+                    ):
+                        del normalized_tool_call["id"]
+                    normalized_tool_calls.append(normalized_tool_call)
+                else:
+                    # Handle other tool call formats
+                    normalized_tool_calls.append(tool_call)
+            normalized_message.tool_calls = normalized_tool_calls
+
+        # Handle invalid_tool_calls attribute in AIMessage
+        if (
+            hasattr(normalized_message, "invalid_tool_calls")
+            and normalized_message.invalid_tool_calls
+        ):
+            normalized_invalid_tool_calls = []
+            for invalid_tool_call in normalized_message.invalid_tool_calls:
+                if isinstance(invalid_tool_call, dict):
+                    normalized_invalid_tool_call = invalid_tool_call.copy()
+                    if "id" in normalized_invalid_tool_call and _should_strip_id(
+                        normalized_invalid_tool_call.get("id")
+                    ):
+                        del normalized_invalid_tool_call["id"]
+                    normalized_invalid_tool_calls.append(normalized_invalid_tool_call)
+                else:
+                    normalized_invalid_tool_calls.append(invalid_tool_call)
+            normalized_message.invalid_tool_calls = normalized_invalid_tool_calls
 
         normalized_messages.append(normalized_message)
 
