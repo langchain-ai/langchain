@@ -6,10 +6,12 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from langchain_core.language_models._utils import (
-    _convert_openai_format_to_data_block,
     _is_openai_data_block,
 )
 from langchain_core.messages import content as types
+from langchain_core.messages.block_translators.langchain import (
+    _convert_openai_format_to_data_block,
+)
 
 if TYPE_CHECKING:
     from langchain_core.messages import AIMessage, AIMessageChunk
@@ -277,12 +279,14 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     Union[types.ToolCall, types.InvalidToolCall, types.ToolCallChunk]
                 ] = None
                 call_id = block.get("call_id", "")
+
+                from langchain_core.messages import AIMessageChunk
+
                 if (
-                    hasattr(message, "tool_call_chunks")
-                    and len(getattr(message, "tool_call_chunks", [])) == 1
+                    isinstance(message, AIMessageChunk)
+                    and len(message.tool_call_chunks) == 1
                 ):
-                    tool_call_chunks = getattr(message, "tool_call_chunks", [])
-                    tool_call_block = tool_call_chunks[0].copy()
+                    tool_call_block = message.tool_call_chunks[0].copy()  # type: ignore[assignment]
                 elif call_id:
                     for tool_call in message.tool_calls or []:
                         if tool_call.get("id") == call_id:
