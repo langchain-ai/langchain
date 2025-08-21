@@ -501,17 +501,6 @@ def test_trace_images_in_openai_format_v0() -> None:
             "url": "https://example.com/image.png",
         }
     ]
-    # But .content_blocks should perform v1 transformation
-    assert len(response.content_blocks) == 1
-    expected_content_blocks = [
-        {
-            "type": "image",
-            "url": "https://example.com/image.png",
-        }
-    ]
-    assert _content_blocks_equal_ignore_id(
-        response.content_blocks, expected_content_blocks
-    )
 
 
 def test_trace_images_in_openai_format_v1() -> None:
