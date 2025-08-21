@@ -363,30 +363,7 @@ class ParrotFakeChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
-        message = messages[-1]
-
-        # ParrotFakeChatModel is special - it should return content that matches
-        # the expected output_version. Since input messages get normalized to v1,
-        # we need to convert back to v0 format when output_version is v0.
-        if self.output_version == "v0" and isinstance(message.content, list):
-            # Simple conversion: v1 format back to v0 for basic content blocks
-            v0_content = []
-            for block in message.content:
-                if isinstance(block, dict) and block.get("type") == "image":
-                    # Convert v1 image format back to v0
-                    v0_block = {
-                        "type": "image",
-                        "source_type": "url",  # Assume URL for simplicity
-                        "url": block.get("url", ""),
-                    }
-                    v0_content.append(v0_block)
-                else:
-                    # Keep other blocks as-is
-                    v0_content.append(block)
-
-            message = message.model_copy(update={"content": v0_content})
-
-        return ChatResult(generations=[ChatGeneration(message=message)])
+        return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property
     def _llm_type(self) -> str:

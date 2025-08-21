@@ -461,48 +461,6 @@ class FakeChatModelStartTracer(FakeTracer):
         )
 
 
-def test_trace_images_in_openai_format_v0() -> None:
-    """Test images are traced in OpenAI Chat Completions fmt w/ v0 output (default)."""
-    llm = ParrotFakeChatModel()
-    messages = [
-        {
-            "role": "user",
-            # v0 format
-            "content": [
-                {
-                    "type": "image",
-                    "source_type": "url",
-                    "url": "https://example.com/image.png",
-                }
-            ],
-        }
-    ]
-    tracer = FakeChatModelStartTracer()
-    response = llm.invoke(messages, config={"callbacks": [tracer]})
-    assert tracer.messages == [
-        [
-            [
-                HumanMessage(
-                    content=[
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": "https://example.com/image.png"},
-                        }
-                    ]
-                )
-            ]
-        ]
-    ]
-    # With v0 output_version, .content should preserve the original v0 format
-    assert response.content == [
-        {
-            "type": "image",
-            "source_type": "url",
-            "url": "https://example.com/image.png",
-        }
-    ]
-
-
 def test_trace_images_in_openai_format() -> None:
     """Test that images are traced in OpenAI Chat Completions format."""
     llm = ParrotFakeChatModel()
