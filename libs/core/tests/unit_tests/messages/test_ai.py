@@ -1,3 +1,5 @@
+from typing import Union, cast
+
 from langchain_core.load import dumpd, load
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -310,3 +312,44 @@ def test_content_blocks() -> None:
         }
     ]
     assert message.content == ""
+
+    # Test we parse tool call chunks into tool calls for v1 content
+    chunk_1 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "foo",
+                "args": '{"foo": "b',
+                "id": "abc_123",
+                "index": 0,
+            }
+        ],
+    )
+    chunk_1.content = cast("Union[str, list[Union[str, dict]]]", chunk_1.content_blocks)
+    chunk_1.response_metadata["output_version"] = "v1"
+
+    chunk_2 = AIMessageChunk(
+        content="",
+        tool_call_chunks=[
+            {
+                "type": "tool_call_chunk",
+                "name": "",
+                "args": 'ar"}',
+                "id": "abc_123",
+                "index": 0,
+            }
+        ],
+        chunk_position="last",
+    )
+    chunk_2.content = cast("Union[str, list[Union[str, dict]]]", chunk_2.content_blocks)
+
+    chunk = chunk_1 + chunk_2
+    assert chunk.content == [
+        {
+            "type": "tool_call",
+            "name": "foo",
+            "args": {"foo": "bar"},
+            "id": "abc_123",
+        }
+    ]

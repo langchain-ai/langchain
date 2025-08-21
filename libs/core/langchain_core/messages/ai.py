@@ -359,6 +359,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
+    chunk_position: Optional[Literal["last"]] = None
+    """Optional position of the chunk in the stream. If ``'last'``, tool calls in
+    message ``content`` will be parsed when aggregated into a stream."""
+
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -473,6 +477,25 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
+
+        if (
+            self.chunk_position == "last"
+            and self.response_metadata.get("output_version") == "v1"
+            and isinstance(self.content, list)
+        ):
+            for idx, block in enumerate(self.content):
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "tool_call_chunk"
+                    and (tool_call_id := block.get("id"))
+                    and (
+                        matching_tool_calls := [
+                            tc for tc in self.tool_calls if tc.get("id") == tool_call_id
+                        ]
+                    )
+                ):
+                    self.content[idx] = cast("dict", matching_tool_calls[0])
+
         return self
 
     @override
@@ -550,6 +573,10 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
+    chunk_position: Optional[Literal["last"]] = (
+        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
+    )
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -558,6 +585,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
+        chunk_position=chunk_position,
     )
 
 
