@@ -716,7 +716,8 @@ class BaseChatOpenAI(BaseChatModel):
         """Validate temperature parameter for different models.
 
         - o1 models only allow temperature=1
-        - gpt-5 (non-chat) models only allow temperature=1 or unset (defaults to 1)
+        - gpt-5 models (excluding gpt-5-chat) only allow temperature=1 or unset
+          (defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
 
@@ -725,7 +726,7 @@ class BaseChatOpenAI(BaseChatModel):
             values["temperature"] = 1
 
         # For gpt-5 models, handle temperature restrictions
-        # Note that gpt-5 chat models do support temperature
+        # Note that gpt-5-chat models do support temperature
         if model.startswith("gpt-5") and "chat" not in model:
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
@@ -3522,7 +3523,7 @@ def _construct_responses_api_payload(
 
     # Remove temperature parameter for models that don't support it in responses API
     model = payload.get("model", "")
-    if model.startswith("gpt-5") and "chat" not in model:
+    if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
