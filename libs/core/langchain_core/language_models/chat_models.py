@@ -68,7 +68,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX, from_env
+from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -165,119 +165,6 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace
-
-
-def _strip_ids_from_messages(
-    messages: Sequence[BaseMessage], *, strip_all_ids: bool = False
-) -> Sequence[BaseMessage]:
-    """Normalize messages for caching by removing auto-generated IDs.
-
-    Auto-generated IDs (those starting with `LC_AUTO_PREFIX`) are stripped from
-    messages and content blocks to ensure cache keys remain consistent across
-    multiple invocations with the same semantic content.
-
-    Args:
-        messages: List of messages to normalize for caching.
-        strip_all_ids: If True, remove ALL IDs regardless of prefix. If False,
-            only remove IDs starting with `LC_AUTO_PREFIX`.
-
-    Returns:
-        List of messages with auto-generated IDs removed for caching purposes.
-    """
-
-    def _should_strip_id(id_value: str | None) -> bool:
-        """Determine if an ID should be stripped based on current settings."""
-        if not id_value:
-            return False
-        if strip_all_ids:
-            return True
-        return id_value.startswith(LC_AUTO_PREFIX)
-
-    def _normalize_content_block(block: dict[str, Any]) -> dict[str, Any]:
-        """Normalize a single content block by removing appropriate IDs."""
-        normalized_block = block.copy()
-
-        # Remove ID from content block if it should be stripped
-        if "id" in normalized_block and _should_strip_id(normalized_block.get("id")):
-            del normalized_block["id"]
-
-        # Handle tool calls within content blocks
-        if (
-            normalized_block.get("type") == "tool_call"
-            and "id" in normalized_block
-            and _should_strip_id(normalized_block.get("id"))
-        ):
-            del normalized_block["id"]
-
-        return normalized_block
-
-    normalized_messages = []
-
-    for message in messages:
-        # Create a copy of the message
-        normalized_message = message.model_copy(deep=True)
-
-        # Remove auto-generated ID from message level
-        if hasattr(normalized_message, "id") and _should_strip_id(
-            normalized_message.id
-        ):
-            normalized_message.id = None
-
-        # Handle ToolMessage's tool_call_id field
-        if hasattr(normalized_message, "tool_call_id") and _should_strip_id(
-            normalized_message.tool_call_id
-        ):
-            normalized_message.tool_call_id = None
-
-        # Process content if it's a list (multimodal content)
-        if isinstance(normalized_message.content, list):
-            normalized_content: list[str | dict[Any, Any]] = []
-            for block in normalized_message.content:
-                if isinstance(block, dict):
-                    normalized_block = _normalize_content_block(block)
-                    normalized_content.append(normalized_block)
-                else:
-                    normalized_content.append(block)
-            normalized_message.content = normalized_content
-
-        # Handle tool_calls attribute in AIMessage
-        if hasattr(normalized_message, "tool_calls") and normalized_message.tool_calls:
-            normalized_tool_calls = []
-            for tool_call in normalized_message.tool_calls:
-                if isinstance(tool_call, dict):
-                    # Handle tool call dict
-                    normalized_tool_call = tool_call.copy()
-                    if "id" in normalized_tool_call and _should_strip_id(
-                        normalized_tool_call.get("id")
-                    ):
-                        del normalized_tool_call["id"]
-                    normalized_tool_calls.append(normalized_tool_call)
-                else:
-                    # Handle other tool call formats
-                    normalized_tool_calls.append(tool_call)
-            normalized_message.tool_calls = normalized_tool_calls
-
-        # Handle invalid_tool_calls attribute in AIMessage
-        if (
-            hasattr(normalized_message, "invalid_tool_calls")
-            and normalized_message.invalid_tool_calls
-        ):
-            normalized_invalid_tool_calls = []
-            for invalid_tool_call in normalized_message.invalid_tool_calls:
-                if isinstance(invalid_tool_call, dict):
-                    normalized_invalid_tool_call = invalid_tool_call.copy()
-                    if "id" in normalized_invalid_tool_call and _should_strip_id(
-                        normalized_invalid_tool_call.get("id")
-                    ):
-                        del normalized_invalid_tool_call["id"]
-                    normalized_invalid_tool_calls.append(normalized_invalid_tool_call)
-                else:
-                    normalized_invalid_tool_calls.append(invalid_tool_call)
-            normalized_message.invalid_tool_calls = normalized_invalid_tool_calls
-
-        normalized_messages.append(normalized_message)
-
-    return normalized_messages
 
 
 def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
@@ -1203,7 +1090,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(_strip_ids_from_messages(messages))
+                prompt = dumps(messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
@@ -1288,7 +1175,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(_strip_ids_from_messages(messages))
+                prompt = dumps(messages)
                 cache_val = await llm_cache.alookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
