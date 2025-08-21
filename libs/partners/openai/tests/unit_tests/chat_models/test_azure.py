@@ -111,6 +111,10 @@ def test_http_client_reuse() -> None:
     _cached_sync_httpx_client.cache_clear()
     _cached_async_httpx_client.cache_clear()
 
+    # Track cache info before creating instances
+    initial_sync_cache_info = _cached_sync_httpx_client.cache_info()
+    initial_async_cache_info = _cached_async_httpx_client.cache_info()
+
     # Create multiple instances with the same configuration
     llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
         azure_deployment="35-turbo-dev",
@@ -130,11 +134,14 @@ def test_http_client_reuse() -> None:
         azure_endpoint="https://my-base-url.openai.azure.com",
     )
 
-    # Verify that the HTTP clients are the same instance (cached)
-    # Check if the underlying httpx client is the same object
-    assert llm1.root_client._client is llm2.root_client._client  # noqa: SLF001
-    assert llm2.root_client._client is llm3.root_client._client  # noqa: SLF001
+    # Check cache statistics to verify reuse
+    final_sync_cache_info = _cached_sync_httpx_client.cache_info()
+    final_async_cache_info = _cached_async_httpx_client.cache_info()
 
-    # Verify async clients are also cached
-    assert llm1.root_async_client._client is llm2.root_async_client._client  # noqa: SLF001
-    assert llm2.root_async_client._client is llm3.root_async_client._client  # noqa: SLF001
+    # For sync client: first call should be a miss, subsequent calls should be hits
+    assert final_sync_cache_info.misses == initial_sync_cache_info.misses + 1
+    assert final_sync_cache_info.hits == initial_sync_cache_info.hits + 2
+
+    # For async client: first call should be a miss, subsequent calls should be hits
+    assert final_async_cache_info.misses == initial_async_cache_info.misses + 1
+    assert final_async_cache_info.hits == initial_async_cache_info.hits + 2
