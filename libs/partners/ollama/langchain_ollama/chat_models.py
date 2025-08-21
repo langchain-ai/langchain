@@ -33,6 +33,7 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    ensure_id,
     is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
@@ -58,6 +59,64 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
+
+
+def _ensure_content_blocks_have_ids(content_blocks: list) -> list:
+    """Ensure all content blocks have IDs."""
+    updated_blocks = []
+    for block in content_blocks:
+        if isinstance(block, dict) and "id" not in block:
+            updated_block = dict(block)
+            updated_block["id"] = ensure_id(None)
+            updated_blocks.append(updated_block)
+        else:
+            updated_blocks.append(block)
+    return updated_blocks
+
+
+def _update_ollama_message_to_v1(message: AIMessage) -> AIMessage:
+    """Update Ollama message to v1 format.
+
+    Exclude `reasoning_content` from `additional_kwargs` since it is now part of
+    `content_blocks`.
+
+    Ensure `response_metadata` has `output_version` set to `v1` for future use.
+
+    """
+    content_blocks_with_ids = _ensure_content_blocks_have_ids(message.content_blocks)
+    return message.model_copy(
+        update={
+            "content": content_blocks_with_ids,
+            "additional_kwargs": {
+                k: v
+                for k, v in message.additional_kwargs.items()
+                if k != "reasoning_content"
+            },
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
+
+def _update_ollama_message_chunk_to_v1(message: AIMessageChunk) -> AIMessageChunk:
+    content_blocks_with_ids = _ensure_content_blocks_have_ids(message.content_blocks)
+    return message.model_copy(
+        update={
+            "content": content_blocks_with_ids,
+            "additional_kwargs": {
+                k: v
+                for k, v in message.additional_kwargs.items()
+                if k != "reasoning_content"
+            },
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
 
 log = logging.getLogger(__name__)
 
@@ -817,13 +876,19 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+            response_metadata={"model_provider": "ollama"},
+        )
+
+        if self.output_version == "v1":
+            message = _update_ollama_message_to_v1(message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
@@ -883,6 +948,7 @@ class ChatOllama(BaseChatModel):
                             stream_resp
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
+                        response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
                 )
@@ -897,6 +963,14 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if self.output_version == "v1":
+                chunk_message = cast(AIMessageChunk, chunk.message)
+                converted_message = _update_ollama_message_chunk_to_v1(chunk_message)
+                chunk = ChatGenerationChunk(
+                    message=converted_message,
+                    generation_info=chunk.generation_info,
+                )
+
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -959,6 +1033,7 @@ class ChatOllama(BaseChatModel):
                             stream_resp
                         ),
                         tool_calls=_get_tool_calls_from_response(stream_resp),
+                        response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
                 )
@@ -973,6 +1048,14 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if self.output_version == "v1":
+                chunk_message = cast(AIMessageChunk, chunk.message)
+                converted_message = _update_ollama_message_chunk_to_v1(chunk_message)
+                chunk = ChatGenerationChunk(
+                    message=converted_message,
+                    generation_info=chunk.generation_info,
+                )
+
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -991,13 +1074,19 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+            response_metadata={"model_provider": "ollama"},
+        )
+
+        if self.output_version == "v1":
+            message = _update_ollama_message_to_v1(message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
