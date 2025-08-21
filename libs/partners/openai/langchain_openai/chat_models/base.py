@@ -3875,8 +3875,8 @@ def _construct_lc_result_from_responses_api(
                         "annotations": [
                             annotation.model_dump()
                             for annotation in content.annotations
-                        ] 
-                        if isinstance(content.annotations, list) 
+                        ]
+                        if isinstance(content.annotations, list)
                         else [],
                         "id": output.id,
                     }
