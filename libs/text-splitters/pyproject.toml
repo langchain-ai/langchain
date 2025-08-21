@@ -52,13 +52,14 @@ test_integration = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
-strict = "True"
-strict_bytes = "True"
+plugins = ["pydantic.mypy"]
+strict = true
 enable_error_code = "deprecated"
+warn_unreachable = true
 
 [[tool.mypy.overrides]]
 module = ["konlpy", "nltk",]
-ignore_missing_imports = "True"
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py39"
