@@ -503,9 +503,9 @@ def test_trace_images_in_openai_format_v0() -> None:
     ]
 
 
-def test_trace_images_in_openai_format_v1() -> None:
-    """Test that images are traced in OpenAI Chat Completions format with v1 output."""
-    llm = ParrotFakeChatModel(output_version="v1")
+def test_trace_images_in_openai_format() -> None:
+    """Test that images are traced in OpenAI Chat Completions format."""
+    llm = ParrotFakeChatModel()
     messages = [
         {
             "role": "user",
@@ -520,7 +520,7 @@ def test_trace_images_in_openai_format_v1() -> None:
         }
     ]
     tracer = FakeChatModelStartTracer()
-    response = llm.invoke(messages, config={"callbacks": [tracer]})
+    llm.invoke(messages, config={"callbacks": [tracer]})
     assert tracer.messages == [
         [
             [
@@ -535,6 +535,24 @@ def test_trace_images_in_openai_format_v1() -> None:
             ]
         ]
     ]
+
+
+def test_content_block_transformation_v0_to_v1_image() -> None:
+    """Test that v0 format image content blocks are transformed to v1 format."""
+    # Create a message with v0 format image content
+    image_message = AIMessage(
+        content=[
+            {
+                "type": "image",
+                "source_type": "url",
+                "url": "https://example.com/image.png",
+            }
+        ]
+    )
+
+    llm = GenericFakeChatModel(messages=iter([image_message]), output_version="v1")
+    response = llm.invoke("test")
+
     # With v1 output_version, .content should be transformed
     # Check structure, ignoring auto-generated IDs
     assert len(response.content) == 1

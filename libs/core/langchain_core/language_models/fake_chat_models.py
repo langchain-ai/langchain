@@ -363,44 +363,7 @@ class ParrotFakeChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
-        # Get the last message to parrot
-        last_message = messages[-1]
-
-        # ParrotFakeChatModel is a special case that needs to return content
-        # in the format expected by output_version. Since input messages are
-        # normalized to v1 format, we need to convert back for v0 output.
-        if self.output_version == "v0" and isinstance(last_message.content, list):
-            # Convert v1 content blocks back to v0 format for backwards compatibility
-            v0_content: list[Union[str, dict]] = []
-            for block in last_message.content:
-                if isinstance(block, dict) and block.get("type") in {
-                    "image",
-                    "audio",
-                    "file",
-                }:
-                    v0_block = dict(block)
-                    # Add source_type based on which field is present
-                    if "url" in block:
-                        v0_block["source_type"] = "url"
-                    elif "base64" in block:
-                        v0_block["source_type"] = "base64"
-                        v0_block["data"] = v0_block.pop("base64")
-                    elif "file_id" in block:
-                        v0_block["source_type"] = "id"
-                    # Remove v1-specific fields
-                    v0_block.pop("id", None)
-                    v0_block.pop("extras", None)
-                    v0_block.pop("index", None)
-                    v0_content.append(v0_block)
-                else:
-                    v0_content.append(block)
-
-            # Create response message with v0 content
-            response_message = last_message.model_copy(update={"content": v0_content})
-            return ChatResult(generations=[ChatGeneration(message=response_message)])
-
-        # For v1 output or non-list content, return as-is
-        return ChatResult(generations=[ChatGeneration(message=last_message)])
+        return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property
     def _llm_type(self) -> str:
