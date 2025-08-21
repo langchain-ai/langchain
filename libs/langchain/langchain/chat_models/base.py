@@ -14,7 +14,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import AnyMessage, BaseMessage
+from langchain_core.messages import AIMessage, AnyMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
@@ -934,7 +934,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.
