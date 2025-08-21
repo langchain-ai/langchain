@@ -22,6 +22,8 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    auth_provider: Optional[str] = None,
+    auth_scopes: Optional[list[str]] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -37,6 +39,8 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    auth_provider: Optional[str] = None,
+    auth_scopes: Optional[list[str]] = None,
 ) -> BaseTool: ...
 
 
@@ -51,6 +55,8 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    auth_provider: Optional[str] = None,
+    auth_scopes: Optional[list[str]] = None,
 ) -> BaseTool: ...
 
 
@@ -65,6 +71,8 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    auth_provider: Optional[str] = None,
+    auth_scopes: Optional[list[str]] = None,
 ) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
 
 
@@ -79,6 +87,8 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
+    auth_provider: Optional[str] = None,
+    auth_scopes: Optional[list[str]] = None,
 ) -> Union[
     BaseTool,
     Callable[[Union[Callable, Runnable]], BaseTool],
@@ -118,6 +128,12 @@ def tool(
         error_on_invalid_docstring: if ``parse_docstring`` is provided, configure
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
+        auth_provider: Optional authentication provider identifier for the tool.
+            This will be stored in the tool's metadata under the 'auth' key.
+            Defaults to None.
+        auth_scopes: Optional list of authentication scopes required for the tool.
+            This will be stored in the tool's metadata under the 'auth' key.
+            Defaults to None.
 
     Returns:
         The tool.
@@ -262,6 +278,16 @@ def tool(
                 func = dec_func
                 schema = args_schema
 
+            # Create auth metadata if auth parameters are provided
+            metadata = {}
+            if auth_provider is not None or auth_scopes is not None:
+                auth_metadata = {}
+                if auth_provider is not None:
+                    auth_metadata["provider"] = auth_provider
+                if auth_scopes is not None:
+                    auth_metadata["scopes"] = auth_scopes
+                metadata["auth"] = auth_metadata
+            
             if infer_schema or args_schema is not None:
                 return StructuredTool.from_function(
                     func,
@@ -274,6 +300,7 @@ def tool(
                     response_format=response_format,
                     parse_docstring=parse_docstring,
                     error_on_invalid_docstring=error_on_invalid_docstring,
+                    metadata=metadata if metadata else None,
                 )
             # If someone doesn't want a schema applied, we must treat it as
             # a simple string->string function
@@ -290,6 +317,7 @@ def tool(
                 return_direct=return_direct,
                 coroutine=coroutine,
                 response_format=response_format,
+                metadata=metadata if metadata else None,
             )
 
         return _tool_factory
