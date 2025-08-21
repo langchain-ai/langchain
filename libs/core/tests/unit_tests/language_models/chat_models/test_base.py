@@ -172,10 +172,10 @@ async def test_astream_fallback_to_ainvoke() -> None:
     # is not strictly correct.
     # LangChain documents a pattern of adding BaseMessageChunks to accumulate a stream.
     # This may be better done with `reduce(operator.add, chunks)`.
-    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_any_id_ai_message(content="hello")]  # type: ignore[comparison-overlap]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
