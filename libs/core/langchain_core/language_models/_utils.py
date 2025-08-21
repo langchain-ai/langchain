@@ -13,7 +13,6 @@ from typing import (
 if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
 from langchain_core.messages.content import (
-    KNOWN_BLOCK_TYPES,
     ContentBlock,
     ImageContentBlock,
     create_audio_block,
@@ -404,10 +403,7 @@ def _normalize_messages(
                     _update_content_block(formatted_message, idx, converted_block)
                     continue
 
-                # Pass through blocks that look like they have v1 format unchanged
-                elif isinstance(block, dict) and block.get("type") in KNOWN_BLOCK_TYPES:
-                    # No conversion needed for v1 blocks, so no need to copy
-                    pass
+                # else, pass through blocks that look like they have v1 format unchanged
 
         formatted_messages.append(formatted_message)
 
