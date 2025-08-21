@@ -410,12 +410,6 @@ def _normalize_messages(
                     # No conversion needed for v1 blocks, so no need to copy
                     pass
 
-        # If we didn't modify the message, skip creating a new instance
-        # e.g. passing through content that is just `str`
-        if formatted_message is message:
-            formatted_messages.append(message)
-            continue
-
         formatted_messages.append(formatted_message)
 
     return formatted_messages
