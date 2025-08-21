@@ -857,7 +857,7 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, str)
         assert chunk.content
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+        full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.content == "foo bar"
 
@@ -888,7 +888,7 @@ def test_output_version_stream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full_env = chunk if full_env is None else full_env + chunk  # type: ignore[assignment]
+        full_env = chunk if full_env is None else full_env + chunk
     assert isinstance(full_env, AIMessageChunk)
     assert full_env.response_metadata["output_version"] == "v1"
 
@@ -903,7 +903,7 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         assert isinstance(chunk.content, str)
         assert chunk.content
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+        full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert full.content == "foo bar"
 
@@ -934,6 +934,6 @@ async def test_output_version_astream(monkeypatch: Any) -> None:
         assert isinstance(block, dict)
         assert block["type"] == "text"
         assert block["text"]
-        full_env = chunk if full_env is None else full_env + chunk  # type: ignore[assignment]
+        full_env = chunk if full_env is None else full_env + chunk
     assert isinstance(full_env, AIMessageChunk)
     assert full_env.response_metadata["output_version"] == "v1"
