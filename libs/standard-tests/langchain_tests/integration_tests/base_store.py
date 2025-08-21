@@ -239,7 +239,7 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         await kv_store.amset(key_value_pairs)
         await kv_store.amset(key_value_pairs)
         assert await kv_store.amget(["foo", "bar"]) == [foo, bar]
-        assert sorted(kv_store.yield_keys()) == ["bar", "foo"]
+        assert sorted([key async for key in kv_store.ayield_keys()]) == ["bar", "foo"]
 
     async def test_get_can_get_same_value(
         self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]
