@@ -151,7 +151,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessage]:
         if isinstance(config, list):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
@@ -164,7 +164,7 @@ class FakeListChatModel(SimpleChatModel):
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> list[BaseMessage]:
+    ) -> list[AIMessage]:
         if isinstance(config, list):
             # do Not use an async iterator here because need explicit ordering
             return [await self.ainvoke(m, c, **kwargs) for m, c in zip(inputs, config)]
