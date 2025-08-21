@@ -8,7 +8,6 @@ from typing import (
     TypedDict,
     TypeVar,
     Union,
-    cast,
 )
 
 if TYPE_CHECKING:
@@ -453,16 +452,24 @@ def _update_message_content_to_blocks(message: T, output_version: str) -> T:
     )
 
 
-def _convert_legacy_v0_content_block_to_v1(block: dict) -> ContentBlock:
+def _convert_legacy_v0_content_block_to_v1(block: dict) -> Union[ContentBlock, dict]:
     """Convert a LangChain v0 content block to v1 format.
 
     Preserves unknown keys as extras to avoid data loss.
+
+    Returns the original block unchanged if it's not in v0 format.
 
     """
 
     def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
         """Extract unknown keys from v0 block to preserve as extras."""
         return {k: v for k, v in block_dict.items() if k not in known_keys}
+
+    # Check if this is actually a v0 format block
+    block_type = block.get("type")
+    if block_type not in {"image", "audio", "file"} or "source_type" not in block:
+        # Not a v0 format block, return unchanged
+        return block
 
     if block.get("type") == "image":
         source_type = block.get("source_type")
@@ -564,5 +571,5 @@ def _convert_legacy_v0_content_block_to_v1(block: dict) -> ContentBlock:
                 **extras,
             )
 
-    # If we can't convert, return the block as-is
-    return cast("ContentBlock", block)
+    # If we can't convert, return the block unchanged
+    return block

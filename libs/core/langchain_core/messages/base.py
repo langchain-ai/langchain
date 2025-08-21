@@ -181,9 +181,10 @@ class BaseMessage(Serializable):
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
-                # Check for v0 format blocks first
-                if item_type in {"image", "audio", "file"} and "source_type" in item:
-                    blocks.append(_convert_legacy_v0_content_block_to_v1(item))
+                # Try to convert potential v0 format first
+                converted_block = _convert_legacy_v0_content_block_to_v1(item)
+                if converted_block is not item:  # Conversion happened
+                    blocks.append(cast("types.ContentBlock", converted_block))
                 elif item_type is None or item_type not in types.KNOWN_BLOCK_TYPES:
                     blocks.append(
                         cast(
