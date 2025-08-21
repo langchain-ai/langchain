@@ -132,9 +132,9 @@ def test_http_client_reuse() -> None:
 
     # Verify that the HTTP clients are the same instance (cached)
     # Check if the underlying httpx client is the same object
-    assert llm1.root_client._client is llm2.root_client._client
-    assert llm2.root_client._client is llm3.root_client._client
+    assert llm1.root_client._client is llm2.root_client._client  # noqa: SLF001
+    assert llm2.root_client._client is llm3.root_client._client  # noqa: SLF001
 
     # Verify async clients are also cached
-    assert llm1.root_async_client._client is llm2.root_async_client._client
-    assert llm2.root_async_client._client is llm3.root_async_client._client
+    assert llm1.root_async_client._client is llm2.root_async_client._client  # noqa: SLF001
+    assert llm2.root_async_client._client is llm3.root_async_client._client  # noqa: SLF001
