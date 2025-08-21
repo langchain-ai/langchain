@@ -2,7 +2,6 @@ import re
 from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
-    Any,
     Literal,
     Optional,
     TypedDict,
@@ -14,11 +13,6 @@ if TYPE_CHECKING:
     from langchain_core.messages import BaseMessage
 from langchain_core.messages.content import (
     ContentBlock,
-    ImageContentBlock,
-    create_audio_block,
-    create_file_block,
-    create_image_block,
-    create_plaintext_block,
 )
 
 
@@ -108,140 +102,6 @@ def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
     }
 
 
-def _convert_openai_format_to_data_block(
-    block: dict,
-) -> Union[ContentBlock, dict[Any, Any]]:
-    """Convert OpenAI image/audio/file content block to respective v1 multimodal block.
-
-    We expect that the incoming block is verified to be in OpenAI Chat Completions
-    format.
-
-    If parsing fails, passes block through unchanged.
-
-    Mappings (Chat Completions to LangChain v1):
-    - Image -> `ImageContentBlock`
-    - Audio -> `AudioContentBlock`
-    - File -> `FileContentBlock`
-
-    """
-
-    # Extract extra keys to put them in `extras`
-    def _extract_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
-        """Extract unknown keys from block to preserve as extras."""
-        return {k: v for k, v in block_dict.items() if k not in known_keys}
-
-    # base64-style image block
-    if (block["type"] == "image_url") and (
-        parsed := _parse_data_uri(block["image_url"]["url"])
-    ):
-        known_keys = {"type", "image_url"}
-        extras = _extract_extras(block, known_keys)
-
-        # Also extract extras from nested image_url dict
-        image_url_known_keys = {"url"}
-        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
-
-        # Merge extras
-        all_extras = {**extras}
-        for key, value in image_url_extras.items():
-            if key == "detail":  # Don't rename
-                all_extras["detail"] = value
-            else:
-                all_extras[f"image_url_{key}"] = value
-
-        return create_image_block(
-            # Even though this is labeled as `url`, it can be base64-encoded
-            base64=block["image_url"]["url"],
-            mime_type=parsed["mime_type"],
-            **all_extras,
-        )
-
-    # url-style image block
-    if (block["type"] == "image_url") and isinstance(
-        block["image_url"].get("url"), str
-    ):
-        known_keys = {"type", "image_url"}
-        extras = _extract_extras(block, known_keys)
-
-        image_url_known_keys = {"url"}
-        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
-
-        all_extras = {**extras}
-        for key, value in image_url_extras.items():
-            if key == "detail":  # Don't rename
-                all_extras["detail"] = value
-            else:
-                all_extras[f"image_url_{key}"] = value
-
-        return create_image_block(
-            url=block["image_url"]["url"],
-            **all_extras,
-        )
-
-    # base64-style audio block
-    # audio is only represented via raw data, no url or ID option
-    if block["type"] == "input_audio":
-        known_keys = {"type", "input_audio"}
-        extras = _extract_extras(block, known_keys)
-
-        # Also extract extras from nested audio dict
-        audio_known_keys = {"data", "format"}
-        audio_extras = _extract_extras(block["input_audio"], audio_known_keys)
-
-        all_extras = {**extras}
-        for key, value in audio_extras.items():
-            all_extras[f"audio_{key}"] = value
-
-        return create_audio_block(
-            base64=block["input_audio"]["data"],
-            mime_type=f"audio/{block['input_audio']['format']}",
-            **all_extras,
-        )
-
-    # id-style file block
-    if block.get("type") == "file" and "file_id" in block.get("file", {}):
-        known_keys = {"type", "file"}
-        extras = _extract_extras(block, known_keys)
-
-        file_known_keys = {"file_id"}
-        file_extras = _extract_extras(block["file"], file_known_keys)
-
-        all_extras = {**extras}
-        for key, value in file_extras.items():
-            all_extras[f"file_{key}"] = value
-
-        return create_file_block(
-            file_id=block["file"]["file_id"],
-            **all_extras,
-        )
-
-    # base64-style file block
-    if (block["type"] == "file") and (
-        parsed := _parse_data_uri(block["file"]["file_data"])
-    ):
-        known_keys = {"type", "file"}
-        extras = _extract_extras(block, known_keys)
-
-        file_known_keys = {"file_data", "filename"}
-        file_extras = _extract_extras(block["file"], file_known_keys)
-
-        all_extras = {**extras}
-        for key, value in file_extras.items():
-            all_extras[f"file_{key}"] = value
-
-        mime_type = parsed["mime_type"]
-        filename = block["file"].get("filename")
-        return create_file_block(
-            base64=block["file"]["file_data"],
-            mime_type=mime_type,
-            filename=filename,
-            **all_extras,
-        )
-
-    # Escape hatch
-    return block
-
-
 def _normalize_messages(
     messages: Sequence["BaseMessage"],
     convert_all: bool = False,  # noqa: FBT001, FBT002
@@ -318,41 +178,46 @@ def _normalize_messages(
     If a v1 message is passed in, it will be returned as-is, meaning it is safe to
     always pass in v1 messages to this function for assurance.
 
+    For posterity, here are the OpenAI Chat Completions schemas we expect:
+
+    Chat Completions image. Can be URL-based or base64-encoded. Supports MIME types
+    png, jpeg/jpg, webp, static gif:
+    {
+        "type": Literal['image_url'],
+        "image_url": {
+            "url": Union["data:$MIME_TYPE;base64,$BASE64_ENCODED_IMAGE", "$IMAGE_URL"],
+            "detail": Literal['low', 'high', 'auto'] = 'auto',  # Supported by OpenAI
+        }
+    }
+
+    Chat Completions audio:
+    {
+        "type": Literal['input_audio'],
+        "input_audio": {
+            "format": Literal['wav', 'mp3'],
+            "data": str = "$BASE64_ENCODED_AUDIO",
+        },
+    }
+
+    Chat Completions files: either base64 or pre-uploaded file ID
+    {
+        "type": Literal['file'],
+        "file": Union[
+            {
+                "filename": Optional[str] = "$FILENAME",
+                "file_data": str = "$BASE64_ENCODED_FILE",
+            },
+            {
+                "file_id": str = "$FILE_ID",  # For pre-uploaded files to OpenAI
+            },
+        ],
+    }
+
     """
-    # For posterity, here are the OpenAI Chat Completions schemas we expect:
-    #
-    # Chat Completions image. Can be URL-based or base64-encoded. Supports MIME types
-    # png, jpeg/jpg, webp, static gif:
-    # {
-    #     "type": Literal['image_url'],
-    #     "image_url": {
-    #         "url": Union["data:$MIME_TYPE;base64,$BASE64_ENCODED_IMAGE", "$IMAGE_URL"],  # noqa: E501
-    #         "detail": Literal['low', 'high', 'auto'] = 'auto',  # Only supported by OpenAI  # noqa: E501
-    #     }
-    # }
-
-    # Chat Completions audio:
-    # {
-    #     "type": Literal['input_audio'],
-    #     "input_audio": {
-    #         "format": Literal['wav', 'mp3'],
-    #         "data": str = "$BASE64_ENCODED_AUDIO",
-    #     },
-    # }
-
-    # Chat Completions files: either base64 or pre-uploaded file ID
-    # {
-    #     "type": Literal['file'],
-    #     "file": Union[
-    #         {
-    #             "filename": Optional[str] = "$FILENAME",
-    #             "file_data": str = "$BASE64_ENCODED_FILE",
-    #         },
-    #         {
-    #             "file_id": str = "$FILE_ID",  # For pre-uploaded files to OpenAI
-    #         },
-    #     ],
-    # }
+    from langchain_core.messages.block_translators.langchain import (
+        _convert_legacy_v0_content_block_to_v1,
+        _convert_openai_format_to_data_block,
+    )
 
     formatted_messages = []
     for message in messages:
@@ -446,126 +311,3 @@ def _update_message_content_to_blocks(message: T, output_version: str) -> T:
             },
         }
     )
-
-
-def _convert_legacy_v0_content_block_to_v1(block: dict) -> Union[ContentBlock, dict]:
-    """Convert a LangChain v0 content block to v1 format.
-
-    Preserves unknown keys as extras to avoid data loss.
-
-    Returns the original block unchanged if it's not in v0 format.
-
-    """
-
-    def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
-        """Extract unknown keys from v0 block to preserve as extras."""
-        return {k: v for k, v in block_dict.items() if k not in known_keys}
-
-    # Check if this is actually a v0 format block
-    block_type = block.get("type")
-    if block_type not in {"image", "audio", "file"} or "source_type" not in block:
-        # Not a v0 format block, return unchanged
-        return block
-
-    if block.get("type") == "image":
-        source_type = block.get("source_type")
-        if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            if "id" in block:
-                return create_image_block(
-                    url=block["url"],
-                    mime_type=block.get("mime_type"),
-                    id=block["id"],
-                    **extras,
-                )
-
-            # Don't construct with an ID if not present in original block
-            v1_block = ImageContentBlock(type="image", url=block["url"])
-            if block.get("mime_type"):
-                v1_block["mime_type"] = block["mime_type"]
-
-            for key, value in extras.items():
-                if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
-            return v1_block
-        if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            if "id" in block:
-                return create_image_block(
-                    base64=block["data"],
-                    mime_type=block.get("mime_type"),
-                    id=block["id"],
-                    **extras,
-                )
-
-            v1_block = ImageContentBlock(type="image", base64=block["data"])
-            if block.get("mime_type"):
-                v1_block["mime_type"] = block["mime_type"]
-
-            for key, value in extras.items():
-                if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
-            return v1_block
-        if source_type == "id":
-            known_keys = {"type", "source_type", "id"}
-            extras = _extract_v0_extras(block, known_keys)
-            # For id `source_type`, `id` is the file reference, not block ID
-            v1_block = ImageContentBlock(type="image", file_id=block["id"])
-
-            for key, value in extras.items():
-                if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
-
-            return v1_block
-    elif block.get("type") == "audio":
-        source_type = block.get("source_type")
-        if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_audio_block(
-                url=block["url"], mime_type=block.get("mime_type"), **extras
-            )
-        if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_audio_block(
-                base64=block["data"], mime_type=block.get("mime_type"), **extras
-            )
-        if source_type == "id":
-            known_keys = {"type", "source_type", "id"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_audio_block(file_id=block["id"], **extras)
-    elif block.get("type") == "file":
-        source_type = block.get("source_type")
-        if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_file_block(
-                url=block["url"], mime_type=block.get("mime_type"), **extras
-            )
-        if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_file_block(
-                base64=block["data"], mime_type=block.get("mime_type"), **extras
-            )
-        if source_type == "id":
-            known_keys = {"type", "source_type", "id"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_file_block(file_id=block["id"], **extras)
-        if source_type == "text":
-            known_keys = {"type", "source_type", "url", "mime_type"}
-            extras = _extract_v0_extras(block, known_keys)
-            return create_plaintext_block(
-                # In v0, URL points to the text file content
-                text=block["url"],
-                **extras,
-            )
-
-    # If we can't convert, return the block unchanged
-    return block

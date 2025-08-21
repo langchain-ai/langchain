@@ -6,10 +6,11 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
 
-from langchain_core.language_models._utils import (
-    _convert_legacy_v0_content_block_to_v1,
-)
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages.block_translators.langchain import (
+    _convert_legacy_v0_content_block_to_v1,
+    _convert_v0_multimodal_input_to_v1,
+)
 from langchain_core.messages.block_translators.openai import (
     _convert_to_v1_from_chat_completions_input,
 )
@@ -22,45 +23,6 @@ if TYPE_CHECKING:
 
     from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
-
-
-def _convert_to_v1_from_v0_multimodal_input(
-    blocks: list[types.ContentBlock],
-) -> list[types.ContentBlock]:
-    """Convert v0 multimodal blocks to v1 format.
-
-    Processes non_standard blocks that might be v0 format and converts them
-    to proper v1 ContentBlocks.
-
-    Args:
-        blocks: List of content blocks to process.
-
-    Returns:
-        Updated list with v0 blocks converted to v1 format.
-    """
-    converted_blocks = []
-    for block in blocks:
-        if (
-            isinstance(block, dict)
-            and block.get("type") == "non_standard"
-            and "value" in block
-            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
-        ):
-            # We know this is a NonStandardContentBlock, so we can safely access value
-            value = cast("Any", block)["value"]
-            # Check if this looks like v0 format
-            if (
-                value.get("type") in {"image", "audio", "file"}
-                and "source_type" in value
-            ):
-                converted_block = _convert_legacy_v0_content_block_to_v1(value)
-                converted_blocks.append(cast("types.ContentBlock", converted_block))
-            else:
-                converted_blocks.append(block)
-        else:
-            converted_blocks.append(block)
-
-    return converted_blocks
 
 
 class BaseMessage(Serializable):
@@ -196,7 +158,7 @@ class BaseMessage(Serializable):
                     blocks.append(cast("types.ContentBlock", item))
 
         # Subsequent passes: attempt to unpack non-standard blocks
-        blocks = _convert_to_v1_from_v0_multimodal_input(blocks)
+        blocks = _convert_v0_multimodal_input_to_v1(blocks)
         # blocks = _convert_to_v1_from_anthropic_input(blocks)
         # ...
 
