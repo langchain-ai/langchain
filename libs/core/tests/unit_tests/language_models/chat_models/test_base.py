@@ -705,7 +705,6 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
         normalized_message.content, expected_content_messages.content
     )
 
-    # `convert_all = True` (image, audio, file)
     messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},
@@ -766,17 +765,6 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
                 "file_id": "<file id>",
             },
         ]
-    )
-
-    normalized_content = _normalize_messages([messages], convert_all=True)
-
-    # Check structure, ignoring auto-generated IDs
-    assert len(normalized_content) == 1
-    normalized_message = normalized_content[0]
-    assert len(normalized_message.content) == len(expected_content_messages.content)
-
-    assert _content_blocks_equal_ignore_id(
-        normalized_message.content, expected_content_messages.content
     )
 
 

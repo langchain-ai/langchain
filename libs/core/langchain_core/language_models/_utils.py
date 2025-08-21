@@ -104,14 +104,12 @@ def _parse_data_uri(uri: str) -> Optional[ParsedDataUri]:
 
 def _normalize_messages(
     messages: Sequence["BaseMessage"],
-    convert_all: bool = False,  # noqa: FBT001, FBT002
 ) -> list["BaseMessage"]:
     """Normalize message formats to LangChain v1 standard content blocks.
 
     Chat models already implement support for:
     - Images in OpenAI Chat Completions format
-        These will be passed through unchanged unless `convert_all` is True, in which
-        case they will be converted to LangChain v1 standard content blocks.
+        These will be passed through unchanged
     - LangChain v1 standard content blocks
 
     This function extends support to:
@@ -230,20 +228,14 @@ def _normalize_messages(
                 # OpenAI Chat Completions multimodal data blocks to v1 standard
                 if (
                     isinstance(block, dict)
-                    and block.get("type") in {"image_url", "input_audio", "file"}
+                    and block.get("type") in {"input_audio", "file"}
                     # Discriminate between OpenAI/LC format since they share `'type'`
                     and _is_openai_data_block(block)
                 ):
                     formatted_message = _ensure_message_copy(message, formatted_message)
 
-                    # Convert OpenAI audio/file block to LC v1 std content
-                    # unless `all` is True, in which case we also conver images
-                    if convert_all or block["type"] != "image_url":
-                        converted_block = _convert_openai_format_to_data_block(block)
-                        _update_content_block(formatted_message, idx, converted_block)
-                    else:
-                        # If `all` is False, we pass through images unchanged
-                        _update_content_block(formatted_message, idx, block)
+                    converted_block = _convert_openai_format_to_data_block(block)
+                    _update_content_block(formatted_message, idx, converted_block)
 
                 # Convert multimodal LangChain v0 to v1 standard content blocks
                 elif (
