@@ -116,19 +116,19 @@ def test_http_client_reuse() -> None:
     initial_async_cache_info = _cached_async_httpx_client.cache_info()
 
     # Create multiple instances with the same configuration
-    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         azure_endpoint="https://my-base-url.openai.azure.com",
     )
 
-    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         azure_endpoint="https://my-base-url.openai.azure.com",
     )
 
-    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
         azure_deployment="35-turbo-dev",
         openai_api_version="2023-05-15",
         azure_endpoint="https://my-base-url.openai.azure.com",
