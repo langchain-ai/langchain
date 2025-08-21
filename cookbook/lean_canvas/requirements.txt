@@ -2,5 +2,5 @@ langchain-gigachat~=0.3.8
 langchain-community~=0.3.24
 langgraph~=0.3.21
 langchain-tavily~=0.1.6
-duckduckgo-search~=8.0.2
+ddgs~=9.5.4
 rich~=14.0.0
