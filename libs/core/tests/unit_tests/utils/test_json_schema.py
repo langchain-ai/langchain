@@ -444,3 +444,96 @@ def test_dereference_refs_list_index() -> None:
 
     actual_dict_key = dereference_refs(schema_dict_key)
     assert actual_dict_key == expected_dict_key
+
+
+def test_dereference_refs_three_node_cycle_mixed_refs() -> None:
+    """Ensure long cycles with mixed $ref properties terminate and preserve extras."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "root": {"$ref": "#/$defs/A", "description": "root node"},
+        },
+        "$defs": {
+            "A": {
+                "type": "object",
+                "properties": {"b": {"$ref": "#/$defs/B", "nullable": True}},
+            },
+            "B": {
+                "type": "object",
+                "properties": {"c": {"$ref": "#/$defs/C"}},
+            },
+            "C": {
+                "type": "object",
+                "properties": {"a": {"$ref": "#/$defs/A"}},
+            },
+        },
+    }
+
+    actual = dereference_refs(schema)
+
+    # Basic shape checks (don’t assert deep equality to avoid over-constraining):
+    assert isinstance(actual, dict)
+    assert actual.get("type") == "object"
+    assert "properties" in actual and "root" in actual["properties"]
+    root = actual["properties"]["root"]
+    assert isinstance(root, dict) and root.get("type") == "object"
+    # Verify our extra property on the mixed $ref made it through
+    assert root.get("description") == "root node"
+
+    # Follow through one hop and check the 'nullable' flag survived
+    a_props = root.get("properties", {})
+    b_obj = a_props.get("b")
+    assert isinstance(b_obj, dict)
+    assert b_obj.get("nullable") is True
+
+
+def test_dereference_refs_ref_inside_allof_preserves_other_parts() -> None:
+    """Ensure $ref inside `allOf` is dereferenced and merged without losing sibling items.
+    This guards against regressions with mixed $ref + composition keywords.
+    """
+    schema = {
+        "type": "object",
+        "properties": {"container": {"$ref": "#/$defs/Container"}},
+        "$defs": {
+            "Meta": {"type": "object", "properties": {"id": {"type": "string"}}},
+            "Item": {
+                "type": "object",
+                "properties": {"container": {"$ref": "#/$defs/Container"}},
+            },
+            "Container": {
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "items": {
+                                "type": "array",
+                                "items": {"$ref": "#/$defs/Item"},
+                            }
+                        },
+                    },
+                    {"$ref": "#/$defs/Meta"},
+                ]
+            },
+        },
+    }
+
+    actual = dereference_refs(schema)
+    assert "properties" in actual and "container" in actual["properties"]
+    container = actual["properties"]["container"]
+
+    # The container schema should still be an allOf with two parts
+    assert isinstance(container, dict)
+    assert "allOf" in container and isinstance(container["allOf"], list)
+    parts = container["allOf"]
+    assert len(parts) == 2
+
+    # One part should have 'items' (array of Item), the other should be the dereferenced Meta
+    has_items = any(
+        isinstance(p, dict) and "properties" in p and "items" in p["properties"]
+        for p in parts
+    )
+    has_meta = any(
+        isinstance(p, dict) and "properties" in p and "id" in p["properties"]
+        for p in parts
+    )
+    assert has_items and has_meta
