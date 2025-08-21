@@ -894,8 +894,6 @@ ToolContentBlock = Union[
 
 ContentBlock = Union[
     TextContentBlock,
-    ToolCall,
-    ToolCallChunk,
     InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,

@@ -54,7 +54,7 @@ def _convert_to_v1_from_v0_multimodal_input(
                 and "source_type" in value
             ):
                 converted_block = _convert_legacy_v0_content_block_to_v1(value)
-                converted_blocks.append(converted_block)
+                converted_blocks.append(cast("types.ContentBlock", converted_block))
             else:
                 converted_blocks.append(block)
         else:
