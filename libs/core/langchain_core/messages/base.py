@@ -8,10 +8,11 @@ from pydantic import ConfigDict, Field
 
 from langchain_core.language_models._utils import (
     _convert_legacy_v0_content_block_to_v1,
-    _convert_openai_format_to_data_block,
-    _is_openai_data_block,
 )
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages.block_translators.openai import (
+    _convert_to_v1_from_chat_completions_input,
+)
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -21,55 +22,6 @@ if TYPE_CHECKING:
 
     from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
-
-
-def _convert_to_v1_from_chat_completions_input(
-    blocks: list[types.ContentBlock],
-) -> list[types.ContentBlock]:
-    """Convert OpenAI Chat Completions format blocks to v1 format.
-
-    Processes non_standard blocks that might be OpenAI format and converts them
-    to proper ContentBlocks. If conversion fails, leaves them as non_standard.
-
-    Args:
-        blocks: List of content blocks to process.
-
-    Returns:
-        Updated list with OpenAI blocks converted to v1 format.
-    """
-    from langchain_core.messages import content as types
-
-    converted_blocks = []
-    for block in blocks:
-        if (
-            isinstance(block, dict)
-            and block.get("type") == "non_standard"
-            and "value" in block
-            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
-        ):
-            # We know this is a NonStandardContentBlock, so we can safely access value
-            value = cast("Any", block)["value"]
-            # Check if this looks like OpenAI format
-            if value.get("type") in {
-                "image_url",
-                "input_audio",
-                "file",
-            } and _is_openai_data_block(value):
-                converted_block = _convert_openai_format_to_data_block(value)
-                # If conversion succeeded, use it; otherwise keep as non_standard
-                if (
-                    isinstance(converted_block, dict)
-                    and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
-                ):
-                    converted_blocks.append(cast("types.ContentBlock", converted_block))
-                else:
-                    converted_blocks.append(block)
-            else:
-                converted_blocks.append(block)
-        else:
-            converted_blocks.append(block)
-
-    return converted_blocks
 
 
 def _convert_to_v1_from_v0_multimodal_input(

@@ -1,10 +1,18 @@
 """Derivations of standard content blocks from OpenAI content."""
 
-from collections.abc import Iterable
-from typing import Any, Optional, Union, cast
+from __future__ import annotations
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
+
+from langchain_core.language_models._utils import (
+    _convert_openai_format_to_data_block,
+    _is_openai_data_block,
+)
 from langchain_core.messages import content as types
+
+if TYPE_CHECKING:
+    from langchain_core.messages import AIMessage, AIMessageChunk
 
 
 # v1 / Chat Completions
@@ -23,6 +31,55 @@ def _convert_to_v1_from_chat_completions(
         content_blocks.append(tool_call)
 
     return content_blocks
+
+
+def _convert_to_v1_from_chat_completions_input(
+    blocks: list[types.ContentBlock],
+) -> list[types.ContentBlock]:
+    """Convert OpenAI Chat Completions format blocks to v1 format.
+
+    Processes non_standard blocks that might be OpenAI format and converts them
+    to proper ContentBlocks. If conversion fails, leaves them as non_standard.
+
+    Args:
+        blocks: List of content blocks to process.
+
+    Returns:
+        Updated list with OpenAI blocks converted to v1 format.
+    """
+    from langchain_core.messages import content as types
+
+    converted_blocks = []
+    for block in blocks:
+        if (
+            isinstance(block, dict)
+            and block.get("type") == "non_standard"
+            and "value" in block
+            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
+        ):
+            # We know this is a NonStandardContentBlock, so we can safely access value
+            value = cast("Any", block)["value"]
+            # Check if this looks like OpenAI format
+            if value.get("type") in {
+                "image_url",
+                "input_audio",
+                "file",
+            } and _is_openai_data_block(value):
+                converted_block = _convert_openai_format_to_data_block(value)
+                # If conversion succeeded, use it; otherwise keep as non_standard
+                if (
+                    isinstance(converted_block, dict)
+                    and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
+                ):
+                    converted_blocks.append(cast("types.ContentBlock", converted_block))
+                else:
+                    converted_blocks.append(block)
+            else:
+                converted_blocks.append(block)
+        else:
+            converted_blocks.append(block)
+
+    return converted_blocks
 
 
 def _convert_to_v1_from_chat_completions_chunk(
@@ -221,10 +278,11 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 ] = None
                 call_id = block.get("call_id", "")
                 if (
-                    isinstance(message, AIMessageChunk)
-                    and len(message.tool_call_chunks) == 1
+                    hasattr(message, "tool_call_chunks")
+                    and len(getattr(message, "tool_call_chunks", [])) == 1
                 ):
-                    tool_call_block = message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    tool_call_chunks = getattr(message, "tool_call_chunks", [])
+                    tool_call_block = tool_call_chunks[0].copy()
                 elif call_id:
                     for tool_call in message.tool_calls or []:
                         if tool_call.get("id") == call_id:
