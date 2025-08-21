@@ -228,7 +228,7 @@ def test_convert_to_v1_from_responses_chunk() -> None:
 
     full: Optional[AIMessageChunk] = None
     for chunk in chunks:
-        full = chunk if full is None else full + chunk  # type: ignore[assignment]
+        full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
 
     expected_content = [

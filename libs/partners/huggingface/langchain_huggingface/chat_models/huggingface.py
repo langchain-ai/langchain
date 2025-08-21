@@ -807,7 +807,7 @@ class ChatHuggingFace(BaseChatModel):
             Union[dict, str, Literal["auto", "none", "required"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
