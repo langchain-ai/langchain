@@ -19,7 +19,7 @@ from langchain_core.messages.content import (
 def _is_openai_data_block(block: dict) -> bool:
     """Check if the block contains multimodal data in OpenAI Chat Completions format.
 
-    Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``).
+    Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``)
 
     If additional keys are present, they are ignored / will not affect outcome as long
     as the required keys are present and valid.
