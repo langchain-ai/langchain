@@ -2673,3 +2673,21 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature(use_responses_api: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload  # not supported for gpt-5 family models
+
+    llm = ChatOpenAI(
+        model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5  # gpt-5-chat is exception
