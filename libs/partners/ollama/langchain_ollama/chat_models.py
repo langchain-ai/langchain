@@ -33,9 +33,13 @@ from langchain_core.messages import (
     SystemMessage,
     ToolCall,
     ToolMessage,
+    ensure_id,
     is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
+
+# Import the translator to ensure it's registered
+from langchain_core.messages.block_translators import ollama  # noqa: F401
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -52,12 +56,71 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
+from ollama._types import ChatResponse
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
 from ._utils import validate_model
+
+
+def _ensure_content_blocks_have_ids(content_blocks: list) -> list:
+    """Ensure all content blocks have IDs."""
+    updated_blocks = []
+    for block in content_blocks:
+        if isinstance(block, dict) and "id" not in block:
+            updated_block = dict(block)
+            updated_block["id"] = ensure_id(None)
+            updated_blocks.append(updated_block)
+        else:
+            updated_blocks.append(block)
+    return updated_blocks
+
+
+def _update_ollama_message_to_v1(message: AIMessage) -> AIMessage:
+    """Update Ollama message to v1 format.
+
+    Exclude `reasoning_content` from `additional_kwargs` since it is now part of
+    `content_blocks`.
+
+    Ensure `response_metadata` has `output_version` set to `v1` for future use.
+
+    """
+    content_blocks_with_ids = _ensure_content_blocks_have_ids(message.content_blocks)
+    return message.model_copy(
+        update={
+            "content": content_blocks_with_ids,
+            "additional_kwargs": {
+                k: v
+                for k, v in message.additional_kwargs.items()
+                if k != "reasoning_content"
+            },
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
+
+def _update_ollama_message_chunk_to_v1(message: AIMessageChunk) -> AIMessageChunk:
+    content_blocks_with_ids = _ensure_content_blocks_have_ids(message.content_blocks)
+    return message.model_copy(
+        update={
+            "content": content_blocks_with_ids,
+            "additional_kwargs": {
+                k: v
+                for k, v in message.additional_kwargs.items()
+                if k != "reasoning_content"
+            },
+            "response_metadata": {
+                **message.response_metadata,
+                "output_version": "v1",
+            },
+        }
+    )
+
 
 log = logging.getLogger(__name__)
 
@@ -206,8 +269,12 @@ def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
 def _get_image_from_data_content_block(block: dict) -> str:
     """Format standard data content block to format expected by Ollama."""
     if block["type"] == "image":
-        if block["source_type"] == "base64":
+        if block.get("source_type") == "base64":
+            # v0
             return block["data"]
+        if block.get("base64") is not None:
+            # v1
+            return block["base64"]
         error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
 
@@ -715,7 +782,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
+    ) -> AsyncIterator[Union[ChatResponse, str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -729,7 +796,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[Union[Mapping[str, Any], str]]:
+    ) -> Iterator[Union[ChatResponse, str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -817,13 +884,19 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+            response_metadata={"model_provider": "ollama"},
+        )
+
+        if self.output_version == "v1":
+            message = _update_ollama_message_to_v1(message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
@@ -837,18 +910,21 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
+                content = stream_resp.message.content if stream_resp.message else ""
+                content = content or ""  # Ensure content is never None
+                done = stream_resp.done if hasattr(stream_resp, "done") else False
+                done_reason = (
+                    stream_resp.done_reason
+                    if hasattr(stream_resp, "done_reason")
+                    else None
                 )
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True
-                    and stream_resp.get("done_reason") == "load"
-                    and not content.strip()
+                    done is True
+                    and done_reason == "load"
+                    and not (content or "").strip()
                 )
 
                 if is_load_response_with_empty_content:
@@ -859,7 +935,7 @@ class ChatOllama(BaseChatModel):
                     )
                     continue
 
-                if stream_resp.get("done") is True:
+                if done is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
@@ -870,19 +946,26 @@ class ChatOllama(BaseChatModel):
                 additional_kwargs = {}
                 if (
                     reasoning
-                    and "message" in stream_resp
-                    and (thinking_content := stream_resp["message"].get("thinking"))
+                    and hasattr(stream_resp, "message")
+                    and stream_resp.message
+                    and hasattr(stream_resp.message, "thinking")
+                    and stream_resp.message.thinking
                 ):
-                    additional_kwargs["reasoning_content"] = thinking_content
+                    additional_kwargs["reasoning_content"] = (
+                        stream_resp.message.thinking
+                    )
 
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
                         additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
+                            cast(Mapping[str, Any], stream_resp)
                         ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
+                        tool_calls=_get_tool_calls_from_response(
+                            cast(Mapping[str, Any], stream_resp)
+                        ),
+                        response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
                 )
@@ -897,6 +980,14 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         for chunk in self._iterate_over_stream(messages, stop, **kwargs):
+            if self.output_version == "v1":
+                chunk_message = cast(AIMessageChunk, chunk.message)
+                converted_message = _update_ollama_message_chunk_to_v1(chunk_message)
+                chunk = ChatGenerationChunk(
+                    message=converted_message,
+                    generation_info=chunk.generation_info,
+                )
+
             if run_manager:
                 run_manager.on_llm_new_token(
                     chunk.text,
@@ -913,18 +1004,21 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
+                content = stream_resp.message.content if stream_resp.message else ""
+                content = content or ""  # Ensure content is never None
+                done = stream_resp.done if hasattr(stream_resp, "done") else False
+                done_reason = (
+                    stream_resp.done_reason
+                    if hasattr(stream_resp, "done_reason")
+                    else None
                 )
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True
-                    and stream_resp.get("done_reason") == "load"
-                    and not content.strip()
+                    done is True
+                    and done_reason == "load"
+                    and not (content or "").strip()
                 )
 
                 if is_load_response_with_empty_content:
@@ -935,7 +1029,7 @@ class ChatOllama(BaseChatModel):
                     )
                     continue
 
-                if stream_resp.get("done") is True:
+                if done is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
@@ -946,19 +1040,26 @@ class ChatOllama(BaseChatModel):
                 additional_kwargs = {}
                 if (
                     reasoning
-                    and "message" in stream_resp
-                    and (thinking_content := stream_resp["message"].get("thinking"))
+                    and hasattr(stream_resp, "message")
+                    and stream_resp.message
+                    and hasattr(stream_resp.message, "thinking")
+                    and stream_resp.message.thinking
                 ):
-                    additional_kwargs["reasoning_content"] = thinking_content
+                    additional_kwargs["reasoning_content"] = (
+                        stream_resp.message.thinking
+                    )
 
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
                         additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
+                            cast(Mapping[str, Any], stream_resp)
                         ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
+                        tool_calls=_get_tool_calls_from_response(
+                            cast(Mapping[str, Any], stream_resp)
+                        ),
+                        response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
                 )
@@ -973,6 +1074,14 @@ class ChatOllama(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         async for chunk in self._aiterate_over_stream(messages, stop, **kwargs):
+            if self.output_version == "v1":
+                chunk_message = cast(AIMessageChunk, chunk.message)
+                converted_message = _update_ollama_message_chunk_to_v1(chunk_message)
+                chunk = ChatGenerationChunk(
+                    message=converted_message,
+                    generation_info=chunk.generation_info,
+                )
+
             if run_manager:
                 await run_manager.on_llm_new_token(
                     chunk.text,
@@ -991,13 +1100,19 @@ class ChatOllama(BaseChatModel):
             messages, stop, run_manager, verbose=self.verbose, **kwargs
         )
         generation_info = final_chunk.generation_info
+        message = AIMessage(
+            content=final_chunk.text,
+            usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
+            tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+            additional_kwargs=final_chunk.message.additional_kwargs,
+            response_metadata={"model_provider": "ollama"},
+        )
+
+        if self.output_version == "v1":
+            message = _update_ollama_message_to_v1(message)
+
         chat_generation = ChatGeneration(
-            message=AIMessage(
-                content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
-                additional_kwargs=final_chunk.message.additional_kwargs,
-            ),
+            message=message,
             generation_info=generation_info,
         )
         return ChatResult(generations=[chat_generation])
