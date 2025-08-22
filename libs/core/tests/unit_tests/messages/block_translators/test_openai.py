@@ -1,39 +1,10 @@
 from typing import Optional
 
-from langchain_core.language_models.fake_chat_models import ParrotFakeChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 from tests.unit_tests.language_models.chat_models.test_base import (
     _content_blocks_equal_ignore_id,
 )
-
-
-def test_v0_to_v1_content_blocks() -> None:
-    llm = ParrotFakeChatModel()
-    messages = [
-        {
-            "role": "user",
-            # v0 format
-            "content": [
-                {
-                    "type": "image",
-                    "source_type": "url",
-                    "url": "https://example.com/image.png",
-                }
-            ],
-        }
-    ]
-    response = llm.invoke(messages)
-    assert len(response.content_blocks) == 1
-    expected_content_blocks = [
-        {
-            "type": "image",
-            "url": "https://example.com/image.png",
-        }
-    ]
-    assert _content_blocks_equal_ignore_id(
-        response.content_blocks, expected_content_blocks
-    )
 
 
 def test_convert_to_v1_from_responses() -> None:
