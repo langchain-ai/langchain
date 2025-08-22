@@ -29,11 +29,6 @@ integration_test:
 	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest $(TEST_FILE)
 
 # CI integration tests - disabled until ollama service is configured in CI
-integration_tests:
-	@echo "❌ Integration tests are disabled for CI until ollama service is configured"
-	@echo "   Use 'make integration_test' to run locally with ollama service"
-	@echo "   TODO: configure ollama server to run in CI (see GitHub issue)"
-	@exit 1
 
 ######################
 # LINTING AND FORMATTING
