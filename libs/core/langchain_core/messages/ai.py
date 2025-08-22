@@ -3,10 +3,11 @@
 import json
 import logging
 import operator
-from typing import Any, Literal, Optional, Union, cast, overload
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union, cast
 
 from pydantic import model_validator
-from typing_extensions import NotRequired, Self, TypedDict, override
+from typing_extensions import NotRequired, Self, TypedDict, overload, override
 
 from langchain_core.messages import content as types
 from langchain_core.messages.base import (
@@ -230,7 +231,10 @@ class AIMessage(BaseMessage):
 
             translator = get_translator(model_provider)
             if translator:
-                return translator["translate_content"](self)
+                try:
+                    return translator["translate_content_chunk"](self)
+                except NotImplementedError:
+                    pass
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
@@ -383,7 +387,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
             translator = get_translator(model_provider)
             if translator:
-                return translator["translate_content_chunk"](self)
+                try:
+                    return translator["translate_content_chunk"](self)
+                except NotImplementedError:
+                    pass
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
@@ -498,8 +505,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         return self
 
+    @overload  # type: ignore[override]  # summing BaseMessages gives ChatPromptTemplate
+    def __add__(self, other: "AIMessageChunk") -> "AIMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Sequence["AIMessageChunk"]) -> "AIMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Any) -> BaseMessageChunk: ...
+
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
+    def __add__(self, other: Any) -> BaseMessageChunk:
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
         if isinstance(other, (list, tuple)) and all(
