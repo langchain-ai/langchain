@@ -7,11 +7,11 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "ollama>=0.5.3,<1.0.0",
-    "langchain-core<1.0.0,>=0.3.70",
+    "ollama<1.0.0,>=0.5.3",
+    "langchain-core<1.0.0,>=0.3.74",
 ]
 name = "langchain-ollama"
-version = "0.3.6"
+version = "1.0.0"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
@@ -22,19 +22,19 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.4.3",
+    "pytest<9.0.0,>=8.4.1",
     "pytest-asyncio<1.0.0,>=0.23.2",
-    "syrupy<5.0.0,>=4.0.2",
+    "syrupy<5.0.0,>=4.9.1",
     "pytest-socket<1.0.0,>=0.7.0",
-    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-watcher<1.0.0,>=0.4.3 ",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.6"]
+codespell = ["codespell<3.0.0,>=2.4.1"]
 test_integration = []
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff<0.13,>=0.12.10"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0.0,>=1.7.1", "langchain-core"]
+typing = ["mypy<2.0.0,>=1.17.1", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

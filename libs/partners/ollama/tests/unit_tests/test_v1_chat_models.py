@@ -1,6 +1,6 @@
 """Unit tests for ChatOllama v1 format support."""
 
-from typing import Any
+from typing import Any, cast
 from unittest.mock import MagicMock, patch
 
 from langchain_core.messages import (
@@ -22,7 +22,7 @@ MODEL_NAME = "llama3.1"
 
 def create_mock_chat_response(**kwargs: Any) -> ChatResponse:
     """Create a mock ChatResponse object for testing."""
-    defaults = {
+    defaults: dict[str, Any] = {
         "model": "test-model",
         "created_at": "2025-01-01T00:00:00.000000000Z",
         "done": False,
@@ -31,7 +31,20 @@ def create_mock_chat_response(**kwargs: Any) -> ChatResponse:
     }
     defaults.update(kwargs)
 
-    return ChatResponse(**defaults)
+    # mypy can't properly type check unpacking, so use explicity keyword-only args
+    return ChatResponse(
+        model=cast(str, defaults.get("model")),
+        created_at=cast(str, defaults.get("created_at")),
+        done=cast(bool, defaults.get("done")),
+        done_reason=cast(str, defaults.get("done_reason")),
+        total_duration=cast(int, defaults.get("total_duration")),
+        load_duration=cast(int, defaults.get("load_duration")),
+        prompt_eval_count=cast(int, defaults.get("prompt_eval_count")),
+        prompt_eval_duration=cast(int, defaults.get("prompt_eval_duration")),
+        eval_count=cast(int, defaults.get("eval_count")),
+        eval_duration=cast(int, defaults.get("eval_duration")),
+        message=cast(Message, defaults["message"]),
+    )
 
 
 class TestV1BlockTranslator:
