@@ -754,6 +754,22 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         return chat_result
 
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Get the request payload, using deployment name for Azure Responses API."""
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # For Azure Responses API, use deployment name instead of model name
+        if self._use_responses_api(payload) and self.deployment_name:
+            payload["model"] = self.deployment_name
+
+        return payload
+
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
