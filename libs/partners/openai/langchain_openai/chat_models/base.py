@@ -1396,26 +1396,37 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             payload.pop("stream")
             try:
-                response = await self.root_async_client.beta.chat.completions.parse(
+                raw_response = await self.root_async_client.beta.chat.completions.with_raw_response.parse(  # noqa: E501
                     **payload
                 )
+                try:
+                    response = raw_response.parse()
+                except Exception as e:
+                    e.response = raw_response  # type: ignore[attr-defined]
+                    raise e
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = await self.root_async_client.responses.parse(**payload)
-            else:
-                if self.include_response_headers:
-                    raw_response = (
-                        await self.root_async_client.with_raw_response.responses.create(
-                            **payload
-                        )
+                raw_response = (
+                    await self.root_async_client.responses.with_raw_response.parse(
+                        **payload
                     )
-                    response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
-                else:
-                    response = await self.root_async_client.responses.create(**payload)
+                )
+            else:
+                raw_response = (
+                    await self.root_async_client.responses.with_raw_response.create(
+                        **payload
+                    )
+                )
+            try:
+                response = raw_response.parse()
+            except Exception as e:
+                e.response = raw_response  # type: ignore[attr-defined]
+                raise e
+            if self.include_response_headers:
+                generation_info = {"headers": dict(raw_response.headers)}
             return _construct_lc_result_from_responses_api(
                 response,
                 schema=original_schema_obj,

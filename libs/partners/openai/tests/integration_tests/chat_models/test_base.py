@@ -1157,19 +1157,20 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
     assert isinstance(response_model_level.content, str)
 
 
+class BadModel(BaseModel):
+    response: str
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        if v != "bad":
+            raise ValueError('response must be exactly "bad"')
+        return v
+
+
 # VCR can't handle parameterized tests
 @pytest.mark.vcr()
 def test_schema_parsing_failures() -> None:
-    class BadModel(BaseModel):
-        response: str
-
-        @field_validator("response")
-        @classmethod
-        def validate_response(cls, v: str) -> str:
-            if v != "bad":
-                raise ValueError('response must be exactly "bad"')
-            return v
-
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
     try:
         llm.invoke("respond with good", response_format=BadModel)
@@ -1182,6 +1183,30 @@ def test_schema_parsing_failures() -> None:
 # VCR can't handle parameterized tests
 @pytest.mark.vcr()
 def test_schema_parsing_failures_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
+    try:
+        llm.invoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+async def test_schema_parsing_failures_async() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
+    try:
+        await llm.ainvoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+async def test_schema_parsing_failures_responses_api_async() -> None:
     class BadModel(BaseModel):
         response: str
 
@@ -1194,7 +1219,7 @@ def test_schema_parsing_failures_responses_api() -> None:
 
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
     try:
-        llm.invoke("respond with good", response_format=BadModel)
+        await llm.ainvoke("respond with good", response_format=BadModel)
     except Exception as e:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
