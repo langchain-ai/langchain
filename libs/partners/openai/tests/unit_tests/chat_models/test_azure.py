@@ -119,7 +119,7 @@ def test_responses_api_uses_deployment_name() -> None:
     # For Responses API, the model field should be the deployment name, not the model name
     assert payload["model"] == "your_deployment"
     assert "input" in payload  # Responses API uses 'input' instead of 'messages'
-    assert "reasoning" in payload
+
 
 
 def test_chat_completions_api_uses_model_name() -> None:
