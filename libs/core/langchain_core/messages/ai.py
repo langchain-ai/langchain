@@ -231,7 +231,10 @@ class AIMessage(BaseMessage):
 
             translator = get_translator(model_provider)
             if translator:
-                return translator["translate_content"](self)
+                try:
+                    return translator["translate_content_chunk"](self)
+                except NotImplementedError:
+                    pass
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
@@ -380,7 +383,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
             translator = get_translator(model_provider)
             if translator:
-                return translator["translate_content_chunk"](self)
+                try:
+                    return translator["translate_content_chunk"](self)
+                except NotImplementedError:
+                    pass
 
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks

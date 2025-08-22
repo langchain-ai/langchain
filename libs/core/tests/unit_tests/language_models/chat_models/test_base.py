@@ -621,14 +621,14 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
                 "type": "input_audio",
                 "input_audio": {
                     "format": "wav",
-                    "data": "data:audio/wav;base64,<base64 string>",
+                    "data": "<base64 string>",
                 },
             },
             {  # file-base64
                 "type": "file",
                 "file": {
                     "filename": "draconomicon.pdf",
-                    "file_data": "data:application/pdf;base64,<base64 string>",
+                    "file_data": "<base64 string>",
                 },
             },
             {  # file-id
@@ -643,12 +643,12 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
             {"type": "text", "text": "Hello"},  # TextContentBlock
             {  # AudioContentBlock
                 "type": "audio",
-                "base64": "data:audio/wav;base64,<base64 string>",
+                "base64": "<base64 string>",
                 "mime_type": "audio/wav",
             },
             {  # FileContentBlock
                 "type": "file",
-                "base64": "data:application/pdf;base64,<base64 string>",
+                "base64": "<base64 string>",
                 "mime_type": "application/pdf",
                 "extras": {"filename": "draconomicon.pdf"},
             },

@@ -7,13 +7,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
-from langchain_core.messages.block_translators.langchain import (
-    _convert_legacy_v0_content_block_to_v1,
-    _convert_v0_multimodal_input_to_v1,
-)
-from langchain_core.messages.block_translators.openai import (
-    _convert_to_v1_from_chat_completions_input,
-)
+from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -21,7 +15,6 @@ from langchain_core.utils.interactive_env import is_interactive_env
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from langchain_core.messages import content as types
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
@@ -129,6 +122,15 @@ class BaseMessage(Serializable):
 
         """
         from langchain_core.messages import content as types
+        from langchain_core.messages.block_translators.anthropic import (
+            _convert_to_v1_from_anthropic_input,
+        )
+        from langchain_core.messages.block_translators.langchain_v0 import (
+            _convert_v0_multimodal_input_to_v1,
+        )
+        from langchain_core.messages.block_translators.openai import (
+            _convert_to_v1_from_chat_completions_input,
+        )
 
         blocks: list[types.ContentBlock] = []
 
@@ -143,26 +145,19 @@ class BaseMessage(Serializable):
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
-                # Try to convert potential v0 format first
-                converted_block = _convert_legacy_v0_content_block_to_v1(item)
-                if converted_block is not item:  # Conversion happened
-                    blocks.append(cast("types.ContentBlock", converted_block))
-                elif item_type is None or item_type not in types.KNOWN_BLOCK_TYPES:
-                    blocks.append(
-                        cast(
-                            "types.ContentBlock",
-                            {"type": "non_standard", "value": item},
-                        )
-                    )
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    blocks.append({"type": "non_standard", "value": item})
                 else:
                     blocks.append(cast("types.ContentBlock", item))
 
         # Subsequent passes: attempt to unpack non-standard blocks
-        blocks = _convert_v0_multimodal_input_to_v1(blocks)
-        # blocks = _convert_to_v1_from_anthropic_input(blocks)
-        # ...
-
-        return _convert_to_v1_from_chat_completions_input(blocks)
+        for parsing_step in [
+            _convert_v0_multimodal_input_to_v1,
+            _convert_to_v1_from_chat_completions_input,
+            _convert_to_v1_from_anthropic_input,
+        ]:
+            blocks = parsing_step(blocks)
+        return blocks
 
     def text(self) -> str:
         """Get the text content of the message.
