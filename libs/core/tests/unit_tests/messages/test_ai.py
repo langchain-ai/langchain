@@ -140,6 +140,17 @@ def test_add_usage_with_details() -> None:
     assert result["output_token_details"]["reasoning"] == 15
 
 
+def test_add_usage_with_none_tokens() -> None:
+    # Test case for issue #26348 - handle None values in token counts
+    usage1 = {"input_tokens": 10, "output_tokens": None, "total_tokens": None}
+    usage2 = {"input_tokens": None, "output_tokens": 20, "total_tokens": 30}
+    # Cast to UsageMetadata to simulate the real scenario
+    result = add_usage(usage1, usage2)  # type: ignore[arg-type]
+    assert result["input_tokens"] == 10
+    assert result["output_tokens"] == 20
+    assert result["total_tokens"] == 30
+
+
 def test_subtract_usage_both_none() -> None:
     result = subtract_usage(None, None)
     assert result == UsageMetadata(input_tokens=0, output_tokens=0, total_tokens=0)

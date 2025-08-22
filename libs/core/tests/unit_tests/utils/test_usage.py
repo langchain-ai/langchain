@@ -35,11 +35,27 @@ def test_dict_int_op_max_depth_exceeded() -> None:
         _dict_int_op(left, right, operator.add, max_depth=2)
 
 
+def test_dict_int_op_with_none_values() -> None:
+    # Test None values are treated as default (0)
+    left = {"a": 1, "b": None, "c": 3}
+    right = {"a": 2, "b": 3, "c": None}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 3, "b": 3, "c": 3}
+
+
+def test_dict_int_op_nested_with_none() -> None:
+    # Test nested dicts with None values
+    left = {"a": 1, "b": {"c": None, "d": 3}}
+    right = {"a": None, "b": {"c": 2, "d": None}}
+    result = _dict_int_op(left, right, operator.add)
+    assert result == {"a": 1, "b": {"c": 2, "d": 3}}
+
+
 def test_dict_int_op_invalid_types() -> None:
     left = {"a": 1, "b": "string"}
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported.",
+        match="Only dict, int, and None values are supported.",
     ):
         _dict_int_op(left, right, operator.add)
