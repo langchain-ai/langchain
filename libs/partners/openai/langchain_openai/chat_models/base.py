@@ -1092,37 +1092,36 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = self.client.create(**payload)
             context_manager = response
+        response = None
         try:
-            try:
-                with context_manager as response:
-                    is_first_chunk = True
-                    for chunk in response:
-                        if not isinstance(chunk, dict):
-                            chunk = chunk.model_dump()
-                        generation_chunk = self._convert_chunk_to_generation_chunk(
-                            chunk,
-                            default_chunk_class,
-                            base_generation_info if is_first_chunk else {},
+            with context_manager as response:
+                is_first_chunk = True
+                for chunk in response:
+                    if not isinstance(chunk, dict):
+                        chunk = chunk.model_dump()
+                    generation_chunk = self._convert_chunk_to_generation_chunk(
+                        chunk,
+                        default_chunk_class,
+                        base_generation_info if is_first_chunk else {},
+                    )
+                    if generation_chunk is None:
+                        continue
+                    default_chunk_class = generation_chunk.message.__class__
+                    logprobs = (generation_chunk.generation_info or {}).get("logprobs")
+                    if run_manager:
+                        run_manager.on_llm_new_token(
+                            generation_chunk.text,
+                            chunk=generation_chunk,
+                            logprobs=logprobs,
                         )
-                        if generation_chunk is None:
-                            continue
-                        default_chunk_class = generation_chunk.message.__class__
-                        logprobs = (generation_chunk.generation_info or {}).get(
-                            "logprobs"
-                        )
-                        if run_manager:
-                            run_manager.on_llm_new_token(
-                                generation_chunk.text,
-                                chunk=generation_chunk,
-                                logprobs=logprobs,
-                            )
-                        is_first_chunk = False
-                        yield generation_chunk
-            except Exception as e:
-                e.response = response  # type: ignore[attr-defined]
-                raise e
+                    is_first_chunk = False
+                    yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
+        except Exception as e:
+            if response is not None:
+                e.response = response  # type: ignore[attr-defined]
+            raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
@@ -1344,37 +1343,36 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = await self.async_client.create(**payload)
             context_manager = response
+        response = None
         try:
-            try:
-                async with context_manager as response:
-                    is_first_chunk = True
-                    async for chunk in response:
-                        if not isinstance(chunk, dict):
-                            chunk = chunk.model_dump()
-                        generation_chunk = self._convert_chunk_to_generation_chunk(
-                            chunk,
-                            default_chunk_class,
-                            base_generation_info if is_first_chunk else {},
+            async with context_manager as response:
+                is_first_chunk = True
+                async for chunk in response:
+                    if not isinstance(chunk, dict):
+                        chunk = chunk.model_dump()
+                    generation_chunk = self._convert_chunk_to_generation_chunk(
+                        chunk,
+                        default_chunk_class,
+                        base_generation_info if is_first_chunk else {},
+                    )
+                    if generation_chunk is None:
+                        continue
+                    default_chunk_class = generation_chunk.message.__class__
+                    logprobs = (generation_chunk.generation_info or {}).get("logprobs")
+                    if run_manager:
+                        await run_manager.on_llm_new_token(
+                            generation_chunk.text,
+                            chunk=generation_chunk,
+                            logprobs=logprobs,
                         )
-                        if generation_chunk is None:
-                            continue
-                        default_chunk_class = generation_chunk.message.__class__
-                        logprobs = (generation_chunk.generation_info or {}).get(
-                            "logprobs"
-                        )
-                        if run_manager:
-                            await run_manager.on_llm_new_token(
-                                generation_chunk.text,
-                                chunk=generation_chunk,
-                                logprobs=logprobs,
-                            )
-                        is_first_chunk = False
-                        yield generation_chunk
-            except Exception as e:
-                e.response = response  # type: ignore[attr-defined]
-                raise e
+                    is_first_chunk = False
+                    yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
+        except Exception as e:
+            if response is not None:
+                e.response = response  # type: ignore[attr-defined]
+            raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
