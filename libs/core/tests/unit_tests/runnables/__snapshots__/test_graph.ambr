@@ -525,6 +525,19 @@
                   'title': 'Additional Kwargs',
                   'type': 'object',
                 }),
+                'chunk_position': dict({
+                  'anyOf': list([
+                    dict({
+                      'const': 'last',
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Chunk Position',
+                }),
                 'content': dict({
                   'anyOf': list([
                     dict({
