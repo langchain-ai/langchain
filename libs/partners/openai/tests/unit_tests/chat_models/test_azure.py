@@ -117,7 +117,7 @@ def test_responses_api_uses_deployment_name() -> None:
     payload = llm._get_request_payload(messages)
 
     # For Responses API, the model field should be the deployment name, not the model name
-    assert payload["model"] == "lkm-dev-gpt-5"
+    assert payload["model"] == "your_deployment"
     assert "input" in payload  # Responses API uses 'input' instead of 'messages'
     assert "reasoning" in payload
 
@@ -137,6 +137,6 @@ def test_chat_completions_api_uses_model_name() -> None:
 
     # For Chat Completions API, the model field should still be None/model_name
     # Azure Chat Completions uses deployment in the URL, not in the model field
-    assert payload["model"] == "gpt-4o"
+    assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
