@@ -1283,6 +1283,7 @@ def test_chat_prompt_template_save_load_yaml(tmp_path: Path) -> None:
 
     # Load and verify
     import yaml
+
     with yaml_path.open() as f:
         loaded_data = yaml.safe_load(f)
     loaded_template = load(loaded_data)
@@ -1315,7 +1316,7 @@ def test_chat_prompt_template_save_with_messages_placeholder(tmp_path: Path) -> 
     # Test formatting with the placeholder
     assert loaded_template.format_messages(
         input="Hello",
-        chat_history=[HumanMessage(content="Hi"), AIMessage(content="Hello!")]
+        chat_history=[HumanMessage(content="Hi"), AIMessage(content="Hello!")],
     ) == [
         SystemMessage(content="You are an assistant"),
         HumanMessage(content="Hi"),
@@ -1326,9 +1327,7 @@ def test_chat_prompt_template_save_with_messages_placeholder(tmp_path: Path) -> 
 
 def test_chat_prompt_template_save_invalid_extension(tmp_path: Path) -> None:
     """Test that saving with invalid extension raises error."""
-    template = ChatPromptTemplate.from_messages(
-        [("human", "Hello {name}")]
-    )
+    template = ChatPromptTemplate.from_messages([("human", "Hello {name}")])
 
     # Try to save with invalid extension
     invalid_path = tmp_path / "prompt.txt"
@@ -1352,9 +1351,7 @@ def test_chat_prompt_template_save_with_partial_variables(tmp_path: Path) -> Non
 
 def test_chat_prompt_template_save_creates_directories(tmp_path: Path) -> None:
     """Test that save creates parent directories if they don't exist."""
-    template = ChatPromptTemplate.from_messages(
-        [("human", "Hello")]
-    )
+    template = ChatPromptTemplate.from_messages([("human", "Hello")])
 
     # Save to nested path that doesn't exist
     nested_path = tmp_path / "nested" / "dir" / "prompt.json"
