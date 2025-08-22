@@ -52,34 +52,31 @@ def _convert_to_v1_from_chat_completions_input(
     from langchain_core.messages import content as types
 
     converted_blocks = []
-    for block in blocks:
-        if (
-            isinstance(block, dict)
-            and block.get("type") == "non_standard"
-            and "value" in block
-            and isinstance(block["value"], dict)  # type: ignore[typeddict-item]
-        ):
-            # We know this is a NonStandardContentBlock, so we can safely access value
-            value = cast("Any", block)["value"]
-            # Check if this looks like OpenAI format
-            if value.get("type") in {
-                "image_url",
-                "input_audio",
-                "file",
-            } and _is_openai_data_block(value):
-                converted_block = _convert_openai_format_to_data_block(value)
-                # If conversion succeeded, use it; otherwise keep as non_standard
-                if (
-                    isinstance(converted_block, dict)
-                    and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
-                ):
-                    converted_blocks.append(cast("types.ContentBlock", converted_block))
-                else:
-                    converted_blocks.append(block)
+    unpacked_blocks: list[dict[str, Any]] = [
+        cast("dict[str, Any]", block)
+        if block.get("type") != "non_standard"
+        else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
+        for block in blocks
+    ]
+    for block in unpacked_blocks:
+        if block.get("type") in {
+            "image_url",
+            "input_audio",
+            "file",
+        } and _is_openai_data_block(block):
+            converted_block = _convert_openai_format_to_data_block(block)
+            # If conversion succeeded, use it; otherwise keep as non_standard
+            if (
+                isinstance(converted_block, dict)
+                and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
+            ):
+                converted_blocks.append(cast("types.ContentBlock", converted_block))
             else:
-                converted_blocks.append(block)
+                converted_blocks.append({"type": "non_standard", "value": block})
+        elif block.get("type") in types.KNOWN_BLOCK_TYPES:
+            converted_blocks.append(cast("types.ContentBlock", block))
         else:
-            converted_blocks.append(block)
+            converted_blocks.append({"type": "non_standard", "value": block})
 
     return converted_blocks
 

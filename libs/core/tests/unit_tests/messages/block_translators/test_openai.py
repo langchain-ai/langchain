@@ -1,7 +1,7 @@
 from typing import Optional
 
 from langchain_core.language_models.fake_chat_models import ParrotFakeChatModel
-from langchain_core.messages import AIMessage, AIMessageChunk
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 from tests.unit_tests.language_models.chat_models.test_base import (
     _content_blocks_equal_ignore_id,
@@ -261,3 +261,64 @@ def test_convert_to_v1_from_responses_chunk() -> None:
         },
     ]
     assert full.content_blocks == expected_content_blocks
+
+
+def test_convert_to_v1_from_openai_input() -> None:
+    message = HumanMessage(
+        content=[
+            {"type": "text", "text": "Hello"},
+            {
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
+            },
+            {
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
+            },
+            {
+                "type": "input_audio",
+                "input_audio": {
+                    "format": "wav",
+                    "data": "<base64 string>",
+                },
+            },
+            {
+                "type": "file",
+                "file": {
+                    "filename": "draconomicon.pdf",
+                    "file_data": "<base64 string>",
+                },
+            },
+            {
+                "type": "file",
+                "file": {"file_id": "<file id>"},
+            },
+        ]
+    )
+
+    expected: list[types.ContentBlock] = [
+        {"type": "text", "text": "Hello"},
+        {
+            "type": "image",
+            "url": "https://example.com/image.png",
+        },
+        {
+            "type": "image",
+            "base64": "/9j/4AAQSkZJRg...",
+            "mime_type": "image/jpeg",
+        },
+        {
+            "type": "audio",
+            "base64": "<base64 string>",
+            "mime_type": "audio/wav",
+        },
+        {
+            "type": "file",
+            "base64": "<base64 string>",
+            "mime_type": "application/pdf",
+            "extras": {"filename": "draconomicon.pdf"},
+        },
+        {"type": "file", "file_id": "<file id>"},
+    ]
+
+    assert _content_blocks_equal_ignore_id(message.content_blocks, expected)
