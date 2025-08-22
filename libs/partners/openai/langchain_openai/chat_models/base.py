@@ -1154,19 +1154,20 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
+            raw_response = None
             try:
                 raw_response = (
                     self.root_client.beta.chat.completions.with_raw_response.parse(
                         **payload
                     )
                 )
-                try:
-                    response = raw_response.parse()
-                except Exception as e:
-                    e.response = raw_response  # type: ignore[attr-defined]
-                    raise e
+                response = raw_response.parse()
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
+            except Exception as e:
+                if raw_response is not None:
+                    e.response = raw_response  # type: ignore[attr-defined]
+                raise e
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
@@ -1405,17 +1406,18 @@ class BaseChatOpenAI(BaseChatModel):
                     "specified."
                 )
             payload.pop("stream")
+            raw_response = None
             try:
                 raw_response = await self.root_async_client.beta.chat.completions.with_raw_response.parse(  # noqa: E501
                     **payload
                 )
-                try:
-                    response = raw_response.parse()
-                except Exception as e:
-                    e.response = raw_response  # type: ignore[attr-defined]
-                    raise e
+                response = raw_response.parse()
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
+            except Exception as e:
+                if raw_response is not None:
+                    e.response = raw_response  # type: ignore[attr-defined]
+                raise e
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
