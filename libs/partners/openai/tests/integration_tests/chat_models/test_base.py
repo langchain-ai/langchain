@@ -1224,3 +1224,37 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
         assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+def test_stream_response_format_failures() -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    try:
+        for chunk in ChatOpenAI(model="gpt-5-nano").stream(
+            "respond with good", response_format=BadModel
+        ):
+            chunks.append(chunk)
+            full = chunk if full is None else full + chunk
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+async def test_astream_response_format_failures() -> None:
+    full: Optional[BaseMessageChunk] = None
+    chunks = []
+    try:
+        async for chunk in ChatOpenAI(model="gpt-5-nano").astream(
+            "respond with good", response_format=BadModel
+        ):
+            chunks.append(chunk)
+            full = chunk if full is None else full + chunk
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
