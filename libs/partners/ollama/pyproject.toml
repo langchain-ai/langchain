@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "ollama>=0.5.1,<1.0.0",
+    "ollama>=0.5.3,<1.0.0",
     "langchain-core<1.0.0,>=0.3.70",
 ]
 name = "langchain-ollama"

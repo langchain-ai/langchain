@@ -13,10 +13,25 @@ from langchain_core.messages.block_translators.ollama import (
     translate_content_chunk,
 )
 from langchain_core.utils.utils import LC_AUTO_PREFIX
+from ollama._types import ChatResponse, Message
 
 from langchain_ollama.chat_models import ChatOllama
 
 MODEL_NAME = "llama3.1"
+
+
+def create_mock_chat_response(**kwargs: Any) -> ChatResponse:
+    """Create a mock ChatResponse object for testing."""
+    defaults = {
+        "model": "test-model",
+        "created_at": "2025-01-01T00:00:00.000000000Z",
+        "done": False,
+        "done_reason": None,
+        "message": Message(role="assistant", content=""),
+    }
+    defaults.update(kwargs)
+
+    return ChatResponse(**defaults)
 
 
 class TestV1BlockTranslator:
@@ -120,16 +135,15 @@ class TestV1ChatOllama:
     def test_v0_output_format(self) -> None:
         """Test that previous output format is retained."""
         mock_response = [
-            {
-                "model": "test-model",
-                "message": {
+            create_mock_chat_response(
+                message={
                     "role": "assistant",
                     "content": "Hello, world!",
                     "thinking": "I should greet the user.",
                 },
-                "done": True,
-                "done_reason": "stop",
-            }
+                done=True,
+                done_reason="stop",
+            )
         ]
 
         with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -164,16 +178,15 @@ class TestV1ChatOllama:
 
     def test_v1_output_format(self) -> None:
         mock_response = [
-            {
-                "model": "test-model",
-                "message": {
+            create_mock_chat_response(
+                message={
                     "role": "assistant",
                     "content": "Hello, world!",
                     "thinking": "I should greet the user.",
                 },
-                "done": True,
-                "done_reason": "stop",
-            }
+                done=True,
+                done_reason="stop",
+            )
         ]
 
         with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -211,17 +224,15 @@ class TestV1ChatOllama:
     def test_v1_streaming_output_format(self) -> None:
         """Test that v1 format works with streaming."""
         mock_responses = [
-            {
-                "model": "test-model",
-                "message": {"role": "assistant", "content": "Hello"},
-                "done": False,
-            },
-            {
-                "model": "test-model",
-                "message": {"role": "assistant", "content": ", world!"},
-                "done": True,
-                "done_reason": "stop",
-            },
+            create_mock_chat_response(
+                message={"role": "assistant", "content": "Hello"},
+                done=False,
+            ),
+            create_mock_chat_response(
+                message={"role": "assistant", "content": ", world!"},
+                done=True,
+                done_reason="stop",
+            ),
         ]
 
         with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -244,9 +255,8 @@ class TestV1ChatOllama:
     def test_v1_with_tool_calls(self) -> None:
         """Test v1 format with tool calls."""
         mock_response = [
-            {
-                "model": "test-model",
-                "message": {
+            create_mock_chat_response(
+                message={
                     "role": "assistant",
                     "content": "",
                     "tool_calls": [
@@ -258,9 +268,9 @@ class TestV1ChatOllama:
                         }
                     ],
                 },
-                "done": True,
-                "done_reason": "stop",
-            }
+                done=True,
+                done_reason="stop",
+            )
         ]
 
         with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -284,16 +294,15 @@ class TestV1ChatOllama:
     async def test_v1_async_generation(self) -> None:
         """Test v1 format with async generation."""
         mock_response = [
-            {
-                "model": "test-model",
-                "message": {
+            create_mock_chat_response(
+                message={
                     "role": "assistant",
                     "content": "Hello, async world!",
                     "thinking": "Async thinking...",
                 },
-                "done": True,
-                "done_reason": "stop",
-            }
+                done=True,
+                done_reason="stop",
+            )
         ]
 
         with patch("langchain_ollama.chat_models.AsyncClient") as mock_client_class:
@@ -330,17 +339,15 @@ class TestV1ChatOllama:
     async def test_v1_async_streaming(self) -> None:
         """Test v1 format with async streaming."""
         mock_responses = [
-            {
-                "model": "test-model",
-                "message": {"role": "assistant", "content": "Async"},
-                "done": False,
-            },
-            {
-                "model": "test-model",
-                "message": {"role": "assistant", "content": " streaming!"},
-                "done": True,
-                "done_reason": "stop",
-            },
+            create_mock_chat_response(
+                message={"role": "assistant", "content": "Async"},
+                done=False,
+            ),
+            create_mock_chat_response(
+                message={"role": "assistant", "content": " streaming!"},
+                done=True,
+                done_reason="stop",
+            ),
         ]
 
         with patch("langchain_ollama.chat_models.AsyncClient") as mock_client_class:

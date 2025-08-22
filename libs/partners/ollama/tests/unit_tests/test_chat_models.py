@@ -12,6 +12,7 @@ from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
+from ollama._types import ChatResponse, Message
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -20,6 +21,20 @@ from langchain_ollama.chat_models import (
 )
 
 MODEL_NAME = "llama3.1"
+
+
+def create_mock_chat_response(**kwargs: Any) -> ChatResponse:
+    """Create a mock ChatResponse object for testing."""
+    defaults = {
+        "model": "test-model",
+        "created_at": "2025-01-01T00:00:00.000000000Z",
+        "done": False,
+        "done_reason": None,
+        "message": Message(role="assistant", content=""),
+    }
+    defaults.update(kwargs)
+
+    return ChatResponse(**defaults)
 
 
 class TestChatOllama(ChatModelUnitTests):
@@ -191,13 +206,11 @@ def test_load_response_with_empty_content_is_skipped(
 ) -> None:
     """Test that load responses with empty content log a warning and are skipped."""
     load_only_response = [
-        {
-            "model": "test-model",
-            "created_at": "2025-01-01T00:00:00.000000000Z",
-            "done": True,
-            "done_reason": "load",
-            "message": {"role": "assistant", "content": ""},
-        }
+        create_mock_chat_response(
+            done=True,
+            done_reason="load",
+            message={"role": "assistant", "content": ""},
+        )
     ]
 
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -221,13 +234,11 @@ def test_load_response_with_whitespace_content_is_skipped(
 ) -> None:
     """Test load responses w/ only whitespace content log a warning and are skipped."""
     load_whitespace_response = [
-        {
-            "model": "test-model",
-            "created_at": "2025-01-01T00:00:00.000000000Z",
-            "done": True,
-            "done_reason": "load",
-            "message": {"role": "assistant", "content": "   \n  \t  "},
-        }
+        create_mock_chat_response(
+            done=True,
+            done_reason="load",
+            message={"role": "assistant", "content": "   \n  \t  "},
+        )
     ]
 
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -250,23 +261,20 @@ def test_load_followed_by_content_response(
 ) -> None:
     """Test load responses log a warning and are skipped when followed by content."""
     load_then_content_response = [
-        {
-            "model": "test-model",
-            "created_at": "2025-01-01T00:00:00.000000000Z",
-            "done": True,
-            "done_reason": "load",
-            "message": {"role": "assistant", "content": ""},
-        },
-        {
-            "model": "test-model",
-            "created_at": "2025-01-01T00:00:01.000000000Z",
-            "done": True,
-            "done_reason": "stop",
-            "message": {
+        create_mock_chat_response(
+            done=True,
+            done_reason="load",
+            message={"role": "assistant", "content": ""},
+        ),
+        create_mock_chat_response(
+            created_at="2025-01-01T00:00:01.000000000Z",
+            done=True,
+            done_reason="stop",
+            message={
                 "role": "assistant",
                 "content": "Hello! How can I help you today?",
             },
-        },
+        ),
     ]
 
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -289,13 +297,11 @@ def test_load_response_with_actual_content_is_not_skipped(
 ) -> None:
     """Test load responses with actual content are NOT skipped and log no warning."""
     load_with_content_response = [
-        {
-            "model": "test-model",
-            "created_at": "2025-01-01T00:00:00.000000000Z",
-            "done": True,
-            "done_reason": "load",
-            "message": {"role": "assistant", "content": "This is actual content"},
-        }
+        create_mock_chat_response(
+            done=True,
+            done_reason="load",
+            message={"role": "assistant", "content": "This is actual content"},
+        )
     ]
 
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:

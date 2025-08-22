@@ -7,8 +7,10 @@ from langchain_ollama import ChatOllama
 
 SAMPLE = "What is 3^3?"
 
+REASONING_MODEL = "deepseek-r1:1.5b"
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_stream_no_reasoning(model: str) -> None:
     """Test streaming with `reasoning=False`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
@@ -31,7 +33,7 @@ def test_stream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result.additional_kwargs
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_astream_no_reasoning(model: str) -> None:
     """Test async streaming with `reasoning=False`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
@@ -54,7 +56,7 @@ async def test_astream_no_reasoning(model: str) -> None:
     assert "reasoning_content" not in result.additional_kwargs
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_stream_reasoning_none(model: str) -> None:
     """Test streaming with `reasoning=None`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
@@ -79,7 +81,7 @@ def test_stream_reasoning_none(model: str) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_astream_reasoning_none(model: str) -> None:
     """Test async streaming with `reasoning=None`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
@@ -104,7 +106,7 @@ async def test_astream_reasoning_none(model: str) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_reasoning_stream(model: str) -> None:
     """Test streaming with `reasoning=True`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
@@ -130,7 +132,7 @@ def test_reasoning_stream(model: str) -> None:
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_reasoning_astream(model: str) -> None:
     """Test async streaming with `reasoning=True`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
@@ -156,7 +158,7 @@ async def test_reasoning_astream(model: str) -> None:
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_invoke_no_reasoning(model: str) -> None:
     """Test using invoke with `reasoning=False`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
@@ -167,7 +169,7 @@ def test_invoke_no_reasoning(model: str) -> None:
     assert "<think>" not in result.content and "</think>" not in result.content
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_ainvoke_no_reasoning(model: str) -> None:
     """Test using async invoke with `reasoning=False`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=False)
@@ -178,7 +180,7 @@ async def test_ainvoke_no_reasoning(model: str) -> None:
     assert "<think>" not in result.content and "</think>" not in result.content
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_invoke_reasoning_none(model: str) -> None:
     """Test using invoke with `reasoning=None`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
@@ -191,7 +193,7 @@ def test_invoke_reasoning_none(model: str) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_ainvoke_reasoning_none(model: str) -> None:
     """Test using async invoke with `reasoning=None`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=None)
@@ -204,7 +206,7 @@ async def test_ainvoke_reasoning_none(model: str) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_reasoning_invoke(model: str) -> None:
     """Test invoke with `reasoning=True`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
@@ -218,7 +220,7 @@ def test_reasoning_invoke(model: str) -> None:
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 async def test_reasoning_ainvoke(model: str) -> None:
     """Test invoke with `reasoning=True`"""
     llm = ChatOllama(model=model, num_ctx=2**12, reasoning=True)
@@ -232,7 +234,7 @@ async def test_reasoning_ainvoke(model: str) -> None:
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
 
-@pytest.mark.parametrize(("model"), [("deepseek-r1:1.5b")])
+@pytest.mark.parametrize(("model"), [(REASONING_MODEL)])
 def test_think_tag_stripping_necessity(model: str) -> None:
     """Test that demonstrates why ``_strip_think_tags`` is necessary.
 

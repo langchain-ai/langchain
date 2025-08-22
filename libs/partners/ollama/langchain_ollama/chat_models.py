@@ -37,6 +37,9 @@ from langchain_core.messages import (
     is_data_content_block,
 )
 from langchain_core.messages.ai import UsageMetadata
+
+# Import the translator to ensure it's registered
+from langchain_core.messages.block_translators import ollama  # noqa: F401
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
     JsonOutputKeyToolsParser,
@@ -53,6 +56,7 @@ from langchain_core.utils.function_calling import (
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
 from ollama import AsyncClient, Client, Message, Options
+from ollama._types import ChatResponse
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -774,7 +778,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[Union[Mapping[str, Any], str]]:
+    ) -> AsyncIterator[Union[ChatResponse, str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -788,7 +792,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[Union[Mapping[str, Any], str]]:
+    ) -> Iterator[Union[ChatResponse, str]]:
         chat_params = self._chat_params(messages, stop, **kwargs)
 
         if chat_params["stream"]:
@@ -902,18 +906,21 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
+                content = stream_resp.message.content if stream_resp.message else ""
+                content = content or ""  # Ensure content is never None
+                done = stream_resp.done if hasattr(stream_resp, "done") else False
+                done_reason = (
+                    stream_resp.done_reason
+                    if hasattr(stream_resp, "done_reason")
+                    else None
                 )
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True
-                    and stream_resp.get("done_reason") == "load"
-                    and not content.strip()
+                    done is True
+                    and done_reason == "load"
+                    and not (content or "").strip()
                 )
 
                 if is_load_response_with_empty_content:
@@ -924,7 +931,7 @@ class ChatOllama(BaseChatModel):
                     )
                     continue
 
-                if stream_resp.get("done") is True:
+                if done is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
@@ -935,19 +942,25 @@ class ChatOllama(BaseChatModel):
                 additional_kwargs = {}
                 if (
                     reasoning
-                    and "message" in stream_resp
-                    and (thinking_content := stream_resp["message"].get("thinking"))
+                    and hasattr(stream_resp, "message")
+                    and stream_resp.message
+                    and hasattr(stream_resp.message, "thinking")
+                    and stream_resp.message.thinking
                 ):
-                    additional_kwargs["reasoning_content"] = thinking_content
+                    additional_kwargs["reasoning_content"] = (
+                        stream_resp.message.thinking
+                    )
 
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
                         additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
+                            cast(Mapping[str, Any], stream_resp)
                         ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
+                        tool_calls=_get_tool_calls_from_response(
+                            cast(Mapping[str, Any], stream_resp)
+                        ),
                         response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
@@ -987,18 +1000,21 @@ class ChatOllama(BaseChatModel):
         reasoning = kwargs.get("reasoning", self.reasoning)
         async for stream_resp in self._acreate_chat_stream(messages, stop, **kwargs):
             if not isinstance(stream_resp, str):
-                content = (
-                    stream_resp["message"]["content"]
-                    if "message" in stream_resp and "content" in stream_resp["message"]
-                    else ""
+                content = stream_resp.message.content if stream_resp.message else ""
+                content = content or ""  # Ensure content is never None
+                done = stream_resp.done if hasattr(stream_resp, "done") else False
+                done_reason = (
+                    stream_resp.done_reason
+                    if hasattr(stream_resp, "done_reason")
+                    else None
                 )
 
                 # Warn and skip responses with done_reason: 'load' and empty content
                 # These indicate the model was loaded but no actual generation occurred
                 is_load_response_with_empty_content = (
-                    stream_resp.get("done") is True
-                    and stream_resp.get("done_reason") == "load"
-                    and not content.strip()
+                    done is True
+                    and done_reason == "load"
+                    and not (content or "").strip()
                 )
 
                 if is_load_response_with_empty_content:
@@ -1009,7 +1025,7 @@ class ChatOllama(BaseChatModel):
                     )
                     continue
 
-                if stream_resp.get("done") is True:
+                if done is True:
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
@@ -1020,19 +1036,25 @@ class ChatOllama(BaseChatModel):
                 additional_kwargs = {}
                 if (
                     reasoning
-                    and "message" in stream_resp
-                    and (thinking_content := stream_resp["message"].get("thinking"))
+                    and hasattr(stream_resp, "message")
+                    and stream_resp.message
+                    and hasattr(stream_resp.message, "thinking")
+                    and stream_resp.message.thinking
                 ):
-                    additional_kwargs["reasoning_content"] = thinking_content
+                    additional_kwargs["reasoning_content"] = (
+                        stream_resp.message.thinking
+                    )
 
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
                         additional_kwargs=additional_kwargs,
                         usage_metadata=_get_usage_metadata_from_generation_info(
-                            stream_resp
+                            cast(Mapping[str, Any], stream_resp)
                         ),
-                        tool_calls=_get_tool_calls_from_response(stream_resp),
+                        tool_calls=_get_tool_calls_from_response(
+                            cast(Mapping[str, Any], stream_resp)
+                        ),
                         response_metadata={"model_provider": "ollama"},
                     ),
                     generation_info=generation_info,
