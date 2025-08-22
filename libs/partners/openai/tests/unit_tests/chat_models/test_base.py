@@ -2153,10 +2153,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
 
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
-        {
-            "type": "input_text",
-            "text": "I'll check the weather for you.",
-        }
+        {"type": "input_text", "text": "I'll check the weather for you."}
     ]
 
     assert result[1]["type"] == "function_call"
