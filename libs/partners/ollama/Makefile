@@ -8,8 +8,7 @@ UV_FROZEN = true
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
-integration_test integration_tests: TEST_FILE = tests/integration_tests/
-# note: leaving out integration_tests (with s) command to skip release testing for now
+integration_test: TEST_FILE = tests/integration_tests/
 # TODO(erick) configure ollama server to run in CI, in separate repo
 
 # Define variables for test model configuration
@@ -26,9 +25,15 @@ test_watch:
 
 
 # integration tests are run without the --disable-socket flag to allow network calls
-integration_test integration_tests:
+integration_test:
 	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest $(TEST_FILE)
-# note: leaving out integration_tests (with s) command to skip release testing for now
+
+# CI integration tests - disabled until ollama service is configured in CI
+integration_tests:
+	@echo "❌ Integration tests are disabled for CI until ollama service is configured"
+	@echo "   Use 'make integration_test' to run locally with ollama service"
+	@echo "   TODO: configure ollama server to run in CI (see GitHub issue)"
+	@exit 1
 
 ######################
 # LINTING AND FORMATTING
