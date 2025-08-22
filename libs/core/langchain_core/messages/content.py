@@ -887,8 +887,6 @@ ToolContentBlock = Union[
 
 ContentBlock = Union[
     TextContentBlock,
-    ToolCall,
-    ToolCallChunk,
     InvalidToolCall,
     ReasoningContentBlock,
     NonStandardContentBlock,
@@ -898,21 +896,26 @@ ContentBlock = Union[
 
 
 KNOWN_BLOCK_TYPES = {
+    # Text output
     "text",
-    "text-plain",
+    "reasoning",
+    # Tools
     "tool_call",
     "invalid_tool_call",
     "tool_call_chunk",
-    "reasoning",
-    "non_standard",
+    # Multimodal data
     "image",
     "audio",
     "file",
+    "text-plain",
     "video",
+    # Server-side tool calls
     "code_interpreter_call",
     "code_interpreter_result",
     "web_search_call",
     "web_search_result",
+    # Catch-all
+    "non_standard",
 }
 
 
@@ -942,21 +945,25 @@ def is_data_content_block(block: dict) -> bool:
         True if the content block is a data content block, False otherwise.
 
     """
-    return block.get("type") in _get_data_content_block_types() and any(
-        # Check if at least one non-type key is present to signify presence of data
-        key in block
-        for key in (
-            "url",
-            "base64",
-            "file_id",
-            "text",
-            "source_type",  # for backwards compatibility with v0 content blocks
-            # TODO: should we verify that if source_type is present, at least one of
-            # url, base64, or file_id is also present? Otherwise, source_type could be
-            # present without any actual data? Need to confirm whether this was ever
-            # possible in v0 content blocks in the first place.
-        )
-    )
+    if block.get("type") not in _get_data_content_block_types():
+        return False
+
+    if any(key in block for key in ("url", "base64", "file_id", "text")):
+        return True
+
+    # Verify data presence based on source type
+    if "source_type" in block:
+        source_type = block["source_type"]
+        if (source_type == "url" and "url" in block) or (
+            source_type == "base64" and "data" in block
+        ):
+            return True
+        if (source_type == "id" and "id" in block) or (
+            source_type == "text" and "url" in block
+        ):
+            return True
+
+    return False
 
 
 def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
@@ -1013,12 +1020,13 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 
 def convert_to_openai_data_block(block: dict) -> dict:
     """Format standard data content block to format expected by OpenAI."""
-    # TODO: make sure this supports new v1
     if block["type"] == "image":
         formatted_block = convert_to_openai_image_block(block)
 
     elif block["type"] == "file":
         if "base64" in block or block.get("source_type") == "base64":
+            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format: {"base64": "...", ...}
             base64_data = block["data"] if "source_type" in block else block["base64"]
             file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
@@ -1037,6 +1045,8 @@ def convert_to_openai_data_block(block: dict) -> dict:
                 )
             formatted_block = {"type": "file", "file": file}
         elif "file_id" in block or block.get("source_type") == "id":
+            # Handle v0 format: {"source_type": "id", "id": "...", ...}
+            # Handle v1 format: {"file_id": "...", ...}
             file_id = block["id"] if "source_type" in block else block["file_id"]
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
         else:
@@ -1045,6 +1055,8 @@ def convert_to_openai_data_block(block: dict) -> dict:
 
     elif block["type"] == "audio":
         if "base64" in block or block.get("source_type") == "base64":
+            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format: {"base64": "...", ...}
             base64_data = block["data"] if "source_type" in block else block["base64"]
             audio_format = block["mime_type"].split("/")[-1]
             formatted_block = {

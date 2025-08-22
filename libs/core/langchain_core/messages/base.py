@@ -8,6 +8,12 @@ from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content as types
+from langchain_core.messages.block_translators.langchain import (
+    _convert_v0_multimodal_input_to_v1,
+)
+from langchain_core.messages.block_translators.openai import (
+    _convert_to_v1_from_chat_completions_input,
+)
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -128,7 +134,7 @@ class BaseMessage(Serializable):
 
         blocks: list[types.ContentBlock] = []
 
-        # First pass converting to standard blocks
+        # First pass: convert to standard blocks
         content = (
             [self.content]
             if isinstance(self.content, str) and self.content
@@ -143,13 +149,15 @@ class BaseMessage(Serializable):
                     blocks.append({"type": "non_standard", "value": item})
                 else:
                     blocks.append(cast("types.ContentBlock", item))
-            else:
-                pass
 
-        # Subsequent passes attempt to unpack non-standard blocks
-        blocks = _convert_to_v1_from_anthropic_input(blocks)
-
-        return blocks  # noqa: RET504
+        # Subsequent passes: attempt to unpack non-standard blocks
+        for parsing_step in [
+            _convert_v0_multimodal_input_to_v1,
+            _convert_to_v1_from_chat_completions_input,
+            _convert_to_v1_from_anthropic_input,
+        ]:
+            blocks = parsing_step(blocks)
+        return blocks
 
     def text(self) -> str:
         """Get the text content of the message.
@@ -215,7 +223,9 @@ def merge_content(
     Returns:
         The merged content.
     """
-    merged = first_content
+    merged: Union[str, list[Union[str, dict]]]
+    merged = "" if first_content is None else first_content
+
     for content in contents:
         # If current is a string
         if isinstance(merged, str):
@@ -236,8 +246,8 @@ def merge_content(
         # If second content is an empty string, treat as a no-op
         elif content == "":
             pass
-        else:
-            # Otherwise, add the second content as a new element of the list
+        # Otherwise, add the second content as a new element of the list
+        elif merged:
             merged.append(content)
     return merged
 
