@@ -681,5 +681,5 @@ def test_responses_stream() -> None:
         if "content" in dumped and isinstance(dumped["content"], list):
             for content in dumped["content"]:
                 if "type" in content and content["type"] == "output_text":
-                    content["type"] == "input_text"
+                    content["type"] = "input_text"
         assert dumped == payload["input"][idx]
