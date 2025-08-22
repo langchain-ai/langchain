@@ -1974,8 +1974,8 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
             "type": "message",
             "role": "assistant",
             "content": [
-                {"type": "output_text", "text": "foo", "annotations": []},
-                {"type": "output_text", "text": "bar", "annotations": []},
+                {"type": "input_text", "text": "foo", "annotations": []},
+                {"type": "input_text", "text": "bar", "annotations": []},
             ],
             "id": "msg_123",
         }
@@ -1999,8 +1999,8 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
             "type": "message",
             "role": "assistant",
             "content": [
-                {"type": "output_text", "text": "foo", "annotations": []},
-                {"type": "output_text", "text": "bar", "annotations": []},
+                {"type": "input_text", "text": "foo", "annotations": []},
+                {"type": "input_text", "text": "bar", "annotations": []},
                 {"type": "refusal", "refusal": "I refuse."},
             ],
             "id": "msg_123",
@@ -2008,7 +2008,7 @@ def test__construct_responses_api_input_multiple_message_components() -> None:
         {
             "type": "message",
             "role": "assistant",
-            "content": [{"type": "output_text", "text": "baz", "annotations": []}],
+            "content": [{"type": "input_text", "text": "baz", "annotations": []}],
             "id": "msg_234",
         },
     ]
@@ -2130,7 +2130,7 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
         {
-            "type": "output_text",
+            "type": "input_text",
             "text": "I'll check the weather for you.",
             "annotations": [],
         }
@@ -2154,9 +2154,8 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
         {
-            "type": "output_text",
+            "type": "input_text",
             "text": "I'll check the weather for you.",
-            "annotations": [],
         }
     ]
 
@@ -2257,16 +2256,15 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert result[6]["role"] == "assistant"
     assert result[6]["content"] == [
         {
-            "type": "output_text",
+            "type": "input_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
-            "annotations": [],
         }
     ]
 
     assert result[7]["role"] == "assistant"
     assert result[7]["content"] == [
         {
-            "type": "output_text",
+            "type": "input_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
             "annotations": [],
         }
