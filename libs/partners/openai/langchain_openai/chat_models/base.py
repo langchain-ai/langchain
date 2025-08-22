@@ -3701,7 +3701,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                             msg_id = block.get("id")
                             if block_type in ("text", "output_text"):
                                 new_block = {
-                                    "type": "output_text",
+                                    "type": "input_text",
                                     "text": block["text"],
                                     "annotations": block.get("annotations") or [],
                                 }
@@ -3752,13 +3752,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     {
                         "type": "message",
                         "role": "assistant",
-                        "content": [
-                            {
-                                "type": "output_text",
-                                "text": msg["content"],
-                                "annotations": [],
-                            }
-                        ],
+                        "content": [{"type": "input_text", "text": msg["content"]}],
                     }
                 )
 
