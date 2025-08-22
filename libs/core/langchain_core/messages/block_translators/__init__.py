@@ -45,37 +45,45 @@ def get_translator(
     return PROVIDER_TRANSLATORS.get(provider)
 
 
-def _auto_register_translators() -> None:
-    """Automatically register all available block translators."""
-    import contextlib
-    import importlib
-    import pkgutil
-    from pathlib import Path
+def _register_translators() -> None:
+    """Register all translators in langchain-core.
 
-    package_path = Path(__file__).parent
+    A unit test ensures all modules in ``block_translators`` are represented here.
 
-    # Discover all sub-modules
-    for module_info in pkgutil.iter_modules([str(package_path)]):
-        module_name = module_info.name
+    For translators implemented outside langchain-core, they can be registered by
+    calling ``register_translator`` from within the integration package.
+    """
+    from langchain_core.messages.block_translators.anthropic import (
+        _register_anthropic_translator,
+    )
+    from langchain_core.messages.block_translators.bedrock import (
+        _register_bedrock_translator,
+    )
+    from langchain_core.messages.block_translators.bedrock_converse import (
+        _register_bedrock_converse_translator,
+    )
+    from langchain_core.messages.block_translators.google_genai import (
+        _register_google_genai_translator,
+    )
+    from langchain_core.messages.block_translators.google_vertexai import (
+        _register_google_vertexai_translator,
+    )
+    from langchain_core.messages.block_translators.groq import _register_groq_translator
+    from langchain_core.messages.block_translators.ollama import (
+        _register_ollama_translator,
+    )
+    from langchain_core.messages.block_translators.openai import (
+        _register_openai_translator,
+    )
 
-        # Skip the __init__ module and any private modules
-        if module_name.startswith("_"):
-            continue
-
-        if module_info.ispkg:
-            # For subpackages, discover their submodules
-            subpackage_path = package_path / module_name
-            for submodule_info in pkgutil.iter_modules([str(subpackage_path)]):
-                submodule_name = submodule_info.name
-                if not submodule_name.startswith("_"):
-                    with contextlib.suppress(ImportError, AttributeError):
-                        importlib.import_module(
-                            f".{module_name}.{submodule_name}", package=__name__
-                        )
-        else:
-            # Import top-level translator modules
-            with contextlib.suppress(ImportError, AttributeError):
-                importlib.import_module(f".{module_name}", package=__name__)
+    _register_bedrock_translator()
+    _register_bedrock_converse_translator()
+    _register_anthropic_translator()
+    _register_google_genai_translator()
+    _register_google_vertexai_translator()
+    _register_groq_translator()
+    _register_ollama_translator()
+    _register_openai_translator()
 
 
-_auto_register_translators()
+_register_translators()

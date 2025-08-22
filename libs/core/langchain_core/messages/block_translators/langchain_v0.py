@@ -1,4 +1,4 @@
-"""Derivations of standard content blocks from LangChain content."""
+"""Derivations of standard content blocks from LangChain v0 multimodal content."""
 
 from typing import Any, Union, cast
 

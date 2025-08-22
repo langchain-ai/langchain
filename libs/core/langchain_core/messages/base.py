@@ -8,12 +8,6 @@ from pydantic import ConfigDict, Field
 
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content as types
-from langchain_core.messages.block_translators.langchain import (
-    _convert_v0_multimodal_input_to_v1,
-)
-from langchain_core.messages.block_translators.openai import (
-    _convert_to_v1_from_chat_completions_input,
-)
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -130,6 +124,12 @@ class BaseMessage(Serializable):
         from langchain_core.messages import content as types
         from langchain_core.messages.block_translators.anthropic import (
             _convert_to_v1_from_anthropic_input,
+        )
+        from langchain_core.messages.block_translators.langchain_v0 import (
+            _convert_v0_multimodal_input_to_v1,
+        )
+        from langchain_core.messages.block_translators.openai import (
+            _convert_to_v1_from_chat_completions_input,
         )
 
         blocks: list[types.ContentBlock] = []
