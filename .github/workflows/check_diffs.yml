@@ -54,6 +54,7 @@ jobs:
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
   # Run linting only on packages that have changed files
   lint:
     needs: [ build ]
