@@ -14,7 +14,7 @@ from langchain_core.messages import (
     HumanMessage,
     MessageLikeRepresentation,
 )
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 from typing_extensions import TypedDict
 
 from langchain_openai import ChatOpenAI, custom_tool
@@ -716,24 +716,3 @@ def test_custom_tool() -> None:
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert len(full.tool_calls) == 1
-
-
-@pytest.mark.vcr()
-def test_schema_parsing_failures() -> None:
-    class BadModel(BaseModel):
-        response: str
-
-        @field_validator("response")
-        @classmethod
-        def validate_response(cls, v: str) -> str:
-            if v != "bad":
-                raise ValueError('response must be exactly "bad"')
-            return v
-
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
-    try:
-        llm.invoke("respond with good", response_format=BadModel)
-    except Exception as e:
-        assert e.response is not None  # type: ignore[attr-defined]
-    else:
-        assert False

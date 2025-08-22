@@ -1150,7 +1150,16 @@ class BaseChatOpenAI(BaseChatModel):
                 )
             payload.pop("stream")
             try:
-                response = self.root_client.beta.chat.completions.parse(**payload)
+                raw_response = (
+                    self.root_client.beta.chat.completions.with_raw_response.parse(
+                        **payload
+                    )
+                )
+                try:
+                    response = raw_response.parse()
+                except Exception as e:
+                    e.response = raw_response  # type: ignore[attr-defined]
+                    raise e
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
         elif self._use_responses_api(payload):
