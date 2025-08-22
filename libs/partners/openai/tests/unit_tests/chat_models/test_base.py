@@ -2326,8 +2326,9 @@ def test_mcp_tracing() -> None:
     tracer = FakeTracer()
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any) -> Response:
-        return Response(
+    def mock_create(*args: Any, **kwargs: Any) -> MagicMock:
+        mock_raw_response = MagicMock()
+        mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
             model="o4-mini",
@@ -2349,8 +2350,9 @@ def test_mcp_tracing() -> None:
                 )
             ],
         )
+        return mock_raw_response
 
-    mock_client.responses.create = mock_create
+    mock_client.responses.with_raw_response.create = mock_create
     input_message = HumanMessage("Test query")
     tools = [
         {
