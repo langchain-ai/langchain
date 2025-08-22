@@ -1,0 +1,34 @@
+[tool.poetry]
+name = "langchain-notion"
+version = "0.1.1"
+description = "LangChain Tools & Toolkit for Notion (search pages, get page, create page)."
+authors = ["Rujeet <r1jahagirdar@gmail.com>"]
+readme = "README.md"
+repository = "https://github.com/rujeetjahagirdar/langchain-notion"
+license = "MIT"
+packages = [{ include = "langchain_notion" }]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+langchain-core = "^0.3.15"
+notion-client = "^2.4.0"
+
+[tool.poetry.group.test.dependencies]
+pytest = "^7.4.3"
+pytest-asyncio = "^0.23.2"
+langchain-tests = "^0.3.5"
+
+[tool.poetry.extras]
+test = ["pytest","pytest-asyncio","langchain-tests"]
+
+[tool.ruff]
+fix = true  # stays here if you want auto-fixing enabled
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
