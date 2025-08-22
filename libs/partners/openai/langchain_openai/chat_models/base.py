@@ -1156,16 +1156,20 @@ class BaseChatOpenAI(BaseChatModel):
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
             if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = self.root_client.responses.parse(**payload)
+                raw_response = self.root_client.responses.with_raw_response.parse(
+                    **payload
+                )
             else:
-                if self.include_response_headers:
-                    raw_response = self.root_client.with_raw_response.responses.create(
-                        **payload
-                    )
-                    response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
-                else:
-                    response = self.root_client.responses.create(**payload)
+                raw_response = self.root_client.responses.with_raw_response.create(
+                    **payload
+                )
+            try:
+                response = raw_response.parse()
+            except Exception as e:
+                e.response = raw_response  # type: ignore[attr-defined]
+                raise e
+            if self.include_response_headers:
+                generation_info = {"headers": dict(raw_response.headers)}
             return _construct_lc_result_from_responses_api(
                 response,
                 schema=original_schema_obj,
