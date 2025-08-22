@@ -1236,6 +1236,8 @@ def test_dict_message_prompt_template_errors_on_jinja2() -> None:
 
 def test_chat_prompt_template_save_load_json(tmp_path: Path) -> None:
     """Test saving and loading ChatPromptTemplate as JSON."""
+    import json
+
     template = ChatPromptTemplate.from_messages(
         [
             ("system", "You are a helpful AI assistant named {name}."),
@@ -1253,7 +1255,9 @@ def test_chat_prompt_template_save_load_json(tmp_path: Path) -> None:
     assert json_path.exists()
 
     # Load and verify
-    loaded_template = load(json_path.read_text())
+    with json_path.open() as f:
+        data = json.load(f)
+    loaded_template = load(data)
     assert loaded_template == template
     assert loaded_template.format_messages(
         name="Bob", user="Alice", input="What's your name?"
@@ -1287,6 +1291,8 @@ def test_chat_prompt_template_save_load_yaml(tmp_path: Path) -> None:
 
 def test_chat_prompt_template_save_with_messages_placeholder(tmp_path: Path) -> None:
     """Test saving ChatPromptTemplate with MessagesPlaceholder."""
+    import json
+
     # Use non-optional placeholder to avoid partial variables
     template = ChatPromptTemplate.from_messages(
         [
@@ -1301,7 +1307,9 @@ def test_chat_prompt_template_save_with_messages_placeholder(tmp_path: Path) -> 
     template.save(json_path)
 
     # Load and verify
-    loaded_template = load(json_path.read_text())
+    with json_path.open() as f:
+        data = json.load(f)
+    loaded_template = load(data)
     assert loaded_template == template
 
     # Test formatting with the placeholder
