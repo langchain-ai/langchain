@@ -1244,14 +1244,14 @@ def test_chat_prompt_template_save_load_json(tmp_path: Path) -> None:
             ("human", "{input}"),
         ]
     )
-    
+
     # Save to JSON
     json_path = tmp_path / "prompt.json"
     template.save(json_path)
-    
+
     # Verify file exists
     assert json_path.exists()
-    
+
     # Load and verify
     loaded_template = load(json_path.read_text())
     assert loaded_template == template
@@ -1269,17 +1269,17 @@ def test_chat_prompt_template_save_load_yaml(tmp_path: Path) -> None:
             MessagesPlaceholder("history"),
         ]
     )
-    
+
     # Save to YAML
     yaml_path = tmp_path / "prompt.yaml"
     template.save(yaml_path)
-    
+
     # Verify file exists
     assert yaml_path.exists()
-    
-    # Load and verify  
+
+    # Load and verify
     import yaml
-    with open(yaml_path) as f:
+    with yaml_path.open() as f:
         loaded_data = yaml.safe_load(f)
     loaded_template = load(loaded_data)
     assert loaded_template == template
@@ -1295,18 +1295,18 @@ def test_chat_prompt_template_save_with_messages_placeholder(tmp_path: Path) -> 
             ("human", "{input}"),
         ]
     )
-    
+
     # Save to JSON
     json_path = tmp_path / "prompt_with_placeholder.json"
     template.save(json_path)
-    
+
     # Load and verify
     loaded_template = load(json_path.read_text())
     assert loaded_template == template
-    
+
     # Test formatting with the placeholder
     assert loaded_template.format_messages(
-        input="Hello", 
+        input="Hello",
         chat_history=[HumanMessage(content="Hi"), AIMessage(content="Hello!")]
     ) == [
         SystemMessage(content="You are an assistant"),
@@ -1321,7 +1321,7 @@ def test_chat_prompt_template_save_invalid_extension(tmp_path: Path) -> None:
     template = ChatPromptTemplate.from_messages(
         [("human", "Hello {name}")]
     )
-    
+
     # Try to save with invalid extension
     invalid_path = tmp_path / "prompt.txt"
     with pytest.raises(ValueError, match="must be json or yaml"):
@@ -1335,7 +1335,7 @@ def test_chat_prompt_template_save_with_partial_variables(tmp_path: Path) -> Non
     )
     # Add partial variables
     template_with_partial = template.partial(day="Monday")
-    
+
     # Should raise error when trying to save with partial variables
     json_path = tmp_path / "prompt.json"
     with pytest.raises(ValueError, match="Cannot save prompt with partial variables"):
@@ -1347,11 +1347,11 @@ def test_chat_prompt_template_save_creates_directories(tmp_path: Path) -> None:
     template = ChatPromptTemplate.from_messages(
         [("human", "Hello")]
     )
-    
+
     # Save to nested path that doesn't exist
     nested_path = tmp_path / "nested" / "dir" / "prompt.json"
     template.save(nested_path)
-    
+
     # Verify file and directories were created
     assert nested_path.exists()
     assert nested_path.parent.exists()
