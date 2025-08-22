@@ -678,6 +678,8 @@ def test_responses_stream() -> None:
     for idx, item in enumerate(response.output):
         dumped = _strip_none(item.model_dump())
         _ = dumped.pop("status", None)
-        if dumped["type"] == "output_text":
-            dumped["type"] = "input_text"
+        if "content" in dumped and isinstance(dumped["content"], list):
+            for content in dumped["content"]:
+                if "type" in content and content["type"] == "output_text":
+                    content["type"] == "input_text"
         assert dumped == payload["input"][idx]
