@@ -169,7 +169,7 @@ def _load_map_reduce_documents_chain(
 
     return MapReduceDocumentsChain(
         llm_chain=llm_chain,
-        reduce_documents_chain=reduce_documents_chain,  # type: ignore[arg-type]
+        reduce_documents_chain=reduce_documents_chain,
         **config,
     )
 
@@ -293,10 +293,10 @@ def _load_llm_checker_chain(config: dict, **kwargs: Any) -> LLMCheckerChain:
         revised_answer_prompt = load_prompt(config.pop("revised_answer_prompt_path"))
     return LLMCheckerChain(
         llm=llm,
-        create_draft_answer_prompt=create_draft_answer_prompt,  # type: ignore[arg-type]
-        list_assertions_prompt=list_assertions_prompt,  # type: ignore[arg-type]
-        check_assertions_prompt=check_assertions_prompt,  # type: ignore[arg-type]
-        revised_answer_prompt=revised_answer_prompt,  # type: ignore[arg-type]
+        create_draft_answer_prompt=create_draft_answer_prompt,
+        list_assertions_prompt=list_assertions_prompt,
+        check_assertions_prompt=check_assertions_prompt,
+        revised_answer_prompt=revised_answer_prompt,
         **config,
     )
 
@@ -325,7 +325,7 @@ def _load_llm_math_chain(config: dict, **kwargs: Any) -> LLMMathChain:
     elif "prompt_path" in config:
         prompt = load_prompt(config.pop("prompt_path"))
     if llm_chain:
-        return LLMMathChain(llm_chain=llm_chain, prompt=prompt, **config)  # type: ignore[arg-type]
+        return LLMMathChain(llm_chain=llm_chain, prompt=prompt, **config)
     return LLMMathChain(llm=llm, prompt=prompt, **config)
 
 
@@ -341,7 +341,7 @@ def _load_map_rerank_documents_chain(
     else:
         msg = "One of `llm_chain` or `llm_chain_path` must be present."
         raise ValueError(msg)
-    return MapRerankDocumentsChain(llm_chain=llm_chain, **config)  # type: ignore[arg-type]
+    return MapRerankDocumentsChain(llm_chain=llm_chain, **config)
 
 
 def _load_pal_chain(config: dict, **kwargs: Any) -> Any:
@@ -377,8 +377,8 @@ def _load_refine_documents_chain(config: dict, **kwargs: Any) -> RefineDocuments
     elif "document_prompt_path" in config:
         document_prompt = load_prompt(config.pop("document_prompt_path"))
     return RefineDocumentsChain(
-        initial_llm_chain=initial_llm_chain,  # type: ignore[arg-type]
-        refine_llm_chain=refine_llm_chain,  # type: ignore[arg-type]
+        initial_llm_chain=initial_llm_chain,
+        refine_llm_chain=refine_llm_chain,
         document_prompt=document_prompt,
         **config,
     )
@@ -402,7 +402,7 @@ def _load_qa_with_sources_chain(config: dict, **kwargs: Any) -> QAWithSourcesCha
             "`combine_documents_chain_path` must be present."
         )
         raise ValueError(msg)
-    return QAWithSourcesChain(combine_documents_chain=combine_documents_chain, **config)  # type: ignore[arg-type]
+    return QAWithSourcesChain(combine_documents_chain=combine_documents_chain, **config)
 
 
 def _load_sql_database_chain(config: dict, **kwargs: Any) -> Any:
@@ -445,7 +445,7 @@ def _load_vector_db_qa_with_sources_chain(
         )
         raise ValueError(msg)
     return VectorDBQAWithSourcesChain(
-        combine_documents_chain=combine_documents_chain,  # type: ignore[arg-type]
+        combine_documents_chain=combine_documents_chain,
         vectorstore=vectorstore,
         **config,
     )
@@ -475,7 +475,7 @@ def _load_retrieval_qa(config: dict, **kwargs: Any) -> RetrievalQA:
         )
         raise ValueError(msg)
     return RetrievalQA(
-        combine_documents_chain=combine_documents_chain,  # type: ignore[arg-type]
+        combine_documents_chain=combine_documents_chain,
         retriever=retriever,
         **config,
     )
@@ -508,7 +508,7 @@ def _load_retrieval_qa_with_sources_chain(
         )
         raise ValueError(msg)
     return RetrievalQAWithSourcesChain(
-        combine_documents_chain=combine_documents_chain,  # type: ignore[arg-type]
+        combine_documents_chain=combine_documents_chain,
         retriever=retriever,
         **config,
     )
@@ -538,7 +538,7 @@ def _load_vector_db_qa(config: dict, **kwargs: Any) -> VectorDBQA:
         )
         raise ValueError(msg)
     return VectorDBQA(
-        combine_documents_chain=combine_documents_chain,  # type: ignore[arg-type]
+        combine_documents_chain=combine_documents_chain,
         vectorstore=vectorstore,
         **config,
     )
@@ -606,8 +606,8 @@ def _load_api_chain(config: dict, **kwargs: Any) -> APIChain:
         msg = "`requests_wrapper` must be present."
         raise ValueError(msg)
     return APIChain(
-        api_request_chain=api_request_chain,  # type: ignore[arg-type]
-        api_answer_chain=api_answer_chain,  # type: ignore[arg-type]
+        api_request_chain=api_request_chain,
+        api_answer_chain=api_answer_chain,
         requests_wrapper=requests_wrapper,
         **config,
     )
