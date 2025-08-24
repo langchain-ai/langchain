@@ -449,6 +449,7 @@ def test_tool_use() -> None:
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]
     assert "args" in tool_call_chunk
+    assert gathered.content_blocks == gathered.tool_calls
 
     streaming_tool_msg = ToolMessage(
         "sally_green_hair",
