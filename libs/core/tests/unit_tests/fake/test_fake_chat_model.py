@@ -57,17 +57,17 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="hello"),
+        _any_id_ai_message_chunk(content="hello", chunk_span=("first",)),
         _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye"),
+        _any_id_ai_message_chunk(content="goodbye", chunk_span=("last",)),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
     chunks = list(model.stream("meow"))
     assert chunks == [
-        _any_id_ai_message_chunk(content="hello"),
+        _any_id_ai_message_chunk(content="hello", chunk_span=("first",)),
         _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye"),
+        _any_id_ai_message_chunk(content="goodbye", chunk_span=("last",)),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -77,8 +77,11 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="", additional_kwargs={"foo": 42}),
+        _any_id_ai_message_chunk(
+            content="", additional_kwargs={"foo": 42}, chunk_span=("first",)
+        ),
         _any_id_ai_message_chunk(content="", additional_kwargs={"bar": 24}),
+        _any_id_ai_message_chunk(content="", chunk_span=("last",)),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -97,7 +100,9 @@ async def test_generic_fake_chat_model_stream() -> None:
 
     assert chunks == [
         _any_id_ai_message_chunk(
-            content="", additional_kwargs={"function_call": {"name": "move_file"}}
+            content="",
+            additional_kwargs={"function_call": {"name": "move_file"}},
+            chunk_span=("first",),
         ),
         _any_id_ai_message_chunk(
             content="",
@@ -113,6 +118,10 @@ async def test_generic_fake_chat_model_stream() -> None:
             additional_kwargs={
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
+        ),
+        _any_id_ai_message_chunk(
+            content="",
+            chunk_span=("last",),
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
@@ -134,6 +143,7 @@ async def test_generic_fake_chat_model_stream() -> None:
             }
         },
         id=chunks[0].id,
+        chunk_span=("first", "last"),
     )
 
 
@@ -146,9 +156,9 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     ]
     final = log_patches[-1]
     assert final.state["streamed_output"] == [
-        _any_id_ai_message_chunk(content="hello"),
+        _any_id_ai_message_chunk(content="hello", chunk_span=("first",)),
         _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye"),
+        _any_id_ai_message_chunk(content="goodbye", chunk_span=("last",)),
     ]
     assert len({chunk.id for chunk in final.state["streamed_output"]}) == 1
 
@@ -203,9 +213,9 @@ async def test_callback_handlers() -> None:
         )
     ]
     assert results == [
-        _any_id_ai_message_chunk(content="hello"),
+        _any_id_ai_message_chunk(content="hello", chunk_span=("first",)),
         _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye"),
+        _any_id_ai_message_chunk(content="goodbye", chunk_span=("last",)),
     ]
     assert tokens == ["hello", " ", "goodbye"]
     assert len({chunk.id for chunk in results}) == 1
