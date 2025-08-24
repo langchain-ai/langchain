@@ -122,18 +122,19 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
-          'chunk_position': dict({
+          'chunk_span': dict({
             'anyOf': list([
               dict({
-                'const': 'last',
-                'type': 'string',
+                'items': dict({
+                }),
+                'type': 'array',
               }),
               dict({
                 'type': 'null',
               }),
             ]),
             'default': None,
-            'title': 'Chunk Position',
+            'title': 'Chunk Span',
           }),
           'content': dict({
             'anyOf': list([
@@ -1606,18 +1607,19 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
-          'chunk_position': dict({
+          'chunk_span': dict({
             'anyOf': list([
               dict({
-                'const': 'last',
-                'type': 'string',
+                'items': dict({
+                }),
+                'type': 'array',
               }),
               dict({
                 'type': 'null',
               }),
             ]),
             'default': None,
-            'title': 'Chunk Position',
+            'title': 'Chunk Span',
           }),
           'content': dict({
             'anyOf': list([
