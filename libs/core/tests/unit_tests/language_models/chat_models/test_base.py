@@ -234,7 +234,7 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             """Stream the output of the model."""
             yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
             yield ChatGenerationChunk(
-                message=AIMessageChunk(content="b", chunk_span=("last",))
+                message=AIMessageChunk(content="b", chunk_position="last")
             )
 
         @property
@@ -244,15 +244,19 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     model = ModelWithSyncStream()
     chunks = list(model.stream("anything"))
     assert chunks == [
-        _any_id_ai_message_chunk(content="a", chunk_span=("first",)),
-        _any_id_ai_message_chunk(content="b", chunk_span=("last",)),
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        _any_id_ai_message_chunk(content="a", chunk_span=("first",)),
-        _any_id_ai_message_chunk(content="b", chunk_span=("last",)),
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
 
@@ -282,7 +286,7 @@ async def test_astream_implementation_uses_astream() -> None:
             """Stream the output of the model."""
             yield ChatGenerationChunk(message=AIMessageChunk(content="a"))
             yield ChatGenerationChunk(
-                message=AIMessageChunk(content="b", chunk_span=("last",))
+                message=AIMessageChunk(content="b", chunk_position="last")
             )
 
         @property
@@ -292,8 +296,10 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="a", chunk_span=("first",)),
-        _any_id_ai_message_chunk(content="b", chunk_span=("last",)),
+        _any_id_ai_message_chunk(
+            content="a",
+        ),
+        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 

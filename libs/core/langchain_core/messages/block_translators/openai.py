@@ -92,7 +92,7 @@ def _convert_to_v1_from_chat_completions_chunk(
         else:
             content_blocks = []
 
-    if chunk.chunk_span == ("first", "last"):
+    if chunk.chunk_position == "last":
         for tool_call in chunk.tool_calls:
             content_blocks.append(tool_call)
 
@@ -287,7 +287,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if (
                     isinstance(message, AIMessageChunk)
                     and len(message.tool_call_chunks) == 1
-                    and message.chunk_span != ("first", "last")
+                    and message.chunk_position != "last"
                 ):
                     tool_call_block = message.tool_call_chunks[0].copy()  # type: ignore[assignment]
                 elif call_id:

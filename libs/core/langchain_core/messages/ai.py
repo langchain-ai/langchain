@@ -363,10 +363,10 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
-    chunk_span: Optional[tuple[Literal["first", "last"], ...]] = None
+    chunk_position: Optional[Literal["last"]] = None
     """Optional span represented by an aggregated AIMessageChunk.
 
-    If both ``"first"`` and ``"last"`` chunks are aggregated through a stream,
+    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
     ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
     """
 
@@ -401,7 +401,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         if (
             self.tool_call_chunks
             and not self.content
-            and self.chunk_span != ("first", "last")  # keep tool_calls if aggregated
+            and self.chunk_position != "last"  # keep tool_calls if aggregated
         ):
             blocks = [
                 block
@@ -493,7 +493,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         self.invalid_tool_calls = invalid_tool_calls
 
         if (
-            self.chunk_span == ("first", "last")
+            self.chunk_position == "last"
             and self.tool_call_chunks
             and self.response_metadata.get("output_version") == "v1"
             and isinstance(self.content, list)
@@ -596,10 +596,8 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
-    # chunk span collects any non-null values into a tuple
-    chunk_span: Optional[tuple[Literal["first", "last"], ...]] = (
-        tuple(item for obj in (left, *others) for item in (obj.chunk_span or ()))
-        or None
+    chunk_position: Optional[Literal["last"]] = (
+        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
     )
 
     return left.__class__(
@@ -610,7 +608,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
-        chunk_span=chunk_span,
+        chunk_position=chunk_position,
     )
 
 

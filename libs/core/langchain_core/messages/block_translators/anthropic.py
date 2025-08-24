@@ -226,7 +226,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 if (
                     isinstance(message, AIMessageChunk)
                     and len(message.tool_call_chunks) == 1
-                    and message.chunk_span != ("first", "last")
+                    and message.chunk_position != "last"
                 ):
                     # Isolated chunk
                     tool_call_chunk: types.ToolCallChunk = (

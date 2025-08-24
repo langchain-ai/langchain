@@ -112,14 +112,11 @@ class FakeListChatModel(SimpleChatModel):
             ):
                 raise FakeListChatModelError
 
-            if i_c == 0:
-                chunk_span: Optional[tuple[Literal["first", "last"], ...]] = ("first",)
-            elif i_c == len(response) - 1:
-                chunk_span = ("last",)
-            else:
-                chunk_span = None
+            chunk_position: Optional[Literal["last"]] = (
+                "last" if i_c == len(response) - 1 else None
+            )
             yield ChatGenerationChunk(
-                message=AIMessageChunk(content=c, chunk_span=chunk_span)
+                message=AIMessageChunk(content=c, chunk_position=chunk_position)
             )
 
     @override
@@ -143,14 +140,11 @@ class FakeListChatModel(SimpleChatModel):
                 and i_c == self.error_on_chunk_number
             ):
                 raise FakeListChatModelError
-            if i_c == 0:
-                chunk_span: Optional[tuple[Literal["first", "last"], ...]] = ("first",)
-            elif i_c == len(response) - 1:
-                chunk_span = ("last",)
-            else:
-                chunk_span = None
+            chunk_position: Optional[Literal["last"]] = (
+                "last" if i_c == len(response) - 1 else None
+            )
             yield ChatGenerationChunk(
-                message=AIMessageChunk(content=c, chunk_span=chunk_span)
+                message=AIMessageChunk(content=c, chunk_position=chunk_position)
             )
 
     @property
@@ -308,7 +302,7 @@ class GenericFakeChatModel(BaseChatModel):
                     and isinstance(chunk.message, AIMessageChunk)
                     and not message.additional_kwargs
                 ):
-                    chunk.message.chunk_span = ("last",)
+                    chunk.message.chunk_position = "last"
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
