@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Iterable
-from typing import Any, cast
+from typing import Any, Optional, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -228,27 +228,34 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     and len(message.tool_call_chunks) == 1
                     and message.chunk_span != ("first", "last")
                 ):
+                    # Isolated chunk
                     tool_call_chunk: types.ToolCallChunk = (
                         message.tool_call_chunks[0].copy()  # type: ignore[assignment]
                     )
                     if "type" not in tool_call_chunk:
                         tool_call_chunk["type"] = "tool_call_chunk"
                     yield tool_call_chunk
-                elif (
-                    not isinstance(message, AIMessageChunk)
-                    and len(message.tool_calls) == 1
-                ):
-                    tool_call_block = message.tool_calls[0]
+                else:
+                    tool_call_block: Optional[types.ToolCall] = None
+                    # Non-streaming or gathered chunk
+                    if len(message.tool_calls) == 1:
+                        tool_call_block = message.tool_calls[0]
+                    elif call_id := block.get("id"):
+                        for tc in message.tool_calls:
+                            if tc.get("id") == call_id:
+                                tool_call_block = tc
+                                break
+                    else:
+                        pass
+                    if not tool_call_block:
+                        tool_call_block = {
+                            "type": "tool_call",
+                            "name": block.get("name", ""),
+                            "args": block.get("input", {}),
+                            "id": block.get("id", ""),
+                        }
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
-                    yield tool_call_block
-                else:
-                    tool_call_block = {
-                        "type": "tool_call",
-                        "name": block.get("name", ""),
-                        "args": block.get("input", {}),
-                        "id": block.get("id", ""),
-                    }
                     yield tool_call_block
 
             elif (
