@@ -591,17 +591,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         if inspect.iscoroutinefunction(self.get_session_history):
             try:
                 asyncio.get_running_loop()
-
                 def run_async() -> BaseChatMessageHistory:
-                    new_loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(new_loop)
-                    try:
-                        return new_loop.run_until_complete(
-                            self.get_session_history(*args, **kwargs)  # type: ignore[arg-type]
-                        )
-                    finally:
-                        new_loop.close()
-
+                    return asyncio.run(self.get_session_history(*args, **kwargs))  # type: ignore[return-value]
                 with concurrent.futures.ThreadPoolExecutor() as executor:
                     future = executor.submit(run_async)
                     return future.result()
