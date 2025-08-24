@@ -941,6 +941,8 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["system_fingerprint"] = system_fingerprint
             if service_tier := chunk.get("service_tier"):
                 generation_info["service_tier"] = service_tier
+            if isinstance(message_chunk, AIMessageChunk):
+                message_chunk.chunk_span = ("last",)
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -4138,6 +4140,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = {}
     response_metadata["model_provider"] = "openai"
     usage_metadata = None
+    chunk_span: Optional[tuple[Literal["first", "last"], ...]] = None
     id = None
     if chunk.type == "response.output_text.delta":
         _advance(chunk.output_index, chunk.content_index)
@@ -4175,6 +4178,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
+        chunk_span = ("last",)
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
@@ -4292,6 +4296,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
         id=id,
+        chunk_span=chunk_span,
     )
     if output_version == "v0":
         message = cast(
