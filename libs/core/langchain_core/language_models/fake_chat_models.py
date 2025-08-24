@@ -3,8 +3,8 @@
 import asyncio
 import re
 import time
-from collections.abc import AsyncIterator, Iterator
-from typing import Any, Optional, Union, cast
+from collections.abc import AsyncIterator, Iterator, Sequence
+from typing import Any, Callable, Optional, Union, cast
 
 from typing_extensions import override
 
@@ -15,7 +15,8 @@ from langchain_core.callbacks import (
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
+from langchain_core.tools import BaseTool
 
 
 class FakeMessagesListChatModel(BaseChatModel):
@@ -205,6 +206,35 @@ class FakeChatModel(SimpleChatModel):
     @property
     def _identifying_params(self) -> dict[str, Any]:
         return {"key": "fake"}
+
+    @override
+    def bind_tools(
+        self,
+        tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
+        *,
+        tool_choice: Optional[str] = None,
+        choice_input: Optional[Union[dict[str, Any], tuple]] = None,
+        **kwargs: Any,
+    ) -> Runnable:
+        def _call_tool_chain(tool_input: dict) -> dict:
+            if tool_choice is None:
+                return {}
+
+            if choice_input is None:
+                msg = "choice_input must be provided if tool_choice is specified."
+                raise ValueError(msg)
+
+            tool = next(t for t in tools if t.name == tool_choice)
+
+            params = choice_input if choice_input is not None else tool_input
+
+            if hasattr(tool, "run"):
+                return tool.run(params)
+
+            f"Tool {tool} is not callable or does not have a 'run' method."
+            raise ValueError(msg)
+
+        return RunnableLambda(func=_call_tool_chain)
 
 
 class GenericFakeChatModel(BaseChatModel):
