@@ -9,15 +9,13 @@
 </div>
 
 [![Release Notes](https://img.shields.io/github/release/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/releases)
-[![CI](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml/badge.svg)](https://github.com/langchain-ai/langchain/actions/workflows/check_diffs.yml)
 [![PyPI - License](https://img.shields.io/pypi/l/langchain-core?style=flat-square)](https://opensource.org/licenses/MIT)
-[![PyPI - Downloads](https://img.shields.io/pypi/dm/langchain-core?style=flat-square)](https://pypistats.org/packages/langchain-core)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain)](https://pypistats.org/packages/langchain-core)
 [![GitHub star chart](https://img.shields.io/github/stars/langchain-ai/langchain?style=flat-square)](https://star-history.com/#langchain-ai/langchain)
-[![Open Issues](https://img.shields.io/github/issues-raw/langchain-ai/langchain?style=flat-square)](https://github.com/langchain-ai/langchain/issues)
 [![Open in Dev Containers](https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode&style=flat-square)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/langchain-ai/langchain)
 [<img src="https://github.com/codespaces/badge.svg" alt="Open in Github Codespace" title="Open in Github Codespace" width="150" height="20">](https://codespaces.new/langchain-ai/langchain)
-[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 [![CodSpeed Badge](https://img.shields.io/endpoint?url=https://codspeed.io/badge.json)](https://codspeed.io/langchain-ai/langchain)
+[![Twitter](https://img.shields.io/twitter/url/https/twitter.com/langchainai.svg?style=social&label=Follow%20%40LangChainAI)](https://twitter.com/langchainai)
 
 > [!NOTE]
 > Looking for the JS/TS library? Check out [LangChain.js](https://github.com/langchain-ai/langchainjs).
@@ -68,7 +66,7 @@ reliably handle complex tasks with LangGraph, our low-level agent orchestration
 framework. LangGraph offers customizable architecture, long-term memory, and
 human-in-the-loop workflows — and is trusted in production by companies like LinkedIn,
 Uber, Klarna, and GitLab.
-- [LangGraph Platform](https://langchain-ai.github.io/langgraph/concepts/langgraph_platform/) - Deploy
+- [LangGraph Platform](https://docs.langchain.com/langgraph-platform) - Deploy
 and scale agents effortlessly with a purpose-built deployment platform for long
 running, stateful workflows. Discover, reuse, configure, and share agents across
 teams — and iterate quickly with visual prototyping in
@@ -85,3 +83,4 @@ concepts behind the LangChain framework.
 - [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.
+- [Chat LangChain](https://chat.langchain.com/): Ask questions & chat with our documentation
