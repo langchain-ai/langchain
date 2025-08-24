@@ -934,7 +934,6 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info = {**base_generation_info} if base_generation_info else {}
 
         if finish_reason := choice.get("finish_reason"):
-            generation_info["model_provider"] = "openai"
             generation_info["finish_reason"] = finish_reason
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
@@ -950,6 +949,7 @@ class BaseChatOpenAI(BaseChatModel):
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 
+        message_chunk.response_metadata["model_provider"] = "openai"
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
