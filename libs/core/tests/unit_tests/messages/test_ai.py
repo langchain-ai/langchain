@@ -327,9 +327,8 @@ def test_content_blocks() -> None:
                 "index": 0,
             }
         ],
+        chunk_span=("first",),
     )
-    chunk_1.content = cast("Union[str, list[Union[str, dict]]]", chunk_1.content_blocks)
-    chunk_1.response_metadata["output_version"] = "v1"
 
     chunk_2 = AIMessageChunk(
         content="",
@@ -342,8 +341,15 @@ def test_content_blocks() -> None:
                 "index": 0,
             }
         ],
-        chunk_position="last",
+        chunk_span=("last",),
     )
+    chunk = chunk_1 + chunk_2
+    assert chunk.content == ""
+    assert chunk.content_blocks == chunk.tool_calls
+
+    # test v1 content
+    chunk_1.content = cast("Union[str, list[Union[str, dict]]]", chunk_1.content_blocks)
+    chunk_1.response_metadata["output_version"] = "v1"
     chunk_2.content = cast("Union[str, list[Union[str, dict]]]", chunk_2.content_blocks)
 
     chunk = chunk_1 + chunk_2

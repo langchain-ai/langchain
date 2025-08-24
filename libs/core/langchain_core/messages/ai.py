@@ -363,9 +363,12 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
-    chunk_position: Optional[Literal["last"]] = None
-    """Optional position of the chunk in the stream. If ``'last'``, tool calls in
-    message ``content`` will be parsed when aggregated into a stream."""
+    chunk_span: Optional[tuple[Literal["first", "last"], ...]] = None
+    """Optional span represented by an aggregated AIMessageChunk.
+
+    If both ``"first"`` and ``"last"`` chunks are aggregated through a stream,
+    ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
+    """
 
     @property
     def lc_attributes(self) -> dict:
@@ -395,7 +398,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
-        if self.tool_call_chunks and not self.content:
+        if (
+            self.tool_call_chunks
+            and not self.content
+            and self.chunk_span != ("first", "last")  # keep tool_calls if aggregated
+        ):
             blocks = [
                 block
                 for block in blocks
@@ -486,22 +493,22 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         self.invalid_tool_calls = invalid_tool_calls
 
         if (
-            self.chunk_position == "last"
+            self.chunk_span == ("first", "last")
+            and self.tool_call_chunks
             and self.response_metadata.get("output_version") == "v1"
             and isinstance(self.content, list)
         ):
+            id_to_tc: dict[str, types.ToolCall] = {
+                cast("str", tc.get("id")): tc for tc in self.tool_calls if "id" in tc
+            }
             for idx, block in enumerate(self.content):
                 if (
                     isinstance(block, dict)
                     and block.get("type") == "tool_call_chunk"
-                    and (tool_call_id := block.get("id"))
-                    and (
-                        matching_tool_calls := [
-                            tc for tc in self.tool_calls if tc.get("id") == tool_call_id
-                        ]
-                    )
+                    and (call_id := block.get("id"))
+                    and call_id in id_to_tc
                 ):
-                    self.content[idx] = cast("dict", matching_tool_calls[0])
+                    self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
 
         return self
 
@@ -589,8 +596,10 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
-    chunk_position: Optional[Literal["last"]] = (
-        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
+    # chunk span collects any non-null values into a tuple
+    chunk_span: Optional[tuple[Literal["first", "last"], ...]] = (
+        tuple(item for obj in (left, *others) for item in (obj.chunk_span or ()))
+        or None
     )
 
     return left.__class__(
@@ -601,7 +610,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
-        chunk_position=chunk_position,
+        chunk_span=chunk_span,
     )
 
 
