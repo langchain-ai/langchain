@@ -199,7 +199,7 @@ def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
+        ignore_keys.extend(["tool_call_chunks", "chunk_span"])
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
@@ -1501,14 +1501,12 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_position"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_span"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
             return msg_cls(
-                **chunk.model_dump(
-                    exclude={"type", "tool_call_chunks", "chunk_position"}
-                )
+                **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_span"})
             )
 
     msg = (
