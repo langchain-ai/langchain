@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
+import concurrent.futures
 import inspect
-from collections.abc import Sequence
+from collections.abc import Awaitable, Sequence
 from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
@@ -35,7 +37,10 @@ if TYPE_CHECKING:
 
 
 MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
-GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
+GetSessionHistoryCallable = Union[
+    Callable[..., BaseChatMessageHistory],
+    Callable[..., Awaitable[BaseChatMessageHistory]],
+]
 
 
 class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
@@ -515,7 +520,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         raise ValueError(msg)
 
     def _enter_history(self, value: Any, config: RunnableConfig) -> list[BaseMessage]:
-        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        configurable = config.get("configurable", {})
+        hist: BaseChatMessageHistory = configurable["message_history"]
         messages = hist.messages.copy()
 
         if not self.history_messages_key:
@@ -529,7 +535,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     async def _aenter_history(
         self, value: dict[str, Any], config: RunnableConfig
     ) -> list[BaseMessage]:
-        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        configurable = config.get("configurable", {})
+        hist: BaseChatMessageHistory = configurable["message_history"]
         messages = (await hist.aget_messages()).copy()
 
         if not self.history_messages_key:
@@ -541,7 +548,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         return messages
 
     def _exit_history(self, run: Run, config: RunnableConfig) -> None:
-        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        configurable = config.get("configurable", {})
+        hist: BaseChatMessageHistory = configurable["message_history"]
 
         # Get the input messages
         inputs = load(run.inputs)
@@ -549,7 +557,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         # If historic messages were prepended to the input messages, remove them to
         # avoid adding duplicate messages to history.
         if not self.history_messages_key:
-            historic_messages = config["configurable"]["message_history"].messages
+            configurable = config.get("configurable", {})
+            historic_messages = configurable["message_history"].messages
             input_messages = input_messages[len(historic_messages) :]
 
         # Get the output messages
@@ -558,7 +567,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         hist.add_messages(input_messages + output_messages)
 
     async def _aexit_history(self, run: Run, config: RunnableConfig) -> None:
-        hist: BaseChatMessageHistory = config["configurable"]["message_history"]
+        configurable = config.get("configurable", {})
+        hist: BaseChatMessageHistory = configurable["message_history"]
 
         # Get the input messages
         inputs = load(run.inputs)
@@ -573,6 +583,34 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         output_val = load(run.outputs)
         output_messages = self._get_output_messages(output_val)
         await hist.aadd_messages(input_messages + output_messages)
+
+    def _run_get_session_history(
+        self, *args: Any, **kwargs: Any
+    ) -> BaseChatMessageHistory:
+        """Run get_session_history, handling both sync and async cases."""
+        if inspect.iscoroutinefunction(self.get_session_history):
+            try:
+                asyncio.get_running_loop()
+
+                def run_async() -> BaseChatMessageHistory:
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        return new_loop.run_until_complete(
+                            self.get_session_history(*args, **kwargs)  # type: ignore[arg-type]
+                        )
+                    finally:
+                        new_loop.close()
+
+                with concurrent.futures.ThreadPoolExecutor() as executor:
+                    future = executor.submit(run_async)
+                    return future.result()
+            except RuntimeError:
+                # No event loop running, safe to use asyncio.run
+                return asyncio.run(self.get_session_history(*args, **kwargs))
+        else:
+            # Synchronous function
+            return self.get_session_history(*args, **kwargs)  # type: ignore[return-value]
 
     def _merge_configs(self, *configs: Optional[RunnableConfig]) -> RunnableConfig:
         config = super()._merge_configs(*configs)
@@ -598,13 +636,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         if len(expected_keys) == 1:
             if parameter_names:
                 # If arity = 1, then invoke function by positional arguments
-                message_history = self.get_session_history(
+                message_history = self._run_get_session_history(
                     configurable[expected_keys[0]]
                 )
             else:
-                if not config:
+                if "configurable" not in config:
                     config["configurable"] = {}
-                message_history = self.get_session_history()
+                message_history = self._run_get_session_history()
         else:
             # otherwise verify that names of keys patch and invoke by named arguments
             if set(expected_keys) != set(parameter_names):
@@ -614,9 +652,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 )
                 raise ValueError(msg)
 
-            message_history = self.get_session_history(
+            message_history = self._run_get_session_history(
                 **{key: configurable[key] for key in expected_keys}
             )
+        if "configurable" not in config:
+            config["configurable"] = {}
         config["configurable"]["message_history"] = message_history
         return config
 
