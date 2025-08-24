@@ -92,16 +92,21 @@ def _convert_to_v1_from_chat_completions_chunk(
         else:
             content_blocks = []
 
-    for tool_call_chunk in chunk.tool_call_chunks:
-        tc: types.ToolCallChunk = {
-            "type": "tool_call_chunk",
-            "id": tool_call_chunk.get("id"),
-            "name": tool_call_chunk.get("name"),
-            "args": tool_call_chunk.get("args"),
-        }
-        if (idx := tool_call_chunk.get("index")) is not None:
-            tc["index"] = idx
-        content_blocks.append(tc)
+    if chunk.chunk_span == ("first", "last"):
+        for tool_call in chunk.tool_calls:
+            content_blocks.append(tool_call)
+
+    else:
+        for tool_call_chunk in chunk.tool_call_chunks:
+            tc: types.ToolCallChunk = {
+                "type": "tool_call_chunk",
+                "id": tool_call_chunk.get("id"),
+                "name": tool_call_chunk.get("name"),
+                "args": tool_call_chunk.get("args"),
+            }
+            if (idx := tool_call_chunk.get("index")) is not None:
+                tc["index"] = idx
+            content_blocks.append(tc)
 
     return content_blocks
 
@@ -282,6 +287,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 if (
                     isinstance(message, AIMessageChunk)
                     and len(message.tool_call_chunks) == 1
+                    and message.chunk_span != ("first", "last")
                 ):
                     tool_call_block = message.tool_call_chunks[0].copy()  # type: ignore[assignment]
                 elif call_id:
