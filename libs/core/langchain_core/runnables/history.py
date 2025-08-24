@@ -590,7 +590,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         """Run get_session_history, handling both sync and async cases."""
         if inspect.iscoroutinefunction(self.get_session_history):
             try:
-                asyncio.get_running_loop()
+                asyncio.get_event_loop()
 
                 def run_async() -> BaseChatMessageHistory:
                     return asyncio.run(self.get_session_history(*args, **kwargs))  # type: ignore[arg-type]
