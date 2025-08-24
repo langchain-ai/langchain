@@ -2423,6 +2423,8 @@ def _make_message_chunk_from_anthropic_event(
                 "stop_sequence": event.delta.stop_sequence,
             },
         )
+        if message_chunk.response_metadata.get("stop_reason"):
+            message_chunk.chunk_span = ("last",)
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
     else:
