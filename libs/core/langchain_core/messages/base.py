@@ -67,9 +67,11 @@ class BaseMessage(Serializable):
     )
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
     ) -> None:
-        """Pass in content as positional arg.
+        """Initialize BaseMessage.
 
         Args:
             content: The string contents of the message.

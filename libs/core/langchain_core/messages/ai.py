@@ -184,9 +184,11 @@ class AIMessage(BaseMessage):
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
     ) -> None:
-        """Pass in content as positional arg.
+        """Initialize AIMessage.
 
         Args:
             content: The content of the message.

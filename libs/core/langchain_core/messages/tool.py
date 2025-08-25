@@ -143,9 +143,11 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         return values
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
     ) -> None:
-        """Create a ToolMessage.
+        """Initialize ToolMessage.
 
         Args:
             content: The string contents of the message.
