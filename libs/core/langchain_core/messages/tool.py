@@ -10,7 +10,6 @@ from typing_extensions import NotRequired, TypedDict, override
 from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk, merge_content
 from langchain_core.messages.content import InvalidToolCall as InvalidToolCall
-from langchain_core.messages.content import ToolCall as ToolCall
 from langchain_core.utils._merge import merge_dicts, merge_obj
 
 
@@ -197,6 +196,37 @@ class ToolMessageChunk(ToolMessage, BaseMessageChunk):
             )
 
         return super().__add__(other)
+
+
+class ToolCall(TypedDict):
+    """Represents a request to call a tool.
+
+    Example:
+
+        .. code-block:: python
+
+            {
+                "name": "foo",
+                "args": {"a": 1},
+                "id": "123"
+            }
+
+        This represents a request to call the tool named "foo" with arguments {"a": 1}
+        and an identifier of "123".
+
+    """
+
+    name: str
+    """The name of the tool to be called."""
+    args: dict[str, Any]
+    """The arguments to the tool call."""
+    id: Optional[str]
+    """An identifier associated with the tool call.
+
+    An identifier is needed to associate a tool call request with a tool
+    call result in events when multiple concurrent tool calls are made.
+    """
+    type: NotRequired[Literal["tool_call"]]
 
 
 def tool_call(

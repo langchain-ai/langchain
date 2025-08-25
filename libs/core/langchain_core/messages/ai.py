@@ -255,9 +255,9 @@ class AIMessage(BaseMessage):
                         "args": tool_call["args"],
                     }
                     if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]
+                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
                     if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]
+                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
                     blocks.append(tool_call_block)
 
         return blocks
