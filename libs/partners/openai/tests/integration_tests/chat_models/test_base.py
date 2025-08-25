@@ -253,7 +253,9 @@ def test_stream() -> None:
         assert isinstance(chunk, AIMessageChunk)
         if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if chunk.response_metadata:
+        if chunk.response_metadata and not set(chunk.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         raise AssertionError(
@@ -281,7 +283,9 @@ async def test_astream() -> None:
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 chunks_with_token_counts += 1
-            if chunk.response_metadata:
+            if chunk.response_metadata and not set(
+                chunk.response_metadata.keys()
+            ).issubset({"model_provider", "output_version"}):
                 chunks_with_response_metadata += 1
         assert isinstance(full, AIMessageChunk)
         if chunks_with_response_metadata != 1:
