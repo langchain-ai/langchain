@@ -153,7 +153,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
@@ -331,7 +330,6 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["function_call"] = function_call
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = raw_tool_calls
         try:
             tool_call_chunks = [
                 tool_call_chunk(

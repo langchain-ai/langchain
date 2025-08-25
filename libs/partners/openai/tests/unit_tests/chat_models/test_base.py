@@ -201,7 +201,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": [raw_tool_call]},
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
@@ -235,7 +234,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": raw_tool_calls},
         invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
