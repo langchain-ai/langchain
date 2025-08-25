@@ -22,7 +22,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.outputs import ChatGeneration, ChatResult, LLMResult
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
     magic_function,
@@ -168,38 +167,6 @@ def test_chat_openai_invalid_streaming_params() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     with pytest.raises(ValueError):
         ChatOpenAI(max_tokens=MAX_TOKEN_COUNT, streaming=True, temperature=0, n=5)  # type: ignore[call-arg]
-
-
-@pytest.mark.scheduled
-async def test_async_chat_openai_bind_functions() -> None:
-    """Test ChatOpenAI wrapper with multiple completions."""
-
-    class Person(BaseModel):
-        """Identifying information about a person."""
-
-        name: str = Field(..., title="Name", description="The person's name")
-        age: int = Field(..., title="Age", description="The person's age")
-        fav_food: Optional[str] = Field(
-            default=None, title="Fav Food", description="The person's favorite food"
-        )
-
-    chat = ChatOpenAI(max_tokens=30, n=1, streaming=True).bind_functions(  # type: ignore[call-arg]
-        functions=[Person], function_call="Person"
-    )
-
-    prompt = ChatPromptTemplate.from_messages(
-        [("system", "Use the provided Person function"), ("user", "{input}")]
-    )
-
-    chain = prompt | chat
-
-    message = HumanMessage(content="Sally is 13 years old")
-    response = await chain.abatch([{"input": message}])
-
-    assert isinstance(response, list)
-    assert len(response) == 1
-    for generation in response:
-        assert isinstance(generation, AIMessage)
 
 
 @pytest.mark.scheduled
@@ -429,9 +396,7 @@ def test_tool_use() -> None:
     tool_call = ai_msg.tool_calls[0]
     assert "args" in tool_call
 
-    tool_msg = ToolMessage(
-        "sally_green_hair", tool_call_id=ai_msg.additional_kwargs["tool_calls"][0]["id"]
-    )
+    tool_msg = ToolMessage("sally_green_hair", tool_call_id=ai_msg.tool_calls[0]["id"])
     msgs.extend([ai_msg, tool_msg])
     llm_with_tool.invoke(msgs)
 
@@ -451,8 +416,7 @@ def test_tool_use() -> None:
     assert "args" in tool_call_chunk
 
     streaming_tool_msg = ToolMessage(
-        "sally_green_hair",
-        tool_call_id=gathered.additional_kwargs["tool_calls"][0]["id"],
+        "sally_green_hair", tool_call_id=gathered.tool_calls[0]["id"]
     )
     msgs.extend([gathered, streaming_tool_msg])
     llm_with_tool.invoke(msgs)
