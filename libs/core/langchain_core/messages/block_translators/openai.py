@@ -30,7 +30,14 @@ def _convert_to_v1_from_chat_completions(
             content_blocks = []
 
     for tool_call in message.tool_calls:
-        content_blocks.append(tool_call)
+        content_blocks.append(
+            {
+                "type": "tool_call",
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+                "id": tool_call.get("id"),
+            }
+        )
 
     return content_blocks
 
@@ -94,7 +101,14 @@ def _convert_to_v1_from_chat_completions_chunk(
 
     if chunk.chunk_position == "last":
         for tool_call in chunk.tool_calls:
-            content_blocks.append(tool_call)
+            content_blocks.append(
+                {
+                    "type": "tool_call",
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                    "id": tool_call.get("id"),
+                }
+            )
 
     else:
         for tool_call_chunk in chunk.tool_call_chunks:
@@ -293,7 +307,12 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 elif call_id:
                     for tool_call in message.tool_calls or []:
                         if tool_call.get("id") == call_id:
-                            tool_call_block = tool_call.copy()
+                            tool_call_block = {
+                                "type": "tool_call",
+                                "name": tool_call["name"],
+                                "args": tool_call["args"],
+                                "id": tool_call.get("id"),
+                            }
                             break
                     else:
                         for invalid_tool_call in message.invalid_tool_calls or []:

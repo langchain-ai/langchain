@@ -47,7 +47,7 @@ class ExponentialJitterParams(TypedDict, total=False):
     """Random additional wait sampled from random.uniform(0, jitter)."""
 
 
-class RunnableRetry(RunnableBindingBase[Input, Output]):
+class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
     """Retry a Runnable if it fails.
 
     RunnableRetry can be used to add retry logic to any object

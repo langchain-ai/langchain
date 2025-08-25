@@ -203,6 +203,16 @@ def test_add_ai_message_chunks_usage() -> None:
     )
 
 
+def test_init_tool_calls() -> None:
+    # Test we add "type" key on init
+    msg = AIMessage("", tool_calls=[{"name": "foo", "args": {"a": "b"}, "id": "abc"}])
+    assert len(msg.tool_calls) == 1
+    assert msg.tool_calls[0]["type"] == "tool_call"
+
+    # Test we can assign without adding type key
+    msg.tool_calls = [{"name": "bar", "args": {"c": "d"}, "id": "def"}]
+
+
 def test_content_blocks() -> None:
     message = AIMessage(
         "",

@@ -20,6 +20,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
@@ -2156,7 +2157,11 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
 
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
-        {"type": "output_text", "text": "I'll check the weather for you."}
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
     ]
 
     assert result[1]["type"] == "function_call"
@@ -2258,6 +2263,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
         {
             "type": "output_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
         }
     ]
 
@@ -2575,9 +2581,16 @@ def test_convert_from_v1_to_chat_completions(
 def test_convert_from_v1_to_responses(
     message_v1: AIMessage, expected: list[dict[str, Any]]
 ) -> None:
-    result = _convert_from_v1_to_responses(
-        message_v1.content_blocks, message_v1.tool_calls
-    )
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
     assert result == expected
 
     # Check no mutation
@@ -2822,3 +2835,21 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature(use_responses_api: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload  # not supported for gpt-5 family models
+
+    llm = ChatOpenAI(
+        model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5  # gpt-5-chat is exception

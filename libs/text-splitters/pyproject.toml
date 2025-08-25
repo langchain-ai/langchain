@@ -52,8 +52,8 @@ test_integration = [
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 strict = true
-strict_bytes = true
 enable_error_code = "deprecated"
 warn_unreachable = true
 

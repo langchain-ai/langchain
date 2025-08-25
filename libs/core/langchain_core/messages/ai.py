@@ -255,9 +255,9 @@ class AIMessage(BaseMessage):
                         "args": tool_call["args"],
                     }
                     if "index" in tool_call:
-                        tool_call_block["index"] = tool_call["index"]
+                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
                     if "extras" in tool_call:
-                        tool_call_block["extras"] = tool_call["extras"]
+                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
                     blocks.append(tool_call_block)
 
         return blocks
@@ -499,7 +499,14 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             and isinstance(self.content, list)
         ):
             id_to_tc: dict[str, types.ToolCall] = {
-                cast("str", tc.get("id")): tc for tc in self.tool_calls if "id" in tc
+                cast("str", tc.get("id")): {
+                    "type": "tool_call",
+                    "name": tc["name"],
+                    "args": tc["args"],
+                    "id": tc.get("id"),
+                }
+                for tc in self.tool_calls
+                if "id" in tc
             }
             for idx, block in enumerate(self.content):
                 if (

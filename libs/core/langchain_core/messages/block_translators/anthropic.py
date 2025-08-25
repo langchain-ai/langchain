@@ -239,11 +239,21 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     tool_call_block: Optional[types.ToolCall] = None
                     # Non-streaming or gathered chunk
                     if len(message.tool_calls) == 1:
-                        tool_call_block = message.tool_calls[0]
+                        tool_call_block = {
+                            "type": "tool_call",
+                            "name": message.tool_calls[0]["name"],
+                            "args": message.tool_calls[0]["args"],
+                            "id": message.tool_calls[0].get("id"),
+                        }
                     elif call_id := block.get("id"):
                         for tc in message.tool_calls:
                             if tc.get("id") == call_id:
-                                tool_call_block = tc
+                                tool_call_block = {
+                                    "type": "tool_call",
+                                    "name": tc["name"],
+                                    "args": tc["args"],
+                                    "id": tc.get("id"),
+                                }
                                 break
                     else:
                         pass
