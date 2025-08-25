@@ -116,11 +116,35 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        new_e = (
-                            {k: v for k, v in e.items() if k != "type"}
-                            if "type" in e
-                            else e
-                        )
+                        if (left_type := merged[to_merge[0]].get("type")) and (
+                            e.get("type") == "non_standard" and "value" in e
+                        ):
+                            if left_type != "non_standard":
+                                # standard + non_standard
+                                new_e: dict[str, Any] = {
+                                    "extras": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                            else:
+                                # non_standard + non_standard
+                                new_e = {
+                                    "value": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                                if "index" in e:
+                                    new_e["index"] = e["index"]
+                        else:
+                            new_e = (
+                                {k: v for k, v in e.items() if k != "type"}
+                                if "type" in e
+                                else e
+                            )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)

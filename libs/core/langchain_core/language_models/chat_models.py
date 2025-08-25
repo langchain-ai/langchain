@@ -39,9 +39,9 @@ from langchain_core.language_models.base import (
 from langchain_core.load import dumpd, dumps
 from langchain_core.messages import (
     AIMessage,
+    AIMessageChunk,
     AnyMessage,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     convert_to_messages,
     convert_to_openai_data_block,
@@ -124,7 +124,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     if (
                         block.get("type") == "image"
                         and is_data_content_block(block)
-                        and block.get("source_type") != "id"
+                        and not ("file_id" in block or block.get("source_type") == "id")
                     ):
                         if message_to_trace is message:
                             # Shallow copy
@@ -342,7 +342,7 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
     return ls_structured_output_format_dict
 
 
-class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
+class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     """Base class for chat models.
 
     Key imperative methods:
@@ -534,21 +534,24 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> BaseMessage:
+    ) -> AIMessage:
         config = ensure_config(config)
         return cast(
-            "ChatGeneration",
-            self.generate_prompt(
-                [self._convert_input(input)],
-                stop=stop,
-                callbacks=config.get("callbacks"),
-                tags=config.get("tags"),
-                metadata=config.get("metadata"),
-                run_name=config.get("run_name"),
-                run_id=config.pop("run_id", None),
-                **kwargs,
-            ).generations[0][0],
-        ).message
+            "AIMessage",
+            cast(
+                "ChatGeneration",
+                self.generate_prompt(
+                    [self._convert_input(input)],
+                    stop=stop,
+                    callbacks=config.get("callbacks"),
+                    tags=config.get("tags"),
+                    metadata=config.get("metadata"),
+                    run_name=config.get("run_name"),
+                    run_id=config.pop("run_id", None),
+                    **kwargs,
+                ).generations[0][0],
+            ).message,
+        )
 
     @override
     async def ainvoke(
@@ -558,7 +561,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> BaseMessage:
+    ) -> AIMessage:
         config = ensure_config(config)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
@@ -570,7 +573,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             run_id=config.pop("run_id", None),
             **kwargs,
         )
-        return cast("ChatGeneration", llm_result.generations[0][0]).message
+        return cast(
+            "AIMessage", cast("ChatGeneration", llm_result.generations[0][0]).message
+        )
 
     def _should_stream(
         self,
@@ -615,11 +620,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> Iterator[BaseMessageChunk]:
+    ) -> Iterator[AIMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
-                "BaseMessageChunk",
+                "AIMessageChunk",
                 self.invoke(input, config=config, stop=stop, **kwargs),
             )
         else:
@@ -678,7 +683,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                         cast("str", chunk.message.content), chunk=chunk
                     )
                     chunks.append(chunk)
-                    yield chunk.message
+                    yield cast("AIMessageChunk", chunk.message)
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -691,7 +696,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     generations = [generations_with_error_metadata]
                 run_manager.on_llm_error(
                     e,
-                    response=LLMResult(generations=generations),  # type: ignore[arg-type]
+                    response=LLMResult(generations=generations),
                 )
                 raise
 
@@ -711,11 +716,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> AsyncIterator[BaseMessageChunk]:
+    ) -> AsyncIterator[AIMessageChunk]:
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
-                "BaseMessageChunk",
+                "AIMessageChunk",
                 await self.ainvoke(input, config=config, stop=stop, **kwargs),
             )
             return
@@ -780,7 +785,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     cast("str", chunk.message.content), chunk=chunk
                 )
                 chunks.append(chunk)
-                yield chunk.message
+                yield cast("AIMessageChunk", chunk.message)
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -790,7 +795,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 generations = [generations_with_error_metadata]
             await run_manager.on_llm_error(
                 e,
-                response=LLMResult(generations=generations),  # type: ignore[arg-type]
+                response=LLMResult(generations=generations),
             )
             raise
 
@@ -1005,17 +1010,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_managers[i].on_llm_error(
                         e,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]  # type: ignore[list-item]
+                            generations=[generations_with_error_metadata]
                         ),
                     )
                 raise
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
+        output = LLMResult(generations=generations, llm_output=llm_output)
         if run_managers:
             run_infos = []
             for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -1125,7 +1130,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     await run_managers[i].on_llm_error(
                         res,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]  # type: ignore[list-item]
+                            generations=[generations_with_error_metadata]
                         ),
                     )
                 exceptions.append(res)
@@ -1135,7 +1140,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations],  # type: ignore[list-item, union-attr]
+                                generations=[res.generations],  # type: ignore[union-attr]
                                 llm_output=res.llm_output,  # type: ignore[union-attr]
                             )
                         )
@@ -1145,12 +1150,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             raise exceptions[0]
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item, union-attr]
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[union-attr]
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])  # type: ignore[union-attr]
         generations = [res.generations for res in results]  # type: ignore[union-attr]
-        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
+        output = LLMResult(generations=generations, llm_output=llm_output)
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)
@@ -1571,7 +1576,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tools to the model.
 
         Args:

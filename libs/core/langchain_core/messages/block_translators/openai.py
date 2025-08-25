@@ -1,10 +1,20 @@
 """Derivations of standard content blocks from OpenAI content."""
 
-from collections.abc import Iterable
-from typing import Any, Optional, Union, cast
+from __future__ import annotations
 
-from langchain_core.messages import AIMessage, AIMessageChunk
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, Any, Optional, Union, cast
+
+from langchain_core.language_models._utils import (
+    _is_openai_data_block,
+)
 from langchain_core.messages import content as types
+from langchain_core.messages.block_translators.langchain_v0 import (
+    _convert_openai_format_to_data_block,
+)
+
+if TYPE_CHECKING:
+    from langchain_core.messages import AIMessage, AIMessageChunk
 
 
 # v1 / Chat Completions
@@ -20,9 +30,62 @@ def _convert_to_v1_from_chat_completions(
             content_blocks = []
 
     for tool_call in message.tool_calls:
-        content_blocks.append(tool_call)
+        content_blocks.append(
+            {
+                "type": "tool_call",
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+                "id": tool_call.get("id"),
+            }
+        )
 
     return content_blocks
+
+
+def _convert_to_v1_from_chat_completions_input(
+    blocks: list[types.ContentBlock],
+) -> list[types.ContentBlock]:
+    """Convert OpenAI Chat Completions format blocks to v1 format.
+
+    Processes non_standard blocks that might be OpenAI format and converts them
+    to proper ContentBlocks. If conversion fails, leaves them as non_standard.
+
+    Args:
+        blocks: List of content blocks to process.
+
+    Returns:
+        Updated list with OpenAI blocks converted to v1 format.
+    """
+    from langchain_core.messages import content as types
+
+    converted_blocks = []
+    unpacked_blocks: list[dict[str, Any]] = [
+        cast("dict[str, Any]", block)
+        if block.get("type") != "non_standard"
+        else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
+        for block in blocks
+    ]
+    for block in unpacked_blocks:
+        if block.get("type") in {
+            "image_url",
+            "input_audio",
+            "file",
+        } and _is_openai_data_block(block):
+            converted_block = _convert_openai_format_to_data_block(block)
+            # If conversion succeeded, use it; otherwise keep as non_standard
+            if (
+                isinstance(converted_block, dict)
+                and converted_block.get("type") in types.KNOWN_BLOCK_TYPES
+            ):
+                converted_blocks.append(cast("types.ContentBlock", converted_block))
+            else:
+                converted_blocks.append({"type": "non_standard", "value": block})
+        elif block.get("type") in types.KNOWN_BLOCK_TYPES:
+            converted_blocks.append(cast("types.ContentBlock", block))
+        else:
+            converted_blocks.append({"type": "non_standard", "value": block})
+
+    return converted_blocks
 
 
 def _convert_to_v1_from_chat_completions_chunk(
@@ -220,6 +283,9 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     Union[types.ToolCall, types.InvalidToolCall, types.ToolCallChunk]
                 ] = None
                 call_id = block.get("call_id", "")
+
+                from langchain_core.messages import AIMessageChunk
+
                 if (
                     isinstance(message, AIMessageChunk)
                     and len(message.tool_call_chunks) == 1
@@ -228,7 +294,12 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 elif call_id:
                     for tool_call in message.tool_calls or []:
                         if tool_call.get("id") == call_id:
-                            tool_call_block = tool_call.copy()
+                            tool_call_block = {
+                                "type": "tool_call",
+                                "name": tool_call["name"],
+                                "args": tool_call["args"],
+                                "id": tool_call.get("id"),
+                            }
                             break
                     else:
                         for invalid_tool_call in message.invalid_tool_calls or []:

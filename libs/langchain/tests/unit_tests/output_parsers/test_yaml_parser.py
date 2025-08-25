@@ -95,5 +95,5 @@ def test_yaml_output_parser_fail() -> None:
 
 def test_yaml_output_parser_output_type() -> None:
     """Test YamlOutputParser OutputType."""
-    yaml_parser = YamlOutputParser(pydantic_object=TestModel)
+    yaml_parser = YamlOutputParser[TestModel](pydantic_object=TestModel)
     assert yaml_parser.OutputType is TestModel
