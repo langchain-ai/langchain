@@ -628,7 +628,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
                 "type": "file",
                 "file": {
                     "filename": "draconomicon.pdf",
-                    "file_data": "<base64 string>",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
                 },
             },
             {  # file-id
