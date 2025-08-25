@@ -257,7 +257,7 @@ def test_convert_to_v1_from_openai_input() -> None:
                 "type": "file",
                 "file": {
                     "filename": "draconomicon.pdf",
-                    "file_data": "<base64 string>",
+                    "file_data": "data:application/pdf;base64,<base64 string>",
                 },
             },
             {

@@ -272,7 +272,9 @@ def _convert_openai_format_to_data_block(
         )
 
     # base64-style file block
-    if block["type"] == "file":
+    if (block["type"] == "file") and (
+        parsed := _parse_data_uri(block["file"]["file_data"])
+    ):
         known_keys = {"type", "file"}
         extras = _extract_extras(block, known_keys)
 
@@ -285,7 +287,7 @@ def _convert_openai_format_to_data_block(
 
         filename = block["file"].get("filename")
         return types.create_file_block(
-            base64=block["file"]["file_data"],
+            base64=parsed["data"],
             mime_type="application/pdf",
             filename=filename,
             **all_extras,
