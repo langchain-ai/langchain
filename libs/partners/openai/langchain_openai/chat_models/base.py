@@ -1161,6 +1161,7 @@ class BaseChatOpenAI(BaseChatModel):
                     raw_response = self.root_client.responses.with_raw_response.parse(
                         **payload
                     )
+                    response = raw_response.parse()
                 else:
                     raw_response = self.root_client.responses.with_raw_response.create(
                         **payload
