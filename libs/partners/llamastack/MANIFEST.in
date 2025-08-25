@@ -1,0 +1,11 @@
+include README.md
+include LICENSE
+include pyproject.toml
+include pytest.ini
+recursive-include langchain_llamastack *.py
+recursive-include examples *.py
+recursive-include tests *.py
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+recursive-exclude * .pytest_cache
+recursive-exclude * .mypy_cache
