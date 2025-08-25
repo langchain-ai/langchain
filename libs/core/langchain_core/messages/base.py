@@ -20,8 +20,7 @@ if TYPE_CHECKING:
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of ChatModels.
-
+    Messages are the inputs and outputs of ``ChatModel``s.
     """
 
     content: Union[str, list[Union[str, dict]]]
