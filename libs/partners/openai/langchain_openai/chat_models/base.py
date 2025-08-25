@@ -716,7 +716,8 @@ class BaseChatOpenAI(BaseChatModel):
         """Validate temperature parameter for different models.
 
         - o1 models only allow temperature=1
-        - gpt-5 models only allow temperature=1 or unset (defaults to 1)
+        - gpt-5 models (excluding gpt-5-chat) only allow temperature=1 or unset
+          (defaults to 1)
         """
         model = values.get("model_name") or values.get("model") or ""
 
@@ -725,10 +726,12 @@ class BaseChatOpenAI(BaseChatModel):
             values["temperature"] = 1
 
         # For gpt-5 models, handle temperature restrictions
-        if model.startswith("gpt-5"):
+        # Note that gpt-5-chat models do support temperature
+        if model.startswith("gpt-5") and "chat" not in model:
             temperature = values.get("temperature")
             if temperature is not None and temperature != 1:
-                # For gpt-5, only temperature=1 is supported, so remove non-defaults
+                # For gpt-5 (non-chat), only temperature=1 is supported
+                # So we remove any non-defaults
                 values.pop("temperature", None)
 
         return values
@@ -3520,7 +3523,7 @@ def _construct_responses_api_payload(
 
     # Remove temperature parameter for models that don't support it in responses API
     model = payload.get("model", "")
-    if model.startswith("gpt-5"):
+    if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
         payload.pop("temperature", None)
 
     payload["input"] = _construct_responses_api_input(messages)
@@ -3599,6 +3602,13 @@ def _construct_responses_api_payload(
                 }
             else:
                 pass
+
+    verbosity = payload.pop("verbosity", None)
+    if verbosity is not None:
+        if "text" not in payload:
+            payload["text"] = {"format": {"type": "text"}}
+        payload["text"]["verbosity"] = verbosity
+
     return payload
 
 
@@ -3742,7 +3752,13 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                     {
                         "type": "message",
                         "role": "assistant",
-                        "content": [{"type": "output_text", "text": msg["content"]}],
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": msg["content"],
+                                "annotations": [],
+                            }
+                        ],
                     }
                 )
 
@@ -3868,7 +3884,9 @@ def _construct_lc_result_from_responses_api(
                         "annotations": [
                             annotation.model_dump()
                             for annotation in content.annotations
-                        ],
+                        ]
+                        if isinstance(content.annotations, list)
+                        else [],
                         "id": output.id,
                     }
                     content_blocks.append(block)

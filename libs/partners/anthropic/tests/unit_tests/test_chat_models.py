@@ -62,6 +62,55 @@ def test_anthropic_client_caching() -> None:
     assert llm1._client._client is not llm5._client._client
 
 
+def test_anthropic_proxy_support() -> None:
+    """Test that both sync and async clients support proxy configuration."""
+    proxy_url = "http://proxy.example.com:8080"
+
+    # Test sync client with proxy
+    llm_sync = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+    )
+    sync_client = llm_sync._client
+    assert sync_client is not None
+
+    # Test async client with proxy - this should not raise TypeError
+    async_client = llm_sync._async_client
+    assert async_client is not None
+
+    # Test that clients with different proxy settings are not cached together
+    llm_no_proxy = ChatAnthropic(model="claude-3-5-sonnet-latest")
+    llm_with_proxy = ChatAnthropic(
+        model="claude-3-5-sonnet-latest", anthropic_proxy=proxy_url
+    )
+
+    # Different proxy settings should result in different cached clients
+    assert llm_no_proxy._client._client is not llm_with_proxy._client._client
+
+
+def test_anthropic_proxy_from_environment() -> None:
+    """Test that proxy can be set from ANTHROPIC_PROXY environment variable."""
+    proxy_url = "http://env-proxy.example.com:8080"
+
+    # Test with environment variable set
+    with patch.dict(os.environ, {"ANTHROPIC_PROXY": proxy_url}):
+        llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+        assert llm.anthropic_proxy == proxy_url
+
+        # Should be able to create clients successfully
+        sync_client = llm._client
+        async_client = llm._async_client
+        assert sync_client is not None
+        assert async_client is not None
+
+    # Test that explicit parameter overrides environment variable
+    with patch.dict(os.environ, {"ANTHROPIC_PROXY": "http://env-proxy.com"}):
+        explicit_proxy = "http://explicit-proxy.com"
+        llm = ChatAnthropic(
+            model="claude-3-5-sonnet-latest", anthropic_proxy=explicit_proxy
+        )
+        assert llm.anthropic_proxy == explicit_proxy
+
+
 @pytest.mark.requires("anthropic")
 def test_anthropic_model_name_param() -> None:
     llm = ChatAnthropic(model_name="foo")  # type: ignore[call-arg, call-arg]
@@ -544,6 +593,47 @@ def test__format_messages_with_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_tool_use_block() -> None:
+    # Test we correctly format tool_use blocks when there is no corresponding tool_call.
+    message = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {},
+                "partial_json": '{"bar_2": "baz_2"}',
+                "index": 1,
+            },
+        ]
+    )
+    result = _format_messages([message])
+    expected = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {"bar_2": "baz_2"},
+            },
+        ],
+    }
+    assert result == (None, [expected])
 
 
 def test__format_messages_with_str_content_and_tool_calls() -> None:
@@ -1076,3 +1166,123 @@ def test_mcp_tracing() -> None:
     # Test headers are correctly propagated to request
     payload = llm._get_request_payload([input_message])
     assert payload["mcp_servers"][0]["authorization_token"] == "PLACEHOLDER"  # noqa: S105
+
+
+def test_cache_control_kwarg() -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+
+    messages = [HumanMessage("foo"), AIMessage("bar"), HumanMessage("baz")]
+    payload = llm._get_request_payload(messages)
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {"role": "user", "content": "baz"},
+    ]
+
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz", "cache_control": {"type": "ephemeral"}}
+            ],
+        },
+    ]
+
+    messages = [
+        HumanMessage("foo"),
+        AIMessage("bar"),
+        HumanMessage(
+            content=[
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux"},
+            ]
+        ),
+    ]
+    payload = llm._get_request_payload(messages, cache_control={"type": "ephemeral"})
+    assert payload["messages"] == [
+        {"role": "user", "content": "foo"},
+        {"role": "assistant", "content": "bar"},
+        {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "baz"},
+                {"type": "text", "text": "qux", "cache_control": {"type": "ephemeral"}},
+            ],
+        },
+    ]
+
+
+def test_streaming_cache_token_reporting() -> None:
+    """Test that cache tokens are properly reported in streaming events."""
+    from unittest.mock import MagicMock
+
+    from anthropic.types import MessageDeltaUsage
+
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    # Create a mock message_start event
+    mock_message = MagicMock()
+    mock_message.model = "claude-3-sonnet-20240229"
+    mock_message.usage.input_tokens = 100
+    mock_message.usage.output_tokens = 0
+    mock_message.usage.cache_read_input_tokens = 25
+    mock_message.usage.cache_creation_input_tokens = 10
+
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    # Create a mock message_delta event with complete usage info
+    mock_delta_usage = MessageDeltaUsage(
+        output_tokens=50,
+        input_tokens=100,
+        cache_read_input_tokens=25,
+        cache_creation_input_tokens=10,
+    )
+
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+    mock_delta.stop_sequence = None
+
+    message_delta_event = MagicMock()
+    message_delta_event.type = "message_delta"
+    message_delta_event.usage = mock_delta_usage
+    message_delta_event.delta = mock_delta
+
+    # Test message_start event
+    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+
+    # Test message_delta event - should contain complete usage metadata (w/ cache)
+    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_delta_event,
+        stream_usage=True,
+        coerce_content_to_string=True,
+        block_start_event=None,
+    )
+
+    # Verify message_delta has complete usage_metadata including cache tokens
+    assert start_chunk is not None, "message_start should produce a chunk"
+    assert getattr(start_chunk, "usage_metadata", None) is None, (
+        "message_start should not have usage_metadata"
+    )
+    assert delta_chunk is not None, "message_delta should produce a chunk"
+    assert delta_chunk.usage_metadata is not None, (
+        "message_delta should have usage_metadata"
+    )
+    assert "input_token_details" in delta_chunk.usage_metadata
+    input_details = delta_chunk.usage_metadata["input_token_details"]
+    assert input_details.get("cache_read") == 25
+    assert input_details.get("cache_creation") == 10
+
+    # Verify totals are correct: 100 base + 25 cache_read + 10 cache_creation = 135
+    assert delta_chunk.usage_metadata["input_tokens"] == 135
+    assert delta_chunk.usage_metadata["output_tokens"] == 50
+    assert delta_chunk.usage_metadata["total_tokens"] == 185
