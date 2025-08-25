@@ -1207,16 +1207,6 @@ async def test_schema_parsing_failures_async() -> None:
 # VCR can't handle parameterized tests
 @pytest.mark.vcr()
 async def test_schema_parsing_failures_responses_api_async() -> None:
-    class BadModel(BaseModel):
-        response: str
-
-        @field_validator("response")
-        @classmethod
-        def validate_response(cls, v: str) -> str:
-            if v != "bad":
-                raise ValueError('response must be exactly "bad"')
-            return v
-
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
     try:
         await llm.ainvoke("respond with good", response_format=BadModel)
