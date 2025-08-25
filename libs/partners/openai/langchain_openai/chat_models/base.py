@@ -1092,7 +1092,6 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = self.client.create(**payload)
             context_manager = response
-        response = None
         try:
             with context_manager as response:
                 is_first_chunk = True
@@ -1118,10 +1117,6 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
-        except Exception as e:
-            if response is not None and hasattr(response, "http_response"):
-                e.response = response.http_response  # type: ignore[attr-defined]
-            raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
@@ -1344,7 +1339,6 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = await self.async_client.create(**payload)
             context_manager = response
-        response = None
         try:
             async with context_manager as response:
                 is_first_chunk = True
@@ -1370,10 +1364,6 @@ class BaseChatOpenAI(BaseChatModel):
                     yield generation_chunk
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
-        except Exception as e:
-            if response is not None and hasattr(response, "http_response"):
-                e.response = response.http_response  # type: ignore[attr-defined]
-            raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
