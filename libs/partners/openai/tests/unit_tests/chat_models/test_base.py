@@ -20,6 +20,7 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
@@ -2575,9 +2576,16 @@ def test_convert_from_v1_to_chat_completions(
 def test_convert_from_v1_to_responses(
     message_v1: AIMessage, expected: list[dict[str, Any]]
 ) -> None:
-    result = _convert_from_v1_to_responses(
-        message_v1.content_blocks, message_v1.tool_calls
-    )
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
     assert result == expected
 
     # Check no mutation
