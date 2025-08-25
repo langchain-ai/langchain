@@ -662,11 +662,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     .. code-block:: python
 
-        llm = ChatOpenAI(
-            model="o4-mini",
-            use_responses_api=True,
-            output_version="responses/v1",
-        )
+        llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
     .. versionadded:: 0.3.26
@@ -681,7 +677,7 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Literal["v0", "responses/v1"] = "v0"
+    output_version: Literal["v0", "responses/v1"] = "responses/v1"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -698,6 +694,10 @@ class BaseChatOpenAI(BaseChatModel):
 
     .. versionadded:: 0.3.25
 
+    .. versionchanged:: 1.0.0
+
+        Default updated to ``"responses/v1"``.
+
     """
 
     model_config = ConfigDict(populate_by_name=True)
@@ -709,6 +709,40 @@ class BaseChatOpenAI(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
         return values
+
+    @model_validator(mode="after")
+    def _maybe_enable_responses(self) -> Self:
+        """Additional check to see if we should route to the Responses API.
+
+        This is added for backwards compatibility: prior to 1.0, ``output_version``
+        defaulted to ``"v0"`` and ``output_version="responses/v1"`` would engage the
+        Responses API.
+
+        In 1.0, the default ``output_version`` was updated to ``"responses/v1"``, so
+        here we ensure that we continue to route to the Responses API if that version
+        is specified explicitly.
+        """
+        if (
+            "output_version" in self.model_fields_set
+            and self.output_version == "responses/v1"
+            and self.use_responses_api is None
+        ):
+            self.use_responses_api = True
+        return self
+
+    def to_json(self):
+        """Exclude ``output_version`` if it has default, to accommodate
+        ``_maybe_enable_responses`` if we serialize and deserialize.
+        """
+        result = super().to_json()
+        if (
+            isinstance(result, dict)
+            and "kwargs" in result
+            and "output_version" in result["kwargs"]
+            and "output_version" not in self.model_fields_set
+        ):
+            _ = result["kwargs"].pop("output_version")
+        return result
 
     @model_validator(mode="before")
     @classmethod
@@ -1183,8 +1217,6 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
-        elif self.output_version == "responses/v1":
-            return True
         elif self.include is not None:
             return True
         elif self.reasoning is not None:
@@ -3837,7 +3869,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: Literal["v0", "responses/v1"] = "responses/v1",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -4001,7 +4033,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: Literal["v0", "responses/v1"] = "responses/v1",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.

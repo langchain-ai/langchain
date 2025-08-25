@@ -54,7 +54,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
 
 @pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, output_version="responses/v1")
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -115,7 +115,7 @@ def test_web_search() -> None:
 
 @pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version="v0")
     response = await llm.ainvoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -504,7 +504,7 @@ def test_mcp_builtin() -> None:
 def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        output_version="responses/v1",
+        use_responses_api=True,
         store=False,
         include=["reasoning.encrypted_content"],
     )
@@ -551,7 +551,7 @@ def test_mcp_builtin_zdr() -> None:
 @pytest.mark.vcr()
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v0")
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
@@ -606,7 +606,7 @@ def test_image_generation_streaming() -> None:
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v0")
     # Test invocation
     tool = {
         "type": "image_generation",
@@ -696,9 +696,7 @@ def test_custom_tool() -> None:
         """Execute python code."""
         return "27"
 
-    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1").bind_tools(
-        [execute_code]
-    )
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True).bind_tools([execute_code])
 
     input_message = {"role": "user", "content": "Use the tool to evaluate 3^3."}
     tool_call_message = llm.invoke([input_message])
