@@ -108,19 +108,29 @@ class BaseMessage(Serializable):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return the content as a list of standard ``ContentBlock``s.
+        r"""Return ``content`` as a list of standardized :class:`~langchain_core.messages.content.ContentBlock`\s.
 
-        To use this property, the corresponding chat model must support
-        ``message_version='v1'`` or higher:
+        .. important::
 
-        .. code-block:: python
+            To use this property correctly, the corresponding ``ChatModel`` must support
+            ``message_version='v1'`` or higher (and it must be set):
 
-            from langchain.chat_models import init_chat_model
-            llm = init_chat_model("...", message_version="v1")
+            .. code-block:: python
 
-        Otherwise, does best-effort parsing to standard types.
+                from langchain.chat_models import init_chat_model
+                llm = init_chat_model("...", message_version="v1")
 
-        """
+                # or
+
+                from langchain-openai import ChatOpenAI
+                llm = ChatOpenAI(model="gpt-4o", message_version="v1")
+
+            Otherwise, the property will perform best-effort parsing to standard types,
+            though some content may be misinterpreted.
+
+        .. versionadded:: 1.0.0
+
+        """  # noqa: E501
         from langchain_core.messages import content as types
         from langchain_core.messages.block_translators.anthropic import (
             _convert_to_v1_from_anthropic_input,
