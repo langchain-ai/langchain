@@ -396,9 +396,7 @@ def test_tool_use() -> None:
     tool_call = ai_msg.tool_calls[0]
     assert "args" in tool_call
 
-    tool_msg = ToolMessage(
-        "sally_green_hair", tool_call_id=ai_msg.tool_calls[0]["id"]
-    )
+    tool_msg = ToolMessage("sally_green_hair", tool_call_id=ai_msg.tool_calls[0]["id"])
     msgs.extend([ai_msg, tool_msg])
     llm_with_tool.invoke(msgs)
 
@@ -418,8 +416,7 @@ def test_tool_use() -> None:
     assert "args" in tool_call_chunk
 
     streaming_tool_msg = ToolMessage(
-        "sally_green_hair",
-        tool_call_id=gathered.tool_calls[0]["id"],
+        "sally_green_hair", tool_call_id=gathered.tool_calls[0]["id"]
     )
     msgs.extend([gathered, streaming_tool_msg])
     llm_with_tool.invoke(msgs)
