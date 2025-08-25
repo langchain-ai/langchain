@@ -89,8 +89,6 @@ def example_1_basic_chat():
         llm = ChatLlamaStack(
             model="ollama/llama3:8b",  # Use your available model
             base_url="http://localhost:8321",
-            temperature=0.7,
-            max_tokens=100,
         )
 
         # Basic chat
@@ -274,9 +272,7 @@ def example_5_combined_workflow():
         )
 
         # Initialize all components
-        llm = ChatLlamaStack(
-            model="ollama/llama3:8b", base_url="http://localhost:8321", temperature=0.7
-        )
+        llm = ChatLlamaStack(model="ollama/llama3:8b", base_url="http://localhost:8321")
 
         embeddings = LlamaStackEmbeddings(
             model="ollama/nomic-embed-text", base_url="http://localhost:8321"

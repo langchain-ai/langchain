@@ -80,9 +80,6 @@ class ChatLlamaStack(BaseChatModel):
     streaming: bool = Field(default=False)
     """Whether to stream the results."""
 
-    llamastack_api_key: Optional[str] = Field(default=None)
-    """API key for Llama Stack (if required)."""
-
     llamastack_available: bool = Field(default=False, exclude=True)
     """Whether LlamaStack is available."""
 
@@ -102,17 +99,7 @@ class ChatLlamaStack(BaseChatModel):
 
         if LlamaStackClient is not None:
             try:
-                # Get API key from environment if not provided
-                api_key = get_from_dict_or_env(
-                    {"llamastack_api_key": self.llamastack_api_key},
-                    "llamastack_api_key",
-                    "LLAMASTACK_API_KEY",
-                    default="",
-                )
-
                 client_kwargs = {"base_url": self.base_url}
-                if api_key:
-                    client_kwargs["api_key"] = api_key
 
                 self.client = LlamaStackClient(**client_kwargs)
 
@@ -147,9 +134,7 @@ class ChatLlamaStack(BaseChatModel):
         from .utils import list_available_models
 
         try:
-            return list_available_models(
-                base_url=self.base_url, llamastack_api_key=self.llamastack_api_key
-            )
+            return list_available_models(base_url=self.base_url)
         except Exception as e:
             logger.warning(f"Failed to get models from LlamaStack: {e}")
             return []
@@ -186,8 +171,6 @@ class ChatLlamaStack(BaseChatModel):
     def _get_api_headers(self) -> Dict[str, str]:
         """Get headers for API requests."""
         headers = {"Content-Type": "application/json"}
-        if self.llamastack_api_key:
-            headers["Authorization"] = f"Bearer {self.llamastack_api_key}"
         return headers
 
     def _handle_api_error(self, response_data: Dict[str, Any]) -> None:
@@ -393,7 +376,6 @@ class ChatLlamaStack(BaseChatModel):
             "available": self.llamastack_available,
             "models_count": len(self.available_models),
             "base_url": self.base_url,
-            "api_key_configured": bool(self.llamastack_api_key),
             "models": (
                 self.available_models[:10]
                 if len(self.available_models) > 10
@@ -405,23 +387,21 @@ class ChatLlamaStack(BaseChatModel):
     def list_available_models(
         cls,
         base_url: str = "http://localhost:8321",
-        llamastack_api_key: Optional[str] = None,
     ) -> List[str]:
         """List available models from LlamaStack without creating a full instance."""
         from .utils import list_available_models
 
-        return list_available_models(base_url, llamastack_api_key)
+        return list_available_models(base_url)
 
     @classmethod
     def check_llamastack_connection(
         cls,
         base_url: str = "http://localhost:8321",
-        llamastack_api_key: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Check LlamaStack connection and return status information."""
         from .utils import check_llamastack_connection
 
-        return check_llamastack_connection(base_url, llamastack_api_key)
+        return check_llamastack_connection(base_url)
 
     def get_model_info(self, model_id: str = None) -> Dict[str, Any]:
         """Get information about a specific model."""

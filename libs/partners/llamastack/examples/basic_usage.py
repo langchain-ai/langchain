@@ -14,8 +14,6 @@ def test_chat_completion():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.7,
-            max_tokens=100,
         )
 
         # Test basic completion
@@ -122,7 +120,6 @@ def test_combined_safe_chat():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.7,
         )
 
         safety = LlamaStackSafety(base_url="http://localhost:8321")

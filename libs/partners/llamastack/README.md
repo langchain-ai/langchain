@@ -1,161 +1,221 @@
 # LangChain Llama Stack Integration
 
-This package provides LangChain-compatible integrations for [Llama Stack](https://github.com/meta-llama/llama-stack), including chat completion and safety checking capabilities.
+A comprehensive LangChain integration for [Llama Stack](https://github.com/meta-llama/llama-stack) that provides chat completion, text embeddings, safety checking, and utility functions with support for multiple providers.
 
-## 🚀 Installation
+## 🚀 Features
+
+- **💬 Chat Completion**: Full LangChain-compatible chat models with streaming support
+- **🔤 Text Embeddings**: Vector embeddings for semantic search and RAG applications
+- **🛡️ Safety Checking**: Content moderation using Llama Guard and other safety shields
+- **🔍 Model Discovery**: Automatic detection and listing of available models
+- **🔌 Multi-Provider Support**: Works with Ollama, OpenAI, Together AI, Fireworks, and more
+- **⚡ Streaming**: Real-time streaming responses for chat completions
+- **🔄 Provider Validation**: Built-in connection testing and environment validation
+- **📊 Semantic Search**: Vector similarity search with embedding models
+
+## 📦 Installation
 
 ```bash
-# Install from PyPI
-pip install -U langchain-llamastack
+# Install from PyPI (when published)
+pip install langchain-llamastack
 
-# Or install with development dependencies
-pip install -U "langchain-llamastack[dev]"
-
-# Or install from source (for development)
+# Or install from source for development
 git clone https://github.com/langchain-ai/langchain.git
 cd langchain/libs/partners/llamastack
 pip install -e .
+
+# Install with all optional dependencies
+pip install -e ".[all]"
 ```
 
-## 📋 Prerequisites
+## 🏗️ Setup & Prerequisites
 
-1. **Llama Stack Server**: You need a running Llama Stack server with inference and safety capabilities.
-2. **Models**: Ensure you have appropriate models loaded in your Llama Stack setup.
-
-### Setting up Llama Stack Server
+### 1. Install Llama Stack
 
 ```bash
-# Example: Start Llama Stack server
-llama stack run your-config.yaml --port 8321
+# Install Llama Stack
+pip install llama-stack
+
+# Or install from source
+git clone https://github.com/meta-llama/llama-stack.git
+cd llama-stack
+pip install -e .
 ```
 
-## 🤖 Chat Completion Usage
+### 2. Set Up Providers
 
-The `ChatLlamaStack` class provides a LangChain-compatible interface for Llama Stack's chat completion endpoint.
+Choose and configure your preferred providers:
 
-### Basic Usage
+```bash
+# For Ollama (local models)
+export OLLAMA_BASE_URL="http://localhost:11434"
+ollama serve
+ollama pull llama3:8b
+ollama pull nomic-embed-text
+ollama pull shieldgemma:2b
+
+# For OpenAI
+export OPENAI_API_KEY="your-openai-api-key"
+
+# For Together AI
+export TOGETHER_API_KEY="your-together-api-key"
+
+# For Fireworks AI
+export FIREWORKS_API_KEY="your-fireworks-api-key"
+
+# For Anthropic
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+```
+
+### 3. Start Llama Stack Server
+
+```bash
+# With Ollama provider
+llama-stack-run --port 8321 --inference-provider remote::ollama
+
+# With multiple providers
+llama-stack-run --port 8321 \
+  --inference-provider remote::ollama \
+  --inference-provider remote::together \
+  --embedding-provider remote::ollama \
+  --safety-provider remote::ollama
+```
+
+### 4. Verify Setup
+
+```bash
+# Check server is running
+curl http://localhost:8321/v1/models
+
+# Or use the built-in utility
+python -c "from langchain_llamastack import check_llamastack_connection; print(check_llamastack_connection())"
+```
+
+## 💬 Chat Completion Usage
+
+### Basic Chat
 
 ```python
 from langchain_llamastack import ChatLlamaStack
 
 # Initialize the chat model
 llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-8B-Instruct",  # Model identifier
-    base_url="http://localhost:8321",          # Llama Stack server URL
-    temperature=0.7,                           # Temperature for sampling
-    max_tokens=1000,                          # Maximum tokens to generate
+    model="ollama/llama3:8b",  # or "openai/gpt-4o-mini", "together/llama-3.1-8b", etc.
+    base_url="http://localhost:8321",
 )
 
-# Simple text completion
-response = llm.invoke("Tell me a joke about programming")
+# Simple completion
+response = llm.invoke("What is artificial intelligence?")
 print(response.content)
 ```
 
-### Advanced Configuration
-
-```python
-from langchain_llamastack import ChatLlamaStack
-
-# Advanced configuration
-llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-70B-Instruct",
-    base_url="http://localhost:8321",
-    temperature=0.1,              # Lower temperature for more focused responses
-    max_tokens=2000,             # Longer responses
-    top_p=0.9,                   # Top-p sampling
-    top_k=50,                    # Top-k sampling
-    repetition_penalty=1.1,      # Repetition penalty
-    llamastack_api_key="your-api-key",  # Optional API key
-)
-
-# Check available models
-models = llm.get_available_models()
-print("Available models:", models)
-
-# Get model information
-model_info = llm.get_model_info()
-print("Model info:", model_info)
-```
-
-### Streaming Responses
+### Streaming Chat
 
 ```python
 from langchain_llamastack import ChatLlamaStack
 
 llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-8B-Instruct",
+    model="ollama/llama3:8b",
     base_url="http://localhost:8321",
     streaming=True,
 )
 
 # Stream the response
 print("AI: ", end="", flush=True)
-for chunk in llm.stream("Write a short story about AI"):
+for chunk in llm.stream("Tell me a story about AI"):
     print(chunk.content, end="", flush=True)
 print()
 ```
 
-### Using with LangChain Messages
+### Multi-turn Conversations
 
 ```python
-from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_llamastack import ChatLlamaStack
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 
-llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-8B-Instruct",
-    base_url="http://localhost:8321",
-)
-
-# Using LangChain message types
 messages = [
-    SystemMessage(content="You are a helpful assistant that speaks like a pirate."),
-    HumanMessage(content="Tell me about the weather today."),
+    SystemMessage(content="You are a helpful AI assistant."),
+    HumanMessage(content="Hello! What's your name?"),
 ]
 
 response = llm.invoke(messages)
 print(response.content)
 ```
 
-### Integration with LangChain Chains
+### Model Discovery
 
 ```python
-from langchain.chains import LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_llamastack import ChatLlamaStack
+# List available models
+models = llm.get_available_models()
+print(f"Available models: {models}")
 
-# Create the chat model
-llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-8B-Instruct",
+# Get model information
+model_info = llm.get_model_info("ollama/llama3:8b")
+print(f"Model info: {model_info}")
+```
+
+## 🔤 Text Embeddings Usage
+
+### Basic Embeddings
+
+```python
+from langchain_llamastack import LlamaStackEmbeddings
+
+# Initialize embeddings
+embeddings = LlamaStackEmbeddings(
+    model="ollama/nomic-embed-text",  # or "openai/text-embedding-3-small"
     base_url="http://localhost:8321",
 )
 
-# Create a prompt template
-prompt = PromptTemplate(
-    input_variables=["topic"],
-    template="Write a detailed explanation about {topic} in simple terms."
+# Single text embedding
+text = "Hello, world!"
+embedding = embeddings.embed_query(text)
+print(f"Embedding dimension: {len(embedding)}")
+
+# Multiple documents
+documents = [
+    "Artificial intelligence is transforming industries.",
+    "Machine learning enables computers to learn from data.",
+    "Natural language processing helps understand text.",
+]
+
+doc_embeddings = embeddings.embed_documents(documents)
+print(f"Generated {len(doc_embeddings)} embeddings")
+```
+
+### Semantic Search
+
+```python
+# Perform semantic search (requires numpy and scikit-learn)
+query = "What is machine learning?"
+knowledge_base = [
+    "Machine learning is a subset of artificial intelligence.",
+    "Deep learning uses neural networks with multiple layers.",
+    "Natural language processing enables text understanding.",
+    "Computer vision allows machines to interpret images.",
+]
+
+# Find most similar documents
+similar_docs = embeddings.similarity_search_by_vector(
+    embeddings.embed_query(query),
+    knowledge_base,
+    k=2
 )
 
-# Create a chain
-chain = LLMChain(llm=llm, prompt=prompt)
-
-# Run the chain
-result = chain.run(topic="quantum computing")
-print(result)
+for doc, score in similar_docs:
+    print(f"Score: {score:.3f} - {doc}")
 ```
 
 ## 🛡️ Safety Checking Usage
-
-The `LlamaStackSafety` class provides safety checking capabilities using Llama Stack's safety shields.
 
 ### Basic Safety Checking
 
 ```python
 from langchain_llamastack import LlamaStackSafety
 
-# Initialize the safety checker
+# Initialize safety checker
 safety = LlamaStackSafety(
     base_url="http://localhost:8321",
-    # default_shield_id="meta-llama/Llama-Guard-3-8B",  # Optional
+    shield_id="ollama/shieldgemma:2b",  # or "meta-llama/Llama-Guard-3-8B"
 )
 
 # Check content safety
@@ -168,14 +228,10 @@ if not result.is_safe:
     print(f"Confidence: {result.confidence_score}")
 ```
 
-### Conversation Safety Checking
+### Conversation Safety
 
 ```python
-from langchain_llamastack import LlamaStackSafety
-
-safety = LlamaStackSafety(base_url="http://localhost:8321")
-
-# Check a conversation
+# Check a full conversation
 messages = [
     {"role": "user", "content": "Hello there!"},
     {"role": "assistant", "content": "Hi! How can I help you today?"},
@@ -184,235 +240,130 @@ messages = [
 
 result = safety.check_conversation(messages)
 print(f"Conversation safe: {result.is_safe}")
-print(f"Result: {result.message}")
 ```
 
-### Working with Safety Shields
+### Shield Management
 
 ```python
-from langchain_llamastack import LlamaStackSafety
-
-safety = LlamaStackSafety(base_url="http://localhost:8321")
-
-# List available shields
-shields = safety.get_available_shields()
-print("Available shields:", shields)
-
-# Use a specific shield
-result = safety.check_content(
-    "Check this content",
-    shield_id="meta-llama/Llama-Guard-3-8B"
-)
+# List available safety shields
+shields = safety.list_available_shields()
+print(f"Available shields: {shields}")
 
 # Get shield information
-shield_info = safety.get_shield_info("meta-llama/Llama-Guard-3-8B")
-print("Shield info:", shield_info)
-
-# Set default shield
-success = safety.set_default_shield("meta-llama/Llama-Guard-3-8B")
-print(f"Default shield set: {success}")
+shield_info = safety.get_shield_info("ollama/shieldgemma:2b")
+print(f"Shield info: {shield_info}")
 ```
 
-## 🔗 Combining Chat and Safety
+## 🔗 Complete Safe AI Workflow
 
-You can combine both chat completion and safety checking for safe AI applications:
-
-```python
-from langchain_llamastack import ChatLlamaStack, LlamaStackSafety
-
-# Initialize both components
-llm = ChatLlamaStack(
-    model="meta-llama/Llama-3.1-8B-Instruct",
-    base_url="http://localhost:8321",
-)
-
-safety = LlamaStackSafety(base_url="http://localhost:8321")
-
-def safe_chat(user_input: str) -> str:
-    """Safe chat function with content checking."""
-
-    # First, check if the input is safe
-    input_safety = safety.check_content(user_input)
-    if not input_safety.is_safe:
-        return f"⚠️ Input rejected: {input_safety.message}"
-
-    # Generate response
-    response = llm.invoke(user_input)
-
-    # Check if the response is safe
-    output_safety = safety.check_content(response.content)
-    if not output_safety.is_safe:
-        return f"⚠️ Response filtered: {output_safety.message}"
-
-    return response.content
-
-# Use the safe chat function
-user_message = "Tell me about artificial intelligence"
-safe_response = safe_chat(user_message)
-print(safe_response)
-```
-
-## 🏗️ Advanced Integration Example
-
-Here's a complete example that demonstrates a safe conversational AI system:
+Combine all components for a comprehensive safe AI application:
 
 ```python
-from typing import List, Dict
-from langchain_llamastack import ChatLlamaStack, LlamaStackSafety
-from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_llamastack import ChatLlamaStack, LlamaStackEmbeddings, LlamaStackSafety
 
-class SafeConversationalAI:
-    def __init__(self, base_url: str = "http://localhost:8321"):
-        self.llm = ChatLlamaStack(
-            model="meta-llama/Llama-3.1-8B-Instruct",
+class SafeAI:
+    def __init__(self, base_url="http://localhost:8321"):
+self.llm = ChatLlamaStack(
+            model="ollama/llama3:8b",
             base_url=base_url,
-            temperature=0.7,
         )
-        self.safety = LlamaStackSafety(base_url=base_url)
-        self.conversation_history = []
 
-    def add_system_message(self, content: str):
-        """Add a system message to set the AI's behavior."""
-        self.conversation_history.append(SystemMessage(content=content))
+        self.embeddings = LlamaStackEmbeddings(
+            model="ollama/nomic-embed-text",
+            base_url=base_url,
+        )
 
-    def chat(self, user_input: str) -> Dict[str, str]:
-        """Safe chat with conversation history."""
+        self.safety = LlamaStackSafety(
+            base_url=base_url,
+            shield_id="ollama/shieldgemma:2b",
+        )
 
-        # Check input safety
+    def safe_chat_with_context(self, user_input, knowledge_base=None):
+        """Safe chat with optional context retrieval."""
+
+        # 1. Safety check input
         input_safety = self.safety.check_content(user_input)
         if not input_safety.is_safe:
-            return {
-                "response": "I can't process that request due to safety concerns.",
-                "status": "input_rejected",
-                "reason": input_safety.message
-            }
+            return f"⚠️ Input rejected: {input_safety.message}"
 
-        # Add user message to history
-        self.conversation_history.append(HumanMessage(content=user_input))
+        # 2. Retrieve relevant context (if knowledge base provided)
+        context = ""
+        if knowledge_base:
+            similar_docs = self.embeddings.similarity_search_by_vector(
+                self.embeddings.embed_query(user_input),
+                knowledge_base,
+                k=3
+            )
+            context = "\n".join([doc for doc, _ in similar_docs])
 
-        # Generate response
-        try:
-            response = self.llm.invoke(self.conversation_history)
+        # 3. Generate response with context
+        prompt = f"Context: {context}\n\nQuestion: {user_input}" if context else user_input
+        response = self.llm.invoke(prompt)
 
-            # Check output safety
-            output_safety = self.safety.check_content(response.content)
-            if not output_safety.is_safe:
-                return {
-                    "response": "I need to filter my response for safety reasons.",
-                    "status": "output_filtered",
-                    "reason": output_safety.message
-                }
+        # 4. Safety check output
+        output_safety = self.safety.check_content(response.content)
+        if not output_safety.is_safe:
+            return f"⚠️ Response filtered: {output_safety.message}"
 
-            # Add AI response to history
-            self.conversation_history.append(AIMessage(content=response.content))
+        return response.content
 
-            return {
-                "response": response.content,
-                "status": "success",
-                "reason": "Response generated successfully"
-            }
+# Usage
+safe_ai = SafeAI()
 
-        except Exception as e:
-            return {
-                "response": "I encountered an error processing your request.",
-                "status": "error",
-                "reason": str(e)
-            }
+knowledge_base = [
+    "Python is a programming language known for its simplicity.",
+    "Machine learning helps computers learn from data.",
+    "AI is transforming many industries worldwide.",
+]
 
-    def get_conversation_safety_score(self) -> Dict[str, any]:
-        """Check the safety of the entire conversation."""
-        # Convert conversation to safety check format
-        messages = []
-        for msg in self.conversation_history:
-            if isinstance(msg, (HumanMessage, AIMessage)):
-                role = "user" if isinstance(msg, HumanMessage) else "assistant"
-                messages.append({"role": role, "content": msg.content})
-
-        if messages:
-            result = self.safety.check_conversation(messages)
-            return {
-                "is_safe": result.is_safe,
-                "message": result.message,
-                "confidence": result.confidence_score
-            }
-        return {"is_safe": True, "message": "No conversation to check"}
-
-# Example usage
-ai = SafeConversationalAI()
-ai.add_system_message("You are a helpful, harmless, and honest assistant.")
-
-# Chat with the AI
-result = ai.chat("Hello! Can you help me learn about machine learning?")
-print(f"AI: {result['response']}")
-print(f"Status: {result['status']}")
-
-# Check conversation safety
-safety_score = ai.get_conversation_safety_score()
-print(f"Conversation safety: {safety_score}")
+response = safe_ai.safe_chat_with_context(
+    "Tell me about Python",
+    knowledge_base
+)
+print(response)
 ```
 
-## 🔧 Configuration
+## 🔧 Utilities & Helpers
 
-### Environment Variables
-
-You can configure the integration using environment variables:
-
-```bash
-export LLAMASTACK_API_KEY="your-api-key"
-export LLAMASTACK_BASE_URL="http://localhost:8321"
-```
-
-Then use them in your code:
+### Connection Testing
 
 ```python
-import os
-from langchain_llamastack import ChatLlamaStack, LlamaStackSafety
+from langchain_llamastack import check_llamastack_connection, list_available_models
 
-# These will automatically use environment variables
-llm = ChatLlamaStack(model="meta-llama/Llama-3.1-8B-Instruct")
-safety = LlamaStackSafety()
-```
+# Check connection status
+status = check_llamastack_connection("http://localhost:8321")
+if status['connected']:
+    print(f"✅ Connected! {status['models_count']} models available")
+else:
+    print(f"❌ Connection failed: {status['error']}")
 
-### Error Handling
-
-```python
-from langchain_llamastack import ChatLlamaStack, LlamaStackSafety
-import logging
-
-# Enable logging
-logging.basicConfig(level=logging.INFO)
-
+# List all available models
 try:
-    llm = ChatLlamaStack(
-        model="non-existent-model",
-        base_url="http://localhost:8321",
-    )
-    response = llm.invoke("Hello")
-except Exception as e:
+    models = list_available_models("http://localhost:8321")
+    print(f"Available models: {models}")
+except ValueError as e:
     print(f"Error: {e}")
-
-try:
-    safety = LlamaStackSafety(base_url="http://invalid-url:9999")
-    result = safety.check_content("Hello")
-except Exception as e:
-    print(f"Safety check error: {e}")
 ```
 
-## 📚 API Reference
+### Provider Environment Checking
+
+```python
+# Check if required environment variables are set
+from langchain_llamastack.check_provider_env import check_provider_environment
+
+status = check_provider_environment()
+print(f"Environment status: {status}")
+```
+
+## 📋 API Reference
 
 ### ChatLlamaStack
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `model` | str | `"meta-llama/Llama-3.1-8B-Instruct"` | Model identifier |
+| `model` | str | `"ollama/llama3:8b"` | Model identifier |
 | `base_url` | str | `"http://localhost:8321"` | Llama Stack server URL |
-| `temperature` | float | `0.7` | Sampling temperature |
-| `max_tokens` | int | `None` | Maximum tokens to generate |
-| `top_p` | float | `None` | Top-p sampling |
-| `top_k` | int | `None` | Top-k sampling |
-| `repetition_penalty` | float | `None` | Repetition penalty |
 | `streaming` | bool | `False` | Enable streaming |
-| `llamastack_api_key` | str | `None` | API key (optional) |
 
 **Methods:**
 - `invoke(messages)` - Generate completion
@@ -420,20 +371,36 @@ except Exception as e:
 - `get_available_models()` - List available models
 - `get_model_info(model_id)` - Get model information
 
+### LlamaStackEmbeddings
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `model` | str | `"ollama/nomic-embed-text"` | Embedding model name |
+| `base_url` | str | `"http://localhost:8321"` | Llama Stack server URL |
+| `chunk_size` | int | `1000` | Batch size for processing |
+| `max_retries` | int | `3` | Maximum retry attempts |
+| `request_timeout` | float | `30.0` | Request timeout in seconds |
+
+**Methods:**
+- `embed_query(text)` - Embed single text
+- `embed_documents(texts)` - Embed multiple texts
+- `similarity_search_by_vector(vector, docs, k)` - Semantic search
+- `get_available_models()` - List embedding models
+- `get_model_info(model_id)` - Get model information
+- `get_embedding_dimension()` - Get embedding dimension
+
 ### LlamaStackSafety
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `base_url` | str | `"http://localhost:8321"` | Llama Stack server URL |
-| `default_shield_id` | str | `None` | Default safety shield |
-| `llamastack_api_key` | str | `None` | API key (optional) |
+| `shield_id` | str | `None` | Default safety shield |
 
 **Methods:**
 - `check_content(content, shield_id, context)` - Check content safety
 - `check_conversation(messages, shield_id)` - Check conversation safety
-- `get_available_shields()` - List available shields
+- `list_available_shields()` - List safety shields
 - `get_shield_info(shield_id)` - Get shield information
-- `set_default_shield(shield_id)` - Set default shield
 
 ### SafetyResult
 
@@ -445,37 +412,79 @@ except Exception as e:
 - `shield_id: str` - Shield used for checking
 - `raw_response: dict` - Raw API response
 
-**Methods:**
-- `to_dict()` - Convert to dictionary
+## 🧪 Examples & Testing
 
-## 🧪 Testing
+The `examples/` directory contains comprehensive usage examples:
+
+- `getting_started.py` - Complete setup and usage guide
+- `basic_usage.py` - Basic chat, embeddings, and safety examples
+- `advanced_usage.py` - Advanced features and integrations
+- `provider_examples.py` - Provider-specific configuration examples
+
+Run examples:
 
 ```bash
-# Run tests
+# Complete getting started guide
+python examples/getting_started.py
+
+# Basic usage examples
+python examples/basic_usage.py
+
+# Advanced features
+python examples/advanced_usage.py
+```
+
+Run tests:
+
+```bash
+# Run all tests
 pytest tests/
 
-# Run tests with coverage
+# Run with coverage
 pytest tests/ --cov=langchain_llamastack
 
 # Run specific test
-pytest tests/test_chat_models.py::test_basic_completion
+pytest tests/test_llamastack.py::test_basic_completion
 ```
 
-## 🤝 Contributing
+## 🔧 Configuration
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
+### Environment Variables
 
-## 📋 Requirements
+```bash
+# LlamaStack server configuration
+export LLAMASTACK_BASE_URL="http://localhost:8321"
 
-- Python 3.8+
-- `langchain-core>=0.1.0`
-- `llama-stack-client>=0.1.0`
-- A running Llama Stack server
+# Provider API keys (choose what you need)
+export OPENAI_API_KEY="your-openai-api-key"
+export TOGETHER_API_KEY="your-together-api-key"
+export FIREWORKS_API_KEY="your-fireworks-api-key"
+export ANTHROPIC_API_KEY="your-anthropic-api-key"
+export GROQ_API_KEY="your-groq-api-key"
+
+# Ollama configuration
+export OLLAMA_BASE_URL="http://localhost:11434"
+```
+
+### Error Handling & Logging
+
+```python
+import logging
+from langchain_llamastack import ChatLlamaStack
+
+# Enable debug logging
+logging.basicConfig(level=logging.DEBUG)
+
+try:
+    llm = ChatLlamaStack(
+        model="ollama/llama3:8b",
+        base_url="http://localhost:8321",
+    )
+    response = llm.invoke("Hello")
+    print(response.content)
+except Exception as e:
+    logging.error(f"Chat completion failed: {e}")
+```
 
 ## 🐛 Troubleshooting
 
@@ -483,44 +492,85 @@ pytest tests/test_chat_models.py::test_basic_completion
 
 1. **Connection Refused**
    ```
-   Error: Failed to initialize Llama Stack client: Connection refused
+   Error: Failed to connect to LlamaStack
    ```
-   - Ensure Llama Stack server is running
-   - Check the `base_url` parameter
-   - Verify network connectivity
+   - Ensure LlamaStack server is running: `curl http://localhost:8321/v1/models`
+   - Check if port 8321 is available
+   - Verify provider setup
 
 2. **Model Not Found**
    ```
-   Error: Model 'model-name' not found
+   Error: Model 'xyz' not found
    ```
-   - Check available models with `llm.get_available_models()`
-   - Ensure the model is loaded in your Llama Stack configuration
+   - List available models: `curl http://localhost:8321/v1/models`
+   - For Ollama: `ollama pull llama3:8b`
+   - Check model identifier format
 
 3. **No Shields Available**
    ```
-   SafetyResult(is_safe=False, violation_type=None)
+   No safety shields found
    ```
-   - Verify safety shields are configured in Llama Stack
-   - Check `safety.get_available_shields()`
+   - Install shield models: `ollama pull shieldgemma:2b`
+   - Verify safety provider is configured
+   - Check shield list: `curl http://localhost:8321/v1/shields`
 
 4. **Import Errors**
    ```
    ImportError: llama-stack-client is required
    ```
-   - Install the required dependency: `pip install llama-stack-client`
+   - Install dependencies: `pip install llama-stack-client`
+   - Or install with all dependencies: `pip install -e ".[all]"`
 
-### Debug Mode
+5. **Embedding Errors**
+   ```
+   No embedding models available
+   ```
+   - Install embedding models: `ollama pull nomic-embed-text`
+   - Verify embedding provider configuration
+   - Check model availability
 
-```python
-import logging
-logging.basicConfig(level=logging.DEBUG)
+### Debug Commands
 
-# Now all requests will show debug information
+```bash
+# Check LlamaStack server
+curl http://localhost:8321/v1/models
+
+# Check Ollama server
+curl http://localhost:11434/api/tags
+
+# List Ollama models
+ollama list
+
+# Test connection programmatically
+python -c "from langchain_llamastack import check_llamastack_connection; print(check_llamastack_connection())"
 ```
+
+## 📚 Requirements
+
+- **Python**: 3.8+
+- **Core Dependencies**:
+  - `langchain-core>=0.1.0`
+  - `httpx>=0.25.0`
+  - `pydantic>=1.10.0`
+- **Optional Dependencies**:
+  - `llama-stack-client>=0.0.40` (for Llama Stack integration)
+  - `numpy` and `scikit-learn` (for similarity search)
+- **External Requirements**:
+  - Running Llama Stack server
+  - At least one configured provider (Ollama, OpenAI, etc.)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Make your changes and add tests
+4. Run the test suite: `pytest tests/`
+5. Run code formatting: `black . && isort .`
+6. Submit a pull request
 
 ## 📜 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔗 Related Projects
 
@@ -530,4 +580,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-For more examples and detailed documentation, check the `examples/` directory.
+For more examples and detailed documentation, explore the `examples/` directory and run the getting started guide.

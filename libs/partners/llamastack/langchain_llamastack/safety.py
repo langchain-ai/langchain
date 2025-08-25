@@ -494,3 +494,131 @@ Classification:"""
                 shield_id=shield_id,
                 confidence_score=0.1,
             )
+
+    def check_conversation(
+        self,
+        messages: List[Dict[str, str]],
+        shield_id: Optional[str] = None,
+    ) -> SafetyResult:
+        """
+        Check conversation for safety violations using LlamaStack.
+
+        Args:
+            messages: List of conversation messages with 'role' and 'content' keys
+            shield_id: Specific shield model to use (optional)
+
+        Returns:
+            SafetyResult: The safety check result
+
+        Example:
+            .. code-block:: python
+
+                messages = [
+                    {"role": "user", "content": "Hello!"},
+                    {"role": "assistant", "content": "Hi! How can I help?"}
+                ]
+                result = safety.check_conversation(messages)
+                print(f"Conversation safe: {result.is_safe}")
+        """
+        model_to_use = shield_id or self.default_shield_model
+        using_user_specified_shield = bool(shield_id) or self.use_only_specified_shield
+
+        if not model_to_use:
+            return SafetyResult(
+                is_safe=True,
+                message="No shield models available - conversation passed through",
+                shield_id="",
+                confidence_score=0.0,
+            )
+
+        # If user specified a shield (either in constructor or method call), use it regardless
+        # of whether it's in available_shields. Only skip for auto-discovered shields.
+        if (
+            not using_user_specified_shield
+            and model_to_use not in self.available_shields
+        ):
+            logger.warning(f"Auto-discovered shield model {model_to_use} not available")
+            return SafetyResult(
+                is_safe=True,
+                message=f"Shield model {model_to_use} not available - conversation passed through",
+                shield_id=model_to_use,
+                confidence_score=0.0,
+            )
+
+        # Use LlamaStack only
+        if not self.llamastack_available:
+            raise ValueError(
+                "LlamaStack is not available. Please ensure LlamaStack is running and accessible."
+            )
+
+        try:
+            if using_user_specified_shield:
+                logger.info(
+                    f"Checking conversation with user-specified LlamaStack shield: {model_to_use}"
+                )
+            else:
+                logger.info(
+                    f"Checking conversation with auto-discovered LlamaStack shield: {model_to_use}"
+                )
+
+            # Use LlamaStack safety endpoint with full conversation
+            response = self.client.safety.run_shield(
+                shield_id=model_to_use,
+                messages=messages,
+                params={},  # Empty params dict as required parameter
+            )
+
+            # Process LlamaStack response - handle both formats
+            is_safe = getattr(response, "is_safe", True)
+            message = getattr(response, "message", "Conversation checked by LlamaStack")
+            violation_type = getattr(response, "violation_type", None)
+
+            # Check for violation object (alternative response format)
+            violation = getattr(response, "violation", None)
+            if violation:
+                is_safe = False  # If violation exists, content is not safe
+                violation_type = getattr(violation, "violation_type", "content_policy")
+                user_message = getattr(violation, "user_message", str(violation))
+                message = f"Safety violation detected: {user_message}"
+
+            return SafetyResult(
+                is_safe=is_safe,
+                violation_type=violation_type,
+                message=f"LlamaStack {model_to_use}: {message}",
+                shield_id=model_to_use,
+                raw_response=(
+                    response.__dict__ if hasattr(response, "__dict__") else {}
+                ),
+            )
+
+        except Exception as e:
+            # Check if this is the 'enabled' bug for conversation check too
+            if "Model 'enabled' not found" in str(e) and model_to_use == "llama-guard":
+                logger.info(f"Conversation shield '{model_to_use}' has 'enabled' bug")
+                # For conversation, we'll just check the last user message as a fallback
+                last_user_message = ""
+                for msg in reversed(messages):
+                    if msg.get("role") == "user":
+                        last_user_message = msg.get("content", "")
+                        break
+
+                if last_user_message:
+                    return self._call_model_for_safety_workaround(
+                        last_user_message, model_to_use
+                    )
+                else:
+                    return SafetyResult(
+                        is_safe=True,
+                        message="No user message found in conversation, defaulting to safe",
+                        shield_id=model_to_use,
+                        confidence_score=0.5,
+                    )
+            else:
+                if using_user_specified_shield:
+                    logger.error(f"User-specified shield '{model_to_use}' failed: {e}")
+                    raise ValueError(
+                        f"Failed to use user-specified shield '{model_to_use}': {e}"
+                    )
+                else:
+                    logger.error(f"LlamaStack conversation safety check failed: {e}")
+                    raise

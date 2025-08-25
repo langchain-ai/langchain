@@ -22,7 +22,6 @@ def advanced_prompt_example():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.1,  # Lower temperature for more consistent responses
         )
 
         # Create a detailed prompt template
@@ -85,7 +84,6 @@ def conversation_memory_example():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.7,
         )
 
         # Create conversation chain with memory
@@ -127,7 +125,6 @@ def safe_conversation_agent():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.7,
         )
 
         safety = LlamaStackSafety(
@@ -269,8 +266,6 @@ def multi_model_comparison():
             llm = ChatLlamaStack(
                 model=model,
                 base_url="http://localhost:8321",
-                temperature=0.1,  # Consistent temperature for fair comparison
-                max_tokens=200,
             )
 
             try:
@@ -353,7 +348,6 @@ def langchain_integration_showcase():
         llm = ChatLlamaStack(
             model="ollama/llama3:70b-instruct",
             base_url="http://localhost:8321",
-            temperature=0.7,
         )
 
         # 1. Simple Chain

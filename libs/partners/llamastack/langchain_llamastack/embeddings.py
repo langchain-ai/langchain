@@ -51,7 +51,6 @@ class LlamaStackEmbeddings(Embeddings):
         self,
         model: str = "all-minilm",
         base_url: str = "http://localhost:8321",
-        llamastack_api_key: Optional[str] = None,
         chunk_size: int = 1000,
         max_retries: int = 3,
         request_timeout: float = 30.0,
@@ -62,7 +61,6 @@ class LlamaStackEmbeddings(Embeddings):
         Args:
             model: Model name to use for embeddings
             base_url: Base URL for the Llama Stack server
-            llamastack_api_key: API key for Llama Stack (if required)
             chunk_size: Maximum number of texts to embed in each batch
             max_retries: Maximum number of retries for API calls
             request_timeout: Request timeout in seconds
@@ -72,7 +70,6 @@ class LlamaStackEmbeddings(Embeddings):
 
         self.model = model
         self.base_url = base_url
-        self.llamastack_api_key = llamastack_api_key
         self.chunk_size = chunk_size
         self.max_retries = max_retries
         self.request_timeout = request_timeout
@@ -82,20 +79,9 @@ class LlamaStackEmbeddings(Embeddings):
 
     def _setup_client(self):
         """Setup the Llama Stack client."""
-        # Get API key from environment if not provided
-        api_key = get_from_dict_or_env(
-            {"llamastack_api_key": self.llamastack_api_key},
-            "llamastack_api_key",
-            "LLAMASTACK_API_KEY",
-            default="",
-        )
-
         # Initialize the client
         try:
             client_kwargs = {"base_url": self.base_url}
-            if api_key:
-                client_kwargs["api_key"] = api_key
-
             self.client = LlamaStackClient(**client_kwargs)
         except Exception as e:
             raise ValueError(f"Failed to initialize Llama Stack client: {e}")
@@ -131,8 +117,6 @@ class LlamaStackEmbeddings(Embeddings):
 
             # Prepare headers
             headers = {"Content-Type": "application/json"}
-            if self.llamastack_api_key:
-                headers["Authorization"] = f"Bearer {self.llamastack_api_key}"
 
             # Prepare request payload in OpenAI format
             payload = {"model": self.model, "input": texts}
