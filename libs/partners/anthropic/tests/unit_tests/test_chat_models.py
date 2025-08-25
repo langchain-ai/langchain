@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import os
-from types import SimpleNamespace
 from typing import Any, Callable, Literal, Optional, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic
 import pytest
-from anthropic.types import Message, MessageDeltaUsage, TextBlock, Usage
+from anthropic.types import Message, TextBlock, Usage
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool
@@ -23,7 +22,6 @@ from langchain_anthropic.chat_models import (
     _create_usage_metadata,
     _format_image,
     _format_messages,
-    _make_message_chunk_from_anthropic_event,
     _merge_messages,
     convert_to_anthropic_tool,
 )
@@ -595,6 +593,47 @@ def test__format_messages_with_tool_calls() -> None:
     )
     actual = _format_messages(messages)
     assert expected == actual
+
+
+def test__format_tool_use_block() -> None:
+    # Test we correctly format tool_use blocks when there is no corresponding tool_call.
+    message = AIMessage(
+        [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {},
+                "partial_json": '{"bar_2": "baz_2"}',
+                "index": 1,
+            },
+        ]
+    )
+    result = _format_messages([message])
+    expected = {
+        "role": "assistant",
+        "content": [
+            {
+                "type": "tool_use",
+                "name": "foo_1",
+                "id": "1",
+                "input": {"bar_1": "baz_1"},
+            },
+            {
+                "type": "tool_use",
+                "name": "foo_2",
+                "id": "2",
+                "input": {"bar_2": "baz_2"},
+            },
+        ],
+    }
+    assert result == (None, [expected])
 
 
 def test__format_messages_with_str_content_and_tool_calls() -> None:
@@ -1176,222 +1215,74 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
-def test_streaming_token_counting_deferred() -> None:
-    """Test streaming defers input token counting until message completion.
+def test_streaming_cache_token_reporting() -> None:
+    """Test that cache tokens are properly reported in streaming events."""
+    from unittest.mock import MagicMock
 
-    Validates that the streaming implementation correctly:
-    1. Stores input tokens from `message_start` without emitting them immediately
-    2. Combines stored input tokens with output tokens at `message_delta` completion
-    3. Only emits complete token usage metadata when the message is finished
+    from anthropic.types import MessageDeltaUsage
 
-    This prevents the bug where tools would cause inaccurate token counts due to
-    premature emission of input tokens before tool execution completed.
-    """
-    # Mock `message_start` event with usage
-    message_start_event = SimpleNamespace(
-        type="message_start",
-        message=SimpleNamespace(
-            usage=Usage(
-                input_tokens=100,
-                output_tokens=1,
-                cache_creation_input_tokens=0,
-                cache_read_input_tokens=0,
-            ),
-            model="claude-opus-4-1-20250805",
-        ),
+    from langchain_anthropic.chat_models import _make_message_chunk_from_anthropic_event
+
+    # Create a mock message_start event
+    mock_message = MagicMock()
+    mock_message.model = "claude-3-sonnet-20240229"
+    mock_message.usage.input_tokens = 100
+    mock_message.usage.output_tokens = 0
+    mock_message.usage.cache_read_input_tokens = 25
+    mock_message.usage.cache_creation_input_tokens = 10
+
+    message_start_event = MagicMock()
+    message_start_event.type = "message_start"
+    message_start_event.message = mock_message
+
+    # Create a mock message_delta event with complete usage info
+    mock_delta_usage = MessageDeltaUsage(
+        output_tokens=50,
+        input_tokens=100,
+        cache_read_input_tokens=25,
+        cache_creation_input_tokens=10,
     )
 
-    # Mock `message_delta` event with final output tokens
-    message_delta_event = SimpleNamespace(
-        type="message_delta",
-        usage=MessageDeltaUsage(
-            output_tokens=50,
-            input_tokens=None,  # This is None in real delta events
-            cache_creation_input_tokens=None,
-            cache_read_input_tokens=None,
-        ),
-        delta=SimpleNamespace(
-            stop_reason="end_turn",
-            stop_sequence=None,
-        ),
-    )
+    mock_delta = MagicMock()
+    mock_delta.stop_reason = "end_turn"
+    mock_delta.stop_sequence = None
 
-    # Test `message_start` event - should store input tokens but not emit them
-    msg_chunk, _, stored_usage = _make_message_chunk_from_anthropic_event(
-        message_start_event,  # type: ignore[arg-type]
+    message_delta_event = MagicMock()
+    message_delta_event.type = "message_delta"
+    message_delta_event.usage = mock_delta_usage
+    message_delta_event.delta = mock_delta
+
+    # Test message_start event
+    start_chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_start_event,
         stream_usage=True,
         coerce_content_to_string=True,
-        stored_input_usage=None,
+        block_start_event=None,
     )
 
-    assert msg_chunk is not None
-    assert msg_chunk.usage_metadata is not None
-
-    # Input tokens should be 0 at message_start (deferred)
-    assert msg_chunk.usage_metadata["input_tokens"] == 0
-    assert msg_chunk.usage_metadata["output_tokens"] == 0
-    assert msg_chunk.usage_metadata["total_tokens"] == 0
-
-    # Usage should be stored
-    assert stored_usage is not None
-    assert getattr(stored_usage, "input_tokens", 0) == 100
-
-    # Test `message_delta` - combine stored input with delta output tokens
-    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
-        message_delta_event,  # type: ignore[arg-type]
+    # Test message_delta event - should contain complete usage metadata (w/ cache)
+    delta_chunk, _ = _make_message_chunk_from_anthropic_event(
+        message_delta_event,
         stream_usage=True,
         coerce_content_to_string=True,
-        stored_input_usage=stored_usage,
+        block_start_event=None,
     )
 
-    assert msg_chunk is not None
-    assert msg_chunk.usage_metadata is not None
-
-    # Should now have the complete usage metadata
-    assert msg_chunk.usage_metadata["input_tokens"] == 100  # From stored usage
-    assert msg_chunk.usage_metadata["output_tokens"] == 50  # From delta event
-    assert msg_chunk.usage_metadata["total_tokens"] == 150
-
-    # Verify response metadata is properly set
-    assert "stop_reason" in msg_chunk.response_metadata
-    assert msg_chunk.response_metadata["stop_reason"] == "end_turn"
-
-
-def test_streaming_token_counting_fallback() -> None:
-    """Test streaming token counting gracefully handles missing stored usage.
-
-    Validates that when no stored input usage is available (edge case scenario),
-    the streaming implementation safely falls back to reporting only output tokens
-    rather than failing or returning invalid token counts.
-    """
-    # Mock message_delta event without stored input usage
-    message_delta_event = SimpleNamespace(
-        type="message_delta",
-        usage=MessageDeltaUsage(
-            output_tokens=25,
-            input_tokens=None,
-            cache_creation_input_tokens=None,
-            cache_read_input_tokens=None,
-        ),
-        delta=SimpleNamespace(
-            stop_reason="end_turn",
-            stop_sequence=None,
-        ),
+    # Verify message_delta has complete usage_metadata including cache tokens
+    assert start_chunk is not None, "message_start should produce a chunk"
+    assert getattr(start_chunk, "usage_metadata", None) is None, (
+        "message_start should not have usage_metadata"
     )
-
-    # Test message_delta without stored usage - should fallback gracefully
-    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
-        message_delta_event,  # type: ignore[arg-type]
-        stream_usage=True,
-        coerce_content_to_string=True,
-        stored_input_usage=None,  # No stored usage
+    assert delta_chunk is not None, "message_delta should produce a chunk"
+    assert delta_chunk.usage_metadata is not None, (
+        "message_delta should have usage_metadata"
     )
+    assert "input_token_details" in delta_chunk.usage_metadata
+    input_details = delta_chunk.usage_metadata["input_token_details"]
+    assert input_details.get("cache_read") == 25
+    assert input_details.get("cache_creation") == 10
 
-    assert msg_chunk is not None
-    assert msg_chunk.usage_metadata is not None
-
-    # Should fallback to 0 input tokens and only report output tokens
-    assert msg_chunk.usage_metadata["input_tokens"] == 0
-    assert msg_chunk.usage_metadata["output_tokens"] == 25
-    assert msg_chunk.usage_metadata["total_tokens"] == 25
-
-
-def test_streaming_token_counting_cumulative_input_tokens() -> None:
-    """Test streaming handles cumulative input tokens from `message_delta` events.
-
-    Validates that when Anthropic sends updated cumulative input tokens in
-    `message_delta` events (e.g., due to MCP tool calling), the implementation
-    prioritizes these updated counts over stored input usage.
-
-    """
-    # Mock `message_start` event with initial usage
-    message_start_event = SimpleNamespace(
-        type="message_start",
-        message=SimpleNamespace(
-            usage=Usage(
-                input_tokens=100,  # Initial input tokens
-                output_tokens=1,
-                cache_creation_input_tokens=0,
-                cache_read_input_tokens=0,
-            ),
-            model="claude-opus-4-1-20250805",
-        ),
-    )
-
-    # Mock `message_delta` event with updated cumulative input tokens
-    # This happens when MCP tools are called mid-stream
-    message_delta_event = SimpleNamespace(
-        type="message_delta",
-        usage=MessageDeltaUsage(
-            output_tokens=50,
-            input_tokens=120,  # Cumulative count increased due to tool calling
-            cache_creation_input_tokens=None,
-            cache_read_input_tokens=None,
-        ),
-        delta=SimpleNamespace(
-            stop_reason="end_turn",
-            stop_sequence=None,
-        ),
-    )
-
-    # Store input usage from `message_start`
-    _, _, stored_usage = _make_message_chunk_from_anthropic_event(
-        message_start_event,  # type: ignore[arg-type]
-        stream_usage=True,
-        coerce_content_to_string=True,
-        stored_input_usage=None,
-    )
-
-    # Test `message_delta` with cumulative input tokens
-    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
-        message_delta_event,  # type: ignore[arg-type]
-        stream_usage=True,
-        coerce_content_to_string=True,
-        stored_input_usage=stored_usage,
-    )
-
-    assert msg_chunk is not None
-    assert msg_chunk.usage_metadata is not None
-
-    # Should use the cumulative input tokens from event (120) not stored (100)
-    assert msg_chunk.usage_metadata["input_tokens"] == 120
-    assert msg_chunk.usage_metadata["output_tokens"] == 50
-    assert msg_chunk.usage_metadata["total_tokens"] == 170
-
-
-def test_streaming_token_counting_cumulative_fallback() -> None:
-    """Test fallback handles cumulative input tokens from message_delta events.
-
-    When no stored usage is available, validates that cumulative input tokens
-    from the message_delta event are still properly used instead of defaulting to 0.
-    """
-    # Mock `message_delta` event with cumulative input tokens but no stored usage
-    message_delta_event = SimpleNamespace(
-        type="message_delta",
-        usage=MessageDeltaUsage(
-            output_tokens=30,
-            input_tokens=85,  # Cumulative input tokens in the event
-            cache_creation_input_tokens=None,
-            cache_read_input_tokens=None,
-        ),
-        delta=SimpleNamespace(
-            stop_reason="end_turn",
-            stop_sequence=None,
-        ),
-    )
-
-    # Test `message_delta` without stored usage - should use event's input tokens
-    msg_chunk, _, _ = _make_message_chunk_from_anthropic_event(
-        message_delta_event,  # type: ignore[arg-type]
-        stream_usage=True,
-        coerce_content_to_string=True,
-        stored_input_usage=None,  # No stored usage
-    )
-
-    assert msg_chunk is not None
-    assert msg_chunk.usage_metadata is not None
-
-    # Should use cumulative input tokens from event, not fallback to 0
-    assert msg_chunk.usage_metadata["input_tokens"] == 85  # From event
-    assert msg_chunk.usage_metadata["output_tokens"] == 30
-    assert msg_chunk.usage_metadata["total_tokens"] == 115
+    # Verify totals are correct: 100 base + 25 cache_read + 10 cache_creation = 135
+    assert delta_chunk.usage_metadata["input_tokens"] == 135
+    assert delta_chunk.usage_metadata["output_tokens"] == 50
+    assert delta_chunk.usage_metadata["total_tokens"] == 185
