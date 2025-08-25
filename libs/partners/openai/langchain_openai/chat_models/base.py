@@ -1161,12 +1161,11 @@ class BaseChatOpenAI(BaseChatModel):
                     raw_response = self.root_client.responses.with_raw_response.parse(
                         **payload
                     )
-                    response = raw_response.parse()
                 else:
                     raw_response = self.root_client.responses.with_raw_response.create(
                         **payload
                     )
-                    response = raw_response.parse()
+                response = raw_response.parse()
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
                 return _construct_lc_result_from_responses_api(
