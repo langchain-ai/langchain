@@ -49,6 +49,38 @@ def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
+def _add_citations_to_parsed_output(parsed: Any, result: Any) -> Any:
+    """Add citations to parsed output if available.
+
+    Args:
+        parsed: The parsed output from the parser.
+        result: The raw result from the LLM.
+
+    Returns:
+        The parsed output with citations added if available.
+    """
+    if hasattr(result, "additional_kwargs"):
+        citations = result.additional_kwargs.get("citations")
+        if citations:
+            # If parsed is a dict, add citations directly
+            if isinstance(parsed, dict):
+                parsed["citations"] = citations
+            # If parsed is a Pydantic model, try to add citations if field exists
+            elif hasattr(parsed, "__dict__"):
+                # Check if the model has a citations field
+                if hasattr(parsed.__class__, "model_fields"):
+                    # Pydantic v2
+                    fields = parsed.__class__.model_fields
+                    if "citations" in fields:
+                        setattr(parsed, "citations", citations)
+                elif hasattr(parsed.__class__, "__fields__"):
+                    # Pydantic v1
+                    fields = parsed.__class__.__fields__
+                    if "citations" in fields:
+                        setattr(parsed, "citations", citations)
+    return parsed
+
+
 def _create_usage_metadata(token_usage: dict) -> UsageMetadata:
     input_tokens = token_usage.get("prompt_tokens", 0)
     output_tokens = token_usage.get("completion_tokens", 0)
@@ -491,4 +523,9 @@ class ChatPerplexity(BaseChatModel):
             )
             return RunnableMap(raw=llm) | parser_with_fallback
         else:
-            return llm | output_parser
+            # Create a chain that preserves citations
+            def parse_with_citations(message: Any) -> Any:
+                parsed = output_parser.invoke(message)
+                return _add_citations_to_parsed_output(parsed, message)
+
+            return llm | parse_with_citations
