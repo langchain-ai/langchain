@@ -5,7 +5,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
+from typing_extensions import Self
 
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
 from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
@@ -16,6 +18,52 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from langchain_core.prompts.chat import ChatPromptTemplate
+
+
+class TextAccessor(str):
+    """String-like object that supports both property and method access patterns.
+
+    Exists to maintain backward compatibility while transitioning from method-based to
+    property-based text access in message objects. In LangChain <v1.0, message text was
+    accessed via ``.text()`` method calls. In v1.0=<, the preferred pattern is property
+    access via ``.text``.
+
+    Rather than breaking existing code immediately, ``TextAccessor`` allows both
+    patterns:
+    - Modern property access: ``message.text`` (returns string directly)
+    - Legacy method access: ``message.text()`` (callable, emits deprecation warning)
+
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, value: str) -> Self:
+        """Create new TextAccessor instance."""
+        return str.__new__(cls, value)
+
+    def __call__(self) -> str:
+        """Enable method-style text access for backward compatibility.
+
+        This method exists solely to support legacy code that calls ``.text()``
+        as a method. New code should use property access (``.text``) instead.
+
+        .. deprecated:: 1.0.0
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
+
+        Returns:
+            The string content, identical to property access.
+
+        """
+        warn_deprecated(
+            since="1.0.0",
+            message=(
+                "Calling .text() as a method is deprecated. "
+                "Use .text as a property instead (e.g., message.text)."
+            ),
+            removal="2.0.0",
+        )
+        return str(self)
 
 
 class BaseMessage(Serializable):
@@ -169,25 +217,33 @@ class BaseMessage(Serializable):
             blocks = parsing_step(blocks)
         return blocks
 
-    def text(self) -> str:
-        """Get the text content of the message.
+    @property
+    def text(self) -> TextAccessor:
+        """Get the text content of the message as a string.
+
+        Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 1.0.0
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
         """
         if isinstance(self.content, str):
-            return self.content
-
-        # must be a list
-        blocks = [
-            block
-            for block in self.content
-            if isinstance(block, str)
-            or (block.get("type") == "text" and isinstance(block.get("text"), str))
-        ]
-        return "".join(
-            block if isinstance(block, str) else block["text"] for block in blocks
-        )
+            text_value = self.content
+        else:
+            # must be a list
+            blocks = [
+                block
+                for block in self.content
+                if isinstance(block, str)
+                or (block.get("type") == "text" and isinstance(block.get("text"), str))
+            ]
+            text_value = "".join(
+                block if isinstance(block, str) else block["text"] for block in blocks
+            )
+        return TextAccessor(text_value)
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Concatenate this message with another message."""
