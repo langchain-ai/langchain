@@ -363,6 +363,13 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
+    chunk_position: Optional[Literal["last"]] = None
+    """Optional span represented by an aggregated AIMessageChunk.
+
+    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
+    ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
+    """
+
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -391,7 +398,11 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         # Otherwise, use best-effort parsing
         blocks = super().content_blocks
 
-        if self.tool_call_chunks and not self.content:
+        if (
+            self.tool_call_chunks
+            and not self.content
+            and self.chunk_position != "last"  # keep tool_calls if aggregated
+        ):
             blocks = [
                 block
                 for block in blocks
@@ -480,6 +491,32 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
+
+        if (
+            self.chunk_position == "last"
+            and self.tool_call_chunks
+            and self.response_metadata.get("output_version") == "v1"
+            and isinstance(self.content, list)
+        ):
+            id_to_tc: dict[str, types.ToolCall] = {
+                cast("str", tc.get("id")): {
+                    "type": "tool_call",
+                    "name": tc["name"],
+                    "args": tc["args"],
+                    "id": tc.get("id"),
+                }
+                for tc in self.tool_calls
+                if "id" in tc
+            }
+            for idx, block in enumerate(self.content):
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "tool_call_chunk"
+                    and (call_id := block.get("id"))
+                    and call_id in id_to_tc
+                ):
+                    self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
+
         return self
 
     @overload  # type: ignore[override]  # summing BaseMessages gives ChatPromptTemplate
@@ -566,6 +603,10 @@ def add_ai_message_chunks(
                     chunk_id = id_
                     break
 
+    chunk_position: Optional[Literal["last"]] = (
+        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
+    )
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -574,6 +615,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
+        chunk_position=chunk_position,
     )
 
 

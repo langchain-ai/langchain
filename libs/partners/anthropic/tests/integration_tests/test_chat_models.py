@@ -482,7 +482,7 @@ def test_tool_use() -> None:
     assert len(content_blocks) == 2
     assert content_blocks[0]["type"] == "text"
     assert content_blocks[0]["text"]
-    assert content_blocks[1]["type"] == "tool_call_chunk"
+    assert content_blocks[1]["type"] == "tool_call"
     assert content_blocks[1]["name"] == "get_weather"
     assert content_blocks[1]["args"]
 

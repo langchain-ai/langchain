@@ -556,6 +556,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             try:
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+                yielded = False
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -570,6 +571,21 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     )
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
+                    yielded = True
+
+                # Yield a final empty chunk with chunk_position="last" if not yet
+                # yielded
+                if (
+                    yielded
+                    and isinstance(chunk.message, AIMessageChunk)
+                    and not chunk.message.chunk_position
+                ):
+                    empty_content: Union[str, list] = (
+                        "" if isinstance(chunk.message.content, str) else []
+                    )
+                    yield AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -654,6 +670,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         try:
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+            yielded = False
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -672,6 +689,20 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 )
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                yield AIMessageChunk(
+                    content=empty_content, chunk_position="last", id=run_id
+                )
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -1120,11 +1151,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
+            run_id: Optional[str] = (
+                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+            )
+            yielded = False
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
@@ -1134,6 +1169,24 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                chunks.append(
+                    ChatGenerationChunk(
+                        message=AIMessageChunk(
+                            content=empty_content, chunk_position="last", id=run_id
+                        )
+                    )
+                )
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
             result = self._generate(
@@ -1205,11 +1258,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
+            run_id: Optional[str] = (
+                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+            )
+            yielded = False
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     if self.output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
@@ -1219,6 +1276,24 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         cast("str", chunk.message.content), chunk=chunk
                     )
                 chunks.append(chunk)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                chunks.append(
+                    ChatGenerationChunk(
+                        message=AIMessageChunk(
+                            content=empty_content, chunk_position="last", id=run_id
+                        )
+                    )
+                )
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
             result = await self._agenerate(

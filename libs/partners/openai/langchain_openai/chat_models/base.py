@@ -938,7 +938,6 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info = {**base_generation_info} if base_generation_info else {}
 
         if finish_reason := choice.get("finish_reason"):
-            generation_info["model_provider"] = "openai"
             generation_info["finish_reason"] = finish_reason
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
@@ -946,6 +945,8 @@ class BaseChatOpenAI(BaseChatModel):
                 generation_info["system_fingerprint"] = system_fingerprint
             if service_tier := chunk.get("service_tier"):
                 generation_info["service_tier"] = service_tier
+            if isinstance(message_chunk, AIMessageChunk):
+                message_chunk.chunk_position = "last"
 
         logprobs = choice.get("logprobs")
         if logprobs:
@@ -954,6 +955,7 @@ class BaseChatOpenAI(BaseChatModel):
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 
+        message_chunk.response_metadata["model_provider"] = "openai"
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -4157,6 +4159,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = {}
     response_metadata["model_provider"] = "openai"
     usage_metadata = None
+    chunk_position: Optional[Literal["last"]] = None
     id = None
     if chunk.type == "response.output_text.delta":
         _advance(chunk.output_index, chunk.content_index)
@@ -4194,6 +4197,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = {
             k: v for k, v in msg.response_metadata.items() if k != "id"
         }
+        chunk_position = "last"
     elif chunk.type == "response.output_item.added" and chunk.item.type == "message":
         if output_version == "v0":
             id = chunk.item.id
@@ -4311,6 +4315,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
         id=id,
+        chunk_position=chunk_position,
     )
     if output_version == "v0":
         message = cast(

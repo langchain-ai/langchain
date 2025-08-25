@@ -2077,6 +2077,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -3505,6 +3517,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -5029,6 +5053,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -6489,6 +6525,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -7960,6 +8008,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -9467,6 +9527,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -10845,6 +10917,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -12329,6 +12413,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
