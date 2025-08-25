@@ -1119,8 +1119,8 @@ class BaseChatOpenAI(BaseChatModel):
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except Exception as e:
-            if response is not None:
-                e.response = response  # type: ignore[attr-defined]
+            if response is not None and hasattr(response, "http_response"):
+                e.response = response.http_response  # type: ignore[attr-defined]
             raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
@@ -1165,8 +1165,8 @@ class BaseChatOpenAI(BaseChatModel):
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
             except Exception as e:
-                if raw_response is not None:
-                    e.response = raw_response  # type: ignore[attr-defined]
+                if raw_response is not None and hasattr(raw_response, "http_response"):
+                    e.response = raw_response.http_response  # type: ignore[attr-defined]
                 raise e
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
@@ -1371,8 +1371,8 @@ class BaseChatOpenAI(BaseChatModel):
         except openai.BadRequestError as e:
             _handle_openai_bad_request(e)
         except Exception as e:
-            if response is not None:
-                e.response = response  # type: ignore[attr-defined]
+            if response is not None and hasattr(response, "http_response"):
+                e.response = response.http_response  # type: ignore[attr-defined]
             raise e
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
@@ -1415,8 +1415,8 @@ class BaseChatOpenAI(BaseChatModel):
             except openai.BadRequestError as e:
                 _handle_openai_bad_request(e)
             except Exception as e:
-                if raw_response is not None:
-                    e.response = raw_response  # type: ignore[attr-defined]
+                if raw_response is not None and hasattr(raw_response, "http_response"):
+                    e.response = raw_response.http_response  # type: ignore[attr-defined]
                 raise e
         elif self._use_responses_api(payload):
             original_schema_obj = kwargs.get("response_format")
