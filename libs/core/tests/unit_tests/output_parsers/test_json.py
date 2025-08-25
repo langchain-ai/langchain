@@ -5,7 +5,6 @@ from typing import Any
 import pytest
 from pydantic import BaseModel, Field
 
-
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers.json import (
     SimpleJsonOutputParser,
