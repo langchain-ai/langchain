@@ -1,8 +1,7 @@
 """Human message."""
 
-from typing import Any, Literal, Optional, Union, cast, overload
+from typing import Any, Literal, Union, overload
 
-from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
@@ -54,10 +53,16 @@ class HumanMessage(BaseMessage):
         **kwargs: Any,
     ) -> None: ...
 
+    def __init__(
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None:
+        """Initialize HumanMessage.
+
         Args:
             content: The string contents of the message.
             kwargs: Additional fields to pass to the message.
-
         """
         super().__init__(content=content, **kwargs)
 
