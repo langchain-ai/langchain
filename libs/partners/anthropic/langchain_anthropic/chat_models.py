@@ -1501,11 +1501,20 @@ class ChatAnthropic(BaseChatModel):
                 isinstance(message, AIMessage)
                 and message.response_metadata.get("output_version") == "v1"
             ):
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in message.tool_calls
+                ]
                 messages[idx] = message.model_copy(
                     update={
                         "content": _convert_from_v1_to_anthropic(
                             cast(list[types.ContentBlock], message.content),
-                            message.tool_calls,
+                            tcs,
                             message.response_metadata.get("model_provider"),
                         )
                     }

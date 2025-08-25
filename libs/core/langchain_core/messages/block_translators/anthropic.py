@@ -237,7 +237,12 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     not isinstance(message, AIMessageChunk)
                     and len(message.tool_calls) == 1
                 ):
-                    tool_call_block = message.tool_calls[0]
+                    tool_call_block: types.ToolCall = {
+                        "type": "tool_call",
+                        "name": message.tool_calls[0]["name"],
+                        "args": message.tool_calls[0]["args"],
+                        "id": message.tool_calls[0].get("id"),
+                    }
                     if "index" in block:
                         tool_call_block["index"] = block["index"]
                     yield tool_call_block

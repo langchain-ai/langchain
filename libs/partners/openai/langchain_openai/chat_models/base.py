@@ -64,6 +64,7 @@ from langchain_core.messages import (
     convert_to_openai_data_block,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
@@ -3748,9 +3749,16 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
             if isinstance(msg.get("content"), list) and all(
                 isinstance(block, dict) for block in msg["content"]
             ):
-                msg["content"] = _convert_from_v1_to_responses(
-                    msg["content"], lc_msg.tool_calls
-                )
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in lc_msg.tool_calls
+                ]
+                msg["content"] = _convert_from_v1_to_responses(msg["content"], tcs)
         else:
             msg = _convert_message_to_dict(lc_msg)
             # Get content from non-standard content blocks
