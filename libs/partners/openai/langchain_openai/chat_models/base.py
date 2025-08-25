@@ -1181,7 +1181,11 @@ class BaseChatOpenAI(BaseChatModel):
             if raw_response is not None and hasattr(raw_response, "http_response"):
                 e.response = raw_response.http_response  # type: ignore[attr-defined]
             raise e
-        if self.include_response_headers and raw_response is not None:
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
         return self._create_chat_result(response, generation_info)
 
@@ -1423,7 +1427,11 @@ class BaseChatOpenAI(BaseChatModel):
             if raw_response is not None and hasattr(raw_response, "http_response"):
                 e.response = raw_response.http_response  # type: ignore[attr-defined]
             raise e
-        if self.include_response_headers and raw_response is not None:
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
