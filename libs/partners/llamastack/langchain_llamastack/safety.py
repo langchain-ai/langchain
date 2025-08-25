@@ -593,7 +593,7 @@ Classification:"""
 
         except Exception as e:
             # Check if this is the 'enabled' bug for conversation check too
-            if "Model 'enabled' not found" in str(e) and model_to_use == "llama-guard":
+            try:
                 logger.info(f"Conversation shield '{model_to_use}' has 'enabled' bug")
                 # For conversation, we'll just check the last user message as a fallback
                 last_user_message = ""
@@ -601,7 +601,6 @@ Classification:"""
                     if msg.get("role") == "user":
                         last_user_message = msg.get("content", "")
                         break
-
                 if last_user_message:
                     return self._call_model_for_safety_workaround(
                         last_user_message, model_to_use
@@ -613,7 +612,7 @@ Classification:"""
                         shield_id=model_to_use,
                         confidence_score=0.5,
                     )
-            else:
+            except Exception as e:
                 if using_user_specified_shield:
                     logger.error(f"User-specified shield '{model_to_use}' failed: {e}")
                     raise ValueError(
