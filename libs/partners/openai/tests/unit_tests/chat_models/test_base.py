@@ -601,7 +601,7 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_client.create.called
+    assert mock_client.with_raw_response.create.called
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
@@ -613,7 +613,7 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_async_client.create.called
+    assert mock_async_client.with_raw_response.create.called
 
 
 @pytest.mark.parametrize(
@@ -638,7 +638,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
         assert len(call_args) == 0  # no positional args
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1
@@ -678,7 +678,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     ]
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "tool_calls" in tool_call_message_payload
@@ -688,7 +688,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     cast(AIMessage, messages[1]).tool_calls = []
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "function_call" in tool_call_message_payload
