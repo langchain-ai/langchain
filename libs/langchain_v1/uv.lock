@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -1621,7 +1621,6 @@ lint = [
 ]
 test = [
     { name = "blockbuster" },
-    { name = "langchain-core" },
     { name = "langchain-openai" },
     { name = "langchain-tests" },
     { name = "langchain-text-splitters" },
@@ -1640,7 +1639,6 @@ test-integration = [
     { name = "langchain-text-splitters" },
     { name = "langchainhub" },
     { name = "python-dotenv" },
-    { name = "urllib3", marker = "python_full_version < '3.10'" },
     { name = "vcrpy" },
     { name = "wrapt" },
 ]
@@ -1675,33 +1673,31 @@ provides-extras = ["anthropic", "openai", "azure-ai", "google-vertexai", "google
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 lint = [
-    { name = "mypy", specifier = ">=1.15,<1.16" },
-    { name = "ruff", specifier = ">=0.12.2,<0.13" },
+    { name = "mypy", specifier = ">=1.15" },
+    { name = "ruff", specifier = ">=0.12.2" },
 ]
 test = [
-    { name = "blockbuster", specifier = ">=1.5.18,<1.6" },
-    { name = "langchain-core", editable = "../core" },
+    { name = "blockbuster", specifier = ">=1.5.18" },
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "pytest", specifier = ">=8,<9" },
-    { name = "pytest-asyncio", specifier = ">=0.23.2,<1.0.0" },
-    { name = "pytest-cov", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pytest-socket", specifier = ">=0.6.0,<1.0.0" },
-    { name = "pytest-watcher", specifier = ">=0.2.6,<1.0.0" },
-    { name = "pytest-xdist", specifier = ">=3.6.1,<4.0.0" },
-    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.23.2" },
+    { name = "pytest-cov", specifier = ">=4.0.0" },
+    { name = "pytest-socket", specifier = ">=0.6.0" },
+    { name = "pytest-watcher", specifier = ">=0.2.6" },
+    { name = "pytest-xdist", specifier = ">=3.6.1" },
+    { name = "syrupy", specifier = ">=4.0.2" },
     { name = "toml", specifier = ">=0.10.2" },
 ]
 test-integration = [
-    { name = "cassio", specifier = ">=0.1.0,<1.0.0" },
+    { name = "cassio", specifier = ">=0.1.0" },
     { name = "langchain-core", editable = "../core" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
-    { name = "langchainhub", specifier = ">=0.1.16,<1.0.0" },
-    { name = "python-dotenv", specifier = ">=1.0.0,<2.0.0" },
-    { name = "urllib3", marker = "python_full_version < '3.10'", specifier = "<2" },
+    { name = "langchainhub", specifier = ">=0.1.16" },
+    { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "vcrpy", specifier = ">=7.0" },
-    { name = "wrapt", specifier = ">=1.15.0,<2.0.0" },
+    { name = "wrapt", specifier = ">=1.15.0" },
 ]
 typing = [{ name = "types-toml", specifier = ">=0.10.8.20240310" }]
 

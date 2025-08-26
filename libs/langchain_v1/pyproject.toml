@@ -46,23 +46,22 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = [
     "pytest<9,>=8",
-    "pytest-cov<5.0.0,>=4.0.0",
-    "pytest-watcher<1.0.0,>=0.2.6",
-    "pytest-asyncio<1.0.0,>=0.23.2",
-    "pytest-socket<1.0.0,>=0.6.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster<1.6,>=1.5.18",
+    "pytest-cov>=4.0.0",
+    "pytest-watcher>=0.2.6",
+    "pytest-asyncio>=0.23.2",
+    "pytest-socket>=0.6.0",
+    "syrupy>=4.0.2",
+    "pytest-xdist>=3.6.1",
+    "blockbuster>=1.5.18",
     "langchain-tests",
-    "langchain-core",
     "langchain-text-splitters",
     "langchain-openai",
     "toml>=0.10.2",
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
-    "ruff<0.13,>=0.12.2",
-    "mypy<1.16,>=1.15",
+    "ruff>=0.12.2",
+    "mypy>=1.15",
 ]
 typing = [
     "types-toml>=0.10.8.20240310",
@@ -70,11 +69,10 @@ typing = [
 
 test_integration = [
     "vcrpy>=7.0",
-    "urllib3<2; python_version < \"3.10\"",
-    "wrapt<2.0.0,>=1.15.0",
-    "python-dotenv<2.0.0,>=1.0.0",
-    "cassio<1.0.0,>=0.1.0",
-    "langchainhub<1.0.0,>=0.1.16",
+    "wrapt>=1.15.0",
+    "python-dotenv>=1.0.0",
+    "cassio>=0.1.0",
+    "langchainhub>=0.1.16",
     "langchain-core",
     "langchain-text-splitters",
 ]
@@ -86,8 +84,9 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
+line-length = 100
 
 [tool.mypy]
 strict = "True"

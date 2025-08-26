@@ -7,10 +7,8 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    Callable,
     Generic,
     Literal,
-    Optional,
     Union,
     cast,
 )
@@ -26,6 +24,8 @@ from langchain._internal._utils import RunnableCallable
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.documents import Document
     from langchain_core.language_models.chat_models import BaseChatModel
 
@@ -154,7 +154,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             StateNode,
         ] = "default_reducer",
         context_schema: type[ContextT] | None = None,
-        response_format: Optional[type[BaseModel]] = None,
+        response_format: type[BaseModel] | None = None,
     ) -> None:
         """Initialize the MapReduceExtractor.
 
@@ -190,9 +190,7 @@ class _MapReduceExtractor(Generic[ContextT]):
         if isinstance(model, str):
             model = init_chat_model(model)
 
-        self.model = (
-            model.with_structured_output(response_format) if response_format else model
-        )
+        self.model = model.with_structured_output(response_format) if response_format else model
         self.map_prompt = map_prompt
         self.reduce_prompt = reduce_prompt
         self.reduce = reduce
@@ -342,9 +340,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             config: RunnableConfig,
         ) -> dict[str, list[ExtractionResult]]:
             prompt = await self._aget_map_prompt(state, runtime)
-            response = cast(
-                "AIMessage", await self.model.ainvoke(prompt, config=config)
-            )
+            response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
             result = response if self.response_format else response.text()
             extraction_result: ExtractionResult = {
                 "indexes": state["indexes"],
@@ -375,9 +371,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             config: RunnableConfig,
         ) -> MapReduceNodeUpdate:
             prompt = await self._aget_reduce_prompt(state, runtime)
-            response = cast(
-                "AIMessage", await self.model.ainvoke(prompt, config=config)
-            )
+            response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
             result = response if self.response_format else response.text()
             return {"result": result}
 
@@ -450,7 +444,7 @@ def create_map_reduce_chain(
         StateNode,
     ] = "default_reducer",
     context_schema: type[ContextT] | None = None,
-    response_format: Optional[type[BaseModel]] = None,
+    response_format: type[BaseModel] | None = None,
 ) -> StateGraph[MapReduceState, ContextT, InputSchema, OutputSchema]:
     """Create a map-reduce document extraction chain.
 
