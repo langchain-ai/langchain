@@ -1887,7 +1887,9 @@ async def test_events_astream_config() -> None:
     )
 
     model_02 = model.with_config({"configurable": {"messages": good_world_on_repeat}})
-    assert model_02.invoke("hello") == AIMessage(content="Goodbye world", id="ai2")
+    assert model_02.invoke("hello") == AIMessage(
+        content="Goodbye world", additional_kwargs={"output_version": "v0"}, id="ai2"
+    )
 
     events = await _collect_events(model_02.astream_events("hello", version="v1"))
     _assert_events_equal_allow_superset_metadata(
@@ -2013,7 +2015,9 @@ async def test_runnable_with_message_history() -> None:
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
-            AIMessage(content="hello", id="ai3"),
+            AIMessage(
+                content="hello", additional_kwargs={"output_version": "v0"}, id="ai3"
+            ),
         ]
     }
 

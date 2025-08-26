@@ -28,11 +28,17 @@ def test_generic_fake_chat_model_invoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = model.invoke("meow")
-    assert response == _any_id_ai_message(content="hello")
+    assert response == _any_id_ai_message(
+        content="hello", additional_kwargs={"output_version": "v0"}
+    )
     response = model.invoke("kitty")
-    assert response == _any_id_ai_message(content="goodbye")
+    assert response == _any_id_ai_message(
+        content="goodbye", additional_kwargs={"output_version": "v0"}
+    )
     response = model.invoke("meow")
-    assert response == _any_id_ai_message(content="hello")
+    assert response == _any_id_ai_message(
+        content="hello", additional_kwargs={"output_version": "v0"}
+    )
 
 
 async def test_generic_fake_chat_model_ainvoke() -> None:
@@ -40,11 +46,17 @@ async def test_generic_fake_chat_model_ainvoke() -> None:
     infinite_cycle = cycle([AIMessage(content="hello"), AIMessage(content="goodbye")])
     model = GenericFakeChatModel(messages=infinite_cycle)
     response = await model.ainvoke("meow")
-    assert response == _any_id_ai_message(content="hello")
+    assert response == _any_id_ai_message(
+        content="hello", additional_kwargs={"output_version": "v0"}
+    )
     response = await model.ainvoke("kitty")
-    assert response == _any_id_ai_message(content="goodbye")
+    assert response == _any_id_ai_message(
+        content="goodbye", additional_kwargs={"output_version": "v0"}
+    )
     response = await model.ainvoke("meow")
-    assert response == _any_id_ai_message(content="hello")
+    assert response == _any_id_ai_message(
+        content="hello", additional_kwargs={"output_version": "v0"}
+    )
 
 
 async def test_generic_fake_chat_model_stream() -> None:
@@ -57,17 +69,33 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=infinite_cycle)
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="hello"),
-        _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye", chunk_position="last"),
+        _any_id_ai_message_chunk(
+            content="hello", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content=" ", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="goodbye",
+            chunk_position="last",
+            additional_kwargs={"output_version": "v0"},
+        ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
     chunks = list(model.stream("meow"))
     assert chunks == [
-        _any_id_ai_message_chunk(content="hello"),
-        _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye", chunk_position="last"),
+        _any_id_ai_message_chunk(
+            content="hello", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content=" ", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="goodbye",
+            chunk_position="last",
+            additional_kwargs={"output_version": "v0"},
+        ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -77,8 +105,12 @@ async def test_generic_fake_chat_model_stream() -> None:
     model = GenericFakeChatModel(messages=cycle([message]))
     chunks = [chunk async for chunk in model.astream("meow")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="", additional_kwargs={"foo": 42}),
-        _any_id_ai_message_chunk(content="", additional_kwargs={"bar": 24}),
+        _any_id_ai_message_chunk(
+            content="", additional_kwargs={"foo": 42, "output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="", additional_kwargs={"bar": 24, "output_version": "v0"}
+        ),
         _any_id_ai_message_chunk(content="", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
@@ -99,21 +131,30 @@ async def test_generic_fake_chat_model_stream() -> None:
     assert chunks == [
         _any_id_ai_message_chunk(
             content="",
-            additional_kwargs={"function_call": {"name": "move_file"}},
+            additional_kwargs={
+                "function_call": {"name": "move_file"},
+                "output_version": "v0",
+            },
         ),
         _any_id_ai_message_chunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '{\n  "source_path": "foo"'},
+                "output_version": "v0",
             },
         ),
         _any_id_ai_message_chunk(
-            content="", additional_kwargs={"function_call": {"arguments": ","}}
+            content="",
+            additional_kwargs={
+                "function_call": {"arguments": ","},
+                "output_version": "v0",
+            },
         ),
         _any_id_ai_message_chunk(
             content="",
             additional_kwargs={
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
+                "output_version": "v0",
             },
         ),
         _any_id_ai_message_chunk(content="", chunk_position="last"),
@@ -134,7 +175,8 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "name": "move_file",
                 "arguments": '{\n  "source_path": "foo",\n  "'
                 'destination_path": "bar"\n}',
-            }
+            },
+            "output_version": "v0",
         },
         id=chunks[0].id,
         chunk_position="last",
@@ -150,9 +192,17 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     ]
     final = log_patches[-1]
     assert final.state["streamed_output"] == [
-        _any_id_ai_message_chunk(content="hello"),
-        _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye", chunk_position="last"),
+        _any_id_ai_message_chunk(
+            content="hello", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content=" ", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="goodbye",
+            chunk_position="last",
+            additional_kwargs={"output_version": "v0"},
+        ),
     ]
     assert len({chunk.id for chunk in final.state["streamed_output"]}) == 1
 
@@ -207,9 +257,17 @@ async def test_callback_handlers() -> None:
         )
     ]
     assert results == [
-        _any_id_ai_message_chunk(content="hello"),
-        _any_id_ai_message_chunk(content=" "),
-        _any_id_ai_message_chunk(content="goodbye", chunk_position="last"),
+        _any_id_ai_message_chunk(
+            content="hello", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content=" ", additional_kwargs={"output_version": "v0"}
+        ),
+        _any_id_ai_message_chunk(
+            content="goodbye",
+            chunk_position="last",
+            additional_kwargs={"output_version": "v0"},
+        ),
     ]
     assert tokens == ["hello", " ", "goodbye"]
     assert len({chunk.id for chunk in results}) == 1
@@ -221,17 +279,19 @@ def test_chat_model_inputs() -> None:
     assert cast("HumanMessage", fake.invoke("hello")) == _any_id_human_message(
         content="hello"
     )
-    assert fake.invoke([("ai", "blah")]) == _any_id_ai_message(content="blah")
+    assert fake.invoke([("ai", "blah")]) == _any_id_ai_message(
+        content="blah", additional_kwargs={"output_version": "v0"}
+    )
     assert fake.invoke([AIMessage(content="blah")]) == _any_id_ai_message(
-        content="blah"
+        content="blah", additional_kwargs={"output_version": "v0"}
     )
 
 
 def test_fake_list_chat_model_batch() -> None:
     expected = [
-        _any_id_ai_message(content="a"),
-        _any_id_ai_message(content="b"),
-        _any_id_ai_message(content="c"),
+        _any_id_ai_message(content="a", additional_kwargs={"output_version": "v0"}),
+        _any_id_ai_message(content="b", additional_kwargs={"output_version": "v0"}),
+        _any_id_ai_message(content="c", additional_kwargs={"output_version": "v0"}),
     ]
     for _ in range(20):
         # run this 20 times to test race condition in batch
