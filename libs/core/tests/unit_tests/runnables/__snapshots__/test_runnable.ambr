@@ -97,7 +97,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -227,7 +227,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['baz, qux'])",
+          "repr": "FakeListChatModel(responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -346,7 +346,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         },
         {
@@ -457,7 +457,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['baz, qux'])",
+          "repr": "FakeListChatModel(responses=['baz, qux'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -1009,7 +1009,7 @@
 # name: test_prompt_with_chat_model
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo'])
+  | FakeListChatModel(responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model.1
@@ -1109,7 +1109,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(output_version='v0', responses=['foo'])",
+        "repr": "FakeListChatModel(responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -1220,7 +1220,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -1249,7 +1249,7 @@
 # name: test_prompt_with_chat_model_async
   '''
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo'])
+  | FakeListChatModel(responses=['foo'])
   '''
 # ---
 # name: test_prompt_with_chat_model_async.1
@@ -1349,7 +1349,7 @@
           "fake_chat_models",
           "FakeListChatModel"
         ],
-        "repr": "FakeListChatModel(output_version='v0', responses=['foo'])",
+        "repr": "FakeListChatModel(responses=['foo'])",
         "name": "FakeListChatModel"
       }
     },
@@ -13775,7 +13775,7 @@
     just_to_test_lambda: RunnableLambda(...)
   }
   | ChatPromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['documents', 'question'], input_types={}, partial_variables={}, template='Context:\n{documents}\n\nQuestion:\n{question}'), additional_kwargs={})])
-  | FakeListChatModel(output_version='v0', responses=['foo, bar'])
+  | FakeListChatModel(responses=['foo, bar'])
   | CommaSeparatedListOutputParser()
   '''
 # ---
@@ -13978,7 +13978,7 @@
             "fake_chat_models",
             "FakeListChatModel"
           ],
-          "repr": "FakeListChatModel(output_version='v0', responses=['foo, bar'])",
+          "repr": "FakeListChatModel(responses=['foo, bar'])",
           "name": "FakeListChatModel"
         }
       ],
@@ -14004,7 +14004,7 @@
   ChatPromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, messages=[SystemMessagePromptTemplate(prompt=PromptTemplate(input_variables=[], input_types={}, partial_variables={}, template='You are a nice assistant.'), additional_kwargs={}), HumanMessagePromptTemplate(prompt=PromptTemplate(input_variables=['question'], input_types={}, partial_variables={}, template='{question}'), additional_kwargs={})])
   | RunnableLambda(...)
   | {
-      chat: FakeListChatModel(output_version='v0', responses=["i'm a chatbot"]),
+      chat: FakeListChatModel(responses=["i'm a chatbot"]),
       llm: FakeListLLM(responses=["i'm a textbot"])
     }
   '''
@@ -14130,7 +14130,7 @@
                 "fake_chat_models",
                 "FakeListChatModel"
               ],
-              "repr": "FakeListChatModel(output_version='v0', responses=[\"i'm a chatbot\"])",
+              "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
               "name": "FakeListChatModel"
             },
             "llm": {
@@ -14285,7 +14285,7 @@
                     "fake_chat_models",
                     "FakeListChatModel"
                   ],
-                  "repr": "FakeListChatModel(output_version='v0', responses=[\"i'm a chatbot\"])",
+                  "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
                   "name": "FakeListChatModel"
                 },
                 "kwargs": {
