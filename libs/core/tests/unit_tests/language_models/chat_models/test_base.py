@@ -208,10 +208,10 @@ async def test_astream_fallback_to_ainvoke() -> None:
     # is not strictly correct.
     # LangChain documents a pattern of adding BaseMessageChunks to accumulate a stream.
     # This may be better done with `reduce(operator.add, chunks)`.
-    assert chunks == [_any_id_ai_message(content="hello", additional_kwargs={})]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
     chunks = [chunk async for chunk in model.astream("anything")]
-    assert chunks == [_any_id_ai_message(content="hello", additional_kwargs={})]
+    assert chunks == [_any_id_ai_message(content="hello")]
 
 
 async def test_astream_implementation_fallback_to_stream() -> None:
@@ -253,22 +253,20 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     model = ModelWithSyncStream()
     chunks = list(model.stream("anything"))
     assert chunks == [
-        _any_id_ai_message_chunk(content="a", additional_kwargs={}),
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
             content="b",
             chunk_position="last",
-            additional_kwargs={},
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
-        _any_id_ai_message_chunk(content="a", additional_kwargs={}),
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
             content="b",
             chunk_position="last",
-            additional_kwargs={},
         ),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
@@ -313,11 +311,10 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
-        _any_id_ai_message_chunk(content="a", additional_kwargs={}),
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
             content="b",
             chunk_position="last",
-            additional_kwargs={},
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
