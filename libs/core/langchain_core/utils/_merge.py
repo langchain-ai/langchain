@@ -44,7 +44,6 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
-                # Special handling for output_version - it should be consistent
                 if right_k == "output_version":
                     if merged[right_k] == right_v:
                         continue

@@ -254,6 +254,32 @@ class GenericFakeChatModel(BaseChatModel):
         """Top Level call."""
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
+
+        # Apply v1 content transformation if needed
+        if output_version == "v1":
+            from langchain_core.language_models._utils import (
+                _update_message_content_to_blocks,
+            )
+
+            message_ = _update_message_content_to_blocks(message_, "v1")
+
+        # Only set response metadata if output_version is explicitly provided
+        # If output_version is "v0" and self.output_version is None, it's the default
+        output_version_explicit = not (
+            output_version == "v0" and getattr(self, "output_version", None) is None
+        )
+        if output_version_explicit:
+            if hasattr(message_, "response_metadata"):
+                message_.response_metadata = {"output_version": output_version}
+            else:
+                # Create new message with response_metadata
+                message_ = AIMessage(
+                    content=message_.content,
+                    additional_kwargs=message_.additional_kwargs,
+                    response_metadata={"output_version": output_version},
+                    id=message_.id,
+                )
+
         generation = ChatGeneration(message=message_)
         return ChatResult(generations=[generation])
 
@@ -267,11 +293,12 @@ class GenericFakeChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
+        # Always call _generate with v0 to get the original string content for splitting
         chat_result = self._generate(
             messages,
             stop=stop,
             run_manager=run_manager,
-            output_version=output_version,
+            output_version="v0",
             **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
@@ -321,7 +348,17 @@ class GenericFakeChatModel(BaseChatModel):
                         chunk.message, "v1"
                     )
 
-                chunk.message.response_metadata = {"output_version": output_version}
+                # Only set response metadata if output_version is explicitly provided
+                # If output_version is "v0" and self.output_version is None, it's the
+                # default
+                output_version_explicit = not (
+                    output_version == "v0"
+                    and getattr(self, "output_version", None) is None
+                )
+                if output_version_explicit:
+                    chunk.message.response_metadata = {"output_version": output_version}
+                else:
+                    chunk.message.response_metadata = {}
 
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)

@@ -92,7 +92,9 @@ async def test_generic_fake_chat_model_stream() -> None:
             content="", additional_kwargs={"bar": 24}, response_metadata={}
         ),
         _any_id_ai_message_chunk(
-            content="", chunk_position="last", response_metadata={}
+            content="",
+            chunk_position="last",
+            response_metadata={},
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
@@ -140,7 +142,9 @@ async def test_generic_fake_chat_model_stream() -> None:
             response_metadata={},
         ),
         _any_id_ai_message_chunk(
-            content="", chunk_position="last", response_metadata={}
+            content="",
+            chunk_position="last",
+            response_metadata={},
         ),
     ]
     assert len({chunk.id for chunk in chunks}) == 1

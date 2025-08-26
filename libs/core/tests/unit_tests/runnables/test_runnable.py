@@ -1862,11 +1862,7 @@ def test_prompt_with_chat_model(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(
-            content="o",
-            chunk_position="last",
-            additional_kwargs={},
-        ),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1975,11 +1971,7 @@ async def test_prompt_with_chat_model_async(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(
-            content="o",
-            chunk_position="last",
-            additional_kwargs={},
-        ),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
