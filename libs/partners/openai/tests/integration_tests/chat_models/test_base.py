@@ -72,7 +72,7 @@ def test_chat_openai_system_message(use_responses_api: bool) -> None:
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
-    assert isinstance(response.text(), str)
+    assert isinstance(response.text, str)
 
 
 @pytest.mark.scheduled
@@ -179,7 +179,7 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
     )
     for token in result:
-        assert isinstance(token.text(), str)
+        assert isinstance(token.text, str)
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -1002,8 +1002,8 @@ def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
         ]
     )
     assert isinstance(response, AIMessage)
-    assert isinstance(response.text(), str)
-    assert response.text().upper() == response.text()
+    assert isinstance(response.text, str)
+    assert response.text.upper() == response.text
 
 
 @pytest.mark.scheduled
