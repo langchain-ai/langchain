@@ -1888,7 +1888,7 @@ async def test_events_astream_config() -> None:
 
     model_02 = model.with_config({"configurable": {"messages": good_world_on_repeat}})
     assert model_02.invoke("hello") == AIMessage(
-        content="Goodbye world", additional_kwargs={"output_version": "v0"}, id="ai2"
+        content="Goodbye world", additional_kwargs={}, id="ai2"
     )
 
     events = await _collect_events(model_02.astream_events("hello", version="v1"))
@@ -2015,9 +2015,7 @@ async def test_runnable_with_message_history() -> None:
     assert store == {
         "session-123": [
             HumanMessage(content="hello"),
-            AIMessage(
-                content="hello", additional_kwargs={"output_version": "v0"}, id="ai3"
-            ),
+            AIMessage(content="hello", id="ai3"),
         ]
     }
 

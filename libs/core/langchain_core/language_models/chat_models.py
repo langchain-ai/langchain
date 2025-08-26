@@ -632,13 +632,18 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                     output_version = kwargs["_output_version"]
-                    if isinstance(chunk.message, (AIMessage, AIMessageChunk)) and (
-                        not isinstance(chunk.message, AIMessageChunk)
-                        or chunk.message.chunk_position != "last"
-                        or chunk.message.content  # Include last chunks with content
+                    if (
+                        isinstance(chunk.message, (AIMessage, AIMessageChunk))
+                        and (
+                            not isinstance(chunk.message, AIMessageChunk)
+                            or chunk.message.chunk_position != "last"
+                            or chunk.message.content  # Include last chunks with content
+                        )
+                        and output_version
+                        and output_version != "v0"
                     ):
                         chunk.message.additional_kwargs["output_version"] = (
-                            output_version or "v0"
+                            output_version
                         )
                     if output_version == "v1":
                         # Overwrite .content with .content_blocks
@@ -785,14 +790,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
                 output_version = kwargs["_output_version"]
-                if isinstance(chunk.message, (AIMessage, AIMessageChunk)) and (
-                    not isinstance(chunk.message, AIMessageChunk)
-                    or chunk.message.chunk_position != "last"
-                    or chunk.message.content  # Include last chunks with content
-                ):
-                    chunk.message.additional_kwargs["output_version"] = (
-                        output_version or "v0"
+                if (
+                    isinstance(chunk.message, (AIMessage, AIMessageChunk))
+                    and (
+                        not isinstance(chunk.message, AIMessageChunk)
+                        or chunk.message.chunk_position != "last"
+                        or chunk.message.content  # Include last chunks with content
                     )
+                    and output_version
+                    and output_version != "v0"
+                ):
+                    chunk.message.additional_kwargs["output_version"] = output_version
                 if output_version == "v1":
                     # Overwrite .content with .content_blocks
                     chunk.message = _update_message_content_to_blocks(
@@ -1278,14 +1286,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 messages, stop=stop, output_version=output_version or "v0", **kwargs
             ):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if isinstance(chunk.message, (AIMessage, AIMessageChunk)) and (
-                    not isinstance(chunk.message, AIMessageChunk)
-                    or chunk.message.chunk_position != "last"
-                    or chunk.message.content  # Include last chunks with content
-                ):
-                    chunk.message.additional_kwargs["output_version"] = (
-                        output_version or "v0"
+                if (
+                    isinstance(chunk.message, (AIMessage, AIMessageChunk))
+                    and (
+                        not isinstance(chunk.message, AIMessageChunk)
+                        or chunk.message.chunk_position != "last"
+                        or chunk.message.content  # Include last chunks with content
                     )
+                    and output_version
+                    and output_version != "v0"
+                ):
+                    chunk.message.additional_kwargs["output_version"] = output_version
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -1344,10 +1355,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
-            if isinstance(generation.message, (AIMessage, AIMessageChunk)):
-                generation.message.additional_kwargs["output_version"] = (
-                    output_version or "v0"
-                )
+            if (
+                isinstance(generation.message, (AIMessage, AIMessageChunk))
+                and output_version
+                and output_version != "v0"
+            ):
+                generation.message.additional_kwargs["output_version"] = output_version
         if len(result.generations) == 1 and result.llm_output is not None:
             result.generations[0].message.response_metadata = {
                 **result.llm_output,
@@ -1407,14 +1420,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 messages, stop=stop, output_version=output_version or "v0", **kwargs
             ):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if isinstance(chunk.message, (AIMessage, AIMessageChunk)) and (
-                    not isinstance(chunk.message, AIMessageChunk)
-                    or chunk.message.chunk_position != "last"
-                    or chunk.message.content  # Include last chunks with content
-                ):
-                    chunk.message.additional_kwargs["output_version"] = (
-                        output_version or "v0"
+                if (
+                    isinstance(chunk.message, (AIMessage, AIMessageChunk))
+                    and (
+                        not isinstance(chunk.message, AIMessageChunk)
+                        or chunk.message.chunk_position != "last"
+                        or chunk.message.content  # Include last chunks with content
                     )
+                    and output_version
+                    and output_version != "v0"
+                ):
+                    chunk.message.additional_kwargs["output_version"] = output_version
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
@@ -1473,10 +1489,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
-            if isinstance(generation.message, (AIMessage, AIMessageChunk)):
-                generation.message.additional_kwargs["output_version"] = (
-                    output_version or "v0"
-                )
+            if (
+                isinstance(generation.message, (AIMessage, AIMessageChunk))
+                and output_version
+                and output_version != "v0"
+            ):
+                generation.message.additional_kwargs["output_version"] = output_version
         if len(result.generations) == 1 and result.llm_output is not None:
             result.generations[0].message.response_metadata = {
                 **result.llm_output,
