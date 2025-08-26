@@ -695,7 +695,7 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
                 "type": "input_audio",
                 "input_audio": {
                     "format": "wav",
-                    "data": "data:audio/wav;base64,<base64 string>",
+                    "data": "<base64 string>",
                 },
             },
             {  # file-base64
@@ -715,23 +715,22 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
     expected_content_messages = HumanMessage(
         content=[
             {"type": "text", "text": "Hello"},  # TextContentBlock
-            {  # Chat Completions Image becomes ImageContentBlock after invoke
-                "type": "image",
-                "url": "https://example.com/image.png",
+            {  # image-url passes through
+                "type": "image_url",
+                "image_url": {"url": "https://example.com/image.png"},
             },
-            {  # ...
-                "type": "image",
-                "base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-                "mime_type": "image/jpeg",
+            {  # image-url passes through with inline data
+                "type": "image_url",
+                "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."},
             },
             {  # AudioContentBlock
                 "type": "audio",
-                "base64": "data:audio/wav;base64,<base64 string>",
+                "base64": "<base64 string>",
                 "mime_type": "audio/wav",
             },
             {  # FileContentBlock
                 "type": "file",
-                "base64": "data:application/pdf;base64,<base64 string>",
+                "base64": "<base64 string>",
                 "mime_type": "application/pdf",
                 "extras": {"filename": "draconomicon.pdf"},
             },
@@ -740,6 +739,17 @@ def test_extend_support_to_openai_multimodal_formats() -> None:
                 "file_id": "<file id>",
             },
         ]
+    )
+
+    normalized_content = _normalize_messages([messages])
+
+    # Check structure, ignoring auto-generated IDs
+    assert len(normalized_content) == 1
+    normalized_message = normalized_content[0]
+    assert len(normalized_message.content) == len(expected_content_messages.content)
+
+    assert _content_blocks_equal_ignore_id(
+        normalized_message.content, expected_content_messages.content
     )
 
 
