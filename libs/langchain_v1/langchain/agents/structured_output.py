@@ -198,6 +198,7 @@ class ToolOutput(Generic[SchemaT]):
 
     def __init__(
         self,
+        *,
         schema: type[SchemaT],
         tool_message_content: str | None = None,
         handle_errors: bool
