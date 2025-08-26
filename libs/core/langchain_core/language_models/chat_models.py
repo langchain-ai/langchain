@@ -1188,14 +1188,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                msg_chunk = AIMessageChunk(
-                    content=empty_content, chunk_position="last", id=run_id
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
                 )
                 if run_manager:
-                    run_manager.on_llm_new_token(
-                        "", chunk=ChatGenerationChunk(message=msg_chunk)
-                    )
-                chunks.append(ChatGenerationChunk(message=msg_chunk))
+                    run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
             result = self._generate(
@@ -1296,14 +1296,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                msg_chunk = AIMessageChunk(
-                    content=empty_content, chunk_position="last", id=run_id
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
                 )
                 if run_manager:
-                    await run_manager.on_llm_new_token(
-                        "", chunk=ChatGenerationChunk(message=msg_chunk)
-                    )
-                chunks.append(ChatGenerationChunk(message=msg_chunk))
+                    await run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
             result = await self._agenerate(
