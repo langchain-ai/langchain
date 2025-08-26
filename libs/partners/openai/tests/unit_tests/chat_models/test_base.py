@@ -1187,10 +1187,7 @@ def test_minimal_reasoning_effort_payload(
 
 def test_output_version_compat() -> None:
     llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
-    assert llm.use_responses_api is True
-
-    llm = ChatOpenAI(model="gpt-5", use_responses_api=True)
-    assert llm.output_version == "responses/v1"
+    assert llm._use_responses_api({}) is True
 
 
 def test_verbosity_parameter_payload() -> None:

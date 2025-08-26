@@ -621,7 +621,7 @@ def _strip_none(obj: Any) -> Any:
 
 
 def test_responses_stream() -> None:
-    llm = ChatOpenAI(model="o4-mini", output_version="responses/v1")
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
