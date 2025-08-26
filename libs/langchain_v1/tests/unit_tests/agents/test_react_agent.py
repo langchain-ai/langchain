@@ -110,9 +110,7 @@ def test_system_message_prompt() -> None:
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
-    expected_response = {
-        "messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
-    }
+    expected_response = {"messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]}
     assert response == expected_response
 
 
@@ -121,9 +119,7 @@ def test_string_prompt() -> None:
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
-    expected_response = {
-        "messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
-    }
+    expected_response = {"messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]}
     assert response == expected_response
 
 
@@ -189,9 +185,7 @@ def test_prompt_with_store() -> None:
         prompt=prompt,
         store=in_memory_store,
     )
-    response = agent.invoke(
-        {"messages": [("user", "hi")]}, {"configurable": {"user_id": "1"}}
-    )
+    response = agent.invoke({"messages": [("user", "hi")]}, {"configurable": {"user_id": "1"}})
     assert response["messages"][-1].content == "User name is Alice-hi"
 
     # test state modifier that doesn't use store works
@@ -201,9 +195,7 @@ def test_prompt_with_store() -> None:
         prompt=prompt_no_store,
         store=in_memory_store,
     )
-    response = agent.invoke(
-        {"messages": [("user", "hi")]}, {"configurable": {"user_id": "2"}}
-    )
+    response = agent.invoke({"messages": [("user", "hi")]}, {"configurable": {"user_id": "2"}})
     assert response["messages"][-1].content == "foo-hi"
 
 
@@ -213,18 +205,12 @@ async def test_prompt_with_store_async() -> None:
         return a + b
 
     in_memory_store = InMemoryStore()
-    await in_memory_store.aput(
-        ("memories", "1"), "user_name", {"data": "User name is Alice"}
-    )
-    await in_memory_store.aput(
-        ("memories", "2"), "user_name", {"data": "User name is Bob"}
-    )
+    await in_memory_store.aput(("memories", "1"), "user_name", {"data": "User name is Alice"})
+    await in_memory_store.aput(("memories", "2"), "user_name", {"data": "User name is Bob"})
 
     async def prompt(state, config, *, store):
         user_id = config["configurable"]["user_id"]
-        system_str = (await store.aget(("memories", user_id), "user_name")).value[
-            "data"
-        ]
+        system_str = (await store.aget(("memories", user_id), "user_name")).value["data"]
         return [SystemMessage(system_str)] + state["messages"]
 
     async def prompt_no_store(state, config):
@@ -240,9 +226,7 @@ async def test_prompt_with_store_async() -> None:
     assert response["messages"][-1].content == "User name is Alice-hi"
 
     # test state modifier that doesn't use store works
-    agent = create_react_agent(
-        model, [add], prompt=prompt_no_store, store=in_memory_store
-    )
+    agent = create_react_agent(model, [add], prompt=prompt_no_store, store=in_memory_store)
     response = await agent.ainvoke(
         {"messages": [("user", "hi")]}, {"configurable": {"user_id": "2"}}
     )
@@ -347,9 +331,7 @@ def test__validate_messages() -> None:
                     ],
                 ),
                 ToolMessage(content="Sunny, 75°F", tool_call_id="call1"),
-                AIMessage(
-                    content="The weather is sunny and 75°F. Let me check the time."
-                ),
+                AIMessage(content="The weather is sunny and 75°F. Let me check the time."),
             ]
         )
 
@@ -475,9 +457,7 @@ def test_react_agent_update_state(
             update={
                 "user_name": user_name,
                 "messages": [
-                    ToolMessage(
-                        "Successfully retrieved user name", tool_call_id=tool_call_id
-                    )
+                    ToolMessage("Successfully retrieved user name", tool_call_id=tool_call_id)
                 ],
             }
         )
@@ -551,9 +531,7 @@ def test_react_agent_parallel_tool_calls(
     config = {"configurable": {"thread_id": "1"}}
     query = "Get user assistance and also check the weather"
     message_types = []
-    for event in agent.stream(
-        {"messages": [("user", query)]}, config, stream_mode="values"
-    ):
+    for event in agent.stream({"messages": [("user", query)]}, config, stream_mode="values"):
         if messages := event.get("messages"):
             message_types.append([m.type for m in messages])
 
@@ -565,9 +543,7 @@ def test_react_agent_parallel_tool_calls(
 
     # Resume
     message_types = []
-    for event in agent.stream(
-        Command(resume={"data": "Hello"}), config, stream_mode="values"
-    ):
+    for event in agent.stream(Command(resume={"data": "Hello"}), config, stream_mode="values"):
         if messages := event.get("messages"):
             message_types.append([m.type for m in messages])
 
@@ -653,9 +629,7 @@ async def test_return_direct() -> None:
     )
 
     # Test direct return for tool_return_direct
-    result = agent.invoke(
-        {"messages": [HumanMessage(content="Test direct", id="hum0")]}
-    )
+    result = agent.invoke({"messages": [HumanMessage(content="Test direct", id="hum0")]})
     assert result["messages"] == [
         HumanMessage(content="Test direct", id="hum0"),
         expected_ai,
@@ -675,9 +649,7 @@ async def test_return_direct() -> None:
     ]
     model = FakeToolCallingModel(tool_calls=[second_tool_call, []])
     agent = create_react_agent(model, [tool_return_direct, tool_normal])
-    result = agent.invoke(
-        {"messages": [HumanMessage(content="Test normal", id="hum1")]}
-    )
+    result = agent.invoke({"messages": [HumanMessage(content="Test normal", id="hum1")]})
     assert result["messages"] == [
         HumanMessage(content="Test normal", id="hum1"),
         AIMessage(content="Test normal", id="0", tool_calls=second_tool_call),
@@ -759,10 +731,7 @@ def test_react_with_subgraph_tools(
         return {"result": state["a"] + state["b"]}
 
     add_subgraph = (
-        StateGraph(State, output_schema=Output)
-        .add_node(add)
-        .add_edge(START, "add")
-        .compile()
+        StateGraph(State, output_schema=Output).add_node(add).add_edge(START, "add").compile()
     )
 
     def multiply(state):
@@ -816,18 +785,14 @@ def test_react_with_subgraph_tools(
                 ToolCall(name="multiplication", args={"a": 2, "b": 3}, id="2"),
             ],
         ),
-        ToolMessage(
-            content="5", name="addition", tool_call_id="1", id=result["messages"][2].id
-        ),
+        ToolMessage(content="5", name="addition", tool_call_id="1", id=result["messages"][2].id),
         ToolMessage(
             content="6",
             name="multiplication",
             tool_call_id="2",
             id=result["messages"][3].id,
         ),
-        AIMessage(
-            content="What's 2 + 3 and 2 * 3?-What's 2 + 3 and 2 * 3?-5-6", id="1"
-        ),
+        AIMessage(content="What's 2 + 3 and 2 * 3?-What's 2 + 3 and 2 * 3?-5-6", id="1"),
     ]
 
 
@@ -877,9 +842,7 @@ def test_react_agent_subgraph_streaming_sync() -> None:
     compiled_workflow = workflow.compile()
 
     # Test the streaming functionality
-    result = compiled_workflow.invoke(
-        {"messages": [("user", "What is the weather in Tokyo?")]}
-    )
+    result = compiled_workflow.invoke({"messages": [("user", "What is the weather in Tokyo?")]})
 
     # Verify the result contains expected structure
     assert len(result["messages"]) == 2
@@ -943,9 +906,7 @@ async def test_react_agent_subgraph_streaming() -> None:
     )
 
     # Create a subgraph that uses the React agent as a node
-    async def react_agent_node(
-        state: MessagesState, config: RunnableConfig
-    ) -> MessagesState:
+    async def react_agent_node(state: MessagesState, config: RunnableConfig) -> MessagesState:
         """Node that runs the React agent and collects streaming output."""
         collected_content = ""
 
@@ -1184,9 +1145,7 @@ def test_dynamic_model_with_state_schema() -> None:
 
     agent = create_react_agent(dynamic_model, [], state_schema=CustomDynamicState)
 
-    result = agent.invoke(
-        {"messages": [HumanMessage("hello")], "model_preference": "advanced"}
-    )
+    result = agent.invoke({"messages": [HumanMessage("hello")], "model_preference": "advanced"})
     assert len(result["messages"]) == 2
     assert result["model_preference"] == "advanced"
 
@@ -1451,9 +1410,7 @@ def test_pre_model_hook() -> None:
 
     # Test `messages`
     def pre_model_hook(state: AgentState):
-        return {
-            "messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), HumanMessage("Hello!")]
-        }
+        return {"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES), HumanMessage("Hello!")]}
 
     agent = create_react_agent(model, [], pre_model_hook=pre_model_hook)
     result = agent.invoke({"messages": [HumanMessage("hi?")]})
@@ -1534,9 +1491,7 @@ def test_post_model_hook_with_structured_output() -> None:
 
     assert "post_model_hook" in agent.nodes
 
-    response = agent.invoke(
-        {"messages": [HumanMessage("What's the weather?")], "flag": False}
-    )
+    response = agent.invoke({"messages": [HumanMessage("What's the weather?")], "flag": False})
     assert response["flag"] is True
     assert response["structured_response"] == expected_structured_response
 
@@ -1550,9 +1505,7 @@ def test_post_model_hook_with_structured_output() -> None:
         state_schema=State,
     )
 
-    events = list(
-        agent.stream({"messages": [HumanMessage("What's the weather?")], "flag": False})
-    )
+    events = list(agent.stream({"messages": [HumanMessage("What's the weather?")], "flag": False}))
     assert events == [
         {
             "model": {

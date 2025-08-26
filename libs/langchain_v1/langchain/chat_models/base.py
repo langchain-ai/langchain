@@ -67,9 +67,7 @@ def init_chat_model(
     model: Optional[str] = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Optional[
-        Union[Literal["any"], list[str], tuple[str, ...]]
-    ] = None,
+    configurable_fields: Optional[Union[Literal["any"], list[str], tuple[str, ...]]] = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> Union[BaseChatModel, _ConfigurableModel]:
@@ -446,9 +444,7 @@ def _init_chat_model_helper(
 
         return ChatPerplexity(model=model, **kwargs)
     supported = ", ".join(_SUPPORTED_PROVIDERS)
-    msg = (
-        f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
-    )
+    msg = f"Unsupported {model_provider=}.\n\nSupported model providers are: {supported}"
     raise ValueError(msg)
 
 
@@ -501,18 +497,13 @@ def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
 
 
 def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
-    if (
-        not model_provider
-        and ":" in model
-        and model.split(":")[0] in _SUPPORTED_PROVIDERS
-    ):
+    if not model_provider and ":" in model and model.split(":")[0] in _SUPPORTED_PROVIDERS:
         model_provider = model.split(":")[0]
         model = ":".join(model.split(":")[1:])
     model_provider = model_provider or _attempt_infer_model_provider(model)
     if not model_provider:
         msg = (
-            f"Unable to infer model provider for {model=}, please specify "
-            f"model_provider directly."
+            f"Unable to infer model provider for {model=}, please specify model_provider directly."
         )
         raise ValueError(msg)
     model_provider = model_provider.replace("-", "_").lower()
@@ -522,9 +513,7 @@ def _parse_model(model: str, model_provider: Optional[str]) -> tuple[str, str]:
 def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
     if not util.find_spec(pkg):
         pkg_kebab = pkg_kebab if pkg_kebab is not None else pkg.replace("_", "-")
-        msg = (
-            f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
-        )
+        msg = f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         raise ImportError(msg)
 
 
@@ -546,9 +535,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     ) -> None:
         self._default_config: dict = default_config or {}
         self._configurable_fields: Union[Literal["any"], list[str]] = (
-            configurable_fields
-            if configurable_fields == "any"
-            else list(configurable_fields)
+            configurable_fields if configurable_fields == "any" else list(configurable_fields)
         )
         self._config_prefix = (
             config_prefix + "_"
@@ -604,9 +591,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if k.startswith(self._config_prefix)
         }
         if self._configurable_fields != "any":
-            model_params = {
-                k: v for k, v in model_params.items() if k in self._configurable_fields
-            }
+            model_params = {k: v for k, v in model_params.items() if k in self._configurable_fields}
         return model_params
 
     def with_config(

@@ -46,9 +46,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         if self.tool_calls:
             if is_native:
                 tool_calls = (
-                    self.tool_calls[self.index]
-                    if self.index < len(self.tool_calls)
-                    else []
+                    self.tool_calls[self.index] if self.index < len(self.tool_calls) else []
                 )
             else:
                 tool_calls = self.tool_calls[self.index % len(self.tool_calls)]

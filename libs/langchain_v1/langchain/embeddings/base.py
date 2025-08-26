@@ -19,9 +19,7 @@ _SUPPORTED_PROVIDERS = {
 
 def _get_provider_list() -> str:
     """Get formatted list of providers and their packages."""
-    return "\n".join(
-        f"  - {p}: {pkg.replace('_', '-')}" for p, pkg in _SUPPORTED_PROVIDERS.items()
-    )
+    return "\n".join(f"  - {p}: {pkg.replace('_', '-')}" for p, pkg in _SUPPORTED_PROVIDERS.items())
 
 
 def _parse_model_string(model_name: str) -> tuple[str, str]:
@@ -117,10 +115,7 @@ def _infer_model_and_provider(
 def _check_pkg(pkg: str) -> None:
     """Check if a package is installed."""
     if not util.find_spec(pkg):
-        msg = (
-            f"Could not import {pkg} python package. "
-            f"Please install it with `pip install {pkg}`"
-        )
+        msg = f"Could not import {pkg} python package. Please install it with `pip install {pkg}`"
         raise ImportError(msg)
 
 
@@ -182,9 +177,7 @@ def init_embeddings(
     """
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()
-        msg = (
-            f"Must specify model name. Supported providers are: {', '.join(providers)}"
-        )
+        msg = f"Must specify model name. Supported providers are: {', '.join(providers)}"
         raise ValueError(msg)
 
     provider, model_name = _infer_model_and_provider(model, provider=provider)

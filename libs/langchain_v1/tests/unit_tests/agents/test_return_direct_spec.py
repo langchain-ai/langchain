@@ -60,9 +60,7 @@ def _make_tool(return_direct: bool):
     return {"tool": _wrapped, "mock": mock}
 
 
-@pytest.mark.skipif(
-    skip_openai_integration_tests, reason="OpenAI integration tests are disabled."
-)
+@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 @pytest.mark.parametrize("case", TEST_CASES, ids=[c.name for c in TEST_CASES])
 def test_return_direct_integration_matrix(case: TestCase) -> None:
     poll_tool = _make_tool(case.return_direct)
@@ -89,9 +87,7 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
     result = agent.invoke(
         {
             "messages": [
-                HumanMessage(
-                    "Poll the job until it's done and tell me how many attempts it took."
-                )
+                HumanMessage("Poll the job until it's done and tell me how many attempts it took.")
             ]
         }
     )

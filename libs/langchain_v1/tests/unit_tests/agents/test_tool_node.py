@@ -153,8 +153,7 @@ async def test_tool_node() -> None:
     tool_message: ToolMessage = result3["messages"][-1]
     assert tool_message.type == "tool"
     assert (
-        tool_message.content
-        == '[{"key_1": 2, "key_2": "foo"}, {"key_1": "bar", "key_2": "baz"}]'
+        tool_message.content == '[{"key_1": 2, "key_2": "foo"}, {"key_1": "bar", "key_2": "baz"}]'
     )
     assert tool_message.tool_call_id == "some 2"
 
@@ -340,9 +339,7 @@ async def test_tool_node_error_handling_callable() -> None:
         return "Tool exception"
 
     for handle_tool_errors in ("Value error", handle_value_error):
-        result_error = await ToolNode(
-            [tool1], handle_tool_errors=handle_tool_errors
-        ).ainvoke(
+        result_error = await ToolNode([tool1], handle_tool_errors=handle_tool_errors).ainvoke(
             {
                 "messages": [
                     AIMessage(
@@ -368,9 +365,7 @@ async def test_tool_node_error_handling_callable() -> None:
     # - passing a callable with all exceptions in the signature
     for handle_tool_errors in ((ValueError,), handle_value_error):
         with pytest.raises(ToolException) as exc_info:
-            await ToolNode(
-                [tool1, tool2], handle_tool_errors=handle_tool_errors
-            ).ainvoke(
+            await ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
                 {
                     "messages": [
                         AIMessage(
@@ -395,9 +390,7 @@ async def test_tool_node_error_handling_callable() -> None:
 
     for handle_tool_errors in ((ToolException,), handle_tool_exception):
         with pytest.raises(ValueError) as exc_info:
-            await ToolNode(
-                [tool1, tool2], handle_tool_errors=handle_tool_errors
-            ).ainvoke(
+            await ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
                 {
                     "messages": [
                         AIMessage(
@@ -484,9 +477,7 @@ async def test_tool_node_handle_tool_errors_false() -> None:
 
 def test_tool_node_individual_tool_error_handling() -> None:
     # test error handling on individual tools (and that it overrides overall error handling!)
-    result_individual_tool_error_handler = ToolNode(
-        [tool5], handle_tool_errors="bar"
-    ).invoke(
+    result_individual_tool_error_handler = ToolNode([tool5], handle_tool_errors="bar").invoke(
         {
             "messages": [
                 AIMessage(
@@ -531,10 +522,7 @@ def test_tool_node_incorrect_tool_name() -> None:
     tool_message: ToolMessage = result_incorrect_name["messages"][-1]
     assert tool_message.type == "tool"
     assert tool_message.status == "error"
-    assert (
-        tool_message.content
-        == "Error: tool3 is not a valid tool, try one of [tool1, tool2]."
-    )
+    assert tool_message.content == "Error: tool3 is not a valid tool, try one of [tool1, tool2]."
     assert tool_message.tool_call_id == "some 0"
 
 
@@ -578,9 +566,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """Transfer to Bob"""
         return Command(
             update={
-                "messages": [
-                    ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)
-                ]
+                "messages": [ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)]
             },
             goto="bob",
             graph=Command.PARENT,
@@ -591,9 +577,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """Transfer to Bob"""
         return Command(
             update={
-                "messages": [
-                    ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)
-                ]
+                "messages": [ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)]
             },
             goto="bob",
             graph=Command.PARENT,
@@ -687,13 +671,7 @@ async def test_tool_node_command(input_type: str) -> None:
     # test sync tools
     for tool in [transfer_to_bob, custom_tool]:
         result = ToolNode([tool]).invoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "", tool_calls=[{"args": {}, "id": "1", "name": tool.name}]
-                    )
-                ]
-            }
+            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]}
         )
         assert result == [
             Command(
@@ -714,13 +692,7 @@ async def test_tool_node_command(input_type: str) -> None:
     # test async tools
     for tool in [async_transfer_to_bob, async_custom_tool]:
         result = await ToolNode([tool]).ainvoke(
-            {
-                "messages": [
-                    AIMessage(
-                        "", tool_calls=[{"args": {}, "id": "1", "name": tool.name}]
-                    )
-                ]
-            }
+            {"messages": [AIMessage("", tool_calls=[{"args": {}, "id": "1", "name": tool.name}])]}
         )
         assert result == [
             Command(
@@ -787,18 +759,14 @@ async def test_tool_node_command(input_type: str) -> None:
         @dec_tool
         def list_update_tool(tool_call_id: Annotated[str, InjectedToolCallId]):
             """My tool"""
-            return Command(
-                update=[ToolMessage(content="foo", tool_call_id=tool_call_id)]
-            )
+            return Command(update=[ToolMessage(content="foo", tool_call_id=tool_call_id)])
 
         ToolNode([list_update_tool]).invoke(
             {
                 "messages": [
                     AIMessage(
                         "",
-                        tool_calls=[
-                            {"args": {}, "id": "1", "name": "list_update_tool"}
-                        ],
+                        tool_calls=[{"args": {}, "id": "1", "name": "list_update_tool"}],
                     )
                 ]
             }
@@ -829,9 +797,7 @@ async def test_tool_node_command(input_type: str) -> None:
         @dec_tool
         def mismatching_tool_call_id_tool():
             """My tool"""
-            return Command(
-                update={"messages": [ToolMessage(content="foo", tool_call_id="2")]}
-            )
+            return Command(update={"messages": [ToolMessage(content="foo", tool_call_id="2")]})
 
         ToolNode([mismatching_tool_call_id_tool]).invoke(
             {
@@ -861,9 +827,7 @@ async def test_tool_node_command(input_type: str) -> None:
             "messages": [
                 AIMessage(
                     "",
-                    tool_calls=[
-                        {"args": {}, "id": "1", "name": "node_update_parent_tool"}
-                    ],
+                    tool_calls=[{"args": {}, "id": "1", "name": "node_update_parent_tool"}],
                 )
             ]
         }
@@ -877,9 +841,7 @@ async def test_tool_node_command_list_input() -> None:
     def transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
         """Transfer to Bob"""
         return Command(
-            update=[
-                ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)
-            ],
+            update=[ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)],
             goto="bob",
             graph=Command.PARENT,
         )
@@ -888,9 +850,7 @@ async def test_tool_node_command_list_input() -> None:
     async def async_transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
         """Transfer to Bob"""
         return Command(
-            update=[
-                ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)
-            ],
+            update=[ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)],
             goto="bob",
             graph=Command.PARENT,
         )
@@ -1056,9 +1016,7 @@ async def test_tool_node_command_list_input() -> None:
         def list_update_tool(tool_call_id: Annotated[str, InjectedToolCallId]):
             """My tool"""
             return Command(
-                update={
-                    "messages": [ToolMessage(content="foo", tool_call_id=tool_call_id)]
-                }
+                update={"messages": [ToolMessage(content="foo", tool_call_id=tool_call_id)]}
             )
 
         ToolNode([list_update_tool]).invoke(
@@ -1099,9 +1057,7 @@ async def test_tool_node_command_list_input() -> None:
             [
                 AIMessage(
                     "",
-                    tool_calls=[
-                        {"args": {}, "id": "1", "name": "mismatching_tool_call_id_tool"}
-                    ],
+                    tool_calls=[{"args": {}, "id": "1", "name": "mismatching_tool_call_id_tool"}],
                 )
             ]
         )
@@ -1223,9 +1179,7 @@ async def test_tool_node_command_remove_all_messages() -> None:
         "args": {},
         "id": "tool_call_123",
     }
-    result = await tool_node.ainvoke(
-        {"messages": [AIMessage(content="", tool_calls=[tool_call])]}
-    )
+    result = await tool_node.ainvoke({"messages": [AIMessage(content="", tool_calls=[tool_call])]})
 
     assert isinstance(result, list)
     assert len(result) == 1
@@ -1288,9 +1242,7 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
         """Tool 1 docstring."""
         return foo
 
-    def tool4(
-        some_val: int, msgs: Annotated[list[AnyMessage], InjectedState("messages")]
-    ) -> str:
+    def tool4(some_val: int, msgs: Annotated[list[AnyMessage], InjectedState("messages")]) -> str:
         """Tool 1 docstring."""
         return msgs[0].content
 
@@ -1440,7 +1392,7 @@ def test_tool_node_ensure_utf8() -> None:
 
 def test_tool_node_messages_key() -> None:
     @dec_tool
-    def add(a: int, b: int):
+    def add(a: int, b: int) -> int:
         """Adds a and b."""
         return a + b
 
@@ -1451,7 +1403,7 @@ def test_tool_node_messages_key() -> None:
     class State(TypedDict):
         subgraph_messages: Annotated[list[AnyMessage], add_messages]
 
-    def call_model(state: State):
+    def call_model(state: State) -> dict[str, Any]:
         response = model.invoke(state["subgraph_messages"])
         model.tool_calls = []
         return {"subgraph_messages": response}
@@ -1491,10 +1443,7 @@ def test_tool_node_stream_writer() -> None:
 
     tool_node = ToolNode([streaming_tool])
     graph = (
-        StateGraph(MessagesState)
-        .add_node("tools", tool_node)
-        .add_edge(START, "tools")
-        .compile()
+        StateGraph(MessagesState).add_node("tools", tool_node).add_edge(START, "tools").compile()
     )
 
     tool_call = {

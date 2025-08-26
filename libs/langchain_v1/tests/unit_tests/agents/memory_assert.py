@@ -24,9 +24,7 @@ class MemorySaverAssertImmutable(InMemorySaver):
         put_sleep: Optional[float] = None,
     ) -> None:
         _, filename = tempfile.mkstemp()
-        super().__init__(
-            serde=serde, factory=partial(PersistentDict, filename=filename)
-        )
+        super().__init__(serde=serde, factory=partial(PersistentDict, filename=filename))
         self.storage_for_copies = defaultdict(lambda: defaultdict(dict))
         self.put_sleep = put_sleep
         self.stack.callback(os.remove, filename)

@@ -66,33 +66,25 @@ class EncoderBackedStore(BaseStore[K, V]):
         """Get the values associated with the given keys."""
         encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = self.store.mget(encoded_keys)
-        return [
-            self.value_deserializer(value) if value is not None else value
-            for value in values
-        ]
+        return [self.value_deserializer(value) if value is not None else value for value in values]
 
     async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Get the values associated with the given keys."""
         encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = await self.store.amget(encoded_keys)
-        return [
-            self.value_deserializer(value) if value is not None else value
-            for value in values
-        ]
+        return [self.value_deserializer(value) if value is not None else value for value in values]
 
     def mset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys."""
         encoded_pairs = [
-            (self.key_encoder(key), self.value_serializer(value))
-            for key, value in key_value_pairs
+            (self.key_encoder(key), self.value_serializer(value)) for key, value in key_value_pairs
         ]
         self.store.mset(encoded_pairs)
 
     async def amset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys."""
         encoded_pairs = [
-            (self.key_encoder(key), self.value_serializer(value))
-            for key, value in key_value_pairs
+            (self.key_encoder(key), self.value_serializer(value)) for key, value in key_value_pairs
         ]
         await self.store.amset(encoded_pairs)
 

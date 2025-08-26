@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import inspect
-from collections.abc import Sequence
+from collections.abc import Sequence  # noqa: TC003
 from dataclasses import asdict, is_dataclass
 from typing import (
     TYPE_CHECKING,
@@ -35,7 +35,7 @@ from langgraph._internal._runnable import RunnableCallable, RunnableLike
 from langgraph.errors import ErrorCode, create_error_message
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.managed import RemainingSteps
+from langgraph.managed import RemainingSteps  # noqa: TC002
 from langgraph.types import Checkpointer, Command, Send
 from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
@@ -93,11 +93,7 @@ Prompt = Union[
 
 
 def _get_state_value(state: StateT, key: str, default: Any = None) -> Any:
-    return (
-        state.get(key, default)
-        if isinstance(state, dict)
-        else getattr(state, key, default)
-    )
+    return state.get(key, default) if isinstance(state, dict) else getattr(state, key, default)
 
 
 def _get_prompt_runnable(prompt: Optional[Prompt]) -> Runnable:
@@ -161,8 +157,9 @@ def _validate_chat_history(
     error_message = create_error_message(
         message="Found AIMessages with tool_calls that do not have a corresponding ToolMessage. "
         f"Here are the first few of those tool calls: {tool_calls_without_results[:3]}.\n\n"
-        "Every tool call (LLM requesting to call a tool) in the message history MUST have a corresponding ToolMessage "
-        "(result of a tool invocation to return to the LLM) - this is required by most LLM providers.",
+        "Every tool call (LLM requesting to call a tool) in the message history MUST have a "
+        "corresponding ToolMessage (result of a tool invocation to return to the LLM) - "
+        "this is required by most LLM providers.",
         error_code=ErrorCode.INVALID_CHAT_HISTORY,
     )
     raise ValueError(error_message)
@@ -207,7 +204,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 "Expected `model` to be a BaseChatModel or a string, got {type(model)}."
                 "The `model` parameter should not have pre-bound tools, simply pass the model and tools separately."
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         self._setup_tools()
         self._setup_state_schema()
@@ -222,14 +219,10 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             self._llm_builtin_tools = []
         else:
             self._llm_builtin_tools = [t for t in self.tools if isinstance(t, dict)]
-            self._tool_node = ToolNode(
-                [t for t in self.tools if not isinstance(t, dict)]
-            )
+            self._tool_node = ToolNode([t for t in self.tools if not isinstance(t, dict)])
             self._tool_classes = list(self._tool_node.tools_by_name.values())
 
-        self._should_return_direct = {
-            t.name for t in self._tool_classes if t.return_direct
-        }
+        self._should_return_direct = {t.name for t in self._tool_classes if t.return_direct}
         self._tool_calling_enabled = len(self._tool_classes) > 0
 
     def _setup_structured_output(self) -> None:
@@ -245,12 +238,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         2. Binding provider-native response_format kwargs at model bind time
         3. Parsing provider-enforced structured output directly into the schema
         """
-        self.structured_output_tools: dict[
-            str, OutputToolBinding[StructuredResponseT]
-        ] = {}
-        self.native_output_binding: NativeOutputBinding[StructuredResponseT] | None = (
-            None
-        )
+        self.structured_output_tools: dict[str, OutputToolBinding[StructuredResponseT]] = {}
+        self.native_output_binding: NativeOutputBinding[StructuredResponseT] | None = None
 
         if self.response_format is not None:
             response_format = self.response_format
@@ -258,9 +247,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             if isinstance(response_format, ToolOutput):
                 # check if response_format.schema is a union
                 for response_schema in response_format.schema_specs:
-                    structured_tool_info = OutputToolBinding.from_schema_spec(
-                        response_schema
-                    )
+                    structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
                     self.structured_output_tools[structured_tool_info.tool.name] = (
                         structured_tool_info
                     )
@@ -293,9 +280,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         else:
             self._final_state_schema = cast("type[StateT]", AgentState)
 
-    def _handle_structured_response_tool_calls(
-        self, response: AIMessage
-    ) -> Optional[Command]:
+    def _handle_structured_response_tool_calls(self, response: AIMessage) -> Optional[Command]:
         """Handle tool calls that match structured output tools using the tools strategy.
 
         Args:
@@ -321,9 +306,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             return None
 
         if len(structured_tool_calls) > 1:
-            return self._handle_multiple_structured_outputs(
-                response, structured_tool_calls
-            )
+            return self._handle_multiple_structured_outputs(response, structured_tool_calls)
 
         return self._handle_single_structured_output(response, structured_tool_calls[0])
 
@@ -396,12 +379,10 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         except Exception as parse_error:
             exception = StructuredOutputParsingError(tool_call["name"], parse_error)
 
-            should_retry, error_message = self._handle_structured_output_error(
-                exception
-            )
+            should_retry, error_message = self._handle_structured_output_error(exception)
 
             if not should_retry:
-                raise exception
+                raise exception from parse_error
 
             return Command(
                 update={
@@ -417,7 +398,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 goto="model",
             )
 
-    def _handle_structured_output_error(
+    def _handle_structured_output_error(  # noqa: PLR0911
         self,
         exception: Exception,
     ) -> tuple[bool, str]:
@@ -425,8 +406,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
         Returns (should_retry, retry_tool_message).
         """
-        assert isinstance(self.response_format, ToolOutput)
-        handle_errors = self.response_format.handle_errors
+        handle_errors = cast("ToolOutput", self.response_format).handle_errors
 
         if handle_errors is False:
             return False, ""
@@ -436,32 +416,24 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             return True, handle_errors
         if isinstance(handle_errors, type) and issubclass(handle_errors, Exception):
             if isinstance(exception, handle_errors):
-                return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(
-                    error=str(exception)
-                )
+                return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
             return False, ""
         if isinstance(handle_errors, tuple):
             if any(isinstance(exception, exc_type) for exc_type in handle_errors):
-                return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(
-                    error=str(exception)
-                )
+                return True, STRUCTURED_OUTPUT_ERROR_TEMPLATE.format(error=str(exception))
             return False, ""
         if callable(handle_errors):
             return True, handle_errors(exception)  # type: ignore[call-arg]
         return False, ""
 
-    def _apply_native_output_binding(
-        self, model: LanguageModelLike
-    ) -> LanguageModelLike:
+    def _apply_native_output_binding(self, model: LanguageModelLike) -> LanguageModelLike:
         """If native output is configured, bind provider-native kwargs onto the model."""
         if not isinstance(self.response_format, NativeOutput):
             return model
         kwargs = self.response_format.to_model_kwargs()
         return model.bind(**kwargs)
 
-    def _handle_structured_response_native(
-        self, response: AIMessage
-    ) -> Optional[Command]:
+    def _handle_structured_response_native(self, response: AIMessage) -> Optional[Command]:
         """If native output is configured and there are no tool calls, parse using NativeOutputBinding."""
         if self.native_output_binding is None:
             return None
@@ -471,17 +443,15 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
         structured_response = self.native_output_binding.parse(response)
 
-        return Command(
-            update={"messages": [response], "structured_response": structured_response}
-        )
+        return Command(update={"messages": [response], "structured_response": structured_response})
 
     def _setup_model(self) -> None:
         """Setup model-related attributes."""
-        self._is_dynamic_model = not isinstance(
-            self.model, (str, Runnable)
-        ) and callable(self.model)
-        self._is_async_dynamic_model = (
-            self._is_dynamic_model and inspect.iscoroutinefunction(self.model)
+        self._is_dynamic_model = not isinstance(self.model, (str, Runnable)) and callable(
+            self.model
+        )
+        self._is_async_dynamic_model = self._is_dynamic_model and inspect.iscoroutinefunction(
+            self.model
         )
 
         if not self._is_dynamic_model:
@@ -493,7 +463,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                     )
                 except ImportError:
                     msg = "Please install langchain (`pip install langchain`) to use '<provider>:<model>' string syntax for `model` parameter."
-                    raise ImportError(msg)
+                    raise ImportError(msg) from None
                 model = init_chat_model(model)
 
             # Collect all tools: regular tools + structured output tools
@@ -532,18 +502,14 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         else:
             self._static_model = None
 
-    def _resolve_model(
-        self, state: StateT, runtime: Runtime[ContextT]
-    ) -> LanguageModelLike:
+    def _resolve_model(self, state: StateT, runtime: Runtime[ContextT]) -> LanguageModelLike:
         """Resolve the model to use, handling both static and dynamic models."""
         if self._is_dynamic_model:
             dynamic_model = self.model(state, runtime)  # type: ignore[operator, arg-type]
             return self._apply_native_output_binding(dynamic_model)  # type: ignore[arg-type]
         return self._static_model
 
-    async def _aresolve_model(
-        self, state: StateT, runtime: Runtime[ContextT]
-    ) -> LanguageModelLike:
+    async def _aresolve_model(self, state: StateT, runtime: Runtime[ContextT]) -> LanguageModelLike:
         """Async resolve the model to use, handling both static and dynamic models."""
         if self._is_async_dynamic_model:
             dynamic_model = cast(
@@ -556,14 +522,12 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             return self._apply_native_output_binding(dynamic_model)  # type: ignore[arg-type]
         return self._static_model
 
-    def create_model_node(self) -> RunnableCallable:
+    def create_model_node(self) -> RunnableCallable:  # noqa: C901
         """Create the 'agent' node that calls the LLM."""
 
         def _get_model_input_state(state: StateT) -> StateT:
             messages = _get_state_value(state, "messages")
-            error_msg = (
-                f"Expected input to call_model to have 'messages' key, but got {state}"
-            )
+            error_msg = f"Expected input to call_model to have 'messages' key, but got {state}"
 
             if messages is None:
                 raise ValueError(error_msg)
@@ -575,28 +539,24 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             ):
                 # we're passing messages under `messages` key, as this
                 # is expected by the prompt
-                state.messages = messages  # type: ignore
+                state.messages = messages
             else:
-                state["messages"] = messages  # type: ignore
+                state["messages"] = messages
             return state
 
         def _are_more_steps_needed(state: StateT, response: BaseMessage) -> bool:
             has_tool_calls = isinstance(response, AIMessage) and response.tool_calls
             all_tools_return_direct = (
-                all(
-                    call["name"] in self._should_return_direct
-                    for call in response.tool_calls
-                )
+                all(call["name"] in self._should_return_direct for call in response.tool_calls)
                 if isinstance(response, AIMessage)
                 else False
             )
             remaining_steps = _get_state_value(state, "remaining_steps", None)
-            if remaining_steps is not None:
-                if (remaining_steps < 1 and all_tools_return_direct) or (
-                    remaining_steps < 2 and has_tool_calls
-                ):
-                    return True
-            return False
+            more_steps_needed = remaining_steps is not None and (
+                (remaining_steps < 1 and all_tools_return_direct)
+                or (remaining_steps < 2 and has_tool_calls)
+            )
+            return cast("bool", more_steps_needed)
 
         def call_model(
             state: StateT, runtime: Runtime[ContextT], config: RunnableConfig
@@ -737,12 +697,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             ):
                 return END
 
-            tool_messages = [
-                m.tool_call_id for m in messages if isinstance(m, ToolMessage)
-            ]
-            last_ai_message = next(
-                m for m in reversed(messages) if isinstance(m, AIMessage)
-            )
+            tool_messages = [m.tool_call_id for m in messages if isinstance(m, ToolMessage)]
+            last_ai_message = next(m for m in reversed(messages) if isinstance(m, AIMessage))
             pending_tool_calls = [
                 c for c in last_ai_message.tool_calls if c["id"] not in tool_messages
             ]
@@ -775,9 +731,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             if (
                 isinstance(m, AIMessage)
                 and m.tool_calls
-                and any(
-                    call["name"] in self._should_return_direct for call in m.tool_calls
-                )
+                and any(call["name"] in self._should_return_direct for call in m.tool_calls)
             ):
                 return END
 
@@ -809,7 +763,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         paths.append(END)
         return paths
 
-    def build(self) -> StateGraph:
+    def build(self) -> StateGraph:  # noqa: PLR0912
         """Build the agent workflow graph (uncompiled)."""
         workflow = StateGraph(
             state_schema=self._final_state_schema,
@@ -877,9 +831,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
 
 def _supports_native_structured_output(
-    model: Union[
-        str, BaseChatModel, SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel]
-    ],
+    model: Union[str, BaseChatModel, SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel]],
 ) -> bool:
     """Check if a model supports native structured output.
 
@@ -893,10 +845,7 @@ def _supports_native_structured_output(
 
     return (
         "grok" in model_name.lower()
-        or any(
-            part in model_name
-            for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"]
-        )
+        or any(part in model_name for part in ["gpt-5", "gpt-4.1", "gpt-oss", "o3-pro", "o3-mini"])
         if model_name
         else False
     )
@@ -1109,9 +1058,7 @@ def create_react_agent(
         model=model,
         tools=tools,
         prompt=prompt,
-        response_format=cast(
-            "Union[ResponseFormat[StructuredResponseT], None]", response_format
-        ),
+        response_format=cast("Union[ResponseFormat[StructuredResponseT], None]", response_format),
         pre_model_hook=pre_model_hook,
         post_model_hook=post_model_hook,
         state_schema=state_schema,

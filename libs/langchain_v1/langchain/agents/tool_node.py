@@ -110,10 +110,7 @@ def msg_content_output(output: Any) -> Union[str, list[dict]]:
     """
     if isinstance(output, str) or (
         isinstance(output, list)
-        and all(
-            isinstance(x, dict) and x.get("type") in TOOL_MESSAGE_BLOCK_TYPES
-            for x in output
-        )
+        and all(isinstance(x, dict) and x.get("type") in TOOL_MESSAGE_BLOCK_TYPES for x in output)
     ):
         return output
     # Technically a list of strings is also valid message content, but it's
@@ -122,7 +119,7 @@ def msg_content_output(output: Any) -> Union[str, list[dict]]:
     # any existing ToolNode usage.
     try:
         return json.dumps(output, ensure_ascii=False)
-    except Exception:
+    except Exception:  # noqa: BLE001
         return str(output)
 
 
@@ -130,8 +127,18 @@ class ToolInvocationError(Exception):
     """Exception raised when a tool invocation fails due to invalid arguments."""
 
     def __init__(
-        self, tool_name: str, error: Exception, tool_kwargs: dict[str, Any]
+        self,
+        tool_name: str,
+        error: ValidationError,
+        tool_kwargs: dict[str, Any],
     ) -> None:
+        """Initialize the ToolInvocationError.
+
+        Args:
+            tool_name: The name of the tool that failed.
+            error: The exception that occurred during tool invocation.
+            tool_kwargs: The keyword arguments passed to the tool.
+        """
         self.message = TOOL_INVOCATION_ERROR_TEMPLATE.format(
             tool_name=tool_name, tool_kwargs=tool_kwargs, error=error
         )
@@ -197,7 +204,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     return content
 
 
@@ -424,9 +431,7 @@ class ToolNode(RunnableCallable):
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
         with get_executor_for_config(config) as executor:
-            outputs = [
-                *executor.map(self._run_one, tool_calls, input_types, config_list)
-            ]
+            outputs = [*executor.map(self._run_one, tool_calls, input_types, config_list)]
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -461,9 +466,7 @@ class ToolNode(RunnableCallable):
 
         # LangGraph will automatically handle list of Command and non-command node
         # updates
-        combined_outputs: list[
-            Command | list[ToolMessage] | dict[str, list[ToolMessage]]
-        ] = []
+        combined_outputs: list[Command | list[ToolMessage] | dict[str, list[ToolMessage]]] = []
 
         # combine all parent commands with goto into a single parent command
         parent_command: Optional[Command] = None
@@ -509,7 +512,7 @@ class ToolNode(RunnableCallable):
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"])
+                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -544,9 +547,7 @@ class ToolNode(RunnableCallable):
         if isinstance(response, Command):
             return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
-            response.content = cast(
-                "Union[str, list]", msg_content_output(response.content)
-            )
+            response.content = cast("Union[str, list]", msg_content_output(response.content))
             return response
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
@@ -568,7 +569,7 @@ class ToolNode(RunnableCallable):
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"])
+                raise ToolInvocationError(call["name"], exc, call["args"]) from None
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -604,9 +605,7 @@ class ToolNode(RunnableCallable):
         if isinstance(response, Command):
             return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
-            response.content = cast(
-                "Union[str, list]", msg_content_output(response.content)
-            )
+            response.content = cast("Union[str, list]", msg_content_output(response.content))
             return response
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
@@ -628,9 +627,7 @@ class ToolNode(RunnableCallable):
                 return tool_calls, input_type
             input_type = "list"
             messages = input
-        elif isinstance(input, dict) and (
-            messages := input.get(self._messages_key, [])
-        ):
+        elif isinstance(input, dict) and (messages := input.get(self._messages_key, [])):
             input_type = "dict"
         elif messages := getattr(input, self._messages_key, []):
             # Assume dataclass-like state that can coerce from dict
@@ -640,16 +637,13 @@ class ToolNode(RunnableCallable):
             raise ValueError(msg)
 
         try:
-            latest_ai_message = next(
-                m for m in reversed(messages) if isinstance(m, AIMessage)
-            )
+            latest_ai_message = next(m for m in reversed(messages) if isinstance(m, AIMessage))
         except StopIteration:
             msg = "No AIMessage found in input"
-            raise ValueError(msg)
+            raise ValueError(msg) from None
 
         tool_calls = [
-            self.inject_tool_args(call, input, store)
-            for call in latest_ai_message.tool_calls
+            self.inject_tool_args(call, input, store) for call in latest_ai_message.tool_calls
         ]
         return tool_calls, input_type
 
@@ -709,9 +703,7 @@ class ToolNode(RunnableCallable):
         }
         return tool_call
 
-    def _inject_store(
-        self, tool_call: ToolCall, store: Optional[BaseStore]
-    ) -> ToolCall:
+    def _inject_store(self, tool_call: ToolCall, store: Optional[BaseStore]) -> ToolCall:
         store_arg = self._tool_to_store_arg[tool_call["name"]]
         if not store_arg:
             return tool_call
@@ -801,7 +793,8 @@ class ToolNode(RunnableCallable):
             # Input type is list when ToolNode is invoked with a list input (e.g. [AIMessage(..., tool_calls=[...])])
             if input_type != "list":
                 msg = (
-                    f"Tools can provide a list of messages in Command.update only when using list of messages as ToolNode input, "
+                    f"Tools can provide a list of messages in Command.update only when "
+                    f"using list of messages as ToolNode input, "
                     f"got: {command.update} for tool '{call['name']}'"
                 )
                 raise ValueError(msg)
@@ -836,9 +829,10 @@ class ToolNode(RunnableCallable):
                 else '`Command(update=[ToolMessage("Success", tool_call_id=tool_call_id), ...], ...)`'
             )
             msg = (
-                f"Expected to have a matching ToolMessage in Command.update for tool '{call['name']}', "
-                f"got: {messages_update}. Every tool call (LLM requesting to call a tool) in the message history "
-                "MUST have a corresponding ToolMessage. "
+                f"Expected to have a matching ToolMessage in Command.update for tool "
+                f"'{call['name']}', got: {messages_update}. Every tool call (LLM "
+                "requesting to call a tool) in the message history MUST have a "
+                "corresponding ToolMessage. "
                 f"You can fix it by modifying the tool to return {example_update}."
             )
             raise ValueError(msg)
@@ -863,7 +857,7 @@ def tools_condition(
         state: The current graph state to examine for tool calls. Supported formats:
             - Dictionary containing a messages key (for StateGraph)
             - BaseModel instance with a messages attribute
-        messages_key: The key or attribute name containing the message list in the state.
+        messages_key: The key or attribute name with the messages list in the state.
             This allows customization for graphs using different state schemas.
             Defaults to "messages".
 
@@ -967,8 +961,12 @@ class InjectedState(InjectedToolArg):
 
         node = ToolNode([state_tool, foo_tool])
 
-        tool_call1 = {"name": "state_tool", "args": {"x": 1}, "id": "1", "type": "tool_call"}
-        tool_call2 = {"name": "foo_tool", "args": {"x": 1}, "id": "2", "type": "tool_call"}
+        tool_call1 = {
+            "name": "state_tool", "args": {"x": 1}, "id": "1", "type": "tool_call"
+        }
+        tool_call2 = {
+            "name": "foo_tool", "args": {"x": 1}, "id": "2", "type": "tool_call"
+        }
         state = {
             "messages": [AIMessage("", tool_calls=[tool_call1, tool_call2])],
             "foo": "bar",
@@ -978,7 +976,9 @@ class InjectedState(InjectedToolArg):
 
         ```pycon
         [
-            ToolMessage(content='not enough messages', name='state_tool', tool_call_id='1'),
+            ToolMessage(
+                content='not enough messages', name='state_tool', tool_call_id='1'
+            ),
             ToolMessage(content='bar2', name='foo_tool', tool_call_id='2')
         ]
         ```
@@ -994,6 +994,7 @@ class InjectedState(InjectedToolArg):
     """
 
     def __init__(self, field: Optional[str] = None) -> None:
+        """Initialize the InjectedState annotation."""
         self.field = field
 
 
@@ -1057,10 +1058,14 @@ class InjectedStore(InjectedToolArg):
 
         ```python
         # First session
-        result1 = graph.invoke({"messages": [HumanMessage("Save my favorite color as blue")]})
+        result1 = graph.invoke(
+            {"messages": [HumanMessage("Save my favorite color as blue")]}
+        )
 
         # Later session - data persists
-        result2 = graph.invoke({"messages": [HumanMessage("What's my favorite color?")]})
+        result2 = graph.invoke(
+            {"messages": [HumanMessage("What's my favorite color?")]}
+        )
         ```
 
     Note:
@@ -1074,7 +1079,8 @@ class InjectedStore(InjectedToolArg):
 
 
 def _is_injection(
-    type_arg: Any, injection_type: type[Union[InjectedState, InjectedStore]]
+    type_arg: Any,
+    injection_type: type[Union[InjectedState, InjectedStore]],
 ) -> bool:
     """Check if a type argument represents an injection annotation.
 
@@ -1118,9 +1124,7 @@ def _get_state_args(tool: BaseTool) -> dict[str, Optional[str]]:
 
     for name, type_ in get_all_basemodel_annotations(full_schema).items():
         injections = [
-            type_arg
-            for type_arg in get_args(type_)
-            if _is_injection(type_arg, InjectedState)
+            type_arg for type_arg in get_args(type_) if _is_injection(type_arg, InjectedState)
         ]
         if len(injections) > 1:
             msg = (
@@ -1159,9 +1163,7 @@ def _get_store_arg(tool: BaseTool) -> Optional[str]:
     full_schema = tool.get_input_schema()
     for name, type_ in get_all_basemodel_annotations(full_schema).items():
         injections = [
-            type_arg
-            for type_arg in get_args(type_)
-            if _is_injection(type_arg, InjectedStore)
+            type_arg for type_arg in get_args(type_) if _is_injection(type_arg, InjectedStore)
         ]
         if len(injections) > 1:
             msg = (

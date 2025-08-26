@@ -60,9 +60,7 @@ def _make_tool(fn, *, name: str, description: str):
     return {"tool": _wrapped, "mock": mock}
 
 
-@pytest.mark.skipif(
-    skip_openai_integration_tests, reason="OpenAI integration tests are disabled."
-)
+@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 @pytest.mark.parametrize("case", TEST_CASES, ids=[c.name for c in TEST_CASES])
 def test_responses_integration_matrix(case: TestCase) -> None:
     if case.name == "asking for information that does not fit into the response format":
@@ -131,10 +129,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
         result = agent.invoke({"messages": [HumanMessage(assertion.prompt)]})
 
         # Count tool calls
-        assert (
-            role_tool["mock"].call_count
-            == assertion.tools_with_expected_calls.get_employee_role
-        )
+        assert role_tool["mock"].call_count == assertion.tools_with_expected_calls.get_employee_role
         assert (
             dept_tool["mock"].call_count
             == assertion.tools_with_expected_calls.get_employee_department

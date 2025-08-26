@@ -124,9 +124,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=WeatherBaseModel
-        )
+        agent = create_react_agent(model, [get_weather], response_format=WeatherBaseModel)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
@@ -147,9 +145,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=WeatherDataclass
-        )
+        agent = create_react_agent(model, [get_weather], response_format=WeatherDataclass)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DATACLASS
@@ -170,9 +166,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=WeatherTypedDict
-        )
+        agent = create_react_agent(model, [get_weather], response_format=WeatherTypedDict)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
@@ -193,9 +187,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=weather_json_schema
-        )
+        agent = create_react_agent(model, [get_weather], response_format=weather_json_schema)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
@@ -313,9 +305,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [get_weather, get_location],
-            response_format=ToolOutput(
-                {"oneOf": [weather_json_schema, location_json_schema]}
-            ),
+            response_format=ToolOutput({"oneOf": [weather_json_schema, location_json_schema]}),
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -339,13 +329,9 @@ class TestResponseFormatAsToolOutput:
         agent_location = create_react_agent(
             model_location,
             [get_weather, get_location],
-            response_format=ToolOutput(
-                {"oneOf": [weather_json_schema, location_json_schema]}
-            ),
+            response_format=ToolOutput({"oneOf": [weather_json_schema, location_json_schema]}),
         )
-        response_location = agent_location.invoke(
-            {"messages": [HumanMessage("Where am I?")]}
-        )
+        response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
         assert response_location["structured_response"] == EXPECTED_LOCATION_DICT
         assert len(response_location["messages"]) == 5
@@ -397,9 +383,7 @@ class TestResponseFormatAsToolOutput:
             [get_weather, get_location],
             response_format=ToolOutput(Union[WeatherBaseModel, LocationResponse]),
         )
-        response_location = agent_location.invoke(
-            {"messages": [HumanMessage("Where am I?")]}
-        )
+        response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
         assert response_location["structured_response"] == EXPECTED_LOCATION
         assert len(response_location["messages"]) == 5
@@ -588,14 +572,8 @@ class TestResponseFormatAsToolOutput:
 
         # HumanMessage, AIMessage, ToolMessage, ToolMessage, AI, ToolMessage
         assert len(response["messages"]) == 6
-        assert (
-            response["messages"][2].content
-            == "Custom error: Multiple outputs not allowed"
-        )
-        assert (
-            response["messages"][3].content
-            == "Custom error: Multiple outputs not allowed"
-        )
+        assert response["messages"][2].content == "Custom error: Multiple outputs not allowed"
+        assert response["messages"][3].content == "Custom error: Multiple outputs not allowed"
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
     def test_retry_with_custom_string_message(self) -> None:
@@ -742,9 +720,7 @@ def test_union_of_types() -> None:
     assert len(response["messages"]) == 5
 
 
-@pytest.mark.skipif(
-    skip_openai_integration_tests, reason="OpenAI integration tests are disabled."
-)
+@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 def test_inference_to_native_output() -> None:
     """Test that native output is inferred when a model supports it."""
     model = ChatOpenAI(model="gpt-5")
@@ -769,9 +745,7 @@ def test_inference_to_native_output() -> None:
     ]
 
 
-@pytest.mark.skipif(
-    skip_openai_integration_tests, reason="OpenAI integration tests are disabled."
-)
+@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
 def test_inference_to_tool_output() -> None:
     """Test that tool output is inferred when a model supports it."""
     model = ChatOpenAI(model="gpt-4")

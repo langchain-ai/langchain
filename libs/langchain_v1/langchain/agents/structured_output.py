@@ -46,6 +46,7 @@ class MultipleStructuredOutputsError(StructuredOutputError):
     """Raised when model returns multiple structured output tool calls when only one is expected."""
 
     def __init__(self, tool_names: list[str]) -> None:
+        """Initialize MultipleStructuredOutputsError."""
         self.tool_names = tool_names
         super().__init__(
             f"Model incorrectly returned multiple structured responses ({', '.join(tool_names)}) when only one is expected."
@@ -56,6 +57,7 @@ class StructuredOutputParsingError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
     def __init__(self, tool_name: str, parse_error: Exception) -> None:
+        """Initialize StructuredOutputParsingError."""
         self.tool_name = tool_name
         self.parse_error = parse_error
         super().__init__(
@@ -70,6 +72,7 @@ def _parse_with_schema(
 
     Args:
         schema: The schema type (Pydantic model, dataclass, or TypedDict)
+        schema_kind: The type of the schema (pydantic, dataclass, typeddict, or json_schema)
         data: The data to parse
 
     Returns:
@@ -131,13 +134,9 @@ class _SchemaSpec(Generic[SchemaT]):
         if name:
             self.name = name
         elif isinstance(schema, dict):
-            self.name = str(
-                schema.get("title", f"response_format_{str(uuid.uuid4())[:4]}")
-            )
+            self.name = str(schema.get("title", f"response_format_{str(uuid.uuid4())[:4]}"))
         else:
-            self.name = str(
-                getattr(schema, "__name__", f"response_format_{str(uuid.uuid4())[:4]}")
-            )
+            self.name = str(getattr(schema, "__name__", f"response_format_{str(uuid.uuid4())[:4]}"))
 
         self.description = description or (
             schema.get("description", "")
@@ -201,18 +200,20 @@ class ToolOutput(Generic[SchemaT]):
         self,
         schema: type[SchemaT],
         tool_message_content: str | None = None,
-        handle_errors: Union[
-            bool,
-            str,
-            type[Exception],
-            tuple[type[Exception], ...],
-            Callable[[Exception], str],
-        ] = True,
+        handle_errors: bool
+        | str
+        | type[Exception]
+        | tuple[type[Exception], ...]
+        | Callable[[Exception], str]
+        | None = None,
     ) -> None:
         """Initialize ToolOutput with schemas, tool message content, and error handling strategy."""
         self.schema = schema
         self.tool_message_content = tool_message_content
-        self.handle_errors = handle_errors
+        if handle_errors is None:
+            self.handle_errors = True
+        else:
+            self.handle_errors = handle_errors
 
         def _iter_variants(schema: Any) -> Iterable[Any]:
             """Yield leaf variants from Union and JSON Schema oneOf."""
@@ -245,10 +246,12 @@ class NativeOutput(Generic[SchemaT]):
         self,
         schema: type[SchemaT],
     ) -> None:
+        """Initialize NativeOutput with schema."""
         self.schema = schema
         self.schema_spec = _SchemaSpec(schema)
 
     def to_model_kwargs(self) -> dict[str, Any]:
+        """Convert the schema to the appropriate format for the model provider."""
         # OpenAI:
         # - see https://platform.openai.com/docs/guides/structured-outputs
         response_format = {

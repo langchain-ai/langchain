@@ -190,9 +190,7 @@ class _MapReduceExtractor(Generic[ContextT]):
         if isinstance(model, str):
             model = init_chat_model(model)
 
-        self.model = (
-            model.with_structured_output(response_format) if response_format else model
-        )
+        self.model = model.with_structured_output(response_format) if response_format else model
         self.map_prompt = map_prompt
         self.reduce_prompt = reduce_prompt
         self.reduce = reduce
@@ -342,9 +340,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             config: RunnableConfig,
         ) -> dict[str, list[ExtractionResult]]:
             prompt = await self._aget_map_prompt(state, runtime)
-            response = cast(
-                "AIMessage", await self.model.ainvoke(prompt, config=config)
-            )
+            response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
             result = response if self.response_format else response.text()
             extraction_result: ExtractionResult = {
                 "indexes": state["indexes"],
@@ -375,9 +371,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             config: RunnableConfig,
         ) -> MapReduceNodeUpdate:
             prompt = await self._aget_reduce_prompt(state, runtime)
-            response = cast(
-                "AIMessage", await self.model.ainvoke(prompt, config=config)
-            )
+            response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
             result = response if self.response_format else response.text()
             return {"result": result}
 

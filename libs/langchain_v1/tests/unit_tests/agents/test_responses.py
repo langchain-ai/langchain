@@ -72,9 +72,7 @@ class TestOutputToolBinding:
 
     def test_from_schema_spec_with_custom_description(self) -> None:
         """Test OutputToolBinding creation with custom description."""
-        schema_spec = _SchemaSpec(
-            schema=_TestModel, description="Custom tool description"
-        )
+        schema_spec = _SchemaSpec(schema=_TestModel, description="Custom tool description")
         tool_binding = OutputToolBinding.from_schema_spec(schema_spec)
 
         assert tool_binding.tool.description == "Custom tool description"
@@ -86,9 +84,7 @@ class TestOutputToolBinding:
 
         assert tool_binding.tool.description == "Custom model with a custom docstring."
 
-    @pytest.mark.skip(
-        reason="Need to fix bug in langchain-core for inheritance of doc-strings."
-    )
+    @pytest.mark.skip(reason="Need to fix bug in langchain-core for inheritance of doc-strings.")
     def test_from_schema_spec_empty_docstring(self) -> None:
         """Test OutputToolBinding creation with model that has default docstring."""
 
@@ -136,13 +132,9 @@ class TestEdgeCases:
         strategy = ToolOutput(EmptyDocModel)
         assert len(strategy.schema_specs) == 1
 
-    @pytest.mark.skip(
-        reason="Need to fix bug in langchain-core for inheritance of doc-strings."
-    )
+    @pytest.mark.skip(reason="Need to fix bug in langchain-core for inheritance of doc-strings.")
     def test_base_model_doc_constant(self) -> None:
         """Test that BASE_MODEL_DOC constant is set correctly."""
         binding = OutputToolBinding.from_schema_spec(_SchemaSpec(EmptyDocModel))
         assert binding.tool.name == "EmptyDocModel"
-        assert (
-            binding.tool.description[:5] == ""
-        )  # Should be empty for default docstring
+        assert binding.tool.description[:5] == ""  # Should be empty for default docstring

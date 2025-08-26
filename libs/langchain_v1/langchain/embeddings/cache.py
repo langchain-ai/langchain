@@ -181,9 +181,7 @@ class CacheBackedEmbeddings(Embeddings):
         vectors: list[Union[list[float], None]] = self.document_embedding_store.mget(
             texts,
         )
-        all_missing_indices: list[int] = [
-            i for i, vector in enumerate(vectors) if vector is None
-        ]
+        all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
 
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
@@ -212,12 +210,8 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: list[
-            Union[list[float], None]
-        ] = await self.document_embedding_store.amget(texts)
-        all_missing_indices: list[int] = [
-            i for i, vector in enumerate(vectors) if vector is None
-        ]
+        vectors: list[Union[list[float], None]] = await self.document_embedding_store.amget(texts)
+        all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
 
         # batch_iterate supports None batch_size which returns all elements at once
         # as a single batch.
