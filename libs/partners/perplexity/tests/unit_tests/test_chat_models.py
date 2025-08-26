@@ -251,3 +251,123 @@ def test_perplexity_stream_includes_citations_and_search_results(
     }
 
     patcher.assert_called_once()
+
+
+def test_perplexity_structured_output_preserves_citations(
+    mocker: MockerFixture,
+) -> None:
+    """Test that structured output preserves citations in the response."""
+    from pydantic import BaseModel, Field
+
+    class OutputWithCitations(BaseModel):
+        """Test model with citations field."""
+
+        result: str = Field(description="The result text")
+        citations: list[str] = Field(default_factory=list, description="Citations")
+
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    # Mock the API response with proper attributes for citations
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(
+            message=MagicMock(content='{"result": "Paris is the capital of France"}')
+        )
+    ]
+    mock_response.model = "test"
+
+    # Set up mock to have citations as an attribute
+    mock_response.citations = ["example.com", "example2.com"]
+
+    # Mock hasattr to return True for our mock_response attributes
+    def custom_hasattr(obj: Any, name: str) -> bool:
+        if obj is mock_response and name == "citations":
+            return True
+        return (
+            object.__getattribute__(obj, "__dict__").get(name) is not None
+            if hasattr(obj, "__dict__")
+            else False
+        )
+
+    with mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_response
+    ):
+        # Test with model that has citations field
+        structured_llm = llm.with_structured_output(OutputWithCitations)
+        result = structured_llm.invoke("what is the capital of France?")
+
+        # Verify the result has citations
+        assert isinstance(result, OutputWithCitations)
+        assert result.result == "Paris is the capital of France"
+        assert result.citations == ["example.com", "example2.com"]
+
+
+def test_perplexity_structured_output_dict_preserves_citations(
+    mocker: MockerFixture,
+) -> None:
+    """Test that structured output with dict schema preserves citations."""
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    # Mock the API response
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(
+            message=MagicMock(content='{"result": "Paris is the capital of France"}')
+        )
+    ]
+    mock_response.model = "test"
+    mock_response.citations = ["example.com", "example2.com"]
+
+    with mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_response
+    ):
+        # Test with dict output (JSON mode) - requires title for OpenAI function format
+        structured_llm_json = llm.with_structured_output(
+            {
+                "title": "Output",
+                "type": "object",
+                "properties": {"result": {"type": "string"}},
+            }
+        )
+        result_json = structured_llm_json.invoke("what is the capital of France?")
+
+        # Verify the result is a dict with citations
+        assert isinstance(result_json, dict)
+        assert result_json["result"] == "Paris is the capital of France"
+        assert result_json.get("citations") == ["example.com", "example2.com"]
+
+
+def test_perplexity_structured_output_without_citations_field(
+    mocker: MockerFixture,
+) -> None:
+    """Test that structured output works when model doesn't have citations field."""
+    from pydantic import BaseModel, Field
+
+    class SimpleOutput(BaseModel):
+        """Test model without citations field."""
+
+        result: str = Field(description="The result text")
+
+    llm = ChatPerplexity(model="test", timeout=30, verbose=True)
+
+    # Mock the API response
+    mock_response = MagicMock()
+    mock_response.choices = [
+        MagicMock(
+            message=MagicMock(content='{"result": "Paris is the capital of France"}')
+        )
+    ]
+    mock_response.model = "test"
+    mock_response.citations = ["example.com", "example2.com"]
+
+    with mocker.patch.object(
+        llm.client.chat.completions, "create", return_value=mock_response
+    ):
+        # Test with model that doesn't have citations field
+        structured_llm = llm.with_structured_output(SimpleOutput)
+        result = structured_llm.invoke("what is the capital of France?")
+
+        # Verify the result doesn't have citations (model doesn't have field)
+        assert isinstance(result, SimpleOutput)
+        assert result.result == "Paris is the capital of France"
+        assert not hasattr(result, "citations")

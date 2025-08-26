@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.71",
+    "langchain-core>=0.3.71,<1.0.0",
     "openai<2.0.0,>=1.97.1",
 ]
 name = "langchain-perplexity"
@@ -37,7 +37,11 @@ test = [
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = ["ruff<0.13,>=0.12.2"]
-dev = ["langchain-core"]
+dev = [
+    "langchain-core",
+    "pytest>=7.4.4",
+    "pytest-mock>=3.14.0",
+]
 test_integration = [
     "httpx<1.0.0,>=0.27.0",
     "pillow<11.0.0,>=10.3.0",
@@ -70,13 +74,12 @@ skip-magic-trailing-comma = true
 omit = ["tests/*"]
 
 [tool.pytest.ini_options]
-addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_perplexity"
+addopts = "--strict-markers --strict-config --durations=5"
 markers = [
     "requires: mark tests as requiring a specific library",
     "compile: mark placeholder test used to compile integration tests without running them",
     "scheduled: mark tests to run in scheduled testing",
 ]
-asyncio_mode = "auto"
 filterwarnings = [
     "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
 ]
