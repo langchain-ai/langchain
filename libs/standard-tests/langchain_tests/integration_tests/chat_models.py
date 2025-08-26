@@ -1559,7 +1559,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
-        function_args = {"a": "1", "b": "2"}
+        function_args = {"a": 1, "b": 2}
 
         messages_string_content = [
             HumanMessage("What is 1 + 2"),

@@ -32,7 +32,6 @@ from urllib.parse import urlparse
 import certifi
 import openai
 import tiktoken
-from langchain_core._api.deprecation import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -157,7 +156,6 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
-            additional_kwargs["tool_calls"] = raw_tool_calls
             for raw_tool_call in raw_tool_calls:
                 try:
                     tool_calls.append(parse_tool_call(raw_tool_call, return_id=True))
@@ -357,7 +355,6 @@ def _convert_delta_to_message_chunk(
         additional_kwargs["function_call"] = function_call
     tool_call_chunks = []
     if raw_tool_calls := _dict.get("tool_calls"):
-        additional_kwargs["tool_calls"] = raw_tool_calls
         try:
             tool_call_chunks = [
                 tool_call_chunk(
@@ -1174,42 +1171,51 @@ class BaseChatOpenAI(BaseChatModel):
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            try:
-                response = self.root_client.beta.chat.completions.parse(**payload)
-            except openai.BadRequestError as e:
-                _handle_openai_bad_request(e)
-        elif self._use_responses_api(payload):
-            original_schema_obj = kwargs.get("response_format")
-            if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = self.root_client.responses.parse(**payload)
-            else:
-                if self.include_response_headers:
-                    raw_response = self.root_client.with_raw_response.responses.create(
-                        **payload
+        raw_response = None
+        try:
+            if "response_format" in payload:
+                payload.pop("stream")
+                try:
+                    raw_response = (
+                        self.root_client.chat.completions.with_raw_response.parse(
+                            **payload
+                        )
                     )
                     response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
+                except openai.BadRequestError as e:
+                    _handle_openai_bad_request(e)
+            elif self._use_responses_api(payload):
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                    raw_response = self.root_client.responses.with_raw_response.parse(
+                        **payload
+                    )
                 else:
-                    response = self.root_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(
-                response,
-                schema=original_schema_obj,
-                metadata=generation_info,
-                output_version=self.output_version,
-            )
-        elif self.include_response_headers:
-            raw_response = self.client.with_raw_response.create(**payload)
-            response = raw_response.parse()
+                    raw_response = self.root_client.responses.with_raw_response.create(
+                        **payload
+                    )
+                response = raw_response.parse()
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            else:
+                raw_response = self.client.with_raw_response.create(**payload)
+                response = raw_response.parse()
+        except Exception as e:
+            if raw_response is not None and hasattr(raw_response, "http_response"):
+                e.response = raw_response.http_response  # type: ignore[attr-defined]
+            raise e
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
-        else:
-            response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
 
     def _use_responses_api(self, payload: dict) -> bool:
@@ -1413,46 +1419,55 @@ class BaseChatOpenAI(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            try:
-                response = await self.root_async_client.beta.chat.completions.parse(
-                    **payload
-                )
-            except openai.BadRequestError as e:
-                _handle_openai_bad_request(e)
-        elif self._use_responses_api(payload):
-            original_schema_obj = kwargs.get("response_format")
-            if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = await self.root_async_client.responses.parse(**payload)
-            else:
-                if self.include_response_headers:
+        raw_response = None
+        try:
+            if "response_format" in payload:
+                payload.pop("stream")
+                try:
+                    raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
+                        **payload
+                    )
+                    response = raw_response.parse()
+                except openai.BadRequestError as e:
+                    _handle_openai_bad_request(e)
+            elif self._use_responses_api(payload):
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = (
-                        await self.root_async_client.with_raw_response.responses.create(
+                        await self.root_async_client.responses.with_raw_response.parse(
                             **payload
                         )
                     )
-                    response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
                 else:
-                    response = await self.root_async_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(
-                response,
-                schema=original_schema_obj,
-                metadata=generation_info,
-                output_version=self.output_version,
-            )
-        elif self.include_response_headers:
-            raw_response = await self.async_client.with_raw_response.create(**payload)
-            response = raw_response.parse()
+                    raw_response = (
+                        await self.root_async_client.responses.with_raw_response.create(
+                            **payload
+                        )
+                    )
+                response = raw_response.parse()
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            else:
+                raw_response = await self.async_client.with_raw_response.create(
+                    **payload
+                )
+                response = raw_response.parse()
+        except Exception as e:
+            if raw_response is not None and hasattr(raw_response, "http_response"):
+                e.response = raw_response.http_response  # type: ignore[attr-defined]
+            raise e
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
-        else:
-            response = await self.async_client.create(**payload)
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
@@ -1636,65 +1651,6 @@ class BaseChatOpenAI(BaseChatModel):
         # every reply is primed with <im_start>assistant
         num_tokens += 3
         return num_tokens
-
-    @deprecated(
-        since="0.2.1",
-        alternative="langchain_openai.chat_models.base.ChatOpenAI.bind_tools",
-        removal="1.0.0",
-    )
-    def bind_functions(
-        self,
-        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model.
-
-        Assumes model is compatible with OpenAI function-calling API.
-
-        .. note::
-            Using ``bind_tools()`` is recommended instead, as the ``functions`` and
-            ``function_call`` request parameters are officially marked as deprecated by
-            OpenAI.
-
-        Args:
-            functions: A list of function definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, or callable. Pydantic
-                models and callables will be automatically converted to
-                their schema dictionary representation.
-            function_call: Which function to require the model to call.
-                Must be the name of the single provided function or
-                ``'auto'`` to automatically determine which function to call
-                (if any).
-            **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
-        """
-
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                raise ValueError(
-                    "When specifying `function_call`, you must provide exactly one "
-                    "function."
-                )
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                raise ValueError(
-                    f"Function call {function_call} was specified, but the only "
-                    f"provided function was {formatted_functions[0]['name']}."
-                )
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(functions=formatted_functions, **kwargs)
 
     def bind_tools(
         self,
