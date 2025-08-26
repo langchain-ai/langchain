@@ -405,7 +405,7 @@ class _MapReduceExtractor(Generic[ContextT]):
         # Add-conditional edges doesn't explicitly type Send
         builder.add_conditional_edges(
             "continue_to_map",
-            self.continue_to_map,  # type: ignore[arg-type]
+            self.continue_to_map,
             ["map_process"],
         )
 
@@ -416,7 +416,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             builder.add_edge("map_process", "reduce_process")
             builder.add_edge("reduce_process", END)
         else:
-            reduce_node = cast("StateNode", self.reduce)
+            reduce_node = self.reduce
             # The type is ignored here. Requires parameterizing with generics.
             builder.add_node("reduce_process", reduce_node)  # type: ignore[arg-type]
             builder.add_edge("map_process", "reduce_process")
