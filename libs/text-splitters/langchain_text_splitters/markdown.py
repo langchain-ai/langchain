@@ -414,7 +414,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
         self._complete_chunk_doc()
         # I don't see why `return_each_line` is a necessary feature of this splitter.
-        # It's easy enough to to do outside of the class and the caller can have more
+        # It's easy enough to do outside of the class and the caller can have more
         # control over it.
         if self.return_each_line:
             return [
