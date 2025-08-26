@@ -112,6 +112,10 @@ from langchain_openai.chat_models._compat import (
 )
 
 if TYPE_CHECKING:
+    from langchain_core.load.serializable import (
+        SerializedConstructor,
+        SerializedNotImplemented,
+    )
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -710,33 +714,14 @@ class BaseChatOpenAI(BaseChatModel):
         values = _build_model_kwargs(values, all_required_field_names)
         return values
 
-    @model_validator(mode="after")
-    def _maybe_enable_responses(self) -> Self:
-        """Additional check to see if we should route to the Responses API.
-
-        This is added for backwards compatibility: prior to 1.0, ``output_version``
-        defaulted to ``"v0"`` and ``output_version="responses/v1"`` would engage the
-        Responses API.
-
-        In 1.0, the default ``output_version`` was updated to ``"responses/v1"``, so
-        here we ensure that we continue to route to the Responses API if that version
-        is specified explicitly.
-        """
-        if (
-            "output_version" in self.model_fields_set
-            and self.output_version == "responses/v1"
-            and self.use_responses_api is None
-        ):
-            self.use_responses_api = True
-        return self
-
-    def to_json(self):
-        """Exclude ``output_version`` if it has default, to accommodate
-        ``_maybe_enable_responses`` if we serialize and deserialize.
+    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
+        """Exclude ``output_version`` if it has default, so that on deserialization it
+        is not explicitly set (which enables Responses API for backward compat).
         """
         result = super().to_json()
         if (
             isinstance(result, dict)
+            and result["type"] == "constructor"
             and "kwargs" in result
             and "output_version" in result["kwargs"]
             and "output_version" not in self.model_fields_set
@@ -1217,6 +1202,12 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
+        elif (
+            "output_version" in self.model_fields_set
+            and self.output_version == "responses/v1"
+        ):
+            # output_version="responses/v1" explicitly set
+            return True
         elif self.include is not None:
             return True
         elif self.reasoning is not None:
