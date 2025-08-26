@@ -145,7 +145,7 @@ def test_configurable() -> None:
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
-            "output_version": "v0",
+            "output_version": None,
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
@@ -277,7 +277,7 @@ def test_configurable_with_default() -> None:
             "model_kwargs": {},
             "streaming": False,
             "stream_usage": True,
-            "output_version": "v0",
+            "output_version": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

@@ -706,7 +706,9 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: str = "v0"
+    output_version: Optional[str] = Field(
+        default_factory=from_env("LC_OUTPUT_VERSION", default=None)
+    )
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -3938,11 +3940,17 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: str = "v0",
+    output_version: Optional[str] = None,
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
+
+    if output_version is None:
+        # Sentinel value of None lets us know if output_version is set explicitly.
+        # Explicitly setting `output_version="responses/v1"` separately enables the
+        # Responses API.
+        output_version = "v0"
 
     response_metadata = {
         k: v
@@ -4103,7 +4111,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: str = "v0",
+    output_version: Optional[str] = None,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -4149,6 +4157,12 @@ def _convert_responses_chunk_to_generation_chunk(
                 current_index += 1
             current_sub_index = sub_idx
         current_output_index = output_idx
+
+    if output_version is None:
+        # Sentinel value of None lets us know if output_version is set explicitly.
+        # Explicitly setting `output_version="responses/v1"` separately enables the
+        # Responses API.
+        output_version = "v0"
 
     content = []
     tool_call_chunks: list = []
