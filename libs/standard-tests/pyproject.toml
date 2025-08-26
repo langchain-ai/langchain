@@ -9,7 +9,7 @@ requires-python = ">=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.63",
     "pytest<9,>=7",
-    "pytest-asyncio<2,>=1",
+    "pytest-asyncio<2,>=0.20",
     "httpx<1,>=0.28.1",
     "syrupy<5,>=4",
     "pytest-socket<1,>=0.7.0",
