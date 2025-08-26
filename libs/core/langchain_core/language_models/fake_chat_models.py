@@ -322,7 +322,8 @@ class GenericFakeChatModel(BaseChatModel):
                                         id=message.id,
                                         content="",
                                         additional_kwargs={
-                                            "function_call": {fkey: fvalue_chunk}
+                                            "function_call": {fkey: fvalue_chunk},
+                                            "output_version": "v0",
                                         },
                                     )
                                 )
@@ -337,7 +338,10 @@ class GenericFakeChatModel(BaseChatModel):
                                 message=AIMessageChunk(
                                     id=message.id,
                                     content="",
-                                    additional_kwargs={"function_call": {fkey: fvalue}},
+                                    additional_kwargs={
+                                        "function_call": {fkey: fvalue},
+                                        "output_version": "v0",
+                                    },
                                 )
                             )
                             if run_manager:
@@ -349,7 +353,9 @@ class GenericFakeChatModel(BaseChatModel):
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
-                            id=message.id, content="", additional_kwargs={key: value}
+                            id=message.id,
+                            content="",
+                            additional_kwargs={key: value, "output_version": "v0"},
                         )
                     )
                     if run_manager:
@@ -358,6 +364,14 @@ class GenericFakeChatModel(BaseChatModel):
                             chunk=chunk,  # No token for function call
                         )
                     yield chunk
+
+            # Add a final chunk with chunk_position="last" after all additional_kwargs
+            final_chunk = ChatGenerationChunk(
+                message=AIMessageChunk(id=message.id, content="", chunk_position="last")
+            )
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=final_chunk)
+            yield final_chunk
 
     @property
     def _llm_type(self) -> str:
