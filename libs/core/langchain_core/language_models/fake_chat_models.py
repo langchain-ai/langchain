@@ -247,6 +247,8 @@ class GenericFakeChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         """Top Level call."""
@@ -260,11 +262,17 @@ class GenericFakeChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
         chat_result = self._generate(
-            messages, stop=stop, run_manager=run_manager, **kwargs
+            messages,
+            stop=stop,
+            run_manager=run_manager,
+            output_version=output_version,
+            **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
             msg = (
@@ -303,6 +311,18 @@ class GenericFakeChatModel(BaseChatModel):
                     and not message.additional_kwargs
                 ):
                     chunk.message.chunk_position = "last"
+
+                if output_version == "v1":
+                    from langchain_core.language_models._utils import (
+                        _update_message_content_to_blocks,
+                    )
+
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
+
+                chunk.message.response_metadata = {"output_version": output_version}
+
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
@@ -323,7 +343,6 @@ class GenericFakeChatModel(BaseChatModel):
                                         content="",
                                         additional_kwargs={
                                             "function_call": {fkey: fvalue_chunk},
-                                            "output_version": "v0",
                                         },
                                     )
                                 )
@@ -340,7 +359,6 @@ class GenericFakeChatModel(BaseChatModel):
                                     content="",
                                     additional_kwargs={
                                         "function_call": {fkey: fvalue},
-                                        "output_version": "v0",
                                     },
                                 )
                             )
@@ -355,7 +373,7 @@ class GenericFakeChatModel(BaseChatModel):
                         message=AIMessageChunk(
                             id=message.id,
                             content="",
-                            additional_kwargs={key: value, "output_version": "v0"},
+                            additional_kwargs={key: value},
                         )
                     )
                     if run_manager:

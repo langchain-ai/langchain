@@ -227,24 +227,24 @@ class TestStreamFallback:
 
 
 class TestOutputVersionInMessages:
-    """Test output_version is added to message additional_kwargs."""
+    """Test output_version is added to message response_metadata."""
 
-    def test_output_version_added_to_message_additional_kwargs(
+    def test_output_version_added_to_message_response_metadata(
         self,
         messages: list[BaseMessage],
     ) -> None:
-        """Test that output_version is added to message additional_kwargs."""
+        """Test that output_version is added to message response_metadata."""
         model = OutputVersionTrackingChatModel(
             messages=iter(["test response"]), output_version="v1"
         )
         result = model.invoke(messages, output_version="v2")
-        assert result.additional_kwargs["output_version"] == "v2"
+        assert result.response_metadata["output_version"] == "v2"
 
-    def test_output_version_added_to_stream_message_additional_kwargs(
+    def test_output_version_added_to_stream_message_response_metadata(
         self,
         messages: list[BaseMessage],
     ) -> None:
-        """Test that output_version is added to streamed message additional_kwargs."""
+        """Test that output_version is added to streamed message response_metadata."""
         model = OutputVersionTrackingChatModel(
             messages=iter(["test response"]), output_version="v1"
         )
@@ -255,14 +255,14 @@ class TestOutputVersionInMessages:
         assert len(content_chunks) >= 1  # Should have at least one content chunk
 
         for chunk in content_chunks:
-            assert "output_version" in chunk.additional_kwargs
-            assert chunk.additional_kwargs["output_version"] == "v2"
+            assert "output_version" in chunk.response_metadata
+            assert chunk.response_metadata["output_version"] == "v2"
 
-    async def test_output_version_added_to_astream_message_additional_kwargs(
+    async def test_output_version_added_to_astream_message_response_metadata(
         self,
         messages: list[BaseMessage],
     ) -> None:
-        """Test output_version added to async streamed additional_kwargs."""
+        """Test output_version added to async streamed response_metadata."""
         model = OutputVersionTrackingChatModel(
             messages=iter(["test response"]), output_version="v1"
         )
@@ -273,8 +273,8 @@ class TestOutputVersionInMessages:
         assert len(content_chunks) >= 1  # Should have at least one content chunk
 
         for chunk in content_chunks:
-            assert "output_version" in chunk.additional_kwargs
-            assert chunk.additional_kwargs["output_version"] == "v2"
+            assert "output_version" in chunk.response_metadata
+            assert chunk.response_metadata["output_version"] == "v2"
 
 
 class TestOutputVersionMerging:

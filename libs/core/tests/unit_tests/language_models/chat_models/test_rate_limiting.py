@@ -216,8 +216,8 @@ def test_rate_limit_skips_cache() -> None:
             '[{"lc": 1, "type": "constructor", "id": ["langchain", "schema", '
             '"messages", "HumanMessage"], "kwargs": {"content": "foo", '
             '"type": "human"}}]',
-            "[('_output_version', 'v0'), ('_type', 'generic-fake-chat-model'), "
-            "('stop', None)]",
+            "[('_output_version', 'v0'), ('_output_version_explicit', False), ('_type',"
+            " 'generic-fake-chat-model'), ('stop', None)]",
         )
     ]
 
