@@ -232,7 +232,7 @@ class AIMessage(BaseMessage):
             translator = get_translator(model_provider)
             if translator:
                 try:
-                    return translator["translate_content_chunk"](self)
+                    return translator["translate_content"](self)
                 except NotImplementedError:
                     pass
 

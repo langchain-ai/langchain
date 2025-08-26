@@ -82,6 +82,11 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
         metadata: dict = {}
+        if hasattr(response, "json"):
+            try:
+                metadata["body"] = response.json()
+            except Exception:
+                metadata["body"] = getattr(response, "text", None)
         if hasattr(response, "headers"):
             try:
                 metadata["headers"] = dict(response.headers)
@@ -670,9 +675,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     empty_content: Union[str, list] = (
                         "" if isinstance(chunk.message.content, str) else []
                     )
-                    yield AIMessageChunk(
+                    msg_chunk = AIMessageChunk(
                         content=empty_content, chunk_position="last", id=run_id
                     )
+                    run_manager.on_llm_new_token(
+                        "", chunk=ChatGenerationChunk(message=msg_chunk)
+                    )
+                    yield msg_chunk
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -826,9 +835,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                yield AIMessageChunk(
+                msg_chunk = AIMessageChunk(
                     content=empty_content, chunk_position="last", id=run_id
                 )
+                await run_manager.on_llm_new_token(
+                    "", chunk=ChatGenerationChunk(message=msg_chunk)
+                )
+                yield msg_chunk
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -1324,13 +1337,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                chunks.append(
-                    ChatGenerationChunk(
-                        message=AIMessageChunk(
-                            content=empty_content, chunk_position="last", id=run_id
-                        )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
                     )
                 )
+                if run_manager:
+                    run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
             result = self._generate(
@@ -1458,13 +1472,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                chunks.append(
-                    ChatGenerationChunk(
-                        message=AIMessageChunk(
-                            content=empty_content, chunk_position="last", id=run_id
-                        )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
                     )
                 )
+                if run_manager:
+                    await run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
             result = await self._agenerate(
