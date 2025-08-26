@@ -69,6 +69,25 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 ### 3. Start Llama Stack Server
 
+**Recommended way to run Llama Stack:**
+
+```bash
+# Run Llama Stack with the starter distribution
+uv run --with llama-stack==0.2.18 llama stack build --distro starter --image-type venv --run
+```
+
+**If using Ollama, set the environment variable first:**
+
+```bash
+# Set Ollama URL before starting Llama Stack
+export OLLAMA_URL=http://localhost:11434
+
+# Then run Llama Stack
+uv run --with llama-stack==0.2.18 llama stack build --distro starter --image-type venv --run
+```
+
+**Alternative commands (if needed):**
+
 ```bash
 # With Ollama provider
 llama-stack-run --port 8321 --inference-provider remote::ollama
@@ -263,7 +282,7 @@ from langchain_llamastack import ChatLlamaStack, LlamaStackEmbeddings, LlamaStac
 
 class SafeAI:
     def __init__(self, base_url="http://localhost:8321"):
-self.llm = ChatLlamaStack(
+        self.llm = ChatLlamaStack(
             model="ollama/llama3:8b",
             base_url=base_url,
         )
@@ -547,7 +566,7 @@ python -c "from langchain_llamastack import check_llamastack_connection; print(c
 
 ## 📚 Requirements
 
-- **Python**: 3.8+
+- **Python**: 3.12
 - **Core Dependencies**:
   - `langchain-core>=0.1.0`
   - `httpx>=0.25.0`
