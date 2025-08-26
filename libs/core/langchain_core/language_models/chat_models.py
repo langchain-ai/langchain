@@ -422,18 +422,19 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AIMessage:
-        """Invoke the chat model.
+        """Invoke the model.
 
         Args:
-            input: The input to the chat model.
-            config: The config to use for this run.
-            stop: Stop words to use when generating.
+            input: The model input.
+            config: The config to use for this model run.
+            stop: Stop words to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
                 If None, uses the model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
             The model's response message.
+
         """
         config = ensure_config(config)
 
@@ -469,18 +470,19 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AIMessage:
-        """Asynchronously invoke the chat model.
+        """Asynchronously invoke the model.
 
         Args:
-            input: The input to the chat model.
-            config: The config to use for this run.
-            stop: Stop words to use when generating.
+            input: The model input.
+            config: The config to use for this model run.
+            stop: Stop words to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
                 If None, uses the model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
             The model's response message.
+
         """
         config = ensure_config(config)
 
@@ -551,15 +553,16 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Stream responses from the chat model.
 
         Args:
-            input: The input to the chat model.
-            config: The config to use for this run.
-            stop: Stop words to use when generating.
+            input: The model input.
+            config: The config to use for this model run.
+            stop: Stop words to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
                 If None, uses the model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
             Iterator of message chunks.
+
         """
         effective_output_version = (
             output_version if output_version is not None else self.output_version
@@ -704,18 +707,19 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[AIMessageChunk]:
-        """Asynchronously stream responses from the chat model.
+        """Asynchronously stream responses from the model.
 
         Args:
-            input: The input to the chat model.
-            config: The config to use for this run.
-            stop: Stop words to use when generating.
+            input: The model input.
+            config: The config to use for this model run.
+            stop: Stop words to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
                 If None, uses the model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
-            Async iterator of message chunks.
+            Async Iterator of message chunks.
+
         """
         effective_output_version = (
             output_version if output_version is not None else self.output_version
