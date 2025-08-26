@@ -2905,6 +2905,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         input_message = HumanMessage("What is the weather in San Francisco, CA?")
         tool_call_message = llm_with_tools.invoke([input_message])
         assert isinstance(tool_call_message, AIMessage)
+        content_blocks = tool_call_message.content_blocks
+        assert any(block["type"] == "tool_call" for block in content_blocks)
         tool_calls = tool_call_message.tool_calls
         assert len(tool_calls) == 1
         tool_call = tool_calls[0]
