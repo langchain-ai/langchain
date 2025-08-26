@@ -735,17 +735,22 @@ def test_format_message_content() -> None:
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "image",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "image/png",
-        }
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -753,16 +758,23 @@ def test_format_message_content() -> None:
             "image_url": {"url": "data:image/png;base64,<base64 data>"},
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "file",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
     ]
     expected = [
         {
@@ -773,11 +785,16 @@ def test_format_message_content() -> None:
             },
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
 
 class GenerateUsername(BaseModel):

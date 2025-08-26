@@ -583,9 +583,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     empty_content: Union[str, list] = (
                         "" if isinstance(chunk.message.content, str) else []
                     )
-                    yield AIMessageChunk(
+                    msg_chunk = AIMessageChunk(
                         content=empty_content, chunk_position="last", id=run_id
                     )
+                    run_manager.on_llm_new_token(
+                        "", chunk=ChatGenerationChunk(message=msg_chunk)
+                    )
+                    yield msg_chunk
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -700,9 +704,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                yield AIMessageChunk(
+                msg_chunk = AIMessageChunk(
                     content=empty_content, chunk_position="last", id=run_id
                 )
+                await run_manager.on_llm_new_token(
+                    "", chunk=ChatGenerationChunk(message=msg_chunk)
+                )
+                yield msg_chunk
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -1157,14 +1165,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             yielded = False
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    if self.output_version == "v1":
-                        # Overwrite .content with .content_blocks
-                        chunk.message = _update_message_content_to_blocks(
-                            chunk.message, "v1"
-                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1180,13 +1188,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                chunks.append(
-                    ChatGenerationChunk(
-                        message=AIMessageChunk(
-                            content=empty_content, chunk_position="last", id=run_id
-                        )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
                     )
                 )
+                if run_manager:
+                    run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
             result = self._generate(
@@ -1264,14 +1273,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             yielded = False
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    if self.output_version == "v1":
-                        # Overwrite .content with .content_blocks
-                        chunk.message = _update_message_content_to_blocks(
-                            chunk.message, "v1"
-                        )
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1287,13 +1296,14 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 empty_content: Union[str, list] = (
                     "" if isinstance(chunk.message.content, str) else []
                 )
-                chunks.append(
-                    ChatGenerationChunk(
-                        message=AIMessageChunk(
-                            content=empty_content, chunk_position="last", id=run_id
-                        )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
                     )
                 )
+                if run_manager:
+                    await run_manager.on_llm_new_token("", chunk=chunk)
+                chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
             result = await self._agenerate(
