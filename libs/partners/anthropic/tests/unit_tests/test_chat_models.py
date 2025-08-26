@@ -434,7 +434,7 @@ def function() -> Callable:
             arg1: foo
             arg2: one of 'bar', 'baz'
 
-        """  # noqa: D401
+        """
 
     return dummy_function
 

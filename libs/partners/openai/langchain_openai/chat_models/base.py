@@ -1139,42 +1139,51 @@ class BaseChatOpenAI(BaseChatModel):
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            try:
-                response = self.root_client.beta.chat.completions.parse(**payload)
-            except openai.BadRequestError as e:
-                _handle_openai_bad_request(e)
-        elif self._use_responses_api(payload):
-            original_schema_obj = kwargs.get("response_format")
-            if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = self.root_client.responses.parse(**payload)
-            else:
-                if self.include_response_headers:
-                    raw_response = self.root_client.with_raw_response.responses.create(
-                        **payload
+        raw_response = None
+        try:
+            if "response_format" in payload:
+                payload.pop("stream")
+                try:
+                    raw_response = (
+                        self.root_client.chat.completions.with_raw_response.parse(
+                            **payload
+                        )
                     )
                     response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
+                except openai.BadRequestError as e:
+                    _handle_openai_bad_request(e)
+            elif self._use_responses_api(payload):
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
+                    raw_response = self.root_client.responses.with_raw_response.parse(
+                        **payload
+                    )
                 else:
-                    response = self.root_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(
-                response,
-                schema=original_schema_obj,
-                metadata=generation_info,
-                output_version=self.output_version,
-            )
-        elif self.include_response_headers:
-            raw_response = self.client.with_raw_response.create(**payload)
-            response = raw_response.parse()
+                    raw_response = self.root_client.responses.with_raw_response.create(
+                        **payload
+                    )
+                response = raw_response.parse()
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            else:
+                raw_response = self.client.with_raw_response.create(**payload)
+                response = raw_response.parse()
+        except Exception as e:
+            if raw_response is not None and hasattr(raw_response, "http_response"):
+                e.response = raw_response.http_response  # type: ignore[attr-defined]
+            raise e
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
-        else:
-            response = self.client.create(**payload)
         return self._create_chat_result(response, generation_info)
 
     def _use_responses_api(self, payload: dict) -> bool:
@@ -1372,46 +1381,55 @@ class BaseChatOpenAI(BaseChatModel):
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         generation_info = None
-        if "response_format" in payload:
-            if self.include_response_headers:
-                warnings.warn(
-                    "Cannot currently include response headers when response_format is "
-                    "specified."
-                )
-            payload.pop("stream")
-            try:
-                response = await self.root_async_client.beta.chat.completions.parse(
-                    **payload
-                )
-            except openai.BadRequestError as e:
-                _handle_openai_bad_request(e)
-        elif self._use_responses_api(payload):
-            original_schema_obj = kwargs.get("response_format")
-            if original_schema_obj and _is_pydantic_class(original_schema_obj):
-                response = await self.root_async_client.responses.parse(**payload)
-            else:
-                if self.include_response_headers:
+        raw_response = None
+        try:
+            if "response_format" in payload:
+                payload.pop("stream")
+                try:
+                    raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
+                        **payload
+                    )
+                    response = raw_response.parse()
+                except openai.BadRequestError as e:
+                    _handle_openai_bad_request(e)
+            elif self._use_responses_api(payload):
+                original_schema_obj = kwargs.get("response_format")
+                if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = (
-                        await self.root_async_client.with_raw_response.responses.create(
+                        await self.root_async_client.responses.with_raw_response.parse(
                             **payload
                         )
                     )
-                    response = raw_response.parse()
-                    generation_info = {"headers": dict(raw_response.headers)}
                 else:
-                    response = await self.root_async_client.responses.create(**payload)
-            return _construct_lc_result_from_responses_api(
-                response,
-                schema=original_schema_obj,
-                metadata=generation_info,
-                output_version=self.output_version,
-            )
-        elif self.include_response_headers:
-            raw_response = await self.async_client.with_raw_response.create(**payload)
-            response = raw_response.parse()
+                    raw_response = (
+                        await self.root_async_client.responses.with_raw_response.create(
+                            **payload
+                        )
+                    )
+                response = raw_response.parse()
+                if self.include_response_headers:
+                    generation_info = {"headers": dict(raw_response.headers)}
+                return _construct_lc_result_from_responses_api(
+                    response,
+                    schema=original_schema_obj,
+                    metadata=generation_info,
+                    output_version=self.output_version,
+                )
+            else:
+                raw_response = await self.async_client.with_raw_response.create(
+                    **payload
+                )
+                response = raw_response.parse()
+        except Exception as e:
+            if raw_response is not None and hasattr(raw_response, "http_response"):
+                e.response = raw_response.http_response  # type: ignore[attr-defined]
+            raise e
+        if (
+            self.include_response_headers
+            and raw_response is not None
+            and hasattr(raw_response, "headers")
+        ):
             generation_info = {"headers": dict(raw_response.headers)}
-        else:
-            response = await self.async_client.create(**payload)
         return await run_in_executor(
             None, self._create_chat_result, response, generation_info
         )
