@@ -29,6 +29,18 @@ def _any_id_document(**kwargs: Any) -> Document:
 
 def _any_id_ai_message(**kwargs: Any) -> AIMessage:
     """Create ai message with an any id field."""
+    # Set default additional_kwargs to include output_version if not provided
+    if "additional_kwargs" not in kwargs:
+        kwargs["additional_kwargs"] = {"output_version": "v0"}
+    elif (
+        isinstance(kwargs["additional_kwargs"], dict)
+        and "output_version" not in kwargs["additional_kwargs"]
+    ):
+        kwargs["additional_kwargs"] = {
+            **kwargs["additional_kwargs"],
+            "output_version": "v0",
+        }
+
     message = AIMessage(**kwargs)
     message.id = AnyStr()
     return message
@@ -36,6 +48,28 @@ def _any_id_ai_message(**kwargs: Any) -> AIMessage:
 
 def _any_id_ai_message_chunk(**kwargs: Any) -> AIMessageChunk:
     """Create ai message with an any id field."""
+    # Only exclude output_version from last chunks that have empty content
+    # (synthetic chunks)
+    is_empty_last_chunk = (
+        kwargs.get("chunk_position") == "last"
+        and not kwargs.get("content")
+        and "additional_kwargs" not in kwargs
+    )
+
+    # Set default additional_kwargs to include output_version if not provided and not
+    # an empty last chunk
+    if not is_empty_last_chunk:
+        if "additional_kwargs" not in kwargs:
+            kwargs["additional_kwargs"] = {"output_version": "v0"}
+        elif (
+            isinstance(kwargs["additional_kwargs"], dict)
+            and "output_version" not in kwargs["additional_kwargs"]
+        ):
+            kwargs["additional_kwargs"] = {
+                **kwargs["additional_kwargs"],
+                "output_version": "v0",
+            }
+
     message = AIMessageChunk(**kwargs)
     message.id = AnyStr()
     return message
