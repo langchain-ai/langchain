@@ -11,7 +11,7 @@ from typing import Any
 
 from langchain_core.messages import HumanMessage, ToolMessage
 
-from tests.any_str import AnyStr
+from .any_str import AnyStr
 
 
 def _AnyIdHumanMessage(**kwargs: Any) -> HumanMessage:

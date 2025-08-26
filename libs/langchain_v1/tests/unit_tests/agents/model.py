@@ -4,12 +4,10 @@ from dataclasses import asdict, is_dataclass
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    List,
     Literal,
     Optional,
-    Type,
+    TypeVar,
     Union,
 )
 
@@ -23,8 +21,9 @@ from langchain_core.messages import (
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
-from langgraph.prebuilt.chat_agent_executor import StructuredResponseT
 from pydantic import BaseModel
+
+StructuredResponseT = TypeVar("StructuredResponseT")
 
 
 class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
@@ -35,8 +34,8 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -80,11 +79,12 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         if len(tools) == 0:
-            raise ValueError("Must provide at least one tool")
+            msg = "Must provide at least one tool"
+            raise ValueError(msg)
 
         tool_dicts = []
         for tool in tools:
@@ -92,9 +92,8 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                 tool_dicts.append(tool)
                 continue
             if not isinstance(tool, BaseTool):
-                raise TypeError(
-                    "Only BaseTool and dict is supported by FakeToolCallingModel.bind_tools"
-                )
+                msg = "Only BaseTool and dict is supported by FakeToolCallingModel.bind_tools"
+                raise TypeError(msg)
 
             # NOTE: this is a simplified tool spec for testing purposes only
             if self.tool_style == "openai":

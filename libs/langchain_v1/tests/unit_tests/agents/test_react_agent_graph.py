@@ -1,11 +1,12 @@
 from typing import Callable, Union
 
 import pytest
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
-from tests.model import FakeToolCallingModel
+from langchain.agents import create_react_agent
+
+from .model import FakeToolCallingModel
 
 model = FakeToolCallingModel()
 
@@ -46,10 +47,11 @@ def test_react_agent_graph_structure(
     try:
         assert agent.get_graph().draw_mermaid(with_styles=False) == snapshot
     except Exception as e:
-        raise ValueError(
+        msg = (
             "The graph structure has changed. Please update the snapshot."
             "Configuration used:\n"
             f"tools: {tools}, "
             f"pre_model_hook: {pre_model_hook}, "
             f"post_model_hook: {post_model_hook}, "
-        ) from e
+        )
+        raise ValueError(msg) from e

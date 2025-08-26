@@ -21,7 +21,7 @@ Key Components:
 Typical Usage:
     ```python
     from langchain_core.tools import tool
-    from langgraph.prebuilt import ToolNode
+    from langchain.agents import ToolNode
 
     @tool
     def my_tool(x: int) -> str:
@@ -332,7 +332,7 @@ class ToolNode(RunnableCallable):
         Basic usage:
 
         ```python
-        from langgraph.prebuilt import ToolNode
+        from langchain.agents import ToolNode
         from langchain_core.tools import tool
 
         @tool
@@ -347,7 +347,7 @@ class ToolNode(RunnableCallable):
 
         ```python
         from typing_extensions import Annotated
-        from langgraph.prebuilt import InjectedState
+        from langchain.agents import InjectedState
 
         @tool
         def context_tool(query: str, state: Annotated[dict, InjectedState]) -> str:
@@ -880,7 +880,7 @@ def tools_condition(
 
         ```python
         from langgraph.graph import StateGraph
-        from langgraph.prebuilt import ToolNode, tools_condition
+        from langchain.agents import ToolNode, tools_condition
         from typing_extensions import TypedDict
 
         class State(TypedDict):
@@ -945,7 +945,7 @@ class InjectedState(InjectedToolArg):
         from langchain_core.messages import BaseMessage, AIMessage
         from langchain_core.tools import tool
 
-        from langgraph.prebuilt import InjectedState, ToolNode
+        from langchain.agents import InjectedState, ToolNode
 
 
         class AgentState(TypedDict):
@@ -1017,7 +1017,7 @@ class InjectedStore(InjectedToolArg):
         from typing_extensions import Annotated
         from langchain_core.tools import tool
         from langgraph.store.memory import InMemoryStore
-        from langgraph.prebuilt import InjectedStore, ToolNode
+        from langchain.agents import InjectedStore, ToolNode
 
         @tool
         def save_preference(

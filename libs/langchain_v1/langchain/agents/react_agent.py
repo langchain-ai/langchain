@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from collections.abc import Sequence
 from dataclasses import asdict, is_dataclass
 from typing import (
     TYPE_CHECKING,
@@ -34,7 +35,7 @@ from langgraph._internal._runnable import RunnableCallable, RunnableLike
 from langgraph.errors import ErrorCode, create_error_message
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.prebuilt.tool_node import ToolNode
+from langgraph.managed import RemainingSteps
 from langgraph.types import Checkpointer, Command, Send
 from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
@@ -49,13 +50,13 @@ from langchain.agents.structured_output import (
     StructuredOutputParsingError,
     ToolOutput,
 )
+from langchain.agents.tool_node import ToolNode
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Sequence
+    from collections.abc import Awaitable
 
     from langchain_core.tools import BaseTool
     from langgraph.graph.state import CompiledStateGraph
-    from langgraph.managed import RemainingSteps
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
 
@@ -1074,7 +1075,7 @@ def create_react_agent(
 
     Example:
         ```python
-        from langgraph.prebuilt import create_react_agent
+        from langchain.agents import create_react_agent
 
         def check_weather(location: str) -> str:
             '''Return the weather forecast for the specified location.'''

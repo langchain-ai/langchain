@@ -7,7 +7,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.store.base import BaseStore
 from pytest_mock import MockerFixture
 
-from tests.conftest_checkpointer import (
+from .conftest_checkpointer import (
     _checkpointer_memory,
     _checkpointer_postgres,
     _checkpointer_postgres_aio,
@@ -18,7 +18,7 @@ from tests.conftest_checkpointer import (
     _checkpointer_sqlite,
     _checkpointer_sqlite_aio,
 )
-from tests.conftest_store import (
+from .conftest_store import (
     _store_memory,
     _store_postgres,
     _store_postgres_aio,
@@ -27,8 +27,6 @@ from tests.conftest_store import (
     _store_postgres_pipe,
     _store_postgres_pool,
 )
-
-pytest.register_assert_rewrite("tests.memory_assert")
 
 # Global variables for checkpointer and store configurations
 FAST_MODE = os.getenv("LANGGRAPH_TEST_FAST", "true").lower() in ("true", "1", "yes")
@@ -81,7 +79,7 @@ ASYNC_STORE_PARAMS = (
 
 
 @pytest.fixture
-def anyio_backend():
+def anyio_backend() -> str:
     return "asyncio"
 
 
@@ -97,7 +95,6 @@ def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
 
 
 @pytest.fixture(
-    scope="function",
     params=SYNC_STORE_PARAMS,
 )
 def sync_store(request: pytest.FixtureRequest) -> Iterator[BaseStore]:
@@ -117,11 +114,11 @@ def sync_store(request: pytest.FixtureRequest) -> Iterator[BaseStore]:
         with _store_postgres_pool() as store:
             yield store
     else:
-        raise NotImplementedError(f"Unknown store {store_name}")
+        msg = f"Unknown store {store_name}"
+        raise NotImplementedError(msg)
 
 
 @pytest.fixture(
-    scope="function",
     params=ASYNC_STORE_PARAMS,
 )
 async def async_store(request: pytest.FixtureRequest) -> AsyncIterator[BaseStore]:
@@ -141,11 +138,11 @@ async def async_store(request: pytest.FixtureRequest) -> AsyncIterator[BaseStore
         async with _store_postgres_aio_pool() as store:
             yield store
     else:
-        raise NotImplementedError(f"Unknown store {store_name}")
+        msg = f"Unknown store {store_name}"
+        raise NotImplementedError(msg)
 
 
 @pytest.fixture(
-    scope="function",
     params=SYNC_CHECKPOINTER_PARAMS,
 )
 def sync_checkpointer(
@@ -168,11 +165,11 @@ def sync_checkpointer(
         with _checkpointer_postgres_pool() as checkpointer:
             yield checkpointer
     else:
-        raise NotImplementedError(f"Unknown checkpointer: {checkpointer_name}")
+        msg = f"Unknown checkpointer: {checkpointer_name}"
+        raise NotImplementedError(msg)
 
 
 @pytest.fixture(
-    scope="function",
     params=ASYNC_CHECKPOINTER_PARAMS,
 )
 async def async_checkpointer(
@@ -195,4 +192,5 @@ async def async_checkpointer(
         async with _checkpointer_postgres_aio_pool() as checkpointer:
             yield checkpointer
     else:
-        raise NotImplementedError(f"Unknown checkpointer: {checkpointer_name}")
+        msg = f"Unknown checkpointer: {checkpointer_name}"
+        raise NotImplementedError(msg)

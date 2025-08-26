@@ -22,20 +22,6 @@ from langchain_core.tools import tool as dec_tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.prebuilt import (
-    ToolNode,
-    create_react_agent,
-)
-from langgraph.prebuilt.chat_agent_executor import (
-    AgentState,
-    _validate_chat_history,
-)
-from langgraph.prebuilt.tool_node import (
-    InjectedState,
-    InjectedStore,
-    _get_state_args,
-    _infer_handled_types,
-)
 from langgraph.runtime import Runtime
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
@@ -43,9 +29,22 @@ from langgraph.types import Command, Interrupt, interrupt
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
-from tests.any_str import AnyStr
-from tests.messages import _AnyIdHumanMessage, _AnyIdToolMessage
-from tests.model import FakeToolCallingModel
+from langchain.agents import (
+    AgentState,
+    ToolNode,
+    create_react_agent,
+)
+from langchain.agents.react_agent import _validate_chat_history
+from langchain.agents.tool_node import (
+    InjectedState,
+    InjectedStore,
+    _get_state_args,
+    _infer_handled_types,
+)
+
+from .any_str import AnyStr
+from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
+from .model import FakeToolCallingModel
 
 pytestmark = pytest.mark.anyio
 
@@ -61,7 +60,7 @@ def test_no_prompt(sync_checkpointer: BaseCheckpointSaver) -> None:
     inputs = [HumanMessage("hi?")]
     thread = {"configurable": {"thread_id": "123"}}
     response = agent.invoke({"messages": inputs}, thread, debug=True)
-    expected_response = {"messages": inputs + [AIMessage(content="hi?", id="0")]}
+    expected_response = {"messages": [*inputs, AIMessage(content="hi?", id="0")]}
     assert response == expected_response
 
     saved = sync_checkpointer.get_tuple(thread)
@@ -87,7 +86,7 @@ async def test_no_prompt_async(async_checkpointer: BaseCheckpointSaver) -> None:
     inputs = [HumanMessage("hi?")]
     thread = {"configurable": {"thread_id": "123"}}
     response = await agent.ainvoke({"messages": inputs}, thread, debug=True)
-    expected_response = {"messages": inputs + [AIMessage(content="hi?", id="0")]}
+    expected_response = {"messages": [*inputs, AIMessage(content="hi?", id="0")]}
     assert response == expected_response
 
     saved = await async_checkpointer.aget_tuple(thread)
@@ -106,29 +105,29 @@ async def test_no_prompt_async(async_checkpointer: BaseCheckpointSaver) -> None:
     assert saved.pending_writes == []
 
 
-def test_system_message_prompt():
+def test_system_message_prompt() -> None:
     prompt = SystemMessage(content="Foo")
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {
-        "messages": inputs + [AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
+        "messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
     }
     assert response == expected_response
 
 
-def test_string_prompt():
+def test_string_prompt() -> None:
     prompt = "Foo"
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
     expected_response = {
-        "messages": inputs + [AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
+        "messages": [*inputs, AIMessage(content="Foo-hi?", id="0", tool_calls=[])]
     }
     assert response == expected_response
 
 
-def test_callable_prompt():
+def test_callable_prompt() -> None:
     def prompt(state):
         modified_message = f"Bar {state['messages'][-1].content}"
         return [HumanMessage(content=modified_message)]
@@ -136,11 +135,11 @@ def test_callable_prompt():
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
-    expected_response = {"messages": inputs + [AIMessage(content="Bar hi?", id="0")]}
+    expected_response = {"messages": [*inputs, AIMessage(content="Bar hi?", id="0")]}
     assert response == expected_response
 
 
-async def test_callable_prompt_async():
+async def test_callable_prompt_async() -> None:
     async def prompt(state):
         modified_message = f"Bar {state['messages'][-1].content}"
         return [HumanMessage(content=modified_message)]
@@ -148,11 +147,11 @@ async def test_callable_prompt_async():
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = await agent.ainvoke({"messages": inputs})
-    expected_response = {"messages": inputs + [AIMessage(content="Bar hi?", id="0")]}
+    expected_response = {"messages": [*inputs, AIMessage(content="Bar hi?", id="0")]}
     assert response == expected_response
 
 
-def test_runnable_prompt():
+def test_runnable_prompt() -> None:
     prompt = RunnableLambda(
         lambda state: [HumanMessage(content=f"Baz {state['messages'][-1].content}")]
     )
@@ -160,11 +159,11 @@ def test_runnable_prompt():
     agent = create_react_agent(FakeToolCallingModel(), [], prompt=prompt)
     inputs = [HumanMessage("hi?")]
     response = agent.invoke({"messages": inputs})
-    expected_response = {"messages": inputs + [AIMessage(content="Baz hi?", id="0")]}
+    expected_response = {"messages": [*inputs, AIMessage(content="Baz hi?", id="0")]}
     assert response == expected_response
 
 
-def test_prompt_with_store():
+def test_prompt_with_store() -> None:
     def add(a: int, b: int):
         """Adds a and b"""
         return a + b
@@ -208,7 +207,7 @@ def test_prompt_with_store():
     assert response["messages"][-1].content == "foo-hi"
 
 
-async def test_prompt_with_store_async():
+async def test_prompt_with_store_async() -> None:
     async def add(a: int, b: int):
         """Adds a and b"""
         return a + b
@@ -290,7 +289,7 @@ def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
         )
 
 
-def test__validate_messages():
+def test__validate_messages() -> None:
     # empty input
     _validate_chat_history([])
 
@@ -356,7 +355,7 @@ def test__validate_messages():
 
 
 def test__infer_handled_types() -> None:
-    def handle(e):  # type: ignore
+    def handle(e) -> str:  # type: ignore
         return ""
 
     def handle2(e: Exception) -> str:
@@ -371,7 +370,7 @@ def test__infer_handled_types() -> None:
 
     handle4 = Handler().handle
 
-    def handle5(e: Union[Union[TypeError, ValueError], ToolException]):
+    def handle5(e: Union[Union[TypeError, ValueError], ToolException]) -> str:
         return ""
 
     expected: tuple = (Exception,)
@@ -396,21 +395,21 @@ def test__infer_handled_types() -> None:
 
     with pytest.raises(ValueError):
 
-        def handler(e: str):
+        def handler(e: str) -> str:
             return ""
 
         _infer_handled_types(handler)
 
     with pytest.raises(ValueError):
 
-        def handler(e: list[Exception]):
+        def handler(e: list[Exception]) -> str:
             return ""
 
         _infer_handled_types(handler)
 
     with pytest.raises(ValueError):
 
-        def handler(e: Union[str, int]):
+        def handler(e: Union[str, int]) -> str:
             return ""
 
         _infer_handled_types(handler)
@@ -425,7 +424,7 @@ def test_react_agent_with_structured_response() -> None:
         [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75}}],
     ]
 
-    def get_weather():
+    def get_weather() -> str:
         """Get the weather"""
         return "The weather is sunny and 75°F."
 
@@ -860,7 +859,7 @@ def test_react_agent_subgraph_streaming_sync() -> None:
         collected_content = ""
 
         # Stream the agent output and collect content
-        for msg_chunk, msg_metadata in agent.stream(
+        for msg_chunk, _msg_metadata in agent.stream(
             {"messages": [("user", state["messages"][-1].content)]},
             config,
             stream_mode="messages",
@@ -951,7 +950,7 @@ async def test_react_agent_subgraph_streaming() -> None:
         collected_content = ""
 
         # Stream the agent output and collect content
-        async for msg_chunk, msg_metadata in agent.astream(
+        async for msg_chunk, _msg_metadata in agent.astream(
             {"messages": [("user", state["messages"][-1].content)]},
             config,
             stream_mode="messages",
@@ -1021,8 +1020,7 @@ def test_tool_node_node_interrupt(
 
     def tool_interrupt(some_val: int) -> str:
         """Tool docstring."""
-        foo = interrupt("provide value for foo")
-        return foo
+        return interrupt("provide value for foo")
 
     # test inside react agent
     model = FakeToolCallingModel(
@@ -1207,7 +1205,7 @@ def test_dynamic_model_with_prompt() -> None:
     # Test with callable prompt
     def dynamic_prompt(state: AgentState) -> list[MessageLikeRepresentation]:
         """Generate a dynamic system message based on state."""
-        return [{"role": "system", "content": "system_msg"}] + list(state["messages"])
+        return [{"role": "system", "content": "system_msg"}, *list(state["messages"])]
 
     agent = create_react_agent(dynamic_model, [], prompt=dynamic_prompt)
     result = agent.invoke({"messages": [HumanMessage("human_msg")]})
@@ -1256,7 +1254,7 @@ def test_dynamic_model_with_structured_response() -> None:
     assert result["structured_response"].confidence == 0.9
 
 
-def test_dynamic_model_with_checkpointer(sync_checkpointer):
+def test_dynamic_model_with_checkpointer(sync_checkpointer) -> None:
     """Test dynamic model with checkpointer."""
     call_count = 0
 
@@ -1330,7 +1328,8 @@ def test_dynamic_model_error_handling() -> None:
 
     def failing_dynamic_model(state, runtime: Runtime):
         if "fail" in state["messages"][-1].content:
-            raise ValueError("Dynamic model failed")
+            msg = "Dynamic model failed"
+            raise ValueError(msg)
         return FakeToolCallingModel(tool_calls=[])
 
     agent = create_react_agent(failing_dynamic_model, [])
@@ -1344,7 +1343,7 @@ def test_dynamic_model_error_handling() -> None:
         agent.invoke({"messages": [HumanMessage("fail now")]})
 
 
-def test_dynamic_model_vs_static_model_behavior():
+def test_dynamic_model_vs_static_model_behavior() -> None:
     """Test that dynamic and static models produce equivalent results when configured the same."""
     # Static model
     static_model = FakeToolCallingModel(tool_calls=[])
@@ -1367,7 +1366,7 @@ def test_dynamic_model_vs_static_model_behavior():
     assert static_result["messages"][1].content == dynamic_result["messages"][1].content
 
 
-def test_dynamic_model_receives_correct_state():
+def test_dynamic_model_receives_correct_state() -> None:
     """Test that the dynamic model function receives the correct state, not the model input."""
     received_states = []
 
@@ -1398,7 +1397,7 @@ def test_dynamic_model_receives_correct_state():
     assert received_state["messages"][0].content == "hello"
 
 
-async def test_dynamic_model_receives_correct_state_async():
+async def test_dynamic_model_receives_correct_state_async() -> None:
     """Test that the async dynamic model function receives the correct state, not the model input."""
     received_states = []
 
@@ -1511,7 +1510,7 @@ def test_post_model_hook_with_structured_output() -> None:
         [{"args": {"temperature": 75}, "id": "2", "name": "WeatherResponse"}],
     ]
 
-    def get_weather():
+    def get_weather() -> str:
         """Get the weather"""
         return "The weather is sunny and 75°F."
 

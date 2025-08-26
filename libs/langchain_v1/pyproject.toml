@@ -50,6 +50,7 @@ test = [
     "pytest-watcher<1.0.0,>=0.2.6",
     "pytest-asyncio<1.0.0,>=0.23.2",
     "pytest-socket<1.0.0,>=0.6.0",
+    "pytest-mock<4.0.0,>=3.12.0",
     "syrupy<5.0.0,>=4.0.2",
     "pytest-xdist<4.0.0,>=3.6.1",
     "blockbuster<1.6,>=1.5.18",

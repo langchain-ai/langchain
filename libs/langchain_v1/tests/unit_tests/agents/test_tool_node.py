@@ -4,8 +4,6 @@ from functools import partial
 from typing import (
     Annotated,
     Any,
-    List,
-    Type,
     TypeVar,
     Union,
 )
@@ -25,16 +23,6 @@ from langgraph.config import get_stream_writer
 from langgraph.errors import GraphBubbleUp, GraphInterrupt
 from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.graph.message import REMOVE_ALL_MESSAGES, add_messages
-from langgraph.prebuilt import (
-    ToolNode,
-)
-from langgraph.prebuilt.tool_node import (
-    TOOL_CALL_ERROR_TEMPLATE,
-    InjectedState,
-    InjectedStore,
-    ToolInvocationError,
-    tools_condition,
-)
 from langgraph.store.base import BaseStore
 from langgraph.store.memory import InMemoryStore
 from langgraph.types import Command, Send
@@ -42,8 +30,19 @@ from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict
 
-from tests.messages import _AnyIdHumanMessage, _AnyIdToolMessage
-from tests.model import FakeToolCallingModel
+from langchain.agents import (
+    ToolNode,
+)
+from langchain.agents.tool_node import (
+    TOOL_CALL_ERROR_TEMPLATE,
+    InjectedState,
+    InjectedStore,
+    ToolInvocationError,
+    tools_condition,
+)
+
+from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
+from .model import FakeToolCallingModel
 
 pytestmark = pytest.mark.anyio
 
@@ -51,14 +50,16 @@ pytestmark = pytest.mark.anyio
 def tool1(some_val: int, some_other_val: str) -> str:
     """Tool 1 docstring."""
     if some_val == 0:
-        raise ValueError("Test error")
+        msg = "Test error"
+        raise ValueError(msg)
     return f"{some_val} - {some_other_val}"
 
 
 async def tool2(some_val: int, some_other_val: str) -> str:
     """Tool 2 docstring."""
     if some_val == 0:
-        raise ToolException("Test error")
+        msg = "Test error"
+        raise ToolException(msg)
     return f"tool2: {some_val} - {some_other_val}"
 
 
@@ -80,7 +81,8 @@ async def tool4(some_val: int, some_other_val: str) -> str:
 @dec_tool
 def tool5(some_val: int):
     """Tool 5 docstring."""
-    raise ToolException("Test error")
+    msg = "Test error"
+    raise ToolException(msg)
 
 
 tool5.handle_tool_error = "foo"
@@ -331,10 +333,10 @@ async def test_tool_node_error_handling() -> None:
 
 
 async def test_tool_node_error_handling_callable() -> None:
-    def handle_value_error(e: ValueError):
+    def handle_value_error(e: ValueError) -> str:
         return "Value error"
 
-    def handle_tool_exception(e: ToolException):
+    def handle_tool_exception(e: ToolException) -> str:
         return "Tool exception"
 
     for handle_tool_errors in ("Value error", handle_value_error):
@@ -419,7 +421,7 @@ async def test_tool_node_error_handling_callable() -> None:
         assert str(exc_info.value) == "Test error"
 
 
-async def test_tool_node_handle_tool_errors_false():
+async def test_tool_node_handle_tool_errors_false() -> None:
     with pytest.raises(ValueError) as exc_info:
         ToolNode([tool1], handle_tool_errors=False).invoke(
             {
@@ -480,7 +482,7 @@ async def test_tool_node_handle_tool_errors_false():
         )
 
 
-def test_tool_node_individual_tool_error_handling():
+def test_tool_node_individual_tool_error_handling() -> None:
     # test error handling on individual tools (and that it overrides overall error handling!)
     result_individual_tool_error_handler = ToolNode(
         [tool5], handle_tool_errors="bar"
@@ -508,7 +510,7 @@ def test_tool_node_individual_tool_error_handling():
     assert tool_message.tool_call_id == "some 0"
 
 
-def test_tool_node_incorrect_tool_name():
+def test_tool_node_incorrect_tool_name() -> None:
     result_incorrect_name = ToolNode([tool1, tool2]).invoke(
         {
             "messages": [
@@ -536,12 +538,13 @@ def test_tool_node_incorrect_tool_name():
     assert tool_message.tool_call_id == "some 0"
 
 
-def test_tool_node_node_interrupt():
+def test_tool_node_node_interrupt() -> None:
     def tool_interrupt(some_val: int) -> None:
         """Tool docstring."""
-        raise GraphBubbleUp("foo")
+        msg = "foo"
+        raise GraphBubbleUp(msg)
 
-    def handle(e: GraphInterrupt):
+    def handle(e: GraphInterrupt) -> str:
         return "handled"
 
     for handle_tool_errors in (True, (GraphBubbleUp,), "handled", handle, False):
@@ -567,7 +570,7 @@ def test_tool_node_node_interrupt():
 
 
 @pytest.mark.parametrize("input_type", ["dict", "tool_calls"])
-async def test_tool_node_command(input_type: str):
+async def test_tool_node_command(input_type: str) -> None:
     from langchain_core.tools.base import InjectedToolCallId
 
     @dec_tool
@@ -867,7 +870,7 @@ async def test_tool_node_command(input_type: str):
     ) == [Command(update={"messages": []}, graph=Command.PARENT)]
 
 
-async def test_tool_node_command_list_input():
+async def test_tool_node_command_list_input() -> None:
     from langchain_core.tools.base import InjectedToolCallId
 
     @dec_tool
@@ -1119,7 +1122,7 @@ async def test_tool_node_command_list_input():
     ) == [Command(update=[], graph=Command.PARENT)]
 
 
-def test_tool_node_parent_command_with_send():
+def test_tool_node_parent_command_with_send() -> None:
     from langchain_core.tools.base import InjectedToolCallId
 
     @dec_tool
@@ -1206,7 +1209,7 @@ def test_tool_node_parent_command_with_send():
     ]
 
 
-async def test_tool_node_command_remove_all_messages():
+async def test_tool_node_command_remove_all_messages() -> None:
     from langchain_core.tools.base import InjectedToolCallId
 
     @dec_tool
@@ -1264,7 +1267,7 @@ T = TypeVar("T")
         _InjectedStateDataclassSchema,
     ],
 )
-def test_tool_node_inject_state(schema_: Type[T]) -> None:
+def test_tool_node_inject_state(schema_: type[T]) -> None:
     def tool1(some_val: int, state: Annotated[T, InjectedState]) -> str:
         """Tool 1 docstring."""
         if isinstance(state, dict):
@@ -1280,13 +1283,13 @@ def test_tool_node_inject_state(schema_: Type[T]) -> None:
     def tool3(
         some_val: int,
         foo: Annotated[str, InjectedState("foo")],
-        msgs: Annotated[List[AnyMessage], InjectedState("messages")],
+        msgs: Annotated[list[AnyMessage], InjectedState("messages")],
     ) -> str:
         """Tool 1 docstring."""
         return foo
 
     def tool4(
-        some_val: int, msgs: Annotated[List[AnyMessage], InjectedState("messages")]
+        some_val: int, msgs: Annotated[list[AnyMessage], InjectedState("messages")]
     ) -> str:
         """Tool 1 docstring."""
         return msgs[0].content
