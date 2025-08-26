@@ -22,6 +22,9 @@ from langchain_core.messages import (
 )
 from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
@@ -52,7 +55,6 @@ from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,

@@ -70,6 +70,9 @@ from langchain_core.messages.ai import (
     OutputTokenDetails,
     UsageMetadata,
 )
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
@@ -108,7 +111,6 @@ from langchain_openai.chat_models._client_utils import (
     _get_default_httpx_client,
 )
 from langchain_openai.chat_models._compat import (
-    _convert_from_v03_ai_message,
     _convert_from_v1_to_chat_completions,
     _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
