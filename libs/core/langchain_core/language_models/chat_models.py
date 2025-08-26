@@ -337,8 +337,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     """
 
-    output_version: str = Field(
-        default_factory=from_env("LC_OUTPUT_VERSION", default="v0")
+    output_version: Optional[str] = Field(
+        default_factory=from_env("LC_OUTPUT_VERSION", default=None)
     )
     """Version of ``AIMessage`` output format to store in message content.
 
