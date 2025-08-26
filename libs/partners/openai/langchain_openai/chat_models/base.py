@@ -112,10 +112,6 @@ from langchain_openai.chat_models._compat import (
 )
 
 if TYPE_CHECKING:
-    from langchain_core.load.serializable import (
-        SerializedConstructor,
-        SerializedNotImplemented,
-    )
     from openai.types.responses import Response
 
 logger = logging.getLogger(__name__)
@@ -681,7 +677,7 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Literal["v0", "responses/v1"] = "responses/v1"
+    output_version: Optional[Literal["v0", "responses/v1"]] = None
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -713,21 +709,6 @@ class BaseChatOpenAI(BaseChatModel):
         all_required_field_names = get_pydantic_field_names(cls)
         values = _build_model_kwargs(values, all_required_field_names)
         return values
-
-    def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
-        """Exclude ``output_version`` if it has default, so that on deserialization it
-        is not explicitly set (which enables Responses API for backward compat).
-        """
-        result = super().to_json()
-        if (
-            isinstance(result, dict)
-            and result["type"] == "constructor"
-            and "kwargs" in result
-            and "output_version" in result["kwargs"]
-            and "output_version" not in self.model_fields_set
-        ):
-            _ = result["kwargs"].pop("output_version")
-        return result
 
     @model_validator(mode="before")
     @classmethod
@@ -1202,11 +1183,7 @@ class BaseChatOpenAI(BaseChatModel):
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
             return self.use_responses_api
-        elif (
-            "output_version" in self.model_fields_set
-            and self.output_version == "responses/v1"
-        ):
-            # output_version="responses/v1" explicitly set
+        elif self.output_version == "responses/v1":
             return True
         elif self.include is not None:
             return True
@@ -3860,12 +3837,14 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: Literal["v0", "responses/v1"] = "responses/v1",
+    output_version: Optional[Literal["v0", "responses/v1"]] = None,
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
         raise ValueError(response.error)
 
+    if output_version is None:
+        output_version = "responses/v1"
     response_metadata = {
         k: v
         for k, v in response.model_dump(exclude_none=True, mode="json").items()
@@ -4024,7 +4003,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: Literal["v0", "responses/v1"] = "responses/v1",
+    output_version: Optional[Literal["v0", "responses/v1"]] = None,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -4070,6 +4049,9 @@ def _convert_responses_chunk_to_generation_chunk(
                 current_index += 1
             current_sub_index = sub_idx
         current_output_index = output_idx
+
+    if output_version is None:
+        output_version = "responses/v1"
 
     content = []
     tool_call_chunks: list = []
