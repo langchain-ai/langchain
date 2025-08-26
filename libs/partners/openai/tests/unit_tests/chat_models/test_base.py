@@ -737,7 +737,7 @@ def test_format_message_content() -> None:
     # Standard multi-modal inputs
     contents = [
         {"type": "image", "source_type": "url", "url": "https://..."},  # v0
-        {"type": "image", "url": "https://..."}  # v1
+        {"type": "image", "url": "https://..."},  # v1
     ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
     for content in contents:
@@ -750,11 +750,7 @@ def test_format_message_content() -> None:
             "data": "<base64 data>",
             "mime_type": "image/png",
         },
-        {
-            "type": "image",
-            "base64": "<base64 data>",
-            "mime_type": "image/png",
-        }
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -778,7 +774,7 @@ def test_format_message_content() -> None:
             "base64": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
     ]
     expected = [
         {
