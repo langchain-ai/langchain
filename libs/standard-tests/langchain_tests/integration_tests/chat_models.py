@@ -315,8 +315,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -351,7 +350,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "https://...",
             }
 
@@ -377,8 +375,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "file",
-                "source_type": "base64",
-                "data": "<base64 file data>",
+                "base64": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 
@@ -404,8 +401,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -499,8 +495,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -2306,8 +2301,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "application/pdf",
             }
 
@@ -2347,9 +2341,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                 },
             ]
         )
@@ -2383,8 +2376,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -2424,9 +2416,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "audio",
-                    "source_type": "base64",
                     "mime_type": "audio/wav",
-                    "data": audio_data,
+                    "base64": audio_data,
                 },
             ]
         )
@@ -2457,8 +2448,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -2484,7 +2474,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "<url>",
             }
 
@@ -2536,9 +2525,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {"type": "text", "text": "describe the weather in this image"},
                 {
                     "type": "image",
-                    "source_type": "base64",
                     "mime_type": "image/jpeg",
-                    "data": image_data,
+                    "base64": image_data,
                 },
             ],
         )
@@ -2551,7 +2539,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {"type": "text", "text": "describe the weather in this image"},
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -2586,8 +2573,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -2642,8 +2628,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             content=[
                 {
                     "type": "image",
-                    "source_type": "base64",
-                    "data": image_data,
+                    "base64": image_data,
                     "mime_type": "image/jpeg",
                 },
             ],
