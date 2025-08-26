@@ -706,7 +706,9 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Optional[str] = "v0"
+    output_version: Optional[str] = Field(
+        default_factory=from_env("LC_OUTPUT_VERSION", default=None)
+    )
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
