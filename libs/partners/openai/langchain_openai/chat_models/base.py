@@ -3945,6 +3945,9 @@ def _construct_lc_result_from_responses_api(
         raise ValueError(response.error)
 
     if output_version is None:
+        # Sentinel value of None lets us know if output_version is set explicitly.
+        # Explicitly setting `output_version="responses/v1"` separately enables the
+        # Responses API.
         output_version = "v0"
 
     response_metadata = {
@@ -4154,6 +4157,9 @@ def _convert_responses_chunk_to_generation_chunk(
         current_output_index = output_idx
 
     if output_version is None:
+        # Sentinel value of None lets us know if output_version is set explicitly.
+        # Explicitly setting `output_version="responses/v1"` separately enables the
+        # Responses API.
         output_version = "v0"
 
     content = []
