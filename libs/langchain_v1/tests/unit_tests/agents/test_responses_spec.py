@@ -97,9 +97,9 @@ def test_responses_integration_matrix(case: TestCase) -> None:
     # Unwrap nested schema objects
     response_format_spec = [item.get("schema", item) for item in response_format_spec]
     if len(response_format_spec) == 1:
-        tool_output = ToolOutput(response_format_spec[0])
+        tool_output = ToolStrategy(response_format_spec[0])
     else:
-        tool_output = ToolOutput({"oneOf": response_format_spec})
+        tool_output = ToolStrategy({"oneOf": response_format_spec})
 
     llm_request_count = 0
 

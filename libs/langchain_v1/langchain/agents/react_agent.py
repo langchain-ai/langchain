@@ -43,14 +43,14 @@ from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict, TypeVar
 
-from langchain.agents.responses import (
+from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
-    NativeOutput,
-    NativeOutputBinding,
     OutputToolBinding,
+    ProviderStrategy,
+    ProviderStrategyBinding,
     ResponseFormat,
     StructuredOutputParsingError,
-    ToolOutput,
+    ToolStrategy,
 )
 from langchain.agents.tool_node import ToolNode
 from langchain.chat_models import init_chat_model
@@ -254,28 +254,28 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         3. Parsing provider-enforced structured output directly into the schema
         """
         self.structured_output_tools: dict[str, OutputToolBinding[StructuredResponseT]] = {}
-        self.native_output_binding: NativeOutputBinding[StructuredResponseT] | None = None
+        self.native_output_binding: ProviderStrategyBinding[StructuredResponseT] | None = None
 
         if self.response_format is not None:
             response_format = self.response_format
 
-            if isinstance(response_format, ToolOutput):
+            if isinstance(response_format, ToolStrategy):
                 # check if response_format.schema is a union
                 for response_schema in response_format.schema_specs:
                     structured_tool_info = OutputToolBinding.from_schema_spec(response_schema)
                     self.structured_output_tools[structured_tool_info.tool.name] = (
                         structured_tool_info
                     )
-            elif isinstance(response_format, NativeOutput):
-                # Use native strategy - create NativeOutputBinding for parsing
-                self.native_output_binding = NativeOutputBinding.from_schema_spec(
+            elif isinstance(response_format, ProviderStrategy):
+                # Use native strategy - create ProviderStrategyBinding for parsing
+                self.native_output_binding = ProviderStrategyBinding.from_schema_spec(
                     response_format.schema_spec
                 )
             else:
                 # This shouldn't happen with the new ResponseFormat type, but keeping for safety
                 msg = (
                     f"Unsupported response_format type: {type(response_format)}. "
-                    f"Expected ToolOutput."
+                    f"Expected ToolStrategy."
                 )
                 raise ValueError(msg)
 
@@ -312,7 +312,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             MultipleStructuredOutputsError: If multiple structured responses are returned and error handling is disabled
             StructuredOutputParsingError: If parsing fails and error handling is disabled
         """
-        if not isinstance(self.response_format, ToolOutput) or not response.tool_calls:
+        if not isinstance(self.response_format, ToolStrategy) or not response.tool_calls:
             return None
 
         structured_tool_calls = [
@@ -377,7 +377,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
             tool_message_content = (
                 self.response_format.tool_message_content
-                if isinstance(self.response_format, ToolOutput)
+                if isinstance(self.response_format, ToolStrategy)
                 and self.response_format.tool_message_content
                 else f"Returning structured response: {structured_response_dict}"
             )
@@ -425,7 +425,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
         Returns (should_retry, retry_tool_message).
         """
-        handle_errors = cast("ToolOutput", self.response_format).handle_errors
+        handle_errors = cast("ToolStrategy", self.response_format).handle_errors
 
         if handle_errors is False:
             return False, ""
@@ -447,13 +447,13 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
     def _apply_native_output_binding(self, model: LanguageModelLike) -> LanguageModelLike:
         """If native output is configured, bind provider-native kwargs onto the model."""
-        if not isinstance(self.response_format, NativeOutput):
+        if not isinstance(self.response_format, ProviderStrategy):
             return model
         kwargs = self.response_format.to_model_kwargs()
         return model.bind(**kwargs)
 
     def _handle_structured_response_native(self, response: AIMessage) -> Command | None:
-        """If native output is configured and there are no tool calls, parse using NativeOutputBinding."""
+        """If native output is configured and there are no tool calls, parse using ProviderStrategyBinding."""
         if self.native_output_binding is None:
             return None
         if response.tool_calls:
@@ -490,7 +490,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 # Check if we need to force tool use for structured output
                 tool_choice = None
                 if self.response_format is not None and isinstance(
-                    self.response_format, ToolOutput
+                    self.response_format, ToolStrategy
                 ):
                     tool_choice = "any"
 
@@ -499,7 +499,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                         all_tools, tool_choice=tool_choice
                     )
                 # If native output is configured, bind tools with strict=True. Required for OpenAI.
-                elif isinstance(self.response_format, NativeOutput):
+                elif isinstance(self.response_format, ProviderStrategy):
                     model = cast("BaseChatModel", model).bind_tools(  # type: ignore[assignment]
                         all_tools, strict=True
                     )
@@ -908,8 +908,8 @@ def create_react_agent(  # noqa: D417
     *,
     prompt: Prompt | None = None,
     response_format: Union[
-        ToolOutput[StructuredResponseT],
-        NativeOutput[StructuredResponseT],
+        ToolStrategy[StructuredResponseT],
+        ProviderStrategy[StructuredResponseT],
         type[StructuredResponseT],
     ]
     | None = None,
@@ -1126,13 +1126,13 @@ def create_react_agent(  # noqa: D417
         msg = f"create_react_agent() got unexpected keyword arguments: {deprecated_kwargs}"
         raise TypeError(msg)
 
-    if response_format and not isinstance(response_format, (ToolOutput, NativeOutput)):
+    if response_format and not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
         if _supports_native_structured_output(model):  # type: ignore[arg-type]
-            response_format = NativeOutput(
+            response_format = ProviderStrategy(
                 schema=response_format,
             )
         else:
-            response_format = ToolOutput(
+            response_format = ToolStrategy(
                 schema=response_format,
             )
     elif isinstance(response_format, tuple) and len(response_format) == 2:

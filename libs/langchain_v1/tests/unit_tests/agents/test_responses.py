@@ -31,21 +31,21 @@ class TestUsingToolStrategy:
 
     def test_basic_creation(self) -> None:
         """Test basic UsingToolStrategy creation."""
-        strategy = ToolOutput(schema=_TestModel)
+        strategy = ToolStrategy(schema=_TestModel)
         assert strategy.schema == _TestModel
         assert strategy.tool_message_content is None
         assert len(strategy.schema_specs) == 1
 
     def test_multiple_schemas(self) -> None:
         """Test UsingToolStrategy with multiple schemas."""
-        strategy = ToolOutput(schema=Union[_TestModel, CustomModel])
+        strategy = ToolStrategy(schema=Union[_TestModel, CustomModel])
         assert len(strategy.schema_specs) == 2
         assert strategy.schema_specs[0].schema == _TestModel
         assert strategy.schema_specs[1].schema == CustomModel
 
     def test_schema_with_tool_message_content(self) -> None:
         """Test UsingToolStrategy with tool message content."""
-        strategy = ToolOutput(schema=_TestModel, tool_message_content="custom message")
+        strategy = ToolStrategy(schema=_TestModel, tool_message_content="custom message")
         assert strategy.schema == _TestModel
         assert strategy.tool_message_content == "custom message"
         assert len(strategy.schema_specs) == 1
@@ -129,7 +129,7 @@ class TestEdgeCases:
 
     def test_empty_schemas_list(self) -> None:
         """Test UsingToolStrategy with empty schemas list."""
-        strategy = ToolOutput(EmptyDocModel)
+        strategy = ToolStrategy(EmptyDocModel)
         assert len(strategy.schema_specs) == 1
 
     @pytest.mark.skip(reason="Need to fix bug in langchain-core for inheritance of doc-strings.")

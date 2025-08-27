@@ -169,7 +169,7 @@ class _SchemaSpec(Generic[SchemaT]):
 
 
 @dataclass(init=False)
-class ToolOutput(Generic[SchemaT]):
+class ToolStrategy(Generic[SchemaT]):
     """Use a tool calling strategy for model responses."""
 
     schema: type[SchemaT]
@@ -188,7 +188,7 @@ class ToolOutput(Generic[SchemaT]):
         tuple[type[Exception], ...],
         Callable[[Exception], str],
     ]
-    """Error handling strategy for structured output via ToolOutput. Default is True.
+    """Error handling strategy for structured output via ToolStrategy. Default is True.
 
     - True: Catch all errors with default error template
     - str: Catch all errors with this custom message
@@ -211,7 +211,7 @@ class ToolOutput(Generic[SchemaT]):
             Callable[[Exception], str],
         ] = True,
     ) -> None:
-        """Initialize ToolOutput with schemas, tool message content, and error handling strategy."""
+        """Initialize ToolStrategy with schemas, tool message content, and error handling strategy."""
         self.schema = schema
         self.tool_message_content = tool_message_content
         self.handle_errors = handle_errors
@@ -234,7 +234,7 @@ class ToolOutput(Generic[SchemaT]):
 
 
 @dataclass(init=False)
-class NativeOutput(Generic[SchemaT]):
+class ProviderStrategy(Generic[SchemaT]):
     """Use the model provider's native structured output method."""
 
     schema: type[SchemaT]
@@ -247,7 +247,7 @@ class NativeOutput(Generic[SchemaT]):
         self,
         schema: type[SchemaT],
     ) -> None:
-        """Initialize NativeOutput with schema."""
+        """Initialize ProviderStrategy with schema."""
         self.schema = schema
         self.schema_spec = _SchemaSpec(schema)
 
@@ -319,7 +319,7 @@ class OutputToolBinding(Generic[SchemaT]):
 
 
 @dataclass
-class NativeOutputBinding(Generic[SchemaT]):
+class ProviderStrategyBinding(Generic[SchemaT]):
     """Information for tracking native structured output metadata.
 
     This contains all necessary information to handle structured responses
@@ -335,13 +335,13 @@ class NativeOutputBinding(Generic[SchemaT]):
 
     @classmethod
     def from_schema_spec(cls, schema_spec: _SchemaSpec[SchemaT]) -> Self:
-        """Create a NativeOutputBinding instance from a SchemaSpec.
+        """Create a ProviderStrategyBinding instance from a SchemaSpec.
 
         Args:
             schema_spec: The SchemaSpec to convert
 
         Returns:
-            A NativeOutputBinding instance for parsing native structured output
+            A ProviderStrategyBinding instance for parsing native structured output
         """
         return cls(
             schema=schema_spec.schema,
@@ -401,4 +401,4 @@ class NativeOutputBinding(Generic[SchemaT]):
         return str(content)
 
 
-ResponseFormat = Union[ToolOutput[SchemaT], NativeOutput[SchemaT]]
+ResponseFormat = Union[ToolStrategy[SchemaT], ProviderStrategy[SchemaT]]

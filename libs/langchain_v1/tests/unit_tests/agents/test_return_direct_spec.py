@@ -75,7 +75,7 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
             model,
             tools=[poll_tool["tool"]],
             prompt=AGENT_PROMPT,
-            response_format=ToolOutput(case.response_format),
+            response_format=ToolStrategy(case.response_format),
         )
     else:
         agent = create_react_agent(

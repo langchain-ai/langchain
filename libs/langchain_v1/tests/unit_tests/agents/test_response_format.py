@@ -7,23 +7,16 @@ from typing import Union
 
 from langchain_core.messages import HumanMessage
 from langchain.agents import create_react_agent
-from langchain.agents.responses import (
+from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
-    NativeOutput,
+    ProviderStrategy,
     StructuredOutputParsingError,
-    ToolOutput,
+    ToolStrategy,
 )
 from pydantic import BaseModel, Field
 from typing_extensions import TypedDict
 
 from tests.unit_tests.agents.model import FakeToolCallingModel
-
-try:
-    from langchain_openai import ChatOpenAI
-except ImportError:
-    skip_openai_integration_tests = True
-else:
-    skip_openai_integration_tests = False
 
 
 # Test data models
@@ -191,9 +184,9 @@ class TestResponseFormatAsModel:
         assert len(response["messages"]) == 5
 
 
-class TestResponseFormatAsToolOutput:
+class TestResponseFormatAsToolStrategy:
     def test_pydantic_model(self) -> None:
-        """Test response_format as ToolOutput with Pydantic model."""
+        """Test response_format as ToolStrategy with Pydantic model."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
             [
@@ -208,7 +201,7 @@ class TestResponseFormatAsToolOutput:
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_react_agent(
-            model, [get_weather], response_format=ToolOutput(WeatherBaseModel)
+            model, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -216,7 +209,7 @@ class TestResponseFormatAsToolOutput:
         assert len(response["messages"]) == 5
 
     def test_dataclass(self) -> None:
-        """Test response_format as ToolOutput with dataclass."""
+        """Test response_format as ToolStrategy with dataclass."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
             [
@@ -231,7 +224,7 @@ class TestResponseFormatAsToolOutput:
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_react_agent(
-            model, [get_weather], response_format=ToolOutput(WeatherDataclass)
+            model, [get_weather], response_format=ToolStrategy(WeatherDataclass)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -239,7 +232,7 @@ class TestResponseFormatAsToolOutput:
         assert len(response["messages"]) == 5
 
     def test_typed_dict(self) -> None:
-        """Test response_format as ToolOutput with TypedDict."""
+        """Test response_format as ToolStrategy with TypedDict."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
             [
@@ -254,7 +247,7 @@ class TestResponseFormatAsToolOutput:
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_react_agent(
-            model, [get_weather], response_format=ToolOutput(WeatherTypedDict)
+            model, [get_weather], response_format=ToolStrategy(WeatherTypedDict)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -262,7 +255,7 @@ class TestResponseFormatAsToolOutput:
         assert len(response["messages"]) == 5
 
     def test_json_schema(self) -> None:
-        """Test response_format as ToolOutput with JSON schema."""
+        """Test response_format as ToolStrategy with JSON schema."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
             [
@@ -277,7 +270,7 @@ class TestResponseFormatAsToolOutput:
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
         agent = create_react_agent(
-            model, [get_weather], response_format=ToolOutput(weather_json_schema)
+            model, [get_weather], response_format=ToolStrategy(weather_json_schema)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -285,7 +278,7 @@ class TestResponseFormatAsToolOutput:
         assert len(response["messages"]) == 5
 
     def test_union_of_json_schemas(self) -> None:
-        """Test response_format as ToolOutput with union of JSON schemas."""
+        """Test response_format as ToolStrategy with union of JSON schemas."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
             [
@@ -302,7 +295,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [get_weather, get_location],
-            response_format=ToolOutput({"oneOf": [weather_json_schema, location_json_schema]}),
+            response_format=ToolStrategy({"oneOf": [weather_json_schema, location_json_schema]}),
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -326,7 +319,7 @@ class TestResponseFormatAsToolOutput:
         agent_location = create_react_agent(
             model_location,
             [get_weather, get_location],
-            response_format=ToolOutput({"oneOf": [weather_json_schema, location_json_schema]}),
+            response_format=ToolStrategy({"oneOf": [weather_json_schema, location_json_schema]}),
         )
         response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
@@ -334,7 +327,7 @@ class TestResponseFormatAsToolOutput:
         assert len(response_location["messages"]) == 5
 
     def test_union_of_types(self) -> None:
-        """Test response_format as ToolOutput with Union of various types."""
+        """Test response_format as ToolStrategy with Union of various types."""
         # Test with WeatherBaseModel
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
@@ -354,7 +347,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [get_weather, get_location],
-            response_format=ToolOutput(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -378,7 +371,7 @@ class TestResponseFormatAsToolOutput:
         agent_location = create_react_agent(
             model_location,
             [get_weather, get_location],
-            response_format=ToolOutput(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
         )
         response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
@@ -407,7 +400,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 Union[WeatherBaseModel, LocationResponse],
                 handle_errors=False,
             ),
@@ -448,7 +441,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 Union[WeatherBaseModel, LocationResponse],
                 handle_errors=True,
             ),
@@ -477,7 +470,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 WeatherBaseModel,
                 handle_errors=False,
             ),
@@ -513,7 +506,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 WeatherBaseModel,
                 handle_errors=(StructuredOutputParsingError,),
             ),
@@ -559,7 +552,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 Union[WeatherBaseModel, LocationResponse],
                 handle_errors=custom_message,
             ),
@@ -597,7 +590,7 @@ class TestResponseFormatAsToolOutput:
         agent = create_react_agent(
             model,
             [],
-            response_format=ToolOutput(
+            response_format=ToolStrategy(
                 WeatherBaseModel,
                 handle_errors="Please provide valid weather data with temperature and condition.",
             ),
@@ -613,9 +606,9 @@ class TestResponseFormatAsToolOutput:
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
 
-class TestResponseFormatAsNativeOutput:
+class TestResponseFormatAsProviderStrategy:
     def test_pydantic_model(self) -> None:
-        """Test response_format as NativeOutput with Pydantic model."""
+        """Test response_format as ProviderStrategy with Pydantic model."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
@@ -625,7 +618,7 @@ class TestResponseFormatAsNativeOutput:
         )
 
         agent = create_react_agent(
-            model, [get_weather], response_format=NativeOutput(WeatherBaseModel)
+            model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -633,7 +626,7 @@ class TestResponseFormatAsNativeOutput:
         assert len(response["messages"]) == 4
 
     def test_dataclass(self) -> None:
-        """Test response_format as NativeOutput with dataclass."""
+        """Test response_format as ProviderStrategy with dataclass."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
@@ -643,7 +636,7 @@ class TestResponseFormatAsNativeOutput:
         )
 
         agent = create_react_agent(
-            model, [get_weather], response_format=NativeOutput(WeatherDataclass)
+            model, [get_weather], response_format=ProviderStrategy(WeatherDataclass)
         )
         response = agent.invoke(
             {"messages": [HumanMessage("What's the weather?")]},
@@ -653,7 +646,7 @@ class TestResponseFormatAsNativeOutput:
         assert len(response["messages"]) == 4
 
     def test_typed_dict(self) -> None:
-        """Test response_format as NativeOutput with TypedDict."""
+        """Test response_format as ProviderStrategy with TypedDict."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
@@ -663,7 +656,7 @@ class TestResponseFormatAsNativeOutput:
         )
 
         agent = create_react_agent(
-            model, [get_weather], response_format=NativeOutput(WeatherTypedDict)
+            model, [get_weather], response_format=ProviderStrategy(WeatherTypedDict)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -671,7 +664,7 @@ class TestResponseFormatAsNativeOutput:
         assert len(response["messages"]) == 4
 
     def test_json_schema(self) -> None:
-        """Test response_format as NativeOutput with JSON schema."""
+        """Test response_format as ProviderStrategy with JSON schema."""
         tool_calls = [
             [{"args": {}, "id": "1", "name": "get_weather"}],
         ]
@@ -681,7 +674,7 @@ class TestResponseFormatAsNativeOutput:
         )
 
         agent = create_react_agent(
-            model, [get_weather], response_format=NativeOutput(weather_json_schema)
+            model, [get_weather], response_format=ProviderStrategy(weather_json_schema)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -690,7 +683,7 @@ class TestResponseFormatAsNativeOutput:
 
 
 def test_union_of_types() -> None:
-    """Test response_format as NativeOutput with Union (if supported)."""
+    """Test response_format as ProviderStrategy with Union (if supported)."""
     tool_calls = [
         [{"args": {}, "id": "1", "name": "get_weather"}],
         [
@@ -709,60 +702,9 @@ def test_union_of_types() -> None:
     agent = create_react_agent(
         model,
         [get_weather, get_location],
-        response_format=ToolOutput(Union[WeatherBaseModel, LocationResponse]),
+        response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
     )
     response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
     assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
     assert len(response["messages"]) == 5
-
-
-@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
-def test_inference_to_native_output() -> None:
-    """Test that native output is inferred when a model supports it."""
-    model = ChatOpenAI(model="gpt-5")
-    agent = create_react_agent(
-        model,
-        prompt="You are a helpful weather assistant. Please call the get_weather tool, then use the WeatherReport tool to generate the final response.",
-        tools=[get_weather],
-        response_format=WeatherBaseModel,
-    )
-    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
-
-    assert isinstance(response["structured_response"], WeatherBaseModel)
-    assert response["structured_response"].temperature == 75.0
-    assert response["structured_response"].condition.lower() == "sunny"
-    assert len(response["messages"]) == 4
-
-    assert [m.type for m in response["messages"]] == [
-        "human",  # "What's the weather?"
-        "ai",  # "What's the weather?"
-        "tool",  # "The weather is sunny and 75°F."
-        "ai",  # structured response
-    ]
-
-
-@pytest.mark.skipif(skip_openai_integration_tests, reason="OpenAI integration tests are disabled.")
-def test_inference_to_tool_output() -> None:
-    """Test that tool output is inferred when a model supports it."""
-    model = ChatOpenAI(model="gpt-4")
-    agent = create_react_agent(
-        model,
-        prompt="You are a helpful weather assistant. Please call the get_weather tool, then use the WeatherReport tool to generate the final response.",
-        tools=[get_weather],
-        response_format=ToolOutput(WeatherBaseModel),
-    )
-    response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
-
-    assert isinstance(response["structured_response"], WeatherBaseModel)
-    assert response["structured_response"].temperature == 75.0
-    assert response["structured_response"].condition.lower() == "sunny"
-    assert len(response["messages"]) == 5
-
-    assert [m.type for m in response["messages"]] == [
-        "human",  # "What's the weather?"
-        "ai",  # "What's the weather?"
-        "tool",  # "The weather is sunny and 75°F."
-        "ai",  # structured response
-        "tool",  # artificial tool message
-    ]

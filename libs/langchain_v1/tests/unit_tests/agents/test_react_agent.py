@@ -34,7 +34,7 @@ from langchain.agents import (
     ToolNode,
     create_react_agent,
 )
-from langchain.agents.chat_agent_executor import _validate_chat_history
+from langchain.agents.react_agent import _validate_chat_history
 from langchain.agents.tool_node import (
     InjectedState,
     InjectedStore,
@@ -1390,7 +1390,6 @@ async def test_dynamic_model_receives_correct_state_async() -> None:
     assert received_state["messages"][0].content == "hello async"
 
 
-@pytest.mark.skip(reason="TODO: support with prepare call")
 def test_pre_model_hook() -> None:
     model = FakeToolCallingModel(tool_calls=[])
 

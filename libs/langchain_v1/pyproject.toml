@@ -52,7 +52,6 @@ test = [
     "pytest-socket>=0.6.0",
     "syrupy>=4.0.2",
     "pytest-xdist>=3.6.1",
-    "blockbuster>=1.5.18",
     "langchain-tests",
     "langchain-text-splitters",
     "langchain-openai",
