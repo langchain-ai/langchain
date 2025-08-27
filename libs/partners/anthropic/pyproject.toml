@@ -128,6 +128,9 @@ markers = [
 ]
 asyncio_mode = "auto"
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
     "S101", # Tests need assertions
