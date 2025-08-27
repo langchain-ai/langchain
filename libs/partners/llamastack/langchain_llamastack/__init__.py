@@ -6,7 +6,11 @@ including chat completion, embeddings, safety checking capabilities, and utiliti
 """
 
 from langchain_llamastack._version import __version__
-from langchain_llamastack.chat_models import ChatLlamaStack
+from langchain_llamastack.chat_models import (
+    check_llamastack_status,
+    create_llamastack_llm,
+    get_llamastack_models,
+)
 from langchain_llamastack.embeddings import LlamaStackEmbeddings
 from langchain_llamastack.safety import LlamaStackSafety
 from langchain_llamastack.utils import (
@@ -15,10 +19,16 @@ from langchain_llamastack.utils import (
 )
 
 __all__ = [
-    "ChatLlamaStack",
+    # Factory functions
+    "create_llamastack_llm",
+    "get_llamastack_models",
+    "check_llamastack_status",
+    # Core classes
     "LlamaStackEmbeddings",
     "LlamaStackSafety",
+    # Utility functions
     "check_llamastack_connection",
     "list_available_models",
+    # Version
     "__version__",
 ]

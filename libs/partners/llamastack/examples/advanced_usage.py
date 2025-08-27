@@ -10,7 +10,12 @@ from langchain.chains import ConversationChain, LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_llamastack import ChatLlamaStack, LlamaStackSafety
+from langchain_llamastack import (
+    check_llamastack_status,
+    create_llamastack_llm,
+    get_llamastack_models,
+    LlamaStackSafety,
+)
 
 
 def advanced_prompt_example():
@@ -19,10 +24,7 @@ def advanced_prompt_example():
     print("=" * 40)
 
     try:
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-        )
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         # Create a detailed prompt template
         prompt = ChatPromptTemplate.from_messages(
@@ -81,10 +83,7 @@ def conversation_memory_example():
     print("=" * 40)
 
     try:
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-        )
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         # Create conversation chain with memory
         memory = ConversationBufferMemory()
@@ -122,10 +121,7 @@ def safe_conversation_agent():
     print("=" * 40)
 
     try:
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-        )
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         safety = LlamaStackSafety(
             base_url="http://localhost:8321", shield_id="code-scanner"
@@ -238,11 +234,8 @@ def multi_model_comparison():
     print("=" * 40)
 
     try:
-        # Initialize chat model
-        base_llm = ChatLlamaStack(base_url="http://localhost:8321")
-
-        # Get available models
-        available_models = base_llm.get_available_models()
+        # Get available models using the new approach
+        available_models = get_llamastack_models()
         print(f"Available models: {len(available_models)}")
 
         # Select models for comparison (use first 2 if available)
@@ -263,10 +256,7 @@ def multi_model_comparison():
         for model in test_models:
             print(f"\n--- {model.split('/')[-1]} ---")
 
-            llm = ChatLlamaStack(
-                model=model,
-                base_url="http://localhost:8321",
-            )
+            llm = create_llamastack_llm(model=model)
 
             try:
                 response = llm.invoke(test_prompt)
@@ -345,10 +335,7 @@ def langchain_integration_showcase():
     print("=" * 40)
 
     try:
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-        )
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         # 1. Simple Chain
         print("\n1. Simple LLM Chain:")

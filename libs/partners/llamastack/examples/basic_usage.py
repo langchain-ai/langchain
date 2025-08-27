@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""Basic usage examples for LangChain Llama Stack integration."""
+"""Basic usage examples for LangChain Llama Stack integration - Updated for simplified approach."""
 
-from langchain_llamastack import ChatLlamaStack, LlamaStackEmbeddings, LlamaStackSafety
+from langchain_llamastack import (
+    check_llamastack_status,
+    create_llamastack_llm,
+    get_llamastack_models,
+    LlamaStackEmbeddings,
+    LlamaStackSafety,
+)
 
 
 def test_chat_completion():
-    """Test basic chat completion."""
-    print("🤖 Testing Chat Completion")
-    print("=" * 40)
+    """Test basic chat completion using the new recommended approach."""
+    print("🤖 Testing Chat Completion (New Factory Function Approach)")
+    print("=" * 60)
 
     try:
-        # Initialize the chat model
-        llm = ChatLlamaStack(
+        # NEW RECOMMENDED APPROACH: Use factory function
+        llm = create_llamastack_llm(
             model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
+            # Will auto-fallback if not available
         )
 
         # Test basic completion
@@ -27,20 +33,82 @@ def test_chat_completion():
         return False
 
 
+# ChatLlamaStack class has been removed - using factory function approach only
+
+
+def test_model_discovery():
+    """Test model discovery and connection checking."""
+    print("\n🔍 Testing Model Discovery")
+    print("=" * 40)
+
+    try:
+        # Check connection status
+        status = check_llamastack_status()
+        print(f"Connection: {'✅ Connected' if status['connected'] else '❌ Failed'}")
+        print(f"Models available: {status['models_count']}")
+
+        if status["connected"]:
+            print(f"Available models: {status['models']}")
+        else:
+            print(f"Error: {status['error']}")
+            return False
+
+        # Get models list directly
+        models = get_llamastack_models()
+        print(f"Direct model query returned {len(models)} models")
+
+        return True
+
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+
+def test_manual_chatopenaai():
+    """Test manual ChatOpenAI usage for advanced users."""
+    print("\n🔧 Testing Manual ChatOpenAI Usage")
+    print("=" * 40)
+
+    try:
+        # Import ChatOpenAI directly
+        from langchain_openai import ChatOpenAI
+
+        # Manual approach for full control
+        models = get_llamastack_models()
+        if not models:
+            print("No models available")
+            return False
+
+        llm = ChatOpenAI(
+            base_url="http://localhost:8321/v1/openai/v1",
+            api_key="not-needed",  # LlamaStack doesn't require real API keys
+            model="ollama/llama3:70b-instruct",  # models[0],
+        )
+
+        response = llm.invoke("Explain quantum computing briefly")
+        print(f"Manual ChatOpenAI response: {response.content}")
+
+        return True
+
+    except ImportError:
+        print("langchain-openai not installed - skipping manual test")
+        return True
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
+
+
 def test_streaming():
     """Test streaming chat completion."""
     print("\n🔄 Testing Streaming")
     print("=" * 40)
 
     try:
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-            streaming=True,
-        )
+        # Use factory function with streaming
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         print("AI: ", end="", flush=True)
-        for chunk in llm.stream("Tell me about machine learning"):
+        for chunk in llm.stream("Tell me about machine learning in 2 sentences"):
             print(chunk.content, end="", flush=True)
         print()
 
@@ -58,7 +126,7 @@ def test_safety_checking():
 
     try:
         safety = LlamaStackSafety(
-            base_url="http://localhost:8321", shield_id="code-scanner"
+            base_url="http://localhost:8321", shield_id="llama-guard"
         )
 
         # Check if shields are available first
@@ -116,12 +184,8 @@ def test_combined_safe_chat():
     print("=" * 40)
 
     try:
-        # Initialize both components
-        llm = ChatLlamaStack(
-            model="ollama/llama3:70b-instruct",
-            base_url="http://localhost:8321",
-        )
-
+        # Initialize components using new approach
+        llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
         safety = LlamaStackSafety(base_url="http://localhost:8321")
 
         # Check if shields are available
@@ -171,7 +235,7 @@ def test_embeddings():
     try:
         # Initialize embeddings
         embeddings = LlamaStackEmbeddings(
-            model="all-minilm",  # Popular embedding model
+            model="ollama/all-minilm:l6-v2",  # Popular embedding model
             base_url="http://localhost:8321",
         )
 
@@ -209,8 +273,16 @@ def main():
     print("🚀 LangChain Llama Stack Integration - Basic Examples")
     print("=" * 60)
 
-    # Run tests
+    # Show different approaches first
+    print("\n🎯 Testing All Approaches")
+    print("=" * 40)
+
+    # Test model discovery first
+    discovery_result = test_model_discovery()
+
+    # Run main tests
     chat_result = test_chat_completion()
+    manual_result = test_manual_chatopenaai()
     streaming_result = test_streaming()
     safety_result = test_safety_checking()
     embeddings_result = test_embeddings()
@@ -219,36 +291,55 @@ def main():
     # Summary
     print("\n📊 Test Results")
     print("=" * 40)
-    print(f"Chat Completion: {'✅ PASS' if chat_result else '❌ FAIL'}")
+    print(f"Model Discovery: {'✅ PASS' if discovery_result else '❌ FAIL'}")
+    print(f"Factory Function Chat: {'✅ PASS' if chat_result else '❌ FAIL'}")
+    print(f"Manual ChatOpenAI: {'✅ PASS' if manual_result else '❌ FAIL'}")
     print(f"Streaming: {'✅ PASS' if streaming_result else '❌ FAIL'}")
     print(f"Safety Checking: {'✅ PASS' if safety_result else '❌ FAIL'}")
     print(f"Embeddings: {'✅ PASS' if embeddings_result else '❌ FAIL'}")
     print(f"Combined Safe Chat: {'✅ PASS' if combined_result else '❌ FAIL'}")
 
-    if all(
-        [
-            chat_result,
-            streaming_result,
-            safety_result,
-            embeddings_result,
-            combined_result,
-        ]
-    ):
+    all_results = [
+        discovery_result,
+        chat_result,
+        manual_result,
+        streaming_result,
+        safety_result,
+        embeddings_result,
+        combined_result,
+    ]
+
+    if all(all_results):
         print("\n🎉 All tests passed!")
     else:
         print("\n⚠️ Some tests failed. Check the output above for details.")
 
-    print("\n💡 Usage Examples:")
-    print("# Chat")
-    print("llm = ChatLlamaStack(model='ollama/llama3:70b-instruct')")
+    print("\n💡 Usage Examples - New Simplified Approach:")
+    print("=" * 50)
+    print("# Recommended: Factory function approach")
+    print("from langchain_llamastack import create_llamastack_llm")
+    print("llm = create_llamastack_llm()  # Auto-selects first available model")
+    print("response = llm.invoke('Hello!')")
+    print()
+    print("# Alternative: Manual ChatOpenAI approach")
+    print("from langchain_openai import ChatOpenAI")
+    print("from langchain_llamastack import get_llamastack_models")
+    print("models = get_llamastack_models()")
+    print("llm = ChatOpenAI(")
+    print("    base_url='http://localhost:8321/v1/openai/v1',")
+    print("    api_key='not-needed',")
+    print("    model=models[0]")
+    print(")")
     print("response = llm.invoke('Hello!')")
     print()
     print("# Safety")
+    print("from langchain_llamastack import LlamaStackSafety")
     print("safety = LlamaStackSafety()")
     print("result = safety.check_content('Hello world')")
     print()
     print("# Embeddings")
-    print("embeddings = LlamaStackEmbeddings(model='all-minilm')")
+    print("from langchain_llamastack import LlamaStackEmbeddings")
+    print("embeddings = LlamaStackEmbeddings(model='nomic-embed-text')")
     print("vector = embeddings.embed_query('Hello world')")
 
 

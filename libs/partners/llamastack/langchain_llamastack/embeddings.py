@@ -191,13 +191,9 @@ class LlamaStackEmbeddings(Embeddings):
     def get_available_models(self) -> List[str]:
         """Get list of available embedding models from Llama Stack."""
         try:
-            models = self.client.models.list()
-            embedding_models = [
-                model.identifier
-                for model in models
-                if getattr(model, "model_type", "") == "embedding"
-            ]
-            return embedding_models
+            from .utils import list_available_models
+
+            return list_available_models(self.base_url, model_type="embedding")
         except Exception as e:
             logger.error(f"Error fetching available embedding models: {e}")
             return []
