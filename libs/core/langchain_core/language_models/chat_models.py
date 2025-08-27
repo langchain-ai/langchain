@@ -451,13 +451,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if self.disable_streaming == "tool_calling" and kwargs.get("tools"):
             return False
 
-        # Check if streaming has been disabled via the streaming parameter.
-        if hasattr(self, "streaming") and not self.streaming:
-            return False
-
         # Check if a runtime streaming flag has been passed in.
         if "stream" in kwargs:
             return kwargs["stream"]
+
+        # Check if streaming has been disabled via the streaming parameter.
+        if not getattr(self, "streaming", True):
+            return False
 
         # Check if any streaming callback handlers have been passed in.
         handlers = run_manager.handlers if run_manager else []
