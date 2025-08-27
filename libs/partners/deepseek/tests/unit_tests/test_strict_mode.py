@@ -1,6 +1,6 @@
 """Unit tests for DeepSeek strict mode support."""
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, SecretStr
 
 from langchain_deepseek import ChatDeepSeek
 from langchain_deepseek.chat_models import DEFAULT_API_BASE
@@ -12,11 +12,11 @@ class SampleTool(BaseModel):
     value: str = Field(description="A test value")
 
 
-def test_bind_tools_with_strict_mode_uses_beta_endpoint():
+def test_bind_tools_with_strict_mode_uses_beta_endpoint() -> None:
     """Test that bind_tools with strict=True uses the beta endpoint."""
     llm = ChatDeepSeek(
         model="deepseek-chat",
-        api_key="test_key",
+        api_key=SecretStr("test_key"),
     )
 
     # Verify default endpoint
@@ -31,11 +31,11 @@ def test_bind_tools_with_strict_mode_uses_beta_endpoint():
     assert bound_model is not None
 
 
-def test_bind_tools_without_strict_mode_uses_default_endpoint():
+def test_bind_tools_without_strict_mode_uses_default_endpoint() -> None:
     """Test bind_tools without strict or with strict=False uses default endpoint."""
     llm = ChatDeepSeek(
         model="deepseek-chat",
-        api_key="test_key",
+        api_key=SecretStr("test_key"),
     )
 
     # Test with strict=False
@@ -47,11 +47,11 @@ def test_bind_tools_without_strict_mode_uses_default_endpoint():
     assert bound_model_none is not None
 
 
-def test_with_structured_output_strict_mode_uses_beta_endpoint():
+def test_with_structured_output_strict_mode_uses_beta_endpoint() -> None:
     """Test that with_structured_output with strict=True uses beta endpoint."""
     llm = ChatDeepSeek(
         model="deepseek-chat",
-        api_key="test_key",
+        api_key=SecretStr("test_key"),
     )
 
     # Verify default endpoint
@@ -64,12 +64,12 @@ def test_with_structured_output_strict_mode_uses_beta_endpoint():
     assert structured_model is not None
 
 
-def test_custom_api_base_not_overridden():
+def test_custom_api_base_not_overridden() -> None:
     """Test that custom API base is not overridden even with strict=True."""
     custom_base = "https://custom.api.com/v1"
     llm = ChatDeepSeek(
         model="deepseek-chat",
-        api_key="test_key",
+        api_key=SecretStr("test_key"),
         api_base=custom_base,
     )
 
