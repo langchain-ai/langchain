@@ -79,10 +79,10 @@ class TestOutputVersionPassing:
     @pytest.mark.parametrize(
         ("method_name", "default_version", "provided_version", "expected_version"),
         [
-            # Test invoke
-            ("invoke", "v1", None, "v1"),  # Uses default when not provided
-            ("invoke", "v0", "v1", "v1"),  # Uses provided version
-            # Test stream
+            # Test invoke - output_version is no longer passed to _generate methods
+            ("invoke", "v1", None, "v0"),  # Always defaults to v0 in _generate
+            ("invoke", "v0", "v1", "v0"),  # Always defaults to v0 in _generate
+            # Test stream - output_version is still passed to _stream methods
             ("stream", "v1", None, "v1"),  # Uses default when not provided
             ("stream", "v1", "v2", "v2"),  # Uses provided version
         ],
@@ -116,10 +116,10 @@ class TestOutputVersionPassing:
     @pytest.mark.parametrize(
         ("method_name", "default_version", "provided_version", "expected_version"),
         [
-            # Test ainvoke
-            ("ainvoke", "v1", None, "v1"),  # Uses default when not provided
-            ("ainvoke", "v0", "v1", "v1"),  # Uses provided version
-            # Test astream
+            # Test ainvoke - output_version is no longer passed to _generate methods
+            ("ainvoke", "v1", None, "v0"),  # Always defaults to v0 in _generate
+            ("ainvoke", "v0", "v1", "v0"),  # Always defaults to v0 in _generate
+            # Test astream - output_version is still passed to _stream methods
             ("astream", "v1", None, "v1"),  # Uses default when not provided
             ("astream", "v1", "v0", "v0"),  # Uses provided version
         ],
@@ -186,9 +186,10 @@ class TestStreamFallback:
                 return "no-stream-model"
 
         model = NoStreamModel(output_version="v1")
-        # Stream should fallback to invoke and pass the output_version
+        # Stream should fallback to invoke but output_version is no longer
+        # passed to _generate
         list(model.stream(messages, output_version="v2"))
-        assert model.last_output_version == "v2"
+        assert model.last_output_version == "v0"  # _generate always gets v0 default
 
     async def test_astream_fallback_to_ainvoke_passes_output_version(
         self,
@@ -220,10 +221,11 @@ class TestStreamFallback:
                 return "no-stream-model"
 
         model = NoStreamModel(output_version="v1")
-        # astream should fallback to ainvoke and pass the output_version
+        # astream should fallback to ainvoke but output_version is no longer
+        # passed to _generate
         async for _ in model.astream(messages, output_version="v2"):
             pass
-        assert model.last_output_version == "v2"
+        assert model.last_output_version == "v0"  # _generate always gets v0 default
 
 
 class TestOutputVersionInMessages:
@@ -275,6 +277,28 @@ class TestOutputVersionInMessages:
         for chunk in content_chunks:
             assert "output_version" in chunk.response_metadata
             assert chunk.response_metadata["output_version"] == "v2"
+
+    def test_no_output_version_anywhere_no_metadata(
+        self,
+        messages: list[BaseMessage],
+    ) -> None:
+        """Test that when no output_version is set, no metadata is added."""
+        from itertools import cycle
+
+        # Test invoke
+        model = GenericFakeChatModel(messages=cycle([AIMessage(content="hello")]))
+        result = model.invoke(messages)
+        assert result.response_metadata == {}
+        assert isinstance(result.content, str)  # Should be v0 behavior
+
+        # Test stream
+        model_stream = GenericFakeChatModel(
+            messages=cycle([AIMessage(content="hello")])
+        )
+        chunks = list(model_stream.stream(messages))
+        content_chunks = [chunk for chunk in chunks if chunk.content]
+        for chunk in content_chunks:
+            assert chunk.response_metadata == {}
 
 
 class TestOutputVersionMerging:
@@ -337,5 +361,6 @@ class TestBackwardsCompatibility:
             call_kwargs = mock_cache.call_args[1]
             assert call_kwargs.get("_output_version") == "v2"
 
-        # Verify the model implementation received the correct output_version
-        assert model.last_output_version == "v2"
+        # Verify the model implementation received the default output_version
+        # (not the explicit one)
+        assert model.last_output_version == "v0"

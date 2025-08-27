@@ -1377,14 +1377,12 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     messages,
                     stop=stop,
                     run_manager=run_manager,
-                    output_version=output_version,
                     **filtered_kwargs,
                 )
             else:
                 result = self._generate(
                     messages,
                     stop=stop,
-                    output_version=output_version,
                     **filtered_kwargs,
                 )
 
@@ -1516,7 +1514,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 messages,
                 stop=stop,
                 run_manager=run_manager,
-                output_version=output_version,
                 **filtered_kwargs,
             )
         else:
@@ -1526,9 +1523,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 for k, v in kwargs.items()
                 if k not in ("_output_version", "_output_version_explicit")
             }
-            result = await self._agenerate(
-                messages, stop=stop, output_version=output_version, **filtered_kwargs
-            )
+            result = await self._agenerate(messages, stop=stop, **filtered_kwargs)
 
         if output_version == "v1":
             # Overwrite .content with .content_blocks
