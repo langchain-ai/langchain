@@ -13,7 +13,7 @@ from typing import (
 )
 
 from langchain_core.language_models import BaseChatModel, LanguageModelInput
-from langchain_core.messages import AnyMessage, BaseMessage
+from langchain_core.messages import AIMessage, AnyMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from typing_extensions import override
 
@@ -915,7 +915,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.
