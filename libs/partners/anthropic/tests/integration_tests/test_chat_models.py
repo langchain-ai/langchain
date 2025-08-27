@@ -6,7 +6,7 @@ import asyncio
 import json
 import os
 from base64 import b64encode
-from typing import Optional, cast
+from typing import Literal, Optional, cast
 
 import httpx
 import pytest
@@ -29,10 +29,11 @@ from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-opus-4-1-20250805"
-IMAGE_MODEL_NAME = "claude-opus-4-1-20250805"
+MODEL_NAME = "claude-3-5-haiku-latest"
+IMAGE_MODEL_NAME = "claude-3-5-haiku-latest"
 
 
 def test_stream() -> None:
@@ -65,6 +66,9 @@ def test_stream() -> None:
     assert chunks_with_model_name == 1
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
+    assert len(full.content_blocks) == 1
+    assert full.content_blocks[0]["type"] == "text"
+    assert full.content_blocks[0]["text"]
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
     assert full.usage_metadata["output_tokens"] > 0
@@ -105,6 +109,9 @@ async def test_astream() -> None:
         )
     # check token usage is populated
     assert isinstance(full, AIMessageChunk)
+    assert len(full.content_blocks) == 1
+    assert full.content_blocks[0]["type"] == "text"
+    assert full.content_blocks[0]["text"]
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
     assert full.usage_metadata["output_tokens"] > 0
@@ -421,6 +428,14 @@ def test_tool_use() -> None:
     assert isinstance(tool_call["args"], dict)
     assert "location" in tool_call["args"]
 
+    content_blocks = response.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call"
+    assert content_blocks[1]["name"] == "get_weather"
+    assert content_blocks[1]["args"] == tool_call["args"]
+
     # Test streaming
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-20250219",  # type: ignore[call-arg]
@@ -440,6 +455,8 @@ def test_tool_use() -> None:
             first = False
         else:
             gathered = gathered + chunk  # type: ignore[assignment]
+        for block in chunk.content_blocks:
+            assert block["type"] in ("text", "tool_call_chunk")
     assert len(chunks) > 1
     assert isinstance(gathered.content, list)
     assert len(gathered.content) == 2
@@ -460,6 +477,14 @@ def test_tool_use() -> None:
     assert isinstance(tool_call["args"], dict)
     assert "location" in tool_call["args"]
     assert tool_call["id"] is not None
+
+    content_blocks = gathered.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call_chunk"
+    assert content_blocks[1]["name"] == "get_weather"
+    assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
     # https://docs.anthropic.com/en/docs/build-with-claude/tool-use/token-efficient-tool-use
@@ -499,6 +524,13 @@ def test_builtin_tools() -> None:
     )
     assert isinstance(response, AIMessage)
     assert response.tool_calls
+
+    content_blocks = response.content_blocks
+    assert len(content_blocks) == 2
+    assert content_blocks[0]["type"] == "text"
+    assert content_blocks[0]["text"]
+    assert content_blocks[1]["type"] == "tool_call"
+    assert content_blocks[1]["name"] == "str_replace_editor"
 
 
 class GenerateUsername(BaseModel):
@@ -682,8 +714,74 @@ def test_pdf_document_input() -> None:
     assert len(result.content) > 0
 
 
-def test_citations() -> None:
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
+@pytest.mark.default_cassette("test_agent_loop.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_agent_loop(output_version: Literal["v0", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = llm_with_tools.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
+
+
+@pytest.mark.default_cassette("test_agent_loop_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_agent_loop_streaming(output_version: Literal["v0", "v1"]) -> None:
+    @tool
+    def get_weather(location: str) -> str:
+        """Get the weather for a location."""
+        return "It's sunny."
+
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest",
+        streaming=True,
+        output_version=output_version,  # type: ignore[call-arg]
+    )
+    llm_with_tools = llm.bind_tools([get_weather])
+    input_message = HumanMessage("What is the weather in San Francisco, CA?")
+    tool_call_message = llm_with_tools.invoke([input_message])
+    assert isinstance(tool_call_message, AIMessage)
+
+    tool_calls = tool_call_message.tool_calls
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    tool_message = get_weather.invoke(tool_call)
+    assert isinstance(tool_message, ToolMessage)
+    response = llm_with_tools.invoke(
+        [
+            input_message,
+            tool_call_message,
+            tool_message,
+        ]
+    )
+    assert isinstance(response, AIMessage)
+
+
+@pytest.mark.default_cassette("test_citations.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_citations(output_version: Literal["v0", "v1"]) -> None:
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", output_version=output_version)  # type: ignore[call-arg]
     messages = [
         {
             "role": "user",
@@ -706,7 +804,10 @@ def test_citations() -> None:
     response = llm.invoke(messages)
     assert isinstance(response, AIMessage)
     assert isinstance(response.content, list)
-    assert any("citations" in block for block in response.content)
+    if output_version == "v1":
+        assert any("annotations" in block for block in response.content)
+    else:
+        assert any("citations" in block for block in response.content)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -714,8 +815,11 @@ def test_citations() -> None:
         full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
-    assert any("citations" in block for block in full.content)
     assert not any("citation" in block for block in full.content)
+    if output_version == "v1":
+        assert any("annotations" in block for block in full.content)
+    else:
+        assert any("citations" in block for block in full.content)
 
     # Test pass back in
     next_message = {
@@ -762,25 +866,26 @@ def test_thinking() -> None:
     _ = llm.invoke([input_message, full, next_message])
 
 
+@pytest.mark.default_cassette("test_thinking.yaml.gz")
 @pytest.mark.vcr
-def test_redacted_thinking() -> None:
+def test_thinking_v1() -> None:
     llm = ChatAnthropic(
         model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
         max_tokens=5_000,  # type: ignore[call-arg]
         thinking={"type": "enabled", "budget_tokens": 2_000},
+        output_version="v1",
     )
-    query = "ANTHROPIC_MAGIC_STRING_TRIGGER_REDACTED_THINKING_46C9A13E193C177646C7398A98432ECCCE4C1253D5E2D82641AC0E52CC2876CB"  # noqa: E501
-    input_message = {"role": "user", "content": query}
 
+    input_message = {"role": "user", "content": "Hello"}
     response = llm.invoke([input_message])
-    has_reasoning = False
+    assert any("reasoning" in block for block in response.content)
     for block in response.content:
         assert isinstance(block, dict)
-        if block["type"] == "redacted_thinking":
-            has_reasoning = True
-            assert set(block.keys()) == {"type", "data"}
-            assert block["data"] and isinstance(block["data"], str)
-    assert has_reasoning
+        if block["type"] == "reasoning":
+            assert set(block.keys()) == {"type", "reasoning", "extras"}
+            assert block["reasoning"] and isinstance(block["reasoning"], str)
+            signature = block["extras"]["signature"]
+            assert signature and isinstance(signature, str)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -788,14 +893,76 @@ def test_redacted_thinking() -> None:
         full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
-    stream_has_reasoning = False
+    assert any("reasoning" in block for block in full.content)
+    for block in full.content:
+        assert isinstance(block, dict)
+        if block["type"] == "reasoning":
+            assert set(block.keys()) == {"type", "reasoning", "extras", "index"}
+            assert block["reasoning"] and isinstance(block["reasoning"], str)
+            signature = block["extras"]["signature"]
+            assert signature and isinstance(signature, str)
+
+    # Test pass back in
+    next_message = {"role": "user", "content": "How are you?"}
+    _ = llm.invoke([input_message, full, next_message])
+
+
+@pytest.mark.default_cassette("test_redacted_thinking.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
+    llm = ChatAnthropic(
+        model="claude-3-7-sonnet-latest",  # type: ignore[call-arg]
+        max_tokens=5_000,  # type: ignore[call-arg]
+        thinking={"type": "enabled", "budget_tokens": 2_000},
+        output_version=output_version,
+    )
+    query = "ANTHROPIC_MAGIC_STRING_TRIGGER_REDACTED_THINKING_46C9A13E193C177646C7398A98432ECCCE4C1253D5E2D82641AC0E52CC2876CB"  # noqa: E501
+    input_message = {"role": "user", "content": query}
+
+    response = llm.invoke([input_message])
+    value = None
+    for block in response.content:
+        assert isinstance(block, dict)
+        if block["type"] == "redacted_thinking":
+            value = block
+        elif (
+            block["type"] == "non_standard"
+            and block["value"]["type"] == "redacted_thinking"
+        ):
+            value = block["value"]
+        else:
+            pass
+        if value:
+            assert set(value.keys()) == {"type", "data"}
+            assert value["data"] and isinstance(value["data"], str)
+    assert value is not None
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    value = None
     for block in full.content:
         assert isinstance(block, dict)
         if block["type"] == "redacted_thinking":
-            stream_has_reasoning = True
-            assert set(block.keys()) == {"type", "data", "index"}
-            assert block["data"] and isinstance(block["data"], str)
-    assert stream_has_reasoning
+            value = block
+            assert set(value.keys()) == {"type", "data", "index"}
+            assert "index" in block
+        elif (
+            block["type"] == "non_standard"
+            and block["value"]["type"] == "redacted_thinking"
+        ):
+            value = block["value"]
+            assert set(value.keys()) == {"type", "data"}
+            assert "index" in block
+        else:
+            pass
+        if value:
+            assert value["data"] and isinstance(value["data"], str)
+    assert value is not None
 
     # Test pass back in
     next_message = {"role": "user", "content": "What?"}
@@ -899,11 +1066,14 @@ def test_image_tool_calling() -> None:
     llm.bind_tools([color_picker]).invoke(messages)
 
 
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
-def test_web_search() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
         model="claude-3-5-sonnet-latest",  # type: ignore[call-arg]
         max_tokens=1024,
+        output_version=output_version,
     )
 
     tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
@@ -921,7 +1091,10 @@ def test_web_search() -> None:
     response = llm_with_tools.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    else:
+        assert block_types == {"text", "web_search_call", "web_search_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -931,7 +1104,10 @@ def test_web_search() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
+    else:
+        assert block_types == {"text", "web_search_call", "web_search_result"}
 
     # Test we can pass back in
     next_message = {
@@ -943,12 +1119,15 @@ def test_web_search() -> None:
     )
 
 
+@pytest.mark.default_cassette("test_code_execution.yaml.gz")
 @pytest.mark.vcr
-def test_code_execution() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
         betas=["code-execution-2025-05-22"],
         max_tokens=10_000,  # type: ignore[call-arg]
+        output_version=output_version,
     )
 
     tool = {"type": "code_execution_20250522", "name": "code_execution"}
@@ -969,7 +1148,14 @@ def test_code_execution() -> None:
     response = llm_with_tools.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    else:
+        assert block_types == {
+            "text",
+            "code_interpreter_call",
+            "code_interpreter_result",
+        }
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -979,7 +1165,14 @@ def test_code_execution() -> None:
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
+    else:
+        assert block_types == {
+            "text",
+            "code_interpreter_call",
+            "code_interpreter_result",
+        }
 
     # Test we can pass back in
     next_message = {
@@ -991,8 +1184,10 @@ def test_code_execution() -> None:
     )
 
 
+@pytest.mark.default_cassette("test_remote_mcp.yaml.gz")
 @pytest.mark.vcr
-def test_remote_mcp() -> None:
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     mcp_servers = [
         {
             "type": "url",
@@ -1008,6 +1203,7 @@ def test_remote_mcp() -> None:
         betas=["mcp-client-2025-04-04"],
         mcp_servers=mcp_servers,
         max_tokens=10_000,  # type: ignore[call-arg]
+        output_version=output_version,
     )
 
     input_message = {
@@ -1025,7 +1221,10 @@ def test_remote_mcp() -> None:
     response = llm.invoke([input_message])
     assert all(isinstance(block, dict) for block in response.content)
     block_types = {block["type"] for block in response.content}  # type: ignore[index]
-    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    else:
+        assert block_types == {"text", "non_standard"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1036,7 +1235,10 @@ def test_remote_mcp() -> None:
     assert isinstance(full.content, list)
     assert all(isinstance(block, dict) for block in full.content)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
-    assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    if output_version == "v0":
+        assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
+    else:
+        assert block_types == {"text", "non_standard"}
 
     # Test we can pass back in
     next_message = {
@@ -1069,8 +1271,7 @@ def test_files_api_image(block_format: str) -> None:
         # standard block format
         block = {
             "type": "image",
-            "source_type": "id",
-            "id": image_file_id,
+            "file_id": image_file_id,
         }
     input_message = {
         "role": "user",
@@ -1097,8 +1298,7 @@ def test_files_api_pdf(block_format: str) -> None:
         # standard block format
         block = {
             "type": "file",
-            "source_type": "id",
-            "id": pdf_file_id,
+            "file_id": pdf_file_id,
         }
     input_message = {
         "role": "user",
@@ -1163,6 +1363,11 @@ def test_search_result_tool_message() -> None:
     assert isinstance(result.content, list)
     assert any("citations" in block for block in result.content)
 
+    assert (
+        _convert_from_v1_to_anthropic(result.content_blocks, [], "anthropic")
+        == result.content
+    )
+
 
 def test_search_result_top_level() -> None:
     llm = ChatAnthropic(
@@ -1208,6 +1413,11 @@ def test_search_result_top_level() -> None:
     assert isinstance(result, AIMessage)
     assert isinstance(result.content, list)
     assert any("citations" in block for block in result.content)
+
+    assert (
+        _convert_from_v1_to_anthropic(result.content_blocks, [], "anthropic")
+        == result.content
+    )
 
 
 def test_async_shared_client() -> None:

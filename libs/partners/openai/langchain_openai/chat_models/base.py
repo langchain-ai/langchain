@@ -63,6 +63,7 @@ from langchain_core.messages import (
     convert_to_openai_data_block,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import (
     InputTokenDetails,
     OutputTokenDetails,
@@ -107,6 +108,8 @@ from langchain_openai.chat_models._client_utils import (
 )
 from langchain_openai.chat_models._compat import (
     _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
 
@@ -200,7 +203,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
-def _format_message_content(content: Any) -> Any:
+def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
         formatted_content = []
@@ -212,7 +215,13 @@ def _format_message_content(content: Any) -> Any:
                 and block["type"] in ("tool_use", "thinking", "reasoning_content")
             ):
                 continue
-            elif isinstance(block, dict) and is_data_content_block(block):
+            elif (
+                isinstance(block, dict)
+                and is_data_content_block(block)
+                # Responses API messages handled separately in _compat (parsed into
+                # image generation calls)
+                and not responses_ai_msg
+            ):
                 formatted_content.append(convert_to_openai_data_block(block))
             # Anthropic image blocks
             elif (
@@ -245,7 +254,9 @@ def _format_message_content(content: Any) -> Any:
     return formatted_content
 
 
-def _convert_message_to_dict(message: BaseMessage) -> dict:
+def _convert_message_to_dict(
+    message: BaseMessage, responses_ai_msg: bool = False
+) -> dict:
     """Convert a LangChain message to a dictionary.
 
     Args:
@@ -254,7 +265,11 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: dict[str, Any] = {"content": _format_message_content(message.content)}
+    message_dict: dict[str, Any] = {
+        "content": _format_message_content(
+            message.content, responses_ai_msg=responses_ai_msg
+        )
+    }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
 
@@ -289,15 +304,25 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
         if "function_call" in message_dict or "tool_calls" in message_dict:
             message_dict["content"] = message_dict["content"] or None
 
-        if "audio" in message.additional_kwargs:
-            # openai doesn't support passing the data back - only the id
-            # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+        audio: Optional[dict[str, Any]] = None
+        for block in message.content:
+            if (
+                isinstance(block, dict)
+                and block.get("type") == "audio"
+                and (id_ := block.get("id"))
+                and not responses_ai_msg
+            ):
+                # openai doesn't support passing the data back - only the id
+                # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
+                audio = {"id": id_}
+        if not audio and "audio" in message.additional_kwargs:
             raw_audio = message.additional_kwargs["audio"]
             audio = (
                 {"id": message.additional_kwargs["audio"]["id"]}
                 if "id" in raw_audio
                 else raw_audio
             )
+        if audio:
             message_dict["audio"] = audio
     elif isinstance(message, SystemMessage):
         message_dict["role"] = message.additional_kwargs.get(
@@ -678,7 +703,7 @@ class BaseChatOpenAI(BaseChatModel):
     .. versionadded:: 0.3.9
     """
 
-    output_version: Literal["v0", "responses/v1"] = "v0"
+    output_version: str = "v0"
     """Version of AIMessage output format to use.
 
     This field is used to roll-out new output formats for chat model AIMessages
@@ -688,10 +713,8 @@ class BaseChatOpenAI(BaseChatModel):
 
     - ``'v0'``: AIMessage format as of langchain-openai 0.3.x.
     - ``'responses/v1'``: Formats Responses API output
-      items into AIMessage content blocks.
-
-    Currently only impacts the Responses API. ``output_version='responses/v1'`` is
-    recommended.
+      items into AIMessage content blocks (Responses API only)
+    - ``"v1"``: v1 of LangChain cross-provider standard.
 
     .. versionadded:: 0.3.25
 
@@ -896,6 +919,10 @@ class BaseChatOpenAI(BaseChatModel):
                 message=default_chunk_class(content="", usage_metadata=usage_metadata),
                 generation_info=base_generation_info,
             )
+            if self.output_version == "v1":
+                generation_chunk.message.content = []
+                generation_chunk.message.response_metadata["output_version"] = "v1"
+
             return generation_chunk
 
         choice = choices[0]
@@ -908,6 +935,7 @@ class BaseChatOpenAI(BaseChatModel):
         generation_info = {**base_generation_info} if base_generation_info else {}
 
         if finish_reason := choice.get("finish_reason"):
+            generation_info["model_provider"] = "openai"
             generation_info["finish_reason"] = finish_reason
             if model_name := chunk.get("model"):
                 generation_info["model_name"] = model_name
@@ -1225,7 +1253,12 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 payload = _construct_responses_api_payload(messages, payload)
         else:
-            payload["messages"] = [_convert_message_to_dict(m) for m in messages]
+            payload["messages"] = [
+                _convert_message_to_dict(_convert_from_v1_to_chat_completions(m))
+                if isinstance(m, AIMessage)
+                else _convert_message_to_dict(m)
+                for m in messages
+            ]
         return payload
 
     def _create_chat_result(
@@ -1274,6 +1307,7 @@ class BaseChatOpenAI(BaseChatModel):
             generations.append(gen)
         llm_output = {
             "token_usage": token_usage,
+            "model_provider": "openai",
             "model_name": response_dict.get("model", self.model_name),
             "system_fingerprint": response_dict.get("system_fingerprint", ""),
         }
@@ -1514,7 +1548,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     def get_num_tokens_from_messages(
         self,
-        messages: list[BaseMessage],
+        messages: Sequence[BaseMessage],
         tools: Optional[
             Sequence[Union[dict[str, Any], type, Callable, BaseTool]]
         ] = None,
@@ -3343,6 +3377,20 @@ def _oai_structured_outputs_parser(
             return parsed
     elif ai_msg.additional_kwargs.get("refusal"):
         raise OpenAIRefusalError(ai_msg.additional_kwargs["refusal"])
+    elif any(
+        isinstance(block, dict)
+        and block.get("type") == "non_standard"
+        and "refusal" in block["value"]
+        for block in ai_msg.content
+    ):
+        refusal = next(
+            block["value"]["refusal"]
+            for block in ai_msg.content
+            if isinstance(block, dict)
+            and block["type"] == "non_standard"
+            and "refusal" in block["value"]
+        )
+        raise OpenAIRefusalError(refusal)
     elif ai_msg.tool_calls:
         return None
     else:
@@ -3459,7 +3507,7 @@ def _get_last_messages(
         msg = messages[i]
         if isinstance(msg, AIMessage):
             response_id = msg.response_metadata.get("id")
-            if response_id:
+            if response_id and response_id.startswith("resp_"):
                 return messages[i + 1 :], response_id
             else:
                 return messages, None
@@ -3568,23 +3616,45 @@ def _construct_responses_api_payload(
     return payload
 
 
-def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
-    computer_call_output: dict = {
-        "call_id": message.tool_call_id,
-        "type": "computer_call_output",
-    }
+def _make_computer_call_output_from_message(
+    message: ToolMessage,
+) -> Optional[dict[str, Any]]:
+    computer_call_output: Optional[dict[str, Any]] = None
     if isinstance(message.content, list):
-        # Use first input_image block
-        output = next(
-            block
-            for block in message.content
-            if cast(dict, block)["type"] == "input_image"
-        )
+        for block in message.content:
+            if (
+                message.additional_kwargs.get("type") == "computer_call_output"
+                and isinstance(block, dict)
+                and block.get("type") == "input_image"
+            ):
+                # Use first input_image block
+                computer_call_output = {
+                    "call_id": message.tool_call_id,
+                    "type": "computer_call_output",
+                    "output": block,
+                }
+                break
+            elif (
+                isinstance(block, dict)
+                and block.get("type") == "non_standard"
+                and block.get("value", {}).get("type") == "computer_call_output"
+            ):
+                computer_call_output = block["value"]
+                break
+            else:
+                pass
     else:
-        # string, assume image_url
-        output = {"type": "input_image", "image_url": message.content}
-    computer_call_output["output"] = output
-    if "acknowledged_safety_checks" in message.additional_kwargs:
+        if message.additional_kwargs.get("type") == "computer_call_output":
+            # string, assume image_url
+            computer_call_output = {
+                "call_id": message.tool_call_id,
+                "type": "computer_call_output",
+                "output": {"type": "input_image", "image_url": message.content},
+            }
+    if (
+        computer_call_output is not None
+        and "acknowledged_safety_checks" in message.additional_kwargs
+    ):
         computer_call_output["acknowledged_safety_checks"] = message.additional_kwargs[
             "acknowledged_safety_checks"
         ]
@@ -3601,6 +3671,15 @@ def _make_custom_tool_output_from_message(message: ToolMessage) -> Optional[dict
                 "output": block.get("output") or "",
             }
             break
+        elif (
+            isinstance(block, dict)
+            and block.get("type") == "non_standard"
+            and block.get("value", {}).get("type") == "custom_tool_call_output"
+        ):
+            custom_tool_output = block["value"]
+            break
+        else:
+            pass
 
     return custom_tool_output
 
@@ -3625,20 +3704,40 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
-        msg = _convert_message_to_dict(lc_msg)
+            msg = _convert_message_to_dict(lc_msg, responses_ai_msg=True)
+            if isinstance(msg.get("content"), list) and all(
+                isinstance(block, dict) for block in msg["content"]
+            ):
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in lc_msg.tool_calls
+                ]
+                msg["content"] = _convert_from_v1_to_responses(msg["content"], tcs)
+        else:
+            msg = _convert_message_to_dict(lc_msg)
+            # Get content from non-standard content blocks
+            if isinstance(msg["content"], list):
+                for i, block in enumerate(msg["content"]):
+                    if isinstance(block, dict) and block.get("type") == "non_standard":
+                        msg["content"][i] = block["value"]
         # "name" parameter unsupported
         if "name" in msg:
             msg.pop("name")
         if msg["role"] == "tool":
             tool_output = msg["content"]
+            computer_call_output = _make_computer_call_output_from_message(
+                cast(ToolMessage, lc_msg)
+            )
             custom_tool_output = _make_custom_tool_output_from_message(lc_msg)  # type: ignore[arg-type]
-            if custom_tool_output:
-                input_.append(custom_tool_output)
-            elif lc_msg.additional_kwargs.get("type") == "computer_call_output":
-                computer_call_output = _make_computer_call_output_from_message(
-                    cast(ToolMessage, lc_msg)
-                )
+            if computer_call_output:
                 input_.append(computer_call_output)
+            elif custom_tool_output:
+                input_.append(custom_tool_output)
             else:
                 if not isinstance(tool_output, str):
                     tool_output = _stringify(tool_output)
@@ -3793,7 +3892,7 @@ def _construct_lc_result_from_responses_api(
     response: Response,
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: str = "v0",
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -3820,6 +3919,7 @@ def _construct_lc_result_from_responses_api(
     if metadata:
         response_metadata.update(metadata)
     # for compatibility with chat completion calls.
+    response_metadata["model_provider"] = "openai"
     response_metadata["model_name"] = response_metadata.get("model")
     if response.usage:
         usage_metadata = _create_usage_metadata_responses(response.usage.model_dump())
@@ -3933,6 +4033,7 @@ def _construct_lc_result_from_responses_api(
             additional_kwargs["parsed"] = parsed
         except json.JSONDecodeError:
             pass
+
     message = AIMessage(
         content=content_blocks,
         id=response.id,
@@ -3944,8 +4045,7 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
-    else:
-        pass
+
     return ChatResult(generations=[ChatGeneration(message=message)])
 
 
@@ -3957,7 +4057,7 @@ def _convert_responses_chunk_to_generation_chunk(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
-    output_version: Literal["v0", "responses/v1"] = "v0",
+    output_version: str = "v0",
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -4011,6 +4111,7 @@ def _convert_responses_chunk_to_generation_chunk(
         response_metadata = metadata
     else:
         response_metadata = {}
+    response_metadata["model_provider"] = "openai"
     usage_metadata = None
     id = None
     if chunk.type == "response.output_text.delta":
@@ -4023,9 +4124,12 @@ def _convert_responses_chunk_to_generation_chunk(
             annotation = chunk.annotation
         else:
             annotation = chunk.annotation.model_dump(exclude_none=True, mode="json")
-        content.append({"annotations": [annotation], "index": current_index})
+
+        content.append(
+            {"type": "text", "annotations": [annotation], "index": current_index}
+        )
     elif chunk.type == "response.output_text.done":
-        content.append({"id": chunk.item_id, "index": current_index})
+        content.append({"type": "text", "id": chunk.item_id, "index": current_index})
     elif chunk.type == "response.created":
         id = chunk.response.id
         response_metadata["id"] = chunk.response.id  # Backwards compatibility
@@ -4118,6 +4222,7 @@ def _convert_responses_chunk_to_generation_chunk(
         content.append({"type": "refusal", "refusal": chunk.refusal})
     elif chunk.type == "response.output_item.added" and chunk.item.type == "reasoning":
         _advance(chunk.output_index)
+        current_sub_index = 0
         reasoning = chunk.item.model_dump(exclude_none=True, mode="json")
         reasoning["index"] = current_index
         content.append(reasoning)
@@ -4131,6 +4236,7 @@ def _convert_responses_chunk_to_generation_chunk(
                 ],
                 "index": current_index,
                 "type": "reasoning",
+                "id": chunk.item_id,
             }
         )
     elif chunk.type == "response.image_generation_call.partial_image":
@@ -4167,8 +4273,7 @@ def _convert_responses_chunk_to_generation_chunk(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
         )
-    else:
-        pass
+
     return (
         current_index,
         current_output_index,

@@ -1,6 +1,6 @@
 """Human message."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal, Union, overload
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
@@ -8,7 +8,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 class HumanMessage(BaseMessage):
     """Message from a human.
 
-    HumanMessages are messages that are passed in from a human to the model.
+    ``HumanMessage``s are messages that are passed in from a human to the model.
 
     Example:
 
@@ -36,15 +36,29 @@ class HumanMessage(BaseMessage):
 
     At the moment, this is ignored by most models. Usage is discouraged.
     Defaults to False.
+
     """
 
     type: Literal["human"] = "human"
-    """The type of the message (used for serialization). Defaults to "human"."""
+    """The type of the message (used for serialization).
+
+    Defaults to ``'human'``.
+
+    """
+
+    @overload
+    def __init__(
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
     ) -> None:
-        """Pass in content as positional arg.
+        """Initialize HumanMessage.
 
         Args:
             content: The string contents of the message.

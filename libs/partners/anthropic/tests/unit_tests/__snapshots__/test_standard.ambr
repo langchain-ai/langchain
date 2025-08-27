@@ -20,6 +20,7 @@
       'max_retries': 2,
       'max_tokens': 100,
       'model': 'claude-3-haiku-20240307',
+      'output_version': 'v0',
       'stop_sequences': list([
       ]),
       'stream_usage': True,
