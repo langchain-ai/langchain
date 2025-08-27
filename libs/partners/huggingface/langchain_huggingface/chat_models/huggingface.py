@@ -631,7 +631,7 @@ class ChatHuggingFace(BaseChatModel):
         return self._to_chat_result(llm_result)
 
     def _should_stream_usage(
-        self, stream_usage: Optional[bool] = None, **kwargs: Any
+        self, *, stream_usage: Optional[bool] = None, **kwargs: Any
     ) -> bool:
         """Determine whether to include usage metadata in streaming output.
 
