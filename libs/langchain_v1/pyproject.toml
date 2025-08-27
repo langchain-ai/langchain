@@ -12,15 +12,11 @@ dependencies = [
     "langgraph>=0.6.0",
     "pydantic>=2.7.4",
 ]
-dynamic = ["version"]
 
 name = "langchain"
+version = "1.0.0a1"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
-
-[tool.pdm.version]
-source = "file"
-path = "langchain/__init__.py"
 
 [project.optional-dependencies]
 # community = ["langchain-community"]
