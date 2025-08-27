@@ -12,6 +12,9 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models._utils import (
+    _update_message_content_to_blocks,
+)
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -255,16 +258,11 @@ class GenericFakeChatModel(BaseChatModel):
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
 
-        # Apply v1 content transformation if needed
         if output_version == "v1":
-            from langchain_core.language_models._utils import (
-                _update_message_content_to_blocks,
-            )
-
             message_ = _update_message_content_to_blocks(message_, "v1")
 
-        # Only set response metadata if output_version is explicitly provided
-        # If output_version is "v0" and self.output_version is None, it's the default
+        # Only set in response metadata if output_version is explicitly provided
+        # (If output_version is "v0" and self.output_version is None, it's the default)
         output_version_explicit = not (
             output_version == "v0" and getattr(self, "output_version", None) is None
         )
@@ -272,7 +270,6 @@ class GenericFakeChatModel(BaseChatModel):
             if hasattr(message_, "response_metadata"):
                 message_.response_metadata = {"output_version": output_version}
             else:
-                # Create new message with response_metadata
                 message_ = AIMessage(
                     content=message_.content,
                     additional_kwargs=message_.additional_kwargs,
@@ -293,12 +290,11 @@ class GenericFakeChatModel(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model."""
-        # Always call _generate with v0 to get the original string content for splitting
         chat_result = self._generate(
             messages,
             stop=stop,
             run_manager=run_manager,
-            output_version="v0",
+            output_version="v0",  # Always call with v0 to get original string content
             **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
@@ -340,17 +336,10 @@ class GenericFakeChatModel(BaseChatModel):
                     chunk.message.chunk_position = "last"
 
                 if output_version == "v1":
-                    from langchain_core.language_models._utils import (
-                        _update_message_content_to_blocks,
-                    )
-
                     chunk.message = _update_message_content_to_blocks(
                         chunk.message, "v1"
                     )
 
-                # Only set response metadata if output_version is explicitly provided
-                # If output_version is "v0" and self.output_version is None, it's the
-                # default
                 output_version_explicit = not (
                     output_version == "v0"
                     and getattr(self, "output_version", None) is None

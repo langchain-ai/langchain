@@ -49,6 +49,10 @@ from langchain_core.messages import (
     is_data_content_block,
     message_chunk_to_message,
 )
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -430,11 +434,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Invoke the model.
 
         Args:
-            input: The model input.
-            config: The config to use for this model run.
-            stop: Stop words to use during generation.
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
-                If None, uses the model's configured ``output_version``.
+                If None, uses the called model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -447,6 +451,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             output_version if output_version is not None else self.output_version
         )
         kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
         kwargs["_output_version_explicit"] = (
             output_version is not None or self.output_version is not None
         )
@@ -481,11 +487,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Asynchronously invoke the model.
 
         Args:
-            input: The model input.
-            config: The config to use for this model run.
-            stop: Stop words to use during generation.
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
-                If None, uses the model's configured ``output_version``.
+                If None, uses the called model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -498,6 +504,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             output_version if output_version is not None else self.output_version
         )
         kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
         kwargs["_output_version_explicit"] = (
             output_version is not None or self.output_version is not None
         )
@@ -564,11 +572,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Stream responses from the chat model.
 
         Args:
-            input: The model input.
-            config: The config to use for this model run.
-            stop: Stop words to use during generation.
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
-                If None, uses the model's configured ``output_version``.
+                If None, uses the called model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -579,6 +587,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             output_version if output_version is not None else self.output_version
         )
         kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
         kwargs["_output_version_explicit"] = (
             output_version is not None or self.output_version is not None
         )
@@ -639,7 +649,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 yielded = False
-                # Filter out internal parameters before passing to implementation
+
                 filtered_kwargs = {
                     k: v
                     for k, v in kwargs.items()
@@ -655,7 +665,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                         chunk.message.id = run_id
                     response_metadata = _gen_info_and_msg_metadata(chunk)
                     output_version = kwargs["_output_version"]
-                    # Add output_version to response_metadata if it was explicitly set
+                    # Add output_version to response_metadata only if was explicitly set
                     if kwargs.get("_output_version_explicit", False):
                         response_metadata["output_version"] = output_version
                     chunk.message.response_metadata = response_metadata
@@ -725,11 +735,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         """Asynchronously stream responses from the model.
 
         Args:
-            input: The model input.
-            config: The config to use for this model run.
-            stop: Stop words to use during generation.
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
             output_version: Override the model's ``output_version`` for this invocation.
-                If None, uses the model's configured ``output_version``.
+                If None, uses the called model's configured ``output_version``.
             **kwargs: Additional keyword arguments.
 
         Returns:
@@ -740,6 +750,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             output_version if output_version is not None else self.output_version
         )
         kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
         kwargs["_output_version_explicit"] = (
             output_version is not None or self.output_version is not None
         )
@@ -802,7 +814,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             yielded = False
-            # Filter out internal parameters before passing to implementation
+
             filtered_kwargs = {
                 k: v
                 for k, v in kwargs.items()
@@ -818,7 +830,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     chunk.message.id = run_id
                 response_metadata = _gen_info_and_msg_metadata(chunk)
                 output_version = kwargs["_output_version"]
-                # Add output_version to response_metadata if it was explicitly set
+                # Add output_version to response_metadata only if was explicitly set
                 if kwargs.get("_output_version_explicit", False):
                     response_metadata["output_version"] = output_version
                 chunk.message.response_metadata = response_metadata
@@ -1308,7 +1320,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
-            # Filter out internal parameters before passing to implementation
+
             filtered_kwargs = {
                 k: v
                 for k, v in kwargs.items()
@@ -1318,7 +1330,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 messages, stop=stop, output_version=output_version, **filtered_kwargs
             ):
                 response_metadata = _gen_info_and_msg_metadata(chunk)
-                # Add output_version to response_metadata if it was explicitly set
+                # Add output_version to response_metadata only if it was explicitly set
                 if output_version_explicit:
                     response_metadata["output_version"] = output_version
                 chunk.message.response_metadata = response_metadata
@@ -1355,7 +1367,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         else:
-            # Filter out internal parameters before passing to implementation
             filtered_kwargs = {
                 k: v
                 for k, v in kwargs.items()
@@ -1389,7 +1400,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             if run_manager and generation.message.id is None:
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             response_metadata = _gen_info_and_msg_metadata(generation)
-            # Add output_version to response_metadata if it was explicitly set
+            # Add output_version to response_metadata only if it was explicitly set
             if output_version_explicit:
                 response_metadata["output_version"] = output_version
             generation.message.response_metadata = response_metadata
@@ -1449,7 +1460,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
-            # Filter out internal parameters before passing to implementation
+
             filtered_kwargs = {
                 k: v
                 for k, v in kwargs.items()
@@ -1459,7 +1470,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 messages, stop=stop, output_version=output_version, **filtered_kwargs
             ):
                 response_metadata = _gen_info_and_msg_metadata(chunk)
-                # Add output_version to response_metadata if it was explicitly set
+                # Add output_version to response_metadata only if it was explicitly set
                 if output_version_explicit:
                     response_metadata["output_version"] = output_version
                 chunk.message.response_metadata = response_metadata
@@ -1496,7 +1507,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
-            # Filter out internal parameters before passing to implementation
             filtered_kwargs = {
                 k: v
                 for k, v in kwargs.items()
@@ -1532,7 +1542,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             if run_manager and generation.message.id is None:
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             response_metadata = _gen_info_and_msg_metadata(generation)
-            # Add output_version to response_metadata if it was explicitly set
+            # Add output_version to response_metadata only if it was explicitly set
             if output_version_explicit:
                 response_metadata["output_version"] = output_version
             generation.message.response_metadata = response_metadata
@@ -1898,11 +1908,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
-
-        from langchain_core.output_parsers.openai_tools import (
-            JsonOutputKeyToolsParser,
-            PydanticToolsParser,
-        )
 
         if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."
