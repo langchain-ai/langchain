@@ -1596,8 +1596,11 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
@@ -1632,8 +1635,11 @@ class ChatAnthropic(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         if stream_usage is None:
             stream_usage = self.stream_usage
         kwargs["stream"] = True
@@ -1715,13 +1721,18 @@ class ChatAnthropic(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         if self.streaming:
             stream_iter = self._stream(
                 messages,
                 stop=stop,
                 run_manager=run_manager,
+                output_version=output_version,
                 **kwargs,
             )
             return generate_from_stream(stream_iter)
@@ -1737,13 +1748,18 @@ class ChatAnthropic(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         if self.streaming:
             stream_iter = self._astream(
                 messages,
                 stop=stop,
                 run_manager=run_manager,
+                output_version=output_version,
                 **kwargs,
             )
             return await agenerate_from_stream(stream_iter)

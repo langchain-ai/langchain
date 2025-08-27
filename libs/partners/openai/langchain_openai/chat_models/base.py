@@ -1118,8 +1118,8 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
-        # Note: output_version parameter accepted for consistency but not used
-        # in Chat Completions API
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1389,8 +1389,8 @@ class BaseChatOpenAI(BaseChatModel):
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
-        # Note: output_version parameter accepted for consistency but not used
-        # in Chat Completions API
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
