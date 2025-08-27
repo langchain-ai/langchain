@@ -1,42 +1,9 @@
 """Configuration for unit tests."""
 
-from collections.abc import Iterator, Sequence
+from collections.abc import Sequence
 from importlib import util
 
 import pytest
-from blockbuster import blockbuster_ctx
-
-
-@pytest.fixture(autouse=True)
-def blockbuster() -> Iterator[None]:
-    with blockbuster_ctx("langchain") as bb:
-        bb.functions["io.TextIOWrapper.read"].can_block_in(
-            "langchain/__init__.py",
-            "<module>",
-        )
-
-        for func in ["os.stat", "os.path.abspath"]:
-            (
-                bb.functions[func]
-                .can_block_in("langchain_core/runnables/base.py", "__repr__")
-                .can_block_in(
-                    "langchain_core/beta/runnables/context.py",
-                    "aconfig_with_context",
-                )
-            )
-
-        for func in ["os.stat", "io.TextIOWrapper.read"]:
-            bb.functions[func].can_block_in(
-                "langsmith/client.py",
-                "_default_retry_config",
-            )
-
-        for bb_function in bb.functions.values():
-            bb_function.can_block_in(
-                "freezegun/api.py",
-                "_get_cached_module_attributes",
-            )
-        yield
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -53,9 +20,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: Sequence[pytest.Function]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.Function]) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
