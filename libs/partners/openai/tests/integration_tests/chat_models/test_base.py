@@ -227,7 +227,7 @@ def test_openai_invoke() -> None:
     result = llm.invoke("Hello", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
-    usage_metadata = result.usage_metadata
+    usage_metadata = result.usage_metadata  # type: ignore[attr-defined]
 
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
@@ -286,15 +286,15 @@ def test_stream() -> None:
     assert aggregate.usage_metadata["input_tokens"] > 0
     assert aggregate.usage_metadata["output_tokens"] > 0
     assert aggregate.usage_metadata["total_tokens"] > 0
-    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0
-    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0
+    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
+    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0  # type: ignore[operator]
     assert (
-        aggregate.usage_metadata.get("output_token_details", {}).get(
+        aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
             "flex_reasoning", 0
         )
         > 0
     )
-    assert aggregate.usage_metadata.get("output_token_details", {}).get(
+    assert aggregate.usage_metadata.get("output_token_details", {}).get(  # type: ignore[operator]
         "flex_reasoning", 0
     ) + aggregate.usage_metadata.get("output_token_details", {}).get(
         "flex", 0
