@@ -1,4 +1,4 @@
-.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests help extended_tests
+.PHONY: all clean docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck format lint test tests test_watch integration_tests help extended_tests start_services stop_services
 
 # Default target executed when no arguments are given to make.
 all: help
@@ -6,6 +6,12 @@ all: help
 ######################
 # TESTING AND COVERAGE
 ######################
+
+start_services:
+	docker compose -f tests/unit_tests/agents/compose-postgres.yml -f tests/unit_tests/agents/compose-redis.yml up -V --force-recreate --wait --remove-orphans
+
+stop_services:
+	docker compose -f tests/unit_tests/agents/compose-postgres.yml -f tests/unit_tests/agents/compose-redis.yml down -v
 
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
@@ -21,17 +27,32 @@ coverage:
 		--cov-report term-missing:skip-covered \
 		$(TEST_FILE)
 
-test tests:
-	uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
+test:
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE) --snapshot-update --cov-report term-missing:skip-covered; \
+	EXIT_CODE=$$?; \
+	make stop_services; \
+	exit $$EXIT_CODE
+
+test_fast:
+	LANGGRAPH_TEST_FAST=1 uv run --group test pytest -n auto --disable-socket --allow-unix-socket $(TEST_FILE)
 
 extended_tests:
-	uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test pytest --disable-socket --allow-unix-socket --only-extended tests/unit_tests; \
+	EXIT_CODE=$$?; \
+	make stop_services; \
+	exit $$EXIT_CODE
 
 test_watch:
-	uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --disable-warnings tests/unit_tests
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --disable-warnings tests/unit_tests; \
+	EXIT_CODE=$$?; \
+	make stop_services; \
+	exit $$EXIT_CODE
 
 test_watch_extended:
-	uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --only-extended tests/unit_tests
+	make start_services && LANGGRAPH_TEST_FAST=0 uv run --group test ptw --snapshot-update --now . -- -x --disable-socket --allow-unix-socket --only-extended tests/unit_tests; \
+	EXIT_CODE=$$?; \
+	make stop_services; \
+	exit $$EXIT_CODE
 
 integration_tests:
 	uv run --group test --group test_integration pytest tests/integration_tests
@@ -87,7 +108,8 @@ help:
 	@echo 'spell_fix               		- run codespell on the project and fix the errors'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
-	@echo 'test                         - run unit tests'
+	@echo 'test                         - run unit tests with all services'
+	@echo 'test_fast                    - run unit tests with in-memory services only'
 	@echo 'tests                        - run unit tests (alias for "make test")'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
 	@echo 'extended_tests               - run only extended unit tests'

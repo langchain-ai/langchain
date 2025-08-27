@@ -37,6 +37,7 @@ from langgraph._internal._typing import MISSING
 from langgraph.errors import ErrorCode, create_error_message
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
+from langgraph.managed import RemainingSteps  # noqa: TC002
 from langgraph.types import Checkpointer, Command, Send
 from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
@@ -57,7 +58,6 @@ from langchain.chat_models import init_chat_model
 if TYPE_CHECKING:
     from langchain_core.tools import BaseTool
     from langgraph.graph.state import CompiledStateGraph
-    from langgraph.managed import RemainingSteps
     from langgraph.runtime import Runtime
     from langgraph.store.base import BaseStore
 

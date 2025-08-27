@@ -1,0 +1,87 @@
+[
+    {
+      "name": "updated structured response",
+      "responseFormat": [
+        {
+          "title": "role_schema_structured_output",
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "role": { "type": "string" }
+          },
+          "required": ["name", "role"]
+        },
+        {
+          "title": "department_schema_structured_output",
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "department": { "type": "string" }
+          },
+          "required": ["name", "department"]
+        }
+      ],
+      "assertionsByInvocation": [
+        {
+          "prompt": "What is the role of Sabine?",
+          "toolsWithExpectedCalls": {
+            "getEmployeeRole": 1,
+            "getEmployeeDepartment": 0
+          },
+          "expectedLastMessage": "Returning structured response: {'name': 'Sabine', 'role': 'Developer'}",
+          "expectedStructuredResponse": { "name": "Sabine", "role": "Developer" },
+          "llmRequestCount": 2
+        },
+        {
+          "prompt": "In which department does Henrik work?",
+          "toolsWithExpectedCalls": {
+            "getEmployeeRole": 1,
+            "getEmployeeDepartment": 1
+          },
+          "expectedLastMessage": "Returning structured response: {'name': 'Henrik', 'department': 'IT'}",
+          "expectedStructuredResponse": { "name": "Henrik", "department": "IT" },
+          "llmRequestCount": 4
+        }
+      ]
+    },
+    {
+      "name": "asking for information that does not fit into the response format",
+      "responseFormat": [
+        {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "role": { "type": "string" }
+            },
+            "required": ["name", "role"]
+          }
+        },
+        {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "department": { "type": "string" }
+            },
+            "required": ["name", "department"]
+          }
+        }
+      ],
+      "assertionsByInvocation": [
+        {
+          "prompt": "How much does Saskia earn?",
+          "toolsWithExpectedCalls": {
+            "getEmployeeRole": 1,
+            "getEmployeeDepartment": 0
+          },
+          "expectedLastMessage": "Returning structured response: {'name': 'Saskia', 'role': 'Software Engineer'}",
+          "expectedStructuredResponse": {
+            "name": "Saskia",
+            "role": "Software Engineer"
+          },
+          "llmRequestCount": 2
+        }
+      ]
+    }
+  ]

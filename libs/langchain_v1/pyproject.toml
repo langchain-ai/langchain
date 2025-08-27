@@ -57,6 +57,7 @@ test = [
     "langchain-text-splitters",
     "langchain-openai",
     "toml>=0.10.2",
+    "pytest-mock"
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
@@ -94,6 +95,7 @@ strict_bytes = "True"
 ignore_missing_imports = "True"
 enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
+exclude = ["tests/unit_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
 disallow_untyped_calls = "False"
@@ -147,6 +149,7 @@ flake8-annotations.allow-star-arg-any = true
     "PLR0912", # too many branches
     "PLR0911", # too many return statements
 ]
+"tests/unit_tests/agents/*" = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "scripts/check_imports.py" = ["ALL"]
