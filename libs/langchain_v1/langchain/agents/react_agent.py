@@ -1127,7 +1127,7 @@ def create_react_agent(  # noqa: D417
         raise TypeError(msg)
 
     if response_format and not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        if _supports_native_structured_output(model):  # type: ignore[arg-type]
+        if _supports_native_structured_output(model):
             response_format = ProviderStrategy(
                 schema=response_format,
             )
