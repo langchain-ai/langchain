@@ -126,20 +126,22 @@ def msg_content_output(output: Any) -> Union[str, list[dict]]:
 class ToolInvocationError(Exception):
     """Exception raised when a tool invocation fails due to invalid arguments."""
 
-    def __init__(self, tool_name: str, error: Exception, tool_kwargs: dict[str, Any]) -> None:
+    def __init__(
+        self, tool_name: str, source: ValidationError, tool_kwargs: dict[str, Any]
+    ) -> None:
         """Initialize the ToolInvocationError.
 
         Args:
             tool_name: The name of the tool that failed.
-            error: The exception that occurred.
+            source: The exception that occurred.
             tool_kwargs: The keyword arguments that were passed to the tool.
         """
         self.message = TOOL_INVOCATION_ERROR_TEMPLATE.format(
-            tool_name=tool_name, tool_kwargs=tool_kwargs, error=error
+            tool_name=tool_name, tool_kwargs=tool_kwargs, error=source
         )
         self.tool_name = tool_name
         self.tool_kwargs = tool_kwargs
-        self.error = error
+        self.source = source
         super().__init__(self.message)
 
 
@@ -509,7 +511,7 @@ class ToolNode(RunnableCallable):
             try:
                 response = tool.invoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"])
+                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
@@ -573,7 +575,7 @@ class ToolNode(RunnableCallable):
             try:
                 response = await tool.ainvoke(call_args, config)
             except ValidationError as exc:
-                raise ToolInvocationError(call["name"], exc, call["args"])
+                raise ToolInvocationError(call["name"], exc, call["args"]) from exc
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,

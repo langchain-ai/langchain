@@ -45,6 +45,7 @@ class MultipleStructuredOutputsError(StructuredOutputError):
             tool_names: The names of the tools called for structured output.
         """
         self.tool_names = tool_names
+
         super().__init__(
             f"Model incorrectly returned multiple structured responses ({', '.join(tool_names)}) when only one is expected."
         )
@@ -53,16 +54,16 @@ class MultipleStructuredOutputsError(StructuredOutputError):
 class StructuredOutputValidationError(StructuredOutputError):
     """Raised when structured output tool call arguments fail to parse according to the schema."""
 
-    def __init__(self, tool_name: str, error: Exception) -> None:
+    def __init__(self, tool_name: str, source: Exception) -> None:
         """Initialize StructuredOutputValidationError.
 
         Args:
             tool_name: The name of the tool that failed.
-            error: The exception that occurred.
+            source: The exception that occurred.
         """
         self.tool_name = tool_name
-        self.error = error
-        super().__init__(f"Failed to parse structured output for tool '{tool_name}': {error}.")
+        self.source = source
+        super().__init__(f"Failed to parse structured output for tool '{tool_name}': {source}.")
 
 
 def _parse_with_schema(
