@@ -52,11 +52,11 @@ test = [
     "pytest-socket>=0.6.0",
     "syrupy>=4.0.2",
     "pytest-xdist>=3.6.1",
-    "blockbuster>=1.5.18",
     "langchain-tests",
     "langchain-text-splitters",
     "langchain-openai",
     "toml>=0.10.2",
+    "pytest-mock"
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
@@ -94,6 +94,7 @@ strict_bytes = "True"
 ignore_missing_imports = "True"
 enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
+exclude = ["tests/unit_tests/agents/*", "tests/integration_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
 disallow_untyped_calls = "False"
@@ -135,13 +136,23 @@ flake8-annotations.allow-star-arg-any = true
   "D", # Documentation rules
   "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
+"langchain/agents/*" = [
+    "ANN401", # we use Any right now, need to narrow
+    "E501", # line too long, needs to fix
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+]
+"tests/unit_tests/agents/*" = ["ALL"]
+"tests/integration_tests/agents/*" = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "scripts/check_imports.py" = ["ALL"]
-
-"langchain/globals.py" = [
-    "PLW"
-]
 
 "langchain/chat_models/base.py" = [
     "ANN",
