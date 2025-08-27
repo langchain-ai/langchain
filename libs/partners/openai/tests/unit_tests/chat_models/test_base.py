@@ -20,13 +20,17 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -43,6 +47,7 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
@@ -50,7 +55,8 @@ from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
@@ -729,17 +735,22 @@ def test_format_message_content() -> None:
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "image",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "image/png",
-        }
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -747,16 +758,23 @@ def test_format_message_content() -> None:
             "image_url": {"url": "data:image/png;base64,<base64 data>"},
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "file",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
     ]
     expected = [
         {
@@ -767,11 +785,16 @@ def test_format_message_content() -> None:
             },
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
 
 class GenerateUsername(BaseModel):
@@ -1229,7 +1252,7 @@ def test_structured_outputs_parser() -> None:
     serialized = dumps(llm_output)
     deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
@@ -2379,7 +2402,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2438,6 +2461,159 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                content_blocks=[
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: list[dict[str, Any]]
+) -> None:
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
 
 
 def test_get_last_messages() -> None:

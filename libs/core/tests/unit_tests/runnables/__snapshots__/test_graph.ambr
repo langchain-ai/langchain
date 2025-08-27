@@ -525,6 +525,19 @@
                   'title': 'Additional Kwargs',
                   'type': 'object',
                 }),
+                'chunk_position': dict({
+                  'anyOf': list([
+                    dict({
+                      'const': 'last',
+                      'type': 'string',
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Chunk Position',
+                }),
                 'content': dict({
                   'anyOf': list([
                     dict({
@@ -1129,7 +1142,7 @@
               'description': '''
                 Allowance for errors made by LLM.
                 
-                Here we add an `error` key to surface errors made during generation
+                Here we add an ``error`` key to surface errors made during generation
                 (e.g., invalid JSON arguments.)
               ''',
               'properties': dict({
@@ -1155,6 +1168,10 @@
                   ]),
                   'title': 'Error',
                 }),
+                'extras': dict({
+                  'title': 'Extras',
+                  'type': 'object',
+                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1165,6 +1182,17 @@
                     }),
                   ]),
                   'title': 'Id',
+                }),
+                'index': dict({
+                  'anyOf': list([
+                    dict({
+                      'type': 'integer',
+                    }),
+                    dict({
+                      'type': 'string',
+                    }),
+                  ]),
+                  'title': 'Index',
                 }),
                 'name': dict({
                   'anyOf': list([
@@ -1184,9 +1212,10 @@
                 }),
               }),
               'required': list([
+                'type',
+                'id',
                 'name',
                 'args',
-                'id',
                 'error',
               ]),
               'title': 'InvalidToolCall',

@@ -27,7 +27,10 @@ from langchain_core.callbacks import (
     Callbacks,
 )
 from langchain_core.globals import get_llm_cache
-from langchain_core.language_models._utils import _normalize_messages
+from langchain_core.language_models._utils import (
+    _normalize_messages,
+    _update_message_content_to_blocks,
+)
 from langchain_core.language_models.base import (
     BaseLanguageModel,
     LangSmithParams,
@@ -41,11 +44,11 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     convert_to_messages,
+    convert_to_openai_data_block,
     convert_to_openai_image_block,
     is_data_content_block,
     message_chunk_to_message,
 )
-from langchain_core.messages.ai import _LC_ID_PREFIX
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -65,6 +68,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
+from langchain_core.utils.utils import LC_ID_PREFIX, from_env
 
 if TYPE_CHECKING:
     import uuid
@@ -125,7 +129,7 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                     if (
                         block.get("type") == "image"
                         and is_data_content_block(block)
-                        and block.get("source_type") != "id"
+                        and not ("file_id" in block or block.get("source_type") == "id")
                     ):
                         if message_to_trace is message:
                             # Shallow copy
@@ -134,6 +138,19 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
 
                         message_to_trace.content[idx] = (  # type: ignore[index]  # mypy confused by .model_copy
                             convert_to_openai_image_block(block)
+                        )
+                    elif (
+                        block.get("type") == "file"
+                        and is_data_content_block(block)
+                        and "base64" in block
+                    ):
+                        if message_to_trace is message:
+                            # Shallow copy
+                            message_to_trace = message.model_copy()
+                            message_to_trace.content = list(message_to_trace.content)
+
+                        message_to_trace.content[idx] = convert_to_openai_data_block(  # type: ignore[index]
+                            block
                         )
                     elif len(block) == 1 and "type" not in block:
                         # Tracing assumes all content blocks have a "type" key. Here
@@ -322,6 +339,28 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     The main reason for this flag is that code might be written using ``stream()`` and
     a user may want to swap out a given model for another model whose the implementation
     does not properly support streaming.
+
+    """
+
+    output_version: Optional[str] = Field(
+        default_factory=from_env("LC_OUTPUT_VERSION", default=None)
+    )
+    """Version of ``AIMessage`` output format to store in message content.
+
+    ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into a
+    standard format. This flag can be used to additionally store the standard format
+    in message content, e.g., for serialization purposes.
+
+    Supported values:
+
+    - ``"v0"``: provider-specific format in content (can lazily-parse with
+      ``.content_blocks``)
+    - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
+
+    Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
+    new content formats in a backward-compatible way.
+
+    .. versionadded:: 1.0
 
     """
 
@@ -521,16 +560,41 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
             try:
                 input_messages = _normalize_messages(messages)
-                run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+                run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+                yielded = False
                 for chunk in self._stream(input_messages, stop=stop, **kwargs):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
                     chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                    if self.output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
                     chunks.append(chunk)
                     yield cast("AIMessageChunk", chunk.message)
+                    yielded = True
+
+                # Yield a final empty chunk with chunk_position="last" if not yet
+                # yielded
+                if (
+                    yielded
+                    and isinstance(chunk.message, AIMessageChunk)
+                    and not chunk.message.chunk_position
+                ):
+                    empty_content: Union[str, list] = (
+                        "" if isinstance(chunk.message.content, str) else []
+                    )
+                    msg_chunk = AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
+                    run_manager.on_llm_new_token(
+                        "", chunk=ChatGenerationChunk(message=msg_chunk)
+                    )
+                    yield msg_chunk
             except BaseException as e:
                 generations_with_error_metadata = _generate_response_from_error(e)
                 chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -614,7 +678,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
         try:
             input_messages = _normalize_messages(messages)
-            run_id = "-".join((_LC_ID_PREFIX, str(run_manager.run_id)))
+            run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
+            yielded = False
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
@@ -623,11 +688,34 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 if chunk.message.id is None:
                     chunk.message.id = run_id
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 await run_manager.on_llm_new_token(
                     cast("str", chunk.message.content), chunk=chunk
                 )
                 chunks.append(chunk)
                 yield cast("AIMessageChunk", chunk.message)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                msg_chunk = AIMessageChunk(
+                    content=empty_content, chunk_position="last", id=run_id
+                )
+                await run_manager.on_llm_new_token(
+                    "", chunk=ChatGenerationChunk(message=msg_chunk)
+                )
+                yield msg_chunk
         except BaseException as e:
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
@@ -1076,14 +1164,42 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
+            run_id: Optional[str] = (
+                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+            )
+            yielded = False
             for chunk in self._stream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
+                chunks.append(chunk)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
+                )
+                if run_manager:
+                    run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._generate).parameters.get("run_manager"):
@@ -1093,10 +1209,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         else:
             result = self._generate(messages, stop=stop, **kwargs)
 
+        if self.output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )
@@ -1149,14 +1272,42 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             **kwargs,
         ):
             chunks: list[ChatGenerationChunk] = []
+            run_id: Optional[str] = (
+                f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
+            )
+            yielded = False
             async for chunk in self._astream(messages, stop=stop, **kwargs):
                 chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
+                if self.output_version == "v1":
+                    # Overwrite .content with .content_blocks
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
                 if run_manager:
                     if chunk.message.id is None:
-                        chunk.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}"
+                        chunk.message.id = run_id
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
+                chunks.append(chunk)
+                yielded = True
+
+            # Yield a final empty chunk with chunk_position="last" if not yet yielded
+            if (
+                yielded
+                and isinstance(chunk.message, AIMessageChunk)
+                and not chunk.message.chunk_position
+            ):
+                empty_content: Union[str, list] = (
+                    "" if isinstance(chunk.message.content, str) else []
+                )
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=empty_content, chunk_position="last", id=run_id
+                    )
+                )
+                if run_manager:
+                    await run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
@@ -1166,10 +1317,17 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         else:
             result = await self._agenerate(messages, stop=stop, **kwargs)
 
+        if self.output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
-                generation.message.id = f"{_LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
+                generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
             generation.message.response_metadata = _gen_info_and_msg_metadata(
                 generation
             )

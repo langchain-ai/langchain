@@ -72,7 +72,7 @@ def test_chat_openai_system_message(use_responses_api: bool) -> None:
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
     assert isinstance(response, BaseMessage)
-    assert isinstance(response.text(), str)
+    assert isinstance(response.text, str)
 
 
 @pytest.mark.scheduled
@@ -179,7 +179,7 @@ async def test_openai_abatch_tags(use_responses_api: bool) -> None:
         ["I'm Pickle Rick", "I'm not Pickle Rick"], config={"tags": ["foo"]}
     )
     for token in result:
-        assert isinstance(token.text(), str)
+        assert isinstance(token.text, str)
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -220,7 +220,9 @@ def test_stream() -> None:
         assert isinstance(chunk, AIMessageChunk)
         if chunk.usage_metadata is not None:
             chunks_with_token_counts += 1
-        if chunk.response_metadata:
+        if chunk.response_metadata and not set(chunk.response_metadata.keys()).issubset(
+            {"model_provider", "output_version"}
+        ):
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
         raise AssertionError(
@@ -248,7 +250,9 @@ async def test_astream() -> None:
             assert isinstance(chunk, AIMessageChunk)
             if chunk.usage_metadata is not None:
                 chunks_with_token_counts += 1
-            if chunk.response_metadata:
+            if chunk.response_metadata and not set(
+                chunk.response_metadata.keys()
+            ).issubset({"model_provider", "output_version"}):
                 chunks_with_response_metadata += 1
         assert isinstance(full, AIMessageChunk)
         if chunks_with_response_metadata != 1:
@@ -414,6 +418,7 @@ def test_tool_use() -> None:
     assert len(gathered.tool_call_chunks) == 1
     tool_call_chunk = gathered.tool_call_chunks[0]
     assert "args" in tool_call_chunk
+    assert gathered.content_blocks == gathered.tool_calls
 
     streaming_tool_msg = ToolMessage(
         "sally_green_hair", tool_call_id=gathered.tool_calls[0]["id"]
@@ -997,8 +1002,8 @@ def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
         ]
     )
     assert isinstance(response, AIMessage)
-    assert isinstance(response.text(), str)
-    assert response.text().upper() == response.text()
+    assert isinstance(response.text, str)
+    assert response.text.upper() == response.text
 
 
 @pytest.mark.scheduled
