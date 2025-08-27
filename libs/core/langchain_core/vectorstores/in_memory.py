@@ -378,8 +378,8 @@ class InMemoryVectorStore(VectorStore):
                 for doc in docs
                 if filter(
                     Document(
-                        id=doc["id"], 
-                        page_content=doc["text"], 
+                        id=doc["id"],
+                        page_content=doc["text"],
                         metadata=doc["metadata"]
                     )
                 )
