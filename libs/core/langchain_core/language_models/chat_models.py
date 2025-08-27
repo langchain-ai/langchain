@@ -1393,6 +1393,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     generation.message, "v1"
                 )
 
+        if self.output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
         # Add response metadata to each generation
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
@@ -1526,6 +1533,13 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             result = await self._agenerate(messages, stop=stop, **filtered_kwargs)
 
         if output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
+
+        if self.output_version == "v1":
             # Overwrite .content with .content_blocks
             for generation in result.generations:
                 generation.message = _update_message_content_to_blocks(
