@@ -655,7 +655,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -1252,7 +1252,7 @@ class ChatAnthropic(BaseChatModel):
                 response = llm_with_tools.invoke(
                     "There's a syntax error in my primes.py file. Can you help me fix it?"
                 )
-                print(response.text())
+                print(response.text)
                 response.tool_calls
 
             .. code-block:: none

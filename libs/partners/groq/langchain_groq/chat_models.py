@@ -160,7 +160,7 @@ class ChatGroq(BaseChatModel):
 
             # Streaming `text` for each content chunk received
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 

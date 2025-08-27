@@ -46,7 +46,7 @@ def _check_response(response: Optional[BaseMessage]) -> None:
                     if "url" in annotation:
                         assert "start_index" in annotation
                         assert "end_index" in annotation
-    text_content = response.text()  # type: ignore[operator,misc]
+    text_content = response.text  # type: ignore[operator,misc]
     assert isinstance(text_content, str)
     assert text_content
     assert response.usage_metadata
@@ -190,7 +190,7 @@ def test_parsed_pydantic_schema(
         model=MODEL_NAME, use_responses_api=True, output_version=output_version
     )
     response = llm.invoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -200,7 +200,7 @@ def test_parsed_pydantic_schema(
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = Foo(**json.loads(full.text()))
+    parsed = Foo(**json.loads(full.text))
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -208,7 +208,7 @@ def test_parsed_pydantic_schema(
 async def test_parsed_pydantic_schema_async() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = await llm.ainvoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -218,7 +218,7 @@ async def test_parsed_pydantic_schema_async() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = Foo(**json.loads(full.text()))
+    parsed = Foo(**json.loads(full.text))
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -228,7 +228,7 @@ async def test_parsed_pydantic_schema_async() -> None:
 def test_parsed_dict_schema(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are ya", response_format=schema)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -238,7 +238,7 @@ def test_parsed_dict_schema(schema: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = json.loads(full.text())
+    parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -252,7 +252,7 @@ def test_parsed_strict() -> None:
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
 
     # Test strict
@@ -273,7 +273,7 @@ def test_parsed_strict() -> None:
 async def test_parsed_dict_schema_async(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = await llm.ainvoke("how are ya", response_format=schema)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -283,7 +283,7 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = json.loads(full.text())
+    parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -297,7 +297,7 @@ def test_function_calling_and_structured_output() -> None:
     bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
     # Test structured output
     response = llm.invoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 

@@ -2169,7 +2169,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -2399,7 +2399,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 output_version="responses/v1",
             )
             response = llm.invoke("Hi, I'm Bob.")
-            response.text()
+            response.text
 
         .. code-block:: python
 
@@ -2411,7 +2411,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "What is my name?",
                 previous_response_id=response.response_metadata["id"],
             )
-            second_response.text()
+            second_response.text
 
         .. code-block:: python
 
@@ -2460,7 +2460,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             response = llm.invoke("What is 3^3?")
 
             # Response text
-            print(f"Output: {response.text()}")
+            print(f"Output: {response.text}")
 
             # Reasoning summaries
             for block in response.content:
