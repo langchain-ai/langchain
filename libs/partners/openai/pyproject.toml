@@ -12,7 +12,7 @@ dependencies = [
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.31"
+version = "0.3.32"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 

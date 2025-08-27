@@ -113,9 +113,7 @@ async def test_aembed_documents(cache_embeddings: CacheBackedEmbeddings) -> None
     vectors = await cache_embeddings.aembed_documents(texts)
     expected_vectors: list[list[float]] = [[1, 2.0], [2.0, 3.0], [1.0, 2.0], [3.0, 4.0]]
     assert vectors == expected_vectors
-    keys = [
-        key async for key in cache_embeddings.document_embedding_store.ayield_keys()
-    ]
+    keys = [key async for key in cache_embeddings.document_embedding_store.ayield_keys()]
     assert len(keys) == 4
     # UUID is expected to be the same for the same text
     assert keys[0] == "test_namespace812b86c1-8ebf-5483-95c6-c95cf2b52d12"
@@ -128,10 +126,7 @@ async def test_aembed_documents_batch(
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
     with contextlib.suppress(ValueError):
         await cache_embeddings_batch.aembed_documents(texts)
-    keys = [
-        key
-        async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()
-    ]
+    keys = [key async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()]
     # only the first batch of three embeddings should exist
     assert len(keys) == 3
     # UUID is expected to be the same for the same text

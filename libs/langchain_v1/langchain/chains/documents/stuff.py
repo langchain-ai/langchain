@@ -5,9 +5,7 @@ from __future__ import annotations
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Generic,
-    Optional,
     Union,
     cast,
 )
@@ -24,6 +22,8 @@ from langchain._internal._utils import RunnableCallable
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.language_models.chat_models import BaseChatModel
 
     # Used for type checking, but IDEs may not recognize it inside the cast.
@@ -149,7 +149,7 @@ class _Extractor(Generic[ContextT]):
             ],
         ] = None,
         context_schema: type[ContextT] | None = None,
-        response_format: Optional[type[BaseModel]] = None,
+        response_format: type[BaseModel] | None = None,
     ) -> None:
         """Initialize the Extractor.
 
@@ -173,9 +173,7 @@ class _Extractor(Generic[ContextT]):
         if isinstance(model, str):
             model = init_chat_model(model)
 
-        self.model = (
-            model.with_structured_output(response_format) if response_format else model
-        )
+        self.model = model.with_structured_output(response_format) if response_format else model
         self.initial_prompt = prompt
         self.refine_prompt = refine_prompt
         self.context_schema = context_schema
@@ -188,9 +186,7 @@ class _Extractor(Generic[ContextT]):
 
         # Choose default prompt based on structured output format
         default_prompt = (
-            DEFAULT_STRUCTURED_INIT_PROMPT
-            if self.response_format
-            else DEFAULT_INIT_PROMPT
+            DEFAULT_STRUCTURED_INIT_PROMPT if self.response_format else DEFAULT_INIT_PROMPT
         )
 
         return resolve_prompt(
@@ -209,9 +205,7 @@ class _Extractor(Generic[ContextT]):
 
         # Choose default prompt based on structured output format
         default_prompt = (
-            DEFAULT_STRUCTURED_INIT_PROMPT
-            if self.response_format
-            else DEFAULT_INIT_PROMPT
+            DEFAULT_STRUCTURED_INIT_PROMPT if self.response_format else DEFAULT_INIT_PROMPT
         )
 
         return await aresolve_prompt(
@@ -246,9 +240,7 @@ class _Extractor(Generic[ContextT]):
 
         # Choose default prompt based on structured output format
         default_prompt = (
-            DEFAULT_STRUCTURED_REFINE_PROMPT
-            if self.response_format
-            else DEFAULT_REFINE_PROMPT
+            DEFAULT_STRUCTURED_REFINE_PROMPT if self.response_format else DEFAULT_REFINE_PROMPT
         )
 
         return resolve_prompt(
@@ -283,9 +275,7 @@ class _Extractor(Generic[ContextT]):
 
         # Choose default prompt based on structured output format
         default_prompt = (
-            DEFAULT_STRUCTURED_REFINE_PROMPT
-            if self.response_format
-            else DEFAULT_REFINE_PROMPT
+            DEFAULT_STRUCTURED_REFINE_PROMPT if self.response_format else DEFAULT_REFINE_PROMPT
         )
 
         return await aresolve_prompt(
@@ -340,16 +330,12 @@ class _Extractor(Generic[ContextT]):
             if "result" not in state or state["result"] == "":
                 # Initial processing
                 prompt = await self._aget_initial_prompt(state, runtime)
-                response = cast(
-                    "AIMessage", await self.model.ainvoke(prompt, config=config)
-                )
+                response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
                 result = response if self.response_format else response.text()
                 return {"result": result}
             # Refinement
             prompt = await self._aget_refine_prompt(state, runtime)
-            response = cast(
-                "AIMessage", await self.model.ainvoke(prompt, config=config)
-            )
+            response = cast("AIMessage", await self.model.ainvoke(prompt, config=config))
             result = response if self.response_format else response.text()
             return {"result": result}
 
@@ -388,7 +374,7 @@ def create_stuff_documents_chain(
         Callable[[ExtractionState, Runtime[ContextT]], list[MessageLikeRepresentation]],
     ] = None,
     context_schema: type[ContextT] | None = None,
-    response_format: Optional[type[BaseModel]] = None,
+    response_format: type[BaseModel] | None = None,
 ) -> StateGraph[ExtractionState, ContextT, InputSchema, OutputSchema]:
     """Create a stuff documents chain for processing documents.
 

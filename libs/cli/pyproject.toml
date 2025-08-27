@@ -7,7 +7,7 @@ authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "typer[all]<1.0.0,>=0.9.0",
+    "typer<1.0.0,>=0.9.0",
     "gitpython<4,>=3",
     "langserve[all]>=0.0.51",
     "uvicorn<1.0,>=0.23",

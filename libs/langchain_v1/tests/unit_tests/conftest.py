@@ -53,9 +53,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(
-    config: pytest.Config, items: Sequence[pytest.Function]
-) -> None:
+def pytest_collection_modifyitems(config: pytest.Config, items: Sequence[pytest.Function]) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.

@@ -27,7 +27,7 @@ from langchain_tests.integration_tests.chat_models import (
     _validate_tool_call_message,
     magic_function,
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from langchain_openai import ChatOpenAI
 from tests.unit_tests.fake.callbacks import FakeCallbackHandler
@@ -1155,3 +1155,62 @@ def test_prompt_cache_key_usage_methods_integration() -> None:
     response_model_level = chat_model_level.invoke(messages)
     assert isinstance(response_model_level, AIMessage)
     assert isinstance(response_model_level.content, str)
+
+
+class BadModel(BaseModel):
+    response: str
+
+    @field_validator("response")
+    @classmethod
+    def validate_response(cls, v: str) -> str:
+        if v != "bad":
+            raise ValueError('response must be exactly "bad"')
+        return v
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+def test_schema_parsing_failures() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
+    try:
+        llm.invoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+def test_schema_parsing_failures_responses_api() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
+    try:
+        llm.invoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+async def test_schema_parsing_failures_async() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
+    try:
+        await llm.ainvoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
+
+
+# VCR can't handle parameterized tests
+@pytest.mark.vcr()
+async def test_schema_parsing_failures_responses_api_async() -> None:
+    llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
+    try:
+        await llm.ainvoke("respond with good", response_format=BadModel)
+    except Exception as e:
+        assert e.response is not None  # type: ignore[attr-defined]
+    else:
+        assert False
