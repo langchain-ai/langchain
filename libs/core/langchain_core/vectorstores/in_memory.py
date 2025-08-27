@@ -372,7 +372,13 @@ class InMemoryVectorStore(VectorStore):
             docs = [
                 doc
                 for doc in docs
-                if filter(Document(id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]))
+                if filter(
+                    Document(
+                        id=doc["id"], 
+                        page_content=doc["text"], 
+                        metadata=doc["metadata"]
+                    )
+                )
             ]
 
         if not docs:
