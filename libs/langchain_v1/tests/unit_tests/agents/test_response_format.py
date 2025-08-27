@@ -10,7 +10,7 @@ from langchain.agents import create_react_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
-    StructuredOutputParsingError,
+    StructuredOutputValidationError,
     ToolStrategy,
 )
 from pydantic import BaseModel, Field
@@ -477,7 +477,7 @@ class TestResponseFormatAsToolStrategy:
         )
 
         with pytest.raises(
-            StructuredOutputParsingError,
+            StructuredOutputValidationError,
             match=".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -508,7 +508,7 @@ class TestResponseFormatAsToolStrategy:
             [],
             response_format=ToolStrategy(
                 WeatherBaseModel,
-                handle_errors=(StructuredOutputParsingError,),
+                handle_errors=(StructuredOutputValidationError,),
             ),
         )
 

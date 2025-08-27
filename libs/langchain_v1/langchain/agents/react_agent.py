@@ -49,7 +49,7 @@ from langchain.agents.structured_output import (
     ProviderStrategy,
     ProviderStrategyBinding,
     ResponseFormat,
-    StructuredOutputParsingError,
+    StructuredOutputValidationError,
     ToolStrategy,
 )
 from langchain.agents.tool_node import ToolNode
@@ -395,8 +395,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                     "structured_response": structured_response,
                 }
             )
-        except Exception as parse_error:  # noqa: BLE001
-            exception = StructuredOutputParsingError(tool_call["name"], parse_error)
+        except Exception as exc:  # noqa: BLE001
+            exception = StructuredOutputValidationError(tool_call["name"], exc)
 
             should_retry, error_message = self._handle_structured_output_error(exception)
 
