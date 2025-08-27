@@ -1995,11 +1995,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2097,11 +2092,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -2514,11 +2504,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2587,11 +2572,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -3408,11 +3388,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -3510,11 +3485,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -3990,11 +3960,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -4063,11 +4028,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -4915,11 +4875,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -5017,11 +4972,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -5497,11 +5447,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -5570,11 +5515,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -6360,11 +6300,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -6462,11 +6397,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -6879,11 +6809,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -6952,11 +6877,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -7815,11 +7735,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -7917,11 +7832,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -8397,11 +8307,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -8470,11 +8375,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -9305,11 +9205,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -9407,11 +9302,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -9824,11 +9714,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -9897,11 +9782,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -10668,11 +10548,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -10770,11 +10645,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -11250,11 +11120,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -11323,11 +11188,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -12136,11 +11996,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -12238,11 +12093,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -12718,11 +12568,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -12791,11 +12636,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
