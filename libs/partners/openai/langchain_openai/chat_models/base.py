@@ -967,9 +967,16 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         api_payload = self._prepare_api_payload(payload)
         if self.include_response_headers:
@@ -1004,7 +1011,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1021,9 +1028,16 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
         api_payload = self._prepare_api_payload(payload)
         if self.include_response_headers:
@@ -1062,7 +1076,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1100,9 +1114,12 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        # Note: output_version parameter accepted for consistency but not used
+        # in Chat Completions API
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1172,11 +1189,23 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
+
         if self.streaming:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                output_version=effective_output_version,
+                **kwargs,
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1212,7 +1241,7 @@ class BaseChatOpenAI(BaseChatModel):
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
             else:
                 api_payload = self._prepare_api_payload(payload)
@@ -1356,9 +1385,12 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        # Note: output_version parameter accepted for consistency but not used
+        # in Chat Completions API
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1430,11 +1462,23 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
+
         if self.streaming:
             stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                output_version=effective_output_version,
+                **kwargs,
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1473,7 +1517,7 @@ class BaseChatOpenAI(BaseChatModel):
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
             else:
                 api_payload = self._prepare_api_payload(payload)
@@ -4078,6 +4122,9 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
+    elif output_version == "v1":
+        # Use content_blocks property which handles v1 conversion via block_translators
+        message = message.model_copy(update={"content": message.content_blocks})
 
     return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -4314,6 +4361,12 @@ def _convert_responses_chunk_to_generation_chunk(
         message = cast(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
+        )
+    elif output_version == "v1":
+        # Use content_blocks property which handles v1 conversion via block_translators
+        message = cast(
+            AIMessageChunk,
+            message.model_copy(update={"content": message.content_blocks}),
         )
 
     return (
