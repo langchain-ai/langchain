@@ -2,24 +2,21 @@
 
 import pytest
 
-# Skip this test since langgraph.prebuilt.responses is not available
-pytest.skip("langgraph.prebuilt.responses not available", allow_module_level=True)
+from dataclasses import dataclass
+from typing import Union
 
-# from dataclasses import dataclass
-# from typing import Union
+from langchain_core.messages import HumanMessage
+from langchain.agents import create_react_agent
+from langchain.agents.responses import (
+    MultipleStructuredOutputsError,
+    NativeOutput,
+    StructuredOutputParsingError,
+    ToolOutput,
+)
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
 
-# from langchain_core.messages import HumanMessage
-# from langchain.agents import create_react_agent
-# from langchain.agents.responses import (
-#     MultipleStructuredOutputsError,
-#     NativeOutput,
-#     StructuredOutputParsingError,
-#     ToolOutput,
-# )
-# from pydantic import BaseModel, Field
-# from typing_extensions import TypedDict
-
-# from tests.model import FakeToolCallingModel
+from tests.unit_tests.agents.model import FakeToolCallingModel
 
 try:
     from langchain_openai import ChatOpenAI

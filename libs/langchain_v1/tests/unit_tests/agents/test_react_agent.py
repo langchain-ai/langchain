@@ -34,7 +34,7 @@ from langchain.agents import (
     ToolNode,
     create_react_agent,
 )
-from langchain.agents.react_agent import _validate_chat_history
+from langchain.agents.chat_agent_executor import _validate_chat_history
 from langchain.agents.tool_node import (
     InjectedState,
     InjectedStore,
@@ -713,7 +713,7 @@ def test__get_state_args() -> None:
 def test_inspect_react() -> None:
     model = FakeToolCallingModel(tool_calls=[])
     agent = create_react_agent(model, [])
-    inspect.getclosurevars(agent.nodes["model"].bound.func)
+    inspect.getclosurevars(agent.nodes["agent"].bound.func)
 
 
 def test_react_with_subgraph_tools(
@@ -1443,7 +1443,7 @@ def test_post_model_hook() -> None:
     events = list(pmh_agent.stream({"messages": [HumanMessage("hi?")], "flag": False}))
     assert events == [
         {
-            "model": {
+            "agent": {
                 "messages": [
                     AIMessage(
                         content="hi?",
@@ -1508,7 +1508,7 @@ def test_post_model_hook_with_structured_output() -> None:
     events = list(agent.stream({"messages": [HumanMessage("What's the weather?")], "flag": False}))
     assert events == [
         {
-            "model": {
+            "agent": {
                 "messages": [
                     AIMessage(
                         content="What's the weather?",
@@ -1540,7 +1540,7 @@ def test_post_model_hook_with_structured_output() -> None:
             }
         },
         {
-            "model": {
+            "agent": {
                 "messages": [
                     AIMessage(
                         content="What's the weather?-What's the weather?-The weather is sunny and 75°F.",

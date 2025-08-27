@@ -43,6 +43,7 @@ from typing import (
     Annotated,
     Any,
     Literal,
+    Optional,
     Union,
     cast,
     get_args,
@@ -421,7 +422,7 @@ class ToolNode(RunnableCallable):
         ],
         config: RunnableConfig,
         *,
-        store: BaseStore | None,
+        store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         tool_calls, input_type = self._parse_input(input, store)
         config_list = get_config_list(config, len(tool_calls))
@@ -440,7 +441,7 @@ class ToolNode(RunnableCallable):
         ],
         config: RunnableConfig,
         *,
-        store: BaseStore | None,
+        store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         tool_calls, input_type = self._parse_input(input, store)
         outputs = await asyncio.gather(
