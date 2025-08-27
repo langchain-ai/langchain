@@ -329,7 +329,7 @@ class _MapReduceExtractor(Generic[ContextT]):
         ) -> dict[str, list[ExtractionResult]]:
             prompt = self._get_map_prompt(state, runtime)
             response = cast("AIMessage", self.model.invoke(prompt, config=config))
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             extraction_result: ExtractionResult = {
                 "indexes": state["indexes"],
                 "result": result,
@@ -345,7 +345,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             response = cast(
                 "AIMessage", await self.model.ainvoke(prompt, config=config)
             )
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             extraction_result: ExtractionResult = {
                 "indexes": state["indexes"],
                 "result": result,
@@ -366,7 +366,7 @@ class _MapReduceExtractor(Generic[ContextT]):
         ) -> MapReduceNodeUpdate:
             prompt = self._get_reduce_prompt(state, runtime)
             response = cast("AIMessage", self.model.invoke(prompt, config=config))
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             return {"result": result}
 
         async def _areduce_node(
@@ -378,7 +378,7 @@ class _MapReduceExtractor(Generic[ContextT]):
             response = cast(
                 "AIMessage", await self.model.ainvoke(prompt, config=config)
             )
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             return {"result": result}
 
         return RunnableCallable(

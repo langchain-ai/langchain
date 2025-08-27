@@ -319,12 +319,12 @@ class _Extractor(Generic[ContextT]):
                 # Initial processing
                 prompt = self._get_initial_prompt(state, runtime)
                 response = cast("AIMessage", self.model.invoke(prompt, config=config))
-                result = response if self.response_format else response.text()
+                result = response if self.response_format else response.text
                 return {"result": result}
             # Refinement
             prompt = self._get_refine_prompt(state, runtime)
             response = cast("AIMessage", self.model.invoke(prompt, config=config))
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             return {"result": result}
 
         async def _aprocess_node(
@@ -343,14 +343,14 @@ class _Extractor(Generic[ContextT]):
                 response = cast(
                     "AIMessage", await self.model.ainvoke(prompt, config=config)
                 )
-                result = response if self.response_format else response.text()
+                result = response if self.response_format else response.text
                 return {"result": result}
             # Refinement
             prompt = await self._aget_refine_prompt(state, runtime)
             response = cast(
                 "AIMessage", await self.model.ainvoke(prompt, config=config)
             )
-            result = response if self.response_format else response.text()
+            result = response if self.response_format else response.text
             return {"result": result}
 
         return RunnableCallable(

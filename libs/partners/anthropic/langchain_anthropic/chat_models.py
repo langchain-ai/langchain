@@ -33,6 +33,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
@@ -51,6 +52,7 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -212,7 +214,7 @@ def _merge_messages(
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
-        if block["source_type"] == "url":
+        if "url" in block:
             if block["url"].startswith("data:"):
                 # Data URI
                 formatted_block = {
@@ -224,16 +226,24 @@ def _format_data_content_block(block: dict) -> dict:
                     "type": "image",
                     "source": {"type": "url", "url": block["url"]},
                 }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": block["mime_type"],
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "image",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "image",
                 "source": {
@@ -243,7 +253,7 @@ def _format_data_content_block(block: dict) -> dict:
             }
         else:
             msg = (
-                "Anthropic only supports 'url' and 'base64' source_type for image "
+                "Anthropic only supports 'url', 'base64', or 'id' keys for image "
                 "content blocks."
             )
             raise ValueError(
@@ -251,7 +261,7 @@ def _format_data_content_block(block: dict) -> dict:
             )
 
     elif block["type"] == "file":
-        if block["source_type"] == "url":
+        if "url" in block:
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -259,16 +269,16 @@ def _format_data_content_block(block: dict) -> dict:
                     "url": block["url"],
                 },
             }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "document",
                 "source": {
                     "type": "base64",
                     "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "text":
+        elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -277,7 +287,15 @@ def _format_data_content_block(block: dict) -> dict:
                     "data": block["text"],
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -285,6 +303,22 @@ def _format_data_content_block(block: dict) -> dict:
                     "file_id": block["id"],
                 },
             }
+        else:
+            msg = (
+                "Anthropic only supports 'url', 'base64', or 'id' keys for file "
+                "content blocks."
+            )
+            raise ValueError(msg)
+
+    elif block["type"] == "text-plain":
+        formatted_block = {
+            "type": "document",
+            "source": {
+                "type": "text",
+                "media_type": block.get("mime_type") or "text/plain",
+                "data": block["text"],
+            },
+        }
 
     else:
         msg = f"Block of type {block['type']} is not supported."
@@ -294,7 +328,10 @@ def _format_data_content_block(block: dict) -> dict:
         for key in ["cache_control", "citations", "title", "context"]:
             if key in block:
                 formatted_block[key] = block[key]
+            elif (metadata := block.get("extras")) and key in metadata:
+                formatted_block[key] = metadata[key]
             elif (metadata := block.get("metadata")) and key in metadata:
+                # Backward compat
                 formatted_block[key] = metadata[key]
 
     return formatted_block
@@ -618,7 +655,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -741,13 +778,11 @@ class ChatAnthropic(BaseChatModel):
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -781,7 +816,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "image",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -810,9 +844,8 @@ class ChatAnthropic(BaseChatModel):
                             "Summarize this document.",
                             {
                                 "type": "file",
-                                "source_type": "base64",
                                 "mime_type": "application/pdf",
-                                "data": data,
+                                "base64": data,
                             },
                         ]
                     )
@@ -846,7 +879,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "file",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -1220,7 +1252,7 @@ class ChatAnthropic(BaseChatModel):
                 response = llm_with_tools.invoke(
                     "There's a syntax error in my primes.py file. Can you help me fix it?"
                 )
-                print(response.text())
+                print(response.text)
                 response.tool_calls
 
             .. code-block:: none
@@ -1462,6 +1494,32 @@ class ChatAnthropic(BaseChatModel):
         **kwargs: dict,
     ) -> dict:
         messages = self._convert_input(input_).to_messages()
+
+        for idx, message in enumerate(messages):
+            # Translate v1 content
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in message.tool_calls
+                ]
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_anthropic(
+                            cast(list[types.ContentBlock], message.content),
+                            tcs,
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         system, formatted_messages = _format_messages(messages)
 
         # If cache_control is provided in kwargs, add it to last message
@@ -1626,6 +1684,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -1633,15 +1692,18 @@ class ChatAnthropic(BaseChatModel):
             and content[0]["type"] == "text"
             and not content[0].get("citations")
         ):
-            msg = AIMessage(content=content[0]["text"])
+            msg = AIMessage(
+                content=content[0]["text"], response_metadata=response_metadata
+            )
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
             msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
+                response_metadata=response_metadata,
             )
         else:
-            msg = AIMessage(content=content)
+            msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
@@ -2363,18 +2425,22 @@ def _make_message_chunk_from_anthropic_event(
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
             response_metadata={
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
             },
         )
+        if message_chunk.response_metadata.get("stop_reason"):
+            message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
     else:
         pass
 
+    if message_chunk:
+        message_chunk.response_metadata["model_provider"] = "anthropic"
     return message_chunk, block_start_event
 
 

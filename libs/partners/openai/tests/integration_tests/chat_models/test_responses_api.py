@@ -28,8 +28,9 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     for block in response.content:
         assert isinstance(block, dict)
         if block["type"] == "text":
-            assert isinstance(block["text"], str)
-            for annotation in block["annotations"]:
+            assert isinstance(block.get("text"), str)
+            annotations = block.get("annotations", [])
+            for annotation in annotations:
                 if annotation["type"] == "file_citation":
                     assert all(
                         key in annotation
@@ -40,8 +41,12 @@ def _check_response(response: Optional[BaseMessage]) -> None:
                         key in annotation
                         for key in ["end_index", "start_index", "title", "type", "url"]
                     )
-
-    text_content = response.text()
+                elif annotation["type"] == "citation":
+                    assert all(key in annotation for key in ["title", "type"])
+                    if "url" in annotation:
+                        assert "start_index" in annotation
+                        assert "end_index" in annotation
+    text_content = response.text  # type: ignore[operator,misc]
     assert isinstance(text_content, str)
     assert text_content
     assert response.usage_metadata
@@ -49,12 +54,14 @@ def _check_response(response: Optional[BaseMessage]) -> None:
     assert response.usage_metadata["output_tokens"] > 0
     assert response.usage_metadata["total_tokens"] > 0
     assert response.response_metadata["model_name"]
-    assert response.response_metadata["service_tier"]
+    assert response.response_metadata["service_tier"]  # type: ignore[typeddict-item]
 
 
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
 @pytest.mark.vcr
-def test_web_search() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
+    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     first_response = llm.invoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -82,20 +89,9 @@ def test_web_search() -> None:
     # Manually pass in chat history
     response = llm.invoke(
         [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": "What was a positive news story from today?",
-                    }
-                ],
-            },
+            {"role": "user", "content": "What was a positive news story from today?"},
             first_response,
-            {
-                "role": "user",
-                "content": [{"type": "text", "text": "what about a negative one"}],
-            },
+            {"role": "user", "content": "what about a negative one"},
         ],
         tools=[{"type": "web_search_preview"}],
     )
@@ -108,9 +104,12 @@ def test_web_search() -> None:
     _check_response(response)
 
     for msg in [first_response, full, response]:
-        assert isinstance(msg, AIMessage)
+        assert msg is not None
         block_types = [block["type"] for block in msg.content]  # type: ignore[index]
-        assert block_types == ["web_search_call", "text"]
+        if output_version == "responses/v1":
+            assert block_types == ["web_search_call", "text"]
+        else:
+            assert block_types == ["web_search_call", "web_search_result", "text"]
 
 
 @pytest.mark.flaky(retries=3, delay=1)
@@ -141,13 +140,15 @@ async def test_web_search_async() -> None:
         assert tool_output["type"] == "web_search_call"
 
 
-@pytest.mark.flaky(retries=3, delay=1)
-def test_function_calling() -> None:
+@pytest.mark.default_cassette("test_function_calling.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_function_calling(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     def multiply(x: int, y: int) -> int:
         """return x * y"""
         return x * y
 
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version=output_version)
     bound_llm = llm.bind_tools([multiply, {"type": "web_search_preview"}])
     ai_msg = cast(AIMessage, bound_llm.invoke("whats 5 * 4"))
     assert len(ai_msg.tool_calls) == 1
@@ -162,6 +163,11 @@ def test_function_calling() -> None:
     assert full.tool_calls[0]["name"] == "multiply"
     assert set(full.tool_calls[0]["args"]) == {"x", "y"}
 
+    if output_version in ("responses/v1", "v1"):
+        for msg in [ai_msg, full]:
+            assert len(msg.content_blocks) == 1
+            assert msg.content_blocks[0]["type"] == "tool_call"
+
     response = bound_llm.invoke("What was a positive news story from today?")
     _check_response(response)
 
@@ -174,10 +180,17 @@ class FooDict(TypedDict):
     response: str
 
 
-def test_parsed_pydantic_schema() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
+@pytest.mark.default_cassette("test_parsed_pydantic_schema.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_parsed_pydantic_schema(
+    output_version: Literal["v0", "responses/v1", "v1"],
+) -> None:
+    llm = ChatOpenAI(
+        model=MODEL_NAME, use_responses_api=True, output_version=output_version
+    )
     response = llm.invoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -187,7 +200,7 @@ def test_parsed_pydantic_schema() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = Foo(**json.loads(full.text()))
+    parsed = Foo(**json.loads(full.text))
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -195,7 +208,7 @@ def test_parsed_pydantic_schema() -> None:
 async def test_parsed_pydantic_schema_async() -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = await llm.ainvoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -205,7 +218,7 @@ async def test_parsed_pydantic_schema_async() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = Foo(**json.loads(full.text()))
+    parsed = Foo(**json.loads(full.text))
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -215,7 +228,7 @@ async def test_parsed_pydantic_schema_async() -> None:
 def test_parsed_dict_schema(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = llm.invoke("how are ya", response_format=schema)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -225,7 +238,7 @@ def test_parsed_dict_schema(schema: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = json.loads(full.text())
+    parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -239,7 +252,7 @@ def test_parsed_strict() -> None:
 
     # Test not strict
     response = llm.invoke("Tell me a joke", response_format=InvalidJoke)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
 
     # Test strict
@@ -260,7 +273,7 @@ def test_parsed_strict() -> None:
 async def test_parsed_dict_schema_async(schema: Any) -> None:
     llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     response = await llm.ainvoke("how are ya", response_format=schema)
-    parsed = json.loads(response.text())
+    parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -270,7 +283,7 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    parsed = json.loads(full.text())
+    parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
     assert parsed["response"] and isinstance(parsed["response"], str)
 
@@ -284,7 +297,7 @@ def test_function_calling_and_structured_output() -> None:
     bound_llm = llm.bind_tools([multiply], response_format=Foo, strict=True)
     # Test structured output
     response = llm.invoke("how are ya", response_format=Foo)
-    parsed = Foo(**json.loads(response.text()))
+    parsed = Foo(**json.loads(response.text))
     assert parsed == response.additional_kwargs["parsed"]
     assert parsed.response
 
@@ -297,8 +310,8 @@ def test_function_calling_and_structured_output() -> None:
 
 @pytest.mark.default_cassette("test_reasoning.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
-def test_reasoning(output_version: Literal["v0", "responses/v1"]) -> None:
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_reasoning(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
     llm = ChatOpenAI(
         model="o4-mini", use_responses_api=True, output_version=output_version
     )
@@ -360,27 +373,32 @@ def test_computer_calls() -> None:
 
 def test_file_search() -> None:
     pytest.skip()  # TODO: set up infra
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, use_responses_api=True)
     tool = {
         "type": "file_search",
         "vector_store_ids": [os.environ["OPENAI_VECTOR_STORE_ID"]],
     }
-    response = llm.invoke("What is deep research by OpenAI?", tools=[tool])
+
+    input_message = {"role": "user", "content": "What is deep research by OpenAI?"}
+    response = llm.invoke([input_message], tools=[tool])
     _check_response(response)
 
     full: Optional[BaseMessageChunk] = None
-    for chunk in llm.stream("What is deep research by OpenAI?", tools=[tool]):
+    for chunk in llm.stream([input_message], tools=[tool]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     _check_response(full)
 
+    next_message = {"role": "user", "content": "Thank you."}
+    _ = llm.invoke([input_message, full, next_message])
+
 
 @pytest.mark.default_cassette("test_stream_reasoning_summary.yaml.gz")
 @pytest.mark.vcr
-@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
 def test_stream_reasoning_summary(
-    output_version: Literal["v0", "responses/v1"],
+    output_version: Literal["v0", "responses/v1", "v1"],
 ) -> None:
     llm = ChatOpenAI(
         model="o4-mini",
@@ -400,7 +418,14 @@ def test_stream_reasoning_summary(
     if output_version == "v0":
         reasoning = response_1.additional_kwargs["reasoning"]
         assert set(reasoning.keys()) == {"id", "type", "summary"}
-    else:
+        summary = reasoning["summary"]
+        assert isinstance(summary, list)
+        for block in summary:
+            assert isinstance(block, dict)
+            assert isinstance(block["type"], str)
+            assert isinstance(block["text"], str)
+            assert block["text"]
+    elif output_version == "responses/v1":
         reasoning = next(
             block
             for block in response_1.content
@@ -409,13 +434,27 @@ def test_stream_reasoning_summary(
         if isinstance(reasoning, str):
             reasoning = json.loads(reasoning)
         assert set(reasoning.keys()) == {"id", "type", "summary", "index"}
-    summary = reasoning["summary"]
-    assert isinstance(summary, list)
-    for block in summary:
-        assert isinstance(block, dict)
-        assert isinstance(block["type"], str)
-        assert isinstance(block["text"], str)
-        assert block["text"]
+        summary = reasoning["summary"]
+        assert isinstance(summary, list)
+        for block in summary:
+            assert isinstance(block, dict)
+            assert isinstance(block["type"], str)
+            assert isinstance(block["text"], str)
+            assert block["text"]
+    else:
+        # v1
+        total_reasoning_blocks = 0
+        for block in response_1.content_blocks:
+            if block["type"] == "reasoning":
+                total_reasoning_blocks += 1
+                assert isinstance(block.get("id"), str) and block.get(
+                    "id", ""
+                ).startswith("rs_")
+                assert isinstance(block.get("reasoning"), str)
+                assert isinstance(block.get("index"), str)
+        assert (
+            total_reasoning_blocks > 1
+        )  # This query typically generates multiple reasoning blocks
 
     # Check we can pass back summaries
     message_2 = {"role": "user", "content": "Thank you."}
@@ -423,9 +462,13 @@ def test_stream_reasoning_summary(
     assert isinstance(response_2, AIMessage)
 
 
+@pytest.mark.default_cassette("test_code_interpreter.yaml.gz")
 @pytest.mark.vcr
-def test_code_interpreter() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v0")
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1", "v1"])
+def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -> None:
+    llm = ChatOpenAI(
+        model="o4-mini", use_responses_api=True, output_version=output_version
+    )
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": {"type": "auto"}}]
     )
@@ -434,16 +477,43 @@ def test_code_interpreter() -> None:
         "content": "Write and run code to answer the question: what is 3^3?",
     }
     response = llm_with_tools.invoke([input_message])
+    assert isinstance(response, AIMessage)
     _check_response(response)
-    tool_outputs = response.additional_kwargs["tool_outputs"]
-    assert tool_outputs
-    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+    if output_version == "v0":
+        tool_outputs = [
+            item
+            for item in response.additional_kwargs["tool_outputs"]
+            if item["type"] == "code_interpreter_call"
+        ]
+        assert len(tool_outputs) == 1
+    elif output_version == "responses/v1":
+        tool_outputs = [
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
+        ]
+        assert len(tool_outputs) == 1
+    else:
+        # v1
+        tool_outputs = [
+            item
+            for item in response.content_blocks
+            if item["type"] == "code_interpreter_call"
+        ]
+        code_interpreter_result = next(
+            item
+            for item in response.content_blocks
+            if item["type"] == "code_interpreter_result"
+        )
+        assert tool_outputs
+        assert code_interpreter_result
+    assert len(tool_outputs) == 1
 
     # Test streaming
     # Use same container
-    tool_outputs = response.additional_kwargs["tool_outputs"]
-    assert len(tool_outputs) == 1
-    container_id = tool_outputs[0]["container_id"]
+    container_id = tool_outputs[0].get("container_id") or tool_outputs[0].get(
+        "extras", {}
+    ).get("container_id")
     llm_with_tools = llm.bind_tools(
         [{"type": "code_interpreter", "container": container_id}]
     )
@@ -453,9 +523,34 @@ def test_code_interpreter() -> None:
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
-    tool_outputs = full.additional_kwargs["tool_outputs"]
-    assert tool_outputs
-    assert any(output["type"] == "code_interpreter_call" for output in tool_outputs)
+    if output_version == "v0":
+        tool_outputs = [
+            item
+            for item in response.additional_kwargs["tool_outputs"]
+            if item["type"] == "code_interpreter_call"
+        ]
+        assert tool_outputs
+    elif output_version == "responses/v1":
+        tool_outputs = [
+            item
+            for item in response.content
+            if isinstance(item, dict) and item["type"] == "code_interpreter_call"
+        ]
+        assert tool_outputs
+    else:
+        # v1
+        code_interpreter_call = next(
+            item
+            for item in full.content_blocks
+            if item["type"] == "code_interpreter_call"
+        )
+        code_interpreter_result = next(
+            item
+            for item in full.content_blocks
+            if item["type"] == "code_interpreter_result"
+        )
+        assert code_interpreter_call
+        assert code_interpreter_result
 
     # Test we can pass back in
     next_message = {"role": "user", "content": "Please add more comments to the code."}
@@ -550,10 +645,69 @@ def test_mcp_builtin_zdr() -> None:
     _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
-@pytest.mark.vcr()
-def test_image_generation_streaming() -> None:
+@pytest.mark.default_cassette("test_mcp_builtin_zdr.yaml.gz")
+@pytest.mark.vcr
+def test_mcp_builtin_zdr_v1() -> None:
+    llm = ChatOpenAI(
+        model="o4-mini",
+        output_version="v1",
+        store=False,
+        include=["reasoning.encrypted_content"],
+    )
+
+    llm_with_tools = llm.bind_tools(
+        [
+            {
+                "type": "mcp",
+                "server_label": "deepwiki",
+                "server_url": "https://mcp.deepwiki.com/mcp",
+                "require_approval": {"always": {"tool_names": ["read_wiki_structure"]}},
+            }
+        ]
+    )
+    input_message = {
+        "role": "user",
+        "content": (
+            "What transport protocols does the 2025-03-26 version of the MCP spec "
+            "support?"
+        ),
+    }
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert all(isinstance(block, dict) for block in full.content)
+
+    approval_message = HumanMessage(
+        [
+            {
+                "type": "non_standard",
+                "value": {
+                    "type": "mcp_approval_response",
+                    "approve": True,
+                    "approval_request_id": block["value"]["id"],  # type: ignore[index]
+                },
+            }
+            for block in full.content_blocks
+            if block["type"] == "non_standard"
+            and block["value"]["type"] == "mcp_approval_request"  # type: ignore[index]
+        ]
+    )
+    _ = llm_with_tools.invoke([input_message, full, approval_message])
+
+
+@pytest.mark.default_cassette("test_image_generation_streaming.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_image_generation_streaming(
+    output_version: Literal["v0", "responses/v1"],
+) -> None:
     """Test image generation streaming."""
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v0")
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version=output_version
+    )
     tool = {
         "type": "image_generation",
         # For testing purposes let's keep the quality low, so the test runs faster.
@@ -600,15 +754,69 @@ def test_image_generation_streaming() -> None:
     # At the moment, the streaming API does not pick up annotations fully.
     # So the following check is commented out.
     # _check_response(complete_ai_message)
-    tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
-    assert set(tool_output.keys()).issubset(expected_keys)
+    if output_version == "v0":
+        assert complete_ai_message.additional_kwargs["tool_outputs"]
+        tool_output = complete_ai_message.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        # "responses/v1"
+        tool_output = next(
+            block
+            for block in complete_ai_message.content
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
 
 
-@pytest.mark.vcr()
-def test_image_generation_multi_turn() -> None:
+@pytest.mark.default_cassette("test_image_generation_streaming.yaml.gz")
+@pytest.mark.vcr
+def test_image_generation_streaming_v1() -> None:
+    """Test image generation streaming."""
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v1")
+    tool = {
+        "type": "image_generation",
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+
+    standard_keys = {"type", "base64", "mime_type", "id", "index"}
+    extra_keys = {
+        "background",
+        "output_format",
+        "quality",
+        "revised_prompt",
+        "size",
+        "status",
+    }
+
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm.stream("Draw a random short word in green font.", tools=[tool]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    complete_ai_message = cast(AIMessageChunk, full)
+
+    tool_output = next(
+        block
+        for block in complete_ai_message.content
+        if isinstance(block, dict) and block["type"] == "image"
+    )
+    assert set(standard_keys).issubset(tool_output.keys())
+    assert set(extra_keys).issubset(tool_output["extras"].keys())
+
+
+@pytest.mark.default_cassette("test_image_generation_multi_turn.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "responses/v1"])
+def test_image_generation_multi_turn(
+    output_version: Literal["v0", "responses/v1"],
+) -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
-    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v0")
+    llm = ChatOpenAI(
+        model="gpt-4.1", use_responses_api=True, output_version=output_version
+    )
     # Test invocation
     tool = {
         "type": "image_generation",
@@ -624,10 +832,41 @@ def test_image_generation_multi_turn() -> None:
         {"role": "user", "content": "Draw a random short word in green font."}
     ]
     ai_message = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message, AIMessage)
     _check_response(ai_message)
-    tool_output = ai_message.additional_kwargs["tool_outputs"][0]
 
-    # Example tool output for an image
+    expected_keys = {
+        "id",
+        "background",
+        "output_format",
+        "quality",
+        "result",
+        "revised_prompt",
+        "size",
+        "status",
+        "type",
+    }
+
+    if output_version == "v0":
+        tool_output = ai_message.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    elif output_version == "responses/v1":
+        tool_output = next(
+            block
+            for block in ai_message.content
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        standard_keys = {"type", "base64", "id", "status"}
+        tool_output = next(
+            block
+            for block in ai_message.content
+            if isinstance(block, dict) and block["type"] == "image"
+        )
+        assert set(standard_keys).issubset(tool_output.keys())
+
+    # Example tool output for an image (v0)
     # {
     #     "background": "opaque",
     #     "id": "ig_683716a8ddf0819888572b20621c7ae4029ec8c11f8dacf8",
@@ -642,20 +881,6 @@ def test_image_generation_multi_turn() -> None:
     #     "type": "image_generation_call",
     #     "result": # base64 encode image data
     # }
-
-    expected_keys = {
-        "id",
-        "background",
-        "output_format",
-        "quality",
-        "result",
-        "revised_prompt",
-        "size",
-        "status",
-        "type",
-    }
-
-    assert set(tool_output.keys()).issubset(expected_keys)
 
     chat_history.extend(
         [
@@ -673,9 +898,89 @@ def test_image_generation_multi_turn() -> None:
     )
 
     ai_message2 = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message2, AIMessage)
     _check_response(ai_message2)
-    tool_output2 = ai_message2.additional_kwargs["tool_outputs"][0]
-    assert set(tool_output2.keys()).issubset(expected_keys)
+
+    if output_version == "v0":
+        tool_output = ai_message2.additional_kwargs["tool_outputs"][0]
+        assert set(tool_output.keys()).issubset(expected_keys)
+    else:
+        # "responses/v1"
+        tool_output = next(
+            block
+            for block in ai_message2.content
+            if isinstance(block, dict) and block["type"] == "image_generation_call"
+        )
+        assert set(tool_output.keys()).issubset(expected_keys)
+
+
+@pytest.mark.default_cassette("test_image_generation_multi_turn.yaml.gz")
+@pytest.mark.vcr
+def test_image_generation_multi_turn_v1() -> None:
+    """Test multi-turn editing of image generation by passing in history."""
+    # Test multi-turn
+    llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True, output_version="v1")
+    # Test invocation
+    tool = {
+        "type": "image_generation",
+        "quality": "low",
+        "output_format": "jpeg",
+        "output_compression": 100,
+        "size": "1024x1024",
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    chat_history: list[MessageLikeRepresentation] = [
+        {"role": "user", "content": "Draw a random short word in green font."}
+    ]
+    ai_message = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message, AIMessage)
+    _check_response(ai_message)
+
+    standard_keys = {"type", "base64", "mime_type", "id"}
+    extra_keys = {
+        "background",
+        "output_format",
+        "quality",
+        "revised_prompt",
+        "size",
+        "status",
+    }
+
+    tool_output = next(
+        block
+        for block in ai_message.content
+        if isinstance(block, dict) and block["type"] == "image"
+    )
+    assert set(standard_keys).issubset(tool_output.keys())
+    assert set(extra_keys).issubset(tool_output["extras"].keys())
+
+    chat_history.extend(
+        [
+            # AI message with tool output
+            ai_message,
+            # New request
+            {
+                "role": "user",
+                "content": (
+                    "Now, change the font to blue. Keep the word and everything else "
+                    "the same."
+                ),
+            },
+        ]
+    )
+
+    ai_message2 = llm_with_tools.invoke(chat_history)
+    assert isinstance(ai_message2, AIMessage)
+    _check_response(ai_message2)
+
+    tool_output = next(
+        block
+        for block in ai_message2.content
+        if isinstance(block, dict) and block["type"] == "image"
+    )
+    assert set(standard_keys).issubset(tool_output.keys())
+    assert set(extra_keys).issubset(tool_output["extras"].keys())
 
 
 def test_verbosity_parameter() -> None:
@@ -691,14 +996,18 @@ def test_verbosity_parameter() -> None:
     assert response.content
 
 
-@pytest.mark.vcr()
-def test_custom_tool() -> None:
+@pytest.mark.default_cassette("test_custom_tool.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["responses/v1", "v1"])
+def test_custom_tool(output_version: Literal["responses/v1", "v1"]) -> None:
     @custom_tool
     def execute_code(code: str) -> str:
         """Execute python code."""
         return "27"
 
-    llm = ChatOpenAI(model="gpt-5", use_responses_api=True).bind_tools([execute_code])
+    llm = ChatOpenAI(model="gpt-5", output_version=output_version).bind_tools(
+        [execute_code]
+    )
 
     input_message = {"role": "user", "content": "Use the tool to evaluate 3^3."}
     tool_call_message = llm.invoke([input_message])

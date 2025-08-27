@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -38,7 +38,7 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+def test_init_chat_model(model_name: str, model_provider: str | None) -> None:
     llm1: BaseChatModel = init_chat_model(
         model_name,
         model_provider=model_provider,
@@ -145,7 +145,7 @@ def test_configurable() -> None:
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
-            "output_version": "v0",
+            "output_version": None,
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
@@ -222,7 +222,7 @@ def test_configurable_with_default() -> None:
             config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
         )
 
-    """  # noqa: E501
+    """
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
         "invoke",
@@ -277,6 +277,7 @@ def test_configurable_with_default() -> None:
             "model_kwargs": {},
             "streaming": False,
             "stream_usage": True,
+            "output_version": None,
         },
         "kwargs": {
             "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],

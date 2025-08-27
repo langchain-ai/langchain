@@ -315,8 +315,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -351,7 +350,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "https://...",
             }
 
@@ -377,8 +375,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "file",
-                "source_type": "base64",
-                "data": "<base64 file data>",
+                "base64": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 
@@ -404,8 +401,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -499,8 +495,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -708,7 +703,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
@@ -741,7 +736,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
@@ -840,7 +835,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
@@ -870,7 +865,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
@@ -901,7 +896,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
@@ -939,7 +934,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
@@ -1564,7 +1559,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
-        function_args = {"a": "1", "b": "2"}
+        function_args = {"a": 1, "b": 2}
 
         messages_string_content = [
             HumanMessage("What is 1 + 2"),
@@ -2306,8 +2301,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "application/pdf",
             }
 
@@ -2347,9 +2341,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                 },
             ]
         )
@@ -2383,8 +2376,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -2424,9 +2416,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "audio",
-                    "source_type": "base64",
                     "mime_type": "audio/wav",
-                    "data": audio_data,
+                    "base64": audio_data,
                 },
             ]
         )
@@ -2457,8 +2448,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -2484,7 +2474,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "<url>",
             }
 
@@ -2536,9 +2525,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {"type": "text", "text": "describe the weather in this image"},
                 {
                     "type": "image",
-                    "source_type": "base64",
                     "mime_type": "image/jpeg",
-                    "data": image_data,
+                    "base64": image_data,
                 },
             ],
         )
@@ -2551,7 +2539,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {"type": "text", "text": "describe the weather in this image"},
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -2586,8 +2573,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -2642,8 +2628,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             content=[
                 {
                     "type": "image",
-                    "source_type": "base64",
-                    "data": image_data,
+                    "base64": image_data,
                     "mime_type": "image/jpeg",
                 },
             ],
@@ -2864,7 +2849,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_agent_loop(self, model: BaseChatModel) -> None:
@@ -2920,6 +2905,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         input_message = HumanMessage("What is the weather in San Francisco, CA?")
         tool_call_message = llm_with_tools.invoke([input_message])
         assert isinstance(tool_call_message, AIMessage)
+        content_blocks = tool_call_message.content_blocks
+        assert any(block["type"] == "tool_call" for block in content_blocks)
         tool_calls = tool_call_message.tool_calls
         assert len(tool_calls) == 1
         tool_call = tool_calls[0]

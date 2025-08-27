@@ -20,13 +20,17 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
+from langchain_core.messages.block_translators.openai import (
+    _convert_from_v03_ai_message,
+)
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
-from openai.types.responses.response import IncompleteDetails, Response, ResponseUsage
+from openai.types.responses.response import IncompleteDetails, Response
 from openai.types.responses.response_error import ResponseError
 from openai.types.responses.response_file_search_tool_call import (
     ResponseFileSearchToolCall,
@@ -43,6 +47,7 @@ from openai.types.responses.response_reasoning_item import Summary
 from openai.types.responses.response_usage import (
     InputTokensDetails,
     OutputTokensDetails,
+    ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
 from typing_extensions import TypedDict
@@ -50,7 +55,8 @@ from typing_extensions import TypedDict
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
     _FUNCTION_CALL_IDS_MAP_KEY,
-    _convert_from_v03_ai_message,
+    _convert_from_v1_to_chat_completions,
+    _convert_from_v1_to_responses,
     _convert_to_v03_ai_message,
 )
 from langchain_openai.chat_models.base import (
@@ -201,7 +207,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": [raw_tool_call]},
         tool_calls=[
             ToolCall(
                 name="GenerateUsername",
@@ -235,7 +240,6 @@ def test__convert_dict_to_message_tool_call() -> None:
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
         content="",
-        additional_kwargs={"tool_calls": raw_tool_calls},
         invalid_tool_calls=[
             InvalidToolCall(
                 name="GenerateUsername",
@@ -601,7 +605,7 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_client.create.called
+    assert mock_client.with_raw_response.create.called
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
@@ -613,7 +617,7 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_async_client.create.called
+    assert mock_async_client.with_raw_response.create.called
 
 
 @pytest.mark.parametrize(
@@ -638,7 +642,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
         assert len(call_args) == 0  # no positional args
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1
@@ -678,7 +682,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     ]
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "tool_calls" in tool_call_message_payload
@@ -688,7 +692,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     cast(AIMessage, messages[1]).tool_calls = []
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "function_call" in tool_call_message_payload
@@ -731,17 +735,22 @@ def test_format_message_content() -> None:
     assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
 
     # Standard multi-modal inputs
-    content = [{"type": "image", "source_type": "url", "url": "https://..."}]
+    contents = [
+        {"type": "image", "source_type": "url", "url": "https://..."},  # v0
+        {"type": "image", "url": "https://..."},  # v1
+    ]
     expected = [{"type": "image_url", "image_url": {"url": "https://..."}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "image",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "image/png",
-        }
+        },
+        {"type": "image", "base64": "<base64 data>", "mime_type": "image/png"},
     ]
     expected = [
         {
@@ -749,16 +758,23 @@ def test_format_message_content() -> None:
             "image_url": {"url": "data:image/png;base64,<base64 data>"},
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [
+    contents = [
         {
             "type": "file",
             "source_type": "base64",
             "data": "<base64 data>",
             "mime_type": "application/pdf",
             "filename": "my_file",
-        }
+        },
+        {
+            "type": "file",
+            "base64": "<base64 data>",
+            "mime_type": "application/pdf",
+            "filename": "my_file",
+        },
     ]
     expected = [
         {
@@ -769,11 +785,16 @@ def test_format_message_content() -> None:
             },
         }
     ]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
-    content = [{"type": "file", "source_type": "id", "id": "file-abc123"}]
+    contents = [
+        {"type": "file", "source_type": "id", "id": "file-abc123"},
+        {"type": "file", "file_id": "file-abc123"},
+    ]
     expected = [{"type": "file", "file": {"file_id": "file-abc123"}}]
-    assert expected == _format_message_content(content)
+    for content in contents:
+        assert expected == _format_message_content([content])
 
 
 class GenerateUsername(BaseModel):
@@ -1228,7 +1249,7 @@ def test_structured_outputs_parser() -> None:
     serialized = dumps(llm_output)
     deserialized = loads(serialized)
     assert isinstance(deserialized, ChatGeneration)
-    result = output_parser.invoke(deserialized.message)
+    result = output_parser.invoke(cast(AIMessage, deserialized.message))
     assert result == parsed_response
 
 
@@ -2305,8 +2326,9 @@ def test_mcp_tracing() -> None:
     tracer = FakeTracer()
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any) -> Response:
-        return Response(
+    def mock_create(*args: Any, **kwargs: Any) -> MagicMock:
+        mock_raw_response = MagicMock()
+        mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
             model="o4-mini",
@@ -2328,8 +2350,9 @@ def test_mcp_tracing() -> None:
                 )
             ],
         )
+        return mock_raw_response
 
-    mock_client.responses.create = mock_create
+    mock_client.responses.with_raw_response.create = mock_create
     input_message = HumanMessage("Test query")
     tools = [
         {
@@ -2358,7 +2381,7 @@ def test_mcp_tracing() -> None:
     assert payload["tools"][0]["headers"]["Authorization"] == "Bearer PLACEHOLDER"
 
 
-def test_compat() -> None:
+def test_compat_responses_v03() -> None:
     # Check compatibility with v0.3 message format
     message_v03 = AIMessage(
         content=[
@@ -2417,6 +2440,159 @@ def test_compat() -> None:
     message_v03_output = _convert_to_v03_ai_message(message)
     assert message_v03_output == message_v03
     assert message_v03_output is not message_v03
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                [
+                    {"type": "reasoning", "reasoning": "Reasoning text"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "text",
+                        "text": "Hello, world!",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"}
+                        ],
+                    },
+                ],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+            AIMessage(
+                [{"type": "text", "text": "Hello, world!"}],
+                id="chatcmpl-123",
+                response_metadata={"model_provider": "openai", "model_name": "gpt-4.1"},
+            ),
+        )
+    ],
+)
+def test_convert_from_v1_to_chat_completions(
+    message_v1: AIMessage, expected: AIMessage
+) -> None:
+    result = _convert_from_v1_to_chat_completions(message_v1)
+    assert result == expected
+    assert result.tool_calls == message_v1.tool_calls  # tool calls remain cached
+
+    # Check no mutation
+    assert message_v1 != result
+
+
+@pytest.mark.parametrize(
+    "message_v1, expected",
+    [
+        (
+            AIMessage(
+                content_blocks=[
+                    {"type": "reasoning", "id": "abc123"},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "foo "},
+                    {"type": "reasoning", "id": "abc234", "reasoning": "bar"},
+                    {
+                        "type": "tool_call",
+                        "id": "call_123",
+                        "name": "get_weather",
+                        "args": {"location": "San Francisco"},
+                    },
+                    {
+                        "type": "tool_call",
+                        "id": "call_234",
+                        "name": "get_weather_2",
+                        "args": {"location": "New York"},
+                        "extras": {"item_id": "fc_123"},
+                    },
+                    {"type": "text", "text": "Hello "},
+                    {
+                        "type": "text",
+                        "text": "world",
+                        "annotations": [
+                            {"type": "citation", "url": "https://example.com"},
+                            {
+                                "type": "citation",
+                                "title": "my doc",
+                                "extras": {"file_id": "file_123", "index": 1},
+                            },
+                            {
+                                "type": "non_standard_annotation",
+                                "value": {"bar": "baz"},
+                            },
+                        ],
+                    },
+                    {"type": "image", "base64": "...", "id": "ig_123"},
+                    {
+                        "type": "non_standard",
+                        "value": {"type": "something_else", "foo": "bar"},
+                    },
+                ],
+                id="resp123",
+            ),
+            [
+                {"type": "reasoning", "id": "abc123", "summary": []},
+                {
+                    "type": "reasoning",
+                    "id": "abc234",
+                    "summary": [
+                        {"type": "summary_text", "text": "foo "},
+                        {"type": "summary_text", "text": "bar"},
+                    ],
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_123",
+                    "name": "get_weather",
+                    "arguments": '{"location": "San Francisco"}',
+                },
+                {
+                    "type": "function_call",
+                    "call_id": "call_234",
+                    "name": "get_weather_2",
+                    "arguments": '{"location": "New York"}',
+                    "id": "fc_123",
+                },
+                {"type": "text", "text": "Hello "},
+                {
+                    "type": "text",
+                    "text": "world",
+                    "annotations": [
+                        {"type": "url_citation", "url": "https://example.com"},
+                        {
+                            "type": "file_citation",
+                            "filename": "my doc",
+                            "index": 1,
+                            "file_id": "file_123",
+                        },
+                        {"bar": "baz"},
+                    ],
+                },
+                {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+                {"type": "something_else", "foo": "bar"},
+            ],
+        )
+    ],
+)
+def test_convert_from_v1_to_responses(
+    message_v1: AIMessage, expected: list[dict[str, Any]]
+) -> None:
+    tcs: list[types.ToolCall] = [
+        {
+            "type": "tool_call",
+            "name": tool_call["name"],
+            "args": tool_call["args"],
+            "id": tool_call.get("id"),
+        }
+        for tool_call in message_v1.tool_calls
+    ]
+    result = _convert_from_v1_to_responses(message_v1.content_blocks, tcs)
+    assert result == expected
+
+    # Check no mutation
+    assert message_v1 != result
 
 
 def test_get_last_messages() -> None:
