@@ -1247,9 +1247,6 @@ class BaseChatOpenAI(BaseChatModel):
         if stop is not None:
             kwargs["stop"] = stop
 
-        # # Filter out parameters that shouldn't be passed to OpenAI API
-        # filtered_kwargs = {k: v for k, v in kwargs.items() if k != "output_version"}
-        # payload = {**self._default_params, **filtered_kwargs}
         payload = {**self._default_params, **kwargs}
 
         if self._use_responses_api(payload):
