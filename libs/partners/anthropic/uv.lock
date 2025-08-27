@@ -373,7 +373,7 @@ wheels = [
 
 [[package]]
 name = "langchain-anthropic"
-version = "0.3.19"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -454,7 +454,7 @@ typing = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.75"
+version = "1.0.0a1"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
