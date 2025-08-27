@@ -350,7 +350,7 @@ def mock_glm4_completion() -> list:
 
 async def test_glm4_astream(mock_glm4_completion: list) -> None:
     llm_name = "glm-4"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = AsyncMock()
 
     async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
@@ -375,7 +375,7 @@ async def test_glm4_astream(mock_glm4_completion: list) -> None:
 
 def test_glm4_stream(mock_glm4_completion: list) -> None:
     llm_name = "glm-4"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -431,7 +431,7 @@ def mock_deepseek_completion() -> list[dict]:
 
 async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
     llm_name = "deepseek-chat"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = AsyncMock()
 
     async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
@@ -455,7 +455,7 @@ async def test_deepseek_astream(mock_deepseek_completion: list) -> None:
 
 def test_deepseek_stream(mock_deepseek_completion: list) -> None:
     llm_name = "deepseek-chat"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
@@ -499,7 +499,7 @@ def mock_openai_completion() -> list[dict]:
 
 async def test_openai_astream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = AsyncMock()
 
     async def mock_create(*args: Any, **kwargs: Any) -> MockAsyncContextManager:
@@ -523,7 +523,7 @@ async def test_openai_astream(mock_openai_completion: list) -> None:
 
 def test_openai_stream(mock_openai_completion: list) -> None:
     llm_name = "gpt-4o"
-    llm = ChatOpenAI(model=llm_name, stream_usage=True)
+    llm = ChatOpenAI(model=llm_name, stream_usage=True, streaming=True)
     mock_client = MagicMock()
 
     def mock_create(*args: Any, **kwargs: Any) -> MockSyncContextManager:
