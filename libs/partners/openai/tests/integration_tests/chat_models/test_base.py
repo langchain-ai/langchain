@@ -227,13 +227,33 @@ def test_openai_invoke() -> None:
     result = llm.invoke("Hello", config=dict(tags=["foo"]))
     assert isinstance(result.content, str)
 
+    usage_metadata = result.usage_metadata
+
     # assert no response headers if include_response_headers is not set
     assert "headers" not in result.response_metadata
+    assert usage_metadata is not None
+    assert usage_metadata.get("input_token_details").get("flex") > 0
+    assert usage_metadata.get("input_token_details").get("flex") == usage_metadata.get(
+        "input_tokens"
+    )
+    assert usage_metadata.get("output_token_details").get("flex") > 0
+    # GPT-5-nano/reasoning model specific. Remove if model used in test changes.
+    assert usage_metadata.get("output_token_details").get("flex_reasoning") > 0
+    assert usage_metadata.get("output_token_details").get(
+        "flex_reasoning"
+    ) + usage_metadata.get("output_token_details").get("flex") == usage_metadata.get(
+        "output_tokens"
+    )
 
 
+@pytest.mark.flaky(retries=3, delay=1)
 def test_stream() -> None:
     """Test streaming tokens from OpenAI."""
-    llm = ChatOpenAI()
+    llm = ChatOpenAI(
+        model="gpt-5-nano",
+        service_tier="flex",  # Also test service_tier
+        max_retries=3,  # Add retries for 503 capacity errors
+    )
 
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream("I'm Pickle Rick"):
@@ -266,6 +286,19 @@ def test_stream() -> None:
     assert aggregate.usage_metadata["input_tokens"] > 0
     assert aggregate.usage_metadata["output_tokens"] > 0
     assert aggregate.usage_metadata["total_tokens"] > 0
+    assert aggregate.usage_metadata.get("input_token_details", {}).get("flex", 0) > 0
+    assert aggregate.usage_metadata.get("output_token_details", {}).get("flex", 0) > 0
+    assert (
+        aggregate.usage_metadata.get("output_token_details", {}).get(
+            "flex_reasoning", 0
+        )
+        > 0
+    )
+    assert aggregate.usage_metadata.get("output_token_details", {}).get(
+        "flex_reasoning", 0
+    ) + aggregate.usage_metadata.get("output_token_details", {}).get(
+        "flex", 0
+    ) == aggregate.usage_metadata.get("output_tokens")
 
 
 async def test_astream() -> None:
