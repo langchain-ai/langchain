@@ -3440,12 +3440,12 @@ def _create_usage_metadata(
     total_tokens = oai_token_usage.get("total_tokens") or input_tokens + output_tokens
     if service_tier != "priority" and service_tier != "flex":
         service_tier = None
-    details_prefix = f"{service_tier}_" if service_tier else ""
+    service_tier_prefix = f"{service_tier}_" if service_tier else ""
     input_token_details: dict = {
         "audio": (oai_token_usage.get("prompt_tokens_details") or {}).get(
             "audio_tokens"
         ),
-        f"{details_prefix}cache_read": (
+        f"{service_tier_prefix}cache_read": (
             oai_token_usage.get("prompt_tokens_details") or {}
         ).get("cached_tokens"),
     }
@@ -3453,7 +3453,7 @@ def _create_usage_metadata(
         "audio": (oai_token_usage.get("completion_tokens_details") or {}).get(
             "audio_tokens"
         ),
-        f"{details_prefix}reasoning": (
+        f"{service_tier_prefix}reasoning": (
             oai_token_usage.get("completion_tokens_details") or {}
         ).get("reasoning_tokens"),
     }
@@ -3461,10 +3461,10 @@ def _create_usage_metadata(
         # Avoid counting cache and reasoning tokens towards the service tier token
         # counts, since service tier tokens are already priced differently
         input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{details_prefix}cache_read", 0
+            f"{service_tier_prefix}cache_read", 0
         )
         output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{details_prefix}reasoning", 0
+            f"{service_tier_prefix}reasoning", 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
@@ -3487,14 +3487,14 @@ def _create_usage_metadata_responses(
     total_tokens = oai_token_usage.get("total_tokens", input_tokens + output_tokens)
     if service_tier != "priority" and service_tier != "flex":
         service_tier = None
-    details_prefix = f"{service_tier}_" if service_tier else ""
+    service_tier_prefix = f"{service_tier}_" if service_tier else ""
     output_token_details: dict = {
-        f"{details_prefix}reasoning": (
+        f"{service_tier_prefix}reasoning": (
             oai_token_usage.get("output_tokens_details") or {}
         ).get("reasoning_tokens")
     }
     input_token_details: dict = {
-        f"{details_prefix}cache_read": (
+        f"{service_tier_prefix}cache_read": (
             oai_token_usage.get("input_tokens_details") or {}
         ).get("cached_tokens")
     }
@@ -3502,10 +3502,10 @@ def _create_usage_metadata_responses(
         # Avoid counting cache and reasoning tokens towards the service tier token
         # counts, since service tier tokens are already priced differently
         output_token_details[service_tier] = output_tokens - output_token_details.get(
-            f"{details_prefix}reasoning", 0
+            f"{service_tier_prefix}reasoning", 0
         )
         input_token_details[service_tier] = input_tokens - input_token_details.get(
-            f"{details_prefix}cache_read", 0
+            f"{service_tier_prefix}cache_read", 0
         )
     return UsageMetadata(
         input_tokens=input_tokens,
