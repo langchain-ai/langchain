@@ -661,8 +661,7 @@ class ChatHuggingFace(BaseChatModel):
         if _is_huggingface_endpoint(self.llm):
             kwargs["stream"] = True
             stream_usage = self._should_stream_usage(
-                stream_usage=stream_usage,
-                **kwargs
+                stream_usage=stream_usage, **kwargs
             )
             if stream_usage:
                 kwargs["stream_options"] = {"include_usage": stream_usage}
