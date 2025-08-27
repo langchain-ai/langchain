@@ -188,7 +188,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         model: Union[
             str,
             BaseChatModel,
-            SyncOrAsync[[StateT, Runtime[ContextT]], BaseModel],
+            SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
         ],
         tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
         *,
@@ -902,7 +902,7 @@ def create_react_agent(  # noqa: D417
     model: Union[
         str,
         BaseChatModel,
-        SyncOrAsync[[StateT, Runtime[ContextT]], BaseModel],
+        SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
     ],
     tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
     *,
