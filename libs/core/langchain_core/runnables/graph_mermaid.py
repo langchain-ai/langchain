@@ -259,6 +259,7 @@ def draw_mermaid_png(
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    proxies: Optional[dict] = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
@@ -275,6 +276,7 @@ def draw_mermaid_png(
             Defaults to 1.
         retry_delay (float, optional): Delay between retries (MermaidDrawMethod.API).
             Defaults to 1.0.
+        proxies (dict, optional): HTTP/HTTPS proxies for requests, e.g. {"http": "http://127.0.0.1:7890", "https": "http://127.0.0.1:7890"}. Defaults to None.
 
     Returns:
         bytes: PNG image bytes.
@@ -297,6 +299,7 @@ def draw_mermaid_png(
             background_color=background_color,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            proxies=proxies,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -390,6 +393,7 @@ def _render_mermaid_using_api(
     file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    proxies: Optional[dict] = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
     try:
@@ -428,7 +432,7 @@ def _render_mermaid_using_api(
 
     for attempt in range(max_retries + 1):
         try:
-            response = requests.get(image_url, timeout=10)
+            response = requests.get(image_url, timeout=10, proxies=proxies)
             if response.status_code == requests.codes.ok:
                 img_bytes = response.content
                 if output_file_path is not None:
