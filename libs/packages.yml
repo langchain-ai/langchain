@@ -733,4 +733,6 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-
+- name: langchain-scrapingbee
+  repo: ScrapingBee/langchain-scrapingbee
+  path: .
