@@ -733,4 +733,7 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-
+  packages:
+- name: langchain-opperai
+  repo: opper-ai/langchain-opperai
+  path: .
