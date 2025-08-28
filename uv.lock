@@ -2880,7 +2880,7 @@ wheels = [
 
 [[package]]
 name = "langchain-text-splitters"
-version = "0.3.9"
+version = "0.3.10"
 source = { editable = "libs/text-splitters" }
 dependencies = [
     { name = "langchain-core" },
