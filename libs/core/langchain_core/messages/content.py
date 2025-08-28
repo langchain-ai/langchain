@@ -83,7 +83,7 @@ The module defines several types of content blocks, including:
 
 - ``TextContentBlock``: Standard text output.
 - ``Citation``: For annotations that link text output to a source document.
-- ``ToolCallContentBlock``: For function calling.
+- ``ToolCall``: For function calling.
 - ``ReasoningContentBlock``: To capture a model's thought process.
 - Multimodal data:
     - ``ImageContentBlock``
@@ -834,7 +834,7 @@ class NonStandardContentBlock(TypedDict):
     The purpose of this block should be to simply hold a provider-specific payload.
     If a provider's non-standard output includes reasoning and tool calls, it should be
     the adapter's job to parse that payload and emit the corresponding standard
-    ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
+    ``ReasoningContentBlock`` and ``ToolCalls``.
 
     Has no ``extras`` field, as provider-specific data should be included in the
     ``value`` field.
