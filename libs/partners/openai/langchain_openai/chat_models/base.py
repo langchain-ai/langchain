@@ -686,11 +686,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     .. code-block:: python
 
-        llm = ChatOpenAI(
-            model="o4-mini",
-            use_responses_api=True,
-            output_version="responses/v1",
-        )
+        llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
     .. versionadded:: 0.3.26
@@ -721,6 +717,10 @@ class BaseChatOpenAI(BaseChatModel):
     - ``"v1"``: v1 of LangChain cross-provider standard.
 
     .. versionadded:: 0.3.25
+
+    .. versionchanged:: 1.0.0
+
+        Default updated to ``"responses/v1"``.
 
     """
 
@@ -3908,7 +3908,7 @@ def _construct_lc_result_from_responses_api(
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
         # Responses API.
-        output_version = "v0"
+        output_version = "responses/v1"
 
     response_metadata = {
         k: v
@@ -4120,7 +4120,7 @@ def _convert_responses_chunk_to_generation_chunk(
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
         # Responses API.
-        output_version = "v0"
+        output_version = "responses/v1"
 
     content = []
     tool_call_chunks: list = []
