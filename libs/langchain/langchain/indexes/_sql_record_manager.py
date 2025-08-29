@@ -30,7 +30,6 @@ from sqlalchemy import (
     and_,
     create_engine,
     delete,
-    func,
     select,
     text,
 )
@@ -330,10 +329,7 @@ class SQLRecordManager(RecordManager):
                     constraint="uix_key_namespace",  # Name of constraint
                     set_={
                         "updated_at": pg_insert_stmt.excluded.updated_at,
-                        "group_id": func.coalesce(
-                            pg_insert_stmt.excluded.group_id,
-                            UpsertionRecord.group_id,
-                        ),
+                        "group_id": pg_insert_stmt.excluded.group_id,
                     },
                 )
             else:
@@ -415,10 +411,7 @@ class SQLRecordManager(RecordManager):
                     constraint="uix_key_namespace",  # Name of constraint
                     set_={
                         "updated_at": pg_insert_stmt.excluded.updated_at,
-                        "group_id": func.coalesce(
-                            pg_insert_stmt.excluded.group_id,
-                            UpsertionRecord.group_id,
-                        ),
+                        "group_id": pg_insert_stmt.excluded.group_id,
                     },
                 )
             else:
