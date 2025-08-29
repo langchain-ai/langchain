@@ -27,6 +27,37 @@ pip install -U langchain-google-bigtable
 
 The `langchain-google-bigtable` package provides the following integrations:
 
+### Vector Store
+
+With `BigtableVectorStore`, you can store documents and their vector embeddings to find the most similar or relevant information in your database.
+
+* **Full `VectorStore` Implementation:** Supports all methods from the LangChain `VectorStore` abstract class.
+* **Async/Sync Support:** All methods are available in both asynchronous and synchronous versions.
+* **Metadata Filtering:** Powerful filtering on metadata fields, including logical AND/OR combinations.
+* **Multiple Distance Strategies:** Supports both Cosine and Euclidean distance for similarity search.
+* **Customizable Storage:** Full control over how content, embeddings, and metadata are stored in Bigtable columns.
+
+```python
+from langchain_google_bigtable import BigtableVectorStore
+
+# Your embedding service and other configurations
+# embedding_service = ...
+
+engine = await BigtableEngine.async_initialize(project_id="your-project-id")
+vector_store = await BigtableVectorStore.create(
+    engine=engine,
+    instance_id="your-instance-id",
+    table_id="your-table-id",
+    embedding_service=embedding_service,
+    collection="your_collection_name",
+)
+await vector_store.aadd_documents([your_documents])
+results = await vector_store.asimilarity_search("your query")
+```
+
+
+Learn more in the [Vector Store how-to guide](https://colab.research.google.com/github/googleapis/langchain-google-bigtable-python/blob/main/docs/vector_store.ipynb).
+
 ### Key-value Store
 
 Use `BigtableByteStore` as a persistent, scalable key-value store for caching, session management, or other storage needs. It supports both synchronous and asynchronous operations.
