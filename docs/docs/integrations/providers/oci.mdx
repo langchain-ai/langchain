@@ -1,4 +1,4 @@
-# Oracle Cloud Infrastructure (OCI)
+    # Oracle Cloud Infrastructure (OCI)
 
 The `LangChain` integrations related to [Oracle Cloud Infrastructure](https://www.oracle.com/artificial-intelligence/).
 
@@ -11,15 +11,13 @@ The `LangChain` integrations related to [Oracle Cloud Infrastructure](https://ww
 To use, you should have the latest `oci` python SDK and the langchain_community package installed.
 
 ```bash
-pip install -U langchain_oci
+python -m pip install -U langchain-oci
 ```
 
 See [chat](/docs/integrations/llms/oci_generative_ai), [complete](/docs/integrations/chat/oci_generative_ai), and [embedding](/docs/integrations/text_embedding/oci_generative_ai) usage examples.
 
 ```python
 from langchain_oci.chat_models import ChatOCIGenAI
-
-from langchain_oci.llms import OCIGenAI
 
 from langchain_oci.embeddings import OCIGenAIEmbeddings
 ```
