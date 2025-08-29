@@ -29,6 +29,7 @@ def _any_id_document(**kwargs: Any) -> Document:
 
 def _any_id_ai_message(**kwargs: Any) -> AIMessage:
     """Create ai message with an any id field."""
+    # Don't automatically add output_version - it should only be present when explicit
     message = AIMessage(**kwargs)
     message.id = AnyStr()
     return message
@@ -36,6 +37,7 @@ def _any_id_ai_message(**kwargs: Any) -> AIMessage:
 
 def _any_id_ai_message_chunk(**kwargs: Any) -> AIMessageChunk:
     """Create ai message with an any id field."""
+    # Don't automatically add output_version - it should only be present when explicit
     message = AIMessageChunk(**kwargs)
     message.id = AnyStr()
     return message

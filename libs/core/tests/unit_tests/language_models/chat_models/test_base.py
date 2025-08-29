@@ -7,7 +7,10 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 import pytest
 from typing_extensions import override
 
-from langchain_core.callbacks import CallbackManagerForLLMRun
+from langchain_core.callbacks import (
+    AsyncCallbackManagerForLLMRun,
+    CallbackManagerForLLMRun,
+)
 from langchain_core.language_models import (
     BaseChatModel,
     FakeListChatModel,
@@ -185,6 +188,8 @@ async def test_astream_fallback_to_ainvoke() -> None:
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
+            *,
+            output_version: str = "v0",
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -218,6 +223,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
+            *,
+            output_version: str = "v0",
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -229,6 +236,8 @@ async def test_astream_implementation_fallback_to_stream() -> None:
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
+            *,
+            output_version: str = "v0",
             **kwargs: Any,
         ) -> Iterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -244,19 +253,21 @@ async def test_astream_implementation_fallback_to_stream() -> None:
     model = ModelWithSyncStream()
     chunks = list(model.stream("anything"))
     assert chunks == [
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
-            content="a",
+            content="b",
+            chunk_position="last",
         ),
-        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
     assert type(model)._astream == BaseChatModel._astream
     astream_chunks = [chunk async for chunk in model.astream("anything")]
     assert astream_chunks == [
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
-            content="a",
+            content="b",
+            chunk_position="last",
         ),
-        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in astream_chunks}) == 1
 
@@ -270,6 +281,8 @@ async def test_astream_implementation_uses_astream() -> None:
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
             run_manager: Optional[CallbackManagerForLLMRun] = None,
+            *,
+            output_version: str = "v0",
             **kwargs: Any,
         ) -> ChatResult:
             """Top Level call."""
@@ -280,7 +293,9 @@ async def test_astream_implementation_uses_astream() -> None:
             self,
             messages: list[BaseMessage],
             stop: Optional[list[str]] = None,
-            run_manager: Optional[CallbackManagerForLLMRun] = None,  # type: ignore[override]
+            run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+            *,
+            output_version: Optional[str] = "v0",
             **kwargs: Any,
         ) -> AsyncIterator[ChatGenerationChunk]:
             """Stream the output of the model."""
@@ -296,10 +311,11 @@ async def test_astream_implementation_uses_astream() -> None:
     model = ModelWithAsyncStream()
     chunks = [chunk async for chunk in model.astream("anything")]
     assert chunks == [
+        _any_id_ai_message_chunk(content="a"),
         _any_id_ai_message_chunk(
-            content="a",
+            content="b",
+            chunk_position="last",
         ),
-        _any_id_ai_message_chunk(content="b", chunk_position="last"),
     ]
     assert len({chunk.id for chunk in chunks}) == 1
 
@@ -351,6 +367,8 @@ class NoStreamingModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         return ChatResult(generations=[ChatGeneration(message=AIMessage("invoke"))])
@@ -367,6 +385,8 @@ class StreamingModel(NoStreamingModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         yield ChatGenerationChunk(message=AIMessageChunk(content="stream"))
