@@ -215,6 +215,29 @@ def _format_ls_structured_output(ls_structured_output_format: Optional[dict]) ->
 
     return ls_structured_output_format_dict
 
+def _clean_dynamic_values(messages):
+    """
+    Remove dynamic fields like 'id' from each message in the list.
+    Supports dicts, Pydantic models, and regular Python objects.
+    """
+    def clean_one(msg):
+        # Pydantic models
+        if hasattr(msg, 'model_dump'):
+            d = msg.model_dump()
+            d.pop('id', None)
+            return d
+        # dicts
+        if isinstance(msg, dict):
+            return {k: v for k, v in msg.items() if k != 'id'}
+        # Regular Python objects with __dict__
+        if hasattr(msg, '__dict__'):
+            d = msg.__dict__.copy()
+            d.pop('id', None)
+            return d
+        return msg
+    if isinstance(messages, list):
+        return [clean_one(m) for m in messages]
+    return messages
 
 class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     """Base class for chat models.
@@ -1046,7 +1069,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if check_cache:
             if llm_cache:
                 llm_string = self._get_llm_string(stop=stop, **kwargs)
-                prompt = dumps(messages)
+                copy_messages = _clean_dynamic_values(messages)
+                prompt = dumps(copy_messages)
                 cache_val = llm_cache.lookup(prompt, llm_string)
                 if isinstance(cache_val, list):
                     converted_generations = self._convert_cached_generations(cache_val)
