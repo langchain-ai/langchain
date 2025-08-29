@@ -215,9 +215,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     headers: Any = None
-    tiktoken_enabled: Optional[bool] = Field(
-        default_factory=from_env("OPENAI_TIKTOKEN_ENABLED", default=True)
-    )
+    tiktoken_enabled: bool = Field(default=True)
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
     the ``--extensions openai`` extension for ``text-generation-webui``"""
     tiktoken_model_name: Optional[str] = None
@@ -253,9 +251,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     http_async_client: Union[Any, None] = None
     """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
-    check_embedding_ctx_length: Optional[bool] = Field(
-        default_factory=from_env("OPENAI_CHECK_EMBEDDING_CTX_LENGTH", default=True)
-    )
+    check_embedding_ctx_length: bool = Field(default=True)
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
 
