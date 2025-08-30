@@ -51,7 +51,7 @@ The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
         ),
     ],
 )
-def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
+def test_criteria_result_output_parser_parse(text: str, want: dict) -> None:
     output_parser = CriteriaResultOutputParser()
     got = output_parser.parse(text)
     assert got.get("reasoning") == want["reasoning"]
