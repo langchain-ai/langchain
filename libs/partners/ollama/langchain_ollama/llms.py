@@ -43,7 +43,7 @@ class OllamaLLM(BaseLLM):
 
     Key init args — generation params:
         model: str
-            Name of the Ollama model to use (e.g. "llama3.1", "llama2").
+            Name of the Ollama model to use (e.g. ``'llama4'``).
         temperature: Optional[float]
             Sampling temperature. Higher values make output more creative.
         num_predict: Optional[int]
