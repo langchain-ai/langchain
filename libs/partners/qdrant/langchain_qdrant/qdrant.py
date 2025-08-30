@@ -249,9 +249,10 @@ class QdrantVectorStore(VectorStore):
     def _get_retriever_tags(self) -> list[str]:
         """Get tags for retriever.
 
-        Override the base class method to handle SPARSE mode where embeddings can be None.
-        In SPARSE mode, embeddings is None, so we don't include embeddings class name in tags.
-        In DENSE/HYBRID modes, embeddings is not None, so we include embeddings class name.
+        Override the base class method to handle SPARSE mode where embeddings can be
+        None. In SPARSE mode, embeddings is None, so we don't include embeddings class
+        name in tags. In DENSE/HYBRID modes, embeddings is not None, so we include
+        embeddings class name.
         """
         tags = [self.__class__.__name__]
 
@@ -279,7 +280,8 @@ class QdrantVectorStore(VectorStore):
             ValueError: If embeddings are None and required for the operation.
         """
         if self.embeddings is None:
-            raise ValueError(f"Embeddings are required for {operation}")
+            msg = f"Embeddings are required for {operation}"
+            raise ValueError(msg)
         return self.embeddings
 
     @property
@@ -547,7 +549,8 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         }
         if self.retrieval_mode == RetrievalMode.DENSE:
-            query_dense_embedding = self._require_embeddings("DENSE mode").embed_query(query)
+            embeddings = self._require_embeddings("DENSE mode")
+            query_dense_embedding = embeddings.embed_query(query)
             results = self.client.query_points(
                 query=query_dense_embedding,
                 using=self.vector_name,
@@ -566,7 +569,8 @@ class QdrantVectorStore(VectorStore):
             ).points
 
         elif self.retrieval_mode == RetrievalMode.HYBRID:
-            query_dense_embedding = self._require_embeddings("HYBRID mode").embed_query(query)
+            embeddings = self._require_embeddings("HYBRID mode")
+            query_dense_embedding = embeddings.embed_query(query)
             query_sparse_embedding = self.sparse_embeddings.embed_query(query)
             results = self.client.query_points(
                 prefetch=[
@@ -720,7 +724,8 @@ class QdrantVectorStore(VectorStore):
             self.embeddings,
         )
 
-        query_embedding = self._require_embeddings("max_marginal_relevance_search").embed_query(query)
+        embeddings = self._require_embeddings("max_marginal_relevance_search")
+        query_embedding = embeddings.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             query_embedding,
             k=k,
@@ -1071,7 +1076,8 @@ class QdrantVectorStore(VectorStore):
         texts: Iterable[str],
     ) -> list[models.VectorStruct]:
         if self.retrieval_mode == RetrievalMode.DENSE:
-            batch_embeddings = self._require_embeddings("DENSE mode").embed_documents(list(texts))
+            embeddings = self._require_embeddings("DENSE mode")
+            batch_embeddings = embeddings.embed_documents(list(texts))
             return [
                 {
                     self.vector_name: vector,
@@ -1093,7 +1099,8 @@ class QdrantVectorStore(VectorStore):
             ]
 
         if self.retrieval_mode == RetrievalMode.HYBRID:
-            dense_embeddings = self._require_embeddings("HYBRID mode").embed_documents(list(texts))
+            embeddings = self._require_embeddings("HYBRID mode")
+            dense_embeddings = embeddings.embed_documents(list(texts))
             sparse_embeddings = self.sparse_embeddings.embed_documents(list(texts))
 
             if len(dense_embeddings) != len(sparse_embeddings):
