@@ -5,14 +5,14 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "anthropic<1,>=0.64.0",
-    "langchain-core<1.0.0,>=0.3.74",
+    "langchain-core<2.0.0,>=1.0.0a1",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
-version = "0.3.19"
+version = "1.0.0a1"
 description = "An integration package connecting Anthropic and LangChain"
 readme = "README.md"
 
