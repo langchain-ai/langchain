@@ -24,15 +24,93 @@ from ._utils import validate_model
 
 
 class OllamaLLM(BaseLLM):
-    """OllamaLLM large language models.
+    """Ollama large language models.
 
-    Example:
+    Setup:
+        Install ``langchain-ollama`` and install/run the Ollama server locally:
+
+        .. code-block:: bash
+
+            pip install -U langchain-ollama
+            # Visit https://ollama.com/download to download and install Ollama
+            # Then start the server: ollama serve
+
+        Download a model to use:
+
+        .. code-block:: bash
+
+            ollama pull llama3.1
+
+    Key init args — generation params:
+        model: str
+            Name of the Ollama model to use (e.g. "llama3.1", "llama2").
+        temperature: Optional[float]
+            Sampling temperature. Higher values make output more creative.
+        num_predict: Optional[int]
+            Maximum number of tokens to predict.
+        top_k: Optional[int]
+            Limits the next token selection to the K most probable tokens.
+        top_p: Optional[float]
+            Nucleus sampling parameter. Higher values lead to more diverse text.
+        mirostat: Optional[int]
+            Enable Mirostat sampling for controlling perplexity.
+        seed: Optional[int]
+            Random number seed for generation reproducibility.
+
+    Key init args — client params:
+        base_url: Optional[str]
+            Base URL where Ollama server is hosted.
+        keep_alive: Optional[Union[int, str]]
+            How long the model stays loaded into memory.
+        format: Literal["", "json"]
+            Specify the format of the output.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
         .. code-block:: python
 
             from langchain_ollama import OllamaLLM
 
-            model = OllamaLLM(model="llama3")
-            print(model.invoke("Come up with 10 names for a song about parrots"))
+            llm = OllamaLLM(
+                model="llama3.1",
+                temperature=0.7,
+                num_predict=256,
+                # base_url="http://localhost:11434",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "The meaning of life is "
+            response = llm.invoke(input_text)
+            print(response)
+
+        .. code-block:: none
+
+            "a philosophical question that has been contemplated by humans for
+            centuries..."
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk, end="")
+
+        .. code-block:: none
+
+            a philosophical question that has been contemplated by humans for
+            centuries...
+
+    Async:
+        .. code-block:: python
+
+            response = await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in llm.astream(input_text):
+            #     print(chunk, end="")
 
     """
 
