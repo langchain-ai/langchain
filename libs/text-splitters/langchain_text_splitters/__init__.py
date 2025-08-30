@@ -54,6 +54,10 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 from langchain_text_splitters.spacy import SpacyTextSplitter
+from langchain_text_splitters.semantic_text_splitter import (  # ✅ your new file
+    SemanticTextSplitter,
+    HybridSemanticSplitter,
+)
 
 __all__ = [
     "CharacterTextSplitter",
@@ -63,6 +67,7 @@ __all__ = [
     "HTMLSectionSplitter",
     "HTMLSemanticPreservingSplitter",
     "HeaderType",
+    "HybridSemanticSplitter",          # ✅ added
     "JSFrameworkTextSplitter",
     "KonlpyTextSplitter",
     "Language",
@@ -74,6 +79,7 @@ __all__ = [
     "PythonCodeTextSplitter",
     "RecursiveCharacterTextSplitter",
     "RecursiveJsonSplitter",
+    "SemanticTextSplitter",            # ✅ added
     "SentenceTransformersTokenTextSplitter",
     "SpacyTextSplitter",
     "TextSplitter",
