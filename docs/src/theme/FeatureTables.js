@@ -247,6 +247,17 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/perplexity/chat_models/langchain_perplexity.chat_models.ChatPerplexity.html"
+            },
+            {
+                "name": "ChatOCIGenAI",
+                "package": "langchain-oci",
+                "link": "oci",
+                "structured_output": false,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://pypi.org/project/langchain-oci/"
             }
         ],
     },
