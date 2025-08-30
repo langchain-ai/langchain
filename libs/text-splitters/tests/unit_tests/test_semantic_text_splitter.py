@@ -1,6 +1,7 @@
 import pytest
-from my_splitters.semantic_text_splitter import SemanticTextSplitter
-from langchain.schema import Document
+from langchain.text_splitter.semantic_text_splitter import SemanticTextSplitter
+from langchain_core.documents import Document
+
 from typing import List
 
 # Dummy embedding model for testing
