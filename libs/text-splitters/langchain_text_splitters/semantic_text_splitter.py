@@ -6,8 +6,8 @@ Dependencies: numpy, scikit-learn
 """
 
 from typing import List, Callable, Optional, Literal, Dict, Any
-from langchain.text_splitter import TextSplitter
-from langchain.schema import Document
+from langchain_text_splitters import TextSplitter
+from langchain_text_splitters import Document
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering, KMeans
 import numpy as np
