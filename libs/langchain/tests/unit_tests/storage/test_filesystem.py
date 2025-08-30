@@ -133,7 +133,10 @@ def test_yield_keys(file_store: LocalFileStore) -> None:
 
 
 def test_catches_forbidden_keys(file_store: LocalFileStore) -> None:
-    """Make sure we raise exception on keys that are not allowed; e.g., absolute path"""
+    """Test that forbidden keys raise exceptions.
+
+    Make sure we raise exception on keys that are not allowed; e.g., absolute path.
+    """
     with pytest.raises(InvalidKeyException):
         file_store.mset([("/etc", b"value1")])
     with pytest.raises(InvalidKeyException):

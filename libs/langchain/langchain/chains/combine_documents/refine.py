@@ -183,8 +183,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
-        """Async combine by mapping a first chain over all, then stuffing
-         into a final chain.
+        """Combine by mapping a first chain over all, then stuffing into a final chain.
 
         Args:
             docs: List of documents to combine
