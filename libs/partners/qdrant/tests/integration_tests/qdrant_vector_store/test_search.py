@@ -1,8 +1,6 @@
 import pytest
 from langchain_core.documents import Document
 from qdrant_client import models
-from qdrant_client import QdrantClient
-from qdrant_client.http.models import SparseVectorParams
 
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from tests.integration_tests.common import (
@@ -316,15 +314,12 @@ def test_similarity_search_filters_with_qdrant_filters(
 @pytest.mark.parametrize("location", qdrant_locations())
 def test_embeddings_property_sparse_mode(location: str) -> None:
     """Test that embeddings property returns None in SPARSE mode."""
-    qdrant = QdrantClient(location)
-    qdrant.create_collection(
-        collection_name="test_sparse_embeddings",
-        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
-    )
-
-    vectorstore = QdrantVectorStore(
-        client=qdrant,
-        collection_name="test_sparse_embeddings",
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
         retrieval_mode=RetrievalMode.SPARSE,
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
         sparse_vector_name="sparse",
@@ -337,18 +332,14 @@ def test_embeddings_property_sparse_mode(location: str) -> None:
 @pytest.mark.parametrize("location", qdrant_locations())
 def test_embeddings_property_dense_mode(location: str) -> None:
     """Test that embeddings property returns embedding object in DENSE mode."""
-    qdrant = QdrantClient(location)
-    qdrant.create_collection(
-        collection_name="test_dense_embeddings",
-        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
-    )
-
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
     embedding = ConsistentFakeEmbeddings()
-    vectorstore = QdrantVectorStore(
-        client=qdrant,
-        collection_name="test_dense_embeddings",
-        retrieval_mode=RetrievalMode.DENSE,
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
         embedding=embedding,
+        location=location,
+        retrieval_mode=RetrievalMode.DENSE,
     )
 
     # In DENSE mode, embeddings should return the embedding object
@@ -358,15 +349,12 @@ def test_embeddings_property_dense_mode(location: str) -> None:
 @pytest.mark.parametrize("location", qdrant_locations())
 def test_as_retriever_sparse_mode(location: str) -> None:
     """Test that as_retriever() works in SPARSE mode."""
-    qdrant = QdrantClient(location)
-    qdrant.create_collection(
-        collection_name="test_sparse_retriever",
-        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
-    )
-
-    vectorstore = QdrantVectorStore(
-        client=qdrant,
-        collection_name="test_sparse_retriever",
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
         retrieval_mode=RetrievalMode.SPARSE,
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
         sparse_vector_name="sparse",
@@ -389,7 +377,7 @@ def test_as_retriever_sparse_mode(location: str) -> None:
     assert all(isinstance(doc, Document) for doc in results)
 
     # Test that retriever has tags
-    assert hasattr(retriever, 'tags')
+    assert hasattr(retriever, "tags")
     assert isinstance(retriever.tags, list)
     assert "QdrantVectorStore" in retriever.tags
 
@@ -397,15 +385,12 @@ def test_as_retriever_sparse_mode(location: str) -> None:
 @pytest.mark.parametrize("location", qdrant_locations())
 def test_as_retriever_sparse_mode_with_search_kwargs(location: str) -> None:
     """Test as_retriever() with custom search_kwargs in SPARSE mode."""
-    qdrant = QdrantClient(location)
-    qdrant.create_collection(
-        collection_name="test_sparse_retriever_kwargs",
-        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
-    )
-
-    vectorstore = QdrantVectorStore(
-        client=qdrant,
-        collection_name="test_sparse_retriever_kwargs",
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
         retrieval_mode=RetrievalMode.SPARSE,
         sparse_embedding=ConsistentFakeSparseEmbeddings(),
         sparse_vector_name="sparse",
