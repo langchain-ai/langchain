@@ -15,7 +15,7 @@ dependencies = [
     "gritql<1.0.0,>=0.2.0",
 ]
 name = "langchain-cli"
-version = "0.0.36"
+version = "0.0.37"
 description = "CLI for interacting with LangChain"
 readme = "README.md"
 
