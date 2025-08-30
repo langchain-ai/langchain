@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langsmith>=0.3.45",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.75"
+version = "1.0.0a1"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 

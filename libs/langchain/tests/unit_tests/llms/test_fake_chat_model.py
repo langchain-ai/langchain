@@ -49,14 +49,14 @@ async def test_generic_fake_chat_model_stream() -> None:
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
     chunks = list(model.stream("meow"))
     assert chunks == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
     # Test streaming of additional kwargs.
@@ -67,6 +67,7 @@ async def test_generic_fake_chat_model_stream() -> None:
     assert chunks == [
         _AnyIdAIMessageChunk(content="", additional_kwargs={"foo": 42}),
         _AnyIdAIMessageChunk(content="", additional_kwargs={"bar": 24}),
+        _AnyIdAIMessageChunk(content="", chunk_position="last"),
     ]
 
     message = AIMessage(
@@ -108,6 +109,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 "function_call": {"arguments": '\n  "destination_path": "bar"\n}'},
             },
         ),
+        _AnyIdAIMessageChunk(content="", chunk_position="last"),
     ]
 
     accumulate_chunks = None
@@ -127,6 +129,7 @@ async def test_generic_fake_chat_model_stream() -> None:
                 'destination_path": "bar"\n}',
             },
         },
+        chunk_position="last",
     )
 
 
@@ -141,7 +144,7 @@ async def test_generic_fake_chat_model_astream_log() -> None:
     assert final.state["streamed_output"] == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
 
 
@@ -198,6 +201,6 @@ async def test_callback_handlers() -> None:
     assert results == [
         _AnyIdAIMessageChunk(content="hello"),
         _AnyIdAIMessageChunk(content=" "),
-        _AnyIdAIMessageChunk(content="goodbye"),
+        _AnyIdAIMessageChunk(content="goodbye", chunk_position="last"),
     ]
     assert tokens == ["hello", " ", "goodbye"]
