@@ -6,7 +6,9 @@ import os
 import pathlib
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
+from typing import Optional
+
+from typing_extensions import override
 
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
@@ -25,7 +27,8 @@ class ImportExtractor(ast.NodeVisitor):
         self.imports: list[tuple[str, str]] = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
+    @override
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -44,7 +47,8 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
+        @override
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -54,7 +58,7 @@ def _get_class_names(code: str) -> list[str]:
     return class_names
 
 
-def is_subclass(class_obj: Any, classes_: list[type]) -> bool:
+def is_subclass(class_obj: type, classes_: list[type]) -> bool:
     """Check if the given class object is a subclass of any class in list classes."""
     return any(
         issubclass(class_obj, kls)

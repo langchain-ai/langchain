@@ -21,7 +21,7 @@ class EventDict(TypedDict):
     properties: Optional[dict[str, Any]]
 
 
-def create_events(events: list[EventDict]) -> Optional[Any]:
+def create_events(events: list[EventDict]) -> Optional[dict[str, Any]]:
     """Create events."""
     try:
         data = {
