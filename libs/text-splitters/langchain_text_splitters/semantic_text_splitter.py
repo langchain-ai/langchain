@@ -101,7 +101,6 @@ class SemanticTextSplitter(TextSplitter):
                 all_docs.append(Document(page_content=chunk, metadata=doc.metadata))
         return all_docs
 
-    # ---------- Private Helpers ----------
 
     def _split_by_similarity(self, sentences: List[str], embeddings: np.ndarray) -> List[str]:
         """Split when cosine similarity between adjacent sentences drops below threshold."""
