@@ -1,3 +1,5 @@
+"""Evaluation QA generate prompt."""
+
 from langchain_core.prompts import PromptTemplate
 
 template = """You are a teacher coming up with questions to ask on a quiz.

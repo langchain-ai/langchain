@@ -1,3 +1,5 @@
+"""Multi-query retriever."""
+
 import asyncio
 import logging
 from collections.abc import Sequence

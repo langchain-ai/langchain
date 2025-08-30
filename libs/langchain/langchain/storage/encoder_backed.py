@@ -1,3 +1,5 @@
+"""Encoder-backed storage."""
+
 from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,

@@ -1,3 +1,5 @@
+"""OpenAI functions agent output parser."""
+
 import json
 from json import JSONDecodeError
 from typing import Union

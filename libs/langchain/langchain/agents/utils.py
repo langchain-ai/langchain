@@ -1,3 +1,5 @@
+"""Agent utilities."""
+
 from collections.abc import Sequence
 
 from langchain_core.tools import BaseTool

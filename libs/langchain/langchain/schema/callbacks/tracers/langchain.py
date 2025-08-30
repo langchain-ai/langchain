@@ -1,3 +1,5 @@
+"""Moved to langchain_core.tracers."""
+
 from langchain_core.tracers.langchain import (
     LangChainTracer,
     get_client,

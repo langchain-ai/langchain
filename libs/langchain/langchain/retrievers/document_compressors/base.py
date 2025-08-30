@@ -1,3 +1,5 @@
+"""Document compressor pipeline."""
+
 from collections.abc import Sequence
 from inspect import signature
 from typing import Optional, Union

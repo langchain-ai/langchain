@@ -1,3 +1,5 @@
+"""File system storage."""
+
 import os
 import re
 import time

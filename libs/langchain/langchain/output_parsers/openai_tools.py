@@ -1,3 +1,5 @@
+"""Moved to langchain_core.output_parsers."""
+
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     JsonOutputToolsParser,

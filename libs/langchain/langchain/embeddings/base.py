@@ -1,3 +1,5 @@
+"""Init embeddings."""
+
 import functools
 from importlib import util
 from typing import Any, Optional, Union

@@ -1,3 +1,5 @@
+"""YAML output parser."""
+
 import json
 import re
 from typing import TypeVar

@@ -1,3 +1,5 @@
+"""Combined memory."""
+
 import warnings
 from typing import Any
 
