@@ -8,6 +8,10 @@ from langchain_core.messages import HumanMessage
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
+from langchain_openai.chat_models._client_utils import (
+    _cached_async_httpx_client,
+    _cached_sync_httpx_client,
+)
 
 
 def test_initialize_azure_openai() -> None:
@@ -99,3 +103,45 @@ def test_max_completion_tokens_in_payload() -> None:
         "stream": False,
         "max_completion_tokens": 300,
     }
+
+
+def test_http_client_reuse() -> None:
+    """Test that multiple AzureChatOpenAI instances reuse the same HTTP client."""
+    # Clear the cache first
+    _cached_sync_httpx_client.cache_clear()
+    _cached_async_httpx_client.cache_clear()
+
+    # Track cache info before creating instances
+    initial_sync_cache_info = _cached_sync_httpx_client.cache_info()
+    initial_async_cache_info = _cached_async_httpx_client.cache_info()
+
+    # Create multiple instances with the same configuration
+    llm1 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="https://my-base-url.openai.azure.com",
+    )
+
+    llm2 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="https://my-base-url.openai.azure.com",
+    )
+
+    llm3 = AzureChatOpenAI(  # type: ignore[call-arg]  # noqa: F841
+        azure_deployment="35-turbo-dev",
+        openai_api_version="2023-05-15",
+        azure_endpoint="https://my-base-url.openai.azure.com",
+    )
+
+    # Check cache statistics to verify reuse
+    final_sync_cache_info = _cached_sync_httpx_client.cache_info()
+    final_async_cache_info = _cached_async_httpx_client.cache_info()
+
+    # For sync client: first call should be a miss, subsequent calls should be hits
+    assert final_sync_cache_info.misses == initial_sync_cache_info.misses + 1
+    assert final_sync_cache_info.hits == initial_sync_cache_info.hits + 2
+
+    # For async client: first call should be a miss, subsequent calls should be hits
+    assert final_async_cache_info.misses == initial_async_cache_info.misses + 1
+    assert final_async_cache_info.hits == initial_async_cache_info.hits + 2
