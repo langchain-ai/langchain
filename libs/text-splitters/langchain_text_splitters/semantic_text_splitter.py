@@ -7,7 +7,7 @@ Dependencies: numpy, scikit-learn
 
 from typing import List, Callable, Optional, Literal, Dict, Any
 from langchain_text_splitters import TextSplitter
-from langchain_text_splitters import Document
+from langchain_core.documents import Document
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering, KMeans
 import numpy as np
@@ -148,3 +148,4 @@ class SemanticTextSplitter(TextSplitter):
             if chunk:
                 final_chunks.append(chunk)
         return final_chunks
+
