@@ -240,17 +240,47 @@ class QdrantVectorStore(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         """Get the dense embeddings instance that is being used.
 
-        Raises:
-            ValueError: If embeddings are ``None`` and retrieval mode is not SPARSE.
-
         Returns:
             Embeddings: An instance of ``Embeddings``, or None for SPARSE mode.
 
         """
-        if self._embeddings is None and self.retrieval_mode != RetrievalMode.SPARSE:
-            msg = "Embeddings are `None`. Please set using the `embedding` parameter."
-            raise ValueError(msg)
         return self._embeddings
+
+    def _get_retriever_tags(self) -> list[str]:
+        """Get tags for retriever.
+
+        Override the base class method to handle SPARSE mode where embeddings can be None.
+        In SPARSE mode, embeddings is None, so we don't include embeddings class name in tags.
+        In DENSE/HYBRID modes, embeddings is not None, so we include embeddings class name.
+        """
+        tags = [self.__class__.__name__]
+
+        # Handle different retrieval modes
+        if self.retrieval_mode == RetrievalMode.SPARSE:
+            # SPARSE mode: no dense embeddings, so no embeddings class name in tags
+            pass
+        else:
+            # DENSE/HYBRID modes: include embeddings class name if available
+            if self.embeddings is not None:
+                tags.append(self.embeddings.__class__.__name__)
+
+        return tags
+
+    def _require_embeddings(self, operation: str) -> Embeddings:
+        """Require embeddings for operations that need them.
+
+        Args:
+            operation: Description of the operation requiring embeddings.
+
+        Returns:
+            The embeddings instance.
+
+        Raises:
+            ValueError: If embeddings are None and required for the operation.
+        """
+        if self.embeddings is None:
+            raise ValueError(f"Embeddings are required for {operation}")
+        return self.embeddings
 
     @property
     def sparse_embeddings(self) -> SparseEmbeddings:
@@ -517,7 +547,7 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         }
         if self.retrieval_mode == RetrievalMode.DENSE:
-            query_dense_embedding = self.embeddings.embed_query(query)
+            query_dense_embedding = self._require_embeddings("DENSE mode").embed_query(query)
             results = self.client.query_points(
                 query=query_dense_embedding,
                 using=self.vector_name,
@@ -536,7 +566,7 @@ class QdrantVectorStore(VectorStore):
             ).points
 
         elif self.retrieval_mode == RetrievalMode.HYBRID:
-            query_dense_embedding = self.embeddings.embed_query(query)
+            query_dense_embedding = self._require_embeddings("HYBRID mode").embed_query(query)
             query_sparse_embedding = self.sparse_embeddings.embed_query(query)
             results = self.client.query_points(
                 prefetch=[
@@ -690,7 +720,7 @@ class QdrantVectorStore(VectorStore):
             self.embeddings,
         )
 
-        query_embedding = self.embeddings.embed_query(query)
+        query_embedding = self._require_embeddings("max_marginal_relevance_search").embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             query_embedding,
             k=k,
@@ -1041,7 +1071,7 @@ class QdrantVectorStore(VectorStore):
         texts: Iterable[str],
     ) -> list[models.VectorStruct]:
         if self.retrieval_mode == RetrievalMode.DENSE:
-            batch_embeddings = self.embeddings.embed_documents(list(texts))
+            batch_embeddings = self._require_embeddings("DENSE mode").embed_documents(list(texts))
             return [
                 {
                     self.vector_name: vector,
@@ -1063,7 +1093,7 @@ class QdrantVectorStore(VectorStore):
             ]
 
         if self.retrieval_mode == RetrievalMode.HYBRID:
-            dense_embeddings = self.embeddings.embed_documents(list(texts))
+            dense_embeddings = self._require_embeddings("HYBRID mode").embed_documents(list(texts))
             sparse_embeddings = self.sparse_embeddings.embed_documents(list(texts))
 
             if len(dense_embeddings) != len(sparse_embeddings):
