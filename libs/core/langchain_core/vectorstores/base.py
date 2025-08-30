@@ -38,6 +38,7 @@ from typing import (
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
@@ -49,7 +50,6 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +85,6 @@ class VectorStore(ABC):
             ValueError: If the number of ids does not match the number of texts.
         """
         if type(self).add_documents != VectorStore.add_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
@@ -234,9 +231,6 @@ class VectorStore(ABC):
             # For backward compatibility
             kwargs["ids"] = ids
         if type(self).aadd_documents != VectorStore.aadd_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts

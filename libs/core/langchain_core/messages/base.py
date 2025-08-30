@@ -110,7 +110,8 @@ class BaseMessage(Serializable):
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Concatenate this message with another message."""
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        # Import locally to prevent circular imports.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

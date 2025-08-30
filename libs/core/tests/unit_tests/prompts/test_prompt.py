@@ -1,6 +1,7 @@
 """Test functionality related to prompts."""
 
 import re
+from tempfile import NamedTemporaryFile
 from typing import Any, Union
 from unittest import mock
 
@@ -32,8 +33,6 @@ def test_from_file_encoding() -> None:
     input_variables = ["foo"]
 
     # First write to a file using CP-1252 encoding.
-    from tempfile import NamedTemporaryFile
-
     with NamedTemporaryFile(delete=True, mode="w", encoding="cp1252") as f:
         f.write(template)
         f.flush()
@@ -434,11 +433,9 @@ Will it get confused{ }?
     assert prompt == expected_prompt
 
 
-@pytest.mark.requires("jinja2")
 def test_basic_sandboxing_with_jinja2() -> None:
     """Test basic sandboxing with jinja2."""
-    import jinja2
-
+    jinja2 = pytest.importorskip("jinja2")
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
