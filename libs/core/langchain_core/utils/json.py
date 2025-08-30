@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, Callable
+from typing import Any, Callable, Union
 
 from langchain_core.exceptions import OutputParserException
 
@@ -19,7 +19,7 @@ def _replace_new_line(match: re.Match[str]) -> str:
     return match.group(1) + value + match.group(3)
 
 
-def _custom_parser(multiline_string: str) -> str:
+def _custom_parser(multiline_string: Union[str, bytes, bytearray]) -> str:
     r"""Custom parser for multiline strings.
 
     The LLM response for `action_input` may be a multiline

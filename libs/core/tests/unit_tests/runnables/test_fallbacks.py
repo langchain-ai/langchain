@@ -264,16 +264,18 @@ def _generate(_: Iterator) -> Iterator[str]:
     yield from "foo bar"
 
 
-def _generate_immediate_error(_: Iterator) -> Iterator[str]:
-    msg = "immmediate error"
+def _error(msg: str) -> None:
     raise ValueError(msg)
+
+
+def _generate_immediate_error(_: Iterator) -> Iterator[str]:
+    _error("immmediate error")
     yield ""
 
 
 def _generate_delayed_error(_: Iterator) -> Iterator[str]:
     yield ""
-    msg = "delayed error"
-    raise ValueError(msg)
+    _error("delayed error")
 
 
 def test_fallbacks_stream() -> None:
@@ -295,15 +297,13 @@ async def _agenerate(_: AsyncIterator) -> AsyncIterator[str]:
 
 
 async def _agenerate_immediate_error(_: AsyncIterator) -> AsyncIterator[str]:
-    msg = "immmediate error"
-    raise ValueError(msg)
+    _error("immediate error")
     yield ""
 
 
 async def _agenerate_delayed_error(_: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    msg = "delayed error"
-    raise ValueError(msg)
+    _error("delayed error")
 
 
 async def test_fallbacks_astream() -> None:
