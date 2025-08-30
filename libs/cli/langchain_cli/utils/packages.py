@@ -1,12 +1,12 @@
 """Packages utilities."""
 
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from tomlkit import load
 
 
-def get_package_root(cwd: Optional[Path] = None) -> Path:
+def get_package_root(cwd: Path | None = None) -> Path:
     """Get package root directory."""
     # traverse path for routes to host (any directory holding a pyproject.toml file)
     package_root = Path.cwd() if cwd is None else cwd
