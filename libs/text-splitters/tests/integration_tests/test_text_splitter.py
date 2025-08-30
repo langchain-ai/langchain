@@ -1,8 +1,7 @@
 """Test text splitters that require an integration."""
 
-from typing import Any
-
 import pytest
+from transformers import GPT2TokenizerFast
 
 from langchain_text_splitters import (
     TokenTextSplitter,
@@ -13,25 +12,17 @@ from langchain_text_splitters.sentence_transformers import (
 )
 
 
-@pytest.fixture
-def sentence_transformers() -> Any:
-    try:
-        import sentence_transformers
-    except ImportError:
-        pytest.skip("SentenceTransformers not installed.")
-    return sentence_transformers
-
-
 def test_huggingface_type_check() -> None:
     """Test that type checks are done properly on input."""
-    with pytest.raises(ValueError):
-        CharacterTextSplitter.from_huggingface_tokenizer("foo")
+    with pytest.raises(
+        ValueError,
+        match="Tokenizer received was not an instance of PreTrainedTokenizerBase",
+    ):
+        CharacterTextSplitter.from_huggingface_tokenizer("foo")  # type: ignore[arg-type]
 
 
 def test_huggingface_tokenizer() -> None:
     """Test text splitter that uses a HuggingFace tokenizer."""
-    from transformers import GPT2TokenizerFast
-
     tokenizer = GPT2TokenizerFast.from_pretrained("gpt2")
     text_splitter = CharacterTextSplitter.from_huggingface_tokenizer(
         tokenizer, separator=" ", chunk_size=1, chunk_overlap=0
@@ -63,7 +54,8 @@ def test_token_text_splitter_from_tiktoken() -> None:
     assert expected_tokenizer == actual_tokenizer
 
 
-def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
+@pytest.mark.requires("sentence_transformers")
+def test_sentence_transformers_count_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -78,7 +70,8 @@ def test_sentence_transformers_count_tokens(sentence_transformers: Any) -> None:
     assert expected_token_count == token_count
 
 
-def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
+@pytest.mark.requires("sentence_transformers")
+def test_sentence_transformers_split_text() -> None:
     splitter = SentenceTransformersTokenTextSplitter(
         model_name="sentence-transformers/paraphrase-albert-small-v2"
     )
@@ -88,7 +81,8 @@ def test_sentence_transformers_split_text(sentence_transformers: Any) -> None:
     assert expected_text_chunks == text_chunks
 
 
-def test_sentence_transformers_multiple_tokens(sentence_transformers: Any) -> None:
+@pytest.mark.requires("sentence_transformers")
+def test_sentence_transformers_multiple_tokens() -> None:
     splitter = SentenceTransformersTokenTextSplitter(chunk_overlap=0)
     text = "Lorem "
 

@@ -1,3 +1,5 @@
+"""JSON text splitter."""
+
 from __future__ import annotations
 
 import copy
@@ -54,13 +56,17 @@ class RecursiveJsonSplitter:
         return len(json.dumps(data))
 
     @staticmethod
-    def _set_nested_dict(d: dict[str, Any], path: list[str], value: Any) -> None:
+    def _set_nested_dict(
+        d: dict[str, Any],
+        path: list[str],
+        value: Any,  # noqa: ANN401
+    ) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def _list_to_dict_preprocessing(self, data: Any) -> Any:
+    def _list_to_dict_preprocessing(self, data: Any) -> Any:  # noqa: ANN401
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
@@ -75,7 +81,7 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: Any,
+        data: Any,  # noqa: ANN401
         current_path: Optional[list[str]] = None,
         chunks: Optional[list[dict[str, Any]]] = None,
     ) -> list[dict[str, Any]]:
