@@ -237,17 +237,17 @@ class QdrantVectorStore(VectorStore):
         return self._client
 
     @property
-    def embeddings(self) -> Embeddings:
+    def embeddings(self) -> Optional[Embeddings]:
         """Get the dense embeddings instance that is being used.
 
         Raises:
-            ValueError: If embeddings are ``None``.
+            ValueError: If embeddings are ``None`` and retrieval mode is not SPARSE.
 
         Returns:
-            Embeddings: An instance of ``Embeddings``.
+            Embeddings: An instance of ``Embeddings``, or None for SPARSE mode.
 
         """
-        if self._embeddings is None:
+        if self._embeddings is None and self.retrieval_mode != RetrievalMode.SPARSE:
             msg = "Embeddings are `None`. Please set using the `embedding` parameter."
             raise ValueError(msg)
         return self._embeddings

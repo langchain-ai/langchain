@@ -1,6 +1,8 @@
 import pytest
 from langchain_core.documents import Document
 from qdrant_client import models
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import SparseVectorParams
 
 from langchain_qdrant import QdrantVectorStore, RetrievalMode
 from tests.integration_tests.common import (
@@ -309,3 +311,118 @@ def test_similarity_search_filters_with_qdrant_filters(
             )
         ],
     )
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_embeddings_property_sparse_mode(location: str) -> None:
+    """Test that embeddings property returns None in SPARSE mode."""
+    qdrant = QdrantClient(location)
+    qdrant.create_collection(
+        collection_name="test_sparse_embeddings",
+        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
+    )
+
+    vectorstore = QdrantVectorStore(
+        client=qdrant,
+        collection_name="test_sparse_embeddings",
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # In SPARSE mode, embeddings should return None
+    assert vectorstore.embeddings is None
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_embeddings_property_dense_mode(location: str) -> None:
+    """Test that embeddings property returns embedding object in DENSE mode."""
+    qdrant = QdrantClient(location)
+    qdrant.create_collection(
+        collection_name="test_dense_embeddings",
+        vectors_config=models.VectorParams(size=1536, distance=models.Distance.COSINE),
+    )
+
+    embedding = ConsistentFakeEmbeddings()
+    vectorstore = QdrantVectorStore(
+        client=qdrant,
+        collection_name="test_dense_embeddings",
+        retrieval_mode=RetrievalMode.DENSE,
+        embedding=embedding,
+    )
+
+    # In DENSE mode, embeddings should return the embedding object
+    assert vectorstore.embeddings is embedding
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_as_retriever_sparse_mode(location: str) -> None:
+    """Test that as_retriever() works in SPARSE mode."""
+    qdrant = QdrantClient(location)
+    qdrant.create_collection(
+        collection_name="test_sparse_retriever",
+        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
+    )
+
+    vectorstore = QdrantVectorStore(
+        client=qdrant,
+        collection_name="test_sparse_retriever",
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # Add test documents
+    docs = [
+        Document(page_content="Python programming", metadata={"topic": "programming"}),
+        Document(page_content="Machine learning", metadata={"topic": "AI"}),
+        Document(page_content="Data analysis", metadata={"topic": "data"}),
+    ]
+    vectorstore.add_documents(docs)
+
+    # Test basic as_retriever() functionality
+    retriever = vectorstore.as_retriever()
+    results = retriever.invoke("programming")
+
+    # Should return documents
+    assert len(results) > 0
+    assert all(isinstance(doc, Document) for doc in results)
+
+    # Test that retriever has tags
+    assert hasattr(retriever, 'tags')
+    assert isinstance(retriever.tags, list)
+    assert "QdrantVectorStore" in retriever.tags
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_as_retriever_sparse_mode_with_search_kwargs(location: str) -> None:
+    """Test as_retriever() with custom search_kwargs in SPARSE mode."""
+    qdrant = QdrantClient(location)
+    qdrant.create_collection(
+        collection_name="test_sparse_retriever_kwargs",
+        sparse_vectors_config={"sparse": SparseVectorParams(modifier=models.Modifier.IDF)},
+    )
+
+    vectorstore = QdrantVectorStore(
+        client=qdrant,
+        collection_name="test_sparse_retriever_kwargs",
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # Add test documents
+    docs = [
+        Document(page_content="Python programming", metadata={"topic": "programming"}),
+        Document(page_content="Machine learning", metadata={"topic": "AI"}),
+        Document(page_content="Data analysis", metadata={"topic": "data"}),
+    ]
+    vectorstore.add_documents(docs)
+
+    # Test with custom search_kwargs
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 1})
+    results = retriever.invoke("programming")
+
+    # Should return exactly 1 document
+    assert len(results) == 1
+    assert isinstance(results[0], Document)
