@@ -2,7 +2,7 @@
 
 import http.client
 import json
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 import typer
 
@@ -18,10 +18,10 @@ class EventDict(TypedDict):
     """
 
     event: str
-    properties: Optional[dict[str, Any]]
+    properties: dict[str, Any] | None
 
 
-def create_events(events: list[EventDict]) -> Optional[Any]:
+def create_events(events: list[EventDict]) -> dict[str, Any] | None:
     """Create events."""
     try:
         data = {
@@ -48,7 +48,8 @@ def create_events(events: list[EventDict]) -> Optional[Any]:
 
         res = conn.getresponse()
 
-        return json.loads(res.read())
+        response_data = json.loads(res.read())
+        return response_data if isinstance(response_data, dict) else None
     except (http.client.HTTPException, OSError, json.JSONDecodeError) as exc:
         typer.echo(f"Error sending events: {exc}")
         return None
