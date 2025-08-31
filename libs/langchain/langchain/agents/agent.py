@@ -19,7 +19,7 @@ from typing import (
     cast,
 )
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.callbacks import (
@@ -53,6 +53,9 @@ from langchain.chains.llm import LLMChain
 from langchain.utilities.asyncio import asyncio_timeout
 
 logger = logging.getLogger(__name__)
+
+# Sentinel used to detect absence of attribute without widening type
+_NOTSET = object()
 
 
 class BaseSingleActionAgent(BaseModel):
@@ -1195,17 +1198,17 @@ class AgentExecutor(Chain):
         during agent execution.
         """
         # Store config temporarily for access during tool execution
-        old_config = getattr(self, '_current_config', '__NOTSET__')
+        old_config = getattr(self, "_current_config", _NOTSET)
         self._current_config = config
         try:
             return super().invoke(input, config, **kwargs)
         finally:
             # Restore previous config
-            if old_config == '__NOTSET__':
-                if hasattr(self, '_current_config'):
-                    delattr(self, '_current_config')
+            if old_config is _NOTSET:
+                if hasattr(self, "_current_config"):
+                    delattr(self, "_current_config")
             else:
-                self._current_config = old_config
+                self._current_config = cast("Optional[RunnableConfig]", old_config)
 
     @override
     async def ainvoke(
@@ -1220,17 +1223,17 @@ class AgentExecutor(Chain):
         during agent execution.
         """
         # Store config temporarily for access during tool execution
-        old_config = getattr(self, '_current_config', '__NOTSET__')
+        old_config = getattr(self, "_current_config", _NOTSET)
         self._current_config = config
         try:
             return await super().ainvoke(input, config, **kwargs)
         finally:
             # Restore previous config
-            if old_config == '__NOTSET__':
-                if hasattr(self, '_current_config'):
-                    delattr(self, '_current_config')
+            if old_config is _NOTSET:
+                if hasattr(self, "_current_config"):
+                    delattr(self, "_current_config")
             else:
-                self._current_config = old_config
+                self._current_config = cast("Optional[RunnableConfig]", old_config)
 
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
@@ -1241,6 +1244,8 @@ class AgentExecutor(Chain):
         Raises:
             ValueError: Saving not supported for agent executors.
         """
+        # mark variable as used for linters
+        _ = file_path
         msg = (
             "Saving not supported for agent executors. "
             "If you are trying to save the agent, please use the "
@@ -1276,7 +1281,7 @@ class AgentExecutor(Chain):
             AgentExecutorIterator: Agent executor iterator object.
         """
         return AgentExecutorIterator(
-            cast(Any, self),
+            cast("Any", self),
             inputs,
             callbacks,
             tags=self.tags,
@@ -1666,7 +1671,7 @@ class AgentExecutor(Chain):
     ) -> dict[str, Any]:
         """Run text through and get agent response."""
         # Get config from instance if available
-        config = getattr(self, '_current_config', None)
+        config = getattr(self, "_current_config", None)
 
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -1724,7 +1729,7 @@ class AgentExecutor(Chain):
     ) -> dict[str, str]:
         """Async run text through and get agent response."""
         # Get config from instance if available
-        config = getattr(self, '_current_config', None)
+        config = getattr(self, "_current_config", None)
 
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
@@ -1847,7 +1852,7 @@ class AgentExecutor(Chain):
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
-            cast(Any, self),
+            cast("Any", self),
             input,
             config.get("callbacks"),
             tags=config.get("tags"),
@@ -1879,7 +1884,7 @@ class AgentExecutor(Chain):
 
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
-            cast(Any, self),
+            cast("Any", self),
             input,
             config.get("callbacks"),
             tags=config.get("tags"),
