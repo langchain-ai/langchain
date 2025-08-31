@@ -7,7 +7,7 @@ agent paths propagate config with and without explicit config provided.
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional, Union
+from typing import Any, ClassVar, Optional, Union, cast
 
 import pytest
 from langchain_core.language_models.fake import FakeListLLM
@@ -111,16 +111,16 @@ def test_optional_config_sync_with_and_without_config() -> None:
     }
     OptionalConfigTool.last_sync_config = None
     exec_.invoke({"input": "go"}, config=test_config)
-    assert OptionalConfigTool.last_sync_config is not None
     # Ensure content from provided config is visible
-    assert OptionalConfigTool.last_sync_config.get("configurable", {}).get("k") == "v"
+    cfg = cast("Any", OptionalConfigTool.last_sync_config)
+    assert cfg.get("configurable", {}).get("k") == "v"
 
     # Without explicit config
     OptionalConfigTool.last_sync_config = None
     exec_.invoke({"input": "go"})
     # BaseTool ensures a child config is still constructed
-    assert OptionalConfigTool.last_sync_config is not None
-    assert isinstance(OptionalConfigTool.last_sync_config, dict)
+    cfg2 = cast("Any", OptionalConfigTool.last_sync_config)
+    assert isinstance(cfg2, dict)
 
 
 def test_union_config_sync_with_and_without_config() -> None:
@@ -131,15 +131,16 @@ def test_union_config_sync_with_and_without_config() -> None:
     test_config: RunnableConfig = {"configurable": {"alpha": True}}
     UnionConfigTool.last_sync_config = None
     exec_.invoke({"input": "go"}, config=test_config)
-    assert UnionConfigTool.last_sync_config is not None
+    cfg3 = cast("Any", UnionConfigTool.last_sync_config)
     assert (
-        UnionConfigTool.last_sync_config.get("configurable", {}).get("alpha") is True
+        cfg3.get("configurable", {}).get("alpha") is True
     )
 
     # Without explicit config
     UnionConfigTool.last_sync_config = None
     exec_.invoke({"input": "go"})
-    assert UnionConfigTool.last_sync_config is not None
+    cfg4 = cast("Any", UnionConfigTool.last_sync_config)
+    assert isinstance(cfg4, dict)
 
 
 @pytest.mark.asyncio
@@ -151,16 +152,17 @@ async def test_optional_config_async_with_and_without_config() -> None:
     test_config: RunnableConfig = {"metadata": {"src": "unit"}}
     OptionalConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"}, config=test_config)
-    assert OptionalConfigTool.last_async_config is not None
+    cfg5 = cast("Any", OptionalConfigTool.last_async_config)
     assert (
-        OptionalConfigTool.last_async_config.get("metadata", {}).get("src")
+        cfg5.get("metadata", {}).get("src")
         == "unit"
     )
 
     # Without explicit config
     OptionalConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"})
-    assert OptionalConfigTool.last_async_config is not None
+    cfg6 = cast("Any", OptionalConfigTool.last_async_config)
+    assert isinstance(cfg6, dict)
 
 
 @pytest.mark.asyncio
@@ -172,13 +174,14 @@ async def test_union_config_async_with_and_without_config() -> None:
     test_config: RunnableConfig = {"metadata": {"mode": "async"}}
     UnionConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"}, config=test_config)
-    assert UnionConfigTool.last_async_config is not None
+    cfg7 = cast("Any", UnionConfigTool.last_async_config)
     assert (
-        UnionConfigTool.last_async_config.get("metadata", {}).get("mode")
+        cfg7.get("metadata", {}).get("mode")
         == "async"
     )
 
     # Without explicit config
     UnionConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"})
-    assert UnionConfigTool.last_async_config is not None
+    cfg8 = cast("Any", UnionConfigTool.last_async_config)
+    assert isinstance(cfg8, dict)
