@@ -21,7 +21,6 @@ splitter = SemanticTextSplitter(
     max_chunk_size=100,
 )
 
-# ---------- Tests ----------
 
 def test_happy_path():
     text = (
