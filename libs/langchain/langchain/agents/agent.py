@@ -236,7 +236,7 @@ class BaseMultiActionAgent(BaseModel):
         """Get allowed tools.
 
         Returns:
-            Optional[List[str]]: Allowed tools.
+            Optional[list[str]]: Allowed tools.
         """
         return None
 
@@ -392,7 +392,7 @@ class MultiActionAgentOutputParser(
             text: Text to parse.
 
         Returns:
-            Union[List[AgentAction], AgentFinish]:
+            Union[list[AgentAction], AgentFinish]:
                 List of agent actions or agent finish.
         """
 
@@ -835,7 +835,7 @@ class Agent(BaseSingleActionAgent):
             **kwargs: User inputs.
 
         Returns:
-            Dict[str, Any]: Full inputs for the LLMChain.
+            dict[str, Any]: Full inputs for the LLMChain.
         """
         thoughts = self._construct_scratchpad(intermediate_steps)
         new_inputs = {"agent_scratchpad": thoughts, "stop": self._stop}
