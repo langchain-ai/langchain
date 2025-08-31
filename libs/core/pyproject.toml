@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.74"
+version = "0.3.75"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
