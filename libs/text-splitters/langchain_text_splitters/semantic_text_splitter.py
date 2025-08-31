@@ -23,8 +23,7 @@ class SemanticTextSplitter(TextSplitter):
         - "clustering": groups sentences using KMeans or Agglomerative clustering.
     Args:
         embedding_model:`.embed_documents(list[str]) -> list[list[float]]`.
-        sentence_splitter: Callable[[str], list[str]] 
-        mode: 'similarity' or 'clustering'.
+        sentence_splitter: mode: 'similarity' or 'clustering'.
         similarity_threshold: Cosine similarity threshold
         n_clusters: Number of clusters (optional).
         clustering_method: 'kmeans' or 'agglomerative'.
@@ -148,3 +147,4 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
