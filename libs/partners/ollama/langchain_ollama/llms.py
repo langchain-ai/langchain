@@ -33,7 +33,7 @@ class OllamaLLM(BaseLLM):
 
             pip install -U langchain-ollama
             # Visit https://ollama.com/download to download and install Ollama
-            # Then start the server: ollama serve
+            # (Linux users): start the server with ``ollama serve``
 
         Download a model to use:
 
