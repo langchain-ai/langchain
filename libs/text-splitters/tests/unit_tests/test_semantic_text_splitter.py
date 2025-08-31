@@ -1,6 +1,6 @@
 from typing import List
 
-from langchain.text_splitter.semantic_text_splitter import SemanticTextSplitter
+from langchain.text_splitter import SemanticTextSplitter
 from langchain_core.documents import Document
 
 
@@ -65,3 +65,4 @@ def test_empty_text():
 
 def test_single_sentence():
     assert splitter.split_text("Single sentence.") == ["Single sentence."]
+
