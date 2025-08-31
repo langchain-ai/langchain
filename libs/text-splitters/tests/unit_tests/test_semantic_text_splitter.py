@@ -66,4 +66,3 @@ def test_empty_text():
 def test_single_sentence():
     assert splitter.split_text("Single sentence.") == ["Single sentence."]
 
-
