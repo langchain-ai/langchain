@@ -107,8 +107,7 @@ class SemanticTextSplitter(TextSplitter):
     def _split_by_similarity(
         self, sentences: list[str], embeddings: np.ndarray
     ) -> list[str]:
-        """ when cosine similarity between adjacent 
-        sentences drops below threshold."""
+        """when cosine similarity drops below threshold."""
         chunks: list[str] = []
         current_chunk: list[str] = [sentences[0]]
 
@@ -162,4 +161,5 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
 
