@@ -3,6 +3,7 @@
 """SemanticTextSplitter: Splits text into semantically meaningful chunks.
 
 Uses embeddings and ML clustering to create coherent text chunks.
+
 Dependencies: numpy, scikit-learn.
 """
 
@@ -24,7 +25,7 @@ class SemanticTextSplitter(TextSplitter):
         - "clustering": groups sentences using KMeans or Agglomerative clustering.
 
     Args:
-        embedding_model: `.embed_documents(list[str]) -> list[list[float]]`.
+        embedding_model: Model with `.embed_documents(list[str]) -> list[list[float]]`.
         sentence_splitter: Function to split text into sentences.
         mode: 'similarity' or 'clustering'.
         similarity_threshold: Cosine similarity threshold.
@@ -44,7 +45,7 @@ class SemanticTextSplitter(TextSplitter):
         ...     mode="similarity",
         ...     similarity_threshold=0.7
         ... )
-        >>> doc = Document(page_content="_text_")
+        >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
         >>> chunks = splitter.split_documents([doc])
         >>> chunks  # doctest: +ELLIPSIS
         [Document(page_content='Hello world. This is a test.', ...),
@@ -82,10 +83,7 @@ class SemanticTextSplitter(TextSplitter):
 
         embeddings = np.array(self.embedding_model.embed_documents(sentences))
         if embeddings.ndim != 2:
-            msg = (
-                "Embeddings should be a 2D array "
-                "(n_sentences x embedding_dim)"
-            )
+            msg = "Embeddings should be a 2D array (n_sentences x embedding_dim)"
             raise ValueError(msg)
 
         if self.mode == "similarity":
@@ -109,7 +107,7 @@ class SemanticTextSplitter(TextSplitter):
     def _split_by_similarity(
         self, sentences: list[str], embeddings: np.ndarray
     ) -> list[str]:
-        """Split when cosine similarity drops below threshold."""
+        """Split when cosine similarity between adjacent sentences drops below threshold."""
         chunks: list[str] = []
         current_chunk: list[str] = [sentences[0]]
 
@@ -144,10 +142,7 @@ class SemanticTextSplitter(TextSplitter):
         for sent, label in zip(sentences, labels):
             clustered[label].append(sent)
 
-        return [
-            " ".join(clustered[i])
-            for i in sorted(clustered.keys())
-        ]
+        return [" ".join(clustered[i]) for i in sorted(clustered.keys())]
 
     def _apply_max_chunk_size(self, chunks: list[str]) -> list[str]:
         """Split chunks further if they exceed max_chunk_size."""
