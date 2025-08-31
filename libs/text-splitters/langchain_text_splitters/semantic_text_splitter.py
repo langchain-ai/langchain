@@ -44,7 +44,7 @@ class SemanticTextSplitter(TextSplitter):
         ...     mode="similarity",
         ...     similarity_threshold=0.7
         ... )
-        >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
+        >>> doc = Document(page_content="_text_")
         >>> chunks = splitter.split_documents([doc])
         >>> chunks  # doctest: +ELLIPSIS
         [Document(page_content='Hello world. This is a test.', ...),
@@ -166,3 +166,4 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
