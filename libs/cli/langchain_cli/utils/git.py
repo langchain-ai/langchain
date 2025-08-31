@@ -6,7 +6,7 @@ import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from git import Repo
 
@@ -26,7 +26,7 @@ class DependencySource(TypedDict):
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: dict
+    event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format

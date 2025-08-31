@@ -15,7 +15,7 @@ dependencies = [
     "gritql<1.0.0,>=0.2.0",
 ]
 name = "langchain-cli"
-version = "0.0.36"
+version = "0.0.37"
 description = "CLI for interacting with LangChain"
 readme = "README.md"
 
@@ -29,8 +29,8 @@ langchain = "langchain_cli.cli:app"
 langchain-cli = "langchain_cli.cli:app"
 
 [dependency-groups]
-dev = ["pytest<8.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
-lint = ["ruff<0.13,>=0.12.2", "mypy<2.0.0,>=1.13.0"]
+dev = ["pytest<9.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<1.18,>=1.17.1"]
 test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []
@@ -63,9 +63,7 @@ ignore = [
     "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
     "BLE",
-    "D1",
 ]
 unfixable = [
     "B028",    # People should intentionally tune the stacklevel
@@ -84,6 +82,11 @@ pyupgrade.keep-runtime-typing = true
 "scripts/**" = [ "INP", "S",]
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
 exclude = [
     "langchain_cli/integration_template",
     "langchain_cli/package_template",
