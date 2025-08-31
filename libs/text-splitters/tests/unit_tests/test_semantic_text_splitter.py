@@ -60,6 +60,5 @@ def test_split_documents():
 def test_empty_text():
     assert splitter.split_text("") == []
 
-
 def test_single_sentence():
     assert splitter.split_text("Single sentence.") == ["Single sentence."]
