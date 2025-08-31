@@ -1,6 +1,6 @@
-"""langchain/text_splitter/semantic_text_splitter.py.
+# langchain/text_splitter/semantic_text_splitter.py
 
-SemanticTextSplitter: Splits text into semantically meaningful chunks
+"""SemanticTextSplitter: Splits text into semantically meaningful chunks
 using embeddings + ML clustering.
 Dependencies: numpy, scikit-learn.
 """
@@ -79,14 +79,18 @@ class SemanticTextSplitter(TextSplitter):
 
         embeddings = np.array(self.embedding_model.embed_documents(sentences))
         if embeddings.ndim != 2:
-            raise ValueError("Embeddings should be a 2D array (n_sentences x embedding_dim)")
+            msg = (
+                "Embeddings should be a 2D array (n_sentences x embedding_dim)"
+            )
+            raise ValueError(msg)
 
         if self.mode == "similarity":
             chunks = self._split_by_similarity(sentences, embeddings)
         elif self.mode == "clustering":
             chunks = self._split_by_clustering(sentences, embeddings)
         else:
-            raise ValueError(f"Unknown mode: {self.mode}")
+            msg = f"Unknown mode: {self.mode}"
+            raise ValueError(msg)
 
         return self._apply_max_chunk_size(chunks)
 
@@ -98,7 +102,9 @@ class SemanticTextSplitter(TextSplitter):
             for chunk in self.split_text(doc.page_content)
         ]
 
-    def _split_by_similarity(self, sentences: list[str], embeddings: np.ndarray) -> list[str]:
+    def _split_by_similarity(
+        self, sentences: list[str], embeddings: np.ndarray
+    ) -> list[str]:
         """Split when cosine similarity drops below threshold."""
         chunks: list[str] = []
         current_chunk: list[str] = [sentences[0]]
@@ -114,12 +120,16 @@ class SemanticTextSplitter(TextSplitter):
         chunks.append(" ".join(current_chunk))
         return chunks
 
-    def _split_by_clustering(self, sentences: list[str], embeddings: np.ndarray) -> list[str]:
+    def _split_by_clustering(
+        self, sentences: list[str], embeddings: np.ndarray
+    ) -> list[str]:
         """Split by clustering sentences into similar groups."""
         n_clusters = self.n_clusters or max(2, len(sentences) // 3)
 
         if self.clustering_method == "kmeans":
-            model = KMeans(n_clusters=n_clusters, random_state=self.random_state, n_init="auto")
+            model = KMeans(
+                n_clusters=n_clusters, random_state=self.random_state, n_init="auto"
+            )
         else:
             model = AgglomerativeClustering(n_clusters=n_clusters)
 
@@ -147,4 +157,3 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
-
