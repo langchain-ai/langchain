@@ -424,8 +424,10 @@ def filter_messages(
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
-            - `True`: all AIMessages with tool calls and all ToolMessages will be excluded.
+
+            - ``True``: all AIMessages with tool calls and all ToolMessages will be excluded.
             - a sequence of tool call IDs to exclude:
+
               - ToolMessages with the corresponding tool call ID will be excluded.
               - The `tool_calls` in the AIMessage will be updated to exclude matching tool calls.
                 If all tool_calls are filtered from an AIMessage, the whole message is excluded.
@@ -688,8 +690,10 @@ def trim_messages(
                 exact token counting is not necessary.
 
         strategy: Strategy for trimming.
+
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
+
             Default is "last".
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
@@ -952,25 +956,26 @@ def convert_to_openai_messages(
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
 
-                - "string":
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type 'text', these are
-                    joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type 'text', then
-                    all blocks are left as dicts.
-                - "block":
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type 'text'. If a message has content
-                    blocks these are left as is.
+            - "string":
+              If a message has a string content, this is left as a string. If
+              a message has content blocks that are all of type 'text', these are
+              joined with a newline to make a single string. If a message has
+              content blocks and at least one isn't of type 'text', then
+              all blocks are left as dicts.
+            - "block":
+              If a message has a string content, this is turned into a list
+              with a single content block of type 'text'. If a message has content
+              blocks these are left as is.
 
     Returns:
         The return type depends on the input type:
-            - dict:
-                If a single message-like object is passed in, a single OpenAI message
-                dict is returned.
-            - list[dict]:
-                If a sequence of message-like objects are passed in, a list of OpenAI
-                message dicts is returned.
+
+        - dict:
+          If a single message-like object is passed in, a single OpenAI message
+          dict is returned.
+        - list[dict]:
+          If a sequence of message-like objects are passed in, a list of OpenAI
+          message dicts is returned.
 
     Example:
 
