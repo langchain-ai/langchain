@@ -7,15 +7,14 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.66",
-    "langchain-text-splitters<1.0.0,>=0.3.8",
+    "langchain-core<2.0.0,>=0.3.75",
+    "langchain-text-splitters<1.0.0,>=0.3.9",
     "langgraph>=0.6.0",
     "pydantic>=2.7.4",
 ]
 
-
 name = "langchain"
-version = "1.0.0dev1"
+version = "1.0.0a2"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -52,11 +51,11 @@ test = [
     "pytest-socket>=0.6.0",
     "syrupy>=4.0.2",
     "pytest-xdist>=3.6.1",
-    "blockbuster>=1.5.18",
     "langchain-tests",
     "langchain-text-splitters",
     "langchain-openai",
     "toml>=0.10.2",
+    "pytest-mock"
 ]
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
@@ -94,6 +93,7 @@ strict_bytes = "True"
 ignore_missing_imports = "True"
 enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
+exclude = ["tests/unit_tests/agents/*", "tests/integration_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
 disallow_untyped_calls = "False"
@@ -135,13 +135,23 @@ flake8-annotations.allow-star-arg-any = true
   "D", # Documentation rules
   "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
+"langchain/agents/*" = [
+    "ANN401", # we use Any right now, need to narrow
+    "E501", # line too long, needs to fix
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+]
+"tests/unit_tests/agents/*" = ["ALL"]
+"tests/integration_tests/agents/*" = ["ALL"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "scripts/check_imports.py" = ["ALL"]
-
-"langchain/globals.py" = [
-    "PLW"
-]
 
 "langchain/chat_models/base.py" = [
     "ANN",
