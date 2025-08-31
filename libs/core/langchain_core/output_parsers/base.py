@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
-import typing
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -332,10 +332,10 @@ class BaseOutputParser(
 
     @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         return self.asdict()
 
-    def asdict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of output parser."""
         output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):

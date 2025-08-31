@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import inspect
 import json
-import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -373,7 +373,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: typing.Dict) -> Any:  # noqa: UP006
+    def raise_deprecation(cls, values: builtins.dict) -> Any:
         """Emit deprecation warning if ``callback_manager`` is used.
 
         Args:
@@ -397,7 +397,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     )
 
     @cached_property
-    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
+    def _serialized(self) -> builtins.dict[str, Any]:
         return dumpd(self)
 
     # --- Runnable methods ---
@@ -747,8 +747,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def _combine_llm_outputs(
         self,
-        llm_outputs: list[Optional[typing.Dict]],  # noqa: ARG002, UP006
-    ) -> typing.Dict:  # noqa: UP006
+        llm_outputs: list[Optional[builtins.dict]],  # noqa: ARG002
+    ) -> builtins.dict:
         return {}
 
     def _convert_cached_generations(self, cache_val: list) -> list[ChatGeneration]:
@@ -794,7 +794,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         self,
         stop: Optional[list[str]] = None,
         **kwargs: Any,
-    ) -> typing.Dict:  # noqa: UP006
+    ) -> builtins.dict:
         params = self.asdict()
         params["stop"] = stop
         return {**params, **kwargs}
@@ -858,7 +858,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
+        metadata: Optional[builtins.dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -974,7 +974,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
+        metadata: Optional[builtins.dict[str, Any]] = None,
         run_name: Optional[str] = None,
         run_id: Optional[uuid.UUID] = None,
         **kwargs: Any,
@@ -1596,10 +1596,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         return self.asdict()
 
-    def asdict(self) -> typing.Dict[str, Any]:  # noqa: UP006
+    def asdict(self) -> builtins.dict[str, Any]:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type
@@ -1607,9 +1607,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def bind_tools(
         self,
-        tools: Sequence[
-            Union[typing.Dict[str, Any], type, Callable, BaseTool]  # noqa: UP006
-        ],
+        tools: Sequence[Union[builtins.dict[str, Any], type, Callable, BaseTool]],
         *,
         tool_choice: Optional[Union[str]] = None,
         **kwargs: Any,
@@ -1628,11 +1626,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     def with_structured_output(
         self,
-        schema: Union[typing.Dict, type],  # noqa: UP006
+        schema: Union[builtins.dict, type],
         *,
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[typing.Dict, BaseModel]]:  # noqa: UP006
+    ) -> Runnable[LanguageModelInput, Union[builtins.dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
