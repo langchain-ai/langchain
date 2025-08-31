@@ -46,11 +46,8 @@ def test_runnable_config_passed_to_tools() -> None:
             "Action Input: test",
             "Final Answer: Tool has been executed",
         ]
-    )
-
-    # Create the prompt template
-    template = (
-        """Answer the following questions as best you can. You have access to
+    )  # Create the prompt template
+    template = """Answer the following questions as best you can. You have access to
         the following tools:
 
         {tools}
@@ -70,7 +67,6 @@ def test_runnable_config_passed_to_tools() -> None:
 
         Question: {input}
         Thought:{agent_scratchpad}"""
-    )
 
     prompt = PromptTemplate.from_template(template)
 

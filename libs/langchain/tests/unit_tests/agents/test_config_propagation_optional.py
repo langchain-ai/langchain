@@ -18,8 +18,7 @@ from langchain_core.tools import BaseTool
 from langchain.agents import AgentExecutor
 from langchain.agents.react.agent import create_react_agent
 
-PROMPT_TMPL = (
-    """Answer the following questions as best you can. You have access to the
+PROMPT_TMPL = """Answer the following questions as best you can. You have access to the
     following tools:
 
     {tools}
@@ -39,7 +38,6 @@ PROMPT_TMPL = (
 
     Question: {input}
     Thought:{agent_scratchpad}"""
-)
 
 
 class OptionalConfigTool(BaseTool):
@@ -132,9 +130,7 @@ def test_union_config_sync_with_and_without_config() -> None:
     UnionConfigTool.last_sync_config = None
     exec_.invoke({"input": "go"}, config=test_config)
     cfg3 = cast("Any", UnionConfigTool.last_sync_config)
-    assert (
-        cfg3.get("configurable", {}).get("alpha") is True
-    )
+    assert cfg3.get("configurable", {}).get("alpha") is True
 
     # Without explicit config
     UnionConfigTool.last_sync_config = None
@@ -153,10 +149,7 @@ async def test_optional_config_async_with_and_without_config() -> None:
     OptionalConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"}, config=test_config)
     cfg5 = cast("Any", OptionalConfigTool.last_async_config)
-    assert (
-        cfg5.get("metadata", {}).get("src")
-        == "unit"
-    )
+    assert cfg5.get("metadata", {}).get("src") == "unit"
 
     # Without explicit config
     OptionalConfigTool.last_async_config = None
@@ -175,10 +168,7 @@ async def test_union_config_async_with_and_without_config() -> None:
     UnionConfigTool.last_async_config = None
     await exec_.ainvoke({"input": "go"}, config=test_config)
     cfg7 = cast("Any", UnionConfigTool.last_async_config)
-    assert (
-        cfg7.get("metadata", {}).get("mode")
-        == "async"
-    )
+    assert cfg7.get("metadata", {}).get("mode") == "async"
 
     # Without explicit config
     UnionConfigTool.last_async_config = None
