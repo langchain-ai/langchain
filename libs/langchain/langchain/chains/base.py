@@ -224,7 +224,9 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         try:
             self._validate_inputs(inputs)
             if new_arg_supported and config_arg_supported:
-                outputs = await self._acall(inputs, run_manager=run_manager, config=config)
+                outputs = await self._acall(
+                    inputs, run_manager=run_manager, config=config
+                )
             elif new_arg_supported:
                 outputs = await self._acall(inputs, run_manager=run_manager)
             elif config_arg_supported:
@@ -327,6 +329,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> dict[str, Any]:
         """Execute the chain.
 
@@ -339,6 +342,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain run.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
@@ -349,6 +353,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
@@ -361,6 +366,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain run.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
