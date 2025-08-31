@@ -4,13 +4,16 @@ Uses embeddings and ML clustering to create coherent text chunks.
 
 Dependencies: numpy, scikit-learn.
 """
+
 from collections.abc import Iterable
 from typing import Any, Callable, Literal, Optional
+
 import numpy as np
 from numpy.typing import NDArray
-from langchain_core.documents import Document
 from sklearn.cluster import AgglomerativeClustering, KMeans  # type: ignore[import]
 from sklearn.metrics.pairwise import cosine_similarity  # type: ignore[import]
+
+from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
 
 class SemanticTextSplitter(TextSplitter):
@@ -158,5 +161,6 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
 
 
