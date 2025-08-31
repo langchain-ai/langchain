@@ -1,7 +1,8 @@
 # langchain_text_splitters/semantic_text_splitter.py
 
-"""SemanticTextSplitter: Splits text into semantically meaningful chunks
-using embeddings + ML clustering.
+"""SemanticTextSplitter: Splits text into semantically meaningful chunks.
+
+Uses embeddings and ML clustering to create coherent text chunks.
 Dependencies: numpy, scikit-learn.
 """
 
@@ -21,31 +22,33 @@ class SemanticTextSplitter(TextSplitter):
     Modes:
         - "similarity": splits when adjacent sentence similarity < threshold.
         - "clustering": groups sentences using KMeans or Agglomerative clustering.
+
     Args:
-        embedding_model:`.embed_documents(list[str]) -> list[list[float]]`.
-        sentence_splitter: mode: 'similarity' or 'clustering'.
-        similarity_threshold: Cosine similarity threshold
+        embedding_model: `.embed_documents(list[str]) -> list[list[float]]`.
+        sentence_splitter: Function to split text into sentences.
+        mode: 'similarity' or 'clustering'.
+        similarity_threshold: Cosine similarity threshold.
         n_clusters: Number of clusters (optional).
         clustering_method: 'kmeans' or 'agglomerative'.
         max_chunk_size: Max character length (optional).
-        random_state: Random seed(clustering).
+        random_state: Random seed for clustering.
+
     Examples:
-    --------
-    >>> from langchain.embeddings import OpenAIEmbeddings
-    >>> from langchain_core.documents import Document
-    >>> def split_sentences(text: str) -> list[str]:
-    ...     return text.split(". ")
-    >>> splitter = SemanticTextSplitter(
-    ...     embedding_model=OpenAIEmbeddings(),
-    ...     sentence_splitter=split_sentences,
-    ...     mode="similarity",
-    ...     similarity_threshold=0.7
-    ... )
-    >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
-    >>> chunks = splitter.split_documents([doc])
-    >>> chunks  # doctest: +ELLIPSIS
-    [Document(page_content='Hello world. This is a test.', ...),
-     Document(page_content='Another sentence.', ...)]
+        >>> from langchain.embeddings import OpenAIEmbeddings
+        >>> from langchain_core.documents import Document
+        >>> def split_sentences(text: str) -> list[str]:
+        ...     return text.split(". ")
+        >>> splitter = SemanticTextSplitter(
+        ...     embedding_model=OpenAIEmbeddings(),
+        ...     sentence_splitter=split_sentences,
+        ...     mode="similarity",
+        ...     similarity_threshold=0.7
+        ... )
+        >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
+        >>> chunks = splitter.split_documents([doc])
+        >>> chunks  # doctest: +ELLIPSIS
+        [Document(page_content='Hello world. This is a test.', ...),
+         Document(page_content='Another sentence.', ...)]
     """
 
     def __init__(
