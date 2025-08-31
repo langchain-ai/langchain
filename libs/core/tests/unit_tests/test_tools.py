@@ -2316,6 +2316,7 @@ def test_tool_injected_tool_call_id() -> None:
 
 def test_tool_injected_tool_call_id_override_llm_generated() -> None:
     """Test that InjectedToolCallId overrides LLM-generated values."""
+
     @tool
     def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
         """Foo."""
