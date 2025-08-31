@@ -1,5 +1,3 @@
-# langchain_text_splitters/semantic_text_splitter.py
-
 """SemanticTextSplitter: Splits text into semantically meaningful chunks.
 
 Uses embeddings and ML clustering to create coherent text chunks.
@@ -161,6 +159,3 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
-
-
-
