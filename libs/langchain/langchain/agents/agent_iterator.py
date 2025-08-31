@@ -34,7 +34,7 @@ from langchain.schema import RUN_KEY
 from langchain.utilities.asyncio import asyncio_timeout
 
 if TYPE_CHECKING:
-    from langchain.agents.agent import AgentExecutor, NextStepOutput
+    from langchain.agents.agent import NextStepOutput
 
 logger = logging.getLogger(__name__)
 

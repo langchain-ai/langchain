@@ -1,5 +1,3 @@
-import pytest
-
 from langchain_core.utils.json_schema import dereference_refs
 
 
@@ -22,7 +20,8 @@ def test_dereference_refs_self_reference_no_recursion() -> None:
     # Should not raise RecursionError and should return a dictionary
     actual = dereference_refs(schema)
     assert isinstance(actual, dict)
-    # The $defs should be preserved and recursion should be broken within dereferenced parts
+    # The $defs should be preserved and recursion should be broken within
+    # dereferenced parts
     assert "$defs" in actual
     assert "properties" in actual
 
