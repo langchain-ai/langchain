@@ -45,7 +45,7 @@ class SemanticTextSplitter(TextSplitter):
         ...     mode="similarity",
         ...     similarity_threshold=0.7
         ... )
-        >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
+        >>> doc = Document(page_content="Hello world.")
         >>> chunks = splitter.split_documents([doc])
         >>> chunks  # doctest: +ELLIPSIS
         [Document(page_content='Hello world. This is a test.', ...),
@@ -107,7 +107,8 @@ class SemanticTextSplitter(TextSplitter):
     def _split_by_similarity(
         self, sentences: list[str], embeddings: np.ndarray
     ) -> list[str]:
-        """Split when cosine similarity between adjacent sentences drops below threshold."""
+        """ when cosine similarity between adjacent 
+        sentences drops below threshold."""
         chunks: list[str] = []
         current_chunk: list[str] = [sentences[0]]
 
@@ -161,3 +162,4 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
