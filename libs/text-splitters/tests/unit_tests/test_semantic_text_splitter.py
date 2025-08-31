@@ -1,15 +1,13 @@
-from typing import List
-
-from langchain_text_splitters.semantic_text_splitter import SemanticTextSplitter
 from langchain_core.documents import Document
+from langchain_text_splitters.semantic_text_splitter import SemanticTextSplitter
 
 
 class DummyEmbedder:
-    def embed_documents(self, docs: List[str]) -> List[List[float]]:
+    def embed_documents(self, docs: list[str]) -> list[list[float]]:
         return [[len(d)] for d in docs]
 
 
-def dummy_split(text: str) -> List[str]:
+def dummy_split(text: str) -> list[str]:
     return text.split(". ")
 
 
@@ -46,7 +44,7 @@ def test_split_documents():
         "Terrorism is a big danger to peace and safety. "
         "It causes harm to people and creates fear in cities and villages. "
         "When such attacks happen, they leave behind pain and sadness. "
-        "To fight terrorism, we need strong laws, alert security forces,"
+        "To fight terrorism, we need strong laws, alert security forces, "
         "and support from people who care about peace and safety."
     )
 
@@ -56,7 +54,7 @@ def test_split_documents():
     docs = splitter.split_documents([doc1, doc2])
     assert all(isinstance(d, Document) for d in docs)
     assert len(docs) >= 2
-    assert all(d.page_content for d in docs)  
+    assert all(d.page_content for d in docs)
 
 
 def test_empty_text():
@@ -65,4 +63,3 @@ def test_empty_text():
 
 def test_single_sentence():
     assert splitter.split_text("Single sentence.") == ["Single sentence."]
-
