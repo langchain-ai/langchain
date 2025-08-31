@@ -6,11 +6,11 @@ Dependencies: numpy, scikit-learn.
 """
 
 from typing import Any, Callable, Literal, Optional
-
+# type: ignore[import]
 import numpy as np
 from langchain_core.documents import Document
-from sklearn.cluster import AgglomerativeClustering, KMeans
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.cluster import AgglomerativeClustering, KMeans # type: ignore
+from sklearn.metrics.pairwise import cosine_similarity # type: ignore
 
 from langchain_text_splitters import TextSplitter
 
@@ -159,3 +159,4 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
+
