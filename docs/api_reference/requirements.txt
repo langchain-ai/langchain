@@ -10,3 +10,6 @@ sphinx-design
 sphinx-copybutton
 beautifulsoup4
 sphinxcontrib-googleanalytics
+numpy>=1.24
+scikit-learn>=1.3
+
