@@ -1,4 +1,4 @@
-# langchain/text_splitter/semantic_text_splitter.py
+# langchain_text_splitters/semantic_text_splitter.py
 
 """SemanticTextSplitter: Splits text into semantically meaningful chunks
 using embeddings + ML clustering.
@@ -80,7 +80,8 @@ class SemanticTextSplitter(TextSplitter):
         embeddings = np.array(self.embedding_model.embed_documents(sentences))
         if embeddings.ndim != 2:
             msg = (
-                "Embeddings should be a 2D array (n_sentences x embedding_dim)"
+                "Embeddings should be a 2D array "
+                "(n_sentences x embedding_dim)"
             )
             raise ValueError(msg)
 
@@ -128,7 +129,9 @@ class SemanticTextSplitter(TextSplitter):
 
         if self.clustering_method == "kmeans":
             model = KMeans(
-                n_clusters=n_clusters, random_state=self.random_state, n_init="auto"
+                n_clusters=n_clusters,
+                random_state=self.random_state,
+                n_init="auto",
             )
         else:
             model = AgglomerativeClustering(n_clusters=n_clusters)
@@ -138,7 +141,10 @@ class SemanticTextSplitter(TextSplitter):
         for sent, label in zip(sentences, labels):
             clustered[label].append(sent)
 
-        return [" ".join(clustered[i]) for i in sorted(clustered.keys())]
+        return [
+            " ".join(clustered[i])
+            for i in sorted(clustered.keys())
+        ]
 
     def _apply_max_chunk_size(self, chunks: list[str]) -> list[str]:
         """Split chunks further if they exceed max_chunk_size."""
