@@ -16,6 +16,7 @@ from sklearn.metrics.pairwise import cosine_similarity  # type: ignore[import]
 from langchain_core.documents import Document
 from langchain_text_splitters import TextSplitter
 
+
 class SemanticTextSplitter(TextSplitter):
     """A semantic text splitter that uses embeddings + ML clustering.
 
@@ -161,6 +162,3 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
-
-
-
