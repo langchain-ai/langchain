@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 import functools
 import inspect
 import json
 import logging
-import typing
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
@@ -305,7 +305,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: typing.Dict[str, Any]) -> Any:  # noqa: UP006
+    def raise_deprecation(cls, values: builtins.dict[str, Any]) -> Any:
         """Raise deprecation warning if callback_manager is used."""
         if values.get("callback_manager") is not None:
             warnings.warn(
@@ -317,7 +317,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return values
 
     @functools.cached_property
-    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
+    def _serialized(self) -> builtins.dict[str, Any]:
         return dumpd(self)
 
     # --- Runnable methods ---
@@ -821,7 +821,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         *,
         tags: Optional[Union[list[str], list[list[str]]]] = None,
         metadata: Optional[
-            Union[typing.Dict[str, Any], list[typing.Dict[str, Any]]]  # noqa: UP006
+            Union[builtins.dict[str, Any], list[builtins.dict[str, Any]]]
         ] = None,
         run_name: Optional[Union[str, list[str]]] = None,
         run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
@@ -1083,7 +1083,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         *,
         tags: Optional[Union[list[str], list[list[str]]]] = None,
         metadata: Optional[
-            Union[typing.Dict[str, Any], list[typing.Dict[str, Any]]]  # noqa: UP006
+            Union[builtins.dict[str, Any], list[builtins.dict[str, Any]]]
         ] = None,
         run_name: Optional[Union[str, list[str]]] = None,
         run_id: Optional[Union[uuid.UUID, list[Optional[uuid.UUID]]]] = None,
@@ -1285,7 +1285,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
+        metadata: Optional[builtins.dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input.
@@ -1334,7 +1334,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         callbacks: Callbacks = None,
         *,
         tags: Optional[list[str]] = None,
-        metadata: Optional[typing.Dict[str, Any]] = None,  # noqa: UP006
+        metadata: Optional[builtins.dict[str, Any]] = None,
         **kwargs: Any,
     ) -> str:
         """Check Cache and run the LLM on the given prompt and input."""
@@ -1404,10 +1404,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
     @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         return self.asdict()
 
-    def asdict(self) -> typing.Dict[str, Any]:  # noqa: UP006
+    def asdict(self) -> builtins.dict[str, Any]:
         """Return a dictionary of the LLM."""
         starter_dict = dict(self._identifying_params)
         starter_dict["_type"] = self._llm_type

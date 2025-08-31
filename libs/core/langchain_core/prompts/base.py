@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import builtins
 import contextlib
 import json
-import typing
 from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from functools import cached_property
@@ -55,7 +55,7 @@ class BasePromptTemplate(
     """optional_variables: A list of the names of the variables for placeholder
        or MessagePlaceholder that are optional. These variables are auto inferred
        from the prompt and user need not provide them."""
-    input_types: typing.Dict[str, Any] = Field(default_factory=dict, exclude=True)  # noqa: UP006
+    input_types: builtins.dict[str, Any] = Field(default_factory=dict, exclude=True)
     """A dictionary of the types of the variables the prompt template expects.
     If not provided, all variables are assumed to be strings."""
     output_parser: Optional[BaseOutputParser] = None
@@ -65,7 +65,7 @@ class BasePromptTemplate(
 
     Partial variables populate the template so that you don't need to
     pass them in every time you call the prompt."""
-    metadata: Optional[typing.Dict[str, Any]] = None  # noqa: UP006
+    metadata: Optional[builtins.dict[str, Any]] = None
     """Metadata to be used for tracing."""
     tags: Optional[list[str]] = None
     """Tags to be used for tracing."""
@@ -119,7 +119,7 @@ class BasePromptTemplate(
     )
 
     @cached_property
-    def _serialized(self) -> typing.Dict[str, Any]:  # noqa: UP006
+    def _serialized(self) -> builtins.dict[str, Any]:
         return dumpd(self)
 
     @property
@@ -152,7 +152,7 @@ class BasePromptTemplate(
             field_definitions={**required_input_variables, **optional_input_variables},
         )
 
-    def _validate_input(self, inner_input: Any) -> typing.Dict:  # noqa: UP006
+    def _validate_input(self, inner_input: Any) -> builtins.dict:
         if not isinstance(inner_input, dict):
             if len(self.input_variables) == 1:
                 var_name = self.input_variables[0]
@@ -188,14 +188,14 @@ class BasePromptTemplate(
 
     def _format_prompt_with_error_handling(
         self,
-        inner_input: typing.Dict,  # noqa: UP006
+        inner_input: builtins.dict,
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
         self,
-        inner_input: typing.Dict,  # noqa: UP006
+        inner_input: builtins.dict,
     ) -> PromptValue:
         inner_input_ = self._validate_input(inner_input)
         return await self.aformat_prompt(**inner_input_)
@@ -203,7 +203,7 @@ class BasePromptTemplate(
     @override
     def invoke(
         self,
-        input: typing.Dict,  # noqa: UP006
+        input: builtins.dict,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> PromptValue:
@@ -232,7 +232,7 @@ class BasePromptTemplate(
     @override
     async def ainvoke(
         self,
-        input: typing.Dict,  # noqa: UP006
+        input: builtins.dict,
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> PromptValue:
@@ -296,7 +296,9 @@ class BasePromptTemplate(
         prompt_dict["partial_variables"] = {**self.partial_variables, **kwargs}
         return type(self)(**prompt_dict)
 
-    def _merge_partial_and_user_variables(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def _merge_partial_and_user_variables(
+        self, **kwargs: Any
+    ) -> builtins.dict[str, Any]:
         # Get partial params:
         partial_kwargs = {
             k: v if not callable(v) else v() for k, v in self.partial_variables.items()
@@ -346,10 +348,10 @@ class BasePromptTemplate(
 
     @deprecated("0.3.61", alternative="asdict", removal="1.0")
     @override
-    def dict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def dict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         return self.asdict(**kwargs)
 
-    def asdict(self, **kwargs: Any) -> typing.Dict[str, Any]:  # noqa: UP006
+    def asdict(self, **kwargs: Any) -> builtins.dict[str, Any]:
         """Return dictionary representation of prompt.
 
         Args:
