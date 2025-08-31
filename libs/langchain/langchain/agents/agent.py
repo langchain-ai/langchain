@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import builtins
 import contextlib
+import importlib
 import json
 import logging
 import time
@@ -19,7 +20,6 @@ from typing import (
     cast,
 )
 
-import yaml  # type: ignore[import-untyped]
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentFinish, AgentStep
 from langchain_core.callbacks import (
@@ -51,6 +51,9 @@ from langchain.agents.tools import InvalidTool
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
 from langchain.utilities.asyncio import asyncio_timeout
+
+# Replace direct yaml import with dynamic import typed as Any
+yaml: Any = importlib.import_module("yaml")
 
 logger = logging.getLogger(__name__)
 
