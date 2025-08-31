@@ -21,7 +21,6 @@ class SemanticTextSplitter(TextSplitter):
     Modes:
         - "similarity": splits when adjacent sentence similarity < threshold.
         - "clustering": groups sentences using KMeans or Agglomerative clustering.
-
     Args:
         embedding_model:`.embed_documents(list[str]) -> list[list[float]]`.
         sentence_splitter: Callable[[str], list[str]] 
@@ -31,7 +30,6 @@ class SemanticTextSplitter(TextSplitter):
         clustering_method: 'kmeans' or 'agglomerative'.
         max_chunk_size: Max character length (optional).
         random_state: Random seed(clustering).
-
     Examples:
     --------
     >>> from langchain.embeddings import OpenAIEmbeddings
