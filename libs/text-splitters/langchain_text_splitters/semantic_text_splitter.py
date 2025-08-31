@@ -32,19 +32,24 @@ class SemanticTextSplitter(TextSplitter):
         max_chunk_size: Max character length of each chunk (optional).
         random_state: Random seed for reproducibility (clustering).
 
-    Example:
-        >>> from langchain.embeddings import OpenAIEmbeddings
-        >>> from langchain.schema import Document
-        >>> def split_sentences(text: str) -> List[str]:
-        ...     return text.split('. ')
-        >>> splitter = SemanticTextSplitter(
-        ...     embedding_model=OpenAIEmbeddings(),
-        ...     sentence_splitter=split_sentences,
-        ...     mode="similarity",
-        ...     similarity_threshold=0.7
-        ... )
-        >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
-        >>> chunks = splitter.split_documents([doc])
+    Examples
+    --------
+    >>> from langchain.embeddings import OpenAIEmbeddings
+    >>> from langchain_core.documents import Document
+    >>> def split_sentences(text: str) -> List[str]:
+    ...     return text.split(". ")
+    >>> splitter = SemanticTextSplitter(
+    ...     embedding_model=OpenAIEmbeddings(),
+    ...     sentence_splitter=split_sentences,
+    ...     mode="similarity",
+    ...     similarity_threshold=0.7
+    ... )
+    >>> doc = Document(page_content="Hello world. This is a test. Another sentence.")
+    >>> chunks = splitter.split_documents([doc])
+    >>> chunks  # doctest: +ELLIPSIS
+    [Document(page_content='Hello world. This is a test.', ...),
+     Document(page_content='Another sentence.', ...)]
+
     """
 
     def __init__(
@@ -147,4 +152,5 @@ class SemanticTextSplitter(TextSplitter):
             if chunk:
                 final_chunks.append(chunk)
         return final_chunks
+
 
