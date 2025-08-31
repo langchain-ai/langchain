@@ -5,12 +5,13 @@ Uses embeddings and ML clustering to create coherent text chunks.
 Dependencies: numpy, scikit-learn.
 """
 
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Iterable, Literal, Optional
 # type: ignore[import]
 import numpy as np
+from numpy.typing import NDArray
 from langchain_core.documents import Document
-from sklearn.cluster import AgglomerativeClustering, KMeans # type: ignore
-from sklearn.metrics.pairwise import cosine_similarity # type: ignore
+from sklearn.cluster import AgglomerativeClustering, KMeans  # type: ignore
+from sklearn.metrics.pairwise import cosine_similarity  # type: ignore
 
 from langchain_text_splitters import TextSplitter
 
@@ -46,8 +47,7 @@ class SemanticTextSplitter(TextSplitter):
         >>> doc = Document(page_content="Hello world.")
         >>> chunks = splitter.split_documents([doc])
         >>> chunks  # doctest: +ELLIPSIS
-        [Document(page_content='Hello world. This is a test.', ...),
-         Document(page_content='Another sentence.', ...)]
+        [Document(page_content='Hello world.', ...)]
     """
 
     def __init__(
@@ -79,7 +79,9 @@ class SemanticTextSplitter(TextSplitter):
         if len(sentences) == 1:
             return [sentences[0]]
 
-        embeddings = np.array(self.embedding_model.embed_documents(sentences))
+        embeddings: NDArray[np.float_] = np.array(
+            self.embedding_model.embed_documents(sentences)
+        )
         if embeddings.ndim != 2:
             msg = "Embeddings should be a 2D array (n_sentences x embedding_dim)"
             raise ValueError(msg)
@@ -94,7 +96,7 @@ class SemanticTextSplitter(TextSplitter):
 
         return self._apply_max_chunk_size(chunks)
 
-    def split_documents(self, documents: list[Document]) -> list[Document]:
+    def split_documents(self, documents: Iterable[Document]) -> list[Document]:
         """Split a list of Documents into semantically coherent chunks."""
         return [
             Document(page_content=chunk, metadata=doc.metadata)
@@ -103,9 +105,9 @@ class SemanticTextSplitter(TextSplitter):
         ]
 
     def _split_by_similarity(
-        self, sentences: list[str], embeddings: np.ndarray
+        self, sentences: list[str], embeddings: NDArray[np.float_]
     ) -> list[str]:
-        """When cosine similarity drops below threshold."""
+        """Split sentences when cosine similarity drops below threshold."""
         chunks: list[str] = []
         current_chunk: list[str] = [sentences[0]]
 
@@ -121,9 +123,9 @@ class SemanticTextSplitter(TextSplitter):
         return chunks
 
     def _split_by_clustering(
-        self, sentences: list[str], embeddings: np.ndarray
+        self, sentences: list[str], embeddings: NDArray[np.float_]
     ) -> list[str]:
-        """Split by clustering sentences into similar groups."""
+        """Split sentences by clustering them into similar groups."""
         n_clusters = self.n_clusters or max(2, len(sentences) // 3)
 
         if self.clustering_method == "kmeans":
@@ -159,4 +161,3 @@ class SemanticTextSplitter(TextSplitter):
                 final_chunks.append(chunk)
 
         return final_chunks
-
