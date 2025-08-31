@@ -1,42 +1,42 @@
-"""
-langchain/text_splitter/semantic_text_splitter.py
+"""langchain/text_splitter/semantic_text_splitter.py.
+
 SemanticTextSplitter: Splits text into semantically meaningful chunks
 using embeddings + ML clustering.
-Dependencies: numpy, scikit-learn
+Dependencies: numpy, scikit-learn.
 """
 
-from typing import List, Callable, Optional, Literal, Dict, Any
-from langchain_text_splitters import TextSplitter
-from langchain_core.documents import Document
-from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.cluster import AgglomerativeClustering, KMeans
+from typing import Any, Callable, Literal, Optional
+
 import numpy as np
+from langchain_core.documents import Document
+from sklearn.cluster import AgglomerativeClustering, KMeans
+from sklearn.metrics.pairwise import cosine_similarity
+
+from langchain_text_splitters import TextSplitter
 
 
 class SemanticTextSplitter(TextSplitter):
-    """
-    A semantic text splitter that uses embeddings + ML clustering 
-    to split text into semantically coherent chunks.
+    """A semantic text splitter that uses embeddings + ML clustering.
 
     Modes:
-        - "similarity": splits when adjacent sentence similarity < threshold
-        - "clustering": groups sentences using KMeans or Agglomerative clustering
+        - "similarity": splits when adjacent sentence similarity < threshold.
+        - "clustering": groups sentences using KMeans or Agglomerative clustering.
 
     Args:
-        embedding_model: Any model with `.embed_documents(List[str]) -> List[List[float]]`.
-        sentence_splitter: Callable[[str], List[str]] to split text into sentences.
+        embedding_model:`.embed_documents(list[str]) -> list[list[float]]`.
+        sentence_splitter: Callable[[str], list[str]] 
         mode: 'similarity' or 'clustering'.
-        similarity_threshold: Cosine similarity threshold for similarity mode.
-        n_clusters: Number of clusters in clustering mode (optional).
+        similarity_threshold: Cosine similarity threshold
+        n_clusters: Number of clusters (optional).
         clustering_method: 'kmeans' or 'agglomerative'.
-        max_chunk_size: Max character length of each chunk (optional).
-        random_state: Random seed for reproducibility (clustering).
+        max_chunk_size: Max character length (optional).
+        random_state: Random seed(clustering).
 
-    Examples
+    Examples:
     --------
     >>> from langchain.embeddings import OpenAIEmbeddings
     >>> from langchain_core.documents import Document
-    >>> def split_sentences(text: str) -> List[str]:
+    >>> def split_sentences(text: str) -> list[str]:
     ...     return text.split(". ")
     >>> splitter = SemanticTextSplitter(
     ...     embedding_model=OpenAIEmbeddings(),
@@ -49,13 +49,12 @@ class SemanticTextSplitter(TextSplitter):
     >>> chunks  # doctest: +ELLIPSIS
     [Document(page_content='Hello world. This is a test.', ...),
      Document(page_content='Another sentence.', ...)]
-
     """
 
     def __init__(
         self,
         embedding_model: Any,
-        sentence_splitter: Callable[[str], List[str]],
+        sentence_splitter: Callable[[str], list[str]],
         mode: Literal["similarity", "clustering"] = "similarity",
         similarity_threshold: float = 0.7,
         n_clusters: Optional[int] = None,
@@ -72,9 +71,8 @@ class SemanticTextSplitter(TextSplitter):
         self.max_chunk_size = max_chunk_size
         self.random_state = random_state
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split text into semantically coherent chunks."""
-        # Filter out empty sentences
         sentences = [s for s in self.sentence_splitter(text) if s.strip()]
         if not sentences:
             return []
@@ -95,21 +93,19 @@ class SemanticTextSplitter(TextSplitter):
 
         return self._apply_max_chunk_size(chunks)
 
-
-
-    def split_documents(self, documents: List[Document]) -> List[Document]:
+    def split_documents(self, documents: list[Document]) -> list[Document]:
         """Split a list of Documents into semantically coherent chunks."""
-        all_docs: List[Document] = []
-        for doc in documents:
-            chunks = self.split_text(doc.page_content)
-            for chunk in chunks:
-                all_docs.append(Document(page_content=chunk, metadata=doc.metadata))
-        return all_docs
+        return [
+            Document(page_content=chunk, metadata=doc.metadata)
+            for doc in documents
+            for chunk in self.split_text(doc.page_content)
+        ]
 
+    def _split_by_similarity(self, sentences: list[str], embeddings: np.ndarray) -> list[str]:
+        """Split when cosine similarity drops below threshold."""
+        chunks: list[str] = []
+        current_chunk: list[str] = [sentences[0]]
 
-    def _split_by_similarity(self, sentences: List[str], embeddings: np.ndarray) -> List[str]:
-        """Split when cosine similarity between adjacent sentences drops below threshold."""
-        chunks, current_chunk = [], [sentences[0]]
         for i in range(1, len(sentences)):
             sim = cosine_similarity([embeddings[i - 1]], [embeddings[i]])[0][0]
             if sim < self.similarity_threshold:
@@ -117,11 +113,12 @@ class SemanticTextSplitter(TextSplitter):
                 current_chunk = [sentences[i]]
             else:
                 current_chunk.append(sentences[i])
+
         chunks.append(" ".join(current_chunk))
         return chunks
 
-    def _split_by_clustering(self, sentences: List[str], embeddings: np.ndarray) -> List[str]:
-        """Split by clustering sentences into semantically similar groups."""
+    def _split_by_clustering(self, sentences: list[str], embeddings: np.ndarray) -> list[str]:
+        """Split by clustering sentences into similar groups."""
         n_clusters = self.n_clusters or max(2, len(sentences) // 3)
 
         if self.clustering_method == "kmeans":
@@ -130,20 +127,20 @@ class SemanticTextSplitter(TextSplitter):
             model = AgglomerativeClustering(n_clusters=n_clusters)
 
         labels = model.fit_predict(embeddings)
-        clustered: Dict[int, List[str]] = {i: [] for i in range(n_clusters)}
+        clustered: dict[int, list[str]] = {i: [] for i in range(n_clusters)}
         for sent, label in zip(sentences, labels):
             clustered[label].append(sent)
 
         return [" ".join(clustered[i]) for i in sorted(clustered.keys())]
 
-    def _apply_max_chunk_size(self, chunks: List[str]) -> List[str]:
+    def _apply_max_chunk_size(self, chunks: list[str]) -> list[str]:
+        """Split chunks further if they exceed max_chunk_size."""
         if not self.max_chunk_size:
             return chunks
 
-        final_chunks = []
+        final_chunks: list[str] = []
         for chunk in chunks:
             while len(chunk) > self.max_chunk_size:
-                # split at nearest space before max_chunk_size
                 split_pos = chunk.rfind(" ", 0, self.max_chunk_size)
                 if split_pos == -1:
                     split_pos = self.max_chunk_size
@@ -151,6 +148,5 @@ class SemanticTextSplitter(TextSplitter):
                 chunk = chunk[split_pos:].lstrip()
             if chunk:
                 final_chunks.append(chunk)
+
         return final_chunks
-
-
