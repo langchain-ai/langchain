@@ -51,7 +51,6 @@ from langchain_text_splitters.markdown import (
 from langchain_text_splitters.nltk import NLTKTextSplitter
 from langchain_text_splitters.python import PythonCodeTextSplitter
 from langchain_text_splitters.semantic_text_splitter import (
-    HybridSemanticSplitter,
     SemanticTextSplitter,
 )
 from langchain_text_splitters.sentence_transformers import (
@@ -67,7 +66,6 @@ __all__ = [
     "HTMLSectionSplitter",
     "HTMLSemanticPreservingSplitter",
     "HeaderType",
-    "HybridSemanticSplitter",
     "JSFrameworkTextSplitter",
     "KonlpyTextSplitter",
     "Language",
