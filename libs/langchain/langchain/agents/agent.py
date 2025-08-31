@@ -1183,6 +1183,55 @@ class AgentExecutor(Chain):
         return self.agent
 
     @override
+    def invoke(
+        self,
+        input: dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Invoke the agent with RunnableConfig support.
+
+        This override ensures that RunnableConfig is passed through to tools
+        during agent execution.
+        """
+        # Store config temporarily for access during tool execution
+        old_config = getattr(self, '_current_config', '__NOTSET__')
+        self._current_config = config
+        try:
+            return super().invoke(input, config, **kwargs)
+        finally:
+            # Restore previous config
+            if old_config == '__NOTSET__':
+                if hasattr(self, '_current_config'):
+                    delattr(self, '_current_config')
+            else:
+                self._current_config = old_config
+
+    @override
+    async def ainvoke(
+        self,
+        input: dict[str, Any],
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Async invoke the agent with RunnableConfig support.
+
+        This override ensures that RunnableConfig is passed through to tools
+        during agent execution.
+        """
+        # Store config temporarily for access during tool execution
+        old_config = getattr(self, '_current_config', '__NOTSET__')
+        self._current_config = config
+        try:
+            return await super().ainvoke(input, config, **kwargs)
+        finally:
+            # Restore previous config
+            if old_config == '__NOTSET__':
+                if hasattr(self, '_current_config'):
+                    delattr(self, '_current_config')
+            else:
+                self._current_config = old_config
+
     def save(self, file_path: Union[Path, str]) -> None:
         """Raise error - saving not supported for Agent Executors.
 
@@ -1227,7 +1276,7 @@ class AgentExecutor(Chain):
             AgentExecutorIterator: Agent executor iterator object.
         """
         return AgentExecutorIterator(
-            self,
+            cast(Any, self),
             inputs,
             callbacks,
             tags=self.tags,
@@ -1316,6 +1365,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         return self._consume_next_step(
             list(
@@ -1325,6 +1375,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
+                    config,
                 ),
             ),
         )
@@ -1336,6 +1387,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> Iterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1406,6 +1458,7 @@ class AgentExecutor(Chain):
                 color_mapping,
                 agent_action,
                 run_manager,
+                config,
             )
 
     def _perform_agent_action(
@@ -1414,6 +1467,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
@@ -1431,6 +1485,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1454,6 +1509,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> Union[AgentFinish, list[tuple[AgentAction, str]]]:
         return self._consume_next_step(
             [
@@ -1464,6 +1520,7 @@ class AgentExecutor(Chain):
                     inputs,
                     intermediate_steps,
                     run_manager,
+                    config,
                 )
             ],
         )
@@ -1475,6 +1532,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1546,6 +1604,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
+                    config,
                 )
                 for agent_action in actions
             ],
@@ -1561,6 +1620,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AgentStep:
         if run_manager:
             await run_manager.on_agent_action(
@@ -1582,6 +1642,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1604,6 +1665,9 @@ class AgentExecutor(Chain):
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> dict[str, Any]:
         """Run text through and get agent response."""
+        # Get config from instance if available
+        config = getattr(self, '_current_config', None)
+
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
@@ -1624,6 +1688,7 @@ class AgentExecutor(Chain):
                 inputs,
                 intermediate_steps,
                 run_manager=run_manager,
+                config=config,
             )
             if isinstance(next_step_output, AgentFinish):
                 return self._return(
@@ -1658,6 +1723,9 @@ class AgentExecutor(Chain):
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
     ) -> dict[str, str]:
         """Async run text through and get agent response."""
+        # Get config from instance if available
+        config = getattr(self, '_current_config', None)
+
         # Construct a mapping of tool name to tool for easy lookup
         name_to_tool_map = {tool.name: tool for tool in self.tools}
         # We construct a mapping from each tool to a color, used for logging.
@@ -1680,6 +1748,7 @@ class AgentExecutor(Chain):
                         inputs,
                         intermediate_steps,
                         run_manager=run_manager,
+                        config=config,
                     )
                     if isinstance(next_step_output, AgentFinish):
                         return await self._areturn(
@@ -1778,7 +1847,7 @@ class AgentExecutor(Chain):
         """
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
-            self,
+            cast(Any, self),
             input,
             config.get("callbacks"),
             tags=config.get("tags"),
@@ -1810,7 +1879,7 @@ class AgentExecutor(Chain):
 
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
-            self,
+            cast(Any, self),
             input,
             config.get("callbacks"),
             tags=config.get("tags"),
