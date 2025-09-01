@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = ["langchain-core<1.0.0,>=0.3.60", "exa-py<2.0.0,>=1.0.8"]
 name = "langchain-exa"
 version = "0.3.0"
@@ -45,7 +45,7 @@ langchain-core = { path = "../../core", editable = true }
 disallow_untyped_defs = "True"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

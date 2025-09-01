@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import json
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, TypedDict, Union, cast
+from typing import Any, Literal, Optional, TypedDict, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (

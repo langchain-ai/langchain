@@ -1,6 +1,6 @@
 import inspect
-from collections.abc import Awaitable
-from typing import Any, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from langchain_core.tools import tool
 

@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Callable, Generator, Iterable, Sequence
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Optional,
     Union,
 )
@@ -1006,6 +1005,7 @@ class QdrantVectorStore(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
@@ -1078,7 +1078,7 @@ class QdrantVectorStore(VectorStore):
                     ),
                 }
                 for dense_vector, sparse_vector in zip(
-                    dense_embeddings, sparse_embeddings
+                    dense_embeddings, sparse_embeddings, strict=False
                 )
             ]
 

@@ -10,7 +10,7 @@ import re
 import ssl
 import sys
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import partial
 from io import BytesIO
 from json import JSONDecodeError
@@ -19,7 +19,6 @@ from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypedDict,

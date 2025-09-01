@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.71",
     "openai<2.0.0,>=1.97.1",
@@ -56,7 +56,7 @@ module = "transformers"
 ignore_missing_imports = true
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]

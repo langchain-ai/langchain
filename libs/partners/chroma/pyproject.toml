@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langchain-core>=0.3.70",
     "numpy>=1.26.0; python_version < '3.13'",
@@ -59,7 +59,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 disallow_untyped_defs = true
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

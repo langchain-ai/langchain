@@ -7,12 +7,11 @@ import os
 import re
 import ssl
 import uuid
-from collections.abc import AsyncIterator, Iterator, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from contextlib import AbstractAsyncContextManager
 from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Literal,
     Optional,
     Union,
