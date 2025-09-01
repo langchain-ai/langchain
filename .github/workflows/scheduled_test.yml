@@ -106,7 +106,7 @@ jobs:
 
       - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
