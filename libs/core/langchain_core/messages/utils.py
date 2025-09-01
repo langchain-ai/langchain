@@ -425,7 +425,7 @@ def filter_messages(
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
 
-            - ``True``: all AIMessages with tool calls and all ToolMessages will be excluded.
+            - ``True``: Each ``AIMessage`` with tool calls and all ``ToolMessage`` will be excluded.
             - a sequence of tool call IDs to exclude:
 
               - ToolMessages with the corresponding tool call ID will be excluded.
@@ -694,7 +694,7 @@ def trim_messages(
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
 
-            Default is "last".
+            Default is ``'last'``.
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
             are included. If ``strategy="first"`` then the first partial contents of a
@@ -956,7 +956,7 @@ def convert_to_openai_messages(
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
 
-            - "string":
+            - ``'string'``:
               If a message has a string content, this is left as a string. If
               a message has content blocks that are all of type 'text', these are
               joined with a newline to make a single string. If a message has

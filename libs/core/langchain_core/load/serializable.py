@@ -36,7 +36,7 @@ class SerializedConstructor(BaseSerialized):
     """Serialized constructor."""
 
     type: Literal["constructor"]
-    """The type of the object. Must be "constructor"."""
+    """The type of the object. Must be ``'constructor'``."""
     kwargs: dict[str, Any]
     """The constructor arguments."""
 
@@ -45,14 +45,14 @@ class SerializedSecret(BaseSerialized):
     """Serialized secret."""
 
     type: Literal["secret"]
-    """The type of the object. Must be "secret"."""
+    """The type of the object. Must be ``'secret'``."""
 
 
 class SerializedNotImplemented(BaseSerialized):
     """Serialized not implemented."""
 
     type: Literal["not_implemented"]
-    """The type of the object. Must be "not_implemented"."""
+    """The type of the object. Must be ``'not_implemented'``."""
     repr: Optional[str]
     """The representation of the object. Optional."""
 
@@ -104,7 +104,7 @@ class Serializable(BaseModel, ABC):
     - ``get_lc_namespace``: Get the namespace of the langchain object.
       During deserialization, this namespace is used to identify
       the correct class to instantiate.
-      Please see the `Reviver` class in `langchain_core.load.load` for more details.
+      Please see the ``Reviver`` class in ``langchain_core.load.load`` for more details.
       During deserialization an additional mapping is handle
       classes that have moved or been renamed across package versions.
     - ``lc_secrets``: A map of constructor argument names to secret ids.
