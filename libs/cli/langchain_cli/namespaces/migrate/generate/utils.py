@@ -6,7 +6,8 @@ import os
 import pathlib
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Optional
+
+from typing_extensions import override
 
 HERE = Path(__file__).parent
 # Should bring us to [root]/src
@@ -20,12 +21,13 @@ PARTNER_PKGS = PKGS_ROOT / "partners"
 class ImportExtractor(ast.NodeVisitor):
     """Import extractor."""
 
-    def __init__(self, *, from_package: Optional[str] = None) -> None:
+    def __init__(self, *, from_package: str | None = None) -> None:
         """Extract all imports from the given code, optionally filtering by package."""
-        self.imports: list = []
+        self.imports: list[tuple[str, str]] = []
         self.package = from_package
 
-    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:  # noqa: N802
+    @override
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
         if node.module and (
             self.package is None or str(node.module).startswith(self.package)
         ):
@@ -44,7 +46,8 @@ def _get_class_names(code: str) -> list[str]:
 
     # Define a node visitor class to collect class names
     class ClassVisitor(ast.NodeVisitor):
-        def visit_ClassDef(self, node: ast.ClassDef) -> None:  # noqa: N802
+        @override
+        def visit_ClassDef(self, node: ast.ClassDef) -> None:
             class_names.append(node.name)
             self.generic_visit(node)
 
@@ -54,7 +57,7 @@ def _get_class_names(code: str) -> list[str]:
     return class_names
 
 
-def is_subclass(class_obj: Any, classes_: list[type]) -> bool:
+def is_subclass(class_obj: type, classes_: list[type]) -> bool:
     """Check if the given class object is a subclass of any class in list classes."""
     return any(
         issubclass(class_obj, kls)
@@ -85,7 +88,7 @@ def _get_all_classnames_from_file(file: Path, pkg: str) -> list[tuple[str, str]]
 def identify_all_imports_in_file(
     file: str,
     *,
-    from_package: Optional[str] = None,
+    from_package: str | None = None,
 ) -> list[tuple[str, str]]:
     """Let's also identify all the imports in the given file."""
     code = Path(file).read_text(encoding="utf-8")
@@ -144,7 +147,7 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
 def find_imports_from_package(
     code: str,
     *,
-    from_package: Optional[str] = None,
+    from_package: str | None = None,
 ) -> list[tuple[str, str]]:
     """Find imports in code."""
     # Parse the code into an AST

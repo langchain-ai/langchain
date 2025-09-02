@@ -5,9 +5,9 @@ build-backend = "pdm.backend"
 [project]
 authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.63",
+    "langchain-core<2.0.0,>=0.3.75",
     "pytest<9,>=7",
     "pytest-asyncio<2,>=0.20",
     "httpx<1,>=0.28.1",
@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-tests"
-version = "0.3.20"
+version = "0.3.21"
 description = "Standard tests for LangChain implementations"
 readme = "README.md"
 
@@ -52,7 +52,7 @@ ignore_missing_imports = true
 
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = ["D", "E", "F", "I", "PGH", "T201", "UP",]

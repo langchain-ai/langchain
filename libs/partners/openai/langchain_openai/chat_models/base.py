@@ -60,7 +60,6 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_to_openai_data_block,
     is_data_content_block,
 )
 from langchain_core.messages import content as types
@@ -71,6 +70,7 @@ from langchain_core.messages.ai import (
 )
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -259,14 +259,7 @@ def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any
 def _convert_message_to_dict(
     message: BaseMessage, responses_ai_msg: bool = False
 ) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
+    """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
         "content": _format_message_content(
             message.content, responses_ai_msg=responses_ai_msg

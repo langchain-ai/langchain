@@ -8,7 +8,6 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypeVar,
@@ -19,7 +18,7 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 from typing_extensions import Self
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Callable, Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
 
 logger = logging.getLogger(__name__)
@@ -126,8 +125,10 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             ):
                 if total > self._chunk_size:
                     logger.warning(
-                        f"Created a chunk of size {total}, "
-                        f"which is longer than the specified {self._chunk_size}"
+                        "Created a chunk of size %d, which is longer than the "
+                        "specified %d",
+                        total,
+                        self._chunk_size,
                     )
                 if len(current_doc) > 0:
                     doc = self._join_docs(current_doc, separator)

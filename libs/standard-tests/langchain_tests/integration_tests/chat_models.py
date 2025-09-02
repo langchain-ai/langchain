@@ -3,7 +3,7 @@
 import base64
 import inspect
 import json
-from typing import Annotated, Any, Literal, Optional, cast
+from typing import Annotated, Any, Literal, cast
 from unittest.mock import MagicMock
 
 import httpx
@@ -72,7 +72,7 @@ def _get_joke_class(
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[Optional[dict]]
+    options: list[dict | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -83,7 +83,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         serialized: Any,
         messages: Any,
         *,
-        options: Optional[dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self.options.append(options)
@@ -769,7 +769,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
         assert num_chunks > 0
 
@@ -806,7 +806,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
         assert num_chunks > 0
 
@@ -1207,7 +1207,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
 
-        full: Optional[AIMessageChunk] = None
+        full: AIMessageChunk | None = None
         for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
             # only one chunk is allowed to set usage_metadata.input_tokens
@@ -1376,7 +1376,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test stream
-        full: Optional[BaseMessageChunk] = None
+        full: BaseMessageChunk | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1438,7 +1438,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test astream
-        full: Optional[BaseMessageChunk] = None
+        full: BaseMessageChunk | None = None
         async for chunk in model_with_tools.astream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1500,7 +1500,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Generate a greeting in a particular style of speaking.",
         )
         if self.has_tool_choice:
-            tool_choice: Optional[str] = "any"
+            tool_choice: str | None = "any"
         else:
             tool_choice = None
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
@@ -1786,7 +1786,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
-        full: Optional[BaseMessageChunk] = None
+        full: BaseMessageChunk | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -2197,7 +2197,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: str = Field(description="question to set up a joke")
-            punchline: Optional[str] = Field(
+            punchline: str | None = Field(
                 default=None, description="answer to resolve the joke"
             )
 
@@ -2222,7 +2222,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: Annotated[str, ..., "question to set up a joke"]
-            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+            punchline: Annotated[str | None, None, "answer to resolve the joke"]
 
         chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
@@ -3001,7 +3001,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         self,
         model: BaseChatModel,
         *,
-        tool_choice: Optional[str] = None,
+        tool_choice: str | None = None,
         force_tool_call: bool = True,
     ) -> None:
         r"""Generic integration test for Unicode characters in tool calls.

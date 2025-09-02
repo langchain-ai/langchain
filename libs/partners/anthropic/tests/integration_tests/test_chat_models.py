@@ -956,6 +956,7 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
             and block["value"]["type"] == "redacted_thinking"
         ):
             value = block["value"]
+            assert isinstance(value, dict)
             assert set(value.keys()) == {"type", "data"}
             assert "index" in block
         else:

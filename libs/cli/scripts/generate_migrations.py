@@ -3,7 +3,6 @@
 import json
 import pkgutil
 from pathlib import Path
-from typing import Optional
 
 import click
 
@@ -52,7 +51,7 @@ def cli() -> None:
 def generic(
     pkg1: str,
     pkg2: str,
-    output: str,
+    output: str | None,
     filter_by_all: bool,  # noqa: FBT001
     format_: str,
 ) -> None:
@@ -76,7 +75,7 @@ def generic(
     Path(output).write_text(dumped)
 
 
-def handle_partner(pkg: str, output: Optional[str] = None) -> None:
+def handle_partner(pkg: str, output: str | None = None) -> None:
     """Handle partner package migrations."""
     migrations = get_migrations_for_partner_package(pkg)
     # Run with python 3.9+

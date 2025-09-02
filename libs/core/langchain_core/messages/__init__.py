@@ -32,6 +32,10 @@ if TYPE_CHECKING:
         message_to_dict,
         messages_to_dict,
     )
+    from langchain_core.messages.block_translators.openai import (
+        convert_to_openai_data_block,
+        convert_to_openai_image_block,
+    )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
     from langchain_core.messages.content import (
         Annotation,
@@ -52,13 +56,7 @@ if TYPE_CHECKING:
         VideoContentBlock,
         WebSearchCall,
         WebSearchResult,
-        convert_to_openai_data_block,
-        convert_to_openai_image_block,
         is_data_content_block,
-        is_reasoning_block,
-        is_text_block,
-        is_tool_call_block,
-        is_tool_call_chunk,
     )
     from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
     from langchain_core.messages.human import HumanMessage, HumanMessageChunk
@@ -135,10 +133,6 @@ __all__ = (
     "filter_messages",
     "get_buffer_string",
     "is_data_content_block",
-    "is_reasoning_block",
-    "is_text_block",
-    "is_tool_call_block",
-    "is_tool_call_chunk",
     "merge_content",
     "merge_message_runs",
     "message_chunk_to_message",
@@ -192,16 +186,12 @@ _dynamic_imports = {
     "MessageLikeRepresentation": "utils",
     "_message_from_dict": "utils",
     "convert_to_messages": "utils",
-    "convert_to_openai_data_block": "content",
-    "convert_to_openai_image_block": "content",
+    "convert_to_openai_data_block": "block_translators.openai",
+    "convert_to_openai_image_block": "block_translators.openai",
     "convert_to_openai_messages": "utils",
     "filter_messages": "utils",
     "get_buffer_string": "utils",
     "is_data_content_block": "content",
-    "is_reasoning_block": "content",
-    "is_text_block": "content",
-    "is_tool_call_block": "content",
-    "is_tool_call_chunk": "content",
     "merge_message_runs": "utils",
     "message_chunk_to_message": "utils",
     "messages_from_dict": "utils",
