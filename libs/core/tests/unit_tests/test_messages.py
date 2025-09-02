@@ -1,9 +1,8 @@
 import unittest
 import uuid
-from typing import Optional, Union
+from typing import Optional, Union, get_args
 
 import pytest
-from typing_extensions import get_args
 
 from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
@@ -211,7 +210,7 @@ def test_chat_message_chunks() -> None:
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
-        )  # type: ignore[reportUnusedExpression, unused-ignore]
+        )
 
     assert ChatMessageChunk(role="User", content="I am") + AIMessageChunk(
         content=" indeed."
@@ -320,7 +319,7 @@ def test_function_message_chunks() -> None:
     ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
-        )  # type: ignore[reportUnusedExpression, unused-ignore]
+        )
 
 
 def test_ai_message_chunks() -> None:
@@ -336,7 +335,7 @@ def test_ai_message_chunks() -> None:
     ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
-        )  # type: ignore[reportUnusedExpression, unused-ignore]
+        )
 
 
 class TestGetBufferString(unittest.TestCase):

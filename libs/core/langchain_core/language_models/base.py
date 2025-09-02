@@ -12,12 +12,13 @@ from typing import (
     Callable,
     Literal,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
