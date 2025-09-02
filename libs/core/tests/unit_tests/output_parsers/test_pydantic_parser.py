@@ -189,8 +189,6 @@ def test_pydantic_output_parser_type_inference() -> None:
 
 def test_format_instructions_preserves_language() -> None:
     """Test format instructions does not attempt to encode into ascii."""
-    from pydantic import BaseModel, Field
-
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "
         "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001

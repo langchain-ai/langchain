@@ -1,6 +1,7 @@
 from collections.abc import AsyncIterator, Iterator
 from typing import Any
 
+import pydantic
 import pytest
 from pydantic import BaseModel, Field, ValidationError
 
@@ -802,7 +803,6 @@ async def test_partial_pydantic_output_parser_async() -> None:
 
 def test_parse_with_different_pydantic_2_v1() -> None:
     """Test with pydantic.v1.BaseModel from pydantic 2."""
-    import pydantic
 
     class Forecast(pydantic.v1.BaseModel):
         temperature: int
@@ -836,9 +836,8 @@ def test_parse_with_different_pydantic_2_v1() -> None:
 
 def test_parse_with_different_pydantic_2_proper() -> None:
     """Test with pydantic.BaseModel from pydantic 2."""
-    import pydantic
 
-    class Forecast(pydantic.BaseModel):
+    class Forecast(BaseModel):
         temperature: int
         forecast: str
 

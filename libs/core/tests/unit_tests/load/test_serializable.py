@@ -1,7 +1,7 @@
 import json
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from langchain_core.load import Serializable, dumpd, dumps, load
 from langchain_core.load.serializable import _is_field_useful
@@ -62,9 +62,6 @@ def test_simple_serialization_is_serializable() -> None:
 
 def test_simple_serialization_secret() -> None:
     """Test handling of secrets."""
-    from pydantic import SecretStr
-
-    from langchain_core.load import Serializable
 
     class Foo(Serializable):
         bar: int
