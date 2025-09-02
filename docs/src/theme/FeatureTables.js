@@ -431,9 +431,9 @@ const FEATURE_TABLES = {
             },
             {
                 name: "OCIGenAIEmbeddings",
-                link: "docs/integrations/text_embedding/oci_generative_ai/",
+                link: "oci_generative_ai",
                 package: "langchain-oci",
-                apiLink: "https://pypi.org/project/langchain-oci/"
+                apiLink: "https://github.com/oracle/langchain-oracle"
 
             }
         ]
