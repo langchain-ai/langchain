@@ -131,7 +131,7 @@ Factory functions offer benefits such as:
 
 from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 
-from typing_extensions import NotRequired, TypedDict, TypeGuard
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.utils.utils import ensure_id
 
@@ -963,33 +963,6 @@ def is_data_content_block(block: dict) -> bool:
             return True
 
     return False
-
-
-def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
-    """Type guard to check if a content block is a ``ToolCall``."""
-    return block.get("type") == "tool_call"
-
-
-def is_tool_call_chunk(block: ContentBlock) -> TypeGuard[ToolCallChunk]:
-    """Type guard to check if a content block is a ``ToolCallChunk``."""
-    return block.get("type") == "tool_call_chunk"
-
-
-def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
-    """Type guard to check if a content block is a ``TextContentBlock``."""
-    return block.get("type") == "text"
-
-
-def is_reasoning_block(block: ContentBlock) -> TypeGuard[ReasoningContentBlock]:
-    """Type guard to check if a content block is a ``ReasoningContentBlock``."""
-    return block.get("type") == "reasoning"
-
-
-def is_invalid_tool_call_block(
-    block: ContentBlock,
-) -> TypeGuard[InvalidToolCall]:
-    """Type guard to check if a content block is an ``InvalidToolCall``."""
-    return block.get("type") == "invalid_tool_call"
 
 
 def create_text_block(
