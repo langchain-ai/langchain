@@ -429,6 +429,13 @@ const FEATURE_TABLES = {
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
+            {
+                name: "OCIGenAIEmbeddings",
+                link: "docs/integrations/text_embedding/oci_generative_ai/",
+                package: "langchain-oci",
+                apiLink: "https://pypi.org/project/langchain-oci/"
+
+            }
         ]
     },
     document_retrievers: {
