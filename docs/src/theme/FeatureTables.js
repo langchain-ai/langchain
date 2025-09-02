@@ -251,13 +251,13 @@ const FEATURE_TABLES = {
             {
                 "name": "ChatOCIGenAI",
                 "package": "langchain-oci",
-                "link": "oci",
+                "link": "oci_generative_ai",
                 "structured_output": true,
                 "tool_calling": true,
                 "json_mode": true,
                 "multimodal": true,
                 "local": false,
-                "apiLink": "https://pypi.org/project/langchain-oci/"
+                "apiLink": "https://github.com/oracle/langchain-oracle"
             }
         ],
     },
