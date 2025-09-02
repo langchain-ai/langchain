@@ -118,7 +118,7 @@ def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
     Returns:
         dict or None: The value of DEPRECATED_LOOKUP if it exists, None otherwise.
     """
-    tree = ast.parse(Path(file_path).read_text(), filename=file_path)
+    tree = ast.parse(Path(file_path).read_text(encoding="utf-8"), filename=file_path)
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
