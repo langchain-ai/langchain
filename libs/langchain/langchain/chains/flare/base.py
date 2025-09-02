@@ -95,7 +95,9 @@ def _low_confidence_spans(
 
 
 class FlareChain(Chain):
-    """Chain that combines a retriever, a question generator,
+    """Flare chain.
+
+    Chain that combines a retriever, a question generator,
     and a response generator.
 
     See [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983) paper.

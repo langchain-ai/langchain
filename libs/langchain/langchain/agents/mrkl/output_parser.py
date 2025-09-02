@@ -30,8 +30,7 @@ class MRKLOutputParser(AgentOutputParser):
         return self.format_instructions
 
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        """Parse the output from the agent into
-        an AgentAction or AgentFinish object.
+        """Parse the output from the agent into an AgentAction or AgentFinish object.
 
         Args:
             text: The text to parse.

@@ -70,7 +70,7 @@ class LLMMathChain(Chain):
                 Expression should be a single line mathematical expression
                 that solves the problem.
 
-                Examples:
+    Examples:
                     "37593 * 67" for "37593 times 67"
                     "37593**(1/5)" for "37593^(1/5)"
                 \"\"\"

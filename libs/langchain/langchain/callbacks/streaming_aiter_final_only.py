@@ -12,6 +12,7 @@ DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     """Callback handler that returns an async iterator.
+
     Only the final output of the agent will be iterated.
     """
 

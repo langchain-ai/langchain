@@ -128,6 +128,8 @@ class UpstashRedisEntityStore(BaseEntityStore):
             key_prefix: Prefix for keys in the Redis store.
             ttl: Time-to-live for keys in seconds (default 1 day).
             recall_ttl: Time-to-live extension for keys when recalled (default 3 days).
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
         """
         try:
             from upstash_redis import Redis
@@ -245,8 +247,9 @@ class RedisEntityStore(BaseEntityStore):
             key_prefix: Prefix for keys in the Redis store.
             ttl: Time-to-live for keys in seconds (default 1 day).
             recall_ttl: Time-to-live extension for keys when recalled (default 3 days).
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
         """
-
         try:
             import redis
         except ImportError as e:
@@ -362,6 +365,8 @@ class SQLiteEntityStore(BaseEntityStore):
             session_id: Unique identifier for the session.
             db_file: Path to the SQLite database file.
             table_name: Name of the table to store entities.
+            *args: Additional positional arguments.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(*args, **kwargs)
         try:
@@ -498,7 +503,8 @@ class ConversationEntityMemory(BaseChatMemory):
         return ["entities", self.chat_history_key]
 
     def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
-        """
+        """Load memory variables.
+
         Returns chat history and all generated entities with summaries if available,
         and updates or clears the recent entity cache.
 
@@ -506,7 +512,6 @@ class ConversationEntityMemory(BaseChatMemory):
         summaries are generated, so the entity cache values may be empty if no entity
         descriptions are generated yet.
         """
-
         # Create an LLMChain for predicting entity names from the recent chat history:
         chain = LLMChain(llm=self.llm, prompt=self.entity_extraction_prompt)
 
@@ -563,13 +568,11 @@ class ConversationEntityMemory(BaseChatMemory):
         }
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
-        """
-        Save context from this conversation history to the entity store.
+        """Save context from this conversation history to the entity store.
 
         Generates a summary for each entity in the entity cache by prompting
         the model, and saves these summaries to the entity store.
         """
-
         super().save_context(inputs, outputs)
 
         if self.input_key is None:

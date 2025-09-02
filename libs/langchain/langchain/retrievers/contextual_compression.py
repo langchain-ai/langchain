@@ -7,6 +7,7 @@ from langchain_core.callbacks import (
 from langchain_core.documents import BaseDocumentCompressor, Document
 from langchain_core.retrievers import BaseRetriever, RetrieverLike
 from pydantic import ConfigDict
+from typing_extensions import override
 
 
 class ContextualCompressionRetriever(BaseRetriever):
@@ -22,6 +23,7 @@ class ContextualCompressionRetriever(BaseRetriever):
         arbitrary_types_allowed=True,
     )
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
@@ -29,14 +31,6 @@ class ContextualCompressionRetriever(BaseRetriever):
         run_manager: CallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            Sequence of relevant documents
-        """
         docs = self.base_retriever.invoke(
             query,
             config={"callbacks": run_manager.get_child()},
@@ -51,6 +45,7 @@ class ContextualCompressionRetriever(BaseRetriever):
             return list(compressed_docs)
         return []
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,
@@ -58,14 +53,6 @@ class ContextualCompressionRetriever(BaseRetriever):
         run_manager: AsyncCallbackManagerForRetrieverRun,
         **kwargs: Any,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         docs = await self.base_retriever.ainvoke(
             query,
             config={"callbacks": run_manager.get_child()},

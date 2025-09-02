@@ -87,7 +87,7 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         message = next(self.messages)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])

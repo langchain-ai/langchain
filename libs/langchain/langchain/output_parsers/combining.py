@@ -42,7 +42,6 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
 
     def get_format_instructions(self) -> str:
         """Instructions on how the LLM output should be formatted."""
-
         initial = f"For your first output: {self.parsers[0].get_format_instructions()}"
         subsequent = "\n".join(
             f"Complete that output fully. Then produce another output, separated by two newline characters: {p.get_format_instructions()}"  # noqa: E501

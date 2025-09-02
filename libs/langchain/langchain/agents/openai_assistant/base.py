@@ -302,6 +302,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
             config: Runnable config. Defaults to None.
+            **kwargs: Additional arguments.
 
         Return:
             If self.as_agent, will return
@@ -309,7 +310,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -390,6 +390,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
                 Will create default async_client if not specified.
+            **kwargs: Additional arguments.
 
         Returns:
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
@@ -442,7 +443,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = config or {}
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
