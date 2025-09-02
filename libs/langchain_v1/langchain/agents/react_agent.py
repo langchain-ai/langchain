@@ -898,7 +898,7 @@ def _supports_native_structured_output(
     )
 
 
-def create_react_agent(  # noqa: D417
+def create_agent(  # noqa: D417
     model: Union[
         str,
         BaseChatModel,
@@ -928,7 +928,7 @@ def create_react_agent(  # noqa: D417
 ) -> CompiledStateGraph[StateT, ContextT]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
-    For more details on using `create_react_agent`, visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
+    For more details on using `create_agent`, visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
 
     Args:
         model: The language model for the agent. Supports static and dynamic
@@ -1096,13 +1096,13 @@ def create_react_agent(  # noqa: D417
 
     Example:
         ```python
-        from langchain.agents import create_react_agent
+        from langchain.agents import create_agent
 
         def check_weather(location: str) -> str:
             '''Return the weather forecast for the specified location.'''
             return f"It's always sunny in {location}"
 
-        graph = create_react_agent(
+        graph = create_agent(
             "anthropic:claude-3-7-sonnet-latest",
             tools=[check_weather],
             prompt="You are a helpful assistant",
@@ -1123,7 +1123,7 @@ def create_react_agent(  # noqa: D417
             context_schema = config_schema
 
     if len(deprecated_kwargs) > 0:
-        msg = f"create_react_agent() got unexpected keyword arguments: {deprecated_kwargs}"
+        msg = f"create_agent() got unexpected keyword arguments: {deprecated_kwargs}"
         raise TypeError(msg)
 
     if response_format and not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
@@ -1171,5 +1171,5 @@ __all__ = [
     "AgentStatePydantic",
     "AgentStateWithStructuredResponse",
     "AgentStateWithStructuredResponsePydantic",
-    "create_react_agent",
+    "create_agent",
 ]
