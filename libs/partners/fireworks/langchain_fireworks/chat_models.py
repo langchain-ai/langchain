@@ -692,7 +692,7 @@ class ChatFireworks(BaseChatModel):
             Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with Fireworks tool-calling API.

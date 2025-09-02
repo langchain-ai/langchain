@@ -86,7 +86,7 @@ def _is_relevant_import(module: str) -> bool:
         "langchain",
         "langchain_core",
         "langchain_community",
-        "langchain_experimental",
+        # "langchain_experimental",
         "langchain_text_splitters",
     ]
     return module.split(".")[0] in recognized_packages

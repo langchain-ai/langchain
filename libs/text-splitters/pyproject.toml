@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langchain-core<2.0.0,>=0.3.75",
 ]
@@ -63,7 +63,7 @@ module = ["konlpy", "nltk",]
 ignore_missing_imports = true
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
@@ -103,6 +103,7 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
+    "ANN401",  # Dynamically typed expressions (typing.Any)
     "D100",    # pydocstyle: Missing docstring in public module
     "D101",    # pydocstyle: Missing docstring in public class
     "D102",    # pydocstyle: Missing docstring in public method
@@ -113,11 +114,17 @@ ignore = [
     "D203",    # Messes with the formatter
     "D213",    # pydocstyle: Multi-line docstring summary should start at the second line (incompatible with D212)
     "D407",    # pydocstyle: Missing-dashed-underline-after-section
+    "C901",    # Complexity
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "S112",    # Rarely useful
+    "PLR2004", # Magic value used in comparison
+    "PLR0915", # Too many statements
+    "PLR0911", # Too many return statements
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments in function definition
     "RUF012",  # Doesn't play well with Pydantic
+    "S112",    # Rarely useful
     "SLF001",  # Private member access
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional

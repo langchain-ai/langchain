@@ -7,7 +7,6 @@ from io import StringIO
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     TypedDict,
@@ -22,7 +21,7 @@ from langchain_core.documents import BaseDocumentTransformer, Document
 from langchain_text_splitters.character import RecursiveCharacterTextSplitter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Sequence
+    from collections.abc import Callable, Iterable, Sequence
 
     from bs4.element import PageElement
 
