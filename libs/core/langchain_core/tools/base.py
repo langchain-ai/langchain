@@ -80,9 +80,8 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "image",
     "json",
     "search_result",
-    "custom_tool_call_output"
+    "custom_tool_call_output",
     "document",
-
 )
 
 
