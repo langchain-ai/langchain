@@ -259,14 +259,7 @@ def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any
 def _convert_message_to_dict(
     message: BaseMessage, responses_ai_msg: bool = False
 ) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
+    """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
         "content": _format_message_content(
             message.content, responses_ai_msg=responses_ai_msg
