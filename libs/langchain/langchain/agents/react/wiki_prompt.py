@@ -1,3 +1,5 @@
+"""React agent wiki prompt."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 EXAMPLES = [

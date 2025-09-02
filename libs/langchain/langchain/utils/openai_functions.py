@@ -1,3 +1,5 @@
+"""Moved to langchain_core.utils."""
+
 from langchain_core.utils.function_calling import (
     FunctionDescription,
     ToolDescription,

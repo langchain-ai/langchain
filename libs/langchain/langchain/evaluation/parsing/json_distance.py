@@ -1,3 +1,5 @@
+"""JSON edit distance evaluator."""
+
 import json
 from typing import Any, Callable, Optional, Union
 

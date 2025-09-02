@@ -1,3 +1,5 @@
+"""Regex match string evaluator."""
+
 import re
 from typing import Any
 

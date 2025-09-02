@@ -1,3 +1,5 @@
+"""Enum output parser."""
+
 from enum import Enum
 
 from langchain_core.exceptions import OutputParserException

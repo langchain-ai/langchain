@@ -162,8 +162,6 @@ ignore = [
     # TODO rules
     "ANN401",
     "BLE",
-    "D100",    # pydocstyle: missing docstring in public module
-    "D104",    # pydocstyle: missing docstring in public package
     "D2",
     "D3",
     "D4",
