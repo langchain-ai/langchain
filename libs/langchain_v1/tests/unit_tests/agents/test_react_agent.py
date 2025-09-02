@@ -1430,9 +1430,7 @@ def test_post_model_hook() -> None:
     def post_model_hook(state: FlagState) -> dict[str, bool]:
         return {"flag": True}
 
-    pmh_agent = create_agent(
-        model, [], post_model_hook=post_model_hook, state_schema=FlagState
-    )
+    pmh_agent = create_agent(model, [], post_model_hook=post_model_hook, state_schema=FlagState)
 
     assert "post_model_hook" in pmh_agent.nodes
 

@@ -200,9 +200,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherBaseModel))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
@@ -223,9 +221,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherDataclass)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherDataclass))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DATACLASS
@@ -246,9 +242,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherTypedDict)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherTypedDict))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
