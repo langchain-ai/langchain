@@ -2375,7 +2375,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
-            tool = {"type": "web_search_preview"}
+            tool = {"type": "web_search"}
             llm_with_tools = llm.bind_tools([tool])
 
             response = llm_with_tools.invoke(
