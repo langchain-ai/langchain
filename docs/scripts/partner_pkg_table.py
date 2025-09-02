@@ -119,18 +119,14 @@ def table() -> str:
 def doc() -> str:
     return f"""\
 ---
-sidebar_position: 0
-sidebar_class_name: hidden
+title: Integration packages
 ---
 
-# Providers
+<Info>
 
-:::info
+If you'd like to contribute an integration, see [Contributing integrations](/oss/integrations/contributing).
 
-If you'd like to write your own integration, see [Extending LangChain](/docs/how_to/#custom).
-If you'd like to contribute an integration, see [Contributing integrations](/docs/contributing/how_to/integrations/).
-
-:::
+</Info>
 
 ## Integration Packages
 
@@ -140,8 +136,8 @@ These providers have standalone `langchain-{{provider}}` packages for improved v
 
 ## All Providers
 
-Click [here](/docs/integrations/providers/all) to see all providers. Or search for a
-provider using the Search field in the top-right corner of the screen.
+Click [here](/oss/integrations/providers/all_providers) to see all providers or search
+for a provider using the search field.
 
 """
 
