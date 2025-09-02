@@ -44,6 +44,16 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
+                if right_k == "output_version":
+                    if merged[right_k] == right_v:
+                        continue
+                    msg = (
+                        "Unable to merge. Two different values seen for "
+                        f"'output_version': {merged[right_k]} and {right_v}. "
+                        "'output_version' should have the same value across "
+                        "all chunks in a generation."
+                    )
+                    raise ValueError(msg)
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
                 #
@@ -58,8 +68,7 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "all dicts."
                 #         )
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
-                    right_k in ("id", "output_version", "model_provider")
-                    and merged[right_k] == right_v
+                    right_k in ("id", "model_provider") and merged[right_k] == right_v
                 ):
                     continue
                 merged[right_k] += right_v

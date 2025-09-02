@@ -960,18 +960,26 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        api_payload = self._prepare_api_payload(payload)
         if self.include_response_headers:
             raw_context_manager = self.root_client.with_raw_response.responses.create(
-                **payload
+                **api_payload
             )
             context_manager = raw_context_manager.parse()
             headers = {"headers": dict(raw_context_manager.headers)}
         else:
-            context_manager = self.root_client.responses.create(**payload)
+            context_manager = self.root_client.responses.create(**api_payload)
             headers = {}
         original_schema_obj = kwargs.get("response_format")
 
@@ -996,7 +1004,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1013,20 +1021,30 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
+        api_payload = self._prepare_api_payload(payload)
         if self.include_response_headers:
             raw_context_manager = (
                 await self.root_async_client.with_raw_response.responses.create(
-                    **payload
+                    **api_payload
                 )
             )
             context_manager = raw_context_manager.parse()
             headers = {"headers": dict(raw_context_manager.headers)}
         else:
-            context_manager = await self.root_async_client.responses.create(**payload)
+            context_manager = await self.root_async_client.responses.create(
+                **api_payload
+            )
             headers = {}
         original_schema_obj = kwargs.get("response_format")
 
@@ -1051,7 +1069,7 @@ class BaseChatOpenAI(BaseChatModel):
                     schema=original_schema_obj,
                     metadata=metadata,
                     has_reasoning=has_reasoning,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1089,9 +1107,12 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1105,16 +1126,20 @@ class BaseChatOpenAI(BaseChatModel):
                     "Cannot currently include response headers when response_format is "
                     "specified."
                 )
-            payload.pop("stream")
-            response_stream = self.root_client.beta.chat.completions.stream(**payload)
+            api_payload = self._prepare_api_payload(payload)
+            api_payload.pop("stream")
+            response_stream = self.root_client.beta.chat.completions.stream(
+                **api_payload
+            )
             context_manager = response_stream
         else:
+            api_payload = self._prepare_api_payload(payload)
             if self.include_response_headers:
-                raw_response = self.client.with_raw_response.create(**payload)
+                raw_response = self.client.with_raw_response.create(**api_payload)
                 response = raw_response.parse()
                 base_generation_info = {"headers": dict(raw_response.headers)}
             else:
-                response = self.client.create(**payload)
+                response = self.client.create(**api_payload)
             context_manager = response
         try:
             with context_manager as response:
@@ -1157,11 +1182,23 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
+
         if self.streaming:
             stream_iter = self._stream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                output_version=effective_output_version,
+                **kwargs,
             )
             return generate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1180,14 +1217,15 @@ class BaseChatOpenAI(BaseChatModel):
                 except openai.BadRequestError as e:
                     _handle_openai_bad_request(e)
             elif self._use_responses_api(payload):
+                api_payload = self._prepare_api_payload(payload)
                 original_schema_obj = kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = self.root_client.responses.with_raw_response.parse(
-                        **payload
+                        **api_payload
                     )
                 else:
                     raw_response = self.root_client.responses.with_raw_response.create(
-                        **payload
+                        **api_payload
                     )
                 response = raw_response.parse()
                 if self.include_response_headers:
@@ -1196,10 +1234,11 @@ class BaseChatOpenAI(BaseChatModel):
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
             else:
-                raw_response = self.client.with_raw_response.create(**payload)
+                api_payload = self._prepare_api_payload(payload)
+                raw_response = self.client.with_raw_response.create(**api_payload)
                 response = raw_response.parse()
         except Exception as e:
             if raw_response is not None and hasattr(raw_response, "http_response"):
@@ -1259,6 +1298,12 @@ class BaseChatOpenAI(BaseChatModel):
                 for m in messages
             ]
         return payload
+
+    def _prepare_api_payload(self, payload: dict) -> dict:
+        """Remove LangChain-specific parameters before making OpenAI API calls."""
+        api_payload = payload.copy()
+        api_payload.pop("output_version", None)
+        return api_payload
 
     def _create_chat_result(
         self,
@@ -1333,9 +1378,12 @@ class BaseChatOpenAI(BaseChatModel):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         *,
         stream_usage: Optional[bool] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         kwargs["stream"] = True
+        # Note: output_version accepted for interface consistency; format conversion
+        # handled by core
         stream_usage = self._should_stream_usage(stream_usage, **kwargs)
         if stream_usage:
             kwargs["stream_options"] = {"include_usage": stream_usage}
@@ -1349,20 +1397,22 @@ class BaseChatOpenAI(BaseChatModel):
                     "Cannot currently include response headers when response_format is "
                     "specified."
                 )
-            payload.pop("stream")
+            api_payload = self._prepare_api_payload(payload)
+            api_payload.pop("stream")
             response_stream = self.root_async_client.beta.chat.completions.stream(
-                **payload
+                **api_payload
             )
             context_manager = response_stream
         else:
+            api_payload = self._prepare_api_payload(payload)
             if self.include_response_headers:
                 raw_response = await self.async_client.with_raw_response.create(
-                    **payload
+                    **api_payload
                 )
                 response = raw_response.parse()
                 base_generation_info = {"headers": dict(raw_response.headers)}
             else:
-                response = await self.async_client.create(**payload)
+                response = await self.async_client.create(**api_payload)
             context_manager = response
         try:
             async with context_manager as response:
@@ -1405,11 +1455,23 @@ class BaseChatOpenAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        effective_output_version = (
+            output_version
+            if output_version is not None
+            else (self.output_version or "v0")
+        )
+
         if self.streaming:
             stream_iter = self._astream(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                output_version=effective_output_version,
+                **kwargs,
             )
             return await agenerate_from_stream(stream_iter)
         payload = self._get_request_payload(messages, stop=stop, **kwargs)
@@ -1417,26 +1479,28 @@ class BaseChatOpenAI(BaseChatModel):
         raw_response = None
         try:
             if "response_format" in payload:
-                payload.pop("stream")
+                api_payload = self._prepare_api_payload(payload)
+                api_payload.pop("stream")
                 try:
                     raw_response = await self.root_async_client.chat.completions.with_raw_response.parse(  # noqa: E501
-                        **payload
+                        **api_payload
                     )
                     response = raw_response.parse()
                 except openai.BadRequestError as e:
                     _handle_openai_bad_request(e)
             elif self._use_responses_api(payload):
+                api_payload = self._prepare_api_payload(payload)
                 original_schema_obj = kwargs.get("response_format")
                 if original_schema_obj and _is_pydantic_class(original_schema_obj):
                     raw_response = (
                         await self.root_async_client.responses.with_raw_response.parse(
-                            **payload
+                            **api_payload
                         )
                     )
                 else:
                     raw_response = (
                         await self.root_async_client.responses.with_raw_response.create(
-                            **payload
+                            **api_payload
                         )
                     )
                 response = raw_response.parse()
@@ -1446,11 +1510,12 @@ class BaseChatOpenAI(BaseChatModel):
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
-                    output_version=self.output_version,
+                    output_version=effective_output_version,
                 )
             else:
+                api_payload = self._prepare_api_payload(payload)
                 raw_response = await self.async_client.with_raw_response.create(
-                    **payload
+                    **api_payload
                 )
                 response = raw_response.parse()
         except Exception as e:
@@ -4050,6 +4115,9 @@ def _construct_lc_result_from_responses_api(
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
+    elif output_version == "v1":
+        # Use content_blocks property which handles v1 conversion via block_translators
+        message = message.model_copy(update={"content": message.content_blocks})
 
     return ChatResult(generations=[ChatGeneration(message=message)])
 
@@ -4286,6 +4354,12 @@ def _convert_responses_chunk_to_generation_chunk(
         message = cast(
             AIMessageChunk,
             _convert_to_v03_ai_message(message, has_reasoning=has_reasoning),
+        )
+    elif output_version == "v1":
+        # Use content_blocks property which handles v1 conversion via block_translators
+        message = cast(
+            AIMessageChunk,
+            message.model_copy(update={"content": message.content_blocks}),
         )
 
     return (
