@@ -32,6 +32,10 @@ if TYPE_CHECKING:
         message_to_dict,
         messages_to_dict,
     )
+    from langchain_core.messages.block_translators.openai import (
+        convert_to_openai_data_block,
+        convert_to_openai_image_block,
+    )
     from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
     from langchain_core.messages.content import (
         Annotation,
@@ -52,8 +56,6 @@ if TYPE_CHECKING:
         VideoContentBlock,
         WebSearchCall,
         WebSearchResult,
-        convert_to_openai_data_block,
-        convert_to_openai_image_block,
         is_data_content_block,
         is_reasoning_block,
         is_text_block,

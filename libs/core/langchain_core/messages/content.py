@@ -129,7 +129,6 @@ Factory functions offer benefits such as:
 
 """
 
-import warnings
 from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 
 from typing_extensions import NotRequired, TypedDict, TypeGuard
@@ -991,86 +990,6 @@ def is_invalid_tool_call_block(
 ) -> TypeGuard[InvalidToolCall]:
     """Type guard to check if a content block is an ``InvalidToolCall``."""
     return block.get("type") == "invalid_tool_call"
-
-
-def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
-    if "url" in block:
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
-        }
-    if "base64" in block or block.get("source_type") == "base64":
-        if "mime_type" not in block:
-            error_message = "mime_type key is required for base64 data."
-            raise ValueError(error_message)
-        mime_type = block["mime_type"]
-        base64_data = block["data"] if "data" in block else block["base64"]
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
-        }
-    error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
-    raise ValueError(error_message)
-
-
-def convert_to_openai_data_block(block: dict) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
-    if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)
-
-    elif block["type"] == "file":
-        if "base64" in block or block.get("source_type") == "base64":
-            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format: {"base64": "...", ...}
-            base64_data = block["data"] if "source_type" in block else block["base64"]
-            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
-            if filename := block.get("filename"):
-                file["filename"] = filename
-            elif (extras := block.get("extras")) and ("filename" in extras):
-                file["filename"] = extras["filename"]
-            elif (extras := block.get("metadata")) and ("filename" in extras):
-                # Backward compat
-                file["filename"] = extras["filename"]
-            else:
-                warnings.warn(
-                    "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the content block: {'type': 'file', 'mime_type': "
-                    "'application/pdf', 'base64': '...', 'filename': 'my-pdf'}",
-                    stacklevel=1,
-                )
-            formatted_block = {"type": "file", "file": file}
-        elif "file_id" in block or block.get("source_type") == "id":
-            # Handle v0 format: {"source_type": "id", "id": "...", ...}
-            # Handle v1 format: {"file_id": "...", ...}
-            file_id = block["id"] if "source_type" in block else block["file_id"]
-            formatted_block = {"type": "file", "file": {"file_id": file_id}}
-        else:
-            error_msg = "Keys base64 or file_id required for file blocks."
-            raise ValueError(error_msg)
-
-    elif block["type"] == "audio":
-        if "base64" in block or block.get("source_type") == "base64":
-            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format: {"base64": "...", ...}
-            base64_data = block["data"] if "source_type" in block else block["base64"]
-            audio_format = block["mime_type"].split("/")[-1]
-            formatted_block = {
-                "type": "input_audio",
-                "input_audio": {"data": base64_data, "format": audio_format},
-            }
-        else:
-            error_msg = "Key base64 is required for audio blocks."
-            raise ValueError(error_msg)
-    else:
-        error_msg = f"Block of type {block['type']} is not supported."
-        raise ValueError(error_msg)
-
-    return formatted_block
 
 
 def create_text_block(
