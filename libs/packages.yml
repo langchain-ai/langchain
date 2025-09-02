@@ -733,4 +733,8 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
+- name: langchain-integration-health
+  name_title: Integration Health Framework
+  path: .
+  repo: sadiqkhzn/langchain-integration-health
 
