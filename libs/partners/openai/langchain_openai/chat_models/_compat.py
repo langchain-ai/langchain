@@ -1,10 +1,10 @@
 """
 This module converts between AIMessage output formats, which are governed by the
-``output_version`` attribute on ChatOpenAI. Supported values are ``"v0"`` and
-``"responses/v1"``.
+``output_version`` attribute on ChatOpenAI. Supported values are ``None``, ``'v0'``, and
+``'responses/v1'``.
 
-``"v0"`` corresponds to the format as of ChatOpenAI v0.3. For the Responses API, it
-stores reasoning and tool outputs in AIMessage.additional_kwargs:
+``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
+stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
 
 .. code-block:: python
 
@@ -31,7 +31,7 @@ stores reasoning and tool outputs in AIMessage.additional_kwargs:
         id="msg_123",
     )
 
-``"responses/v1"`` is only applicable to the Responses API. It retains information
+``'responses/v1'`` is only applicable to the Responses API. It retains information
 about response item sequencing and accommodates multiple reasoning items by
 representing these items in the content sequence:
 

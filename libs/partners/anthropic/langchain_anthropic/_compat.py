@@ -7,7 +7,7 @@ from langchain_core.messages import content as types
 
 
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
-    """Right-inverse of _convert_citation_to_v1."""
+    """Convert LangChain annotation format to Anthropic's native citation format."""
     if annotation["type"] == "non_standard_annotation":
         return annotation["value"]
 
@@ -18,7 +18,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
             if cited_text := annotation.get("cited_text"):
                 out["cited_text"] = cited_text
             if "encrypted_index" in annotation.get("extras", {}):
-                out["encrypted_index"] = annotation["extras"]["encrypted_index"]
+                out["encrypted_index"] = annotation.get("extras", {})["encrypted_index"]
             if "title" in annotation:
                 out["title"] = annotation["title"]
             out["type"] = "web_search_result_location"
@@ -63,7 +63,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
             if cited_text := annotation.get("cited_text"):
                 out["cited_text"] = cited_text
             if "document_index" in annotation.get("extras", {}):
-                out["document_index"] = annotation["extras"]["document_index"]
+                out["document_index"] = annotation.get("extras", {})["document_index"]
             if "title" in annotation:
                 out["document_title"] = annotation["title"]
 
@@ -170,7 +170,7 @@ def _convert_from_v1_to_anthropic(
         elif block["type"] == "web_search_result" and model_provider == "anthropic":
             new_block = {}
             if "content" in block.get("extras", {}):
-                new_block["content"] = block["extras"]["content"]
+                new_block["content"] = block.get("extras", {})["content"]
             if "id" in block:
                 new_block["tool_use_id"] = block["id"]
             new_block["type"] = "web_search_tool_result"
@@ -201,7 +201,9 @@ def _convert_from_v1_to_anthropic(
                 code_interpreter_output = output[0]
                 code_execution_content = {}
                 if "content" in block.get("extras", {}):
-                    code_execution_content["content"] = block["extras"]["content"]
+                    code_execution_content["content"] = block.get("extras", {})[
+                        "content"
+                    ]
                 elif (file_ids := block.get("file_ids")) and isinstance(file_ids, list):
                     code_execution_content["content"] = [
                         {"file_id": file_id, "type": "code_execution_output"}
@@ -222,7 +224,7 @@ def _convert_from_v1_to_anthropic(
                 new_block["content"] = code_execution_content
             elif "error_code" in block.get("extras", {}):
                 code_execution_content = {
-                    "error_code": block["extras"]["error_code"],
+                    "error_code": block.get("extras", {})["error_code"],
                     "type": "code_execution_tool_result_error",
                 }
                 new_block["content"] = code_execution_content

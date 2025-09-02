@@ -1493,6 +1493,7 @@ class ChatAnthropic(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: dict,
     ) -> dict:
+        """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
 
         for idx, message in enumerate(messages):
@@ -1662,6 +1663,7 @@ class ChatAnthropic(BaseChatModel):
             _handle_anthropic_bad_request(e)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
 
@@ -2433,6 +2435,7 @@ def _make_message_chunk_from_anthropic_event(
             },
         )
         if message_chunk.response_metadata.get("stop_reason"):
+            # Mark final Anthropic stream chunk
             message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
