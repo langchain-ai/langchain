@@ -119,7 +119,7 @@ def test_responses_integration_matrix(case: TestCase) -> None:
             http_client=http_client,
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[role_tool["tool"], dept_tool["tool"]],
             prompt=AGENT_PROMPT,
