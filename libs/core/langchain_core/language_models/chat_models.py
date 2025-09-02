@@ -44,10 +44,12 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     convert_to_messages,
-    convert_to_openai_data_block,
-    convert_to_openai_image_block,
     is_data_content_block,
     message_chunk_to_message,
+)
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
+    convert_to_openai_image_block,
 )
 from langchain_core.outputs import (
     ChatGeneration,

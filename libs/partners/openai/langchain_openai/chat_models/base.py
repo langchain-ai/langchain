@@ -60,7 +60,6 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_to_openai_data_block,
     is_data_content_block,
 )
 from langchain_core.messages import content as types
@@ -71,6 +70,7 @@ from langchain_core.messages.ai import (
 )
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
