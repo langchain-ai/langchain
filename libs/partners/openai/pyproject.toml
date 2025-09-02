@@ -7,7 +7,7 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "langchain-core<2.0.0,>=1.0.0a1",
+    "langchain-core<2.0.0,>=1.0.0a2",
     "openai<2.0.0,>=1.99.9",
     "tiktoken<1,>=0.7",
 ]
