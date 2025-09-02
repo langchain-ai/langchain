@@ -1,13 +1,13 @@
 import json
-
-from typing import Any, List
+from typing import Any
 
 
 # Simple mock implementation for testing
-def msg_content_output(content_blocks: List[Any]) -> Any:
+def msg_content_output(content_blocks: list[Any]) -> Any:
     """Mock implementation of msg_content_output for testing.
 
-    Returns the list if all blocks are recognized, otherwise JSON serializes the entire list.
+    Returns the list if all blocks are recognized, otherwise JSON
+    serializes the entire list.
     """
     from langchain_core.tools.base import TOOL_MESSAGE_BLOCK_TYPES
 
@@ -20,9 +20,8 @@ def msg_content_output(content_blocks: List[Any]) -> Any:
     if all_recognized:
         # Return the original list
         return content_blocks
-    else:
-        # JSON serialize the entire input list
-        return json.dumps(content_blocks, ensure_ascii=False)
+    # JSON serialize the entire input list
+    return json.dumps(content_blocks, ensure_ascii=False)
 
 
 def test_msg_content_output_preserves_document_block() -> None:
