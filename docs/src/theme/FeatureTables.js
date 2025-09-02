@@ -252,7 +252,7 @@ const FEATURE_TABLES = {
                 "name": "ChatOCIGenAI",
                 "package": "langchain-oci",
                 "link": "oci",
-                "structured_output": false,
+                "structured_output": true,
                 "tool_calling": true,
                 "json_mode": true,
                 "multimodal": true,
