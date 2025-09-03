@@ -36,16 +36,6 @@ SKIP_IF_PULL_REQUEST = [
 def get_pypi_versions(package_name: str) -> List[str]:
     """
     Fetch all available versions for a package from PyPI.
-
-    Args:
-        package_name (str): Name of the package
-
-    Returns:
-        List[str]: List of all available versions
-
-    Raises:
-        requests.exceptions.RequestException: If PyPI API request fails
-        KeyError: If package not found or response format unexpected
     """
     pypi_url = f"https://pypi.org/pypi/{package_name}/json"
     response = requests.get(pypi_url)
@@ -56,22 +46,15 @@ def get_pypi_versions(package_name: str) -> List[str]:
 def get_minimum_version(package_name: str, spec_string: str) -> Optional[str]:
     """
     Find the minimum published version that satisfies the given constraints.
-
-    Args:
-        package_name (str): Name of the package
-        spec_string (str): Version specification string (e.g., ">=0.2.43,<0.4.0,!=0.3.0")
-
-    Returns:
-        Optional[str]: Minimum compatible version or None if no compatible version found
     """
     # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
     spec_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", spec_string)
-    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1 (can be anywhere in constraint string)
+    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1
     for y in range(1, 10):
         spec_string = re.sub(
             rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y + 1}", spec_string
         )
-    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
+    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0
     for x in range(1, 10):
         spec_string = re.sub(
             rf"\^{x}\.(\d+)\.(\d+)", rf">={x}.\1.\2,<{x + 1}", spec_string
@@ -121,7 +104,12 @@ def get_min_version_from_toml(
         toml_data = tomllib.load(file)
 
     dependencies = defaultdict(list)
-    for dep in toml_data["project"]["dependencies"]:
+
+    project_data = toml_data.get("project")
+    if not project_data or "dependencies" not in project_data:
+        raise KeyError(f"'project' or 'dependencies' key not found in {toml_path}")
+
+    for dep in project_data["dependencies"]:
         requirement = Requirement(dep)
         dependencies[requirement.name].append(requirement)
 
@@ -134,7 +122,6 @@ def get_min_version_from_toml(
             # some libs only get checked on release because of simultaneous
             # changes in multiple libs
             continue
-        # Check if the lib is present in the dependencies
         if lib in dependencies:
             if include and lib not in include:
                 continue
@@ -144,10 +131,7 @@ def get_min_version_from_toml(
                     version_string = str(requirement.specifier)
                     break
 
-            # Use parse_version to get the minimum supported version from version_string
             min_version = get_minimum_version(lib, version_string)
-
-            # Store the minimum version in the min_versions dictionary
             min_versions[lib] = min_version
 
     return min_versions
@@ -156,20 +140,12 @@ def get_min_version_from_toml(
 def check_python_version(version_string, constraint_string):
     """
     Check if the given Python version matches the given constraints.
-
-    :param version_string: A string representing the Python version (e.g. "3.8.5").
-    :param constraint_string: A string representing the package's Python version constraints (e.g. ">=3.6, <4.0").
-    :return: True if the version matches the constraints, False otherwise.
     """
-
-    # rewrite occurrences of ^0.0.z to 0.0.z (can be anywhere in constraint string)
     constraint_string = re.sub(r"\^0\.0\.(\d+)", r"0.0.\1", constraint_string)
-    # rewrite occurrences of ^0.y.z to >=0.y.z,<0.y+1.0 (can be anywhere in constraint string)
     for y in range(1, 10):
         constraint_string = re.sub(
             rf"\^0\.{y}\.(\d+)", rf">=0.{y}.\1,<0.{y + 1}.0", constraint_string
         )
-    # rewrite occurrences of ^x.y.z to >=x.y.z,<x+1.0.0 (can be anywhere in constraint string)
     for x in range(1, 10):
         constraint_string = re.sub(
             rf"\^{x}\.0\.(\d+)", rf">={x}.0.\1,<{x + 1}.0.0", constraint_string
@@ -185,13 +161,11 @@ def check_python_version(version_string, constraint_string):
 
 
 if __name__ == "__main__":
-    # Get the TOML file path from the command line argument
     toml_file = sys.argv[1]
     versions_for = sys.argv[2]
     python_version = sys.argv[3]
     assert versions_for in ["release", "pull_request"]
 
-    # Call the function to get the minimum versions
     min_versions = get_min_version_from_toml(toml_file, versions_for, python_version)
 
     print(" ".join([f"{lib}=={version}" for lib, version in min_versions.items()]))
