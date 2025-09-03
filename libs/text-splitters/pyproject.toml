@@ -1,6 +1,16 @@
 [build-system]
 requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 
+[project]
+name = "langchain-text-splitters"
+version = "0.0.0"
+description = "LangChain text splitters utilities"
+authors = [
+    { name = "LangChain Maintainers" }
+]
+requires-python = ">=3.8"
+dependencies = []
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "-ra -q --strict-markers --strict-config"
