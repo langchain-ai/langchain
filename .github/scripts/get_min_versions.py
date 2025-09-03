@@ -105,11 +105,9 @@ def get_min_version_from_toml(
 
     dependencies = defaultdict(list)
 
-    project_data = toml_data.get("project")
-    if not project_data or "dependencies" not in project_data:
-        raise KeyError(f"'project' or 'dependencies' key not found in {toml_path}")
-
-    for dep in project_data["dependencies"]:
+    project_data = toml_data.get("project", {})
+    deps_list = project_data.get("dependencies", [])
+    for dep in deps_list:
         requirement = Requirement(dep)
         dependencies[requirement.name].append(requirement)
 
@@ -119,8 +117,6 @@ def get_min_version_from_toml(
     # Iterate over the libs in MIN_VERSION_LIBS
     for lib in set(MIN_VERSION_LIBS + (include or [])):
         if versions_for == "pull_request" and lib in SKIP_IF_PULL_REQUEST:
-            # some libs only get checked on release because of simultaneous
-            # changes in multiple libs
             continue
         if lib in dependencies:
             if include and lib not in include:
