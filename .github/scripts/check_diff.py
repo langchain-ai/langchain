@@ -64,10 +64,17 @@ def dependents_graph() -> dict:
             pyproject = tomllib.load(f)
 
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
-        for dep in [
-            *pyproject["project"]["dependencies"],
-            *pyproject["dependency-groups"]["test"],
-        ]:
+
+        project_deps = []
+        test_deps = []
+
+        if "project" in pyproject and "dependencies" in pyproject["project"]:
+            project_deps = pyproject["project"]["dependencies"]
+
+        if "dependency-groups" in pyproject and "test" in pyproject["dependency-groups"]:
+            test_deps = pyproject["dependency-groups"]["test"]
+
+        for dep in [*project_deps, *test_deps]:
             requirement = Requirement(dep)
             package_name = requirement.name
             if "langchain" in dep:
