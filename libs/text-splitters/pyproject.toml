@@ -8,10 +8,9 @@ license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
     "langchain-core<2.0.0,>=0.3.75",
-    "pip>=25.2",
 ]
 name = "langchain-text-splitters"
-version = "0.3.10"
+version = "0.3.11"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
@@ -46,10 +45,12 @@ test_integration = [
     "transformers<5.0.0,>=4.51.3",
     "sentence-transformers>=3.0.1",
     "tiktoken<1.0.0,>=0.8.0",
+    "en-core-web-sm",
 ]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]

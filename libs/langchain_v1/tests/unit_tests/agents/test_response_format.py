@@ -1,4 +1,4 @@
-"""Test suite for create_react_agent with structured output response_format permutations."""
+"""Test suite for create_agent with structured output response_format permutations."""
 
 import pytest
 
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Union
 
 from langchain_core.messages import HumanMessage
-from langchain.agents import create_react_agent
+from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     ProviderStrategy,
@@ -114,7 +114,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(model, [get_weather], response_format=WeatherBaseModel)
+        agent = create_agent(model, [get_weather], response_format=WeatherBaseModel)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
@@ -135,7 +135,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(model, [get_weather], response_format=WeatherDataclass)
+        agent = create_agent(model, [get_weather], response_format=WeatherDataclass)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DATACLASS
@@ -156,7 +156,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(model, [get_weather], response_format=WeatherTypedDict)
+        agent = create_agent(model, [get_weather], response_format=WeatherTypedDict)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
@@ -177,7 +177,7 @@ class TestResponseFormatAsModel:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(model, [get_weather], response_format=weather_json_schema)
+        agent = create_agent(model, [get_weather], response_format=weather_json_schema)
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
@@ -200,9 +200,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherBaseModel)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherBaseModel))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
@@ -223,9 +221,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherDataclass)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherDataclass))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DATACLASS
@@ -246,9 +242,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
-            model, [get_weather], response_format=ToolStrategy(WeatherTypedDict)
-        )
+        agent = create_agent(model, [get_weather], response_format=ToolStrategy(WeatherTypedDict))
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
         assert response["structured_response"] == EXPECTED_WEATHER_DICT
@@ -269,7 +263,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model, [get_weather], response_format=ToolStrategy(weather_json_schema)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -292,7 +286,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [get_weather, get_location],
             response_format=ToolStrategy({"oneOf": [weather_json_schema, location_json_schema]}),
@@ -316,7 +310,7 @@ class TestResponseFormatAsToolStrategy:
 
         model_location = FakeToolCallingModel(tool_calls=tool_calls_location)
 
-        agent_location = create_react_agent(
+        agent_location = create_agent(
             model_location,
             [get_weather, get_location],
             response_format=ToolStrategy({"oneOf": [weather_json_schema, location_json_schema]}),
@@ -344,7 +338,7 @@ class TestResponseFormatAsToolStrategy:
             tool_calls=tool_calls
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [get_weather, get_location],
             response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
@@ -368,7 +362,7 @@ class TestResponseFormatAsToolStrategy:
 
         model_location = FakeToolCallingModel(tool_calls=tool_calls_location)
 
-        agent_location = create_react_agent(
+        agent_location = create_agent(
             model_location,
             [get_weather, get_location],
             response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
@@ -397,7 +391,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -438,7 +432,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -467,7 +461,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -503,7 +497,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -549,7 +543,7 @@ class TestResponseFormatAsToolStrategy:
                 return "Custom error: Multiple outputs not allowed"
             return "Custom error"
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -587,7 +581,7 @@ class TestResponseFormatAsToolStrategy:
 
         model = FakeToolCallingModel(tool_calls=tool_calls)
 
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             [],
             response_format=ToolStrategy(
@@ -617,7 +611,7 @@ class TestResponseFormatAsProviderStrategy:
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model, [get_weather], response_format=ProviderStrategy(WeatherBaseModel)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -635,7 +629,7 @@ class TestResponseFormatAsProviderStrategy:
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DATACLASS
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model, [get_weather], response_format=ProviderStrategy(WeatherDataclass)
         )
         response = agent.invoke(
@@ -655,7 +649,7 @@ class TestResponseFormatAsProviderStrategy:
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model, [get_weather], response_format=ProviderStrategy(WeatherTypedDict)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -673,7 +667,7 @@ class TestResponseFormatAsProviderStrategy:
             tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_DICT
         )
 
-        agent = create_react_agent(
+        agent = create_agent(
             model, [get_weather], response_format=ProviderStrategy(weather_json_schema)
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
@@ -699,7 +693,7 @@ def test_union_of_types() -> None:
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
-    agent = create_react_agent(
+    agent = create_agent(
         model,
         [get_weather, get_location],
         response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
