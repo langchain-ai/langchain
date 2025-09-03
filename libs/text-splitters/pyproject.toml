@@ -1,150 +1,132 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
 
 [project]
-authors = []
-license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = [
-    "langchain-core<2.0.0,>=0.3.75",
-]
 name = "langchain-text-splitters"
-version = "0.3.11"
-description = "LangChain text splitting utilities"
-readme = "README.md"
-
-[project.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
-repository = "https://github.com/langchain-ai/langchain"
-
-[dependency-groups]
-lint = ["ruff<0.13,>=0.12.8", "langchain-core"]
-typing = [
-    "mypy<1.18,>=1.17.1",
-    "lxml-stubs<1.0.0,>=0.5.1",
-    "types-requests<3.0.0.0,>=2.31.0.20240218",
-    "tiktoken<1.0.0,>=0.8.0",
+version = "0.0.0"
+description = "LangChain text splitters utilities"
+authors = [
+    { name = "LangChain Maintainers" }
 ]
-dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
-test = [
-    "pytest<9,>=8",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-socket<1.0.0,>=0.7.0",
-    "pytest-xdist<4.0.0,>=3.6.1",
-    "langchain-core",
-]
-test_integration = [
-    "spacy<4.0.0,>=3.8.7",
-    "thinc<9.0.0,>=8.3.6",
-    "nltk<4.0.0,>=3.9.1",
-    "transformers<5.0.0,>=4.51.3",
-    "sentence-transformers>=3.0.1",
-    "tiktoken<1.0.0,>=0.8.0",
-    "en-core-web-sm",
-]
-
-[tool.uv.sources]
-langchain-core = { path = "../core", editable = true }
-en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
-
-[tool.mypy]
-plugins = ["pydantic.mypy"]
-strict = true
-enable_error_code = "deprecated"
-warn_unreachable = true
-
-[[tool.mypy.overrides]]
-module = ["konlpy", "nltk",]
-ignore_missing_imports = true
-
-[tool.ruff]
-target-version = "py39"
-
-[tool.ruff.lint]
-select = [
-    "A",      # flake8-builtins
-    "B",      # flake8-bugbear
-    "ASYNC",  # flake8-async
-    "C4",     # flake8-comprehensions
-    "COM",    # flake8-commas
-    "D",      # pydocstyle
-    "E",      # pycodestyle error
-    "EM",     # flake8-errmsg
-    "F",      # pyflakes
-    "FA",     # flake8-future-annotations
-    "FBT",    # flake8-boolean-trap
-    "FLY",    # flake8-flynt
-    "I",      # isort
-    "ICN",    # flake8-import-conventions
-    "INT",    # flake8-gettext
-    "ISC",    # isort-comprehensions
-    "PGH",    # pygrep-hooks
-    "PIE",    # flake8-pie
-    "PERF",   # flake8-perf
-    "PYI",    # flake8-pyi
-    "Q",      # flake8-quotes
-    "RET",    # flake8-return
-    "RSE",    # flake8-rst-docstrings
-    "RUF",    # ruff
-    "S",      # flake8-bandit
-    "SLF",    # flake8-self
-    "SLOT",   # flake8-slots
-    "SIM",    # flake8-simplify
-    "T10",    # flake8-debugger
-    "T20",    # flake8-print
-    "TID",    # flake8-tidy-imports
-    "UP",     # pyupgrade
-    "W",      # pycodestyle warning
-    "YTT",    # flake8-2020
-]
-ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D203",    # Messes with the formatter
-    "D213",    # pydocstyle: Multi-line docstring summary should start at the second line (incompatible with D212)
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
-    "COM812",  # Messes with the formatter
-    "ISC001",  # Messes with the formatter
-    "PERF203", # Rarely useful
-    "S112",    # Rarely useful
-    "RUF012",  # Doesn't play well with Pydantic
-    "SLF001",  # Private member access
-    "UP007",   # pyupgrade: non-pep604-annotation-union
-    "UP045",   # pyupgrade: non-pep604-annotation-optional
-]
-unfixable = ["B028"] # People should intentionally tune the stacklevel
-pyupgrade.keep-runtime-typing = true
-
-[tool.ruff.lint.extend-per-file-ignores]
-"tests/**/*.py" = [
-    "S101", # Tests need assertions
-    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
-]
-
-
-[tool.coverage.run]
-omit = ["tests/*"]
+requires-python = ">=3.8"
+dependencies = []
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --durations=5"
-markers = [
-    "requires: mark tests as requiring a specific library",
-    "compile: mark placeholder test used to compile integration tests without running them",
+minversion = "6.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
 ]
-asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
 
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+[tool.coverage.run]
+source = ["langchain_text_splitters"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/*_test.py",
+]
 
-[tool.ruff.lint.per-file-ignores]
-"tests/**" = ["D"]
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "sentence_transformers.*",
+    "sklearn.*",
+    "nltk.*",
+    "numpy.*",
+]
+ignore_missing_imports = true
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+line_length = 88
+known_first_party = ["langchain_text_splitters"]
+known_third_party = ["pytest", "numpy", "sklearn", "sentence_transformers", "nltk"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 88
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "UP", # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "B904",  # raise from e
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"test_*.py" = ["B018", "F401", "F811"]
