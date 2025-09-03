@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar, Union
+from typing import TYPE_CHECKING, Any, ClassVar, Protocol, TypeAlias, TypeVar
 
 from langgraph.graph._node import StateNode
 from pydantic import BaseModel
@@ -44,7 +44,7 @@ class DataclassLike(Protocol):
     __dataclass_fields__: ClassVar[dict[str, Field[Any]]]
 
 
-StateLike: TypeAlias = Union[TypedDictLikeV1, TypedDictLikeV2, DataclassLike, BaseModel]
+StateLike: TypeAlias = TypedDictLikeV1 | TypedDictLikeV2 | DataclassLike | BaseModel
 """Type alias for state-like types.
 
 It can either be a ``TypedDict``, ``dataclass``, or Pydantic ``BaseModel``.
@@ -58,7 +58,7 @@ It can either be a ``TypedDict``, ``dataclass``, or Pydantic ``BaseModel``.
 StateT = TypeVar("StateT", bound=StateLike)
 """Type variable used to represent the state in a graph."""
 
-ContextT = TypeVar("ContextT", bound=Union[StateLike, None])
+ContextT = TypeVar("ContextT", bound=StateLike | None)
 """Type variable for context types."""
 
 

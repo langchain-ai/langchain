@@ -13,7 +13,7 @@ import hashlib
 import json
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Literal, Union, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -178,7 +178,7 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: list[Union[list[float], None]] = self.document_embedding_store.mget(
+        vectors: list[list[float] | None] = self.document_embedding_store.mget(
             texts,
         )
         all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
@@ -210,7 +210,7 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: list[Union[list[float], None]] = await self.document_embedding_store.amget(texts)
+        vectors: list[list[float] | None] = await self.document_embedding_store.amget(texts)
         all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
 
         # batch_iterate supports None batch_size which returns all elements at once
@@ -285,11 +285,8 @@ class CacheBackedEmbeddings(Embeddings):
         *,
         namespace: str = "",
         batch_size: int | None = None,
-        query_embedding_cache: Union[bool, ByteStore] = False,
-        key_encoder: Union[
-            Callable[[str], str],
-            Literal["sha1", "blake2b", "sha256", "sha512"],
-        ] = "sha1",
+        query_embedding_cache: bool | ByteStore = False,
+        key_encoder: Callable[[str], str] | Literal["sha1", "blake2b", "sha256", "sha512"] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 
