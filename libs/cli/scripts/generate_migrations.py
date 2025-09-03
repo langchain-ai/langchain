@@ -72,7 +72,7 @@ def generic(
     else:
         dumped = dump_migrations_as_grit(name, migrations)
 
-    Path(output).write_text(dumped)
+    Path(output).write_text(dumped, encoding="utf-8")
 
 
 def handle_partner(pkg: str, output: str | None = None) -> None:
@@ -83,7 +83,7 @@ def handle_partner(pkg: str, output: str | None = None) -> None:
     data = dump_migrations_as_grit(name, migrations)
     output_name = f"{name}.grit" if output is None else output
     if migrations:
-        Path(output_name).write_text(data)
+        Path(output_name).write_text(data, encoding="utf-8")
         click.secho(f"LangChain migration script saved to {output_name}")
     else:
         click.secho(f"No migrations found for {pkg}", fg="yellow")
@@ -108,7 +108,7 @@ def json_to_grit(json_file: str) -> None:
     name = file.stem
     data = dump_migrations_as_grit(name, migrations)
     output_name = f"{name}.grit"
-    Path(output_name).write_text(data)
+    Path(output_name).write_text(data, encoding="utf-8")
     click.secho(f"GritQL migration script saved to {output_name}")
 
 

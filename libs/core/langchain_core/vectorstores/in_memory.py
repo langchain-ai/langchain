@@ -597,7 +597,7 @@ class InMemoryVectorStore(VectorStore):
             A VectorStore object.
         """
         path_: Path = Path(path)
-        with path_.open("r") as f:
+        with path_.open("r", encoding="utf-8") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
@@ -611,5 +611,5 @@ class InMemoryVectorStore(VectorStore):
         """
         path_: Path = Path(path)
         path_.parent.mkdir(exist_ok=True, parents=True)
-        with path_.open("w") as f:
+        with path_.open("w", encoding="utf-8") as f:
             json.dump(dumpd(self.store), f, indent=2)
