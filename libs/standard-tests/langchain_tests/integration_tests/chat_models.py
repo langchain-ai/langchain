@@ -31,7 +31,7 @@ from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import ChatModelTests
@@ -57,7 +57,7 @@ def _get_joke_class(
         punchline: Annotated[str, ..., "answer to resolve the joke"]
 
     def validate_joke_dict(result: Any) -> bool:
-        return all(key in ["setup", "punchline"] for key in result)
+        return all(key in {"setup", "punchline"} for key in result)
 
     if schema_type == "pydantic":
         return Joke, validate_joke
@@ -78,6 +78,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         super().__init__()
         self.options = []
 
+    @override
     def on_chat_model_start(
         self,
         serialized: Any,
@@ -1045,7 +1046,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = result.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name != "", "model_name is empty"
+        assert model_name, "model_name is empty"
 
         # `input_tokens` is the total, possibly including other unclassified or
         # system-level tokens.
@@ -1059,10 +1060,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(input_token_details.get("audio"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("input_tokens", 0) >= sum(
                 v for v in input_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1071,10 +1071,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(output_token_details.get("audio"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("output_tokens", 0) >= sum(
                 v for v in output_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1083,10 +1082,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(output_token_details.get("reasoning"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("output_tokens", 0) >= sum(
                 v for v in output_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1095,10 +1093,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(input_token_details.get("cache_read"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("input_tokens", 0) >= sum(
                 v for v in input_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1107,10 +1104,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(input_token_details.get("cache_creation"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("input_tokens", 0) >= sum(
                 v for v in input_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """Test usage metadata in streaming mode.
@@ -1238,7 +1234,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = full.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name != "", "model_name is empty"
+        assert model_name, "model_name is empty"
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
@@ -1723,7 +1719,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool choice.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # noqa: ARG001
             """Get weather at a location."""
             return "It's sunny."
 
@@ -2127,7 +2123,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
             of ``with_structured_output``.
 
-        """  # noqa: E501
+        """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
@@ -2259,8 +2255,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
-        from pydantic import BaseModel as BaseModelProper
-        from pydantic import Field as FieldProper
+        from pydantic import BaseModel as BaseModelProper  # noqa: PLC0415
+        from pydantic import Field as FieldProper  # noqa: PLC0415
 
         class Joke(BaseModelProper):
             """Joke to tell user."""
@@ -2912,7 +2908,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # noqa: ARG001
             """Call to surf the web."""
             return "It's sunny."
 

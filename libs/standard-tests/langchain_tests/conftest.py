@@ -27,7 +27,13 @@ class CustomSerializer:
     def serialize(cassette_dict: dict) -> bytes:
         """Convert cassette to YAML and compress it."""
         cassette_dict["requests"] = [
-            request._to_dict() for request in cassette_dict["requests"]
+            {
+                "method": request.method,
+                "uri": request.uri,
+                "body": request.body,
+                "headers": {k: [v] for k, v in request.headers.items()},
+            }
+            for request in cassette_dict["requests"]
         ]
         yml = yaml.safe_dump(cassette_dict)
         return gzip.compress(yml.encode("utf-8"))
@@ -37,9 +43,7 @@ class CustomSerializer:
         """Decompress data and convert it from YAML."""
         text = gzip.decompress(data).decode("utf-8")
         cassette = yaml.safe_load(text)
-        cassette["requests"] = [
-            Request._from_dict(request) for request in cassette["requests"]
-        ]
+        cassette["requests"] = [Request(**request) for request in cassette["requests"]]
         return cassette
 
 
