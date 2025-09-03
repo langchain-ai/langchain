@@ -12,4 +12,14 @@ beautifulsoup4
 sphinxcontrib-googleanalytics
 numpy>=1.24
 scikit-learn>=1.3
+# Core LangChain dependencies
+langchain-text-splitters>=0.0.1
+sentence-transformers>=2.2.0
+numpy>=1.21.0
+nltk>=3.8
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0
+mypy>=1.0.0
+types-requests
 
