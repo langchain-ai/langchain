@@ -54,7 +54,7 @@ from langchain_text_splitters.sentence_transformers import (
     SentenceTransformersTokenTextSplitter,
 )
 from langchain_text_splitters.spacy import SpacyTextSplitter
-from langchain_text_splitters.ml_clustering import MLClusteringTextSplitter
+from langchain_text_splitters.ml_clustering_splitter import MLClusteringSplitter
 
 __all__ = [
     "CharacterTextSplitter",
