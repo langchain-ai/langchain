@@ -107,9 +107,6 @@ select = [
   "ALL"
 ]
 ignore = [
-  "D100",    # pydocstyle: Missing docstring in public module
-  "D104",    # pydocstyle: Missing docstring in public package
-  "D105",    # pydocstyle: Missing docstring in magic method
   "COM812",  # Messes with the formatter
   "ISC001",  # Messes with the formatter
   "PERF203", # Rarely useful
@@ -127,7 +124,7 @@ flake8-annotations.allow-star-arg-any = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-  "D", # Documentation rules
+  "D1", # Documentation rules
   "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
 "langchain/agents/*" = [
