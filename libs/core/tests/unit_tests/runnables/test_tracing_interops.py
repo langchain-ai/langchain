@@ -5,7 +5,7 @@ import sys
 import uuid
 from collections.abc import AsyncGenerator, Coroutine, Generator
 from inspect import isasyncgenfunction
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -13,7 +13,6 @@ from langsmith import Client, get_current_run_tree, traceable
 from langsmith.run_helpers import tracing_context
 from langsmith.run_trees import RunTree
 from langsmith.utils import get_env_var
-from typing_extensions import Literal
 
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.base import RunnableLambda, RunnableParallel

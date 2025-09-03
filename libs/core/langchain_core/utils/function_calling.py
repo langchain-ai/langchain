@@ -17,11 +17,13 @@ from typing import (
     Optional,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import TypedDict, is_typeddict
 
 from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage

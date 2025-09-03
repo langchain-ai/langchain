@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import sys
 import traceback
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
@@ -98,12 +97,7 @@ class _TracerCore(ABC):
         """Get the stacktrace of the parent error."""
         msg = repr(error)
         try:
-            if sys.version_info < (3, 10):
-                tb = traceback.format_exception(
-                    error.__class__, error, error.__traceback__
-                )
-            else:
-                tb = traceback.format_exception(error)
+            tb = traceback.format_exception(error)
             return (msg + "\n\n".join(tb)).strip()
         except:  # noqa: E722
             return msg

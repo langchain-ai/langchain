@@ -1,28 +1,22 @@
-import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as ExtensionsAnnotated
+from typing import Annotated as TypingAnnotated
 from typing import (
     Any,
     Callable,
     Literal,
     Optional,
+    TypeAlias,
     Union,
 )
 from typing import TypedDict as TypingTypedDict
 
 import pytest
+from pydantic import BaseModel, Field
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import TypeAlias
+from typing_extensions import Annotated as ExtensionsAnnotated  # noqa: UP035
 from typing_extensions import TypedDict as ExtensionsTypedDict
-
-try:
-    from typing import Annotated as TypingAnnotated
-except ImportError:
-    TypingAnnotated = ExtensionsAnnotated
-
-from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -177,8 +171,8 @@ def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
 
-        arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
+        arg1: TypingAnnotated[int, ..., "foo"]
+        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
 
     return dummy_function
 
@@ -1047,12 +1041,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
         _convert_typed_dict_to_openai_function(Tool)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
-)
-def test_convert_union_type_py_39() -> None:
+def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
+    def magic_function(value: int | str) -> str:  # noqa: ARG001,FA102
         """Compute a magic function."""
         return ""
 
