@@ -129,15 +129,15 @@ wheels = [
 
 [[package]]
 name = "beautifulsoup4"
-version = "4.13.1"
+version = "4.13.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "soupsieve" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/f3/d90227cc52f7b8fcd0f2af804f56e55edf8dd07036b681a2809e3245318b/beautifulsoup4-4.13.1.tar.gz", hash = "sha256:741c8b6903a1e4ae8ba32b9c9ae7510dab7a197fdbadcf9fcdeb0891ef5ec66a", size = 618295, upload-time = "2025-02-03T12:15:13.622Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/2e/3e5079847e653b1f6dc647aa24549d68c6addb4c595cc0d902d1b19308ad/beautifulsoup4-4.13.5.tar.gz", hash = "sha256:5e70131382930e7c3de33450a2f54a63d5e4b19386eab43a5b34d594268f3695", size = 622954, upload-time = "2025-08-24T14:06:13.168Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/18/75/899bf9b6270b2ce5e8f01b8da121b29e4b88256feb2cf6c6418d4cc42130/beautifulsoup4-4.13.1-py3-none-any.whl", hash = "sha256:72465267014897bb10ca749bb632bde6c2d20f3254afd5458544bd74e6c2e6d8", size = 185056, upload-time = "2025-02-03T12:15:12.076Z" },
+    { url = "https://files.pythonhosted.org/packages/04/eb/f4151e0c7377a6e08a38108609ba5cede57986802757848688aeedd1b9e8/beautifulsoup4-4.13.5-py3-none-any.whl", hash = "sha256:642085eaa22233aceadff9c69651bc51e8bf3f874fb6d7104ece2beb24b47c4a", size = 105113, upload-time = "2025-08-24T14:06:14.884Z" },
 ]
 
 [[package]]
@@ -1191,6 +1191,7 @@ test-integration = [
     { name = "transformers" },
 ]
 typing = [
+    { name = "beautifulsoup4" },
     { name = "lxml-stubs" },
     { name = "mypy" },
     { name = "tiktoken" },
@@ -1229,6 +1230,7 @@ test-integration = [
     { name = "transformers", specifier = ">=4.51.3,<5.0.0" },
 ]
 typing = [
+    { name = "beautifulsoup4", specifier = ">=4.13.4,<5.0.0" },
     { name = "lxml-stubs", specifier = ">=0.5.1,<1.0.0" },
     { name = "mypy", specifier = ">=1.17.1,<1.18" },
     { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
