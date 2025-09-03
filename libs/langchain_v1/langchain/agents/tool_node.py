@@ -85,8 +85,16 @@ INVALID_TOOL_NAME_ERROR_TEMPLATE = (
     "Error: {requested_tool} is not a valid tool, try one of [{available_tools}]."
 )
 TOOL_CALL_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
-TOOL_EXECUTION_ERROR_TEMPLATE = "Error executing tool '{tool_name}' with kwargs {tool_kwargs} with error:\n {error}\n Please fix the error and try again."
-TOOL_INVOCATION_ERROR_TEMPLATE = "Error invoking tool '{tool_name}' with kwargs {tool_kwargs} with error:\n {error}\n Please fix the error and try again."
+TOOL_EXECUTION_ERROR_TEMPLATE = (
+    "Error executing tool '{tool_name}' with kwargs {tool_kwargs} with error:\n"
+    " {error}\n"
+    " Please fix the error and try again."
+)
+TOOL_INVOCATION_ERROR_TEMPLATE = (
+    "Error invoking tool '{tool_name}' with kwargs {tool_kwargs} with error:\n"
+    " {error}\n"
+    " Please fix the error and try again."
+)
 
 
 def msg_content_output(output: Any) -> Union[str, list[dict]]:
@@ -317,7 +325,8 @@ class ToolNode(RunnableCallable):
               error template containing the exception details.
             - **str**: Catch all errors and return a ToolMessage with this custom
               error message string.
-            - **type[Exception]**: Only catch exceptions with the specified type and return the default error message for it.
+            - **type[Exception]**: Only catch exceptions with the specified type and
+              return the default error message for it.
             - **tuple[type[Exception], ...]**: Only catch exceptions with the specified
               types and return default error messages for them.
             - **Callable[..., str]**: Catch exceptions matching the callable's signature
@@ -371,7 +380,7 @@ class ToolNode(RunnableCallable):
 
         tool_node = ToolNode([my_tool], handle_tool_errors=handle_errors)
         ```
-    """
+    """  # noqa: E501
 
     name: str = "tools"
 
@@ -515,10 +524,12 @@ class ToolNode(RunnableCallable):
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
-        # Where GraphInterrupt(GraphBubbleUp) is raised from an `interrupt` invocation most commonly:
+        # Where GraphInterrupt(GraphBubbleUp) is raised from an `interrupt` invocation
+        # most commonly:
         # (1) a GraphInterrupt is raised inside a tool
         # (2) a GraphInterrupt is raised inside a graph node for a graph called as a tool
-        # (3) a GraphInterrupt is raised when a subgraph is interrupted inside a graph called as a tool
+        # (3) a GraphInterrupt is raised when a subgraph is interrupted inside a graph
+        #     called as a tool
         # (2 and 3 can happen in a "supervisor w/ tools" multi-agent architecture)
         except GraphBubbleUp:
             raise
@@ -579,10 +590,12 @@ class ToolNode(RunnableCallable):
 
         # GraphInterrupt is a special exception that will always be raised.
         # It can be triggered in the following scenarios,
-        # Where GraphInterrupt(GraphBubbleUp) is raised from an `interrupt` invocation most commonly:
+        # Where GraphInterrupt(GraphBubbleUp) is raised from an `interrupt` invocation
+        # most commonly:
         # (1) a GraphInterrupt is raised inside a tool
         # (2) a GraphInterrupt is raised inside a graph node for a graph called as a tool
-        # (3) a GraphInterrupt is raised when a subgraph is interrupted inside a graph called as a tool
+        # (3) a GraphInterrupt is raised when a subgraph is interrupted inside a graph
+        #     called as a tool
         # (2 and 3 can happen in a "supervisor w/ tools" multi-agent architecture)
         except GraphBubbleUp:
             raise
@@ -791,10 +804,12 @@ class ToolNode(RunnableCallable):
         input_type: Literal["list", "dict", "tool_calls"],
     ) -> Command:
         if isinstance(command.update, dict):
-            # input type is dict when ToolNode is invoked with a dict input (e.g. {"messages": [AIMessage(..., tool_calls=[...])]})
+            # input type is dict when ToolNode is invoked with a dict input
+            # (e.g. {"messages": [AIMessage(..., tool_calls=[...])]})
             if input_type not in ("dict", "tool_calls"):
                 msg = (
-                    f"Tools can provide a dict in Command.update only when using dict with '{self._messages_key}' key as ToolNode input, "
+                    "Tools can provide a dict in Command.update only when using dict "
+                    f"with '{self._messages_key}' key as ToolNode input, "
                     f"got: {command.update} for tool '{call['name']}'"
                 )
                 raise ValueError(msg)
@@ -803,10 +818,12 @@ class ToolNode(RunnableCallable):
             state_update = cast("dict[str, Any]", updated_command.update) or {}
             messages_update = state_update.get(self._messages_key, [])
         elif isinstance(command.update, list):
-            # Input type is list when ToolNode is invoked with a list input (e.g. [AIMessage(..., tool_calls=[...])])
+            # Input type is list when ToolNode is invoked with a list input
+            # (e.g. [AIMessage(..., tool_calls=[...])])
             if input_type != "list":
                 msg = (
-                    f"Tools can provide a list of messages in Command.update only when using list of messages as ToolNode input, "
+                    "Tools can provide a list of messages in Command.update "
+                    "only when using list of messages as ToolNode input, "
                     f"got: {command.update} for tool '{call['name']}'"
                 )
                 raise ValueError(msg)
@@ -836,13 +853,17 @@ class ToolNode(RunnableCallable):
         # Command.update if command is sent to the CURRENT graph
         if updated_command.graph is None and not has_matching_tool_message:
             example_update = (
-                '`Command(update={"messages": [ToolMessage("Success", tool_call_id=tool_call_id), ...]}, ...)`'
+                '`Command(update={"messages": '
+                '[ToolMessage("Success", tool_call_id=tool_call_id), ...]}, ...)`'
                 if input_type == "dict"
-                else '`Command(update=[ToolMessage("Success", tool_call_id=tool_call_id), ...], ...)`'
+                else "`Command(update="
+                '[ToolMessage("Success", tool_call_id=tool_call_id), ...], ...)`'
             )
             msg = (
-                f"Expected to have a matching ToolMessage in Command.update for tool '{call['name']}', got: {messages_update}. "
-                "Every tool call (LLM requesting to call a tool) in the message history MUST have a corresponding ToolMessage. "
+                "Expected to have a matching ToolMessage in Command.update "
+                f"for tool '{call['name']}', got: {messages_update}. "
+                "Every tool call (LLM requesting to call a tool) "
+                "in the message history MUST have a corresponding ToolMessage. "
                 f"You can fix it by modifying the tool to return {example_update}."
             )
             raise ValueError(msg)
