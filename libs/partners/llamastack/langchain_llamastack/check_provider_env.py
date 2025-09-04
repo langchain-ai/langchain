@@ -65,7 +65,7 @@ def check_provider_environment_variables() -> bool:
     configured_count = 0
 
     for provider_id, config in providers.items():
-        env_var: str = config["env_var"]
+        env_var = config["env_var"]
         env_value = os.getenv(env_var)
 
         # Special handling for OLLAMA_URL (has default)

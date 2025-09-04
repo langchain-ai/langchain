@@ -8,7 +8,7 @@ from typing import Any, Optional
 try:
     from langchain_openai import ChatOpenAI  # type: ignore
 except ImportError:
-    ChatOpenAI = None
+    ChatOpenAI = None  # type: ignore
 
 from .utils import check_llamastack_connection, list_available_models
 
