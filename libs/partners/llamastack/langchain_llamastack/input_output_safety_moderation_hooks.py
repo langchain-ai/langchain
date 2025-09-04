@@ -238,9 +238,7 @@ def create_input_moderation_hook(safety_client) -> Callable[[str], SafetyResult]
         except Exception as e:
             # Fail open for input moderation - allow user to proceed but log error
             return SafetyResult(
-                is_safe=True,
-                violations=[],
-                explanation=f"Input moderation failed: {e}",
+                is_safe=True, violations=[], explanation=f"Input moderation failed: {e}"
             )
 
     return moderate_input

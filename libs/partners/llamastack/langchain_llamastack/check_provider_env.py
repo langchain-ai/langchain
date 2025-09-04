@@ -62,7 +62,6 @@ def check_provider_environment_variables():
         },
     }
 
-
     configured_count = 0
 
     for provider_id, config in providers.items():
@@ -81,11 +80,8 @@ def check_provider_environment_variables():
         else:
             pass
 
-
-
         if env_value:
             configured_count += 1
-
 
     if configured_count == 0:
         pass

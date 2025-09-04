@@ -98,7 +98,6 @@ def get_detailed_model_info():
 
 
 def main():
-
     try:
         # Get detailed model information
         models, error = get_detailed_model_info()
@@ -129,7 +128,6 @@ def main():
             models_in_category = model_categories[category]
 
             if models_in_category:
-
                 for i, model in enumerate(models_in_category, 1):
                     model_name = model["identifier"]
                     provider_id = model.get("provider_id", "unknown")
@@ -161,9 +159,7 @@ def main():
 
         if providers:
             for provider in sorted(providers):
-                [
-                    m for m in models if m.get("provider_id") == provider
-                ]
+                [m for m in models if m.get("provider_id") == provider]
 
     except Exception:
         return 1

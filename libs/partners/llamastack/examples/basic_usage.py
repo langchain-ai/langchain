@@ -19,7 +19,7 @@ def test_chat_completion():
     try:
         # NEW RECOMMENDED APPROACH: Use factory function
         llm = create_llamastack_llm(
-            model="ollama/llama3:70b-instruct",
+            model="ollama/llama3:70b-instruct"
             # Will auto-fallback if not available
         )
 

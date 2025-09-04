@@ -48,8 +48,7 @@ class LlamaStackSafety:
 
             # For local Llama Stack (no API key needed)
             safety = LlamaStackSafety(
-                base_url="http://localhost:8321",
-                shield_type="llama_guard",
+                base_url="http://localhost:8321", shield_type="llama_guard"
             )
 
             # For remote Llama Stack (with API key)
@@ -74,13 +73,12 @@ class LlamaStackSafety:
         .. code-block:: python
 
             moderation_result = safety.moderate_content(
-                content="Content to moderate",
-                content_type="text"
+                content="Content to moderate", content_type="text"
             )
 
         .. code-block:: python
 
-            SafetyResult(is_safe=False, violations=[{'category': 'hate'}])
+            SafetyResult(is_safe=False, violations=[{"category": "hate"}])
 
     Async:
         .. code-block:: python

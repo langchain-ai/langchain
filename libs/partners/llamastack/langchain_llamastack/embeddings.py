@@ -32,8 +32,7 @@ class LlamaStackEmbeddings(Embeddings):
 
             # Initialize with default settings
             embeddings = LlamaStackEmbeddings(
-                model="all-minilm",
-                base_url="http://localhost:8321"
+                model="all-minilm", base_url="http://localhost:8321"
             )
 
             # Embed a single document

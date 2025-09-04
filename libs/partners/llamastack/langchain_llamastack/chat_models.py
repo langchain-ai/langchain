@@ -173,7 +173,7 @@ def _get_provider_headers(
     logger.debug(f"Checking provider for model: {model}")
 
     # Check all possible providers
-    #(don't use elif - a model might match multiple patterns)
+    # (don't use elif - a model might match multiple patterns)
 
     # Fireworks models
     if (

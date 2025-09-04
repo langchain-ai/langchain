@@ -66,9 +66,9 @@ class MockLLM:
 
 def print_section(title):
     """Print section header."""
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  {title}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
 
 def print_test_result(input_text, response, test_number):
@@ -122,9 +122,7 @@ def demo_individual_hooks():
             safety_result = input_safety(test_input)
             print(f"   Input Safety: {'SAFE' if safety_result.is_safe else 'BLOCKED'}")
             if not safety_result.is_safe and safety_result.violations:
-                print(
-                    f"Reason: {safety_result.violations[0].get('reason', 'Unknown')}"
-                )
+                print(f"Reason: {safety_result.violations[0].get('reason', 'Unknown')}")
         except Exception as e:
             print(f"   Input Safety: ERROR ({e})")
 

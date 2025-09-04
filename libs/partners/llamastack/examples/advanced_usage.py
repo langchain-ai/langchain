@@ -4,7 +4,6 @@ Advanced usage examples for LangChain Llama Stack integration.
 This example demonstrates more complex scenarios and integrations.
 """
 
-
 from langchain.chains import ConversationChain, LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
@@ -408,7 +407,7 @@ def main():
 
     for name, example_func in examples:
         try:
-            print(f"\n{'='*70}")
+            print(f"\n{'=' * 70}")
             print(f"Running: {name}")
             print("=" * 70)
 
