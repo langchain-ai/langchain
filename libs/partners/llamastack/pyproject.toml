@@ -32,6 +32,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "typing-extensions>=4.0.0",
     "llama-stack-client>=0.0.40",
+    "fire>=0.4.0",
 ]
 
 [dependency-groups]
