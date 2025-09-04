@@ -2,12 +2,23 @@
 
 import os
 from typing import Any, Dict, List, Optional
+"""LlamaStack Safety integration for LangChain."""
 
-from langchain_core.tools import BaseTool
+import os
+from typing import Any, Dict, List, Optional
+
 from llama_stack_client import AsyncLlamaStackClient, LlamaStackClient
-from pydantic import Field
+from pydantic import BaseModel
 
-from .types import SafetyResult
+
+class SafetyResult(BaseModel):
+    """Result from safety check."""
+
+    is_safe: bool
+    violations: List[Dict[str, Any]] = []
+    confidence_score: Optional[float] = None
+    explanation: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class LlamaStackSafety:

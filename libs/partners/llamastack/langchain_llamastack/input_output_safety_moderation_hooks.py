@@ -11,10 +11,8 @@ All hooks use LlamaStack's run_shield API for accurate, context-aware checking.
 """
 
 from typing import Callable
-
 from langchain_core.runnables import Runnable
-
-from .types import SafetyResult
+from .safety import SafetyResult
 
 
 class SafeLLMWrapper(Runnable):

@@ -32,6 +32,7 @@ dependencies = [
     "httpx>=0.25.0",
     "pydantic>=1.10.0",
     "typing-extensions>=4.0.0",
+    "llama-stack-client>=0.0.40",
 ]
 
 [project.optional-dependencies]
