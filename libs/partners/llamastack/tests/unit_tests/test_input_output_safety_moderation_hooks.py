@@ -1,7 +1,7 @@
 """Unit tests for input/output safety moderation hooks."""
 
-from typing import Any, Callable, Dict, Optional
-from unittest.mock import MagicMock, Mock, patch
+from typing import Any, Callable, Optional
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -516,12 +516,10 @@ class TestFactoryFunctions:
 
         assert result == "Test response"
         # Verify all hooks were called
-        assert (
-            self.mock_safety_client.check_content_safety.call_count == 2
-        )  # Input + output safety
-        assert (
-            self.mock_safety_client.moderate_content.call_count == 2
-        )  # Input + output moderation
+        # Input + output safety
+        assert self.mock_safety_client.check_content_safety.call_count == 2
+        # Input + output moderation
+        assert self.mock_safety_client.moderate_content.call_count == 2
 
     def test_hook_execution_order(self):
         """Test that hooks are executed in the correct order."""

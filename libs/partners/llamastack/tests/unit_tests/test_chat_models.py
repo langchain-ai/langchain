@@ -1,8 +1,8 @@
 """Unit tests for LlamaStack chat models."""
 
 import json
-from typing import Any, Dict, Optional
-from unittest.mock import MagicMock, Mock, patch
+from typing import Any, Optional
+from unittest.mock import Mock, patch
 
 import pytest
 
