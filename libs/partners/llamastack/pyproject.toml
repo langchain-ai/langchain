@@ -27,9 +27,10 @@ classifiers = [
 ]
 
 dependencies = [
-    "langchain-core>=0.1.0",
-    "httpx>=0.25.0",
-    "pydantic>=1.10.0",
+    "langchain-core<0.4.0,>=0.3.15",
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+    "fire>=0.4.0",
     "typing-extensions>=4.0.0",
     "llama-stack-client>=0.0.40",
 ]
@@ -43,9 +44,11 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "langchain-core",
     "langchain-tests",
-]
-test_integration = [
-    "httpx<1.0.0,>=0.27.0",
+    "langchain-openai>=0.1.0",
+    "numpy>=1.21.0",
+    "scikit-learn>=1.0.0",
+    "llama-stack-client>=0.0.53",
+    "httpx>=0.24.0",
 ]
 lint = ["ruff<0.13,>=0.12.8"]
 typing = ["mypy<2.0,>=1.17.1", "langchain-core"]
