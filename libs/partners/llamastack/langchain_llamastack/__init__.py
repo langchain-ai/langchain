@@ -26,6 +26,7 @@ __all__ = [
     # Core classes
     "LlamaStackEmbeddings",
     "LlamaStackSafety",
+    "SafetyResult",
     # Utility functions
     "check_llamastack_connection",
     "list_available_models",

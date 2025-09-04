@@ -18,7 +18,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -44,6 +43,9 @@ test = [
     "syrupy<5.0.0,>=4.0.2",
     "langchain-core",
     "langchain-tests",
+]
+test_integration = [
+    "httpx<1.0.0,>=0.27.0",
 ]
 lint = ["ruff<0.13,>=0.12.8"]
 typing = ["mypy<2.0,>=1.17.1", "langchain-core"]
