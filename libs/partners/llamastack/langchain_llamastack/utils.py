@@ -157,7 +157,7 @@ def check_llamastack_connection(
                         model_ids.append(model_id)
 
         # Sort models to prioritize most reliable ones
-        def model_priority(model_id):
+        def model_priority(model_id: str) -> int:
             """Sort key function to prioritize models."""
             # Fireworks/OpenAI/etc models first (more reliable routing)
             if not model_id.startswith("ollama/"):

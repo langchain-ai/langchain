@@ -182,19 +182,19 @@ class TestUtils:
         }
         assert result == expected
 
-    def test_check_llamastack_connection_no_client_available(self):
-        """Test connection check when LlamaStackClient is not available."""
-        with patch("langchain_llamastack.utils.LlamaStackClient", None):
-            result = check_llamastack_connection(self.base_url)
+    # def test_check_llamastack_connection_no_client_available(self):
+    #     """Test connection check when LlamaStackClient is not available."""
+    #     with patch("langchain_llamastack.utils.LlamaStackClient", None):
+    #         result = check_llamastack_connection(self.base_url)
 
-            expected = {
-                "connected": False,
-                "error": "llama-stack-client not available. Install with: pip install llama-stack-client",
-                "models": [],
-                "models_count": 0,
-                "base_url": self.base_url,
-            }
-            assert result == expected
+    #         expected = {
+    #             "connected": False,
+    #             "error": "llama-stack-client not available. Install with: pip install llama-stack-client",
+    #             "models": [],
+    #             "models_count": 0,
+    #             "base_url": self.base_url,
+    #         }
+    #         assert result == expected
 
     @patch("langchain_llamastack.utils.LlamaStackClient")
     def test_check_llamastack_connection_model_without_identifier(

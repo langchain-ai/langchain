@@ -146,7 +146,7 @@ class LlamaStackSafety:
             self.async_client = AsyncLlamaStackClient(**self._get_client_kwargs())
 
     def check_content_safety(
-        self, content: str, content_type: str = "text", **kwargs
+        self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
         """
         Check content safety using Llama Stack safety shields.
@@ -163,6 +163,10 @@ class LlamaStackSafety:
             self._initialize_client()
 
         try:
+            # Ensure client is not None
+            if self.client is None:
+                raise ValueError("LlamaStack client not initialized")
+
             # Use the safety.run_shield method
             response = self.client.safety.run_shield(
                 shield_type=self.shield_type,
@@ -209,7 +213,7 @@ class LlamaStackSafety:
             )
 
     def moderate_content(
-        self, content: str, content_type: str = "text", **kwargs
+        self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
         """
         Moderate content using Llama Stack moderation.
@@ -226,6 +230,10 @@ class LlamaStackSafety:
             self._initialize_client()
 
         try:
+            # Ensure client is not None
+            if self.client is None:
+                raise ValueError("LlamaStack client not initialized")
+
             # Use the moderations.create method
             response = self.client.moderations.create(
                 content=content, model=self.moderation_model, **kwargs
@@ -270,7 +278,7 @@ class LlamaStackSafety:
             )
 
     async def acheck_content_safety(
-        self, content: str, content_type: str = "text", **kwargs
+        self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
         """
         Async check content safety using Llama Stack safety shields.
@@ -287,6 +295,10 @@ class LlamaStackSafety:
             self._initialize_async_client()
 
         try:
+            # Ensure async client is not None
+            if self.async_client is None:
+                raise ValueError("LlamaStack async client not initialized")
+
             # Use the AsyncLlamaStackClient.safety.run_shield method
             response = await self.async_client.safety.run_shield(
                 shield_type=self.shield_type,
@@ -333,7 +345,7 @@ class LlamaStackSafety:
             )
 
     async def amoderate_content(
-        self, content: str, content_type: str = "text", **kwargs
+        self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
         """
         Async moderate content using Llama Stack moderation.
@@ -350,6 +362,10 @@ class LlamaStackSafety:
             self._initialize_async_client()
 
         try:
+            # Ensure async client is not None
+            if self.async_client is None:
+                raise ValueError("LlamaStack async client not initialized")
+
             # Use the AsyncLlamaStackClient.moderations.create method
             response = await self.async_client.moderations.create(
                 content=content, model=self.moderation_model, **kwargs

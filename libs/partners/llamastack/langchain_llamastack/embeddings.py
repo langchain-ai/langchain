@@ -79,8 +79,7 @@ class LlamaStackEmbeddings(Embeddings):
         """Setup the Llama Stack client."""
         # Initialize the client
         try:
-            client_kwargs = {"base_url": self.base_url}
-            self.client = LlamaStackClient(**client_kwargs)
+            self.client = LlamaStackClient(base_url=self.base_url)
         except Exception as e:
             raise ValueError(f"Failed to initialize Llama Stack client: {e}")
 
@@ -247,7 +246,7 @@ class LlamaStackEmbeddings(Embeddings):
             import numpy as np
 
             try:
-                from sklearn.metrics.pairwise import cosine_similarity
+                from sklearn.metrics.pairwise import cosine_similarity  # type: ignore
             except ImportError:
                 raise ImportError(
                     "scikit-learn is required for similarity search. "
