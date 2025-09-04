@@ -4,17 +4,16 @@ Advanced usage examples for LangChain Llama Stack integration.
 This example demonstrates more complex scenarios and integrations.
 """
 
-from typing import List
 
 from langchain.chains import ConversationChain, LLMChain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
+
 from langchain_llamastack import (
-    check_llamastack_status,
+    LlamaStackSafety,
     create_llamastack_llm,
     get_llamastack_models,
-    LlamaStackSafety,
 )
 
 
@@ -30,10 +29,12 @@ def advanced_prompt_example():
         prompt = ChatPromptTemplate.from_messages(
             [
                 SystemMessage(
-                    content="You are an expert AI researcher who explains concepts clearly and concisely."
+                    content="You are an expert AI researcher \
+                    who explains concepts clearly and concisely."
                 ),
                 HumanMessage(
-                    content="""Explain the concept of {topic} in the context of {context}.
+                    content="""Explain the concept of \
+                    {topic} in the context of {context}.
 
             Please structure your response as follows:
             1. Brief definition
@@ -105,7 +106,7 @@ def conversation_memory_example():
             )
 
         # Show conversation history
-        print(f"\nConversation History:")
+        print("\nConversation History:")
         print(f"Memory buffer: {len(memory.buffer.split())} words")
 
         return True
@@ -139,7 +140,8 @@ def safe_conversation_agent():
                 # Set system context
                 self.conversation.predict(
                     input="You are a helpful, harmless, and honest AI assistant. "
-                    "Always provide accurate information and decline inappropriate requests politely."
+                    "Always provide accurate information and\
+                     decline inappropriate requests politely."
                 )
 
             def chat(self, user_input: str) -> dict:
@@ -149,7 +151,8 @@ def safe_conversation_agent():
                 input_safety = self.safety.check_content(user_input)
                 if not input_safety.is_safe:
                     return {
-                        "response": "I can't process that request due to safety concerns.",
+                        "response": "I can't process that \
+                        request due to safety concerns.",
                         "status": "input_rejected",
                         "safety_info": input_safety.to_dict(),
                     }
@@ -162,7 +165,8 @@ def safe_conversation_agent():
                     output_safety = self.safety.check_content(response)
                     if not output_safety.is_safe:
                         return {
-                            "response": "I need to revise my response for safety reasons. Could you rephrase your question?",
+                            "response": "I need to revise my response\
+                             for safety reasons. Could you rephrase your question?",
                             "status": "output_filtered",
                             "safety_info": output_safety.to_dict(),
                         }
@@ -217,7 +221,7 @@ def safe_conversation_agent():
 
         # Show conversation summary
         summary = agent.get_conversation_summary()
-        print(f"\nConversation Summary:")
+        print("\nConversation Summary:")
         print(f"Total exchanges: {summary['total_exchanges']}")
         print(f"Memory size: {summary['memory_length']} characters")
 
@@ -351,7 +355,8 @@ def langchain_integration_showcase():
         print("\n2. Chat with System Message:")
         messages = [
             SystemMessage(
-                content="You are a helpful coding assistant. Provide concise, practical advice."
+                content="You are a helpful coding assistant. \
+                Provide concise, practical advice."
             ),
             HumanMessage(
                 content="How do I debug a Python script that's running slowly?"

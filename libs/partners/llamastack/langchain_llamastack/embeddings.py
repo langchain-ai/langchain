@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
-import httpx
 from langchain_core.embeddings import Embeddings
-from langchain_core.utils import get_from_dict_or_env
 
 try:
     from llama_stack_client import LlamaStackClient
@@ -91,7 +90,7 @@ class LlamaStackEmbeddings(Embeddings):
         """Return type of language model."""
         return "llamastack-embeddings"
 
-    def _embed_with_retry(self, texts: List[str]) -> List[List[float]]:
+    def _embed_with_retry(self, texts: list[str]) -> list[list[float]]:
         """Embed texts with retry logic."""
         for attempt in range(self.max_retries):
             try:
@@ -105,7 +104,7 @@ class LlamaStackEmbeddings(Embeddings):
                 logger.warning(f"Attempt {attempt + 1} failed, retrying: {e}")
         return []
 
-    def _embed_texts(self, texts: List[str]) -> List[List[float]]:
+    def _embed_texts(self, texts: list[str]) -> list[list[float]]:
         """Embed texts using LlamaStack OpenAI-compatible endpoint."""
         try:
             import httpx
@@ -138,7 +137,8 @@ class LlamaStackEmbeddings(Embeddings):
                 raise ValueError(f"No data in embeddings response: {result}")
 
             logger.info(
-                f"Successfully generated {len(embeddings)} embeddings via LlamaStack OpenAI endpoint"
+                f"Successfully generated {len(embeddings)} \
+                embeddings via LlamaStack OpenAI endpoint"
             )
             return embeddings
 
@@ -146,7 +146,7 @@ class LlamaStackEmbeddings(Embeddings):
             logger.error(f"LlamaStack embeddings failed: {e}")
             raise
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed a list of documents.
 
         Args:
@@ -165,7 +165,7 @@ class LlamaStackEmbeddings(Embeddings):
 
         return all_embeddings
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed a single query text.
 
         Args:
@@ -188,7 +188,7 @@ class LlamaStackEmbeddings(Embeddings):
             "request_timeout": self.request_timeout,
         }
 
-    def get_available_models(self) -> List[str]:
+    def get_available_models(self) -> list[str]:
         """Get list of available embedding models from Llama Stack."""
         try:
             from .utils import list_available_models
@@ -198,7 +198,7 @@ class LlamaStackEmbeddings(Embeddings):
             logger.error(f"Error fetching available embedding models: {e}")
             return []
 
-    def get_model_info(self, model_id: str = None) -> Dict[str, Any]:
+    def get_model_info(self, model_id: str = None) -> dict[str, Any]:
         """Get information about a specific embedding model."""
         model_to_check = model_id or self.model
         try:
@@ -231,8 +231,8 @@ class LlamaStackEmbeddings(Embeddings):
         return model_info.get("embedding_dimension")
 
     def similarity_search_by_vector(
-        self, embedding: List[float], documents: List[str], k: int = 4
-    ) -> List[tuple]:
+        self, embedding: list[float], documents: list[str], k: int = 4
+    ) -> list[tuple]:
         """
         Find the most similar documents to a given embedding vector.
 

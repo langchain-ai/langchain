@@ -3,7 +3,7 @@ Minimal utility functions for LlamaStack operations.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 try:
     from llama_stack_client import LlamaStackClient
@@ -17,7 +17,7 @@ def check_llamastack_connection(
     base_url: str = "http://localhost:8321",
     llamastack_api_key: Optional[str] = None,
     model_type: str = "inference",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Check LlamaStack connection and return status information.
 
     Args:
@@ -42,7 +42,7 @@ def check_llamastack_connection(
             "base_url": base_url,
             "models_count": 0,
             "models": [],
-            "error": "llama-stack-client not available. Install with: pip install llama-stack-client",
+            "error": "llama-stack-client not available. Install with: pip install llama-stack-client",  # noqa: E501
         }
 
     try:
@@ -174,7 +174,7 @@ def list_available_models(
     base_url: str = "http://localhost:8321",
     llamastack_api_key: Optional[str] = None,
     model_type: str = "inference",
-) -> List[str]:
+) -> list[str]:
     """List available models from LlamaStack.
 
     Args:

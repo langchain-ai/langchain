@@ -89,7 +89,7 @@ def get_detailed_model_info():
 
             return detailed_models, None
 
-        except Exception as e:
+        except Exception:
             # Fallback to simple model list
             return [{"identifier": model} for model in status["models"]], None
 
@@ -98,27 +98,15 @@ def get_detailed_model_info():
 
 
 def main():
-    print("🔍 LlamaStack Models by Category")
-    print("=" * 50)
 
     try:
         # Get detailed model information
         models, error = get_detailed_model_info()
 
         if error:
-            print(f"❌ Cannot connect to LlamaStack: {error}")
-            print()
-            print("💡 Make sure LlamaStack is running:")
-            print("  llama stack run ~/.llama/distributions/starter/starter-run.yaml")
             return 1
 
         if not models:
-            print("📭 No models found")
-            print()
-            print("💡 Possible reasons:")
-            print("  • No providers are configured")
-            print("  • Providers are configured but not running")
-            print("  • Environment variables not set")
             return 1
 
         # Classify models by type
@@ -130,12 +118,7 @@ def main():
             model_categories[category].append(model)
 
         # Display summary
-        total_models = len(models)
-        print(f"📊 Found {total_models} models total:")
-        print(f"   • {len(model_categories['inference'])} inference models")
-        print(f"   • {len(model_categories['embedding'])} embedding models")
-        print(f"   • {len(model_categories['safety'])} safety models")
-        print()
+        len(models)
 
         # Display each category
         for category, display_name, emoji in [
@@ -146,35 +129,28 @@ def main():
             models_in_category = model_categories[category]
 
             if models_in_category:
-                print(f"{emoji} {display_name}")
-                print("-" * len(f"{emoji} {display_name}"))
 
                 for i, model in enumerate(models_in_category, 1):
                     model_name = model["identifier"]
                     provider_id = model.get("provider_id", "unknown")
 
                     # Show basic info
-                    print(f"  {i}. {model_name}")
 
                     # Show additional details if available
                     if provider_id != "unknown":
-                        print(f"     Provider: {provider_id}")
+                        pass
 
                     if (
                         "provider_resource_id" in model
                         and model["provider_resource_id"]
                     ):
-                        print(f"     Resource ID: {model['provider_resource_id']}")
+                        pass
 
                     if "model_type" in model and model["model_type"]:
-                        print(f"     Type: {model['model_type']}")
+                        pass
 
-                print()
             else:
-                print(f"{emoji} {display_name}")
-                print("-" * len(f"{emoji} {display_name}"))
-                print("  No models found in this category")
-                print()
+                pass
 
         # Show provider summary
         providers = set()
@@ -184,15 +160,12 @@ def main():
                 providers.add(provider_id)
 
         if providers:
-            print("📡 Active Providers:")
             for provider in sorted(providers):
-                provider_models = [
+                [
                     m for m in models if m.get("provider_id") == provider
                 ]
-                print(f"  • {provider}: {len(provider_models)} models")
 
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    except Exception:
         return 1
 
     return 0

@@ -14,7 +14,8 @@ setup_guide = """
 # Quick Setup
 =============
 
-1. Install: pip install -e /path/to/langchain_llamastack_integration/langchain/libs/partners/llamastack
+1. Install: pip install -e /path/to/\
+langchain_llamastack_integration/langchain/libs/partners/llamastack
 
 2. Set provider environment variables (optional):
    export FIREWORKS_API_KEY="your-key"
@@ -23,7 +24,8 @@ setup_guide = """
 
 3. Start LlamaStack:
    export OLLAMA_URL=http://localhost:11434
-   uv run --with llama-stack==0.2.18 llama stack build --distro starter --image-type venv --run
+   uv run --with llama-stack==0.2.18 \
+   llama stack build --distro starter --image-type venv --run
 
 4. Verify: curl http://localhost:8321/v1/models
 """
@@ -169,6 +171,7 @@ def example_multi_turn():
 
     try:
         from langchain_core.messages import HumanMessage, SystemMessage
+
         from langchain_llamastack import create_llamastack_llm
 
         llm = create_llamastack_llm()

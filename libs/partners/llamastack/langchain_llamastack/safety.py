@@ -1,13 +1,9 @@
-"""Llama Stack safety and moderation integration."""
-
-import os
-from typing import Any, Dict, List, Optional
 """LlamaStack Safety integration for LangChain."""
 
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
-from llama_stack_client import AsyncLlamaStackClient, LlamaStackClient
+from llamastack_client import AsyncLlamaStackClient, LlamaStackClient
 from pydantic import BaseModel
 
 
@@ -15,10 +11,10 @@ class SafetyResult(BaseModel):
     """Result from safety check."""
 
     is_safe: bool
-    violations: List[Dict[str, Any]] = []
+    violations: list[dict[str, Any]] = []
     confidence_score: Optional[float] = None
     explanation: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: Optional[dict[str, Any]] = None
 
 
 class LlamaStackSafety:
@@ -26,13 +22,8 @@ class LlamaStackSafety:
     Llama Stack safety and moderation integration.
 
     Setup:
-        Install ``langchain-llama-stack`` and optionally set environment variables ``LLAMA_STACK_API_KEY`` or ``LLAMA_STACK_BASE_URL``.
-
-        .. code-block:: bash
-
-            pip install -U langchain-llama-stack
-            export LLAMA_STACK_BASE_URL="http://localhost:8321"  # Optional, defaults to localhost
-            export LLAMA_STACK_API_KEY="your-api-key"  # Optional, only needed for remote servers
+            export LLAMA_STACK_BASE_URL="http://localhost:8321"  # Optional
+            export LLAMA_STACK_API_KEY="your-api-key"  # Optional
 
     Key init args — safety params:
         shield_type: str
@@ -89,7 +80,7 @@ class LlamaStackSafety:
 
         .. code-block:: python
 
-            SafetyResult(is_safe=False, violations=[{'category': 'hate', 'severity': 'high'}])
+            SafetyResult(is_safe=False, violations=[{'category': 'hate'}])
 
     Async:
         .. code-block:: python
@@ -127,7 +118,7 @@ class LlamaStackSafety:
         self.client: Optional[LlamaStackClient] = None
         self.async_client: Optional[AsyncLlamaStackClient] = None
 
-    def _get_client_kwargs(self) -> Dict[str, Any]:
+    def _get_client_kwargs(self) -> dict[str, Any]:
         """Get common client kwargs."""
         client_kwargs = {
             "base_url": self.base_url,

@@ -62,9 +62,6 @@ def check_provider_environment_variables():
         },
     }
 
-    print("🔍 Provider Environment Variable Status")
-    print("=" * 50)
-    print()
 
     configured_count = 0
 
@@ -75,41 +72,23 @@ def check_provider_environment_variables():
         # Special handling for OLLAMA_URL (has default)
         if provider_id == "ollama" and not env_value:
             env_value = config["default"]
-            value_source = "(default)"
         elif env_value:
             # Mask API keys
             if "api_key" in env_var.lower() or "key" in env_var.lower():
-                value_source = "(set - API key masked)"
                 env_value = "***"
             else:
-                value_source = f"(set: {env_value})"
+                pass
         else:
-            value_source = "(not set)"
+            pass
 
-        status_icon = "✅" if env_value else "❌"
 
-        print(f"{status_icon} {provider_id.upper()}")
-        print(f"   Variable: {env_var}")
-        print(f"   Status: {value_source}")
-        print(f"   Description: {config['description']}")
-        print()
 
         if env_value:
             configured_count += 1
 
-    print(
-        f"📊 Summary: {configured_count}/{len(providers)} providers have environment variables set"
-    )
 
     if configured_count == 0:
-        print()
-        print("💡 Quick Setup:")
-        print("   export OLLAMA_URL=http://localhost:11434")
-        print("   export TOGETHER_API_KEY='your-api-key'")
-        print("   export FIREWORKS_API_KEY='your-api-key'")
-        print()
-        print("   Then restart LlamaStack:")
-        print("   llama stack run ~/.llama/distributions/starter/starter-run.yaml")
+        pass
 
     return configured_count > 0
 

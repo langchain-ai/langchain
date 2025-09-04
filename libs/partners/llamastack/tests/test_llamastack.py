@@ -3,12 +3,13 @@
 from unittest.mock import Mock, patch
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage
+
 from langchain_llamastack import (
+    LlamaStackSafety,
     check_llamastack_status,
     create_llamastack_llm,
     get_llamastack_models,
-    LlamaStackSafety,
 )
 
 
@@ -52,7 +53,7 @@ class TestFactoryFunctions:
         mock_llm = Mock()
         mock_chatopenaai.return_value = mock_llm
 
-        llm = create_llamastack_llm(model="llama3:70b", temperature=0.7)
+        create_llamastack_llm(model="llama3:70b", temperature=0.7)
 
         mock_chatopenaai.assert_called_once_with(
             base_url="http://localhost:8321/v1/openai/v1",
@@ -99,7 +100,7 @@ class TestFactoryFunctions:
         mock_chatopenaai.return_value = mock_llm
 
         # Request non-existent model with auto-fallback
-        llm = create_llamastack_llm(model="non-existent-model", auto_fallback=True)
+        create_llamastack_llm(model="non-existent-model", auto_fallback=True)
 
         # Should fallback to first available model
         mock_chatopenaai.assert_called_once_with(

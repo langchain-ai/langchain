@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Basic usage examples for LangChain Llama Stack integration - Updated for simplified approach."""
+"""Basic usage examples for LangChain Llama Stack integration \
+- Updated for simplified approach."""
 
 from langchain_llamastack import (
+    LlamaStackEmbeddings,
+    LlamaStackSafety,
     check_llamastack_status,
     create_llamastack_llm,
     get_llamastack_models,
-    LlamaStackEmbeddings,
-    LlamaStackSafety,
 )
 
 
@@ -173,7 +174,8 @@ def test_safety_checking():
     except Exception as e:
         print(f"Error: {e}")
         print(
-            "💡 Safety checking failed - this is expected if no shield models are configured"
+            "💡 Safety checking failed - \
+            this is expected if no shield models are configured"
         )
         return True  # Return success to not fail the overall test
 

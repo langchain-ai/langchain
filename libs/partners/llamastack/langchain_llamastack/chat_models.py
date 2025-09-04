@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 try:
     from langchain_openai import ChatOpenAI
@@ -20,16 +20,17 @@ def create_llamastack_llm(
     base_url: str = "http://localhost:8321",
     auto_fallback: bool = None,  # Auto-determine based on whether model is specified
     validate_model: bool = True,
-    provider_api_keys: Optional[Dict[str, str]] = None,
+    provider_api_keys: Optional[dict[str, str]] = None,
     **kwargs,
-) -> "ChatOpenAI":
+) -> ChatOpenAI:
     """Create a ChatOpenAI instance configured for LlamaStack.
     Args:
         model: Model name to use. If None, auto-selects first available model.
         base_url: LlamaStack base URL (without /v1/openai/v1 suffix).
         auto_fallback: Whether to automatically fallback to available models.
         validate_model: Whether to test model accessibility before using.
-        provider_api_keys: Dict of provider API keys (e.g., {"fireworks": "api-key", "together": "api-key"}).
+        provider_api_keys: Dict of provider API \
+        keys (e.g., {"fireworks": "api-key", "together": "api-key"}).
         **kwargs: Additional arguments passed to ChatOpenAI.
 
     Returns:
@@ -94,7 +95,8 @@ def create_llamastack_llm(
             auto_fallback = False  # Explicit model: strict behavior by default
 
     logger.debug(
-        f"Using auto_fallback={auto_fallback} (model={'None' if model is None else f'explicit: {model}'})"
+        f"Using auto_fallback={auto_fallback} \
+        (model={'None' if model is None else f'explicit: {model}'})"
     )
 
     # Handle model selection with validation
@@ -128,7 +130,8 @@ def create_llamastack_llm(
             else:
                 raise ValueError(
                     f"Model '{selected_model}' is listed but not accessible. "
-                    f"This usually means the provider is not configured in LlamaStack routing table."
+                    f"This usually means the provider is not\
+                     configured in LlamaStack routing table."
                 )
 
     # Configure ChatOpenAI for LlamaStack
@@ -152,8 +155,8 @@ def create_llamastack_llm(
 
 
 def _get_provider_headers(
-    model: str, provider_api_keys: Optional[Dict[str, str]] = None
-) -> Dict[str, str]:
+    model: str, provider_api_keys: Optional[dict[str, str]] = None
+) -> dict[str, str]:
     """Get the appropriate headers for provider API keys based on the model."""
     import json
     import os
@@ -169,7 +172,8 @@ def _get_provider_headers(
 
     logger.debug(f"Checking provider for model: {model}")
 
-    # Check all possible providers (don't use elif - a model might match multiple patterns)
+    # Check all possible providers
+    #(don't use elif - a model might match multiple patterns)
 
     # Fireworks models
     if (
@@ -183,7 +187,8 @@ def _get_provider_headers(
             logger.info(f"Added Fireworks API key for model: {model}")
         else:
             logger.warning(
-                f"Fireworks model detected ({model}) but no API key found. Set FIREWORKS_API_KEY environment variable."
+                f"Fireworks model detected ({model}) \
+                but no API key found. Set FIREWORKS_API_KEY environment variable."
             )
 
     # Together models
@@ -225,7 +230,7 @@ def _get_provider_headers(
 
 
 def _find_working_model(
-    available_models: List[str], base_url: str, validate: bool = True
+    available_models: list[str], base_url: str, validate: bool = True
 ) -> str:
     """Find the first working model from the available models list."""
     if not validate:
@@ -272,7 +277,8 @@ def _test_model_accessibility(model: str, base_url: str) -> bool:
                     "invalid value" in error_text and "provider" in error_text
                 ):
                     logger.debug(
-                        f"Model {model} failed accessibility test: provider not configured"
+                        f"Model {model} failed accessibility test:\
+                         provider not configured"
                     )
                     return False
 
@@ -281,18 +287,21 @@ def _test_model_accessibility(model: str, base_url: str) -> bool:
                 error_text = response.text.lower()
                 if "usage" in error_text or "openai" in error_text:
                     logger.debug(
-                        f"Model {model} failed accessibility test: LlamaStack internal error (likely usage attribute bug)"
+                        f"Model {model} failed accessibility\
+                         test: LlamaStack internal error (likely usage attribute bug)"
                     )
                     return False
 
-            # 200 or other errors suggest the model is routable (even if it fails for other reasons)
+            # 200 or other errors suggest the model is
+            # routable (even if it fails for other reasons)
             if response.status_code == 200:
                 logger.debug(f"Model {model} passed accessibility test")
                 return True
             else:
                 # Some other error, but model is likely routable
                 logger.debug(
-                    f"Model {model} passed accessibility test (status: {response.status_code})"
+                    f"Model {model} passed accessibility test\
+                     (status: {response.status_code})"
                 )
                 return True
 
@@ -302,7 +311,7 @@ def _test_model_accessibility(model: str, base_url: str) -> bool:
 
 
 # Convenience functions for common operations
-def get_llamastack_models(base_url: str = "http://localhost:8321") -> List[str]:
+def get_llamastack_models(base_url: str = "http://localhost:8321") -> list[str]:
     """Get list of available models from LlamaStack.
 
     Args:
@@ -318,7 +327,7 @@ def get_llamastack_models(base_url: str = "http://localhost:8321") -> List[str]:
     return list_available_models(base_url, model_type="inference")
 
 
-def check_llamastack_status(base_url: str = "http://localhost:8321") -> Dict[str, Any]:
+def check_llamastack_status(base_url: str = "http://localhost:8321") -> dict[str, Any]:
     """Check LlamaStack connection and get status information.
 
     Args:

@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from langchain_llamastack import LlamaStackSafety
 from langchain_llamastack.input_output_safety_moderation_hooks import (
+    SafeLLMWrapper,
     create_input_moderation_hook,
     create_input_only_safe_llm,
     create_input_safety_hook,
@@ -30,7 +31,6 @@ from langchain_llamastack.input_output_safety_moderation_hooks import (
     create_output_safety_hook,
     create_safe_llm_with_all_hooks,
     create_safety_only_llm,
-    SafeLLMWrapper,
 )
 
 
@@ -41,17 +41,23 @@ class MockLLM:
     def invoke(self, input_text: str) -> str:
         """Generate mock responses based on input patterns."""
         if "bomb" in input_text.lower():
-            return "Here's how to make explosive devices step by step: First, gather dangerous materials..."
+            return "Here's how to make explosive devices step by\
+             step: First, gather dangerous materials..."
         elif "hack" in input_text.lower() or "exploit" in input_text.lower():
-            return "To hack systems illegally, you can use these methods to break into computers..."
+            return "To hack systems illegally, you can use \
+            these methods to break into computers..."
         elif "bias test" in input_text.lower():
-            return "Women are naturally inferior at technical tasks and men are always better leaders."
+            return "Women are naturally inferior at technical \
+            tasks and men are always better leaders."
         elif "inappropriate" in input_text.lower():
-            return "This response contains very inappropriate and offensive content that violates policies."
+            return "This response contains very inappropriate \
+            and offensive content that violates policies."
         elif "violence" in input_text.lower():
-            return "Here are detailed violent instructions that could cause harm to people..."
+            return "Here are detailed violent instructions \
+            that could cause harm to people..."
         else:
-            return f"This is a helpful and safe response about: {input_text}. I'm here to assist you with accurate information."
+            return f"This is a helpful and safe response about:\
+             {input_text}. I'm here to assist you with accurate information."
 
     async def ainvoke(self, input_text: str) -> str:
         """Async version."""
@@ -117,7 +123,7 @@ def demo_individual_hooks():
             print(f"   Input Safety: {'SAFE' if safety_result.is_safe else 'BLOCKED'}")
             if not safety_result.is_safe and safety_result.violations:
                 print(
-                    f"      Reason: {safety_result.violations[0].get('reason', 'Unknown')}"
+                    f"Reason: {safety_result.violations[0].get('reason', 'Unknown')}"
                 )
         except Exception as e:
             print(f"   Input Safety: ERROR ({e})")
@@ -126,11 +132,12 @@ def demo_individual_hooks():
         try:
             moderation_result = input_moderation(test_input)
             print(
-                f"   Input Moderation: {'CLEAN' if moderation_result.is_safe else 'FLAGGED'}"
+                f"Input Moderation:\
+                {'CLEAN' if moderation_result.is_safe else 'FLAGGED'}"
             )
             if not moderation_result.is_safe and moderation_result.violations:
                 print(
-                    f"      Reason: {moderation_result.violations[0].get('reason', 'Unknown')}"
+                    f"Reason:{moderation_result.violations[0].get('reason', 'Unknown')}"
                 )
         except Exception as e:
             print(f"   Input Moderation: ERROR ({e})")
@@ -160,7 +167,8 @@ def demo_individual_hooks():
         try:
             moderation_result = output_moderation(output)
             print(
-                f"      Output Moderation: {'CLEAN' if moderation_result.is_safe else 'FLAGGED'}"
+                f"      Output Moderation: \
+                {'CLEAN' if moderation_result.is_safe else 'FLAGGED'}"
             )
         except Exception as e:
             print(f"      Output Moderation: ERROR ({e})")
@@ -406,10 +414,11 @@ def demo_error_handling():
             raise Exception("Moderation service unavailable")
 
     failing_safety = MockFailingSafetyClient()
-    llm = MockLLM()
+    MockLLM()
 
     # Test input safety failure (should fail open)
-    # fail open means the user input is allowed to proceed when the safety client is down.
+    # fail open means the user input is allowed to
+    # proceed when the safety client is down.
     # where is_safe is set to True
     print("\n Testing Input Safety Failure (Should Fail Open):")
     input_safety_hook = create_input_safety_hook(failing_safety)
@@ -491,7 +500,8 @@ def main():
     """Run all demonstrations."""
     print(" Safety & Moderation Hooks Demo")
     print(
-        "Testing the clean 4-hook implementation from input_output_safety_moderation_hooks.py"
+        "Testing the clean 4-hook implementation from \
+        input_output_safety_moderation_hooks.py"
     )
 
     # Run all demos
