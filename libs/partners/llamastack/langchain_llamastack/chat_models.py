@@ -6,7 +6,7 @@ import logging
 from typing import Any, Optional
 
 try:
-    from langchain_openai import ChatOpenAI
+    from langchain_openai import ChatOpenAI  # type: ignore
 except ImportError:
     ChatOpenAI = None
 
@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 
 
 def create_llamastack_llm(
-    model: str = None,
+    model: Optional[str] = None,
     base_url: str = "http://localhost:8321",
-    auto_fallback: bool = None,  # Auto-determine based on whether model is specified
+    auto_fallback: Optional[bool] = None,  # Auto-determine based on whether model is specified
     validate_model: bool = True,
     provider_api_keys: Optional[dict[str, str]] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> ChatOpenAI:
     """Create a ChatOpenAI instance configured for LlamaStack.
     Args:

@@ -5,6 +5,7 @@ Comprehensive script to list LlamaStack available models grouped by type
 
 import os
 import sys
+from typing import Any, Optional
 
 # Handle imports for both direct execution and module import
 try:
@@ -13,10 +14,16 @@ try:
 except ImportError:
     # When run directly - add current directory to path and import
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from utils import check_llamastack_connection
+    try:
+        from utils import check_llamastack_connection  # type: ignore
+    except ImportError:
+        # If utils is still not found, define a minimal version
+        def check_llamastack_connection() -> dict[str, Any]:
+            """Fallback function when utils module is not available."""
+            return {"connected": False, "error": "Utils module not available"}
 
 
-def classify_model(model_name):
+def classify_model(model_name: str) -> str:
     """Classify model based on its name pattern."""
     model_lower = model_name.lower()
 
@@ -58,7 +65,7 @@ def classify_model(model_name):
         return "inference"
 
 
-def get_detailed_model_info():
+def get_detailed_model_info() -> tuple[Optional[list[dict[str, Any]]], Optional[str]]:
     """Get detailed model information from LlamaStack."""
     try:
         # Check connection first
@@ -97,7 +104,7 @@ def get_detailed_model_info():
         return None, str(e)
 
 
-def main():
+def main() -> int:
     try:
         # Get detailed model information
         models, error = get_detailed_model_info()

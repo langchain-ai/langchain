@@ -8,7 +8,7 @@ from typing import Any, Optional
 try:
     from llama_stack_client import LlamaStackClient
 except ImportError:
-    LlamaStackClient = None
+    LlamaStackClient = None  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -39,19 +39,20 @@ def check_llamastack_connection(
     if LlamaStackClient is None:
         return {
             "connected": False,
-            "base_url": base_url,
-            "models_count": 0,
+            "error": "llama-stack-client not available. Install with: pip install llama-stack-client",
             "models": [],
-            "error": "llama-stack-client not available. Install with: pip install llama-stack-client",  # noqa: E501
+            "models_count": 0,
+            "base_url": base_url,
         }
 
     try:
         # Create temporary client to check models
-        client_kwargs = {"base_url": base_url}
         if llamastack_api_key:
-            client_kwargs["api_key"] = llamastack_api_key
-
-        temp_client = LlamaStackClient(**client_kwargs)
+            temp_client = LlamaStackClient(
+                base_url=base_url, api_key=llamastack_api_key
+            )
+        else:
+            temp_client = LlamaStackClient(base_url=base_url)
         models = temp_client.models.list()
 
         # Filter models by type
@@ -60,8 +61,14 @@ def check_llamastack_connection(
         else:
             model_ids = []
             for model in models:
-                model_id = model.identifier
-                model_type_attr = getattr(model, "model_type", None)
+                try:
+                    model_id = getattr(model, "identifier", None)
+                    if not model_id:
+                        continue
+                    model_type_attr = getattr(model, "model_type", None)
+                except AttributeError:
+                    # Skip models that don't have required attributes
+                    continue
 
                 # Filter based on model type or common naming patterns
                 if model_type == "inference":
@@ -93,12 +100,21 @@ def check_llamastack_connection(
                         continue
 
                     # Include models that are likely for chat/inference
-                    if (
-                        model_type_attr == "text_completion"
-                        or model_type_attr == "chat_completion"
-                        or model_type_attr
-                        is None  # Default assumption for untyped models
-                        or any(
+                    model_type_lower = (
+                        model_type_attr.lower() if model_type_attr else None
+                    )
+
+                    # Check if it matches inference type
+                    type_matches = (
+                        model_type_lower == "inference"
+                        or model_type_lower == "text_completion"
+                        or model_type_lower == "chat_completion"
+                    )
+
+                    # Check if it matches common inference patterns (only if no model_type)
+                    pattern_matches = (
+                        model_type_attr is None  # Only for models without explicit type
+                        and any(
                             pattern in model_id.lower()
                             for pattern in [
                                 "instruct",  # Most important pattern
@@ -116,11 +132,16 @@ def check_llamastack_connection(
                                 "turbo",
                             ]
                         )
-                    ):
+                    )
+
+                    if type_matches or pattern_matches:
                         model_ids.append(model_id)
                 elif model_type == "embedding":
                     # Include models that are for embeddings
-                    if model_type_attr == "embedding" or any(
+                    model_type_lower = (
+                        model_type_attr.lower() if model_type_attr else None
+                    )
+                    if model_type_lower == "embedding" or any(
                         pattern in model_id.lower()
                         for pattern in [
                             "embed",
@@ -154,19 +175,18 @@ def check_llamastack_connection(
 
         return {
             "connected": True,
-            "base_url": base_url,
-            "models_count": len(model_ids),
             "models": model_ids,
-            "error": None,
+            "models_count": len(model_ids),
+            "base_url": base_url,
         }
     except Exception as e:
         logger.error(f"Failed to connect to LlamaStack at {base_url}: {e}")
         return {
             "connected": False,
-            "base_url": base_url,
-            "models_count": 0,
-            "models": [],
             "error": str(e),
+            "models": [],
+            "models_count": 0,
+            "base_url": base_url,
         }
 
 

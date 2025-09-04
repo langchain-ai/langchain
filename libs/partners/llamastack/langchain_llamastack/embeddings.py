@@ -75,7 +75,7 @@ class LlamaStackEmbeddings(Embeddings):
         # Setup the client
         self._setup_client()
 
-    def _setup_client(self):
+    def _setup_client(self) -> None:
         """Setup the Llama Stack client."""
         # Initialize the client
         try:
@@ -197,7 +197,7 @@ class LlamaStackEmbeddings(Embeddings):
             logger.error(f"Error fetching available embedding models: {e}")
             return []
 
-    def get_model_info(self, model_id: str = None) -> dict[str, Any]:
+    def get_model_info(self, model_id: Optional[str] = None) -> dict[str, Any]:
         """Get information about a specific embedding model."""
         model_to_check = model_id or self.model
         try:
@@ -245,7 +245,14 @@ class LlamaStackEmbeddings(Embeddings):
         """
         try:
             import numpy as np
-            from sklearn.metrics.pairwise import cosine_similarity
+
+            try:
+                from sklearn.metrics.pairwise import cosine_similarity
+            except ImportError:
+                raise ImportError(
+                    "scikit-learn is required for similarity search. "
+                    "Install with: pip install scikit-learn"
+                )
 
             # Get embeddings for all documents
             doc_embeddings = self.embed_documents(documents)

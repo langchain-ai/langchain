@@ -3,7 +3,15 @@
 import os
 from typing import Any, Optional
 
-from llamastack_client import AsyncLlamaStackClient, LlamaStackClient
+try:
+    from llamastack_client import (  # type: ignore
+        AsyncLlamaStackClient,
+        LlamaStackClient,
+    )
+except ImportError:
+    AsyncLlamaStackClient = None  # type: ignore
+    LlamaStackClient = None  # type: ignore
+
 from pydantic import BaseModel
 
 
@@ -95,8 +103,8 @@ class LlamaStackSafety:
 
     def __init__(
         self,
-        base_url: str = None,
-        api_key: str = None,
+        base_url: Optional[str] = None,
+        api_key: Optional[str] = None,
         shield_type: str = "llama_guard",
         moderation_model: Optional[str] = None,
         timeout: Optional[float] = 30.0,
@@ -127,12 +135,12 @@ class LlamaStackSafety:
             client_kwargs["api_key"] = self.api_key
         return client_kwargs
 
-    def _initialize_client(self):
+    def _initialize_client(self) -> None:
         """Initialize the Llama Stack client."""
         if self.client is None:
             self.client = LlamaStackClient(**self._get_client_kwargs())
 
-    def _initialize_async_client(self):
+    def _initialize_async_client(self) -> None:
         """Initialize the async Llama Stack client."""
         if self.async_client is None:
             self.async_client = AsyncLlamaStackClient(**self._get_client_kwargs())
@@ -151,7 +159,7 @@ class LlamaStackSafety:
         Returns:
             SafetyResult with safety assessment
         """
-        if not self.client:
+        if self.client is None:
             self._initialize_client()
 
         try:
@@ -214,7 +222,7 @@ class LlamaStackSafety:
         Returns:
             SafetyResult with moderation assessment
         """
-        if not self.client:
+        if self.client is None:
             self._initialize_client()
 
         try:

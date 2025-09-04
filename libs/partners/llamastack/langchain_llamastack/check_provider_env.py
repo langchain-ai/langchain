@@ -10,7 +10,7 @@ Uses hardcoded provider mapping - no API calls required.
 import os
 
 
-def check_provider_environment_variables():
+def check_provider_environment_variables() -> bool:
     """Simple check of provider environment variables."""
 
     # Standard mapping based on common LlamaStack provider patterns

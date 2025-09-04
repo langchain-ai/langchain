@@ -10,9 +10,10 @@ Simple, focused implementation with 4 essential hooks:
 All hooks use LlamaStack's run_shield API for accurate, context-aware checking.
 """
 
-from typing import Callable
+from typing import Any, Callable, Optional
 
 from langchain_core.runnables import Runnable
+from langchain_core.runnables.config import RunnableConfig
 
 from .safety import SafetyResult
 
@@ -24,13 +25,13 @@ class SafeLLMWrapper(Runnable):
     Flow: User Input → Input Hooks → LLM → Output Hooks → Safe Response
     """
 
-    def __init__(self, llm, safety_client):
+    def __init__(self, llm: Any, safety_client: Any) -> None:
         self.llm = llm
         self.safety_client = safety_client
-        self.input_safety_hook: Callable[[str], SafetyResult] = None
-        self.input_moderation_hook: Callable[[str], SafetyResult] = None
-        self.output_safety_hook: Callable[[str], SafetyResult] = None
-        self.output_moderation_hook: Callable[[str], SafetyResult] = None
+        self.input_safety_hook: Optional[Callable[[str], SafetyResult]] = None
+        self.input_moderation_hook: Optional[Callable[[str], SafetyResult]] = None
+        self.output_safety_hook: Optional[Callable[[str], SafetyResult]] = None
+        self.output_moderation_hook: Optional[Callable[[str], SafetyResult]] = None
 
     def set_input_safety_hook(self, hook: Callable[[str], SafetyResult]) -> None:
         """Set input safety hook (checks user input before LLM)."""
@@ -48,19 +49,19 @@ class SafeLLMWrapper(Runnable):
         """Set output moderation hook (moderates model output after LLM)."""
         self.output_moderation_hook = hook
 
-    def invoke(self, input_text: str, config=None) -> str:
+    def invoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> str:
         """Run LLM with safety and moderation checks."""
 
         # Extract string input if needed
-        if isinstance(input_text, dict):
-            user_input = (
-                input_text.get("input") or input_text.get("question") or str(input_text)
-            )
+        if isinstance(input, dict):
+            user_input = input.get("input") or input.get("question") or str(input)
         else:
-            user_input = str(input_text)
+            user_input = str(input)
 
         # 1. INPUT SAFETY CHECK
-        if self.input_safety_hook:
+        if self.input_safety_hook is not None:
             input_safety_result = self.input_safety_hook(user_input)
             if not input_safety_result.is_safe:
                 violations = [
@@ -70,7 +71,7 @@ class SafeLLMWrapper(Runnable):
                 return f"Input blocked by safety system: {'; '.join(violations)}"
 
         # 2. INPUT MODERATION CHECK
-        if self.input_moderation_hook:
+        if self.input_moderation_hook is not None:
             input_moderation_result = self.input_moderation_hook(user_input)
             if not input_moderation_result.is_safe:
                 violations = [
@@ -93,7 +94,7 @@ class SafeLLMWrapper(Runnable):
             return f"LLM execution failed: {str(e)}"
 
         # 4. OUTPUT SAFETY CHECK
-        if self.output_safety_hook:
+        if self.output_safety_hook is not None:
             output_safety_result = self.output_safety_hook(model_output)
             if not output_safety_result.is_safe:
                 violations = [
@@ -103,7 +104,7 @@ class SafeLLMWrapper(Runnable):
                 return f"Output blocked by safety system: {'; '.join(violations)}"
 
         # 5. OUTPUT MODERATION CHECK
-        if self.output_moderation_hook:
+        if self.output_moderation_hook is not None:
             output_moderation_result = self.output_moderation_hook(model_output)
             if not output_moderation_result.is_safe:
                 violations = [
@@ -114,19 +115,19 @@ class SafeLLMWrapper(Runnable):
 
         return model_output
 
-    async def ainvoke(self, input_text: str, config=None) -> str:
+    async def ainvoke(
+        self, input: Any, config: Optional[RunnableConfig] = None, **kwargs: Any
+    ) -> str:
         """Async version of invoke."""
 
         # Extract string input if needed
-        if isinstance(input_text, dict):
-            user_input = (
-                input_text.get("input") or input_text.get("question") or str(input_text)
-            )
+        if isinstance(input, dict):
+            user_input = input.get("input") or input.get("question") or str(input)
         else:
-            user_input = str(input_text)
+            user_input = str(input)
 
         # 1. INPUT SAFETY CHECK
-        if self.input_safety_hook:
+        if self.input_safety_hook is not None:
             input_safety_result = self.input_safety_hook(user_input)
             if not input_safety_result.is_safe:
                 violations = [
@@ -136,7 +137,7 @@ class SafeLLMWrapper(Runnable):
                 return f"Input blocked by safety system: {'; '.join(violations)}"
 
         # 2. INPUT MODERATION CHECK
-        if self.input_moderation_hook:
+        if self.input_moderation_hook is not None:
             input_moderation_result = self.input_moderation_hook(user_input)
             if not input_moderation_result.is_safe:
                 violations = [
@@ -159,7 +160,7 @@ class SafeLLMWrapper(Runnable):
             return f"LLM execution failed: {str(e)}"
 
         # 4. OUTPUT SAFETY CHECK
-        if self.output_safety_hook:
+        if self.output_safety_hook is not None:
             output_safety_result = self.output_safety_hook(model_output)
             if not output_safety_result.is_safe:
                 violations = [
@@ -169,7 +170,7 @@ class SafeLLMWrapper(Runnable):
                 return f"Output blocked by safety system: {'; '.join(violations)}"
 
         # 5. OUTPUT MODERATION CHECK
-        if self.output_moderation_hook:
+        if self.output_moderation_hook is not None:
             output_moderation_result = self.output_moderation_hook(model_output)
             if not output_moderation_result.is_safe:
                 violations = [
@@ -186,7 +187,7 @@ class SafeLLMWrapper(Runnable):
 # =============================================================================
 
 
-def create_input_safety_hook(safety_client) -> Callable[[str], SafetyResult]:
+def create_input_safety_hook(safety_client: Any) -> Callable[[str], SafetyResult]:
     """
     Create input safety hook using LlamaStack's run_shield API.
 
@@ -216,7 +217,7 @@ def create_input_safety_hook(safety_client) -> Callable[[str], SafetyResult]:
     return check_input_safety
 
 
-def create_input_moderation_hook(safety_client) -> Callable[[str], SafetyResult]:
+def create_input_moderation_hook(safety_client: Any) -> Callable[[str], SafetyResult]:
     """
     Create input moderation hook using LlamaStack's moderation API.
 
@@ -244,7 +245,7 @@ def create_input_moderation_hook(safety_client) -> Callable[[str], SafetyResult]
     return moderate_input
 
 
-def create_output_safety_hook(safety_client) -> Callable[[str], SafetyResult]:
+def create_output_safety_hook(safety_client: Any) -> Callable[[str], SafetyResult]:
     """
     Create output safety hook using LlamaStack's run_shield API.
 
@@ -274,7 +275,7 @@ def create_output_safety_hook(safety_client) -> Callable[[str], SafetyResult]:
     return check_output_safety
 
 
-def create_output_moderation_hook(safety_client) -> Callable[[str], SafetyResult]:
+def create_output_moderation_hook(safety_client: Any) -> Callable[[str], SafetyResult]:
     """
     Create output moderation hook using LlamaStack's moderation API.
 
@@ -309,7 +310,7 @@ def create_output_moderation_hook(safety_client) -> Callable[[str], SafetyResult
 # =============================================================================
 
 
-def create_safe_llm_with_all_hooks(llm, safety_client) -> SafeLLMWrapper:
+def create_safe_llm_with_all_hooks(llm: Any, safety_client: Any) -> SafeLLMWrapper:
     """
     Create a safe LLM with all 4 hooks enabled.
 
@@ -336,7 +337,7 @@ def create_safe_llm_with_all_hooks(llm, safety_client) -> SafeLLMWrapper:
     return safe_llm
 
 
-def create_input_only_safe_llm(llm, safety_client) -> SafeLLMWrapper:
+def create_input_only_safe_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
     """
     Create a safe LLM with only input hooks (safety + moderation).
 
@@ -359,7 +360,7 @@ def create_input_only_safe_llm(llm, safety_client) -> SafeLLMWrapper:
     return safe_llm
 
 
-def create_output_only_safe_llm(llm, safety_client) -> SafeLLMWrapper:
+def create_output_only_safe_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
     """
     Create a safe LLM with only output hooks (safety + moderation).
 
@@ -382,7 +383,7 @@ def create_output_only_safe_llm(llm, safety_client) -> SafeLLMWrapper:
     return safe_llm
 
 
-def create_safety_only_llm(llm, safety_client) -> SafeLLMWrapper:
+def create_safety_only_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
     """
     Create a safe LLM with only safety hooks (input + output).
 
@@ -405,7 +406,7 @@ def create_safety_only_llm(llm, safety_client) -> SafeLLMWrapper:
     return safe_llm
 
 
-def create_moderation_only_llm(llm, safety_client) -> SafeLLMWrapper:
+def create_moderation_only_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
     """
     Create a safe LLM with only moderation hooks (input + output).
 

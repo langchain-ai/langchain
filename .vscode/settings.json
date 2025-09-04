@@ -24,7 +24,7 @@
       "source.organizeImports.ruff": "explicit",
       "source.fixAll": "explicit"
     },
-    "editor.defaultFormatter": "charliermarsh.ruff"
+    "editor.defaultFormatter": "nuclide.arclint"
   },
   "editor.rulers": [
     88
