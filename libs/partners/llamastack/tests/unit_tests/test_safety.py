@@ -1,10 +1,7 @@
 """Unit tests for LlamaStack safety module."""
 
 import os
-from typing import Any, Optional
 from unittest.mock import Mock, patch
-
-import pytest
 
 from langchain_llamastack.safety import LlamaStackSafety, SafetyResult
 

@@ -1,9 +1,6 @@
 """Unit tests for input/output safety moderation hooks."""
 
-from typing import Any, Callable, Optional
-from unittest.mock import Mock, patch
-
-import pytest
+from unittest.mock import Mock
 
 from langchain_llamastack.input_output_safety_moderation_hooks import (
     create_input_moderation_hook,
@@ -543,7 +540,8 @@ class TestFactoryFunctions:
         )
         safe_llm.invoke("Test input")
 
-        # Verify execution order: input safety -> input moderation -> LLM -> output safety -> output moderation
+        # Verify execution order: input safety -> input moderation
+        # -> LLM -> output safety -> output moderation
         expected_order = [
             "safety_Test input",  # Input safety
             "moderation_Test input",  # Input moderation
