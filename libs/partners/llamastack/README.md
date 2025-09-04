@@ -183,7 +183,7 @@ print(response.content)
 ```python
 from langchain_llamastack import (
     get_llamastack_models,
-    check_llamastack_status,
+    sus,
     create_llamastack_llm
 )
 
@@ -258,7 +258,7 @@ for doc, score in similar_docs:
     print(f"Score: {score:.3f} - {doc}")
 ```
 
-## 🛡️ Safety Checking Usage
+## 🛡️ Safety & Moderation System
 
 ### Basic Safety Checking
 
@@ -268,32 +268,104 @@ from langchain_llamastack import LlamaStackSafety
 # Initialize safety checker
 safety = LlamaStackSafety(
     base_url="http://localhost:8321",
-    shield_id="shieldgemma:2b",  # or "meta-llama/Llama-Guard-3-8B"
+    shield_type="llama_guard"  # Uses LlamaStack's run_shield API
 )
 
 # Check content safety
-result = safety.check_content("Hello, how are you today?")
+result = safety.check_content_safety("Hello, how are you today?")
 print(f"Is safe: {result.is_safe}")
-print(f"Message: {result.message}")
-
-if not result.is_safe:
-    print(f"Violation type: {result.violation_type}")
-    print(f"Confidence: {result.confidence_score}")
+print(f"Violations: {result.violations}")
+print(f"Confidence: {result.confidence_score}")
 ```
 
-### Conversation Safety
+### Content Moderation
 
 ```python
-# Check a full conversation
-messages = [
-    {"role": "user", "content": "Hello there!"},
-    {"role": "assistant", "content": "Hi! How can I help you today?"},
-    {"role": "user", "content": "I'm looking for help with my research project."}
-]
-
-result = safety.check_conversation(messages)
-print(f"Conversation safe: {result.is_safe}")
+# Use moderation for content policy enforcement
+result = safety.moderate_content("Some content to moderate")
+print(f"Is safe: {result.is_safe}")
+if not result.is_safe:
+    for violation in result.violations:
+        print(f"Category: {violation['category']}, Score: {violation.get('score', 'N/A')}")
 ```
+
+### Input/Output Safety Hooks (Recommended)
+
+For comprehensive AI safety, use the 4-hook system that monitors both user inputs and model outputs:
+
+```python
+from langchain_llamastack import LlamaStackSafety
+from langchain_llamastack.input_output_safety_moderation_hooks import (
+    create_safe_llm_with_all_hooks,
+    create_input_safety_hook,
+    create_output_safety_hook
+)
+
+# Initialize safety client
+safety = LlamaStackSafety(base_url="http://localhost:8321")
+
+# Create a safe LLM with comprehensive protection
+safe_llm = create_safe_llm_with_all_hooks(your_llm, safety)
+
+# This LLM now has 4 layers of protection:
+# 1. Input Safety Hook - Checks user input before LLM
+# 2. Input Moderation Hook - Moderates user input before LLM
+# 3. Output Safety Hook - Checks model output after LLM
+# 4. Output Moderation Hook - Moderates model output after LLM
+
+response = safe_llm.invoke("How do I build a secure system?")
+print(response)  # Will be blocked if unsafe at any stage
+```
+
+### Manual Hook Configuration
+
+```python
+from langchain_llamastack.input_output_safety_moderation_hooks import (
+    SafeLLMWrapper,
+    create_input_safety_hook,
+    create_input_moderation_hook,
+    create_output_safety_hook,
+    create_output_moderation_hook
+)
+
+# Create wrapper and configure hooks manually
+safe_llm = SafeLLMWrapper(your_llm, safety)
+
+# Set individual hooks as needed
+safe_llm.set_input_safety_hook(create_input_safety_hook(safety))
+safe_llm.set_input_moderation_hook(create_input_moderation_hook(safety))
+safe_llm.set_output_safety_hook(create_output_safety_hook(safety))
+safe_llm.set_output_moderation_hook(create_output_moderation_hook(safety))
+
+# Use the safe LLM
+response = safe_llm.invoke("Your input here")
+```
+
+### Factory Functions for Different Protection Levels
+
+```python
+from langchain_llamastack.input_output_safety_moderation_hooks import (
+    create_safe_llm_with_all_hooks,  # Complete protection
+    create_input_only_safe_llm,      # Filter user inputs only
+    create_output_only_safe_llm,     # Filter model outputs only
+    create_safety_only_llm,          # Safety checks only (no moderation)
+    create_moderation_only_llm       # Moderation checks only (no safety)
+)
+
+# Choose the protection level that fits your needs
+chatbot_llm = create_safe_llm_with_all_hooks(llm, safety)           # Chatbots
+educational_llm = create_input_only_safe_llm(llm, safety)           # Educational apps
+content_gen_llm = create_output_only_safe_llm(llm, safety)          # Content generation
+enterprise_llm = create_safety_only_llm(llm, safety)               # Enterprise compliance
+```
+
+### Key Safety Features
+
+- **Fail Open/Closed Strategy**: Input hooks fail open (allow on errors), output hooks fail closed (block on errors)
+- **LlamaStack Integration**: Uses `run_shield` API for context-aware safety checking
+- **LangChain Compatible**: Works with LCEL chains and all LangChain patterns
+- **Async Support**: Full async/await support for high-throughput scenarios
+- **Configurable**: Choose exactly which hooks you need for your use case
 
 ## 🔗 Complete Safe AI Workflow
 
