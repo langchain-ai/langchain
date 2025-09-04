@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "qdrant-client<2.0.0,>=1.10.1",
     "pydantic<3.0.0,>=2.7.4",
@@ -23,7 +23,7 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [project.optional-dependencies]
 fastembed = [
-    "fastembed<1.0.0,>=0.3.3; python_version < \"3.13\" and python_version >= \"3.9\"",
+    "fastembed<1.0.0,>=0.3.3; python_version < \"3.13\" and python_version >= \"3.10\"",
 ]
 
 [dependency-groups]
@@ -48,7 +48,7 @@ typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 langchain-core = { path = "../../core", editable = true }
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

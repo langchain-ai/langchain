@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import contextlib
 import json
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForLLMRun,

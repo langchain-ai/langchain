@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Literal, Optional, cast
+from collections.abc import Callable
+from typing import Any, Literal, Optional, cast
 from unittest.mock import MagicMock, patch
 
 import anthropic

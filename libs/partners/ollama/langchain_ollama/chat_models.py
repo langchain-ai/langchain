@@ -5,11 +5,10 @@ from __future__ import annotations
 import ast
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
     Any,
-    Callable,
     Literal,
     Optional,
     Union,
@@ -157,7 +156,7 @@ def _parse_arguments_from_tool_call(
                 parsed_value = _parse_json_string(
                     value, skip=True, raw_tool_call=raw_tool_call
                 )
-                if isinstance(parsed_value, (dict, list)):
+                if isinstance(parsed_value, dict | list):
                     parsed_arguments[key] = parsed_value
                 else:
                     parsed_arguments[key] = value

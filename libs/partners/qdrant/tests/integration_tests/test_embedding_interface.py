@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
 
 import pytest  # type: ignore[import-not-found]
 from langchain_core.embeddings import Embeddings

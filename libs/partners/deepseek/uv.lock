@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -441,7 +441,7 @@ typing = [{ name = "mypy", specifier = ">=1.10,<2.0" }]
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.32"
+version = "1.0.0a1"
 source = { editable = "../openai" }
 dependencies = [
     { name = "langchain-core" },
@@ -491,7 +491,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },

@@ -268,15 +268,17 @@ class HuggingFacePipeline(BaseLLM):
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
             }
         _pipeline_kwargs = pipeline_kwargs or {}
-        pipeline = hf_pipeline(
-            task=task,
-            model=model,
-            tokenizer=tokenizer,
-            device=device,
-            batch_size=batch_size,
-            model_kwargs=_model_kwargs,
+        pipeline_args = {
+            "task": task,
+            "model": model,
+            "tokenizer": tokenizer,
+            "batch_size": batch_size,
+            "model_kwargs": _model_kwargs,
             **_pipeline_kwargs,
-        )
+        }
+        if device is not None:
+            pipeline_args["device"] = device
+        pipeline = hf_pipeline(**pipeline_args)
         if pipeline.task not in VALID_TASKS:
             msg = (
                 f"Got invalid task {pipeline.task}, "
