@@ -50,6 +50,20 @@ test = [
     "llama-stack-client>=0.0.53",
     "httpx>=0.24.0",
 ]
+test_integration = [
+    "pytest<8.0.0,>=7.3.0",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-cov<5.0.0,>=4.1.0",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "langchain-core",
+    "langchain-tests",
+    "langchain-openai>=0.1.0",
+    "numpy>=1.21.0",
+    "scikit-learn>=1.0.0",
+    "llama-stack-client>=0.0.53",
+    "httpx>=0.24.0",
+]
 lint = ["ruff<0.13,>=0.12.8"]
 typing = ["mypy<2.0,>=1.17.1", "langchain-core"]
 codespell = ["codespell<3.0.0,>=2.2.0"]

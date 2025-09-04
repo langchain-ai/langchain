@@ -400,7 +400,7 @@ name = "exceptiongroup"
 version = "1.3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "typing-extensions", marker = "python_full_version < '3.12'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0b/9f/a65090624ecf468cdca03533906e7c69ed7588582240cfe7cc9e770b50eb/exceptiongroup-1.3.0.tar.gz", hash = "sha256:b241f5885f560bc56a59ee63ca4c6a8bfa46ae4ad651af316d4e81817bb9fd88", size = 29749, upload-time = "2025-05-10T17:42:51.123Z" }
 wheels = [
@@ -738,6 +738,24 @@ test = [
     { name = "scikit-learn", version = "1.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "syrupy" },
 ]
+test-integration = [
+    { name = "httpx" },
+    { name = "langchain-core" },
+    { name = "langchain-openai" },
+    { name = "langchain-tests" },
+    { name = "llama-stack-client", version = "0.2.12", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "llama-stack-client", version = "0.2.20", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.10.*'" },
+    { name = "numpy", version = "2.3.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-mock" },
+    { name = "scikit-learn", version = "1.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "scikit-learn", version = "1.7.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
+    { name = "syrupy" },
+]
 typing = [
     { name = "langchain-core" },
     { name = "mypy" },
@@ -766,6 +784,20 @@ provides-extras = ["dev", "llamastack", "all"]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
 lint = [{ name = "ruff", specifier = ">=0.12.8,<0.13" }]
 test = [
+    { name = "httpx", specifier = ">=0.24.0" },
+    { name = "langchain-core", editable = "../../core" },
+    { name = "langchain-openai", specifier = ">=0.1.0" },
+    { name = "langchain-tests", editable = "../../standard-tests" },
+    { name = "llama-stack-client", specifier = ">=0.0.53" },
+    { name = "numpy", specifier = ">=1.21.0" },
+    { name = "pytest", specifier = ">=7.3.0,<8.0.0" },
+    { name = "pytest-asyncio", specifier = ">=0.21.1,<1.0.0" },
+    { name = "pytest-cov", specifier = ">=4.1.0,<5.0.0" },
+    { name = "pytest-mock", specifier = ">=3.10.0,<4.0.0" },
+    { name = "scikit-learn", specifier = ">=1.0.0" },
+    { name = "syrupy", specifier = ">=4.0.2,<5.0.0" },
+]
+test-integration = [
     { name = "httpx", specifier = ">=0.24.0" },
     { name = "langchain-core", editable = "../../core" },
     { name = "langchain-openai", specifier = ">=0.1.0" },
