@@ -7,16 +7,14 @@ including chat completion, embeddings, safety checking capabilities, and utiliti
 
 from langchain_llamastack._version import __version__
 from langchain_llamastack.chat_models import (
+    check_llamastack_connection,
     check_llamastack_status,
     create_llamastack_llm,
     get_llamastack_models,
+    list_available_models,
 )
 from langchain_llamastack.embeddings import LlamaStackEmbeddings
 from langchain_llamastack.safety import LlamaStackSafety, SafetyResult
-from langchain_llamastack.utils import (
-    check_llamastack_connection,
-    list_available_models,
-)
 
 __all__ = [
     # Factory functions

@@ -10,9 +10,50 @@ try:
 except ImportError:
     ChatOpenAI = None  # type: ignore
 
-from .utils import check_llamastack_connection, list_available_models
 
 logger = logging.getLogger(__name__)
+
+
+def check_llamastack_connection(
+    base_url: str, model_type: str = "inference"
+) -> dict[str, Any]:
+    """Check LlamaStack connection and return available models."""
+    try:
+        from llama_stack_client import LlamaStackClient
+
+        client = LlamaStackClient(base_url=base_url)
+        models = client.models.list()
+
+        # Filter models by type
+        model_ids = []
+        for model in models:
+            if hasattr(model, "identifier") and hasattr(model, "model_type"):
+                if model.model_type == model_type:
+                    model_ids.append(model.identifier)
+
+        return {
+            "connected": True,
+            "models": model_ids,
+            "models_count": len(model_ids),
+            "base_url": base_url,
+        }
+    except Exception as e:
+        return {
+            "connected": False,
+            "error": str(e),
+            "models": [],
+            "models_count": 0,
+            "base_url": base_url,
+        }
+
+
+def list_available_models(base_url: str, model_type: str = "inference") -> list[str]:
+    """List available models from LlamaStack."""
+    try:
+        result = check_llamastack_connection(base_url, model_type)
+        return result.get("models", [])
+    except Exception:
+        return []
 
 
 def create_llamastack_llm(
