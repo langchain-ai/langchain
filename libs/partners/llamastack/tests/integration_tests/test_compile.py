@@ -8,8 +8,8 @@ def test_compile_all():
     """Test that all integration modules can be imported successfully."""
 
     # Test basic imports
-    import langchain_llamastack  # noqa: F401
-    from langchain_llamastack import (  # noqa: F401
+    import langchain_llamastack
+    from langchain_llamastack import (
         check_llamastack_status,
         create_llamastack_llm,
         get_llamastack_models,
