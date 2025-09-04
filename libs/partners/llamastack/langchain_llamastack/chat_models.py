@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 def create_llamastack_llm(
     model: Optional[str] = None,
     base_url: str = "http://localhost:8321",
-    auto_fallback: Optional[bool] = None,  # Auto-determine based on whether model is specified
+    auto_fallback: Optional[bool] = None,  # Auto-determine based on whether
+    # model is specified
     validate_model: bool = True,
     provider_api_keys: Optional[dict[str, str]] = None,
     **kwargs: Any,

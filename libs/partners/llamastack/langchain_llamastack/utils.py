@@ -39,7 +39,8 @@ def check_llamastack_connection(
     if LlamaStackClient is None:
         return {
             "connected": False,
-            "error": "llama-stack-client not available. Install with: pip install llama-stack-client",
+            "error": "llama-stack-client not available. I\
+            nstall with: pip install llama-stack-client",
             "models": [],
             "models_count": 0,
             "base_url": base_url,
@@ -111,7 +112,8 @@ def check_llamastack_connection(
                         or model_type_lower == "chat_completion"
                     )
 
-                    # Check if it matches common inference patterns (only if no model_type)
+                    # Check if it matches common inference patterns
+                    # (only if no model_type)
                     pattern_matches = (
                         model_type_attr is None  # Only for models without explicit type
                         and any(
