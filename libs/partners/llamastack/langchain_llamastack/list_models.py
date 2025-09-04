@@ -5,7 +5,7 @@ Comprehensive script to list LlamaStack available models grouped by type
 
 import os
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 # Handle imports for both direct execution and module import
 try:
@@ -124,7 +124,7 @@ def main() -> int:
             return 1
 
         # Classify models by type
-        model_categories: Dict[str, List[Dict[str, Any]]] = {
+        model_categories: dict[str, list[dict[str, Any]]] = {
             "inference": [],
             "embedding": [],
             "safety": [],
