@@ -1492,7 +1492,6 @@ codespell = [
     { name = "codespell" },
 ]
 lint = [
-    { name = "mypy" },
     { name = "ruff" },
 ]
 test = [
@@ -1519,6 +1518,7 @@ test-integration = [
     { name = "wrapt" },
 ]
 typing = [
+    { name = "mypy" },
     { name = "types-toml" },
 ]
 
@@ -1548,10 +1548,7 @@ provides-extras = ["anthropic", "openai", "azure-ai", "google-vertexai", "google
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-lint = [
-    { name = "mypy", specifier = ">=1.15" },
-    { name = "ruff", specifier = ">=0.12.11,<0.13" },
-]
+lint = [{ name = "ruff", specifier = ">=0.12.2" }]
 test = [
     { name = "langchain-openai", editable = "../partners/openai" },
     { name = "langchain-tests", editable = "../standard-tests" },
@@ -1575,7 +1572,10 @@ test-integration = [
     { name = "vcrpy", specifier = ">=7.0" },
     { name = "wrapt", specifier = ">=1.15.0" },
 ]
-typing = [{ name = "types-toml", specifier = ">=0.10.8.20240310" }]
+typing = [
+    { name = "mypy", specifier = ">=1.17.1,<1.18" },
+    { name = "types-toml", specifier = ">=0.10.8.20240310" },
+]
 
 [[package]]
 name = "langchain-anthropic"
