@@ -81,6 +81,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "json",
     "search_result",
     "custom_tool_call_output",
+    "document",
 )
 
 
