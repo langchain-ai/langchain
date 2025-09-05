@@ -155,6 +155,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """
         return ["langchain", "output_parsers", "list"]
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the comma-separated list output."""
         return (
@@ -162,6 +163,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
@@ -224,6 +226,7 @@ class MarkdownListOutputParser(ListOutputParser):
     pattern: str = r"^\s*[-*]\s([^\n]+)$"
     """The pattern to match a Markdown list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
         return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"

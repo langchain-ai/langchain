@@ -96,7 +96,7 @@ def test_check_package_version(
                 TypeError,
                 match=(
                     "Additional kwargs key a already exists in left dict and value "
-                    "has unsupported type .+tuple.+."
+                    r"has unsupported type .+tuple.+."
                 ),
             ),
         ),
@@ -136,7 +136,7 @@ def test_merge_dicts(
         (
             {"type": "foo"},
             {"type": "bar"},
-            pytest.raises(ValueError, match="Unable to merge."),
+            pytest.raises(ValueError, match="Unable to merge"),
         ),
     ],
 )
