@@ -648,6 +648,7 @@ class Graph:
         max_retries: int = 1,
         retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
+        base_url: Optional[str] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -683,6 +684,8 @@ class Graph:
                         "themeVariables": { "primaryColor": "#e2e2e2"},
                     }
                 }
+            base_url: The base URL of the Mermaid server for rendering via API.
+                Defaults to None.
 
         Returns:
             The PNG image as bytes.
@@ -707,6 +710,7 @@ class Graph:
             padding=padding,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            base_url=base_url,
         )
 
 
