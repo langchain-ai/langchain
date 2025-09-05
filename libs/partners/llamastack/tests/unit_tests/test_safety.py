@@ -419,7 +419,7 @@ class TestLlamaStackSafety:
 
         import asyncio
 
-        async def mock_amoderate():
+        async def mock_amoderate() -> Any:
             return await safety.amoderate_content("Clean async content")
 
         loop = asyncio.new_event_loop()
@@ -493,7 +493,7 @@ class TestLlamaStackSafety:
 
         import asyncio
 
-        async def mock_amoderate():
+        async def mock_amoderate() -> Any:
             return await safety.amoderate_content("Test async content")
 
         loop = asyncio.new_event_loop()
