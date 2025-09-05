@@ -98,11 +98,13 @@ class BaseMessage(Serializable):
             return self.content
 
         # must be a list
+        # if a block is a dict, it could be a merged type block
+        # check only if the text prop exists
         blocks = [
             block
             for block in self.content
             if isinstance(block, str)
-            or (block.get("type") == "text" and isinstance(block.get("text"), str))
+            or isinstance(block.get("text"), str)
         ]
         return "".join(
             block if isinstance(block, str) else block["text"] for block in blocks
