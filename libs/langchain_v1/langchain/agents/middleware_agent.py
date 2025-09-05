@@ -304,7 +304,6 @@ def create_agent(
             return request.model.bind_tools(
                 request.tools,
                 tool_choice=request.tool_choice,
-                parallel_tool_calls=False,
             )
         return request.model
 

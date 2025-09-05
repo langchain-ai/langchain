@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Annotated, Any, Generic, Literal
+from typing import Annotated, Any, ClassVar, Generic, Literal
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AnyMessage
@@ -27,20 +27,23 @@ class ModelRequest:
 
 
 class AgentState(TypedDict, Generic[ResponseT], total=False):
-    # TODO: figure out Required/NotRequired wrapping annotated and still registering reducer properly
+    # TODO: import change allowing for required / not required and still registering reducer properly
+    # do we want to use total = False or require NotRequired?
     messages: Annotated[list[AnyMessage], add_messages]
     model_request: Annotated[ModelRequest | None, EphemeralValue]
     jump_to: Annotated[JumpTo | None, EphemeralValue]
+
+    # TODO: structured response maybe?
     response: ResponseT
 
 
-StateT = TypeVar("StateT", bound=AgentState, default=AgentState, contravariant=True)
+StateT = TypeVar("StateT", bound=AgentState)
 
 
 class AgentMiddleware(Generic[StateT]):
     # TODO: I thought this should be a ClassVar[type[StateT]] but inherently class vars can't use type vars
     # bc they're instance dependent
-    state_schema: type[StateT]
+    state_schema: ClassVar[type] = AgentState
     tools: list[BaseTool] = []
 
     def before_model(self, state: StateT) -> AgentUpdate | AgentJump | None:

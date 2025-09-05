@@ -62,7 +62,9 @@ class SummarizationMiddleware(AgentMiddleware):
         messages = state["messages"]
         token_counts = self.token_counter(messages)
         # If token counts are less than max allowed, then end this hook early
-        if token_counts < self.max_tokens_before_summary:
+        if self.max_tokens_before_summary is None or (
+            token_counts < self.max_tokens_before_summary
+        ):
             return None
         # Otherwise, we create a summary!
         # Get messages that we want to create a summary for
