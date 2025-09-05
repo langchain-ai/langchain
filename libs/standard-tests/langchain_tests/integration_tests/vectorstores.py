@@ -14,6 +14,10 @@ from langchain_tests.base import BaseStandardTests
 EMBEDDING_SIZE = 6
 
 
+def _sort_by_id(documents: list[Document]) -> list[Document]:
+    return sorted(documents, key=lambda doc: doc.id or "")
+
+
 class VectorStoreIntegrationTests(BaseStandardTests):
     """Base class for vector store integration tests.
 
@@ -347,10 +351,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = vectorstore.add_documents(documents, ids=["1", "2"])
         retrieved_documents = vectorstore.get_by_ids(ids)
-        assert retrieved_documents == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(retrieved_documents) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
@@ -410,10 +416,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
         ids = vectorstore.add_documents(documents)
-        assert vectorstore.get_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(vectorstore.get_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
         """Test that add_documents with existing IDs is idempotent.
@@ -449,10 +457,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = vectorstore.add_documents(documents)
         assert "foo" in ids
-        assert vectorstore.get_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id="foo"),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(vectorstore.get_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id="foo"),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
@@ -679,10 +689,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = await vectorstore.aadd_documents(documents, ids=["1", "2"])
         retrieved_documents = await vectorstore.aget_by_ids(ids)
-        assert retrieved_documents == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(retrieved_documents) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_get_by_ids_missing_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
@@ -743,10 +755,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
         ids = await vectorstore.aadd_documents(documents)
-        assert await vectorstore.aget_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(await vectorstore.aget_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
@@ -784,7 +798,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = await vectorstore.aadd_documents(documents)
         assert "foo" in ids
-        assert await vectorstore.aget_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id="foo"),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(await vectorstore.aget_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id="foo"),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
