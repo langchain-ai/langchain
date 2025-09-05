@@ -6,7 +6,7 @@ from langchain.agents.types import AgentMiddleware, AgentState, ModelRequest
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
     """Prompt Caching Middleware - Optimizes API usage by caching conversation prefixes for Anthropic models.
 
-    This helps to reduce costs and latency for repetitive prompts.
+    Learn more about anthropic prompt caching [here](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
     """
 
     def __init__(
@@ -28,6 +28,20 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
+        try:
+            from langchain_anthropic import ChatAnthropic
+        except ImportError:
+            raise ValueError(
+                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models."
+                "Please install langchain-anthropic."
+            )
+
+        if not isinstance(request.model, ChatAnthropic):
+            raise ValueError(
+                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, "
+                f"not instances of {type(request.model)}"
+            )
+
         messages_count = (
             len(request.messages) + 1 if request.system_prompt else len(request.messages)
         )
