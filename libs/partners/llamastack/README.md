@@ -2,22 +2,22 @@
 
 A comprehensive LangChain integration for [Llama Stack](https://github.com/meta-llama/llama-stack) that provides chat completion, text embeddings, safety checking, and utility functions with support for multiple providers.
 
-**✨ New Simplified Approach**: This integration now uses ChatOpenAI under the hood for maximum reliability while providing LlamaStack-specific conveniences.
+**New Simplified Approach**: This integration now uses ChatOpenAI under the hood for maximum reliability while providing LlamaStack-specific conveniences.
 
-## 🚀 Features
+## Features
 
-- **💬 Chat Completion**: Uses proven ChatOpenAI with LlamaStack auto-configuration
-- **🔤 Text Embeddings**: Vector embeddings for semantic search and RAG applications
-- **🛡️ Safety Checking**: Content moderation using Llama Guard and other safety shields
-- **🔍 Model Discovery**: Automatic detection and filtering of available models by type (inference/embedding)
-- **🔌 Multi-Provider Support**: Works with Ollama, OpenAI, Together AI, Fireworks, Anthropic, Groq and more
-- **⚡ Streaming**: Real-time streaming responses for chat completions
-- **🔄 Provider Validation**: Built-in connection testing and model accessibility validation
-- **📊 Semantic Search**: Vector similarity search with embedding models
-- **🎯 Auto-Fallback**: Automatically selects working models when requested model is unavailable
-- **🔑 Provider API Keys**: Automatic API key detection and header injection for cloud providers
+- **Chat Completion**: Uses proven ChatOpenAI with LlamaStack auto-configuration
+- **Text Embeddings**: Vector embeddings for semantic search and RAG applications
+- **Safety Checking**: Content moderation using Llama Guard and other safety shields
+- **Model Discovery**: Automatic detection and filtering of available models by type (inference/embedding)
+- **Multi-Provider Support**: Works with Ollama, OpenAI, Together AI, Fireworks, Anthropic, Groq and more
+- **Streaming**: Real-time streaming responses for chat completions
+- **Provider Validation**: Built-in connection testing and model accessibility validation
+- **Semantic Search**: Vector similarity search with embedding models
+- **Auto-Fallback**: Automatically selects working models when requested model is unavailable
+- **Provider API Keys**: Automatic API key detection and header injection for cloud providers
 
-## 📦 Installation
+## Installation
 
 ```bash
 # Install from PyPI (when published)
@@ -35,7 +35,7 @@ pip install langchain-openai
 pip install -e ".[all]"
 ```
 
-## 🏗️ Setup & Prerequisites
+## Setup & Prerequisites
 
 ### 1. Install Llama Stack
 
@@ -61,17 +61,11 @@ ollama pull llama3:8b
 ollama pull nomic-embed-text
 ollama pull shieldgemma:2b
 
-# For OpenAI
-export OPENAI_API_KEY="your-openai-api-key"
-
 # For Together AI
 export TOGETHER_API_KEY="your-together-api-key"
 
 # For Fireworks AI
 export FIREWORKS_API_KEY="your-fireworks-api-key"
-
-# For Anthropic
-export ANTHROPIC_API_KEY="your-anthropic-api-key"
 ```
 
 ### 3. Start Llama Stack Server
@@ -103,9 +97,9 @@ curl http://localhost:8321/v1/models
 python -c "from langchain_llamastack import check_llamastack_status; print(check_llamastack_status())"
 ```
 
-## 💬 Chat Completion Usage
+## Chat Completion Usage
 
-### 🎯 Recommended Approach: Simple Factory Function
+### Recommended Approach: Simple Factory Function
 
 ```python
 from langchain_llamastack import create_llamastack_llm
@@ -128,7 +122,7 @@ response = llm.invoke("What is artificial intelligence?")
 print(response.content)
 ```
 
-### 🔧 Alternative: Direct ChatOpenAI Usage
+### Alternative: Direct ChatOpenAI Usage
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -190,10 +184,10 @@ from langchain_llamastack import (
 # Check connection and available models
 status = check_llamastack_status()
 if status['connected']:
-    print(f"✅ {status['models_count']} models available")
+    print(f"{status['models_count']} models available")
     print(f"Models: {status['models']}")
 else:
-    print(f"❌ Error: {status['error']}")
+    print(f"Error: {status['error']}")
 
 # Get models list
 models = get_llamastack_models()
@@ -206,7 +200,7 @@ llm = create_llamastack_llm(model="llama3.1:8b", auto_fallback=False)
 llm = create_llamastack_llm(model="llama3.1:8b", validate_model=False)
 ```
 
-## 🔤 Text Embeddings Usage
+## Text Embeddings Usage
 
 ### Basic Embeddings
 
@@ -258,7 +252,7 @@ for doc, score in similar_docs:
     print(f"Score: {score:.3f} - {doc}")
 ```
 
-## 🛡️ Safety & Moderation System
+## Safety & Moderation System
 
 ### Basic Safety Checking
 
@@ -399,7 +393,7 @@ class SafeAI:
         # 1. Safety check input
         input_safety = self.safety.check_content(user_input)
         if not input_safety.is_safe:
-            return f"⚠️ Input rejected: {input_safety.message}"
+            return f"Input rejected: {input_safety.message}"
 
         # 2. Retrieve relevant context (if knowledge base provided)
         context = ""
@@ -418,7 +412,7 @@ class SafeAI:
         # 4. Safety check output
         output_safety = self.safety.check_content(response.content)
         if not output_safety.is_safe:
-            return f"⚠️ Response filtered: {output_safety.message}"
+            return f"Response filtered: {output_safety.message}"
 
         return response.content
 
@@ -448,10 +442,10 @@ from langchain_llamastack import check_llamastack_status, get_llamastack_models
 # Check connection status
 status = check_llamastack_status("http://localhost:8321")
 if status['connected']:
-    print(f"✅ Connected! {status['models_count']} models available")
+    print(f"Connected! {status['models_count']} models available")
     print(f"Models: {status['models']}")
 else:
-    print(f"❌ Connection failed: {status['error']}")
+    print(f"Connection failed: {status['error']}")
 
 # List all available models
 try:
@@ -471,7 +465,7 @@ status = check_provider_environment()
 print(f"Environment status: {status}")
 ```
 
-## 📋 API Reference
+## API Reference
 
 ### Factory Functions (Recommended)
 
@@ -499,24 +493,6 @@ llm = create_llamastack_llm(
     max_tokens=1000
 )
 ```
-
-#### `get_llamastack_models(base_url)`
-
-Get list of available models from LlamaStack.
-
-**Parameters:**
-- `base_url` (str): LlamaStack server URL
-
-**Returns:** List of available model names
-
-#### `check_llamastack_status(base_url)`
-
-Check LlamaStack connection and get status information.
-
-**Parameters:**
-- `base_url` (str): LlamaStack server URL
-
-**Returns:** Dictionary with connection status and model information
 
 ### LlamaStackEmbeddings
 
@@ -547,14 +523,13 @@ Check LlamaStack connection and get status information.
 - `list_available_shields()` - List safety shields
 - `get_shield_info(shield_id)` - Get shield information
 
-## 🧪 Examples & Testing
+## Examples & Testing
 
 The `examples/` directory contains comprehensive usage examples:
 
 - `getting_started.py` - Complete setup and usage guide
 - `basic_usage.py` - Basic chat, embeddings, and safety examples
 - `advanced_usage.py` - Advanced features and integrations
-- `provider_examples.py` - Provider-specific configuration examples
 
 Run examples:
 
@@ -569,7 +544,7 @@ python examples/basic_usage.py
 python examples/advanced_usage.py
 ```
 
-## 🎯 Usage Patterns
+## Usage Patterns
 
 ### Pattern 1: Simple Auto-Configuration (Recommended for Most Users)
 
@@ -617,7 +592,7 @@ llm = ChatOpenAI(
 response = llm.invoke("Hello!")
 ```
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -663,7 +638,7 @@ python -c "from langchain_llamastack import check_llamastack_status; print(check
 python -c "from langchain_llamastack import get_llamastack_models; print(get_llamastack_models())"
 ```
 
-## 📚 Requirements
+## Requirements
 
 - **Python**: 3.12+
 - **Core Dependencies**:
@@ -678,7 +653,7 @@ python -c "from langchain_llamastack import get_llamastack_models; print(get_lla
   - Running Llama Stack server
   - At least one configured provider (Ollama, OpenAI, etc.)
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature/your-feature`
@@ -687,11 +662,11 @@ python -c "from langchain_llamastack import get_llamastack_models; print(get_lla
 5. Run code formatting: `black . && isort .`
 6. Submit a pull request
 
-## 📜 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Related Projects
+## Related Projects
 
 - [LangChain](https://github.com/langchain-ai/langchain) - The main LangChain library
 - [LangChain OpenAI](https://github.com/langchain-ai/langchain/tree/master/libs/partners/openai) - ChatOpenAI integration
