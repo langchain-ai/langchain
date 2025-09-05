@@ -103,8 +103,7 @@ class BaseMessage(Serializable):
         blocks = [
             block
             for block in self.content
-            if isinstance(block, str)
-            or isinstance(block.get("text"), str)
+            if isinstance(block, str) or isinstance(block.get("text"), str)
         ]
         return "".join(
             block if isinstance(block, str) else block["text"] for block in blocks
