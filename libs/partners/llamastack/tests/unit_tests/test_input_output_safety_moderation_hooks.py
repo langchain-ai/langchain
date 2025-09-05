@@ -12,7 +12,7 @@ from langchain_llamastack.input_output_safety_moderation_hooks import (
     create_output_only_safe_llm,
     create_output_safety_hook,
     create_safe_llm_with_all_hooks,
-    create_safety_only_llm, 
+    create_safety_only_llm,
 )
 from langchain_llamastack.safety import SafetyResult
 
