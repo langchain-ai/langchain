@@ -1,9 +1,9 @@
 """Unit tests for input/output safety moderation hooks."""
 
-from typing import Any
 from unittest.mock import Mock
 
 from langchain_llamastack.input_output_safety_moderation_hooks import (
+    SafeLLMWrapper,
     create_input_moderation_hook,
     create_input_only_safe_llm,
     create_input_safety_hook,
@@ -12,8 +12,7 @@ from langchain_llamastack.input_output_safety_moderation_hooks import (
     create_output_only_safe_llm,
     create_output_safety_hook,
     create_safe_llm_with_all_hooks,
-    create_safety_only_llm,
-    SafeLLMWrapper,
+    create_safety_only_llm, 
 )
 from langchain_llamastack.safety import SafetyResult
 
