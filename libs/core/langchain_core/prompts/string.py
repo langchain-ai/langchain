@@ -166,7 +166,7 @@ def mustache_schema(
                 prefix = section_stack.pop()
         elif type_ in {"section", "inverted section"}:
             section_stack.append(prefix)
-            prefix = prefix + tuple(key.split("."))
+            prefix += tuple(key.split("."))
             fields[prefix] = False
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True

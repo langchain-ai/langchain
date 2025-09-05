@@ -358,7 +358,8 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative = f":meth:`~{_alternative}`"
         elif _alternative:
@@ -366,8 +367,8 @@ def deprecated(
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative_import = f":meth:`~{_alternative_import}`"
         elif _alternative_import:
@@ -471,7 +472,7 @@ def warn_deprecated(
     if not message:
         message = ""
         package_ = (
-            package or name.split(".")[0].replace("_", "-")
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -490,7 +491,7 @@ def warn_deprecated(
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
             if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:

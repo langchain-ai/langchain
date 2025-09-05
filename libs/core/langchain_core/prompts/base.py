@@ -212,7 +212,7 @@ class BasePromptTemplate(
         if self.metadata:
             config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
-            config["tags"] = config["tags"] + self.tags
+            config["tags"] += self.tags
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
