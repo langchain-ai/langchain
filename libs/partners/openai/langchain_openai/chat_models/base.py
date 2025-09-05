@@ -3523,8 +3523,7 @@ def _get_last_messages(
             response_id = msg.response_metadata.get("id")
             if response_id:
                 return messages[i + 1 :], response_id
-            else:
-                return messages, None
+            # Continue searching for an AIMessage with a valid response_id
 
     return messages, None
 
