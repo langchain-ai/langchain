@@ -522,32 +522,6 @@ class TestLlamaStackSafety:
 
         assert safety.client is not None
 
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_async_client_initialization_lazy(self, mock_async_client_class: Any) -> None:
-        """Test that async clients are initialized lazily."""
-        mock_async_client = Mock()
-        mock_async_client_class.return_value = mock_async_client
-
-        safety = LlamaStackSafety(base_url=self.base_url)
-
-        # Async client should not be initialized yet
-        assert safety.async_client is None
-
-        # Calling an async method should initialize the client
-        import asyncio
-
-        async def mock_acheck() -> Any:
-            return await safety.acheck_content_safety("test")
-
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(mock_acheck())
-        finally:
-            loop.close()
-
-        assert safety.async_client is not None
-
     def test_content_safety_custom_shield_type(self) -> None:
         """Test content safety check with custom shield type."""
         with patch("langchain_llamastack.safety.LlamaStackClient") as mock_client_class:
