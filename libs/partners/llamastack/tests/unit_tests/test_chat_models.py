@@ -368,7 +368,7 @@ class TestChatModels:
         assert result is False
 
     @patch("langchain_llamastack.chat_models.list_available_models")
-    def test_get_llamastack_models_success(self, mock_list_models) -> None:
+    def test_get_llamastack_models_success(self, mock_list_models: Any) -> None:
         """Test getting LlamaStack models successfully."""
         mock_list_models.return_value = self.available_models
 
@@ -387,7 +387,7 @@ class TestChatModels:
     #     assert result == []
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_check_llamastack_status_success(self, mock_check_connection) -> None:
+    def test_check_llamastack_status_success(self, mock_check_connection: Any) -> None:
         """Test checking LlamaStack status successfully."""
         expected_status = {
             "connected": True,
