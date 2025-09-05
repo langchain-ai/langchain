@@ -361,7 +361,7 @@ enterprise_llm = create_safety_only_llm(llm, safety)               # Enterprise 
 - **Async Support**: Full async/await support for high-throughput scenarios
 - **Configurable**: Choose exactly which hooks you need for your use case
 
-## 🔗 Complete Safe AI Workflow
+## Complete Safe AI Workflow
 
 Combine all components for a comprehensive safe AI application:
 
@@ -432,7 +432,7 @@ response = safe_ai.safe_chat_with_context(
 print(response)
 ```
 
-## 🔧 Utilities & Helpers
+## Utilities & Helpers
 
 ### Connection Testing
 
@@ -546,12 +546,12 @@ python examples/advanced_usage.py
 
 ## Usage Patterns
 
-### Pattern 1: Simple Auto-Configuration (Recommended for Most Users)
+### Pattern 1: Simple Auto-Configuration
 
 ```python
 from langchain_llamastack import create_llamastack_llm
 
-# Just works - auto-discovers and configures everything
+
 llm = create_llamastack_llm()
 response = llm.invoke("Hello!")
 ```
@@ -576,7 +576,7 @@ llm = create_llamastack_llm(model="llama3.1:8b", auto_fallback=False)
 response = llm.invoke("Hello!")
 ```
 
-### Pattern 4: Manual ChatOpenAI (Full Control)
+### Pattern 4: Manual ChatOpenAI
 
 ```python
 from langchain_openai import ChatOpenAI
