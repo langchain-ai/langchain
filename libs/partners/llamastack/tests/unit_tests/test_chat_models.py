@@ -1,6 +1,7 @@
 """Unit tests for LlamaStack chat models."""
 
 import json
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -27,7 +28,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_default_params(
-        self, mock_chat_openai, mock_check_connection
+        self, mock_chat_openai: Any, mock_check_connection: Any
     ) -> None:
         """Test creating LLM with default parameters."""
         # Mock connection check
@@ -83,7 +84,7 @@ class TestChatModels:
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     def test_create_llamastack_llm_connection_failed(
-        self, mock_check_connection
+        self, mock_check_connection: Any
     ) -> None:
         """Test LLM creation when connection fails."""
         mock_check_connection.return_value = {
@@ -95,7 +96,7 @@ class TestChatModels:
             create_llamastack_llm()
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_create_llamastack_llm_no_models(self, mock_check_connection) -> None:
+    def test_create_llamastack_llm_no_models(self, mock_check_connection: Any) -> None:
         """Test LLM creation when no models are available."""
         mock_check_connection.return_value = {"connected": True, "models": []}
 
@@ -104,7 +105,7 @@ class TestChatModels:
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     def test_create_llamastack_llm_chatgpt_not_available(
-        self, mock_check_connection
+        self, mock_check_connection: Any
     ) -> None:
         """Test LLM creation when ChatOpenAI is not available."""
         mock_check_connection.return_value = {
@@ -119,7 +120,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_model_not_found_strict(
-        self, mock_chat_openai, mock_check_connection
+        self, mock_chat_openai: Any, mock_check_connection: Any
     ) -> None:
         """Test LLM creation when specified model is not found (strict mode)."""
         mock_check_connection.return_value = {
@@ -133,7 +134,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_model_fallback(
-        self, mock_chat_openai, mock_check_connection
+        self, mock_chat_openai: Any, mock_check_connection: Any
     ) -> None:
         """Test LLM creation with model fallback."""
         mock_check_connection.return_value = {
@@ -159,7 +160,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_with_provider_keys(
-        self, mock_chat_openai, mock_check_connection
+        self, mock_chat_openai: Any, mock_check_connection: Any
     ) -> None:
         """Test LLM creation with provider API keys."""
         mock_check_connection.return_value = {
@@ -270,7 +271,7 @@ class TestChatModels:
 
     @patch("langchain_llamastack.chat_models._test_model_accessibility")
     def test_find_working_model_with_validation_success(
-        self, mock_test_accessibility
+        self, mock_test_accessibility: Any
     ) -> None:
         """Test finding working model with validation success."""
         available_models = ["model1", "model2", "model3"]
@@ -283,7 +284,7 @@ class TestChatModels:
 
     @patch("langchain_llamastack.chat_models._test_model_accessibility")
     def test_find_working_model_with_validation_all_fail(
-        self, mock_test_accessibility
+        self, mock_test_accessibility: Any
     ) -> None:
         """Test finding working model when all fail validation."""
         available_models = ["model1", "model2", "model3"]
@@ -294,7 +295,7 @@ class TestChatModels:
         assert result == "model1"  # Returns first model as fallback
 
     @patch("httpx.Client")
-    def test_test_model_accessibility_success(self, mock_httpx_client):
+    def test_test_model_accessibility_success(self, mock_httpx_client: Any) -> None:
         """Test model accessibility check success."""
         mock_response = Mock()
         mock_response.status_code = 200
@@ -308,7 +309,9 @@ class TestChatModels:
         assert result is True
 
     @patch("httpx.Client")
-    def test_test_model_accessibility_provider_error(self, mock_httpx_client):
+    def test_test_model_accessibility_provider_error(
+        self, mock_httpx_client: Any
+    ) -> None:
         """Test model accessibility check with provider error."""
         mock_response = Mock()
         mock_response.status_code = 400
@@ -323,7 +326,9 @@ class TestChatModels:
         assert result is False
 
     @patch("httpx.Client")
-    def test_test_model_accessibility_server_error(self, mock_httpx_client):
+    def test_test_model_accessibility_server_error(
+        self, mock_httpx_client: Any
+    ) -> None:
         """Test model accessibility check with server error."""
         mock_response = Mock()
         mock_response.status_code = 500
@@ -338,7 +343,7 @@ class TestChatModels:
         assert result is False
 
     @patch("httpx.Client")
-    def test_test_model_accessibility_other_error(self, mock_httpx_client):
+    def test_test_model_accessibility_other_error(self, mock_httpx_client: Any) -> None:
         """Test model accessibility check with other HTTP error."""
         mock_response = Mock()
         mock_response.status_code = 404
@@ -352,7 +357,7 @@ class TestChatModels:
         assert result is True  # Non-provider errors are considered accessible
 
     @patch("httpx.Client")
-    def test_test_model_accessibility_exception(self, mock_httpx_client):
+    def test_test_model_accessibility_exception(self, mock_httpx_client: Any) -> None:
         """Test model accessibility check with exception."""
         mock_http_client = Mock()
         mock_http_client.post.side_effect = Exception("Network error")
@@ -399,7 +404,7 @@ class TestChatModels:
         )
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_check_llamastack_status_failure(self, mock_check_connection) -> None:
+    def test_check_llamastack_status_failure(self, mock_check_connection: Any) -> None:
         """Test checking LlamaStack status with failure."""
         expected_status = {
             "connected": False,
