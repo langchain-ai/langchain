@@ -1,4 +1,4 @@
-from langchain.agents.new_agent import create_agent
+from langchain.agents.middleware_agent import create_agent
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 from langchain_core.tools import tool
