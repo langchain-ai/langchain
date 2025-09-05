@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         stringify_dict,
         stringify_value,
     )
+    from langchain_core.utils.usage import get_billable_input_tokens
     from langchain_core.utils.utils import (
         build_extra_kwargs,
         check_package_version,
@@ -52,6 +53,7 @@ __all__ = (
     "convert_to_secret_str",
     "formatter",
     "from_env",
+    "get_billable_input_tokens",
     "get_bolded_text",
     "get_color_mapping",
     "get_colored_text",
@@ -100,6 +102,7 @@ _dynamic_imports = {
     "secret_from_env": "utils",
     "xor_args": "utils",
     "raise_for_status_with_text": "utils",
+    "get_billable_input_tokens": "usage",
 }
 
 

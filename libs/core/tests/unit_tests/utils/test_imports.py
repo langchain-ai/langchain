@@ -28,6 +28,7 @@ EXPECTED_ALL = [
     "from_env",
     "secret_from_env",
     "sanitize_for_postgres",
+    "get_billable_input_tokens",
 ]
 
 
