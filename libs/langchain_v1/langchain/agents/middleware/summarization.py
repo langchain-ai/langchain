@@ -1,6 +1,5 @@
 import uuid
-from collections.abc import Sequence
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 
 from langchain_core.language_models import LanguageModelLike
 from langchain_core.messages import (
@@ -85,10 +84,7 @@ class SummarizationMiddleware(AgentMiddleware):
             ),
             ToolMessage(tool_call_id=fake_tool_call_id, content=summary),
         ]
-        return {
-            "messages": [RemoveMessage(id=m.id) for m in messages_to_summarize]
-            + fake_messages
-        }
+        return {"messages": [RemoveMessage(id=m.id) for m in messages_to_summarize] + fake_messages}
 
     def _summarize_messages(self, messages_to_summarize: Sequence[AnyMessage]) -> str:
         system_message = self.summary_system_prompt

@@ -1,10 +1,9 @@
-from dataclasses import dataclass, field
-from typing import Annotated, Any, Dict, List, cast
+from dataclasses import field
+from typing import cast
 
 from langchain_core.messages import AIMessage
-from typing_extensions import Annotated
-
 from langgraph.agents.types import AgentJump, AgentMiddleware, AgentState, AgentUpdate
+
 
 class State(AgentState):
     tool_call_count: dict[str, int] = field(default_factory=dict)
@@ -19,14 +18,14 @@ class ToolCallLimitMiddleware(AgentMiddleware):
         self.tool_limits = tool_limits
 
     def after_model(self, state: State) -> AgentUpdate | AgentJump | None:
-        ai_msg: AIMessage = cast(AIMessage, state["messages"][-1])
+        ai_msg: AIMessage = cast("AIMessage", state["messages"][-1])
 
         tool_calls = {}
         for call in ai_msg.tool_calls or []:
             tool_calls[call["name"]] = tool_calls.get(call["name"], 0) + 1
 
         aggregate_calls = state["tool_call_count"].copy()
-        for tool_name in tool_calls.keys():
+        for tool_name in tool_calls:
             aggregate_calls[tool_name] = aggregate_calls.get(tool_name, 0) + 1
 
         for tool_name, max_calls in self.tool_limits.items():

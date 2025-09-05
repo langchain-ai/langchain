@@ -1,4 +1,3 @@
-from langchain.agents.types import AgentJump, AgentMiddleware, AgentState, AgentUpdate
 from langgraph.prebuilt.interrupt import (
     ActionRequest,
     HumanInterrupt,
@@ -6,6 +5,8 @@ from langgraph.prebuilt.interrupt import (
     HumanResponse,
 )
 from langgraph.types import interrupt
+
+from langchain.agents.types import AgentJump, AgentMiddleware, AgentState, AgentUpdate
 
 ToolInterruptConfig = dict[str, HumanInterruptConfig]
 
@@ -23,12 +24,12 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
     def after_model(self, state: AgentState) -> AgentUpdate | AgentJump | None:
         messages = state["messages"]
         if not messages:
-            return
+            return None
 
         last_message = messages[-1]
 
         if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
-            return
+            return None
 
         # Separate tool calls that need interrupts from those that don't
         interrupt_tool_calls = []
@@ -43,7 +44,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # If no interrupts needed, return early
         if not interrupt_tool_calls:
-            return
+            return None
 
         approved_tool_calls = auto_approved_tool_calls.copy()
 
@@ -53,9 +54,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         for tool_call in interrupt_tool_calls:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
-            description = (
-                f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
-            )
+            description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
             tool_config = self.tool_configs[tool_name]
 
             request: HumanInterrupt = {

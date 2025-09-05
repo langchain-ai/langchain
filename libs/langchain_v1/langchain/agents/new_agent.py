@@ -422,7 +422,9 @@ def create_agent(
         )
 
     if middleware_w_modify_model_request:
-        for m1, m2 in zip(middleware_w_modify_model_request, middleware_w_modify_model_request[1:], strict=False):
+        for m1, m2 in zip(
+            middleware_w_modify_model_request, middleware_w_modify_model_request[1:], strict=False
+        ):
             _add_middleware_edge(
                 graph,
                 m1.modify_model_request,
