@@ -2,6 +2,7 @@
 
 import asyncio
 import base64
+import os
 import random
 import re
 import time
@@ -20,6 +21,10 @@ from langchain_core.runnables.graph import (
 )
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
+
+# Allow users to point to a self-hosted mermaid server via env var;
+# defaults to using the public mermaid.ink server.
+MERMAID_BASE_URL = os.getenv("MERMAID_BASE_URL", "https://mermaid.ink")
 
 
 def draw_mermaid(
@@ -413,7 +418,7 @@ def _render_mermaid_using_api(
             background_color = f"!{background_color}"
 
     image_url = (
-        f"https://mermaid.ink/img/{mermaid_syntax_encoded}"
+        f"{MERMAID_BASE_URL}/img/{mermaid_syntax_encoded}"
         f"?type={file_type}&bgColor={background_color}"
     )
 
@@ -445,7 +450,7 @@ def _render_mermaid_using_api(
 
             # For other status codes, fail immediately
             msg = (
-                "Failed to reach https://mermaid.ink/ API while trying to render "
+                f"Failed to reach {MERMAID_BASE_URL} API while trying to render "
                 f"your graph. Status code: {response.status_code}.\n\n"
             ) + error_msg_suffix
             raise ValueError(msg)
@@ -457,14 +462,14 @@ def _render_mermaid_using_api(
                 time.sleep(sleep_time)
             else:
                 msg = (
-                    "Failed to reach https://mermaid.ink/ API while trying to render "
+                    f"Failed to reach {MERMAID_BASE_URL} API while trying to render "
                     f"your graph after {max_retries} retries. "
                 ) + error_msg_suffix
                 raise ValueError(msg) from e
 
     # This should not be reached, but just in case
     msg = (
-        "Failed to reach https://mermaid.ink/ API while trying to render "
+        f"Failed to reach {MERMAID_BASE_URL} API while trying to render "
         f"your graph after {max_retries} retries. "
     ) + error_msg_suffix
     raise ValueError(msg)
