@@ -14,5 +14,6 @@ def test_compile_all():
     assert langchain_llamastack is not None
 
     # Verify the module has the expected attributes (basic smoke test)
-    assert hasattr(langchain_llamastack, '__version__') or\
-    hasattr(langchain_llamastack, '__name__')
+    assert hasattr(langchain_llamastack, "__version__") or hasattr(
+        langchain_llamastack, "__name__"
+    )
