@@ -2524,7 +2524,9 @@ def test_get_last_messages_with_mixed_response_metadata() -> None:
         HumanMessage("What's up?"),
     ]
     last_messages, previous_response_id = _get_last_messages(messages)
-    # Should return messages after the AIMessage with response_id (not the most recent one)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
     assert last_messages == [
         HumanMessage("How are you?"),
         AIMessage("I'm good"),
@@ -2537,7 +2539,7 @@ def test_get_last_messages_with_mixed_response_metadata() -> None:
         HumanMessage("Hello"),
         AIMessage("Hi there!"),  # No response_metadata
         HumanMessage("How are you?"),
-        AIMessage("I'm good"),   # No response_metadata
+        AIMessage("I'm good"),  # No response_metadata
         HumanMessage("What's up?"),
     ]
     last_messages, previous_response_id = _get_last_messages(messages)
