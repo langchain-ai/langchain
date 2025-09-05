@@ -1,0 +1,167 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langchain-llamastack"
+version = "0.1.0"
+description = "LangChain integration for LlamaStack"
+readme = "README.md"
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+authors = [
+    {name = "LlamaStack Team", email = "llamastack@meta.com"},
+]
+keywords = ["llama", "llamastack", "langchain", "ai", "llm", "chat", "embeddings", "safety"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "langchain-core<0.4.0,>=0.3.15",
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.0.0",
+    "llama-stack-client>=0.0.40",
+    "fire>=0.4.0",
+]
+
+[dependency-groups]
+test = [
+    "pytest<8.0.0,>=7.3.0",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-cov<5.0.0,>=4.1.0",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "langchain-core",
+    "langchain-tests",
+    "langchain-openai>=0.1.0",
+    "numpy>=1.21.0",
+    "scikit-learn>=1.0.0",
+    "llama-stack-client>=0.0.53",
+    "httpx>=0.24.0",
+]
+test_integration = [
+    "pytest<8.0.0,>=7.3.0",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-cov<5.0.0,>=4.1.0",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "langchain-core",
+    "langchain-tests",
+    "langchain-openai>=0.1.0",
+    "numpy>=1.21.0",
+    "scikit-learn>=1.0.0",
+    "llama-stack-client>=0.0.53",
+    "httpx>=0.24.0",
+]
+lint = ["ruff<0.13,>=0.12.8"]
+typing = ["mypy<2.0,>=1.17.1", "langchain-core"]
+codespell = ["codespell<3.0.0,>=2.2.0"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+llamastack = [
+    "llama-stack-client>=0.0.40",
+]
+all = [
+    "llama-stack-client>=0.0.40",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
+
+[tool.mypy]
+disallow_untyped_defs = "True"
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "T201", "UP", "S"]
+ignore = ["UP007", "UP045"]
+
+[tool.ruff.format]
+docstring-code-format = true
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--snapshot-warn-unused --strict-markers --strict-config --durations=5 --cov=langchain_llamastack"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "compile: mark placeholder test used to compile integration tests without running them",
+    "scheduled: mark tests to run in scheduled testing",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"examples/**/*.py" = [
+    "T201", # Examples can use print statements
+]
+
+[project.urls]
+Homepage = "https://github.com/meta-llama/llama-stack"
+Documentation = "https://llama-stack.readthedocs.io/"
+Repository = "https://github.com/meta-llama/llama-stack"
+"Bug Tracker" = "https://github.com/meta-llama/llama-stack/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["langchain_llamastack*"]
+
+[tool.setuptools.package-data]
+langchain_llamastack = ["py.typed"]
+
+[tool.black]
+line-length = 88
+target-version = ['py38']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+multi_line_output = 3
+line_length = 88
+known_first_party = ["langchain_llamastack"]
