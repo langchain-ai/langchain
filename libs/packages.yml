@@ -733,4 +733,7 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
+- name: langchain-zeusdb
+  repo: zeusdb/langchain-zeusdb
+  path: libs/zeusdb
 
