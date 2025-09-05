@@ -1,5 +1,6 @@
 """Unit tests for LlamaStack embeddings."""
 
+from typing import Any
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,13 +11,13 @@ from langchain_llamastack.embeddings import LlamaStackEmbeddings
 class TestLlamaStackEmbeddings:
     """Test cases for LlamaStackEmbeddings."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.base_url = "http://test-server:8321"
         self.model = "test-model"
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_init_default_params(self, mock_client_class):
+    def test_init_default_params(self, mock_client_class: Any) -> None:
         """Test initialization with default parameters."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -31,7 +32,7 @@ class TestLlamaStackEmbeddings:
         assert embeddings.client is not None
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_init_custom_params(self, mock_client_class):
+    def test_init_custom_params(self, mock_client_class: Any) -> None:
         """Test initialization with custom parameters."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -51,7 +52,7 @@ class TestLlamaStackEmbeddings:
         assert embeddings.request_timeout == 60.0
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_setup_client_success(self, mock_client_class):
+    def test_setup_client_success(self, mock_client_class: Any) -> None:
         """Test successful client setup."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -62,14 +63,14 @@ class TestLlamaStackEmbeddings:
         assert embeddings.client == mock_client
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_setup_client_failure(self, mock_client_class):
+    def test_setup_client_failure(self, mock_client_class: Any) -> None:
         """Test client setup failure."""
         mock_client_class.side_effect = Exception("Connection failed")
 
         with pytest.raises(ValueError, match="Failed to initialize Llama Stack client"):
             LlamaStackEmbeddings(base_url=self.base_url)
 
-    def test_llm_type(self):
+    def test_llm_type(self) -> None:
         """Test _llm_type property."""
         with patch("langchain_llamastack.embeddings.LlamaStackClient"):
             embeddings = LlamaStackEmbeddings()
@@ -77,7 +78,9 @@ class TestLlamaStackEmbeddings:
 
     @patch("httpx.Client")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_embed_texts_success(self, mock_client_class, mock_httpx_client):
+    def test_embed_texts_success(
+        self, mock_client_class: Any, mock_httpx_client: Any
+    ) -> None:
         """Test successful text embedding."""
         # Setup mocks
         mock_client = Mock()
@@ -112,7 +115,9 @@ class TestLlamaStackEmbeddings:
 
     @patch("httpx.Client")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_embed_texts_http_error(self, mock_client_class, mock_httpx_client):
+    def test_embed_texts_http_error(
+        self, mock_client_class: Any, mock_httpx_client: Any
+    ) -> None:
         """Test embedding with HTTP error."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -131,7 +136,9 @@ class TestLlamaStackEmbeddings:
 
     @patch("httpx.Client")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_embed_texts_invalid_response(self, mock_client_class, mock_httpx_client):
+    def test_embed_texts_invalid_response(
+        self, mock_client_class: Any, mock_httpx_client: Any
+    ) -> None:
         """Test embedding with invalid response format."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -168,7 +175,7 @@ class TestLlamaStackEmbeddings:
 
     @patch.object(LlamaStackEmbeddings, "_embed_with_retry")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_embed_query(self, mock_client_class, mock_embed):
+    def test_embed_query(self, mock_client_class: Any, mock_embed: Any) -> None:
         """Test embedding a single query."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -182,7 +189,7 @@ class TestLlamaStackEmbeddings:
         mock_embed.assert_called_once_with(["test query"])
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_identifying_params(self, mock_client_class):
+    def test_identifying_params(self, mock_client_class: Any) -> None:
         """Test identifying parameters property."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -208,7 +215,9 @@ class TestLlamaStackEmbeddings:
 
     @patch.object(LlamaStackEmbeddings, "_embed_texts")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_embed_with_retry_success(self, mock_client_class, mock_embed_texts):
+    def test_embed_with_retry_success(
+        self, mock_client_class: Any, mock_embed_texts: Any
+    ) -> None:
         """Test successful embedding with retry logic."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -224,8 +233,8 @@ class TestLlamaStackEmbeddings:
     @patch.object(LlamaStackEmbeddings, "_embed_texts")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
     def test_embed_with_retry_failure_then_success(
-        self, mock_client_class, mock_embed_texts
-    ):
+        self, mock_client_class: Any, mock_embed_texts: Any
+    ) -> None:
         """Test embedding with retry after failure."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -242,8 +251,8 @@ class TestLlamaStackEmbeddings:
     @patch.object(LlamaStackEmbeddings, "_embed_texts")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
     def test_embed_with_retry_max_retries_exceeded(
-        self, mock_client_class, mock_embed_texts
-    ):
+        self, mock_client_class: Any, mock_embed_texts: Any
+    ) -> None:
         """Test embedding failure after max retries."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -258,7 +267,7 @@ class TestLlamaStackEmbeddings:
         assert mock_embed_texts.call_count == 2
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_get_model_info_with_client_success(self, mock_client_class):
+    def test_get_model_info_with_client_success(self, mock_client_class: Any) -> None:
         """Test getting model info successfully."""
         mock_client = Mock()
         mock_model = Mock()
@@ -286,7 +295,7 @@ class TestLlamaStackEmbeddings:
         assert result == expected
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_get_model_info_model_not_found(self, mock_client_class):
+    def test_get_model_info_model_not_found(self, mock_client_class: Any) -> None:
         """Test getting model info when model not found."""
         mock_client = Mock()
         mock_client.models.list.return_value = []
@@ -298,7 +307,7 @@ class TestLlamaStackEmbeddings:
         assert result == {"error": "Model nonexistent-model not found"}
 
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_get_model_info_client_error(self, mock_client_class):
+    def test_get_model_info_client_error(self, mock_client_class: Any) -> None:
         """Test getting model info with client error."""
         mock_client = Mock()
         mock_client.models.list.side_effect = Exception("API error")
@@ -311,7 +320,9 @@ class TestLlamaStackEmbeddings:
 
     @patch.object(LlamaStackEmbeddings, "get_model_info")
     @patch("langchain_llamastack.embeddings.LlamaStackClient")
-    def test_get_embedding_dimension(self, mock_client_class, mock_get_model_info):
+    def test_get_embedding_dimension(
+        self, mock_client_class: Any, mock_get_model_info: Any
+    ) -> None:
         """Test getting embedding dimension."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
