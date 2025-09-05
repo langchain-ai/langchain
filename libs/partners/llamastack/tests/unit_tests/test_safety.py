@@ -1,6 +1,7 @@
 """Unit tests for LlamaStack safety module."""
 
 import os
+from typing import Any
 from unittest.mock import Mock, patch
 
 from langchain_llamastack.safety import LlamaStackSafety, SafetyResult
@@ -9,7 +10,7 @@ from langchain_llamastack.safety import LlamaStackSafety, SafetyResult
 class TestSafetyResult:
     """Test cases for SafetyResult model."""
 
-    def test_safety_result_creation(self):
+    def test_safety_result_creation(self) -> None:
         """Test SafetyResult creation with default values."""
         result = SafetyResult(is_safe=True)
 
@@ -19,7 +20,7 @@ class TestSafetyResult:
         assert result.explanation is None
         assert result.metadata is None
 
-    def test_safety_result_creation_with_values(self):
+    def test_safety_result_creation_with_values(self) -> None:
         """Test SafetyResult creation with all values."""
         violations = [{"category": "hate", "score": 0.9}]
         result = SafetyResult(
@@ -40,7 +41,7 @@ class TestSafetyResult:
 class TestLlamaStackSafety:
     """Test cases for LlamaStackSafety."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.base_url = "http://test-server:8321"
         self.api_key = "test-api-key"
@@ -48,7 +49,7 @@ class TestLlamaStackSafety:
 
     @patch("langchain_llamastack.safety.LlamaStackClient", None)
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
-    def test_init_default_params(self):
+    def test_init_default_params(self) -> None:
         """Test initialization with default parameters."""
         with patch.dict(os.environ, {}, clear=True):
             safety = LlamaStackSafety()
@@ -64,7 +65,7 @@ class TestLlamaStackSafety:
 
     @patch("langchain_llamastack.safety.LlamaStackClient", None)
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
-    def test_init_custom_params(self):
+    def test_init_custom_params(self) -> None:
         """Test initialization with custom parameters."""
         safety = LlamaStackSafety(
             base_url=self.base_url,
@@ -84,7 +85,7 @@ class TestLlamaStackSafety:
 
     @patch("langchain_llamastack.safety.LlamaStackClient", None)
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
-    def test_init_env_vars(self):
+    def test_init_env_vars(self) -> None:
         """Test initialization with environment variables."""
         env_vars = {
             "LLAMA_STACK_BASE_URL": "http://env-server:8321",
@@ -98,7 +99,7 @@ class TestLlamaStackSafety:
             assert safety.api_key == "env-api-key"
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_get_client_kwargs(self, mock_client_class):
+    def test_get_client_kwargs(self, mock_client_class: Any) -> None:
         """Test getting client kwargs."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -118,7 +119,7 @@ class TestLlamaStackSafety:
         assert kwargs == expected
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_get_client_kwargs_no_api_key(self, mock_client_class):
+    def test_get_client_kwargs_no_api_key(self, mock_client_class: Any) -> None:
         """Test getting client kwargs without API key."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -132,7 +133,7 @@ class TestLlamaStackSafety:
         assert "api_key" not in kwargs
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_initialize_client(self, mock_client_class):
+    def test_initialize_client(self, mock_client_class: Any) -> None:
         """Test initializing client."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -146,7 +147,7 @@ class TestLlamaStackSafety:
         )
 
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_initialize_async_client(self, mock_async_client_class):
+    def test_initialize_async_client(self, mock_async_client_class: Any) -> None:
         """Test initializing async client."""
         mock_async_client = Mock()
         mock_async_client_class.return_value = mock_async_client
@@ -160,7 +161,7 @@ class TestLlamaStackSafety:
         )
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_check_content_safety_success(self, mock_client_class):
+    def test_check_content_safety_success(self, mock_client_class: Any) -> None:
         """Test successful content safety check."""
         # Setup mock client and response
         mock_client = Mock()
@@ -211,7 +212,7 @@ class TestLlamaStackSafety:
     #     assert result.confidence_score == 0.92
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_check_content_safety_error(self, mock_client_class):
+    def test_check_content_safety_error(self, mock_client_class: Any) -> None:
         """Test content safety check with error."""
         mock_client = Mock()
         mock_client.safety.run_shield.side_effect = Exception("API error")
@@ -225,7 +226,7 @@ class TestLlamaStackSafety:
         assert "Safety check failed: API error" in result.explanation
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_moderate_content_success(self, mock_client_class):
+    def test_moderate_content_success(self, mock_client_class: Any) -> None:
         """Test successful content moderation."""
         mock_client = Mock()
         mock_result = Mock()
@@ -248,7 +249,7 @@ class TestLlamaStackSafety:
         )
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_moderate_content_violation(self, mock_client_class):
+    def test_moderate_content_violation(self, mock_client_class: Any) -> None:
         """Test content moderation with violation."""
         mock_client = Mock()
 
@@ -280,7 +281,7 @@ class TestLlamaStackSafety:
         assert result.violations[0]["score"] == 0.85
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_moderate_content_list_results(self, mock_client_class):
+    def test_moderate_content_list_results(self, mock_client_class: Any) -> None:
         """Test content moderation with list results."""
         mock_client = Mock()
 
@@ -299,7 +300,7 @@ class TestLlamaStackSafety:
         assert result.is_safe is True
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_moderate_content_error(self, mock_client_class):
+    def test_moderate_content_error(self, mock_client_class: Any) -> None:
         """Test content moderation with error."""
         mock_client = Mock()
         mock_client.moderations.create.side_effect = Exception("Moderation error")
@@ -378,7 +379,7 @@ class TestLlamaStackSafety:
     #     assert result.violations[0]["level"] == "medium"
 
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_acheck_content_safety_error(self, mock_async_client_class):
+    def test_acheck_content_safety_error(self, mock_async_client_class: Any) -> None:
         """Test async content safety check with error."""
         mock_async_client = Mock()
         mock_async_client.safety.run_shield.side_effect = Exception("Async API error")
@@ -402,7 +403,7 @@ class TestLlamaStackSafety:
         assert "Async safety check failed: Async API error" in result.explanation
 
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_amoderate_content_success(self, mock_async_client_class):
+    def test_amoderate_content_success(self, mock_async_client_class: Any) -> None:
         """Test successful async content moderation."""
         mock_async_client = Mock()
         mock_result = Mock()
@@ -480,7 +481,7 @@ class TestLlamaStackSafety:
     #     assert result.violations[0]["category"] == "violence"
 
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_amoderate_content_error(self, mock_async_client_class):
+    def test_amoderate_content_error(self, mock_async_client_class: Any) -> None:
         """Test async content moderation with error."""
         mock_async_client = Mock()
         mock_async_client.moderations.create.side_effect = Exception(
