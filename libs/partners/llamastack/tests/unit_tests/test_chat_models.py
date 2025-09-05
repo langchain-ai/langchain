@@ -18,7 +18,7 @@ from langchain_llamastack.chat_models import (
 class TestChatModels:
     """Test cases for LlamaStack chat models."""
 
-    def setup_method(self):
+    def setup_method(self) -> None:
         """Set up test fixtures."""
         self.base_url = "http://test-server:8321"
         self.test_model = "test-model"
@@ -28,7 +28,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_default_params(
         self, mock_chat_openai, mock_check_connection
-    ):
+    ) -> None:
         """Test creating LLM with default parameters."""
         # Mock connection check
         mock_check_connection.return_value = {
@@ -82,7 +82,9 @@ class TestChatModels:
     #     assert call_kwargs["temperature"] == 0.7
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_create_llamastack_llm_connection_failed(self, mock_check_connection):
+    def test_create_llamastack_llm_connection_failed(
+        self, mock_check_connection
+    ) -> None:
         """Test LLM creation when connection fails."""
         mock_check_connection.return_value = {
             "connected": False,
@@ -93,7 +95,7 @@ class TestChatModels:
             create_llamastack_llm()
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_create_llamastack_llm_no_models(self, mock_check_connection):
+    def test_create_llamastack_llm_no_models(self, mock_check_connection) -> None:
         """Test LLM creation when no models are available."""
         mock_check_connection.return_value = {"connected": True, "models": []}
 
@@ -101,7 +103,9 @@ class TestChatModels:
             create_llamastack_llm()
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_create_llamastack_llm_chatgpt_not_available(self, mock_check_connection):
+    def test_create_llamastack_llm_chatgpt_not_available(
+        self, mock_check_connection
+    ) -> None:
         """Test LLM creation when ChatOpenAI is not available."""
         mock_check_connection.return_value = {
             "connected": True,
@@ -116,7 +120,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_model_not_found_strict(
         self, mock_chat_openai, mock_check_connection
-    ):
+    ) -> None:
         """Test LLM creation when specified model is not found (strict mode)."""
         mock_check_connection.return_value = {
             "connected": True,
@@ -130,7 +134,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_model_fallback(
         self, mock_chat_openai, mock_check_connection
-    ):
+    ) -> None:
         """Test LLM creation with model fallback."""
         mock_check_connection.return_value = {
             "connected": True,
@@ -156,7 +160,7 @@ class TestChatModels:
     @patch("langchain_llamastack.chat_models.ChatOpenAI")
     def test_create_llamastack_llm_with_provider_keys(
         self, mock_chat_openai, mock_check_connection
-    ):
+    ) -> None:
         """Test LLM creation with provider API keys."""
         mock_check_connection.return_value = {
             "connected": True,
@@ -179,7 +183,7 @@ class TestChatModels:
         assert "default_headers" in call_kwargs
         assert "X-LlamaStack-Provider-Data" in call_kwargs["default_headers"]
 
-    def test_get_provider_headers_fireworks(self):
+    def test_get_provider_headers_fireworks(self) -> None:
         """Test getting provider headers for Fireworks model."""
         model = "accounts/fireworks/models/llama-v3p1-8b-instruct"
         provider_keys = {"fireworks": "test-api-key"}
@@ -190,7 +194,7 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["fireworks_api_key"] == "test-api-key"
 
-    def test_get_provider_headers_together(self):
+    def test_get_provider_headers_together(self) -> None:
         """Test getting provider headers for Together model."""
         model = "together/llama-2-7b-chat"
         provider_keys = {"together": "test-together-key"}
@@ -201,7 +205,7 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["together_api_key"] == "test-together-key"
 
-    def test_get_provider_headers_openai(self):
+    def test_get_provider_headers_openai(self) -> None:
         """Test getting provider headers for OpenAI model."""
         model = "gpt-4"
         provider_keys = {"openai": "test-openai-key"}
@@ -212,7 +216,7 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["openai_api_key"] == "test-openai-key"
 
-    def test_get_provider_headers_anthropic(self):
+    def test_get_provider_headers_anthropic(self) -> None:
         """Test getting provider headers for Anthropic model."""
         model = "claude-3-sonnet"
         provider_keys = {"anthropic": "test-anthropic-key"}
@@ -223,7 +227,7 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["anthropic_api_key"] == "test-anthropic-key"
 
-    def test_get_provider_headers_groq(self):
+    def test_get_provider_headers_groq(self) -> None:
         """Test getting provider headers for Groq model."""
         model = "llama3-groq-70b"
         provider_keys = {"groq": "test-groq-key"}
@@ -234,7 +238,7 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["groq_api_key"] == "test-groq-key"
 
-    def test_get_provider_headers_no_match(self):
+    def test_get_provider_headers_no_match(self) -> None:
         """Test getting provider headers when no provider matches."""
         model = "ollama/llama2"
         provider_keys = {"fireworks": "test-key"}
@@ -243,7 +247,7 @@ class TestChatModels:
 
         assert headers == {}
 
-    def test_get_provider_headers_env_vars(self):
+    def test_get_provider_headers_env_vars(self) -> None:
         """Test getting provider headers from environment variables."""
         model = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
@@ -256,7 +260,7 @@ class TestChatModels:
             provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
             assert provider_data["fireworks_api_key"] == "env-api-key"
 
-    def test_find_working_model_no_validation(self):
+    def test_find_working_model_no_validation(self) -> None:
         """Test finding working model without validation."""
         available_models = ["model1", "model2", "model3"]
 
@@ -265,7 +269,9 @@ class TestChatModels:
         assert result == "model1"
 
     @patch("langchain_llamastack.chat_models._test_model_accessibility")
-    def test_find_working_model_with_validation_success(self, mock_test_accessibility):
+    def test_find_working_model_with_validation_success(
+        self, mock_test_accessibility
+    ) -> None:
         """Test finding working model with validation success."""
         available_models = ["model1", "model2", "model3"]
         mock_test_accessibility.side_effect = [False, True, False]
@@ -276,7 +282,9 @@ class TestChatModels:
         assert mock_test_accessibility.call_count == 2
 
     @patch("langchain_llamastack.chat_models._test_model_accessibility")
-    def test_find_working_model_with_validation_all_fail(self, mock_test_accessibility):
+    def test_find_working_model_with_validation_all_fail(
+        self, mock_test_accessibility
+    ) -> None:
         """Test finding working model when all fail validation."""
         available_models = ["model1", "model2", "model3"]
         mock_test_accessibility.return_value = False
@@ -355,7 +363,7 @@ class TestChatModels:
         assert result is False
 
     @patch("langchain_llamastack.chat_models.list_available_models")
-    def test_get_llamastack_models_success(self, mock_list_models):
+    def test_get_llamastack_models_success(self, mock_list_models) -> None:
         """Test getting LlamaStack models successfully."""
         mock_list_models.return_value = self.available_models
 
@@ -374,7 +382,7 @@ class TestChatModels:
     #     assert result == []
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_check_llamastack_status_success(self, mock_check_connection):
+    def test_check_llamastack_status_success(self, mock_check_connection) -> None:
         """Test checking LlamaStack status successfully."""
         expected_status = {
             "connected": True,
@@ -391,7 +399,7 @@ class TestChatModels:
         )
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
-    def test_check_llamastack_status_failure(self, mock_check_connection):
+    def test_check_llamastack_status_failure(self, mock_check_connection) -> None:
         """Test checking LlamaStack status with failure."""
         expected_status = {
             "connected": False,
@@ -405,7 +413,7 @@ class TestChatModels:
 
         assert result == expected_status
 
-    def test_get_provider_headers_multiple_providers(self):
+    def test_get_provider_headers_multiple_providers(self) -> None:
         """Test getting provider headers for model matching multiple patterns."""
         model = (
             "fireworks-together-model"  # Hypothetical model matching multiple patterns
