@@ -1,6 +1,9 @@
 """Usage utilities."""
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from langchain_core.messages.ai import UsageMetadata
 
 
 def _dict_int_op(
@@ -37,3 +40,31 @@ def _dict_int_op(
             )
             raise ValueError(msg)  # noqa: TRY004
     return combined
+
+
+def get_billable_input_tokens(usage_metadata: "UsageMetadata") -> int:
+    """Calculate billable input tokens excluding cached tokens.
+
+    When using prompt caching (e.g., with Anthropic models), the ``input_tokens``
+    field on ``UsageMetadata`` represents the total tokens processed (cached +
+    non-cached), but you're only charged for non-cached tokens. This function calculates
+    the actual billable input tokens.
+
+    Example:
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+            from langchain_core.utils.usage import get_billable_input_tokens
+
+            model = ChatAnthropic(model="claude-3-sonnet-20240229")
+            response = model.invoke([{"role": "user", "content": "Hello!"}])
+
+            # Calculate billable tokens
+            billable = get_billable_input_tokens(response.usage_metadata)
+
+    """
+    total_input = usage_metadata["input_tokens"]
+    details = usage_metadata.get("input_token_details", {})
+    cache_read = details.get("cache_read", 0)
+    cache_creation = details.get("cache_creation", 0)
+    return total_input - cache_read - cache_creation

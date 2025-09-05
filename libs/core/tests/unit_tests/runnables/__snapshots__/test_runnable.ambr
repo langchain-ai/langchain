@@ -3263,6 +3263,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -4757,6 +4763,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -6265,6 +6277,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -7627,6 +7645,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -9165,6 +9189,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -10572,6 +10602,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -12029,6 +12065,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -13485,6 +13527,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
