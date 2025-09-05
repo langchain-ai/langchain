@@ -507,7 +507,7 @@ class TestLlamaStackSafety:
         assert "Async moderation failed: Async moderation error" in result.explanation
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
-    def test_client_initialization_lazy(self, mock_client_class):
+    def test_client_initialization_lazy(self, mock_client_class: Any) -> None:
         """Test that clients are initialized lazily."""
         mock_client = Mock()
         mock_client_class.return_value = mock_client
@@ -523,7 +523,7 @@ class TestLlamaStackSafety:
         assert safety.client is not None
 
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
-    def test_async_client_initialization_lazy(self, mock_async_client_class):
+    def test_async_client_initialization_lazy(self, mock_async_client_class: Any) --> None:
         """Test that async clients are initialized lazily."""
         mock_async_client = Mock()
         mock_async_client_class.return_value = mock_async_client
