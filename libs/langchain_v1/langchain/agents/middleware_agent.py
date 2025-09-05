@@ -295,17 +295,20 @@ def create_agent(
         if isinstance(response_format, ProviderStrategy):
             # Use native structured output
             kwargs = response_format.to_model_kwargs()
-            return request.model.bind_tools(request.tools, strict=True, **kwargs)
+            return request.model.bind_tools(
+                request.tools, strict=True, **kwargs, **request.model_settings
+            )
         if isinstance(response_format, ToolStrategy):
             tool_choice = "any" if structured_output_tools else request.tool_choice
-            return request.model.bind_tools(request.tools, tool_choice=tool_choice)
+            return request.model.bind_tools(
+                request.tools, tool_choice=tool_choice, **request.model_settings
+            )
         # Standard model binding
         if request.tools:
             return request.model.bind_tools(
-                request.tools,
-                tool_choice=request.tool_choice,
+                request.tools, tool_choice=request.tool_choice, **request.model_settings
             )
-        return request.model
+        return request.model.bind(**request.model_settings)
 
     def model_request(state: AgentState) -> AgentState:
         """Sync model request handler."""

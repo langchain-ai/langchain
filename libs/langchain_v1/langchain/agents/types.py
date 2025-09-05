@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Annotated, Any, ClassVar, Generic, Literal
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -24,6 +24,7 @@ class ModelRequest:
     tool_choice: Any
     tools: list[BaseTool]
     response_format: ResponseFormat | None
+    model_settings: dict[str, Any] = field(default_factory=dict)
 
 
 class AgentState(TypedDict, Generic[ResponseT], total=False):
