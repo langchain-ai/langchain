@@ -37,7 +37,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
         run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         rf = kwargs.get("response_format")
         is_native = isinstance(rf, dict) and rf.get("type") == "json_schema"
 

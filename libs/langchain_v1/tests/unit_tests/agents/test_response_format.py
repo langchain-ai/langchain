@@ -1,11 +1,13 @@
 """Test suite for create_agent with structured output response_format permutations."""
 
-import pytest
-
 from dataclasses import dataclass
 from typing import Union
 
+import pytest
 from langchain_core.messages import HumanMessage
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
+
 from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -13,9 +15,6 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
-from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -76,13 +75,11 @@ location_json_schema = {
 
 def get_weather() -> str:
     """Get the weather."""
-
     return "The weather is sunny and 75°F."
 
 
 def get_location() -> str:
     """Get the current location."""
-
     return "You are in New York, USA."
 
 
@@ -373,7 +370,11 @@ class TestResponseFormatAsToolStrategy:
         assert len(response_location["messages"]) == 5
 
     def test_multiple_structured_outputs_error_without_retry(self) -> None:
-        """Test that MultipleStructuredOutputsError is raised when model returns multiple structured tool calls without retry."""
+        """Test multiple structured outputs error without retry.
+
+        Test that MultipleStructuredOutputsError is raised when model returns multiple
+        structured tool calls without retry.
+        """
         tool_calls = [
             [
                 {
@@ -402,7 +403,7 @@ class TestResponseFormatAsToolStrategy:
 
         with pytest.raises(
             MultipleStructuredOutputsError,
-            match=".*WeatherBaseModel.*LocationResponse.*",
+            match=r".*WeatherBaseModel.*LocationResponse.*",
         ):
             agent.invoke({"messages": [HumanMessage("Give me weather and location")]})
 
@@ -448,7 +449,11 @@ class TestResponseFormatAsToolStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
     def test_structured_output_parsing_error_without_retry(self) -> None:
-        """Test that StructuredOutputParsingError is raised when tool args fail to parse without retry."""
+        """Test structured output parsing error without retry.
+
+        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        without retry.
+        """
         tool_calls = [
             [
                 {
@@ -472,7 +477,7 @@ class TestResponseFormatAsToolStrategy:
 
         with pytest.raises(
             StructuredOutputValidationError,
-            match=".*WeatherBaseModel.*",
+            match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
