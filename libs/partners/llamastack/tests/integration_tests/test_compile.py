@@ -4,7 +4,7 @@ import pytest
 
 
 @pytest.mark.compile
-def test_compile_all():
+def test_compile_all() -> None:
     """Test that all integration modules can be imported successfully."""
 
     # Test basic imports - import and verify module is available
