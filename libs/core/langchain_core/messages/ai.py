@@ -108,6 +108,12 @@ class UsageMetadata(TypedDict):
 
     This is a standard representation of token usage that is consistent across models.
 
+    .. note::
+        When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+        represents the total tokens processed (cached + non-cached), not just the
+        tokens you're charged for. Use ``input_token_details`` to get the breakdown
+        of cached vs non-cached tokens for billing calculations.
+
     Example:
 
         .. code-block:: python
@@ -134,7 +140,12 @@ class UsageMetadata(TypedDict):
     """
 
     input_tokens: int
-    """Count of input (or prompt) tokens. Sum of all input token types."""
+    """Count of input (or prompt) tokens. Sum of all input token types.
+
+    This includes both newly processed tokens and tokens read from cache, if
+    applicable. For billing purposes with cached models, check ``input_token_details``
+    for the breakdown between ``cache_read`` and newly processed tokens.
+    """
     output_tokens: int
     """Count of output (or completion) tokens. Sum of all output token types."""
     total_tokens: int
