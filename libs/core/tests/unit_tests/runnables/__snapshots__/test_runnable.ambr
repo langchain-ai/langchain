@@ -483,273 +483,6 @@
     RunTree(id=00000000-0000-4000-8000-000000000000, name='RunnableSequence', run_type='chain', dotted_order='20230101T000000000000Z00000000-0000-4000-8000-000000000000'),
   ])
 # ---
-# name: test_configurable_fields[schema2]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema3]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableConfigurableFieldsConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema4]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields[schema5]
-  dict({
-    '$defs': dict({
-      'Configurable': dict({
-        'properties': dict({
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'other_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'Other Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            'default': 'Hello, {name}!',
-            'description': 'The prompt template for this chain',
-            'title': 'Prompt Template',
-            'type': 'string',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_example[schema7]
-  dict({
-    '$defs': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/$defs/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm': dict({
-            '$ref': '#/$defs/LLM',
-            'default': 'default',
-          }),
-          'llm_responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/$defs/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/$defs/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
-# name: test_configurable_fields_prefix_keys[schema6]
-  dict({
-    'definitions': dict({
-      'Chat_Responses': dict({
-        'title': 'Chat Responses',
-      }),
-      'Configurable': dict({
-        'properties': dict({
-          'chat_sleep': dict({
-            'anyOf': list([
-              dict({
-                'type': 'number',
-              }),
-              dict({
-                'type': 'null',
-              }),
-            ]),
-            'default': None,
-            'title': 'Chat Sleep',
-          }),
-          'llm': dict({
-            '$ref': '#/definitions/LLM',
-            'default': 'default',
-          }),
-          'llm==chat/responses': dict({
-            'default': list([
-              'hello',
-              'bye',
-            ]),
-            'items': dict({
-              '$ref': '#/definitions/Chat_Responses',
-            }),
-            'title': 'Chat Responses',
-            'type': 'array',
-          }),
-          'llm==default/responses': dict({
-            'default': list([
-              'a',
-            ]),
-            'description': 'A list of fake responses for this LLM',
-            'items': dict({
-              'type': 'string',
-            }),
-            'title': 'LLM Responses',
-            'type': 'array',
-          }),
-          'prompt_template': dict({
-            '$ref': '#/definitions/Prompt_Template',
-            'default': 'hello',
-            'description': 'The prompt template for this chain',
-          }),
-        }),
-        'title': 'Configurable',
-        'type': 'object',
-      }),
-      'LLM': dict({
-        'title': 'LLM',
-      }),
-      'Prompt_Template': dict({
-        'title': 'Prompt Template',
-      }),
-    }),
-    'properties': dict({
-      'configurable': dict({
-        '$ref': '#/definitions/Configurable',
-      }),
-    }),
-    'title': 'RunnableSequenceConfig',
-    'type': 'object',
-  })
-# ---
 # name: test_each
   '''
   {
@@ -3263,6 +2996,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -4757,6 +4496,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -6265,6 +6010,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -7627,6 +7378,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -9165,6 +8922,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -10572,6 +10335,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -12028,6 +11797,12 @@
           Usage metadata for a message, such as token counts.
           
           This is a standard representation of token usage that is consistent across models.
+          
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
           
           Example:
           
@@ -13486,6 +13261,12 @@
           
           This is a standard representation of token usage that is consistent across models.
           
+          .. note::
+              When using prompt caching (e.g., with Anthropic models), ``input_tokens``
+              represents the total tokens processed (cached + non-cached), not just the
+              tokens you're charged for. Use ``input_token_details`` to get the breakdown
+              of cached vs non-cached tokens for billing calculations.
+          
           Example:
           
               .. code-block:: python
@@ -13924,181 +13705,6 @@
           }
         },
         "name": "RunnableParallel<chat,llm>"
-      }
-    },
-    "name": "RunnableSequence"
-  }
-  '''
-# ---
-# name: test_seq_prompt_map
-  '''
-  {
-    "lc": 1,
-    "type": "constructor",
-    "id": [
-      "langchain",
-      "schema",
-      "runnable",
-      "RunnableSequence"
-    ],
-    "kwargs": {
-      "first": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "prompts",
-          "chat",
-          "ChatPromptTemplate"
-        ],
-        "kwargs": {
-          "input_variables": [
-            "question"
-          ],
-          "messages": [
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "SystemMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [],
-                    "template": "You are a nice assistant.",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            },
-            {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "prompts",
-                "chat",
-                "HumanMessagePromptTemplate"
-              ],
-              "kwargs": {
-                "prompt": {
-                  "lc": 1,
-                  "type": "constructor",
-                  "id": [
-                    "langchain",
-                    "prompts",
-                    "prompt",
-                    "PromptTemplate"
-                  ],
-                  "kwargs": {
-                    "input_variables": [
-                      "question"
-                    ],
-                    "template": "{question}",
-                    "template_format": "f-string"
-                  },
-                  "name": "PromptTemplate"
-                }
-              }
-            }
-          ]
-        },
-        "name": "ChatPromptTemplate"
-      },
-      "middle": [
-        {
-          "lc": 1,
-          "type": "not_implemented",
-          "id": [
-            "langchain_core",
-            "runnables",
-            "base",
-            "RunnableLambda"
-          ],
-          "repr": "RunnableLambda(...)"
-        }
-      ],
-      "last": {
-        "lc": 1,
-        "type": "constructor",
-        "id": [
-          "langchain",
-          "schema",
-          "runnable",
-          "RunnableParallel"
-        ],
-        "kwargs": {
-          "steps__": {
-            "chat": {
-              "lc": 1,
-              "type": "constructor",
-              "id": [
-                "langchain",
-                "schema",
-                "runnable",
-                "RunnableBinding"
-              ],
-              "kwargs": {
-                "bound": {
-                  "lc": 1,
-                  "type": "not_implemented",
-                  "id": [
-                    "langchain_core",
-                    "language_models",
-                    "fake_chat_models",
-                    "FakeListChatModel"
-                  ],
-                  "repr": "FakeListChatModel(responses=[\"i'm a chatbot\"])",
-                  "name": "FakeListChatModel"
-                },
-                "kwargs": {
-                  "stop": [
-                    "Thought:"
-                  ]
-                },
-                "config": {}
-              },
-              "name": "FakeListChatModel"
-            },
-            "llm": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "language_models",
-                "fake",
-                "FakeListLLM"
-              ],
-              "repr": "FakeListLLM(responses=[\"i'm a textbot\"])",
-              "name": "FakeListLLM"
-            },
-            "passthrough": {
-              "lc": 1,
-              "type": "not_implemented",
-              "id": [
-                "langchain_core",
-                "runnables",
-                "base",
-                "RunnableLambda"
-              ],
-              "repr": "RunnableLambda(...)"
-            }
-          }
-        },
-        "name": "RunnableParallel<chat,llm,passthrough>"
       }
     },
     "name": "RunnableSequence"
