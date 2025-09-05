@@ -14,12 +14,13 @@ class RecursiveJsonSplitter:
     JSON-formatted strings based on configurable maximum and minimum chunk sizes.
     It supports nested JSON structures, optionally converts lists into dictionaries
     for better chunking, and allows the creation of document objects for further use.
-
-    Attributes:
-        max_chunk_size (int): The maximum size for each chunk. Defaults to 2000.
-        min_chunk_size (int): The minimum size for each chunk, derived from
-            `max_chunk_size` if not explicitly provided.
     """
+
+    max_chunk_size: int = 2000
+    """The maximum size for each chunk. Defaults to 2000."""
+    min_chunk_size: int = 1800
+    """The minimum size for each chunk, derived from ``max_chunk_size`` if not
+    explicitly provided."""
 
     def __init__(
         self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
@@ -27,18 +28,13 @@ class RecursiveJsonSplitter:
         """Initialize the chunk size configuration for text processing.
 
         This constructor sets up the maximum and minimum chunk sizes, ensuring that
-        the `min_chunk_size` defaults to a value slightly smaller than the
-        `max_chunk_size` if not explicitly provided.
+        the ``min_chunk_size`` defaults to a value slightly smaller than the
+        ``max_chunk_size`` if not explicitly provided.
 
         Args:
-            max_chunk_size (int): The maximum size for a chunk. Defaults to 2000.
-            min_chunk_size (Optional[int]): The minimum size for a chunk. If None,
+            max_chunk_size: The maximum size for a chunk. Defaults to 2000.
+            min_chunk_size: The minimum size for a chunk. If None,
                 defaults to the maximum chunk size minus 200, with a lower bound of 50.
-
-        Attributes:
-            max_chunk_size (int): The configured maximum size for each chunk.
-            min_chunk_size (int): The configured minimum size for each chunk, derived
-                from `max_chunk_size` if not explicitly provided.
         """
         super().__init__()
         self.max_chunk_size = max_chunk_size

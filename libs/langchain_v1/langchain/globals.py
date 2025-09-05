@@ -1,4 +1,7 @@
-"""Global values and configuration that apply to all of LangChain."""
+"""Global values and configuration that apply to all of LangChain.
+
+TODO: will be removed in a future alpha version.
+"""
 
 from typing import TYPE_CHECKING, Optional
 

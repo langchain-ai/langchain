@@ -9,13 +9,15 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
 
     This splitter extends RecursiveCharacterTextSplitter to handle
     React (JSX), Vue, and Svelte code by:
+
     1. Detecting and extracting custom component tags from the text
     2. Using those tags as additional separators along with standard JS syntax
 
     The splitter combines:
-    - Custom component tags as separators (e.g. <Component, <div)
-    - JavaScript syntax elements (function, const, if, etc)
-    - Standard text splitting on newlines
+
+    * Custom component tags as separators (e.g. <Component, <div)
+    * JavaScript syntax elements (function, const, if, etc)
+    * Standard text splitting on newlines
 
     This allows chunks to break at natural boundaries in
     React, Vue, and Svelte component code.
@@ -43,9 +45,10 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         """Split text into chunks.
 
         This method splits the text into chunks by:
-        - Extracting unique opening component tags using regex
-        - Creating separators list with extracted tags and JS separators
-        - Splitting the text using the separators by calling the parent class method
+
+        * Extracting unique opening component tags using regex
+        * Creating separators list with extracted tags and JS separators
+        * Splitting the text using the separators by calling the parent class method
 
         Args:
             text: String containing code to split

@@ -1,0 +1,16 @@
+name: langgraph-tests-redis
+services:
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: redis-cli ping
+      start_period: 10s
+      timeout: 1s
+      retries: 5
+      interval: 5s
+      start_interval: 1s
+    tmpfs:
+      - /data  # Use tmpfs for faster testing

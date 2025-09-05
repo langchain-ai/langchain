@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -16,7 +16,7 @@ def _assert_dependency_equals(
     git: Optional[str] = None,
     ref: Optional[str] = None,
     subdirectory: Optional[str] = None,
-    event_metadata: Optional[dict] = None,
+    event_metadata: Optional[dict[str, Any]] = None,
 ) -> None:
     if dep["git"] != git:
         msg = f"Expected git to be {git} but got {dep['git']}"
