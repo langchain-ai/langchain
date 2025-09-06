@@ -6,7 +6,6 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
-    SystemMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
@@ -101,26 +100,30 @@ class SummarizationMiddleware(AgentMiddleware):
         ):
             return None
 
-        system_message, conversation_messages = self._split_system_message(messages)
-        cutoff_index = self._find_safe_cutoff(conversation_messages)
+        cutoff_index = self._find_safe_cutoff(messages)
 
         if cutoff_index <= 0:
             return None
 
         messages_to_summarize, preserved_messages = self._partition_messages(
-            system_message, conversation_messages, cutoff_index
+            messages, cutoff_index
         )
 
         summary = self._create_summary(messages_to_summarize)
-        updated_system_message = self._build_updated_system_message(system_message, summary)
+        new_messages = self._build_new_messages(summary)
 
         return {
             "messages": [
                 RemoveMessage(id=REMOVE_ALL_MESSAGES),
-                updated_system_message,
+                *new_messages,
                 *preserved_messages,
             ]
         }
+
+    def _build_new_messages(self, summary: str):
+        return [
+            {"role": "user", "content": f"Here is a summary of the conversation to date:\n\n{summary}"}
+        ]
 
     def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
         """Ensure all messages have unique IDs for the add_messages reducer."""
@@ -128,51 +131,16 @@ class SummarizationMiddleware(AgentMiddleware):
             if msg.id is None:
                 msg.id = str(uuid.uuid4())
 
-    def _split_system_message(
-        self, messages: list[AnyMessage]
-    ) -> tuple[SystemMessage | None, list[AnyMessage]]:
-        """Separate system message from conversation messages."""
-        if messages and isinstance(messages[0], SystemMessage):
-            return messages[0], messages[1:]
-        return None, messages
-
     def _partition_messages(
         self,
-        system_message: SystemMessage | None,
         conversation_messages: list[AnyMessage],
         cutoff_index: int,
     ) -> tuple[list[AnyMessage], list[AnyMessage]]:
-        """Partition messages into those to summarize and those to preserve.
-
-        We include the system message so that we can capture previous summaries.
-        """
+        """Partition messages into those to summarize and those to preserve."""
         messages_to_summarize = conversation_messages[:cutoff_index]
         preserved_messages = conversation_messages[cutoff_index:]
 
-        if system_message is not None:
-            messages_to_summarize = [system_message, *messages_to_summarize]
-
         return messages_to_summarize, preserved_messages
-
-    def _build_updated_system_message(
-        self, original_system_message: SystemMessage | None, summary: str
-    ) -> SystemMessage:
-        """Build new system message incorporating the summary."""
-        if original_system_message is None:
-            original_content = ""
-        else:
-            content = cast("str", original_system_message.content)
-            original_content = content.split(self.summary_prefix)[0].strip()
-
-        if original_content:
-            content = f"{original_content}\n{self.summary_prefix}\n{summary}"
-        else:
-            content = f"{self.summary_prefix}\n{summary}"
-
-        return SystemMessage(
-            content=content,
-            id=original_system_message.id if original_system_message else str(uuid.uuid4()),
-        )
 
     def _find_safe_cutoff(self, messages: list[AnyMessage]) -> int:
         """Find safe cutoff point that preserves AI/Tool message pairs.

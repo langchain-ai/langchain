@@ -48,53 +48,55 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         approved_tool_calls = auto_approved_tool_calls.copy()
 
-        # Process all tool calls that need interrupts in parallel
-        requests = []
+        # Right now, we do not support multiple tool calls with interrupts
+        if len(interrupt_tool_calls) > 1:
+            raise ValueError("Does not currently support multiple tool calls with interrupts")
 
-        for tool_call in interrupt_tool_calls:
-            tool_name = tool_call["name"]
-            tool_args = tool_call["args"]
-            description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
-            tool_config = self.tool_configs[tool_name]
+        # Right now, we do not support interrupting a tool call if other tool calls exist
+        if auto_approved_tool_calls:
+            raise ValueError("Does not currently support interrupting a tool call if other tool calls exist")
 
-            request: HumanInterrupt = {
-                "action_request": ActionRequest(
-                    action=tool_name,
-                    args=tool_args,
-                ),
-                "config": tool_config,
-                "description": description,
+        # Only one tool call will need interrupts
+        tool_call = interrupt_tool_calls[0]
+        tool_name = tool_call["name"]
+        tool_args = tool_call["args"]
+        description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
+        tool_config = self.tool_configs[tool_name]
+
+        request: HumanInterrupt = {
+            "action_request": ActionRequest(
+                action=tool_name,
+                args=tool_args,
+            ),
+            "config": tool_config,
+            "description": description,
+        }
+
+        responses: list[HumanResponse] = interrupt([request])
+        response = responses[0]
+
+        if response["type"] == "accept":
+            approved_tool_calls.append(tool_call)
+        elif response["type"] == "edit":
+            edited: ActionRequest = response["args"]
+            new_tool_call = {
+                "type": "tool_call",
+                "name": tool_call["name"],
+                "args": edited["args"],
+                "id": tool_call["id"],
             }
-            requests.append(request)
-
-        responses: list[HumanResponse] = interrupt(requests)
-
-        for i, response in enumerate(responses):
-            tool_call = interrupt_tool_calls[i]
-
-            if response["type"] == "accept":
-                approved_tool_calls.append(tool_call)
-            elif response["type"] == "edit":
-                edited: ActionRequest = response["args"]
-                new_tool_call = {
-                    "name": tool_call["name"],
-                    "args": edited["args"],
-                    "id": tool_call["id"],
-                }
-                approved_tool_calls.append(new_tool_call)
-            elif response["type"] == "ignore":
-                # NOTE: does not work with multiple interrupts
-                return {"goto": "__end__"}
-            elif response["type"] == "response":
-                # NOTE: does not work with multiple interrupts
-                tool_message = {
-                    "role": "tool",
-                    "tool_call_id": tool_call["id"],
-                    "content": response["args"],
-                }
-                return {"messages": [tool_message], "goto": "model"}
-            else:
-                raise ValueError(f"Unknown response type: {response['type']}")
+            approved_tool_calls.append(new_tool_call)
+        elif response["type"] == "ignore":
+            return {"goto": "__end__"}
+        elif response["type"] == "response":
+            tool_message = {
+                "role": "tool",
+                "tool_call_id": tool_call["id"],
+                "content": response["args"],
+            }
+            return {"messages": [tool_message], "goto": "model"}
+        else:
+            raise ValueError(f"Unknown response type: {response['type']}")
 
         last_message.tool_calls = approved_tool_calls
 
