@@ -61,8 +61,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 lambda x: "goodbye",
             )
 
-            branch.invoke("hello") # "HELLO"
-            branch.invoke(None) # "goodbye"
+            branch.invoke("hello")  # "HELLO"
+            branch.invoke(None)  # "goodbye"
 
     """
 

@@ -424,11 +424,16 @@ def filter_messages(
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
-            - `True`: all AIMessages with tool calls and all ToolMessages will be excluded.
+
+            - ``True``: all AIMessages with tool calls and all ToolMessages will be
+              excluded.
             - a sequence of tool call IDs to exclude:
+
               - ToolMessages with the corresponding tool call ID will be excluded.
-              - The `tool_calls` in the AIMessage will be updated to exclude matching tool calls.
-                If all tool_calls are filtered from an AIMessage, the whole message is excluded.
+              - The ``tool_calls`` in the AIMessage will be updated to exclude matching
+                tool calls.
+                If all tool_calls are filtered from an AIMessage,
+                the whole message is excluded.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -441,14 +446,25 @@ def filter_messages(
     Example:
         .. code-block:: python
 
-            from langchain_core.messages import filter_messages, AIMessage, HumanMessage, SystemMessage
+            from langchain_core.messages import (
+                filter_messages,
+                AIMessage,
+                HumanMessage,
+                SystemMessage,
+            )
 
             messages = [
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
                 AIMessage("steve-o", id="bar", name="example_assistant"),
-                HumanMessage("what's your favorite color", id="baz",),
-                AIMessage("silicon blue", id="blah",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="baz",
+                ),
+                AIMessage(
+                    "silicon blue",
+                    id="blah",
+                ),
             ]
 
             filter_messages(
@@ -465,7 +481,7 @@ def filter_messages(
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
 
-    """  # noqa: E501
+    """
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
     for msg in messages:
@@ -544,12 +560,14 @@ def merge_message_runs(
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
         messages. By default, if two messages being merged both have string contents,
-        the merged content is a concatenation of the two strings with a new-line separator.
+        the merged content is a concatenation of the two strings with a new-line
+        separator.
         The separator inserted between message chunks can be controlled by specifying
-        any string with ``chunk_separator``. If at least one of the messages has a list of
-        content blocks, the merged content is a list of content blocks.
+        any string with ``chunk_separator``. If at least one of the messages has a list
+        of content blocks, the merged content is a list of content blocks.
 
     Example:
+
         .. code-block:: python
 
             from langchain_core.messages import (
@@ -562,16 +580,33 @@ def merge_message_runs(
 
             messages = [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color", id="foo",),
-                HumanMessage("wait your favorite food", id="bar",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="foo",
+                ),
+                HumanMessage(
+                    "wait your favorite food",
+                    id="bar",
+                ),
                 AIMessage(
                     "my favorite colo",
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool", args={"x": 2}, id="123", type="tool_call"
+                        )
+                    ],
                     id="baz",
                 ),
                 AIMessage(
                     [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool",
+                            args={"x": -10},
+                            id="456",
+                            type="tool_call",
+                        )
+                    ],
                     id="blur",
                 ),
             ]
@@ -582,21 +617,34 @@ def merge_message_runs(
 
             [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color\\nwait your favorite food", id="foo",),
+                HumanMessage(
+                    "what's your favorite color\\n"
+                    "wait your favorite food", id="foo",
+                ),
                 AIMessage(
                     [
                         "my favorite colo",
                         {"type": "text", "text": "my favorite dish is lasagna"}
                     ],
                     tool_calls=[
-                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123", "type": "tool_call"}),
-                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456", "type": "tool_call"})
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": 2},
+                            "id": "123",
+                            "type": "tool_call"
+                        }),
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": -10},
+                            "id": "456",
+                            "type": "tool_call"
+                        })
                     ]
                     id="baz"
                 ),
             ]
 
-    """  # noqa: E501
+    """
     if not messages:
         return []
     messages = convert_to_messages(messages)
@@ -656,8 +704,8 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage`` followed
-       by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage``
+       followed by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
        In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
@@ -748,14 +796,18 @@ def trim_messages(
             )
 
             messages = [
-                SystemMessage("you're a good assistant, you always respond with a joke."),
+                SystemMessage(
+                    "you're a good assistant, you always respond with a joke."
+                ),
                 HumanMessage("i wonder why it's called langchain"),
                 AIMessage(
-                    'Well, I guess they thought "WordRope" and "SentenceString" just didn\'t have the same ring to it!'
+                    'Well, I guess they thought "WordRope" and "SentenceString" just '
+                    "didn't have the same ring to it!"
                 ),
                 HumanMessage("and who is harrison chasing anyways"),
                 AIMessage(
-                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"
+                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last "
+                    "cup of coffee in the office!"
                 ),
                 HumanMessage("what do you call a speechless parrot"),
             ]
@@ -780,8 +832,10 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
         Trim chat history based on the message count, keeping the SystemMessage if
@@ -811,10 +865,15 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='and who is harrison chasing anyways'),
-                AIMessage(content="Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="and who is harrison chasing anyways"),
+                AIMessage(
+                    content="Hmmm let me think.\n\nWhy, he's probably chasing after "
+                    "the last cup of coffee in the office!"
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
 
@@ -825,7 +884,9 @@ def trim_messages(
 
             messages = [
                 SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="first"
+                ),
                 AIMessage(
                     [
                         {"type": "text", "text": "This is the FIRST 4 token block."},
@@ -833,9 +894,15 @@ def trim_messages(
                     ],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="third"
+                ),
+                AIMessage(
+                    "This is a 4 token text. The full message is 10 tokens.",
+                    id="fourth",
+                ),
             ]
+
 
             def dummy_token_counter(messages: list[BaseMessage]) -> int:
                 # treat each message like it adds 3 default tokens at the beginning
@@ -849,9 +916,17 @@ def trim_messages(
                 count = 0
                 for msg in messages:
                     if isinstance(msg.content, str):
-                        count += default_msg_prefix_len + default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + default_content_len
+                            + default_msg_suffix_len
+                        )
                     if isinstance(msg.content, list):
-                        count += default_msg_prefix_len + len(msg.content) *  default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + len(msg.content) * default_content_len
+                            + default_msg_suffix_len
+                        )
                 return count
 
         First 30 tokens, allowing partial messages:
@@ -868,12 +943,20 @@ def trim_messages(
             .. code-block:: python
 
                 [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                    AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
+                    SystemMessage(
+                        "This is a 4 token text. The full message is 10 tokens."
+                    ),
+                    HumanMessage(
+                        "This is a 4 token text. The full message is 10 tokens.",
+                        id="first",
+                    ),
+                    AIMessage(
+                        [{"type": "text", "text": "This is the FIRST 4 token block."}],
+                        id="second",
+                    ),
                 ]
 
-    """  # noqa: E501
+    """
     # Validate arguments
     if start_on and strategy == "first":
         msg = "start_on parameter is only valid with strategy='last'"
@@ -985,8 +1068,27 @@ def convert_to_openai_messages(
 
             messages = [
                 SystemMessage([{"type": "text", "text": "foo"}]),
-                {"role": "user", "content": [{"type": "text", "text": "whats in this"}, {"type": "image_url", "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"}}]},
-                AIMessage("", tool_calls=[{"name": "analyze", "args": {"baz": "buz"}, "id": "1", "type": "tool_call"}]),
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "whats in this"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
+                        },
+                    ],
+                },
+                AIMessage(
+                    "",
+                    tool_calls=[
+                        {
+                            "name": "analyze",
+                            "args": {"baz": "buz"},
+                            "id": "1",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
                 ToolMessage("foobar", tool_call_id="1", name="bar"),
                 {"role": "assistant", "content": "thats nice"},
             ]
