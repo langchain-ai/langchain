@@ -1,13 +1,12 @@
 """Lazy import utilities."""
 
 from importlib import import_module
-from typing import Union
 
 
 def import_attr(
     attr_name: str,
-    module_name: Union[str, None],
-    package: Union[str, None],
+    module_name: str | None,
+    package: str | None,
 ) -> object:
     """Import an attribute from a module located in a package.
 
