@@ -216,15 +216,17 @@ def tokenize(
 
     Returns:
         A generator of mustache tags in the form of a tuple (tag_type, tag_key)
-            Where tag_type is one of:
-             * literal
-             * section
-             * inverted section
-             * end
-             * partial
-             * no escape
-            And tag_key is either the key or in the case of a literal tag,
-            the literal itself.
+        Where tag_type is one of:
+
+        * literal
+        * section
+        * inverted section
+        * end
+        * partial
+        * no escape
+
+        And tag_key is either the key or in the case of a literal tag,
+        the literal itself.
     """
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1

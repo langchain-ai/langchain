@@ -271,15 +271,12 @@ def _function_annotations_are_pydantic_v1(
 
 
 class _SchemaConfig:
-    """Configuration for Pydantic models generated from function signatures.
-
-    Attributes:
-        extra: Whether to allow extra fields in the model.
-        arbitrary_types_allowed: Whether to allow arbitrary types in the model.
-    """
+    """Configuration for Pydantic models generated from function signatures."""
 
     extra: str = "forbid"
+    """Whether to allow extra fields in the model."""
     arbitrary_types_allowed: bool = True
+    """Whether to allow arbitrary types in the model."""
 
 
 def create_schema_from_function(
