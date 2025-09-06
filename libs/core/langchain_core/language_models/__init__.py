@@ -26,7 +26,8 @@ https://python.langchain.com/docs/how_to/custom_chat_model/
 **LLMs**
 
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are Chat Models, see below).
+These are traditionally older models (newer models generally are Chat Models,
+see below).
 
 Although the underlying models are string in, string out, the LangChain wrappers
 also allow these models to take messages as input. This gives them the same interface
@@ -39,7 +40,7 @@ Please see the following guide for more information on how to implement a custom
 https://python.langchain.com/docs/how_to/custom_llm/
 
 
-"""  # noqa: E501
+"""
 
 from typing import TYPE_CHECKING
 

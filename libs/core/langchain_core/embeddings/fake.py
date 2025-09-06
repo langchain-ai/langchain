@@ -20,6 +20,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import FakeEmbeddings
+
             embed = FakeEmbeddings(size=100)
 
     Embed single text:
@@ -78,6 +79,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import DeterministicFakeEmbedding
+
             embed = DeterministicFakeEmbedding(size=100)
 
     Embed single text:

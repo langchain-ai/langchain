@@ -314,14 +314,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "\n"
                 "    .. code-block:: python\n"
                 "\n"
-                "        from langchain_core.documents "
-                "import Document\n"
+                "        from langchain_core.documents import Document\n"
                 "\n"
                 "        document = Document(\n"
-                '            page_content="Hello, '
-                'world!",\n'
-                '            metadata={"source": '
-                '"https://example.com"}\n'
+                '            page_content="Hello, world!", '
+                'metadata={"source": "https://example.com"}\n'
                 "        )",
                 "properties": {
                     "id": {

@@ -133,7 +133,7 @@ def deprecated(
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
 

@@ -85,7 +85,8 @@ def trace_as_chain_group(
             Defaults to None.
 
     .. note:
-        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
+        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
+        LangSmith.
 
     Returns:
         CallbackManagerForChainGroup: The callback manager for the chain group.
@@ -94,12 +95,14 @@ def trace_as_chain_group(
         .. code-block:: python
 
             llm_input = "Foo"
-            with trace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+            with trace_as_chain_group(
+                "group_name", inputs={"input": llm_input}
+            ) as manager:
                 # Use the callback manager for the chain group
                 res = llm.invoke(llm_input, {"callbacks": manager})
                 manager.on_chain_end({"output": res})
 
-    """  # noqa: E501
+    """
     from langchain_core.tracers.context import _get_trace_callbacks
 
     cb = _get_trace_callbacks(
@@ -153,8 +156,8 @@ async def atrace_as_chain_group(
 
     Args:
         group_name (str): The name of the chain group.
-        callback_manager (AsyncCallbackManager, optional): The async callback manager to use,
-            which manages tracing and other callback behavior. Defaults to None.
+        callback_manager (AsyncCallbackManager, optional): The async callback manager
+            to use, which manages tracing and other callback behavior. Defaults to None.
         inputs (dict[str, Any], optional): The inputs to the chain group.
             Defaults to None.
         project_name (str, optional): The name of the project.
@@ -171,18 +174,21 @@ async def atrace_as_chain_group(
         AsyncCallbackManager: The async callback manager for the chain group.
 
     .. note:
-        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
+        Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
+        LangSmith.
 
     Example:
         .. code-block:: python
 
             llm_input = "Foo"
-            async with atrace_as_chain_group("group_name", inputs={"input": llm_input}) as manager:
+            async with atrace_as_chain_group(
+                "group_name", inputs={"input": llm_input}
+            ) as manager:
                 # Use the async callback manager for the chain group
                 res = await llm.ainvoke(llm_input, {"callbacks": manager})
                 await manager.on_chain_end({"output": res})
 
-    """  # noqa: E501
+    """
     from langchain_core.tracers.context import _get_trace_callbacks
 
     cb = _get_trace_callbacks(
@@ -1734,11 +1740,18 @@ class CallbackManagerForChainGroup(CallbackManager):
 
             .. code-block:: python
 
-                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.manager import (
+                    CallbackManager,
+                    trace_as_chain_group,
+                )
                 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
-                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                manager = CallbackManager(
+                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
+                )
+                with trace_as_chain_group(
+                    "My Group Name", tags=["tag1"]
+                ) as group_manager:
                     merged_manager = group_manager.merge(manager)
                     print(type(merged_manager))
                     # <class 'langchain_core.callbacks.manager.CallbackManagerForChainGroup'>
@@ -2258,18 +2271,25 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         from the current object.
 
         Returns:
-            AsyncCallbackManagerForChainGroup: A copy of the current AsyncCallbackManagerForChainGroup
-                with the handlers, tags, etc. of the other callback manager merged in.
+            A copy of the current AsyncCallbackManagerForChainGroup
+            with the handlers, tags, etc. of the other callback manager merged in.
 
         Example: Merging two callback managers.
 
             .. code-block:: python
 
-                from langchain_core.callbacks.manager import CallbackManager, atrace_as_chain_group
+                from langchain_core.callbacks.manager import (
+                    CallbackManager,
+                    atrace_as_chain_group,
+                )
                 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
-                async with atrace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                manager = CallbackManager(
+                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
+                )
+                async with atrace_as_chain_group(
+                    "My Group Name", tags=["tag1"]
+                ) as group_manager:
                     merged_manager = group_manager.merge(manager)
                     print(type(merged_manager))
                     # <class 'langchain_core.callbacks.manager.AsyncCallbackManagerForChainGroup'>

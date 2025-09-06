@@ -1453,15 +1453,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatModel(model="model-name", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -1473,15 +1478,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatModel(model="model-name", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1494,16 +1506,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatModel(model="model-name", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
