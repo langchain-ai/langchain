@@ -24,7 +24,7 @@ import pytest
 from pydantic import BaseModel, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 
 from langchain_core import tools
 from langchain_core.callbacks import (
@@ -119,6 +119,7 @@ class _MockStructuredTool(BaseTool):
     args_schema: type[BaseModel] = _MockSchema
     description: str = "A Structured Tool"
 
+    @override
     def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
         return f"{arg1} {arg2} {arg3}"
 
@@ -146,6 +147,7 @@ def test_misannotated_base_tool_raises_error() -> None:
             args_schema: BaseModel = _MockSchema  # type: ignore[assignment]
             description: str = "A Structured Tool"
 
+            @override
             def _run(
                 self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None
             ) -> str:
@@ -165,6 +167,7 @@ def test_forward_ref_annotated_base_tool_accepted() -> None:
         args_schema: "type[BaseModel]" = _MockSchema
         description: str = "A Structured Tool"
 
+        @override
         def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
@@ -182,6 +185,7 @@ def test_subclass_annotated_base_tool_accepted() -> None:
         args_schema: type[_MockSchema] = _MockSchema
         description: str = "A Structured Tool"
 
+        @override
         def _run(self, *, arg1: int, arg2: bool, arg3: Optional[dict] = None) -> str:
             return f"{arg1} {arg2} {arg3}"
 
@@ -237,6 +241,7 @@ def test_args_kwargs_filtered() -> None:
         name: str = "single_arg_tool"
         description: str = "A  single arged tool with kwargs"
 
+        @override
         def _run(
             self,
             some_arg: str,
@@ -260,6 +265,7 @@ def test_args_kwargs_filtered() -> None:
         name: str = "single_arg_tool"
         description: str = "A single arged tool with kwargs"
 
+        @override
         def _run(
             self,
             *args: Any,
@@ -396,9 +402,11 @@ def test_base_tool_inheritance_base_schema() -> None:
         name: str = "simple_tool"
         description: str = "A Simple Tool"
 
+        @override
         def _run(self, tool_input: str) -> str:
             return f"{tool_input}"
 
+        @override
         async def _arun(self, tool_input: str) -> str:
             raise NotImplementedError
 
@@ -705,7 +713,7 @@ def test_missing_docstring() -> None:
     class MyTool(BaseModel):
         foo: str
 
-    assert MyTool.description == ""  # type: ignore[attr-defined]
+    assert not MyTool.description  # type: ignore[attr-defined]
 
 
 def test_create_tool_positional_args() -> None:
@@ -909,9 +917,11 @@ def test_validation_error_handling_non_validation_error(
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
+        @override
         def _run(self) -> str:
             return "dummy"
 
+        @override
         async def _arun(self) -> str:
             return "dummy"
 
@@ -975,9 +985,11 @@ async def test_async_validation_error_handling_non_validation_error(
         ) -> Union[str, dict[str, Any]]:
             raise NotImplementedError
 
+        @override
         def _run(self) -> str:
             return "dummy"
 
+        @override
         async def _arun(self) -> str:
             return "dummy"
 
@@ -1096,11 +1108,13 @@ class FooBase(BaseTool):
     name: str = "Foo"
     description: str = "Foo"
 
+    @override
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
 
 
 class AFooBase(FooBase):
+    @override
     async def _arun(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return assert_bar(bar, bar_config)
 
@@ -1121,6 +1135,7 @@ def test_tool_pass_config(tool: BaseTool) -> None:
 
 
 class FooBaseNonPickleable(FooBase):
+    @override
     def _run(self, bar: Any, bar_config: RunnableConfig, **kwargs: Any) -> Any:
         return True
 
@@ -1332,7 +1347,7 @@ def test_tool_invalid_docstrings() -> None:
         return bar
 
     for func in {foo3, foo4}:
-        with pytest.raises(ValueError, match="Found invalid Google-Style docstring."):
+        with pytest.raises(ValueError, match="Found invalid Google-Style docstring"):
             _ = tool(func, parse_docstring=True)
 
     def foo5(bar: str, baz: int) -> str:  # noqa: D417
@@ -1345,7 +1360,7 @@ def test_tool_invalid_docstrings() -> None:
         return bar
 
     with pytest.raises(
-        ValueError, match="Arg banana in docstring not found in function signature."
+        ValueError, match="Arg banana in docstring not found in function signature"
     ):
         _ = tool(foo5, parse_docstring=True)
 
@@ -1404,10 +1419,11 @@ class _MockStructuredToolWithRawOutput(BaseTool):
     description: str = "A Structured Tool"
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
+    @override
     def _run(
         self,
         arg1: int,
-        arg2: bool,  # noqa: FBT001
+        arg2: bool,
         arg3: Optional[dict] = None,
     ) -> tuple[str, dict]:
         return f"{arg1} {arg2}", {"arg1": arg1, "arg2": arg2, "arg3": arg3}
@@ -1554,6 +1570,7 @@ class InjectedTool(BaseTool):
     name: str = "foo"
     description: str = "foo."
 
+    @override
     def _run(self, x: int, y: Annotated[str, InjectedToolArg]) -> Any:
         """Foo.
 
@@ -1578,6 +1595,7 @@ class InjectedToolWithSchema(BaseTool):
     description: str = "foo."
     args_schema: type[BaseModel] = fooSchema
 
+    @override
     def _run(self, x: int, y: str) -> Any:
         return y
 
@@ -1743,6 +1761,7 @@ def test_tool_inherited_injected_arg() -> None:
         description: str = "foo."
         args_schema: type[BaseModel] = FooSchema
 
+        @override
         def _run(self, x: int, y: str) -> Any:
             return y
 
@@ -1854,6 +1873,7 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     class SomeTool(BaseTool):
         args_schema: type[pydantic_model] = pydantic_model
 
+        @override
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
 
@@ -1913,6 +1933,7 @@ def test_args_schema_explicitly_typed() -> None:
         # for pydantic 2!
         args_schema: type[BaseModel] = Foo
 
+        @override
         def _run(self, *args: Any, **kwargs: Any) -> str:
             return "foo"
 
@@ -2136,6 +2157,7 @@ def test_tool_annotations_preserved() -> None:
 
 def test_create_retriever_tool() -> None:
     class MyRetriever(BaseRetriever):
+        @override
         def _get_relevant_documents(
             self, query: str, *, run_manager: CallbackManagerForRetrieverRun
         ) -> list[Document]:
@@ -2364,6 +2386,7 @@ def test_tool_mutate_input() -> None:
         name: str = "MyTool"
         description: str = "a tool"
 
+        @override
         def _run(
             self,
             x: str,

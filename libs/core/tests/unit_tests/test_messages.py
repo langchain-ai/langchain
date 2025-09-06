@@ -203,7 +203,7 @@ def test_chat_message_chunks() -> None:
     )
 
     with pytest.raises(
-        ValueError, match="Cannot concatenate ChatMessageChunks with different roles."
+        ValueError, match="Cannot concatenate ChatMessageChunks with different roles"
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
@@ -312,7 +312,7 @@ def test_function_message_chunks() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Cannot concatenate FunctionMessageChunks with different names.",
+        match="Cannot concatenate FunctionMessageChunks with different names",
     ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
@@ -328,7 +328,7 @@ def test_ai_message_chunks() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Cannot concatenate AIMessageChunks with different example values.",
+        match="Cannot concatenate AIMessageChunks with different example values",
     ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
@@ -346,7 +346,7 @@ class TestGetBufferString(unittest.TestCase):
         self.tool_calls_msg = AIMessage(content="tool")
 
     def test_empty_input(self) -> None:
-        assert get_buffer_string([]) == ""
+        assert not get_buffer_string([])
 
     def test_valid_single_message(self) -> None:
         expected_output = f"Human: {self.human_msg.content}"
@@ -1062,7 +1062,7 @@ def test_message_text() -> None:
     # content dict types: [text], [not text], [no type]
 
     assert HumanMessage(content="foo").text() == "foo"
-    assert AIMessage(content=[]).text() == ""
+    assert not AIMessage(content=[]).text()
     assert AIMessage(content=["foo", "bar"]).text() == "foobar"
     assert (
         AIMessage(
@@ -1102,14 +1102,11 @@ def test_message_text() -> None:
     assert (
         AIMessage(content=[{"text": "hi there"}, "hi"]).text() == "hi"
     )  # missing type: text
-    assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text() == ""
-    assert AIMessage(content=[]).text() == ""
-    assert (
-        AIMessage(
-            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
-        ).text()
-        == ""
-    )
+    assert not AIMessage(content=[{"type": "nottext", "text": "hi"}]).text()
+    assert not AIMessage(content=[]).text()
+    assert not AIMessage(
+        content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+    ).text()
 
 
 def test_is_data_content_block() -> None:

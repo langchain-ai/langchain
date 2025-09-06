@@ -37,7 +37,7 @@ _no_default = object()
 # before 3.10, the builtin anext() was not available
 def py_anext(
     iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, None, Any]]:
+) -> Awaitable[Union[T, Any, None]]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.

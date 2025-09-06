@@ -3802,12 +3802,14 @@ class FakeSplitIntoListParser(BaseOutputParser[list[str]]):
         """Return whether or not the class is serializable."""
         return True
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "
             "eg: `foo, bar, baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call."""
         return text.strip().split(", ")

@@ -148,8 +148,6 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                             "type": key,
                             key: block[key],
                         }
-                    else:
-                        pass
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace

@@ -368,7 +368,7 @@ def test_runnable_context_seq_key_order() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Context setter for key foo must be defined after all getters.",
+        match="Context setter for key foo must be defined after all getters",
     ):
         seq.invoke("foo")
 

@@ -4,6 +4,7 @@ from typing import Any, Union, cast
 
 import pytest
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.language_models import FakeListChatModel
 from langchain_core.load.dump import dumps
@@ -27,6 +28,7 @@ def _fake_runnable(
 class FakeStructuredChatModel(FakeListChatModel):
     """Fake ChatModel for testing purposes."""
 
+    @override
     def with_structured_output(
         self, schema: Union[dict, type[BaseModel]], **kwargs: Any
     ) -> Runnable:

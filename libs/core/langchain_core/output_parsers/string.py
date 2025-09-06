@@ -1,5 +1,7 @@
 """String output parser."""
 
+from typing_extensions import override
+
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
 
@@ -28,6 +30,7 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         """Return the output parser type for serialization."""
         return "default"
 
+    @override
     def parse(self, text: str) -> str:
         """Returns the input text with no changes."""
         return text

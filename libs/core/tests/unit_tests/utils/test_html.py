@@ -36,31 +36,31 @@ def test_find_all_links_multiple() -> None:
 
 def test_find_all_links_ignore_suffix() -> None:
     html = 'href="foobar{suffix}"'
-    for suffix in SUFFIXES_TO_IGNORE:
-        actual = find_all_links(html.format(suffix=suffix))
+    for suffix_ in SUFFIXES_TO_IGNORE:
+        actual = find_all_links(html.format(suffix=suffix_))
         assert actual == []
 
     # Don't ignore if pattern doesn't occur at end of link.
     html = 'href="foobar{suffix}more"'
-    for suffix in SUFFIXES_TO_IGNORE:
-        actual = find_all_links(html.format(suffix=suffix))
-        assert actual == [f"foobar{suffix}more"]
+    for suffix_ in SUFFIXES_TO_IGNORE:
+        actual = find_all_links(html.format(suffix=suffix_))
+        assert actual == [f"foobar{suffix_}more"]
 
 
 def test_find_all_links_ignore_prefix() -> None:
     html = 'href="{prefix}foobar"'
-    for prefix in PREFIXES_TO_IGNORE:
-        actual = find_all_links(html.format(prefix=prefix))
+    for prefix_ in PREFIXES_TO_IGNORE:
+        actual = find_all_links(html.format(prefix=prefix_))
         assert actual == []
 
     # Don't ignore if pattern doesn't occur at beginning of link.
     html = 'href="foobar{prefix}more"'
-    for prefix in PREFIXES_TO_IGNORE:
+    for prefix_ in PREFIXES_TO_IGNORE:
         # Pound signs are split on when not prefixes.
-        if prefix == "#":
+        if prefix_ == "#":
             continue
-        actual = find_all_links(html.format(prefix=prefix))
-        assert actual == [f"foobar{prefix}more"]
+        actual = find_all_links(html.format(prefix=prefix_))
+        assert actual == [f"foobar{prefix_}more"]
 
 
 def test_find_all_links_drop_fragment() -> None:

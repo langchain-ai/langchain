@@ -1,5 +1,7 @@
 from typing import Optional
 
+from typing_extensions import override
+
 from langchain_core.example_selectors import BaseExampleSelector
 
 
@@ -10,6 +12,7 @@ class DummyExampleSelector(BaseExampleSelector):
     def add_example(self, example: dict[str, str]) -> None:
         self.example = example
 
+    @override
     def select_examples(self, input_variables: dict[str, str]) -> list[dict]:
         return [input_variables]
 

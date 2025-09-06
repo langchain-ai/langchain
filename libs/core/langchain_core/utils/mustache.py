@@ -82,7 +82,7 @@ def l_sa_check(
     """
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
-        padding = literal.split("\n")[-1]
+        padding = literal.rsplit("\n", maxsplit=1)[-1]
 
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone

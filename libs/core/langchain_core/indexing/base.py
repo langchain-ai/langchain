@@ -7,6 +7,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
+from typing_extensions import override
+
 from langchain_core._api import beta
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
@@ -256,6 +258,7 @@ class InMemoryRecordManager(RecordManager):
     async def acreate_schema(self) -> None:
         """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
 
+    @override
     def get_time(self) -> float:
         """Get the current server time as a high resolution timestamp!"""
         return time.time()
