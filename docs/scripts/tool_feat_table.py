@@ -167,6 +167,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": False,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
+    "Anchor Browser": {
+        "link": "/docs/integrations/tools/anchor_browser",
+        "interactions": True,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
