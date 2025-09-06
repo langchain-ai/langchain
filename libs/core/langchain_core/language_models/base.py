@@ -59,6 +59,12 @@ def get_tokenizer() -> Any:
 
     This function is cached to avoid re-loading the tokenizer every time it is called.
 
+    Raises:
+        ImportError: If the transformers package is not installed.
+
+    Returns:
+        The GPT-2 tokenizer instance.
+
     """
     try:
         from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]

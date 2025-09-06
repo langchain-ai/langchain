@@ -87,8 +87,8 @@ def trace_as_chain_group(
     .. note:
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
 
-    Returns:
-        CallbackManagerForChainGroup: The callback manager for the chain group.
+    Yields:
+        The callback manager for the chain group.
 
     Example:
         .. code-block:: python
@@ -167,8 +167,8 @@ async def atrace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    Returns:
-        AsyncCallbackManager: The async callback manager for the chain group.
+    Yields:
+        The async callback manager for the chain group.
 
     .. note:
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in LangSmith.
@@ -513,15 +513,12 @@ class RunManager(BaseRunManager):
         self,
         text: str,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         """Run when a text is received.
 
         Args:
             text (str): The received text.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
         """
         if not self.handlers:
             return
@@ -601,16 +598,12 @@ class AsyncRunManager(BaseRunManager, ABC):
         self,
         text: str,
         **kwargs: Any,
-    ) -> Any:
+    ) -> None:
         """Run when a text is received.
 
         Args:
             text (str): The received text.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
-
         """
         if not self.handlers:
             return
@@ -908,16 +901,12 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+    def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
         """Run when agent action is received.
 
         Args:
             action (AgentAction): The agent action.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
-
         """
         if not self.handlers:
             return
@@ -932,16 +921,12 @@ class CallbackManagerForChainRun(ParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+    def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent finish is received.
 
         Args:
             finish (AgentFinish): The agent finish.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
-
         """
         if not self.handlers:
             return
@@ -1027,16 +1012,12 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> Any:
+    async def on_agent_action(self, action: AgentAction, **kwargs: Any) -> None:
         """Run when agent action is received.
 
         Args:
             action (AgentAction): The agent action.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
-
         """
         if not self.handlers:
             return
@@ -1051,16 +1032,12 @@ class AsyncCallbackManagerForChainRun(AsyncParentRunManager, ChainManagerMixin):
             **kwargs,
         )
 
-    async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+    async def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> None:
         """Run when agent finish is received.
 
         Args:
             finish (AgentFinish): The agent finish.
             **kwargs (Any): Additional keyword arguments.
-
-        Returns:
-            Any: The result of the callback.
-
         """
         if not self.handlers:
             return
@@ -1556,6 +1533,8 @@ class CallbackManager(BaseCallbackManager):
             parent_run_id (UUID, optional): The ID of the parent run. Defaults to None.
             **kwargs (Any): Additional keyword arguments.
 
+        Returns:
+            The callback manager for the retriever run.
         """
         if run_id is None:
             run_id = uuid.uuid4()
@@ -1601,6 +1580,9 @@ class CallbackManager(BaseCallbackManager):
             name: The name of the adhoc event.
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
+
+        Raises:
+            ValueError: If additional keyword arguments are passed.
 
         .. versionadded:: 0.2.14
 
@@ -1704,8 +1686,8 @@ class CallbackManagerForChainGroup(CallbackManager):
         self.parent_run_manager = parent_run_manager
         self.ended = False
 
+    @override
     def copy(self) -> CallbackManagerForChainGroup:
-        """Copy the callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
             inheritable_handlers=self.inheritable_handlers.copy(),
@@ -2086,6 +2068,9 @@ class AsyncCallbackManager(BaseCallbackManager):
             data: The data for the adhoc event.
             run_id: The ID of the run. Defaults to None.
 
+        Raises:
+            ValueError: If additional keyword arguments are passed.
+
         .. versionadded:: 0.2.14
         """
         if not self.handlers:
@@ -2236,7 +2221,7 @@ class AsyncCallbackManagerForChainGroup(AsyncCallbackManager):
         self.ended = False
 
     def copy(self) -> AsyncCallbackManagerForChainGroup:
-        """Copy the async callback manager."""
+        """Return a copy the async callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
             inheritable_handlers=self.inheritable_handlers.copy(),
@@ -2364,6 +2349,9 @@ def _configure(
             metadata. Defaults to None.
         local_metadata (Optional[dict[str, Any]], optional): The local metadata.
             Defaults to None.
+
+    Raises:
+        RuntimeError: If LANGCHAIN_TRACING is set but LANGCHAIN_TRACING_V2 is not.
 
     Returns:
         T: The configured callback manager.
@@ -2537,6 +2525,10 @@ async def adispatch_custom_event(
               this is not enforced.
         config: Optional config object. Mirrors the async API but not strictly needed.
 
+    Raises:
+        RuntimeError: If there is no parent run ID available to associate
+            the event with.
+
     Example:
 
         .. code-block:: python
@@ -2657,6 +2649,10 @@ def dispatch_custom_event(
               JSON serializable to avoid serialization issues downstream, but
               this is not enforced.
         config: Optional config object. Mirrors the async API but not strictly needed.
+
+    Raises:
+        RuntimeError: If there is no parent run ID available to associate
+            the event with.
 
     Example:
 

@@ -50,8 +50,11 @@ class AsciiCanvas:
         """Create an ASCII canvas.
 
         Args:
-            cols (int): number of columns in the canvas. Should be > 1.
-            lines (int): number of lines in the canvas. Should be > 1.
+            cols: number of columns in the canvas. Should be > 1.
+            lines: number of lines in the canvas. Should be > 1.
+
+        Raises:
+            ValueError: if canvas dimensions are invalid.
         """
         if cols <= 1 or lines <= 1:
             msg = "Canvas dimensions should be > 1"
@@ -63,7 +66,11 @@ class AsciiCanvas:
         self.canvas = [[" "] * cols for line in range(lines)]
 
     def draw(self) -> str:
-        """Draws ASCII canvas on the screen."""
+        """Draws ASCII canvas on the screen.
+
+        Returns:
+            The ASCII canvas string.
+        """
         lines = map("".join, self.canvas)
         return os.linesep.join(lines)
 
@@ -71,12 +78,16 @@ class AsciiCanvas:
         """Create a point on ASCII canvas.
 
         Args:
-            x (int): x coordinate. Should be >= 0 and < number of columns in
+            x: x coordinate. Should be >= 0 and < number of columns in
                 the canvas.
-            y (int): y coordinate. Should be >= 0 an < number of lines in the
+            y: y coordinate. Should be >= 0 an < number of lines in the
                 canvas.
-            char (str): character to place in the specified point on the
+            char: character to place in the specified point on the
                 canvas.
+
+        Raises:
+            ValueError: if char is not a single character or if
+                coordinates are out of bounds.
         """
         if len(char) != 1:
             msg = "char should be a single character"
@@ -225,11 +236,15 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     """Build a DAG and draw it in ASCII.
 
     Args:
-        vertices (list): list of graph vertices.
-        edges (list): list of graph edges.
+        vertices: list of graph vertices.
+        edges: list of graph edges.
+
+    Raises:
+        ValueError: if the canvas dimensions are invalid or if
+            edge coordinates are invalid.
 
     Returns:
-        str: ASCII representation
+        ASCII representation
 
     Example:
 

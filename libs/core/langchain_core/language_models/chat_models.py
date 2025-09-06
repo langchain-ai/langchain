@@ -161,6 +161,9 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     Args:
         stream: Iterator of ``ChatGenerationChunk``.
 
+    Raises:
+        ValueError: If no generations are found in the stream.
+
     Returns:
         ChatResult: Chat result.
 
@@ -328,16 +331,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if ``callback_manager`` is used.
+        """Emit deprecation warning if ``callback_manager`` is used.
 
         Args:
             values (Dict): Values to validate.
 
         Returns:
             Dict: Validated values.
-
-        Raises:
-            DeprecationWarning: If ``callback_manager`` is used.
 
         """
         if values.get("callback_manager") is not None:
@@ -1185,7 +1185,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
+        """Generate the result.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Returns:
+            The chat result.
+        """
 
     async def _agenerate(
         self,
@@ -1194,7 +1204,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
+        """Generate the result.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Returns:
+            The chat result.
+        """
         return await run_in_executor(
             None,
             self._generate,
@@ -1211,6 +1231,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Yields:
+            The chat generation chunks.
+        """
         raise NotImplementedError
 
     async def _astream(
@@ -1220,6 +1251,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Yields:
+            The chat generation chunks.
+        """
         iterator = await run_in_executor(
             None,
             self._stream,
@@ -1258,6 +1300,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If the generation is not a chat generation.
 
         Returns:
             The model output message.
@@ -1319,6 +1364,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 first occurrence of any of these substrings.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If the output is not a string.
 
         Returns:
             The predicted output string.
@@ -1433,6 +1481,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
+        Raises:
+            ValueError: If there are any unsupported ``kwargs``.
+            NotImplementedError: If the model does not implement with_structured_output.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.

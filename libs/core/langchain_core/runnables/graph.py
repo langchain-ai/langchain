@@ -475,6 +475,10 @@ class Graph:
 
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the origin.
+
+        Returns:
+            the first node, or None if there is no such node or multiple
+            candidates.
         """
         return _first_node(self)
 
@@ -483,6 +487,10 @@ class Graph:
 
         If there is no such node, or there are multiple, return None.
         When drawing the graph, this node would be the destination.
+
+        Returns:
+            the last node, or None if there is no such node or multiple
+            candidates.
         """
         return _last_node(self)
 
@@ -513,7 +521,11 @@ class Graph:
             self.remove_node(last_node)
 
     def draw_ascii(self) -> str:
-        """Draw the graph as an ASCII art string."""
+        """Draw the graph as an ASCII art string.
+
+        Returns:
+            The ASCII art string.
+        """
         from langchain_core.runnables.graph_ascii import draw_ascii
 
         return draw_ascii(

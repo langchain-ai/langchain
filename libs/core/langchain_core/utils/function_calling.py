@@ -146,6 +146,9 @@ def _convert_pydantic_to_openai_function(
             of the schema will be used.
         rm_titles: Whether to remove titles from the schema. Defaults to True.
 
+    Raises:
+        TypeError: If the model is not a Pydantic model.
+
     Returns:
         The function description.
     """
@@ -322,6 +325,9 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
 
     Args:
         tool: The tool to format.
+
+    Raises:
+        ValueError: If the tool call schema is not supported.
 
     Returns:
         The function description.
@@ -602,7 +608,20 @@ def convert_to_json_schema(
     *,
     strict: Optional[bool] = None,
 ) -> dict[str, Any]:
-    """Convert a schema representation to a JSON schema."""
+    """Convert a schema representation to a JSON schema.
+
+    Args:
+        schema: the schema to convert.
+        strict: If True, model output is guaranteed to exactly match the JSON Schema
+            provided in the function definition. If None, ``strict`` argument will not
+            be included in function definition.
+
+    Raises:
+        ValueError: If the input is not a valid OpenAI-format tool.
+
+    Returns:
+        A JSON schema representation of the input schema.
+    """
     openai_tool = convert_to_openai_tool(schema, strict=strict)
     if (
         not isinstance(openai_tool, dict)

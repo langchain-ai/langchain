@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.exceptions import LangChainException
 from langchain_core.runnables import run_in_executor
 
@@ -206,27 +208,13 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return self.mget(keys)
 
+    @override
     def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         for key, value in key_value_pairs:
             self.store[key] = value
 
+    @override
     async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Async set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         return self.mset(key_value_pairs)
 
     def mdelete(self, keys: Sequence[str]) -> None:

@@ -101,6 +101,9 @@ def get_usage_metadata_callback(
         name (str): The name of the context variable. Defaults to
             ``'usage_metadata_callback'``.
 
+    Yields:
+        The usage metadata callback.
+
     Example:
         .. code-block:: python
 

@@ -242,7 +242,15 @@ class Runnable(ABC, Generic[Input, Output]):
     def get_name(
         self, suffix: Optional[str] = None, *, name: Optional[str] = None
     ) -> str:
-        """Get the name of the ``Runnable``."""
+        """Get the name of the ``Runnable``.
+
+        Args:
+            suffix: An optional suffix to append to the name.
+            name: An optional name to use instead of the ``Runnable``'s name.
+
+        Returns:
+            The name of the ``Runnable``.
+        """
         if name:
             name_ = name
         elif hasattr(self, "name") and self.name:
@@ -273,7 +281,13 @@ class Runnable(ABC, Generic[Input, Output]):
 
     @property
     def InputType(self) -> type[Input]:  # noqa: N802
-        """The type of input this ``Runnable`` accepts specified as a type annotation."""  # noqa: E501
+        """Input type.
+
+        The type of input this ``Runnable`` accepts specified as a type annotation.
+
+        Raises:
+            TypeError: If the input type cannot be inferred.
+        """
         # First loop through all parent classes and if any of them is
         # a pydantic model, we will pick up the generic parameterization
         # from that model via the __pydantic_generic_metadata__ attribute.
@@ -299,7 +313,13 @@ class Runnable(ABC, Generic[Input, Output]):
 
     @property
     def OutputType(self) -> type[Output]:  # noqa: N802
-        """The type of output this ``Runnable`` produces specified as a type annotation."""  # noqa: E501
+        """Output Type.
+
+        The type of output this ``Runnable`` produces specified as a type annotation.
+
+        Raises:
+            TypeError: If the output type cannot be inferred.
+        """
         # First loop through bases -- this will help generic
         # any pydantic models.
         for base in self.__class__.mro():
@@ -573,7 +593,17 @@ class Runnable(ABC, Generic[Input, Output]):
             Mapping[str, Union[Runnable[Any, Other], Callable[[Any], Other], Any]],
         ],
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this ``Runnable`` with another object to create a ``RunnableSequence``."""  # noqa: E501
+        """Runnable "or" operator.
+
+        Compose this ``Runnable`` with another object to create a
+        ``RunnableSequence``.
+
+        Args:
+            other: Another ``Runnable`` or a ``Runnable``-like object.
+
+        Returns:
+            a new ``Runnable``.
+        """
         return RunnableSequence(self, coerce_to_runnable(other))
 
     def __ror__(
@@ -586,7 +616,17 @@ class Runnable(ABC, Generic[Input, Output]):
             Mapping[str, Union[Runnable[Other, Any], Callable[[Other], Any], Any]],
         ],
     ) -> RunnableSerializable[Other, Output]:
-        """Compose this ``Runnable`` with another object to create a ``RunnableSequence``."""  # noqa: E501
+        """Runnable "reverse-or" operator.
+
+        Compose this ``Runnable`` with another object to create a
+        ``RunnableSequence``.
+
+        Args:
+            other: Another ``Runnable`` or a ``Runnable``-like object.
+
+        Returns:
+            a new ``Runnable``.
+        """
         return RunnableSequence(coerce_to_runnable(other), self)
 
     def pipe(
@@ -594,11 +634,15 @@ class Runnable(ABC, Generic[Input, Output]):
         *others: Union[Runnable[Any, Other], Callable[[Any], Other]],
         name: Optional[str] = None,
     ) -> RunnableSerializable[Input, Other]:
-        """Compose this ``Runnable`` with ``Runnable``-like objects to make a ``RunnableSequence``.
+        """Pipe runnables.
+
+        Compose this ``Runnable`` with ``Runnable``-like objects to make a
+        ``RunnableSequence``.
 
         Equivalent to ``RunnableSequence(self, *others)`` or ``self | others[0] | ...``
 
         Example:
+
             .. code-block:: python
 
                 from langchain_core.runnables import RunnableLambda
@@ -623,13 +667,20 @@ class Runnable(ABC, Generic[Input, Output]):
                 await sequence.abatch([1, 2, 3])
                 # -> [4, 6, 8]
 
-        """  # noqa: E501
+        Args:
+            *others: Other ``Runnable`` or ``Runnable``-like objects to compose
+            name: An optional name for the resulting ``RunnableSequence``.
+
+        Returns:
+            a new ``Runnable``.
+        """
         return RunnableSequence(self, *others, name=name)
 
     def pick(self, keys: Union[str, list[str]]) -> RunnableSerializable[Any, Any]:
         """Pick keys from the output dict of this ``Runnable``.
 
         Pick single key:
+
             .. code-block:: python
 
                 import json
@@ -648,6 +699,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 # -> [1, 2, 3]
 
         Pick list of keys:
+
             .. code-block:: python
 
                 from typing import Any
@@ -674,6 +726,12 @@ class Runnable(ABC, Generic[Input, Output]):
                 json_and_bytes_chain.invoke("[1, 2, 3]")
                 # -> {"json": [1, 2, 3], "bytes": b"[1, 2, 3]"}
 
+        Args:
+            keys: A key or list of keys to pick from the output dict.
+
+        Returns:
+            a new ``Runnable``.
+
         """
         from langchain_core.runnables.passthrough import RunnablePick
 
@@ -691,8 +749,6 @@ class Runnable(ABC, Generic[Input, Output]):
         ],
     ) -> RunnableSerializable[Any, Any]:
         """Assigns new fields to the dict output of this ``Runnable``.
-
-        Returns a new ``Runnable``.
 
         .. code-block:: python
 
@@ -719,6 +775,13 @@ class Runnable(ABC, Generic[Input, Output]):
             # {'title': 'RunnableSequenceOutput', 'type': 'object', 'properties':
             {'str': {'title': 'Str',
             'type': 'string'}, 'hello': {'title': 'Hello', 'type': 'string'}}}
+
+        Args:
+            **kwargs: A mapping of keys to ``Runnable`` or ``Runnable``-like objects
+                that will be invoked with the entire output dict of this ``Runnable``.
+
+        Returns:
+            a new ``Runnable``.
 
         """
         from langchain_core.runnables.passthrough import RunnableAssign
@@ -755,12 +818,18 @@ class Runnable(ABC, Generic[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Any,
     ) -> Output:
-        """Default implementation of ``ainvoke``, calls ``invoke`` from a thread.
+        """Transform a single input into an output.
 
-        The default implementation allows usage of async code even if
-        the ``Runnable`` did not implement a native async version of ``invoke``.
+        Args:
+            input: The input to the ``Runnable``.
+            config: A config to use when invoking the ``Runnable``.
+                The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the ``RunnableConfig``
+                for more details. Defaults to None.
 
-        Subclasses should override this method if they can run asynchronously.
+        Returns:
+            The output of the ``Runnable``.
 
         """
         return await run_in_executor(config, self.invoke, input, config, **kwargs)
@@ -779,6 +848,20 @@ class Runnable(ABC, Generic[Input, Output]):
 
         Subclasses should override this method if they can batch more efficiently;
         e.g., if the underlying ``Runnable`` uses an API which supports a batch mode.
+
+        Args:
+             inputs: A list of inputs to the ``Runnable``.
+             config: A config to use when invoking the ``Runnable``.
+                 The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                 tracing purposes, ``'max_concurrency'`` for controlling how much work
+                 to do in parallel, and other keys. Please refer to the
+                 ``RunnableConfig`` for more details. Defaults to None.
+             return_exceptions: Whether to return exceptions instead of raising them.
+                 Defaults to False.
+             **kwargs: Additional keyword arguments to pass to the ``Runnable``.
+
+        Returns:
+             A list of outputs from the ``Runnable``.
 
         """
         if not inputs:
@@ -833,6 +916,20 @@ class Runnable(ABC, Generic[Input, Output]):
         """Run ``invoke`` in parallel on a list of inputs.
 
         Yields results as they complete.
+
+        Args:
+            inputs: A list of inputs to the ``Runnable``.
+            config: A config to use when invoking the ``Runnable``.
+                The config supports standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work to
+                do in parallel, and other keys. Please refer to the ``RunnableConfig``
+                for more details. Defaults to None.
+            return_exceptions: Whether to return exceptions instead of raising them.
+                Defaults to False.
+            **kwargs: Additional keyword arguments to pass to the ``Runnable``.
+
+        Yields:
+            tuples of the index of the input and the output from the ``Runnable``.
 
         """
         if not inputs:
@@ -898,7 +995,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 for more details. Defaults to None.
             return_exceptions: Whether to return exceptions instead of raising them.
                 Defaults to False.
-            kwargs: Additional keyword arguments to pass to the ``Runnable``.
+            **kwargs: Additional keyword arguments to pass to the ``Runnable``.
 
         Returns:
             A list of outputs from the ``Runnable``.
@@ -1931,11 +2028,14 @@ class Runnable(ABC, Generic[Input, Output]):
         serialized: Optional[dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        """Helper method to transform an ``Input`` value to an ``Output`` value, with callbacks.
+        """Transform an ``Input`` value to an ``Output`` value, with callbacks.
+
+        Helper method to transform an ``Input`` value to an ``Output`` value,
+        with callbacks.
 
         Use this method to implement ``invoke`` in subclasses.
 
-        """  # noqa: E501
+        """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         run_manager = callback_manager.on_chain_start(
@@ -1982,10 +2082,13 @@ class Runnable(ABC, Generic[Input, Output]):
         serialized: Optional[dict[str, Any]] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        """Helper method to transform an ``Input`` value to an ``Output`` value, with callbacks.
+        """Transform an ``Input`` value to an ``Output`` value, with callbacks.
+
+        Helper method to transform an ``Input`` value to an ``Output`` value,
+        with callbacks.
 
         Use this method to implement ``ainvoke`` in subclasses.
-        """  # noqa: E501
+        """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -2520,6 +2623,9 @@ class RunnableSerializable(Serializable, Runnable[Input, Output]):
         Args:
             **kwargs: A dictionary of ``ConfigurableField`` instances to configure.
 
+        Raises:
+            ValueError: If a configuration key is not found in the ``Runnable``.
+
         Returns:
             A new ``Runnable`` with the fields configured.
 
@@ -2829,6 +2935,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "schema", "runnable"]
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
@@ -2843,14 +2954,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Check if the object is serializable.
-
-        Returns:
-            True if the object is serializable, False otherwise.
-
-            Defaults to True.
-
-        """
+        """Return True as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -3619,11 +3723,17 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "schema", "runnable"]
+        """
         return ["langchain", "schema", "runnable"]
 
     model_config = ConfigDict(
@@ -4644,7 +4754,7 @@ class RunnableLambda(Runnable[Input, Output]):
     __hash__ = None  # type: ignore[assignment]
 
     def __repr__(self) -> str:
-        """A string representation of this ``Runnable``."""
+        """Return a string representation of this ``Runnable``."""
         if self._repr is None:
             if hasattr(self, "func") and isinstance(self.func, itemgetter):
                 self._repr = f"RunnableLambda({str(self.func)[len('operator.') :]})"
@@ -5154,11 +5264,17 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "schema", "runnable"]
+        """
         return ["langchain", "schema", "runnable"]
 
     def _invoke(
@@ -5470,6 +5586,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
@@ -5477,7 +5594,8 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Defaults to ``["langchain", "schema", "runnable"]``.
+        Returns:
+            ["langchain", "schema", "runnable"]
         """
         return ["langchain", "schema", "runnable"]
 

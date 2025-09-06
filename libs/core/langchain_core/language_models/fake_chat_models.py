@@ -75,12 +75,13 @@ class FakeListChatModel(SimpleChatModel):
     @override
     def _call(
         self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *args: Any,
         **kwargs: Any,
     ) -> str:
-        """First try to lookup in queries, else return 'foo' or 'bar'."""
+        """Return the next response in the list.
+
+        Cycle back to the start if at the end.
+        """
         if self.sleep is not None:
             time.sleep(self.sleep)
         response = self.responses[self.i]
@@ -239,7 +240,6 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
@@ -252,7 +252,6 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        """Stream the output of the model."""
         chat_result = self._generate(
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
@@ -362,7 +361,6 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property

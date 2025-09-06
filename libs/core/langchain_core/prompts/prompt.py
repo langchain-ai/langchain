@@ -69,6 +69,11 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "prompts", "prompt"]
+        """
         return ["langchain", "prompts", "prompt"]
 
     template: str
@@ -135,7 +140,16 @@ class PromptTemplate(StringPromptTemplate):
         return mustache_schema(self.template)
 
     def __add__(self, other: Any) -> PromptTemplate:
-        """Override the + operator to allow for combining prompt templates."""
+        """Override the + operator to allow for combining prompt templates.
+
+        Raises:
+            ValueError: If the template formats are not f-string or if there are
+                conflicting partial variables.
+            NotImplementedError: If the other object is not a PromptTemplate or str.
+
+        Returns:
+            A new PromptTemplate that is the combination of the two.
+        """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
             if self.template_format != "f-string":

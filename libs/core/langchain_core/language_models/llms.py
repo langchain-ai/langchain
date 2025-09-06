@@ -663,7 +663,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompts."""
+        """Run the LLM on the given prompts.
+
+        Args:
+            prompts: The prompts to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+
+        Returns:
+            The LLM result.
+        """
 
     async def _agenerate(
         self,
@@ -672,7 +683,18 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompts."""
+        """Run the LLM on the given prompts.
+
+        Args:
+            prompts: The prompts to generate from.
+            stop: Stop words to use when generating. Model output is cut off at the
+                first occurrence of any of the stop substrings.
+                If stop tokens are not supported consider raising NotImplementedError.
+            run_manager: Callback manager for the run.
+
+        Returns:
+            The LLM result.
+        """
         return await run_in_executor(
             None,
             self._generate,
@@ -705,8 +727,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
-        Returns:
-            An iterator of GenerationChunks.
+        Yields:
+            Generation chunks.
         """
         raise NotImplementedError
 
@@ -731,8 +753,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
 
-        Returns:
-            An async iterator of GenerationChunks.
+        Yields:
+            Generation chunks.
         """
         iterator = await run_in_executor(
             None,
@@ -852,6 +874,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If prompts is not a list.
+            ValueError: If the length of callbacks, tags, metadata, or run_name
+                (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -1112,6 +1139,10 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 length of the list must match the length of the prompts list.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If the length of callbacks, tags, metadata, or run_name
+                (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -1388,7 +1419,7 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         return AIMessage(content=content)
 
     def __str__(self) -> str:
-        """Get a string representation of the object for printing."""
+        """Return a string representation of the object for printing."""
         cls_name = f"\033[1m{self.__class__.__name__}\033[0m"
         return f"{cls_name}\nParams: {self._identifying_params}"
 
@@ -1536,7 +1567,6 @@ class LLM(BaseLLM):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Run the LLM on the given prompt and input."""
         # TODO: add caching here.
         generations = []
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
@@ -1556,7 +1586,6 @@ class LLM(BaseLLM):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> LLMResult:
-        """Async run the LLM on the given prompt and input."""
         generations = []
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
         for prompt in prompts:
