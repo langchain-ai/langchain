@@ -1,5 +1,6 @@
 """Migrate LangChain to the most recent version."""
 
+import shutil
 from pathlib import Path
 
 import rich
@@ -9,9 +10,28 @@ from typer import Option
 
 
 def get_gritdir_path() -> Path:
-    """Get the path to the grit directory."""
-    script_dir = Path(__file__).parent
-    return script_dir / ".grit"
+    """Get the path to the grit directory.
+
+    Uses a cache directory to avoid Git management conflicts when running
+    in pyenv virtual environments where the .grit directory might be ignored
+    by parent .gitignore files.
+    """
+    # Use user cache directory to avoid Git management conflicts
+    cache_dir = Path.home() / ".cache" / "langchain-cli"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+
+    grit_dir = cache_dir / ".grit"
+
+    # If cached .grit directory doesn't exist, copy from package
+    if not grit_dir.exists():
+        source_grit_dir = Path(__file__).parent / ".grit"
+        if source_grit_dir.exists():
+            shutil.copytree(source_grit_dir, grit_dir)
+        else:
+            # Fallback to original behavior if source doesn't exist
+            return source_grit_dir
+
+    return grit_dir
 
 
 def migrate(
