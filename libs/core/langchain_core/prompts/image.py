@@ -23,7 +23,11 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
-        """Create an image prompt template."""
+        """Create an image prompt template.
+
+        Raises:
+            ValueError: If the input variables contain 'url', 'path', or 'detail'.
+        """
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
@@ -44,7 +48,11 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "prompts", "image"]
+        """
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
@@ -84,6 +92,7 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
         Raises:
             ValueError: If the url is not provided.
             ValueError: If the url is not a string.
+            ValueError: If 'path' is provided in the template or kwargs.
 
         Example:
 
@@ -128,9 +137,6 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
         Returns:
             A formatted string.
-
-        Raises:
-            ValueError: If the path or url is not a string.
         """
         return await run_in_executor(None, self.format, **kwargs)
 

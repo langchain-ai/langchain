@@ -110,7 +110,17 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogPatch instances."""
+        """Combine two RunLogPatch instances.
+
+        Args:
+            other: The other RunLogPatch to combine with.
+
+        Raises:
+            TypeError: If the other object is not a RunLogPatch.
+
+        Returns:
+            A new RunLog representing the combination of the two.
+        """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
@@ -150,7 +160,17 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogs."""
+        """Combine two RunLogs.
+
+        Args:
+            other: The other RunLog or RunLogPatch to combine with.
+
+        Raises:
+            TypeError: If the other object is not a RunLog or RunLogPatch.
+
+        Returns:
+            A new RunLog representing the combination of the two.
+        """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
@@ -167,7 +187,14 @@ class RunLog(RunLogPatch):
 
     @override
     def __eq__(self, other: object) -> bool:
-        """Check if two RunLogs are equal."""
+        """Check if two RunLogs are equal.
+
+        Args:
+            other: The other RunLog to compare to.
+
+        Returns:
+            True if the RunLogs are equal, False otherwise.
+        """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
             return False
@@ -250,7 +277,11 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.root_id: Optional[UUID] = None
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
-        """Iterate over the stream of run logs."""
+        """Iterate over the stream of run logs.
+
+        Returns:
+            An async iterator over the run log patches.
+        """
         return self.receive_stream.__aiter__()
 
     def send(self, *ops: dict[str, Any]) -> bool:
@@ -623,6 +654,23 @@ async def _astream_log_implementation(
 
     The implementation has been factored out (at least temporarily) as both
     astream_log and astream_events relies on it.
+
+    Args:
+        runnable: The runnable to run in streaming mode.
+        value: The input to the runnable.
+        config: The config to pass to the runnable.
+        stream: The stream to send the run logs to.
+        diff: Whether to yield run log patches (True) or full run logs (False).
+        with_streamed_output_list: Whether to include a list of all streamed
+            outputs in each patch. If False, only the final output will be included
+            in the patches.
+        **kwargs: Additional keyword arguments to pass to the runnable.
+
+    Raises:
+        ValueError: If the callbacks in the config are of an unexpected type.
+
+    Yields:
+        The run log patches or states, depending on the value of ``diff``.
     """
     import jsonpatch
 

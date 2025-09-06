@@ -18,17 +18,15 @@ class BaseMessagePromptTemplate(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable.
-
-        Returns: True.
-        """
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "prompts", "chat"].
+        Returns:
+            ["langchain", "prompts", "chat"]
         """
         return ["langchain", "prompts", "chat"]
 

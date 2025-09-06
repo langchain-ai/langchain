@@ -140,6 +140,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
@@ -147,13 +148,18 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Defaults to ["langchain", "schema", "runnable"].
+        Returns:
+            ["langchain", "schema", "runnable"]
         """
         return ["langchain", "schema", "runnable"]
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
-        """Iterator over the Runnable and its fallbacks."""
+        """Iterator over the Runnable and its fallbacks.
+
+        Yields:
+            the Runnable then its fallbacks.
+        """
         yield self.runnable
         yield from self.fallbacks
 

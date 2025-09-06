@@ -49,10 +49,14 @@ def _dereference_refs_helper(
     """Inline every pure {'$ref':...}.
 
     But:
+
     - if shallow_refs=True: only break cycles, do not inline nested refs
     - if shallow_refs=False: deep-inline all nested refs
 
     Also skip recursion under any key in skip_keys.
+
+    Returns:
+        The object with refs dereferenced.
     """
     if processed_refs is None:
         processed_refs = set()
@@ -118,6 +122,9 @@ def dereference_refs(
             shallow-inline refs.
         - If provided (even as an empty list), we will recurse under every key and
             deep-inline all refs.
+
+    Returns:
+        The schema with refs dereferenced.
     """
     full = full_schema or schema_obj
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]

@@ -70,6 +70,9 @@ class StructuredPrompt(ChatPromptTemplate):
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
         namespace is ["langchain", "llms", "openai"]
+
+        Returns:
+            The namespace of the langchain object.
         """
         return cls.__module__.split(".")
 

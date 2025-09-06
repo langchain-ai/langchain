@@ -144,12 +144,17 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """RunnableBranch is serializable if all its branches are serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "schema", "runnable"]
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
@@ -260,7 +265,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """Async version of invoke."""
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -321,9 +325,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -408,9 +409,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)

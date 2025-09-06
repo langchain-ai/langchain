@@ -85,9 +85,6 @@ class PngDrawer:
         Args:
             viz: The graphviz object.
             node: The node to add.
-
-        Returns:
-            None
         """
         viz.add_node(
             node,
@@ -114,9 +111,6 @@ class PngDrawer:
             target: The target node.
             label: The label for the edge. Defaults to None.
             conditional: Whether the edge is conditional. Defaults to False.
-
-        Returns:
-            None
         """
         viz.add_edge(
             source,
@@ -131,8 +125,16 @@ class PngDrawer:
         """Draw the given state graph into a PNG file.
 
         Requires `graphviz` and `pygraphviz` to be installed.
-        :param graph: The graph to draw
-        :param output_path: The path to save the PNG. If None, PNG bytes are returned.
+
+        Args:
+            graph: The graph to draw
+            output_path: The path to save the PNG. If None, PNG bytes are returned.
+
+        Raises:
+            ImportError: If ``pygraphviz`` is not installed.
+
+        Returns:
+            The PNG bytes if output_path is None, else None.
         """
         try:
             import pygraphviz as pgv  # type: ignore[import-not-found]

@@ -55,7 +55,11 @@ class PipelinePromptTemplate(BasePromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "prompts", "pipeline"]
+        """
         return ["langchain", "prompts", "pipeline"]
 
     @model_validator(mode="before")

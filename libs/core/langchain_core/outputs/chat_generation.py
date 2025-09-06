@@ -47,9 +47,6 @@ class ChatGeneration(Generation):
 
         Returns:
             The values of the object with the text attribute set.
-
-        Raises:
-            ValueError: If the message is not a string or a list.
         """
         text = ""
         if isinstance(self.message.content, str):
@@ -88,6 +85,13 @@ class ChatGenerationChunk(ChatGeneration):
         Args:
             other: The other ChatGenerationChunk or list of ChatGenerationChunks to
                 concatenate.
+
+        Raises:
+            TypeError: If other is not a ChatGenerationChunk or list of
+                ChatGenerationChunks.
+
+        Returns:
+            A new ChatGenerationChunk concatenated from self and other.
         """
         if isinstance(other, ChatGenerationChunk):
             generation_info = merge_dicts(
@@ -116,7 +120,14 @@ class ChatGenerationChunk(ChatGeneration):
 def merge_chat_generation_chunks(
     chunks: list[ChatGenerationChunk],
 ) -> Union[ChatGenerationChunk, None]:
-    """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk."""
+    """Merge a list of ChatGenerationChunks into a single ChatGenerationChunk.
+
+    Args:
+        chunks: A list of ChatGenerationChunks to merge.
+
+    Returns:
+        A merged ChatGenerationChunk, or None if the input list is empty.
+    """
     if not chunks:
         return None
 

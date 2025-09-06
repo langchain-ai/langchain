@@ -94,7 +94,7 @@ class NoLock:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
-        """Exception not handled."""
+        """Return False, exception not suppressed."""
         return False
 
 
@@ -236,7 +236,11 @@ class Tee(Generic[T]):
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
-        """Iterate over the child iterators."""
+        """Iterate over the child iterators.
+
+        Yields:
+            The child iterators.
+        """
         yield from self._children
 
     async def __aenter__(self) -> "Tee[T]":
@@ -249,7 +253,11 @@ class Tee(Generic[T]):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
-        """Close all child iterators."""
+        """Close all child iterators.
+
+        Returns:
+            False, exceptions not suppressed.
+        """
         await self.aclose()
         return False
 
@@ -318,8 +326,8 @@ async def abatch_iterate(
         size: The size of the batch.
         iterable: The async iterable to batch.
 
-    Returns:
-        An async iterator over the batches.
+    Yields:
+        the batches.
     """
     batch: list[T] = []
     async for element in iterable:
