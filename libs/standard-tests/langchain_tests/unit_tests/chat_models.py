@@ -1022,8 +1022,8 @@ class ChatModelUnitTests(ChatModelTests):
 
         # Test optional params
         model = self.chat_model_class(
-            max_tokens=10,  # type: ignore[call-arg]
-            stop=["test"],  # type: ignore[call-arg]
+            max_tokens=10,
+            stop=["test"],
             **self.chat_model_params,
         )
         ls_params = model._get_ls_params()
