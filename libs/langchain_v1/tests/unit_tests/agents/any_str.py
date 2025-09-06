@@ -3,6 +3,8 @@ from typing import Union
 
 
 class AnyStr(str):
+    __slots__ = ("prefix",)
+
     def __init__(self, prefix: Union[str, re.Pattern] = "") -> None:
         super().__init__()
         self.prefix = prefix

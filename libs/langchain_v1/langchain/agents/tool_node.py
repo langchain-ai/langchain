@@ -119,7 +119,7 @@ def msg_content_output(output: Any) -> Union[str, list[dict]]:
     # any existing ToolNode usage.
     try:
         return json.dumps(output, ensure_ascii=False)
-    except Exception:  # noqa: BLE001
+    except Exception:
         return str(output)
 
 
@@ -202,7 +202,7 @@ def _handle_tool_error(
             f"Got unexpected type of `handle_tool_error`. Expected bool, str "
             f"or callable. Received: {flag}"
         )
-        raise ValueError(msg)
+        raise TypeError(msg)
     return content
 
 
@@ -234,7 +234,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
     params = list(sig.parameters.values())
     if params:
         # If it's a method, the first argument is typically 'self' or 'cls'
-        if params[0].name in ["self", "cls"] and len(params) == 2:
+        if params[0].name in {"self", "cls"} and len(params) == 2:  # noqa: PLR2004
             first_param = params[1]
         else:
             first_param = params[0]
@@ -417,7 +417,7 @@ class ToolNode(RunnableCallable):
 
     def _func(
         self,
-        input: Union[
+        input_: Union[
             list[AnyMessage],
             dict[str, Any],
             BaseModel,
@@ -426,7 +426,7 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        tool_calls, input_type = self._parse_input(input_, store)
         config_list = get_config_list(config, len(tool_calls))
         input_types = [input_type] * len(tool_calls)
         with get_executor_for_config(config) as executor:
@@ -436,7 +436,7 @@ class ToolNode(RunnableCallable):
 
     async def _afunc(
         self,
-        input: Union[
+        input_: Union[
             list[AnyMessage],
             dict[str, Any],
             BaseModel,
@@ -445,7 +445,7 @@ class ToolNode(RunnableCallable):
         *,
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
-        tool_calls, input_type = self._parse_input(input, store)
+        tool_calls, input_type = self._parse_input(input_, store)
         outputs = await asyncio.gather(
             *(self._arun_one(call, input_type, config) for call in tool_calls)
         )
@@ -625,7 +625,7 @@ class ToolNode(RunnableCallable):
 
     def _parse_input(
         self,
-        input: Union[
+        input_: Union[
             list[AnyMessage],
             dict[str, Any],
             BaseModel,
@@ -633,16 +633,16 @@ class ToolNode(RunnableCallable):
         store: BaseStore | None,
     ) -> tuple[list[ToolCall], Literal["list", "dict", "tool_calls"]]:
         input_type: Literal["list", "dict", "tool_calls"]
-        if isinstance(input, list):
-            if isinstance(input[-1], dict) and input[-1].get("type") == "tool_call":
+        if isinstance(input_, list):
+            if isinstance(input_[-1], dict) and input_[-1].get("type") == "tool_call":
                 input_type = "tool_calls"
-                tool_calls = cast("list[ToolCall]", input)
+                tool_calls = cast("list[ToolCall]", input_)
                 return tool_calls, input_type
             input_type = "list"
-            messages = input
-        elif isinstance(input, dict) and (messages := input.get(self._messages_key, [])):
+            messages = input_
+        elif isinstance(input_, dict) and (messages := input_.get(self._messages_key, [])):
             input_type = "dict"
-        elif messages := getattr(input, self._messages_key, []):
+        elif messages := getattr(input_, self._messages_key, []):
             # Assume dataclass-like state that can coerce from dict
             input_type = "dict"
         else:
@@ -651,12 +651,12 @@ class ToolNode(RunnableCallable):
 
         try:
             latest_ai_message = next(m for m in reversed(messages) if isinstance(m, AIMessage))
-        except StopIteration:
+        except StopIteration as e:
             msg = "No AIMessage found in input"
-            raise ValueError(msg)
+            raise ValueError(msg) from e
 
         tool_calls = [
-            self.inject_tool_args(call, input, store) for call in latest_ai_message.tool_calls
+            self.inject_tool_args(call, input_, store) for call in latest_ai_message.tool_calls
         ]
         return tool_calls, input_type
 
@@ -676,19 +676,19 @@ class ToolNode(RunnableCallable):
     def _inject_state(
         self,
         tool_call: ToolCall,
-        input: Union[
+        input_: Union[
             list[AnyMessage],
             dict[str, Any],
             BaseModel,
         ],
     ) -> ToolCall:
         state_args = self._tool_to_state_args[tool_call["name"]]
-        if state_args and isinstance(input, list):
+        if state_args and isinstance(input_, list):
             required_fields = list(state_args.values())
             if (
                 len(required_fields) == 1 and required_fields[0] == self._messages_key
             ) or required_fields[0] is None:
-                input = {self._messages_key: input}
+                input_ = {self._messages_key: input_}
             else:
                 err_msg = (
                     f"Invalid input to ToolNode. Tool {tool_call['name']} requires "
@@ -699,14 +699,14 @@ class ToolNode(RunnableCallable):
                     err_msg += f" State should contain fields {required_fields_str}."
                 raise ValueError(err_msg)
 
-        if isinstance(input, dict):
+        if isinstance(input_, dict):
             tool_state_args = {
-                tool_arg: input[state_field] if state_field else input
+                tool_arg: input_[state_field] if state_field else input_
                 for tool_arg, state_field in state_args.items()
             }
         else:
             tool_state_args = {
-                tool_arg: getattr(input, state_field) if state_field else input
+                tool_arg: getattr(input_, state_field) if state_field else input_
                 for tool_arg, state_field in state_args.items()
             }
 
@@ -737,7 +737,7 @@ class ToolNode(RunnableCallable):
     def inject_tool_args(
         self,
         tool_call: ToolCall,
-        input: Union[
+        input_: Union[
             list[AnyMessage],
             dict[str, Any],
             BaseModel,
@@ -758,7 +758,7 @@ class ToolNode(RunnableCallable):
         Args:
             tool_call: The tool call dictionary to augment with injected arguments.
                 Must contain 'name', 'args', 'id', and 'type' fields.
-            input: The current graph state to inject into tools requiring state access.
+            input_: The current graph state to inject into tools requiring state access.
                 Can be a message list, state dictionary, or BaseModel instance.
             store: The persistent store instance to inject into tools requiring storage.
                 Will be None if no store is configured for the graph.
@@ -781,7 +781,7 @@ class ToolNode(RunnableCallable):
             return tool_call
 
         tool_call_copy: ToolCall = copy(tool_call)
-        tool_call_with_state = self._inject_state(tool_call_copy, input)
+        tool_call_with_state = self._inject_state(tool_call_copy, input_)
         return self._inject_store(tool_call_with_state, store)
 
     def _validate_tool_command(
@@ -792,7 +792,7 @@ class ToolNode(RunnableCallable):
     ) -> Command:
         if isinstance(command.update, dict):
             # input type is dict when ToolNode is invoked with a dict input (e.g. {"messages": [AIMessage(..., tool_calls=[...])]})
-            if input_type not in ("dict", "tool_calls"):
+            if input_type not in {"dict", "tool_calls"}:
                 msg = (
                     f"Tools can provide a dict in Command.update only when using dict with '{self._messages_key}' key as ToolNode input, "
                     f"got: {command.update} for tool '{call['name']}'"
@@ -1135,8 +1135,6 @@ def _get_state_args(tool: BaseTool) -> dict[str, str | None]:
                 tool_args_to_state_fields[name] = injection.field
             else:
                 tool_args_to_state_fields[name] = None
-        else:
-            pass
     return tool_args_to_state_fields
 
 

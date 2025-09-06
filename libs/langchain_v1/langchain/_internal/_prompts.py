@@ -26,8 +26,8 @@ if TYPE_CHECKING:
 def resolve_prompt(
     prompt: Union[
         str,
-        None,
         Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
+        None,
     ],
     state: StateT,
     runtime: Runtime[ContextT],
@@ -90,9 +90,9 @@ def resolve_prompt(
 async def aresolve_prompt(
     prompt: Union[
         str,
-        None,
         Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
         Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
+        None,
     ],
     state: StateT,
     runtime: Runtime[ContextT],

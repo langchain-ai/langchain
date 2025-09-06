@@ -161,7 +161,7 @@ def test_runnable_prompt() -> None:
 
 def test_prompt_with_store() -> None:
     def add(a: int, b: int):
-        """Adds a and b"""
+        """Adds a and b."""
         return a + b
 
     in_memory_store = InMemoryStore()
@@ -201,7 +201,7 @@ def test_prompt_with_store() -> None:
 
 async def test_prompt_with_store_async() -> None:
     async def add(a: int, b: int):
-        """Adds a and b"""
+        """Adds a and b."""
         return a + b
 
     in_memory_store = InMemoryStore()
@@ -235,7 +235,7 @@ async def test_prompt_with_store_async() -> None:
 
 @pytest.mark.parametrize("tool_style", ["openai", "anthropic"])
 @pytest.mark.parametrize("include_builtin", [True, False])
-def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
+def test_model_with_tools(tool_style: str, *, include_builtin: bool) -> None:
     model = FakeToolCallingModel(tool_style=tool_style)
 
     @dec_tool
@@ -266,7 +266,7 @@ def test_model_with_tools(tool_style: str, include_builtin: bool) -> None:
             }
         )
     # check valid agent constructor
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         create_agent(
             model.bind_tools(tools),
             tools,
@@ -337,7 +337,7 @@ def test__validate_messages() -> None:
 
 
 def test__infer_handled_types() -> None:
-    def handle(e) -> str:  # type: ignore
+    def handle(e) -> str:
         return ""
 
     def handle2(e: Exception) -> str:
@@ -407,7 +407,7 @@ def test_react_agent_with_structured_response() -> None:
     ]
 
     def get_weather() -> str:
-        """Get the weather"""
+        """Get the weather."""
         return "The weather is sunny and 75°F."
 
     expected_structured_response = WeatherResponse(temperature=75)
@@ -451,7 +451,7 @@ def test_react_agent_update_state(
 ) -> None:
     @dec_tool
     def get_user_name(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Retrieve user name"""
+        """Retrieve user name."""
         user_name = interrupt("Please provider user name:")
         return Command(
             update={
@@ -533,7 +533,7 @@ def test_react_agent_parallel_tool_calls(
     message_types = []
     for event in agent.stream({"messages": [("user", query)]}, config, stream_mode="values"):
         if messages := event.get("messages"):
-            message_types.append([m.type for m in messages])
+            message_types.append([m.type for m in messages])  # noqa: PERF401
 
     assert message_types == [
         ["human"],
@@ -601,19 +601,19 @@ def test_create_agent_inject_vars() -> None:
 
 async def test_return_direct() -> None:
     @dec_tool(return_direct=True)
-    def tool_return_direct(input: str) -> str:
+    def tool_return_direct(value: str) -> str:
         """A tool that returns directly."""
-        return f"Direct result: {input}"
+        return f"Direct result: {value}"
 
     @dec_tool
-    def tool_normal(input: str) -> str:
+    def tool_normal(value: str) -> str:
         """A normal tool."""
-        return f"Normal result: {input}"
+        return f"Normal result: {value}"
 
     first_tool_call = [
         ToolCall(
             name="tool_return_direct",
-            args={"input": "Test direct"},
+            args={"value": "Test direct"},
             id="1",
         ),
     ]
@@ -643,7 +643,7 @@ async def test_return_direct() -> None:
     second_tool_call = [
         ToolCall(
             name="tool_normal",
-            args={"input": "Test normal"},
+            args={"value": "Test normal"},
             id="2",
         ),
     ]
@@ -665,12 +665,12 @@ async def test_return_direct() -> None:
     both_tool_calls = [
         ToolCall(
             name="tool_return_direct",
-            args={"input": "Test both direct"},
+            args={"value": "Test both direct"},
             id="3",
         ),
         ToolCall(
             name="tool_normal",
-            args={"input": "Test both normal"},
+            args={"value": "Test both normal"},
             id="4",
         ),
     ]
@@ -704,7 +704,7 @@ def test__get_state_args() -> None:
 
     @dec_tool(args_schema=Schema2)
     def foo(a: str, b: int) -> float:
-        """return"""
+        """Return"""
         return 0.0
 
     assert _get_state_args(foo) == {"a": None, "b": "bar"}
@@ -749,11 +749,11 @@ def test_react_with_subgraph_tools(
     # Add subgraphs as tools
 
     def addition(a: int, b: int):
-        """Add two numbers"""
+        """Add two numbers."""
         return add_subgraph.invoke({"a": a, "b": b})["result"]
 
     def multiplication(a: int, b: int):
-        """Multiply two numbers"""
+        """Multiply two numbers."""
         return multiply_subgraph.invoke({"a": a, "b": b})["result"]
 
     model = FakeToolCallingModel(
@@ -797,7 +797,7 @@ def test_react_with_subgraph_tools(
 
 
 def test_react_agent_subgraph_streaming_sync() -> None:
-    """Test React agent streaming when used as a subgraph node sync version"""
+    """Test React agent streaming when used as a subgraph node sync version."""
 
     @dec_tool
     def get_weather(city: str) -> str:
@@ -856,30 +856,30 @@ def test_react_agent_subgraph_streaming_sync() -> None:
     )
     assert len(result["messages"]) == 2
 
-    events = []
-    for event in compiled_workflow.stream(
-        {"messages": [("user", "What is the weather in Tokyo?")]},
-        stream_mode="messages",
-        subgraphs=False,
-    ):
-        events.append(event)
+    events = list(
+        compiled_workflow.stream(
+            {"messages": [("user", "What is the weather in Tokyo?")]},
+            stream_mode="messages",
+            subgraphs=False,
+        )
+    )
 
     assert len(events) == 0
 
-    events = []
-    for event in compiled_workflow.stream(
-        {"messages": [("user", "What is the weather in Tokyo?")]},
-        stream_mode="messages",
-        subgraphs=True,
-    ):
-        events.append(event)
+    events = list(
+        compiled_workflow.stream(
+            {"messages": [("user", "What is the weather in Tokyo?")]},
+            stream_mode="messages",
+            subgraphs=True,
+        )
+    )
 
     assert len(events) == 3
-    namespace, (msg, metadata) = events[0]
+    _, (msg, _) = events[0]
     # FakeToolCallingModel returns a single AIMessage with tool calls
     # The content of the AIMessage reflects the input message
     assert msg.content.startswith("You are a helpful travel assistant")
-    namespace, (msg, metadata) = events[1]  # ToolMessage
+    _, (msg, _) = events[1]  # ToolMessage
     assert msg.content.startswith("The weather of Tokyo is sunny.")
 
 
@@ -945,30 +945,32 @@ async def test_react_agent_subgraph_streaming() -> None:
     )
     assert len(result["messages"]) == 2
 
-    events = []
-    async for event in compiled_workflow.astream(
-        {"messages": [("user", "What is the weather in Tokyo?")]},
-        stream_mode="messages",
-        subgraphs=False,
-    ):
-        events.append(event)
+    events = [
+        event
+        async for event in compiled_workflow.astream(
+            {"messages": [("user", "What is the weather in Tokyo?")]},
+            stream_mode="messages",
+            subgraphs=False,
+        )
+    ]
 
     assert len(events) == 0
 
-    events = []
-    async for event in compiled_workflow.astream(
-        {"messages": [("user", "What is the weather in Tokyo?")]},
-        stream_mode="messages",
-        subgraphs=True,
-    ):
-        events.append(event)
+    events = [
+        event
+        async for event in compiled_workflow.astream(
+            {"messages": [("user", "What is the weather in Tokyo?")]},
+            stream_mode="messages",
+            subgraphs=True,
+        )
+    ]
 
     assert len(events) == 3
-    namespace, (msg, metadata) = events[0]
+    _, (msg, _) = events[0]
     # FakeToolCallingModel returns a single AIMessage with tool calls
     # The content of the AIMessage reflects the input message
     assert msg.content.startswith("You are a helpful travel assistant")
-    namespace, (msg, metadata) = events[1]  # ToolMessage
+    _, (msg, _) = events[1]  # ToolMessage
     assert msg.content.startswith("The weather of Tokyo is sunny.")
 
 
@@ -1357,7 +1359,10 @@ def test_dynamic_model_receives_correct_state() -> None:
 
 
 async def test_dynamic_model_receives_correct_state_async() -> None:
-    """Test that the async dynamic model function receives the correct state, not the model input."""
+    """Test dynamic model receives correct state.
+
+    Test that the async dynamic model function receives the correct state, not the model input.
+    """
     received_states = []
 
     class CustomAgentStateAsync(AgentState):
@@ -1465,7 +1470,7 @@ def test_post_model_hook_with_structured_output() -> None:
     ]
 
     def get_weather() -> str:
-        """Get the weather"""
+        """Get the weather."""
         return "The weather is sunny and 75°F."
 
     expected_structured_response = WeatherResponse(temperature=75)
@@ -1540,7 +1545,9 @@ def test_post_model_hook_with_structured_output() -> None:
             "agent": {
                 "messages": [
                     AIMessage(
-                        content="What's the weather?-What's the weather?-The weather is sunny and 75°F.",
+                        content="What's the weather?"
+                        "-What's the weather?"
+                        "-The weather is sunny and 75°F.",
                         additional_kwargs={},
                         response_metadata={},
                         id="1",
@@ -1622,7 +1629,7 @@ def test_response_format_using_tool_choice() -> None:
     ]
 
     def get_weather() -> str:
-        """Get the weather"""
+        """Get the weather."""
         return "The weather is sunny and 75°F."
 
     expected_structured_response = WeatherResponse(temperature=75)
