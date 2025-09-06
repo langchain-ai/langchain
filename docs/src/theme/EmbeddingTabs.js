@@ -34,6 +34,7 @@ export default function EmbeddingTabs(props) {
     fakeEmbeddingParams,
     hideFakeEmbedding,
     customVarName,
+    hideOCIGenAIEmbeddings
   } = props;
 
   const openAIParamsOrDefault = openaiParams ?? `model="text-embedding-3-large"`;
@@ -182,6 +183,15 @@ export default function EmbeddingTabs(props) {
       packageName: "langchain-core",
       default: false,
       shouldHide: hideFakeEmbedding,
+    },
+    {
+      value: "OCIGenAIEmbeddings",
+      label: "OCIGenAIEmbeddings",
+      text: `from langchain_oci.embeddings import OCIGenAIEmbeddings`,
+      apiKeyName: "OCI_API_KEY",
+      packageName: "langchain-oci",
+      default: false,
+      shouldHide: hideOCIGenAIEmbeddings,
     },
   ];
 

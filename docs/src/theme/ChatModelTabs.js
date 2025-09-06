@@ -239,6 +239,13 @@ ${llmVarName} = ChatWatsonx(
       model: "deepseek-chat",
       apiKeyName: "DEEPSEEK_API_KEY",
       packageName: "langchain-deepseek",
+    },
+    {
+      value: "chatocigenai",
+      label: "ChatOCIGenAI",
+      model: "cohere.command-r-plus-08-2024",
+      apiKeyName: "OCI_API_KEY",
+      packageName: "langchain-oci",
     }
   ].map((item) => ({
     ...item,
