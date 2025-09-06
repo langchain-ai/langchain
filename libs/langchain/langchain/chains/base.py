@@ -154,6 +154,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             self.metadata,
         )
         new_arg_supported = inspect.signature(self._call).parameters.get("run_manager")
+        config_arg_supported = inspect.signature(self._call).parameters.get("config")
 
         run_manager = callback_manager.on_chain_start(
             None,
@@ -163,11 +164,14 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         )
         try:
             self._validate_inputs(inputs)
-            outputs = (
-                self._call(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else self._call(inputs)
-            )
+            if new_arg_supported and config_arg_supported:
+                outputs = self._call(inputs, run_manager=run_manager, config=config)
+            elif new_arg_supported:
+                outputs = self._call(inputs, run_manager=run_manager)
+            elif config_arg_supported:
+                outputs = self._call(inputs, config=config)
+            else:
+                outputs = self._call(inputs)
 
             final_outputs: dict[str, Any] = self.prep_outputs(
                 inputs,
@@ -210,6 +214,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             self.metadata,
         )
         new_arg_supported = inspect.signature(self._acall).parameters.get("run_manager")
+        config_arg_supported = inspect.signature(self._acall).parameters.get("config")
         run_manager = await callback_manager.on_chain_start(
             None,
             inputs,
@@ -218,11 +223,16 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         )
         try:
             self._validate_inputs(inputs)
-            outputs = (
-                await self._acall(inputs, run_manager=run_manager)
-                if new_arg_supported
-                else await self._acall(inputs)
-            )
+            if new_arg_supported and config_arg_supported:
+                outputs = await self._acall(
+                    inputs, run_manager=run_manager, config=config
+                )
+            elif new_arg_supported:
+                outputs = await self._acall(inputs, run_manager=run_manager)
+            elif config_arg_supported:
+                outputs = await self._acall(inputs, config=config)
+            else:
+                outputs = await self._acall(inputs)
             final_outputs: dict[str, Any] = await self.aprep_outputs(
                 inputs,
                 outputs,
@@ -319,6 +329,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> dict[str, Any]:
         """Execute the chain.
 
@@ -331,6 +342,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain run.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
@@ -341,6 +353,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         self,
         inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> dict[str, Any]:
         """Asynchronously execute the chain.
 
@@ -353,6 +366,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 specified in `Chain.input_keys`, including any inputs added by memory.
             run_manager: The callbacks manager that contains the callback handlers for
                 this run of the chain.
+            config: Optional configuration for the chain run.
 
         Returns:
             A dict of named outputs. Should contain all outputs specified in
