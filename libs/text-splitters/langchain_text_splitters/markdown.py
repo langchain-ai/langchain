@@ -1,3 +1,5 @@
+"""Markdown text splitters."""
+
 from __future__ import annotations
 
 import re
@@ -138,7 +140,6 @@ class MarkdownHeaderTextSplitter:
         current_content: list[str] = []
         current_metadata: dict[str, str] = {}
         # Keep track of the nested header structure
-        # header_stack: List[Dict[str, Union[int, str]]] = []
         header_stack: list[HeaderType] = []
         initial_metadata: dict[str, str] = {}
 
