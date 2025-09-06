@@ -1304,9 +1304,45 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Save prompt to file.
 
         Args:
-            file_path: path to file.
+            file_path: Path to file to save prompt to.
+
+        Raises:
+            ValueError: If the prompt has partial variables.
+            ValueError: If the file path is not json or yaml.
+
+        Example:
+            .. code-block:: python
+
+                prompt.save(file_path="path/prompt.yaml")
         """
-        raise NotImplementedError
+        import json
+
+        import yaml
+
+        from langchain_core.load import dumpd
+
+        if self.partial_variables:
+            msg = "Cannot save prompt with partial variables."
+            raise ValueError(msg)
+
+        # Convert file to Path object.
+        save_path = Path(file_path)
+
+        directory_path = save_path.parent
+        directory_path.mkdir(parents=True, exist_ok=True)
+
+        # Use dumpd for proper serialization
+        prompt_dict = dumpd(self)
+
+        if save_path.suffix == ".json":
+            with save_path.open("w") as f:
+                json.dump(prompt_dict, f, indent=4)
+        elif save_path.suffix.endswith((".yaml", ".yml")):
+            with save_path.open("w") as f:
+                yaml.dump(prompt_dict, f, default_flow_style=False)
+        else:
+            msg = f"{save_path} must be json or yaml"
+            raise ValueError(msg)
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
