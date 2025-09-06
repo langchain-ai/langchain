@@ -39,6 +39,9 @@ def get_from_dict_or_env(
             in the dictionary.
         default: The default value to return if the key is not in the dictionary
             or the environment. Defaults to None.
+
+    Returns:
+        The dict value or the environment variable value.
     """
     if isinstance(key, (list, tuple)):
         for k in key:

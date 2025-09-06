@@ -922,7 +922,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     def copy(self) -> Self:
-        """Copy the callback manager."""
+        """Return a copy of the callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
             inheritable_handlers=self.inheritable_handlers.copy(),

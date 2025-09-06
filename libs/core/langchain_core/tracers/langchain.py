@@ -53,7 +53,11 @@ def wait_for_all_tracers() -> None:
 
 
 def get_client() -> Client:
-    """Get the client."""
+    """Get the client.
+
+    Returns:
+        The LangSmith client.
+    """
     return rt.get_cached_client()
 
 
@@ -235,7 +239,6 @@ class LangChainTracer(BaseTracer):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
-        """Append token event to LLM run and return the run."""
         run_id_str = str(run_id)
         if run_id_str not in self.run_has_token_event_map:
             self.run_has_token_event_map[run_id_str] = True

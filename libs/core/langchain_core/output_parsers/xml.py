@@ -136,9 +136,6 @@ class _StreamingParser:
         """Close the parser.
 
         This should be called after all chunks have been parsed.
-
-        Raises:
-            xml.etree.ElementTree.ParseError: If the XML is not well-formed.
         """
         # Ignore ParseError. This will ignore any incomplete XML at the end of the input
         with contextlib.suppress(xml.etree.ElementTree.ParseError):

@@ -32,7 +32,17 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     @override
     def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
-        """Upsert items into the index."""
+        """Upsert documents into the index.
+
+        Args:
+            items: Sequence of documents to add to the index.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            A response object that contains the list of IDs that were
+            successfully added or updated in the index and the list of IDs that
+            failed to be added or updated.
+        """
         ok_ids = []
 
         for item in items:
@@ -51,7 +61,18 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     @override
     def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> DeleteResponse:
-        """Delete by ID."""
+        """Delete by IDs.
+
+        Args:
+            ids: List of ids to delete.
+
+        Raises:
+            ValueError: If ids is None.
+
+        Returns:
+            A response object that contains the list of IDs that were successfully
+            deleted and the list of IDs that failed to be deleted.
+        """
         if ids is None:
             msg = "IDs must be provided for deletion"
             raise ValueError(msg)
@@ -69,7 +90,6 @@ class InMemoryDocumentIndex(DocumentIndex):
 
     @override
     def get(self, ids: Sequence[str], /, **kwargs: Any) -> list[Document]:
-        """Get by ids."""
         return [self.store[id_] for id_ in ids if id_ in self.store]
 
     @override

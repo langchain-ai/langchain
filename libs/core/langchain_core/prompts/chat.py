@@ -740,10 +740,18 @@ class BaseChatPromptTemplate(BasePromptTemplate, ABC):
 
     @abstractmethod
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
-        """Format kwargs into a list of messages."""
+        """Format kwargs into a list of messages.
+
+        Returns:
+            List of messages.
+        """
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
-        """Async format kwargs into a list of messages."""
+        """Async format kwargs into a list of messages.
+
+        Returns:
+            List of messages.
+        """
         return self.format_messages(**kwargs)
 
     def pretty_repr(
@@ -922,9 +930,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             input_types: A dictionary of the types of the variables the prompt template
                 expects. If not provided, all variables are assumed to be strings.
 
-        Returns:
-            A chat prompt template.
-
         Examples:
             Instantiation from a list of message templates:
 
@@ -974,7 +979,11 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "prompts", "chat"]
+        """
         return ["langchain", "prompts", "chat"]
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
@@ -1174,6 +1183,9 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             **kwargs: keyword arguments to use for filling in template variables
                       in all the template messages in this chat template.
 
+        Raises:
+            ValueError: if messages are of unexpected types.
+
         Returns:
             list of formatted messages.
         """
@@ -1284,7 +1296,13 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     def __getitem__(
         self, index: Union[int, slice]
     ) -> Union[MessageLike, ChatPromptTemplate]:
-        """Use to index into the chat template."""
+        """Use to index into the chat template.
+
+        Returns:
+            If index is an int, returns the message at that index.
+            If index is a slice, returns a new ChatPromptTemplate
+            containing the messages in that slice.
+        """
         if isinstance(index, slice):
             start, stop, step = index.indices(len(self.messages))
             messages = self.messages[start:stop:step]
@@ -1292,7 +1310,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         return self.messages[index]
 
     def __len__(self) -> int:
-        """Get the length of the chat template."""
+        """Return the length of the chat template."""
         return len(self.messages)
 
     @property

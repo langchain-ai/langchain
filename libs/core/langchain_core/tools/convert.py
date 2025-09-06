@@ -119,6 +119,17 @@ def tool(
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
 
+    Raises:
+        ValueError: If too many positional arguments are provided.
+        ValueError: If a runnable is provided without a string name.
+        ValueError: If the first argument is not a string or callable with
+            a ``__name__`` attribute.
+        ValueError: If the function does not have a docstring and description
+            is not provided and ``infer_schema`` is False.
+        ValueError: If ``parse_docstring`` is True and the function has an invalid
+            Google-style docstring and ``error_on_invalid_docstring`` is True.
+        ValueError: If a Runnable is provided that does not have an object schema.
+
     Returns:
         The tool.
 
