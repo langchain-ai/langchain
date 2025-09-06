@@ -3,6 +3,7 @@
 import os
 from unittest import mock
 
+import httpx
 import pytest
 from langchain_core.messages import HumanMessage
 from typing_extensions import TypedDict
@@ -82,6 +83,65 @@ def test_structured_output_old_model() -> None:
     # assert tool calling was used instead of json_schema
     assert "tools" in llm.steps[0].kwargs  # type: ignore
     assert "response_format" not in llm.steps[0].kwargs  # type: ignore
+
+
+def test_azure_client_caching() -> None:
+    """Test that the Azure OpenAI client is cached."""
+    llm1 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+    )
+    llm2 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+    )
+    assert llm1.root_client._client is llm2.root_client._client
+
+    # Different endpoint should create a different client
+    llm3 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://different.openai.azure.com/",
+    )
+    assert llm1.root_client._client is not llm3.root_client._client
+
+    # Same endpoint with timeout=None should reuse the client
+    llm4 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+        timeout=None,
+    )
+    assert llm1.root_client._client is llm4.root_client._client
+
+    # Different timeout should create a different client
+    llm5 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+        timeout=3,
+    )
+    assert llm1.root_client._client is not llm5.root_client._client
+
+    # httpx.Timeout object should create a different client
+    llm6 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+        timeout=httpx.Timeout(timeout=60.0, connect=5.0),
+    )
+    assert llm1.root_client._client is not llm6.root_client._client
+
+    # Tuple timeout should create a different client
+    llm7 = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2023-05-15",
+        azure_endpoint="https://test.openai.azure.com/",
+        timeout=(5, 1),
+    )
+    assert llm1.root_client._client is not llm7.root_client._client
 
 
 def test_max_completion_tokens_in_payload() -> None:
