@@ -65,6 +65,10 @@ def _dereference_refs_helper(
         # grab + copy the target
         target = deepcopy(_retrieve_ref(ref_path, full_schema))
 
+        for key, value in obj.items():
+            if key != "$ref":
+                target[key] = value
+
         # deep inlining: recurse into everything
         result = _dereference_refs_helper(
             target, full_schema, processed_refs, skip_keys, shallow_refs
