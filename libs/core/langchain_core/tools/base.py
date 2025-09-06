@@ -853,7 +853,7 @@ class ChildTool(BaseTool):
                 if signature(self._run).parameters.get("run_manager"):
                     tool_kwargs |= {"run_manager": run_manager}
                 if config_param := _get_runnable_config_param(self._run):
-                    tool_kwargs |= {config_param: config}
+                    tool_kwargs |= {config_param: child_config}
                 response = context.run(self._run, *tool_args, **tool_kwargs)
             if self.response_format == "content_and_artifact":
                 if not isinstance(response, tuple) or len(response) != 2:
@@ -964,7 +964,7 @@ class ChildTool(BaseTool):
                 if signature(func_to_check).parameters.get("run_manager"):
                     tool_kwargs["run_manager"] = run_manager
                 if config_param := _get_runnable_config_param(func_to_check):
-                    tool_kwargs[config_param] = config
+                    tool_kwargs[config_param] = child_config
 
                 coro = self._arun(*tool_args, **tool_kwargs)
                 response = await coro_with_context(coro, context)
@@ -1246,6 +1246,11 @@ def _get_runnable_config_param(func: Callable) -> Optional[str]:
     for name, type_ in type_hints.items():
         if type_ is RunnableConfig:
             return name
+        # Handle Optional[RunnableConfig] and Union[RunnableConfig, None, ...]
+        if get_origin(type_) is Union:
+            union_args = get_args(type_)
+            if RunnableConfig in union_args:
+                return name
     return None
 
 
