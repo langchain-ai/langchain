@@ -671,11 +671,6 @@ packages:
   provider_page: gel
   downloads: 194
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
-- name: langchain-aerospike
-  path: .
-  repo: aerospike/langchain-aerospike
-  downloads: 77
-  downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-brightdata
   path: .
   repo: luminati-io/langchain-brightdata
