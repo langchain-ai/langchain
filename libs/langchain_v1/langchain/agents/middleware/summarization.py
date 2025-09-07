@@ -11,13 +11,14 @@ from langchain_core.messages import (
     RemoveMessage,
     ToolMessage,
 )
+from langchain_core.messages.human import HumanMessage
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
 from langgraph.graph.message import (
     REMOVE_ALL_MESSAGES,
 )
 
-from langchain.agents.types import AgentMiddleware, AgentState
-from langchain.chat_models import BaseChatModel
+from langchain.agents.middleware.types import AgentMiddleware, AgentState
+from langchain.chat_models import BaseChatModel, init_chat_model
 
 TokenCounter = Callable[[Iterable[MessageLikeRepresentation]], int]
 
@@ -67,7 +68,7 @@ class SummarizationMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        model: BaseChatModel,
+        model: str | BaseChatModel,
         max_tokens_before_summary: int | None = None,
         messages_to_keep: int = _DEFAULT_MESSAGES_TO_KEEP,
         token_counter: TokenCounter = count_tokens_approximately,
@@ -86,6 +87,10 @@ class SummarizationMiddleware(AgentMiddleware):
             summary_prefix: Prefix added to system message when including summary.
         """
         super().__init__()
+
+        if isinstance(model, str):
+            model = init_chat_model(model)
+
         self.model = model
         self.max_tokens_before_summary = max_tokens_before_summary
         self.messages_to_keep = messages_to_keep
@@ -123,12 +128,9 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    def _build_new_messages(self, summary: str) -> list[dict[str, Any]]:
+    def _build_new_messages(self, summary: str) -> list[HumanMessage]:
         return [
-            {
-                "role": "user",
-                "content": f"Here is a summary of the conversation to date:\n\n{summary}",
-            }
+            HumanMessage(content=f"Here is a summary of the conversation to date:\n\n{summary}")
         ]
 
     def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:

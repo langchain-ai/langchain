@@ -13,6 +13,14 @@ from langgraph.graph.state import StateGraph
 from langgraph.typing import ContextT
 from typing_extensions import TypeVar
 
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    JumpTo,
+    ModelRequest,
+    PublicAgentState,
+)
+
 # Import structured output classes from the old implementation
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -24,13 +32,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.agents.tool_node import ToolNode
-from langchain.agents.middleware.types import (
-    AgentMiddleware,
-    AgentState,
-    JumpTo,
-    ModelRequest,
-    PublicAgentState,
-)
+from langchain.chat_models import init_chat_model
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
@@ -98,17 +100,6 @@ def create_agent(  # noqa: PLR0915
     """Create a middleware agent graph."""
     # init chat model
     if isinstance(model, str):
-        try:
-            from langchain.chat_models import (
-                init_chat_model,
-            )
-        except ImportError:
-            msg = (
-                "Please install langchain (`pip install langchain`) to "
-                "use '<provider>:<model>' string syntax for `model` parameter."
-            )
-            raise ImportError(msg)
-
         model = init_chat_model(model)
 
     # Handle tools being None or empty

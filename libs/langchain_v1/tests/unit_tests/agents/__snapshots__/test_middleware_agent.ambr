@@ -1,0 +1,595 @@
+# serializer version: 1
+# name: test_create_agent_diagram
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model_request;
+  	model_request --> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.1
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopOne_before_model(NoopOne.before_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopOne_before_model -.-> __end__;
+  	NoopOne_before_model -.-> model_request;
+  	__start__ --> NoopOne_before_model;
+  	model_request --> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.10
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopTen_before_model(NoopTen.before_model)
+  	NoopTen_modify_model_request(NoopTen.modify_model_request)
+  	NoopTen_after_model(NoopTen.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopTen_after_model -.-> NoopTen_before_model;
+  	NoopTen_after_model -.-> __end__;
+  	NoopTen_before_model -.-> NoopTen_modify_model_request;
+  	NoopTen_before_model -.-> __end__;
+  	NoopTen_modify_model_request -.-> NoopTen_before_model;
+  	NoopTen_modify_model_request -.-> __end__;
+  	NoopTen_modify_model_request -.-> model_request;
+  	__start__ --> NoopTen_before_model;
+  	model_request --> NoopTen_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.11
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopTen_before_model(NoopTen.before_model)
+  	NoopTen_modify_model_request(NoopTen.modify_model_request)
+  	NoopTen_after_model(NoopTen.after_model)
+  	NoopEleven_before_model(NoopEleven.before_model)
+  	NoopEleven_modify_model_request(NoopEleven.modify_model_request)
+  	NoopEleven_after_model(NoopEleven.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEleven_after_model -.-> NoopTen_after_model;
+  	NoopEleven_after_model -.-> NoopTen_before_model;
+  	NoopEleven_after_model -.-> __end__;
+  	NoopEleven_before_model -.-> NoopTen_before_model;
+  	NoopEleven_before_model -.-> NoopTen_modify_model_request;
+  	NoopEleven_before_model -.-> __end__;
+  	NoopEleven_modify_model_request -.-> NoopTen_before_model;
+  	NoopEleven_modify_model_request -.-> __end__;
+  	NoopEleven_modify_model_request -.-> model_request;
+  	NoopTen_after_model -.-> NoopTen_before_model;
+  	NoopTen_after_model -.-> __end__;
+  	NoopTen_before_model -.-> NoopEleven_before_model;
+  	NoopTen_before_model -.-> __end__;
+  	NoopTen_modify_model_request -.-> NoopEleven_modify_model_request;
+  	NoopTen_modify_model_request -.-> NoopTen_before_model;
+  	NoopTen_modify_model_request -.-> __end__;
+  	__start__ --> NoopTen_before_model;
+  	model_request --> NoopEleven_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.2
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopOne_before_model(NoopOne.before_model)
+  	NoopTwo_before_model(NoopTwo.before_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopOne_before_model -.-> NoopTwo_before_model;
+  	NoopOne_before_model -.-> __end__;
+  	NoopTwo_before_model -.-> NoopOne_before_model;
+  	NoopTwo_before_model -.-> __end__;
+  	NoopTwo_before_model -.-> model_request;
+  	__start__ --> NoopOne_before_model;
+  	model_request --> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.3
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopOne_before_model(NoopOne.before_model)
+  	NoopTwo_before_model(NoopTwo.before_model)
+  	NoopThree_before_model(NoopThree.before_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopOne_before_model -.-> NoopTwo_before_model;
+  	NoopOne_before_model -.-> __end__;
+  	NoopThree_before_model -.-> NoopOne_before_model;
+  	NoopThree_before_model -.-> __end__;
+  	NoopThree_before_model -.-> model_request;
+  	NoopTwo_before_model -.-> NoopOne_before_model;
+  	NoopTwo_before_model -.-> NoopThree_before_model;
+  	NoopTwo_before_model -.-> __end__;
+  	__start__ --> NoopOne_before_model;
+  	model_request --> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.4
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopFour_after_model(NoopFour.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopFour_after_model -.-> __end__;
+  	NoopFour_after_model -.-> model_request;
+  	__start__ --> model_request;
+  	model_request --> NoopFour_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.5
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopFour_after_model(NoopFour.after_model)
+  	NoopFive_after_model(NoopFive.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopFive_after_model -.-> NoopFour_after_model;
+  	NoopFive_after_model -.-> __end__;
+  	NoopFive_after_model -.-> model_request;
+  	NoopFour_after_model -.-> __end__;
+  	NoopFour_after_model -.-> model_request;
+  	__start__ --> model_request;
+  	model_request --> NoopFive_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.6
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopFour_after_model(NoopFour.after_model)
+  	NoopFive_after_model(NoopFive.after_model)
+  	NoopSix_after_model(NoopSix.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopFive_after_model -.-> NoopFour_after_model;
+  	NoopFive_after_model -.-> __end__;
+  	NoopFive_after_model -.-> model_request;
+  	NoopFour_after_model -.-> __end__;
+  	NoopFour_after_model -.-> model_request;
+  	NoopSix_after_model -.-> NoopFive_after_model;
+  	NoopSix_after_model -.-> __end__;
+  	NoopSix_after_model -.-> model_request;
+  	__start__ --> model_request;
+  	model_request --> NoopSix_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.7
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> model_request;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopSeven_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.8
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> model_request;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_diagram.9
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_after_model(NoopEight.after_model)
+  	NoopNine_before_model(NoopNine.before_model)
+  	NoopNine_after_model(NoopNine.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_before_model -.-> NoopNine_before_model;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> __end__;
+  	NoopNine_after_model -.-> NoopEight_after_model;
+  	NoopNine_after_model -.-> NoopSeven_before_model;
+  	NoopNine_after_model -.-> __end__;
+  	NoopNine_before_model -.-> NoopSeven_before_model;
+  	NoopNine_before_model -.-> __end__;
+  	NoopNine_before_model -.-> model_request;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopNine_after_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_jump[memory]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	tools(tools)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_modify_model_request(NoopSeven.modify_model_request)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_modify_model_request(NoopEight.modify_model_request)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_after_model -.-> tools;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> NoopSeven_modify_model_request;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> tools;
+  	NoopEight_modify_model_request -.-> NoopSeven_before_model;
+  	NoopEight_modify_model_request -.-> __end__;
+  	NoopEight_modify_model_request -.-> model_request;
+  	NoopEight_modify_model_request -.-> tools;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_after_model -.-> tools;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> tools;
+  	NoopSeven_modify_model_request -.-> NoopEight_modify_model_request;
+  	NoopSeven_modify_model_request -.-> NoopSeven_before_model;
+  	NoopSeven_modify_model_request -.-> __end__;
+  	NoopSeven_modify_model_request -.-> tools;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	tools -.-> NoopSeven_before_model;
+  	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_jump[postgres]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	tools(tools)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_modify_model_request(NoopSeven.modify_model_request)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_modify_model_request(NoopEight.modify_model_request)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_after_model -.-> tools;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> NoopSeven_modify_model_request;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> tools;
+  	NoopEight_modify_model_request -.-> NoopSeven_before_model;
+  	NoopEight_modify_model_request -.-> __end__;
+  	NoopEight_modify_model_request -.-> model_request;
+  	NoopEight_modify_model_request -.-> tools;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_after_model -.-> tools;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> tools;
+  	NoopSeven_modify_model_request -.-> NoopEight_modify_model_request;
+  	NoopSeven_modify_model_request -.-> NoopSeven_before_model;
+  	NoopSeven_modify_model_request -.-> __end__;
+  	NoopSeven_modify_model_request -.-> tools;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	tools -.-> NoopSeven_before_model;
+  	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_jump[postgres_pipe]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	tools(tools)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_modify_model_request(NoopSeven.modify_model_request)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_modify_model_request(NoopEight.modify_model_request)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_after_model -.-> tools;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> NoopSeven_modify_model_request;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> tools;
+  	NoopEight_modify_model_request -.-> NoopSeven_before_model;
+  	NoopEight_modify_model_request -.-> __end__;
+  	NoopEight_modify_model_request -.-> model_request;
+  	NoopEight_modify_model_request -.-> tools;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_after_model -.-> tools;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> tools;
+  	NoopSeven_modify_model_request -.-> NoopEight_modify_model_request;
+  	NoopSeven_modify_model_request -.-> NoopSeven_before_model;
+  	NoopSeven_modify_model_request -.-> __end__;
+  	NoopSeven_modify_model_request -.-> tools;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	tools -.-> NoopSeven_before_model;
+  	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_jump[postgres_pool]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	tools(tools)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_modify_model_request(NoopSeven.modify_model_request)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_modify_model_request(NoopEight.modify_model_request)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_after_model -.-> tools;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> NoopSeven_modify_model_request;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> tools;
+  	NoopEight_modify_model_request -.-> NoopSeven_before_model;
+  	NoopEight_modify_model_request -.-> __end__;
+  	NoopEight_modify_model_request -.-> model_request;
+  	NoopEight_modify_model_request -.-> tools;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_after_model -.-> tools;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> tools;
+  	NoopSeven_modify_model_request -.-> NoopEight_modify_model_request;
+  	NoopSeven_modify_model_request -.-> NoopSeven_before_model;
+  	NoopSeven_modify_model_request -.-> __end__;
+  	NoopSeven_modify_model_request -.-> tools;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	tools -.-> NoopSeven_before_model;
+  	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_create_agent_jump[sqlite]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	tools(tools)
+  	NoopSeven_before_model(NoopSeven.before_model)
+  	NoopSeven_modify_model_request(NoopSeven.modify_model_request)
+  	NoopSeven_after_model(NoopSeven.after_model)
+  	NoopEight_before_model(NoopEight.before_model)
+  	NoopEight_modify_model_request(NoopEight.modify_model_request)
+  	NoopEight_after_model(NoopEight.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	NoopEight_after_model -.-> NoopSeven_after_model;
+  	NoopEight_after_model -.-> NoopSeven_before_model;
+  	NoopEight_after_model -.-> __end__;
+  	NoopEight_after_model -.-> tools;
+  	NoopEight_before_model -.-> NoopSeven_before_model;
+  	NoopEight_before_model -.-> NoopSeven_modify_model_request;
+  	NoopEight_before_model -.-> __end__;
+  	NoopEight_before_model -.-> tools;
+  	NoopEight_modify_model_request -.-> NoopSeven_before_model;
+  	NoopEight_modify_model_request -.-> __end__;
+  	NoopEight_modify_model_request -.-> model_request;
+  	NoopEight_modify_model_request -.-> tools;
+  	NoopSeven_after_model -.-> NoopSeven_before_model;
+  	NoopSeven_after_model -.-> __end__;
+  	NoopSeven_after_model -.-> tools;
+  	NoopSeven_before_model -.-> NoopEight_before_model;
+  	NoopSeven_before_model -.-> __end__;
+  	NoopSeven_before_model -.-> tools;
+  	NoopSeven_modify_model_request -.-> NoopEight_modify_model_request;
+  	NoopSeven_modify_model_request -.-> NoopSeven_before_model;
+  	NoopSeven_modify_model_request -.-> __end__;
+  	NoopSeven_modify_model_request -.-> tools;
+  	__start__ --> NoopSeven_before_model;
+  	model_request --> NoopEight_after_model;
+  	tools -.-> NoopSeven_before_model;
+  	tools -.-> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---

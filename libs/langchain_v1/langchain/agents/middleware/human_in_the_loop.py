@@ -11,7 +11,7 @@ from langgraph.prebuilt.interrupt import (
 from langgraph.types import interrupt
 
 from langchain.agents.middleware._utils import _generate_correction_tool_messages
-from langchain.agents.types import AgentMiddleware, AgentState
+from langchain.agents.middleware.types import AgentMiddleware, AgentState
 
 ToolInterruptConfig = dict[str, HumanInterruptConfig]
 
