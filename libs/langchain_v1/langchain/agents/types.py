@@ -5,13 +5,14 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
 
+# needed as top level import for pydantic schema generation on AgentState
+from langchain_core.messages import AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import Messages, add_messages
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
     from langchain_core.language_models.chat_models import BaseChatModel
-    from langchain_core.messages import AnyMessage
     from langchain_core.tools import BaseTool
 
     from langchain.agents.structured_output import ResponseFormat

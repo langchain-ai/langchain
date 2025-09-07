@@ -137,7 +137,7 @@ def create_agent(  # noqa: PLR0915
             native_output_binding = ProviderStrategyBinding.from_schema_spec(
                 response_format.schema_spec
             )
-    middleware_tools = [t for m in middleware for t in m.tools or []]
+    middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
     # Setup tools
     tool_node: ToolNode | None = None
