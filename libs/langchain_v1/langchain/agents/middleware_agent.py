@@ -130,7 +130,7 @@ def create_agent(
             native_output_binding = ProviderStrategyBinding.from_schema_spec(
                 response_format.schema_spec
             )
-
+    middleware_tools = [t for m in middleware for t in m.tools]
     # Setup tools
     if isinstance(tools, list):
         # Extract builtin provider tools (dict format)
@@ -139,25 +139,28 @@ def create_agent(
 
         # Add structured output tools to regular tools
         structured_tools = [info.tool for info in structured_output_tools.values()]
-        all_tools = [t for m in middleware for t in m.tools] + regular_tools + structured_tools
+        all_tools = middleware_tools + regular_tools + structured_tools
 
         if all_tools:  # Only create ToolNode if we have tools
             tool_node = ToolNode(tools=all_tools)
         else:
             tool_node = None
-        default_tools = regular_tools + builtin_tools + structured_tools
+        default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
     else:
         # tools is ToolNode or None
         tool_node = tools
         if tool_node:
-            default_tools = list(tool_node.tools_by_name.values())
+            default_tools = list(tool_node.tools_by_name.values()) + middleware_tools
+            # Update tool node to know about tools provided by middleware
+            all_tools = list(tool_node.tools_by_name.values()) + middleware_tools
+            tool_node = ToolNode(all_tools)
             # Add structured output tools
             for info in structured_output_tools.values():
                 default_tools.append(info.tool)
         else:
             default_tools = (
                 list(structured_output_tools.values()) if structured_output_tools else []
-            )
+            ) + middleware_tools
 
     # validate middleware
     assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (
@@ -400,8 +403,21 @@ def create_agent(
             [first_node, "tools", END],
         )
     else:
-        # If no tools, just go to END from model
-        graph.add_edge(last_node, END)
+        if last_node == "model_request":
+            # If no tools, just go to END from model
+            graph.add_edge(last_node, END)
+        else:
+            # If after_model, then need to check for jump_to
+            _add_middleware_edge(
+                graph,
+                middleware_w_after[0].after_model,
+                f"{middleware_w_after[0].__class__.__name__}.after_model",
+                END,
+                first_node,
+                tools_available=tool_node is not None,
+
+            )
+
 
     # Add middleware edges (same as before)
     if middleware_w_before:
@@ -414,11 +430,16 @@ def create_agent(
                 first_node,
                 tools_available=tool_node is not None,
             )
+        if middleware_w_modify_model_request:
+            first_modify = middleware_w_modify_model_request[0]
+            next_node = f"{first_modify.__class__.__name__}.modify_model_request"
+        else:
+            next_node = "model_request"
         _add_middleware_edge(
             graph,
             middleware_w_before[-1].before_model,
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
-            "model_request",
+            next_node,
             first_node,
             tools_available=tool_node is not None,
         )
@@ -530,7 +551,9 @@ def _add_middleware_edge(
         def jump_edge(state: AgentState) -> str:
             return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
-        destinations = [default_destination, END]
+        destinations = [default_destination]
+        if END != default_destination:
+            destinations.append(END)
         if tools_available:
             destinations.append("tools")
         if name != model_destination:
