@@ -34,7 +34,7 @@ def new(
     package_name_split = computed_name.split("/")
     package_name = (
         package_name_split[-2]
-        if len(package_name_split) > 1 and package_name_split[-1] == ""
+        if len(package_name_split) > 1 and not package_name_split[-1]
         else package_name_split[-1]
     )
     module_name = re.sub(
