@@ -7,6 +7,7 @@ from langgraph.prebuilt.interrupt import (
 from langgraph.types import interrupt
 
 from langchain.agents.types import AgentJump, AgentMiddleware, AgentState, AgentUpdate
+from langchain.agents.middleware._utils import _generate_correction_tool_messages
 
 ToolInterruptConfig = dict[str, HumanInterruptConfig]
 
@@ -50,11 +51,22 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Right now, we do not support multiple tool calls with interrupts
         if len(interrupt_tool_calls) > 1:
-            raise ValueError("Does not currently support multiple tool calls with interrupts")
+            tool_names = [t['name'] for t in interrupt_tool_calls]
+            msg = f"Called the following tools which require interrupts: {tool_names}\n\nYou may only call ONE tool that requires an interrupt at a time"
+            return {
+                "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
+                "jump_to": "model"
+            }
 
         # Right now, we do not support interrupting a tool call if other tool calls exist
         if auto_approved_tool_calls:
-            raise ValueError("Does not currently support interrupting a tool call if other tool calls exist")
+            tool_names = [t['name'] for t in interrupt_tool_calls]
+            msg = f"Called the following tools which require interrupts: {tool_names}. You also called other tools that do not require interrupts. If you call a tool that requires and interrupt, you may ONLY call that tool."
+            return {
+                "messages": _generate_correction_tool_messages(msg,
+                                                               last_message.tool_calls),
+                "jump_to": "model"
+            }
 
         # Only one tool call will need interrupts
         tool_call = interrupt_tool_calls[0]
@@ -87,14 +99,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             }
             approved_tool_calls.append(new_tool_call)
         elif response["type"] == "ignore":
-            return {"goto": "__end__"}
+            return {"jump_to": "__end__"}
         elif response["type"] == "response":
             tool_message = {
                 "role": "tool",
                 "tool_call_id": tool_call["id"],
                 "content": response["args"],
             }
-            return {"messages": [tool_message], "goto": "model"}
+            return {"messages": [tool_message], "jump_to": "model"}
         else:
             raise ValueError(f"Unknown response type: {response['type']}")
 
