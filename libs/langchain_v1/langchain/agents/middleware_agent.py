@@ -24,7 +24,7 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.agents.tool_node import ToolNode
-from langchain.agents.types import (
+from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,

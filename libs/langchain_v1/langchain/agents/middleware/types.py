@@ -36,16 +36,13 @@ class ModelRequest:
     model_settings: dict[str, Any] = field(default_factory=dict)
 
 
-class AgentState(TypedDict, Generic[ResponseT], total=False):
+class AgentState(TypedDict, Generic[ResponseT]):
     """State schema for the agent."""
 
-    # import change allowing for required / not required and still registering reducer properly
-    # do we want to use total = False or require NotRequired?
-    # depends on fix in langgraph to be released in v0.6.7
-    messages: Annotated[list[AnyMessage], add_messages]
-    model_request: Annotated[ModelRequest | None, EphemeralValue]
-    jump_to: Annotated[JumpTo | None, EphemeralValue]
-    response: ResponseT
+    messages: Required[Annotated[list[AnyMessage], add_messages]]
+    model_request: NotRequired[Annotated[ModelRequest | None, EphemeralValue]]
+    jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue]]
+    response: NotRequired[ResponseT]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):
