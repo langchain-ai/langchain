@@ -9,7 +9,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from .model import FakeToolCallingModel
-from .messages import _AnyIdToolMessage
+from .messages import _AnyIdToolMessage, _AnyIdHumanMessage
 from .model import FakeToolCallingModel
 
 
@@ -240,11 +240,12 @@ def test_create_agent_invoke(
     thread1 = {"configurable": {"thread_id": "1"}}
     assert agent_one.invoke({"messages": ["hello"]}, thread1) == {
         "messages": [
+            _AnyIdHumanMessage(content="hello"),
             AIMessage(
-                content="hello",
+                content="You are a helpful assistant.-hello",
                 additional_kwargs={},
                 response_metadata={},
-                id="ai1",
+                id="0",
                 tool_calls=[
                     {
                         "name": "my_tool",
@@ -256,10 +257,10 @@ def test_create_agent_invoke(
             ),
             _AnyIdToolMessage(content="YO", name="my_tool", tool_call_id="1"),
             AIMessage(
-                content="hello",
+                content="You are a helpful assistant.-hello-You are a helpful assistant.-hello-YO",
                 additional_kwargs={},
                 response_metadata={},
-                id="ai2",
+                id="1",
             ),
         ],
     }
