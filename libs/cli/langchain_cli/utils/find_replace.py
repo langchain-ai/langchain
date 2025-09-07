@@ -4,7 +4,15 @@ from pathlib import Path
 
 
 def find_and_replace(source: str, replacements: dict[str, str]) -> str:
-    """Find and replace text in a string."""
+    """Find and replace text in a string.
+
+    Args:
+        source: The source string.
+        replacements: A dictionary of {find: replace} pairs.
+
+    Returns:
+        The modified string.
+    """
     rtn = source
 
     # replace keys in deterministic alphabetical order

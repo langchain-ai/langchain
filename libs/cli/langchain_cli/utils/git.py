@@ -36,7 +36,20 @@ def parse_dependency_string(
     branch: Optional[str],
     api_path: Optional[str],
 ) -> DependencySource:
-    """Parse a dependency string into a DependencySource."""
+    """Parse a dependency string into a DependencySource.
+
+    Args:
+        dep: the dependency string.
+        repo: optional repository.
+        branch: optional branch.
+        api_path: optional API path.
+
+    Returns:
+        The parsed dependency source information.
+
+    Raises:
+        ValueError: if the dependency string is invalid.
+    """
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
             msg = (
@@ -129,7 +142,22 @@ def parse_dependencies(
     branch: list[str],
     api_path: list[str],
 ) -> list[DependencySource]:
-    """Parse dependencies."""
+    """Parse dependencies.
+
+    Args:
+        dependencies: the dependencies to parse
+        repo: the repositories to use
+        branch: the branches to use
+        api_path: the api paths to use
+
+    Returns:
+        A list of DependencySource objects.
+
+    Raises:
+        ValueError: if the number of dependencies, repos, branches, or api_paths
+            do not match.
+
+    """
     num_deps = max(
         len(dependencies) if dependencies is not None else 0,
         len(repo),
@@ -177,7 +205,18 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
 
 
 def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
-    """Update a git repository to the specified ref."""
+    """Update a git repository to the specified ref.
+
+    Tries to pull if the repo already exists, otherwise clones it.
+
+    Args:
+        gitstring: The git repository URL.
+        ref: The git reference.
+        repo_dir: The directory to clone the repository into.
+
+    Returns:
+        The path to the cloned repository.
+    """
     # see if path already saved
     repo_path = _get_repo_path(gitstring, ref, repo_dir)
     if repo_path.exists():
