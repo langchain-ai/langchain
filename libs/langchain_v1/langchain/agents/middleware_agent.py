@@ -11,7 +11,7 @@ from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
 from langgraph.typing import ContextT
-from typing_extensions import TypeVar
+from typing_extensions import TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
@@ -35,6 +35,28 @@ from langchain.agents.tool_node import ToolNode
 from langchain.chat_models import init_chat_model
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
+
+
+def _merge_state_schemas(schemas: list[type]) -> type:
+    """Merge multiple TypedDict schemas into a single schema with all fields."""
+    if not schemas:
+        return AgentState
+
+    all_annotations = {}
+
+    for schema in schemas:
+        all_annotations.update(schema.__annotations__)
+
+    return TypedDict("MergedState", all_annotations)  # type: ignore[operator]
+
+
+def _filter_state_for_schema(state: dict[str, Any], schema: type) -> dict[str, Any]:
+    """Filter state to only include fields defined in the given schema."""
+    if not hasattr(schema, "__annotations__"):
+        return state
+
+    schema_fields = set(schema.__annotations__.keys())
+    return {k: v for k, v in state.items() if k in schema_fields}
 
 
 def _supports_native_structured_output(model: Union[str, BaseChatModel]) -> bool:
@@ -176,15 +198,20 @@ def create_agent(  # noqa: PLR0915
         m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
     ]
 
+    # Collect all middleware state schemas and create merged schema
+    merged_state_schema: type[AgentState] = _merge_state_schemas(
+        [m.state_schema for m in middleware]
+    )
+
     # create graph, add nodes
     graph = StateGraph(
-        AgentState,
+        merged_state_schema,
         input_schema=PublicAgentState,
         output_schema=PublicAgentState,
         context_schema=context_schema,
     )
 
-    def _prepare_model_request(state: AgentState) -> tuple[ModelRequest, list[AnyMessage]]:
+    def _prepare_model_request(state: dict[str, Any]) -> tuple[ModelRequest, list[AnyMessage]]:
         """Prepare model request and messages."""
         request = state.get("model_request") or ModelRequest(
             model=model,
@@ -202,7 +229,7 @@ def create_agent(  # noqa: PLR0915
 
         return request, messages
 
-    def _handle_model_output(state: AgentState, output: AIMessage) -> AgentState:
+    def _handle_model_output(state: dict[str, Any], output: AIMessage) -> dict[str, Any]:
         """Handle model output including structured responses."""
         # Handle structured output with native strategy
         if isinstance(response_format, ProviderStrategy):
@@ -313,28 +340,32 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
-    def model_request(state: AgentState) -> AgentState:
+    def model_request(state: dict[str, Any]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         # Start with the base model request
         request, messages = _prepare_model_request(state)
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            request = m.modify_model_request(request, state)
+            # Filter state to only include fields defined in this middleware's schema
+            filtered_state = _filter_state_for_schema(state, m.state_schema)
+            request = m.modify_model_request(request, filtered_state)
 
         # Get the bound model with the final request
         model_ = _get_bound_model(request)
         output = model_.invoke(messages)
         return _handle_model_output(state, output)
 
-    async def amodel_request(state: AgentState) -> AgentState:
+    async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Start with the base model request
         request, messages = _prepare_model_request(state)
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            request = m.modify_model_request(request, state)
+            # Filter state to only include fields defined in this middleware's schema
+            filtered_state = _filter_state_for_schema(state, m.state_schema)
+            request = m.modify_model_request(request, filtered_state)
 
         # Get the bound model with the final request
         model_ = _get_bound_model(request)
