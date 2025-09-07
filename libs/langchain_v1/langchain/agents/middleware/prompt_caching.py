@@ -1,3 +1,5 @@
+"""Anthropic prompt caching middleware."""
+
 from typing import Literal
 
 from langchain.agents.types import AgentMiddleware, AgentState, ModelRequest
@@ -14,7 +16,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         type: Literal["ephemeral"] = "ephemeral",
         ttl: Literal["5m", "1h"] = "5m",
         min_messages_to_cache: int = 0,
-    ):
+    ) -> None:
         """Initialize the middleware with cache control settings.
 
         Args:
@@ -26,21 +28,23 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.ttl = ttl
         self.min_messages_to_cache = min_messages_to_cache
 
-    def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+    def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:  # noqa: ARG002
         """Modify the model request to add cache control blocks."""
         try:
             from langchain_anthropic import ChatAnthropic
         except ImportError:
-            raise ValueError(
+            msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models."
                 "Please install langchain-anthropic."
             )
+            raise ValueError(msg)
 
         if not isinstance(request.model, ChatAnthropic):
-            raise ValueError(
+            msg = (
                 "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, "
                 f"not instances of {type(request.model)}"
             )
+            raise ValueError(msg)
 
         messages_count = (
             len(request.messages) + 1 if request.system_prompt else len(request.messages)

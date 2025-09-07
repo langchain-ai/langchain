@@ -56,7 +56,6 @@ from langchain.agents.structured_output import (
     ToolStrategy,
 )
 from langchain.agents.tool_node import ToolNode
-from langchain.agents.types import AgentMiddleware
 from langchain.chat_models import init_chat_model
 
 if TYPE_CHECKING:
@@ -68,6 +67,7 @@ if TYPE_CHECKING:
     from langchain.agents._internal._typing import (
         SyncOrAsync,
     )
+    from langchain.agents.types import AgentMiddleware
 
 StructuredResponseT = TypeVar("StructuredResponseT", default=None)
 
@@ -1118,12 +1118,12 @@ def create_agent(  # noqa: D417
         ```
     """
     if middleware:
-        assert isinstance(model, str | BaseChatModel)
-        assert isinstance(prompt, str | None)
-        assert not isinstance(response_format, tuple)
-        assert pre_model_hook is None
-        assert post_model_hook is None
-        assert state_schema is None
+        assert isinstance(model, str | BaseChatModel)  # noqa: S101
+        assert isinstance(prompt, str | None)  # noqa: S101
+        assert not isinstance(response_format, tuple)  # noqa: S101
+        assert pre_model_hook is None  # noqa: S101
+        assert post_model_hook is None  # noqa: S101
+        assert state_schema is None  # noqa: S101
         return create_middleware_agent(  # type: ignore[return-value]
             model=model,
             tools=tools,
