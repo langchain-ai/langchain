@@ -1,3 +1,7 @@
+"""Human in the loop middleware."""
+
+from typing import Any
+
 from langgraph.prebuilt.interrupt import (
     ActionRequest,
     HumanInterrupt,
@@ -6,23 +10,32 @@ from langgraph.prebuilt.interrupt import (
 )
 from langgraph.types import interrupt
 
-from langchain.agents.types import AgentJump, AgentMiddleware, AgentState, AgentUpdate
 from langchain.agents.middleware._utils import _generate_correction_tool_messages
+from langchain.agents.types import AgentMiddleware, AgentState
 
 ToolInterruptConfig = dict[str, HumanInterruptConfig]
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
+    """Human in the loop middleware."""
+
     def __init__(
         self,
         tool_configs: ToolInterruptConfig,
         message_prefix: str = "Tool execution requires approval",
-    ):
+    ) -> None:
+        """Initialize the human in the loop middleware.
+
+        Args:
+            tool_configs: The tool interrupt configs to use for the middleware.
+            message_prefix: The message prefix to use when constructing interrupt content.
+        """
         super().__init__()
         self.tool_configs = tool_configs
         self.message_prefix = message_prefix
 
-    def after_model(self, state: AgentState) -> AgentUpdate | AgentJump | None:
+    def after_model(self, state: AgentState) -> dict[str, Any] | None:
+        """Trigger HITL flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:
             return None
@@ -51,21 +64,20 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Right now, we do not support multiple tool calls with interrupts
         if len(interrupt_tool_calls) > 1:
-            tool_names = [t['name'] for t in interrupt_tool_calls]
+            tool_names = [t["name"] for t in interrupt_tool_calls]
             msg = f"Called the following tools which require interrupts: {tool_names}\n\nYou may only call ONE tool that requires an interrupt at a time"
             return {
                 "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
-                "jump_to": "model"
+                "jump_to": "model",
             }
 
         # Right now, we do not support interrupting a tool call if other tool calls exist
         if auto_approved_tool_calls:
-            tool_names = [t['name'] for t in interrupt_tool_calls]
+            tool_names = [t["name"] for t in interrupt_tool_calls]
             msg = f"Called the following tools which require interrupts: {tool_names}. You also called other tools that do not require interrupts. If you call a tool that requires and interrupt, you may ONLY call that tool."
             return {
-                "messages": _generate_correction_tool_messages(msg,
-                                                               last_message.tool_calls),
-                "jump_to": "model"
+                "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
+                "jump_to": "model",
             }
 
         # Only one tool call will need interrupts
@@ -90,7 +102,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if response["type"] == "accept":
             approved_tool_calls.append(tool_call)
         elif response["type"] == "edit":
-            edited: ActionRequest = response["args"]
+            edited: ActionRequest = response["args"]  # type: ignore[assignment]
             new_tool_call = {
                 "type": "tool_call",
                 "name": tool_call["name"],
@@ -108,7 +120,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             }
             return {"messages": [tool_message], "jump_to": "model"}
         else:
-            raise ValueError(f"Unknown response type: {response['type']}")
+            msg = f"Unknown response type: {response['type']}"
+            raise ValueError(msg)
 
         last_message.tool_calls = approved_tool_calls
 

@@ -1,15 +1,20 @@
+"""Summarization middleware."""
+
 import uuid
 from collections.abc import Callable, Iterable
-from typing import cast
+from typing import Any, cast
 
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
+    RemoveMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
-from langgraph.graph.message import REMOVE_ALL_MESSAGES, RemoveMessage
+from langgraph.graph.message import (
+    REMOVE_ALL_MESSAGES,
+)
 
 from langchain.agents.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel
@@ -68,7 +73,7 @@ class SummarizationMiddleware(AgentMiddleware):
         token_counter: TokenCounter = count_tokens_approximately,
         summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
         summary_prefix: str = SUMMARY_PREFIX,
-    ):
+    ) -> None:
         """Initialize the summarization middleware.
 
         Args:
@@ -88,7 +93,7 @@ class SummarizationMiddleware(AgentMiddleware):
         self.summary_prompt = summary_prompt
         self.summary_prefix = summary_prefix
 
-    def before_model(self, state: AgentState) -> AgentState | None:
+    def before_model(self, state: AgentState) -> dict[str, Any] | None:
         """Process messages before model invocation, potentially triggering summarization."""
         messages = state["messages"]
         self._ensure_message_ids(messages)
@@ -105,9 +110,7 @@ class SummarizationMiddleware(AgentMiddleware):
         if cutoff_index <= 0:
             return None
 
-        messages_to_summarize, preserved_messages = self._partition_messages(
-            messages, cutoff_index
-        )
+        messages_to_summarize, preserved_messages = self._partition_messages(messages, cutoff_index)
 
         summary = self._create_summary(messages_to_summarize)
         new_messages = self._build_new_messages(summary)
@@ -120,9 +123,12 @@ class SummarizationMiddleware(AgentMiddleware):
             ]
         }
 
-    def _build_new_messages(self, summary: str):
+    def _build_new_messages(self, summary: str) -> list[dict[str, Any]]:
         return [
-            {"role": "user", "content": f"Here is a summary of the conversation to date:\n\n{summary}"}
+            {
+                "role": "user",
+                "content": f"Here is a summary of the conversation to date:\n\n{summary}",
+            }
         ]
 
     def _ensure_message_ids(self, messages: list[AnyMessage]) -> None:
@@ -171,7 +177,7 @@ class SummarizationMiddleware(AgentMiddleware):
             if not self._has_tool_calls(messages[i]):
                 continue
 
-            tool_call_ids = self._extract_tool_call_ids(messages[i])
+            tool_call_ids = self._extract_tool_call_ids(cast("AIMessage", messages[i]))
             if self._cutoff_separates_tool_pair(messages, i, cutoff_index, tool_call_ids):
                 return False
 
@@ -180,7 +186,7 @@ class SummarizationMiddleware(AgentMiddleware):
     def _has_tool_calls(self, message: AnyMessage) -> bool:
         """Check if message is an AI message with tool calls."""
         return (
-            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls
+            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls  # type: ignore[return-value]
         )
 
     def _extract_tool_call_ids(self, ai_message: AIMessage) -> set[str]:
@@ -221,7 +227,7 @@ class SummarizationMiddleware(AgentMiddleware):
         try:
             response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
             return cast("str", response.content).strip()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             return f"Error generating summary: {e!s}"
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
@@ -236,5 +242,5 @@ class SummarizationMiddleware(AgentMiddleware):
                 allow_partial=True,
                 include_system=True,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]
