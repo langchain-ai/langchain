@@ -138,7 +138,9 @@ def create_agent(  # noqa: PLR0915
                 response_format.schema_spec
             )
     middleware_tools = [t for m in middleware for t in m.tools or []]
+
     # Setup tools
+    tool_node: ToolNode | None = None
     if isinstance(tools, list):
         # Extract builtin provider tools (dict format)
         builtin_tools = [t for t in tools if isinstance(t, dict)]
@@ -151,7 +153,7 @@ def create_agent(  # noqa: PLR0915
         # Only create ToolNode if we have tools
         tool_node = ToolNode(tools=all_tools) if all_tools else None
         default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
-    else:
+    elif isinstance(tools, ToolNode):
         # tools is ToolNode or None
         tool_node = tools
         if tool_node:
@@ -162,10 +164,10 @@ def create_agent(  # noqa: PLR0915
             # Add structured output tools
             for info in structured_output_tools.values():
                 default_tools.append(info.tool)
-        else:
-            default_tools = (
-                list(structured_output_tools.values()) if structured_output_tools else []
-            ) + middleware_tools
+    else:
+        default_tools = (
+            list(structured_output_tools.values()) if structured_output_tools else []
+        ) + middleware_tools
 
     # validate middleware
     assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (  # noqa: S101
@@ -401,7 +403,7 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, first_node, structured_output_tools),
+            _make_tools_to_model_edge(tool_node, first_node),
             [first_node, END],
         )
         graph.add_conditional_edges(
@@ -531,7 +533,7 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph,
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
     name: str,
     default_destination: str,
     model_destination: str,

@@ -8,10 +8,13 @@ from langchain_core.messages import (
     AIMessage,
     AnyMessage,
     MessageLikeRepresentation,
+    RemoveMessage,
     ToolMessage,
 )
 from langchain_core.messages.utils import count_tokens_approximately, trim_messages
-from langgraph.graph.message import REMOVE_ALL_MESSAGES, RemoveMessage  # type: ignore[attr-undefined]
+from langgraph.graph.message import (
+    REMOVE_ALL_MESSAGES,
+)
 
 from langchain.agents.types import AgentMiddleware, AgentState
 from langchain.chat_models import BaseChatModel
@@ -174,7 +177,7 @@ class SummarizationMiddleware(AgentMiddleware):
             if not self._has_tool_calls(messages[i]):
                 continue
 
-            tool_call_ids = self._extract_tool_call_ids(messages[i])
+            tool_call_ids = self._extract_tool_call_ids(cast("AIMessage", messages[i]))
             if self._cutoff_separates_tool_pair(messages, i, cutoff_index, tool_call_ids):
                 return False
 
@@ -183,7 +186,7 @@ class SummarizationMiddleware(AgentMiddleware):
     def _has_tool_calls(self, message: AnyMessage) -> bool:
         """Check if message is an AI message with tool calls."""
         return (
-            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls
+            isinstance(message, AIMessage) and hasattr(message, "tool_calls") and message.tool_calls  # type: ignore[return-value]
         )
 
     def _extract_tool_call_ids(self, ai_message: AIMessage) -> set[str]:

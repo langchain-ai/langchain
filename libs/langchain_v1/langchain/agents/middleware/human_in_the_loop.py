@@ -102,7 +102,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if response["type"] == "accept":
             approved_tool_calls.append(tool_call)
         elif response["type"] == "edit":
-            edited: ActionRequest = response["args"]
+            edited: ActionRequest = response["args"]  # type: ignore[assignment]
             new_tool_call = {
                 "type": "tool_call",
                 "name": tool_call["name"],
