@@ -108,7 +108,7 @@ from langchain_llamastack import create_llamastack_llm
 llm = create_llamastack_llm()
 
 # Specify a model with auto-fallback
-llm = create_llamastack_llm(model="llama3.1:8b")
+llm = create_llamastack_llm(model="llama3.1:8b", auto_fallback=True)
 
 # Add ChatOpenAI parameters directly
 llm = create_llamastack_llm(
@@ -587,7 +587,7 @@ response = llm.invoke("Hello!")
    ```
    ValueError: Model 'xyz' not found in LlamaStack
    ```
-   - Use auto-fallback: `create_llamastack_llm(model="xyz", auto_fallback=True)`
+   - Use auto-fallback: `create_llamastack_llm(model="xyz"))`
    - Or check available models first: `get_llamastack_models()`
 
 4. **Import Errors**
