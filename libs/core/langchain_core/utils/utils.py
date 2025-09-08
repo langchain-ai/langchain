@@ -134,7 +134,7 @@ def guard_import(
     try:
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
-        pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
+        pip_name = pip_name or module_name.split(".", maxsplit=1)[0].replace("_", "-")
         msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."

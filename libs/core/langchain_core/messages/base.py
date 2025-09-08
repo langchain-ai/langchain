@@ -179,9 +179,7 @@ def merge_content(
         elif merged and isinstance(merged[-1], str):
             merged[-1] += content
         # If second content is an empty string, treat as a no-op
-        elif content == "":
-            pass
-        else:
+        elif content:
             # Otherwise, add the second content as a new element of the list
             merged.append(content)
     return merged

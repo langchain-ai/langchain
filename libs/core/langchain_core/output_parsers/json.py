@@ -46,11 +46,13 @@ class JsonOutputParser(BaseCumulativeTransformOutputParser[Any]):
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
-    def _get_schema(self, pydantic_object: type[TBaseModel]) -> dict[str, Any]:
+    @staticmethod
+    def _get_schema(pydantic_object: type[TBaseModel]) -> dict[str, Any]:
         if issubclass(pydantic_object, pydantic.BaseModel):
             return pydantic_object.model_json_schema()
         return pydantic_object.schema()
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
