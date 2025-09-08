@@ -53,15 +53,15 @@ class HumanInterrupt(TypedDict):
         request = HumanInterrupt(
             action_request=ActionRequest(
                 action="run_command",  # The action being requested
-                args={"command": "ls", "args": ["-l"]}  # Arguments for the action
+                args={"command": "ls", "args": ["-l"]},  # Arguments for the action
             ),
             config=HumanInterruptConfig(
-                allow_ignore=True,    # Allow skipping this step
-                allow_respond=True,   # Allow text feedback
-                allow_edit=False,     # Don't allow editing
-                allow_accept=True     # Allow direct acceptance
+                allow_ignore=True,  # Allow skipping this step
+                allow_respond=True,  # Allow text feedback
+                allow_edit=False,  # Don't allow editing
+                allow_accept=True,  # Allow direct acceptance
             ),
-            description="Please review the command before execution"
+            description="Please review the command before execution",
         )
         # Send the interrupt request and get the response
         response = interrupt([request])[0]

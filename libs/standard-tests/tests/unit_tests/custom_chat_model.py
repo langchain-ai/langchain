@@ -27,8 +27,9 @@ class ChatParrotLink(BaseChatModel):
 
             model = ChatParrotLink(parrot_buffer_length=2, model="bird-brain-001")
             result = model.invoke([HumanMessage(content="hello")])
-            result = model.batch([[HumanMessage(content="hello")],
-                                 [HumanMessage(content="world")]])
+            result = model.batch(
+                [[HumanMessage(content="hello")], [HumanMessage(content="world")]]
+            )
 
     """
 

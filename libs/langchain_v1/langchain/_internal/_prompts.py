@@ -61,6 +61,7 @@ def resolve_prompt(
         def custom_prompt(state, runtime):
             return [{"role": "system", "content": "Custom"}]
 
+
         messages = resolve_prompt(custom_prompt, state, runtime, "content", "default")
         messages = resolve_prompt("Custom system", state, runtime, "content", "default")
         messages = resolve_prompt(None, state, runtime, "content", "Default")
@@ -128,15 +129,13 @@ async def aresolve_prompt(
         async def async_prompt(state, runtime):
             return [{"role": "system", "content": "Async"}]
 
+
         def sync_prompt(state, runtime):
             return [{"role": "system", "content": "Sync"}]
 
-        messages = await aresolve_prompt(
-            async_prompt, state, runtime, "content", "default"
-        )
-        messages = await aresolve_prompt(
-            sync_prompt, state, runtime, "content", "default"
-        )
+
+        messages = await aresolve_prompt(async_prompt, state, runtime, "content", "default")
+        messages = await aresolve_prompt(sync_prompt, state, runtime, "content", "default")
         messages = await aresolve_prompt("Custom", state, runtime, "content", "default")
         ```
 
