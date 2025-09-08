@@ -276,10 +276,7 @@ class HuggingFacePipeline(BaseLLM):
             batch_size=batch_size,
             model_kwargs=_model_kwargs,
             **_pipeline_kwargs,
-        }
-        if device is not None:
-            pipeline_args["device"] = device
-        pipeline = hf_pipeline(**pipeline_args)
+        )
         if pipeline.task not in VALID_TASKS:
             msg = (
                 f"Got invalid task {pipeline.task}, "
