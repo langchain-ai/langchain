@@ -330,7 +330,6 @@ def default_tool_parser(
 
     Returns:
         A list of tool calls and invalid tool calls.
-    .
     """
     tool_calls = []
     invalid_tool_calls = []
