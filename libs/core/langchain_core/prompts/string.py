@@ -166,7 +166,7 @@ def mustache_schema(
                 prefix = section_stack.pop()
         elif type_ in {"section", "inverted section"}:
             section_stack.append(prefix)
-            prefix = prefix + tuple(key.split("."))
+            prefix += tuple(key.split("."))
             fields[prefix] = False
         elif type_ in {"variable", "no escape"}:
             fields[prefix + tuple(key.split("."))] = True
@@ -268,7 +268,11 @@ class StringPromptTemplate(BasePromptTemplate, ABC):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "base"]``
+        """
         return ["langchain", "prompts", "base"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:

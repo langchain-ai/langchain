@@ -20,6 +20,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import FakeEmbeddings
+
             embed = FakeEmbeddings(size=100)
 
     Embed single text:
@@ -78,6 +79,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import DeterministicFakeEmbedding
+
             embed = DeterministicFakeEmbedding(size=100)
 
     Embed single text:
@@ -117,7 +119,8 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         rng = np.random.default_rng(seed)
         return list(rng.normal(size=self.size))
 
-    def _get_seed(self, text: str) -> int:
+    @staticmethod
+    def _get_seed(text: str) -> int:
         """Get a seed for the random generator, using the hash of the text."""
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 

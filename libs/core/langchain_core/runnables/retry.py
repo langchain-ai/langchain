@@ -66,17 +66,21 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
             import time
 
+
             def foo(input) -> None:
                 '''Fake function that raises an exception.'''
                 raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
+
             runnable = RunnableLambda(foo)
 
             runnable_with_retries = runnable.with_retry(
-                retry_if_exception_type=(ValueError,), # Retry only on ValueError
-                wait_exponential_jitter=True, # Add jitter to the exponential backoff
-                stop_after_attempt=2, # Try twice
-                exponential_jitter_params={"initial": 2},  # if desired, customize backoff
+                retry_if_exception_type=(ValueError,),  # Retry only on ValueError
+                wait_exponential_jitter=True,  # Add jitter to the exponential backoff
+                stop_after_attempt=2,  # Try twice
+                exponential_jitter_params={
+                    "initial": 2
+                },  # if desired, customize backoff
             )
 
             # The method invocation above is equivalent to the longer form below:
@@ -111,7 +115,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             chain = template | model
             retryable_chain = chain.with_retry()
 
-    """  # noqa: E501
+    """
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.

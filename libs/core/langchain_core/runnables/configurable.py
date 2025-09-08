@@ -70,11 +70,17 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
@@ -501,7 +507,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             ).configurable_alternatives(
                 ConfigurableField(id="prompt"),
                 default_key="joke",
-                poem=PromptTemplate.from_template("Write a short poem about {topic}")
+                poem=PromptTemplate.from_template("Write a short poem about {topic}"),
             )
 
             # When invoking the created RunnableSequence, you can pass in the
@@ -511,7 +517,9 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
             # The `with_config` method brings in the desired Prompt Runnable in your
             # Runnable Sequence.
-            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+            chain.with_config(configurable={"prompt": "poem"}).invoke(
+                {"topic": "bears"}
+            )
 
 
     Equivalently, you can initialize RunnableConfigurableAlternatives directly
@@ -520,20 +528,28 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         .. code-block:: python
 
             from langchain_core.runnables import ConfigurableField
-            from langchain_core.runnables.configurable import RunnableConfigurableAlternatives
+            from langchain_core.runnables.configurable import (
+                RunnableConfigurableAlternatives,
+            )
             from langchain_openai import ChatOpenAI
 
             prompt = RunnableConfigurableAlternatives(
-                which=ConfigurableField(id='prompt'),
+                which=ConfigurableField(id="prompt"),
                 default=PromptTemplate.from_template("Tell me a joke about {topic}"),
-                default_key='joke',
+                default_key="joke",
                 prefix_keys=False,
-                alternatives={"poem":PromptTemplate.from_template("Write a short poem about {topic}")}
+                alternatives={
+                    "poem": PromptTemplate.from_template(
+                        "Write a short poem about {topic}"
+                    )
+                },
             )
             chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+            chain.with_config(configurable={"prompt": "poem"}).invoke(
+                {"topic": "bears"}
+            )
 
-    """  # noqa: E501
+    """
 
     which: ConfigurableField
     """The ConfigurableField to use to choose between alternatives."""
@@ -680,7 +696,10 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
-    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
+    """Make options spec.
+
+    Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
+    ConfigurableFieldMultiOption.
 
     Args:
         spec: The ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
@@ -688,7 +707,7 @@ def make_options_spec(
 
     Returns:
         The ConfigurableFieldSpec.
-    """  # noqa: E501
+    """
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass
