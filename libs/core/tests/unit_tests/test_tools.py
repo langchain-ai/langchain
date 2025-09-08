@@ -52,6 +52,7 @@ from langchain_core.tools import (
     tool,
 )
 from langchain_core.tools.base import (
+    TOOL_MESSAGE_BLOCK_TYPES,
     ArgsSchema,
     InjectedToolArg,
     InjectedToolCallId,
@@ -1411,6 +1412,29 @@ def test_tool_call_input_tool_message_output() -> None:
     tool_call.pop("type")
     with pytest.raises(ValidationError):
         tool.invoke(tool_call)
+
+
+@pytest.mark.parametrize("block_type", [*TOOL_MESSAGE_BLOCK_TYPES, "bad"])
+def test_tool_content_block_output(block_type: str) -> None:
+    @tool
+    def my_tool(query: str) -> list[dict[str, Any]]:
+        """Test tool."""
+        return [{"type": block_type, "foo": "bar"}]
+
+    tool_call = {
+        "type": "tool_call",
+        "name": "my_tool",
+        "args": {"query": "baz"},
+        "id": "call_abc123",
+    }
+
+    result = my_tool.invoke(tool_call)
+    assert isinstance(result, ToolMessage)
+
+    if block_type in TOOL_MESSAGE_BLOCK_TYPES:
+        assert result.content == [{"type": block_type, "foo": "bar"}]
+    else:
+        assert result.content == '[{"type": "bad", "foo": "bar"}]'
 
 
 class _MockStructuredToolWithRawOutput(BaseTool):
