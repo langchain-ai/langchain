@@ -62,6 +62,10 @@ class ElementType(TypedDict):
     metadata: dict[str, str]
 
 
+# Unfortunately, BeautifulSoup doesn't define overloads for Tag.find_all.
+# So doing the type resolution ourselves.
+
+
 def _find_all_strings(
     tag: Tag,
     *,
