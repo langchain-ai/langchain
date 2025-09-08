@@ -28,17 +28,19 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     Optional,
     Protocol,
     TypeVar,
     Union,
     cast,
+    get_args,
     get_type_hints,
     overload,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args, override
+from typing_extensions import override
 
 from langchain_core._api import beta_decorator
 from langchain_core.load.serializable import (
@@ -2399,7 +2401,7 @@ class Runnable(ABC, Generic[Input, Output]):
             description: The description of the tool. Defaults to None.
             arg_types: A dictionary of argument names to types. Defaults to None.
             message_version: Version of ``ToolMessage`` to return given
-            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
+            :class:`~langchain_core.messages.content.ToolCall` input.
 
         Returns:
             A ``BaseTool`` instance.
@@ -2819,7 +2821,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         if len(steps_flat) < 2:
             msg = f"RunnableSequence must have at least 2 steps, got {len(steps_flat)}"
             raise ValueError(msg)
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             first=steps_flat[0],
             middle=list(steps_flat[1:-1]),
             last=steps_flat[-1],
@@ -3612,7 +3614,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """
         merged = {**steps__} if steps__ is not None else {}
         merged.update(kwargs)
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             steps__={key: coerce_to_runnable(r) for key, r in merged.items()}
         )
 
@@ -5325,7 +5327,7 @@ class RunnableEach(RunnableEachBase[Input, Output]):
         )
 
 
-class RunnableBindingBase(RunnableSerializable[Input, Output]):
+class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[no-redef]
     """``Runnable`` that delegates calls to another ``Runnable`` with a set of kwargs.
 
     Use only if creating a new ``RunnableBinding`` subclass with different ``__init__``
@@ -5404,7 +5406,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
                     ``Runnable`` with a custom type. Defaults to None.
             **other_kwargs: Unpacked into the base class.
         """  # noqa: E501
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             bound=bound,
             kwargs=kwargs or {},
             config=config or {},
@@ -5729,7 +5731,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):
             yield item
 
 
-class RunnableBinding(RunnableBindingBase[Input, Output]):
+class RunnableBinding(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
     """Wrap a ``Runnable`` with additional functionality.
 
     A ``RunnableBinding`` can be thought of as a "runnable decorator" that

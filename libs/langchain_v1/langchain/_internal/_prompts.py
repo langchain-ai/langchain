@@ -12,10 +12,10 @@ particularly for summarization chains and other document processing workflows.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
 
     from langchain_core.messages import MessageLikeRepresentation
     from langgraph.runtime import Runtime
@@ -92,9 +92,7 @@ async def aresolve_prompt(
         str,
         None,
         Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
-        Callable[
-            [StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]
-        ],
+        Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
     ],
     state: StateT,
     runtime: Runtime[ContextT],

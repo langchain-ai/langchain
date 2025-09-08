@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langsmith>=0.3.45",
     "tenacity!=8.4.0,<10.0.0,>=8.1.0",
@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.74"
+version = "1.0.0a2"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -64,6 +64,7 @@ langchain-text-splitters = { path = "../text-splitters" }
 
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 strict = "True"
 strict_bytes = "True"
 enable_error_code = "deprecated"

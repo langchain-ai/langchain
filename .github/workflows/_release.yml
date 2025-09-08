@@ -347,7 +347,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        partner: [openai, anthropic]
+        partner: [openai]
       fail-fast: false  # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

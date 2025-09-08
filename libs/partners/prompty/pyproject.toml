@@ -50,7 +50,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "UP045" ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"

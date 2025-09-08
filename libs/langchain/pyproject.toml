@@ -124,6 +124,7 @@ target-version = "py39"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 strict = "True"
 strict_bytes = "True"
 ignore_missing_imports = "True"

@@ -289,32 +289,28 @@ class ExperimentalMarkdownSyntaxTextSplitter:
     additional features.
 
     Key Features:
-    - Retains the original whitespace and formatting of the Markdown text.
-    - Extracts headers, code blocks, and horizontal rules as metadata.
-    - Splits out code blocks and includes the language in the "Code" metadata key.
-    - Splits text on horizontal rules (`---`) as well.
-    - Defaults to sensible splitting behavior, which can be overridden using the
-      `headers_to_split_on` parameter.
 
-    Parameters:
-    ----------
-    headers_to_split_on : List[Tuple[str, str]], optional
-        Headers to split on, defaulting to common Markdown headers if not specified.
-    return_each_line : bool, optional
-        When set to True, returns each line as a separate chunk. Default is False.
+    * Retains the original whitespace and formatting of the Markdown text.
+    * Extracts headers, code blocks, and horizontal rules as metadata.
+    * Splits out code blocks and includes the language in the "Code" metadata key.
+    * Splits text on horizontal rules (`---`) as well.
+    * Defaults to sensible splitting behavior, which can be overridden using the
+      ``headers_to_split_on`` parameter.
 
-    Usage example:
-    --------------
-    >>> headers_to_split_on = [
-    >>>     ("#", "Header 1"),
-    >>>     ("##", "Header 2"),
-    >>> ]
-    >>> splitter = ExperimentalMarkdownSyntaxTextSplitter(
-    >>>     headers_to_split_on=headers_to_split_on
-    >>> )
-    >>> chunks = splitter.split(text)
-    >>> for chunk in chunks:
-    >>>     print(chunk)
+    Example:
+
+        .. code-block:: python
+
+            headers_to_split_on = [
+                ("#", "Header 1"),
+                ("##", "Header 2"),
+            ]
+            splitter = ExperimentalMarkdownSyntaxTextSplitter(
+                headers_to_split_on=headers_to_split_on
+            )
+            chunks = splitter.split(text)
+            for chunk in chunks:
+                print(chunk)
 
     This class is currently experimental and subject to change based on feedback and
     further development.
@@ -414,7 +410,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
         self._complete_chunk_doc()
         # I don't see why `return_each_line` is a necessary feature of this splitter.
-        # It's easy enough to to do outside of the class and the caller can have more
+        # It's easy enough to do outside of the class and the caller can have more
         # control over it.
         if self.return_each_line:
             return [

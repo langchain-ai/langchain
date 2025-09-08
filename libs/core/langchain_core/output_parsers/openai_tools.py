@@ -246,6 +246,8 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                     _ = tool_call.pop("id")
         else:
             try:
+                # This exists purely for backward compatibility / cached messages
+                # All new messages should use `message.tool_calls`
                 raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
             except KeyError:
                 if self.first_tool_only:

@@ -121,23 +121,25 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "codspeed":
         py_versions = ["3.12"]  # 3.13 is not yet supported
     elif dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        py_versions = ["3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
         # milvus doesn't allow 3.12 because they declare deps in funny way
-        py_versions = ["3.9", "3.11"]
+        py_versions = ["3.10", "3.11"]
 
     elif dir_ in PY_312_MAX_PACKAGES:
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.10", "3.12"]
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
+    elif dir_ == "libs/langchain_v1":
+        py_versions = ["3.10", "3.13"]
 
     elif dir_ == ".":
         # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.10", "3.12"]
     else:
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 

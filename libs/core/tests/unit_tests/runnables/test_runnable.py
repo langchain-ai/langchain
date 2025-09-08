@@ -537,9 +537,6 @@ def test_passthrough_assign_schema() -> None:
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
     assert RunnableLambda(first_lambda).get_input_jsonschema() == {
@@ -1862,7 +1859,7 @@ def test_prompt_with_chat_model(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -1971,7 +1968,7 @@ async def test_prompt_with_chat_model_async(
     ] == [
         _any_id_ai_message_chunk(content="f"),
         _any_id_ai_message_chunk(content="o"),
-        _any_id_ai_message_chunk(content="o"),
+        _any_id_ai_message_chunk(content="o", chunk_position="last"),
     ]
     assert prompt_spy.call_args.args[1] == {"question": "What is your name?"}
     assert chat_spy.call_args.args[1] == ChatPromptValue(
@@ -4742,9 +4739,6 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
     assert tracer.runs[2].outputs == {"output": "bye"}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
     runnable = RunnableLambda(lambda x: x * 2)
