@@ -21,8 +21,10 @@ from typing import (
 
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field, create_model
 from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
 
+import langchain_core
 from langchain_core._api import beta, deprecated
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, ToolMessage
 from langchain_core.utils.json_schema import dereference_refs
@@ -220,10 +222,8 @@ def _convert_python_function_to_openai_function(
     Returns:
         The OpenAI function description.
     """
-    from langchain_core.tools.base import create_schema_from_function
-
     func_name = _get_python_function_name(function)
-    model = create_schema_from_function(
+    model = langchain_core.tools.base.create_schema_from_function(
         func_name,
         function,
         filter_args=(),
@@ -264,9 +264,6 @@ def _convert_any_typed_dicts_to_pydantic(
     visited: dict,
     depth: int = 0,
 ) -> type:
-    from pydantic.v1 import Field as Field_v1
-    from pydantic.v1 import create_model as create_model_v1
-
     if type_ in visited:
         return visited[type_]
     if depth >= _MAX_TYPED_DICT_RECURSION:
@@ -297,7 +294,7 @@ def _convert_any_typed_dicts_to_pydantic(
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
+                fields[arg] = (new_arg_type, Field(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
@@ -305,8 +302,8 @@ def _convert_any_typed_dicts_to_pydantic(
                 field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
-        model = create_model_v1(typed_dict.__name__, **fields)
+                fields[arg] = (new_arg_type, Field(**field_kwargs))
+        model = create_model(typed_dict.__name__, **fields)
         model.__doc__ = description
         visited[typed_dict] = model
         return model
@@ -332,9 +329,9 @@ def _format_tool_to_openai_function(tool: BaseTool) -> FunctionDescription:
     Returns:
         The function description.
     """
-    from langchain_core.tools import simple
-
-    is_simple_oai_tool = isinstance(tool, simple.Tool) and not tool.args_schema
+    is_simple_oai_tool = (
+        isinstance(tool, langchain_core.tools.simple.Tool) and not tool.args_schema
+    )
     if tool.tool_call_schema and not is_simple_oai_tool:
         if isinstance(tool.tool_call_schema, dict):
             return _convert_json_schema_to_openai_function(
@@ -435,8 +432,6 @@ def convert_to_openai_function(
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
     """
-    from langchain_core.tools import BaseTool
-
     # an Anthropic format tool
     if isinstance(function, dict) and all(
         k in function for k in ("name", "input_schema")
@@ -476,7 +471,7 @@ def convert_to_openai_function(
         oai_function = cast(
             "dict", _convert_typed_dict_to_openai_function(cast("type", function))
         )
-    elif isinstance(function, BaseTool):
+    elif isinstance(function, langchain_core.tools.base.BaseTool):
         oai_function = cast("dict", _format_tool_to_openai_function(function))
     elif callable(function):
         oai_function = cast(
@@ -582,7 +577,8 @@ def convert_to_openai_tool(
 
         Added support for OpenAI's image generation built-in tool.
     """
-    from langchain_core.tools import Tool
+    # Import locally to prevent circular import
+    from langchain_core.tools import Tool  # noqa: PLC0415
 
     if isinstance(tool, dict):
         if tool.get("type") in _WellKnownOpenAITools:

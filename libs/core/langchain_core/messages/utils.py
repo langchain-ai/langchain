@@ -42,11 +42,16 @@ from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 
 if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+
+try:
+    from langchain_text_splitters import TextSplitter
+
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = True
+except ImportError:
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = False
 
 logger = logging.getLogger(__name__)
 
@@ -361,7 +366,7 @@ def convert_to_messages(
         list of messages (BaseMessages).
     """
     # Import here to avoid circular imports
-    from langchain_core.prompt_values import PromptValue
+    from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
@@ -386,7 +391,8 @@ def _runnable_support(func: Callable) -> Callable:
         list[BaseMessage],
         Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
-        from langchain_core.runnables.base import RunnableLambda
+        # Import locally to prevent circular import.
+        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
             return func(messages, **kwargs)
@@ -987,17 +993,12 @@ def trim_messages(
         )
         raise ValueError(msg)
 
-    try:
-        from langchain_text_splitters import TextSplitter
-    except ImportError:
-        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
+    if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
+        text_splitter_fn = text_splitter.split_text
+    elif text_splitter:
+        text_splitter_fn = cast("Callable", text_splitter)
     else:
-        if isinstance(text_splitter, TextSplitter):
-            text_splitter_fn = text_splitter.split_text
-        else:
-            text_splitter_fn = text_splitter
-
-    text_splitter_fn = text_splitter_fn or _default_text_splitter
+        text_splitter_fn = _default_text_splitter
 
     if strategy == "first":
         return _first_max_tokens(

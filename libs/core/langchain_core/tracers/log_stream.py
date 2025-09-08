@@ -7,6 +7,7 @@ import contextlib
 import copy
 import threading
 from collections import defaultdict
+from pprint import pformat
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,10 +21,11 @@ from typing import (
 import jsonpatch  # type: ignore[import-untyped]
 from typing_extensions import NotRequired, TypedDict, override
 
+from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.load import dumps
 from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from uuid import UUID
 
+    from langchain_core.runnables import Runnable
     from langchain_core.runnables.utils import Input, Output
     from langchain_core.tracers.schemas import Run
 
@@ -131,8 +134,6 @@ class RunLogPatch:
 
     @override
     def __repr__(self) -> str:
-        from pprint import pformat
-
         # 1:-1 to get rid of the [] around the list
         return f"RunLogPatch({pformat(self.ops)[1:-1]})"
 
@@ -181,8 +182,6 @@ class RunLog(RunLogPatch):
 
     @override
     def __repr__(self) -> str:
-        from pprint import pformat
-
         return f"RunLog({pformat(self.state)})"
 
     @override
@@ -672,14 +671,6 @@ async def _astream_log_implementation(
     Yields:
         The run log patches or states, depending on the value of ``diff``.
     """
-    import jsonpatch
-
-    from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
-
     # Assign the stream handler to the config
     config = ensure_config(config)
     callbacks = config.get("callbacks")

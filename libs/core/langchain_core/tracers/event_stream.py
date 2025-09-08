@@ -17,13 +17,14 @@ from uuid import UUID, uuid4
 
 from typing_extensions import NotRequired, TypedDict, override
 
-from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
 )
+from langchain_core.runnables import ensure_config
 from langchain_core.runnables.schema import (
     CustomStreamEvent,
     EventData,
@@ -36,6 +37,11 @@ from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers.log_stream import (
+    LogStreamCallbackHandler,
+    RunLog,
+    _astream_log_implementation,
+)
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
 
@@ -770,14 +776,6 @@ async def _astream_events_implementation_v1(
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    from langchain_core.runnables import ensure_config
-    from langchain_core.runnables.utils import _RootEventFilter
-    from langchain_core.tracers.log_stream import (
-        LogStreamCallbackHandler,
-        RunLog,
-        _astream_log_implementation,
-    )
-
     stream = LogStreamCallbackHandler(
         auto_close=False,
         include_names=include_names,
@@ -955,9 +953,6 @@ async def _astream_events_implementation_v2(
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
-    from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.runnables import ensure_config
-
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,

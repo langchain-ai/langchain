@@ -118,7 +118,8 @@ class BaseMessage(Serializable):
         Returns:
             A ChatPromptTemplate containing both messages.
         """
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        # Import locally to prevent circular imports.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

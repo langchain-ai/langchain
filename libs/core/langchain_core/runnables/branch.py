@@ -12,6 +12,10 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
 
+from langchain_core.beta.runnables.context import (
+    CONTEXT_CONFIG_PREFIX,
+    CONTEXT_CONFIG_SUFFIX_SET,
+)
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -179,11 +183,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     @property
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            CONTEXT_CONFIG_SUFFIX_SET,
-        )
-
         specs = get_unique_config_specs(
             spec
             for step in (

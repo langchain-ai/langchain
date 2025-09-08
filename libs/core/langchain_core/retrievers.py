@@ -31,6 +31,7 @@ from typing_extensions import Self, TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import Callbacks
+from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.documents import Document
 from langchain_core.runnables import (
     Runnable,
@@ -236,8 +237,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             retriever.invoke("query")
 
         """
-        from langchain_core.callbacks.manager import CallbackManager
-
         config = ensure_config(config)
         inheritable_metadata = {
             **(config.get("metadata") or {}),
@@ -301,8 +300,6 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
             await retriever.ainvoke("query")
 
         """
-        from langchain_core.callbacks.manager import AsyncCallbackManager
-
         config = ensure_config(config)
         inheritable_metadata = {
             **(config.get("metadata") or {}),

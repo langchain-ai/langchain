@@ -15,6 +15,13 @@ if TYPE_CHECKING:
     from langchain_core.documents import Document
     from langchain_core.documents.base import Blob
 
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+    _HAS_TEXT_SPLITTERS = True
+except ImportError:
+    _HAS_TEXT_SPLITTERS = False
+
 
 class BaseLoader(ABC):  # noqa: B024
     """Interface for Document Loader.
@@ -62,15 +69,13 @@ class BaseLoader(ABC):  # noqa: B024
             List of Documents.
         """
         if text_splitter is None:
-            try:
-                from langchain_text_splitters import RecursiveCharacterTextSplitter
-            except ImportError as e:
+            if not _HAS_TEXT_SPLITTERS:
                 msg = (
                     "Unable to import from langchain_text_splitters. Please specify "
                     "text_splitter or install langchain_text_splitters with "
                     "`pip install -U langchain-text-splitters`."
                 )
-                raise ImportError(msg) from e
+                raise ImportError(msg)
 
             text_splitter_: TextSplitter = RecursiveCharacterTextSplitter()
         else:
