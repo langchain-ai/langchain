@@ -672,8 +672,10 @@ def tool_example_to_messages(
             from pydantic import BaseModel, Field
             from langchain_openai import ChatOpenAI
 
+
             class Person(BaseModel):
                 '''Information about a person.'''
+
                 name: Optional[str] = Field(..., description="The name of the person")
                 hair_color: Optional[str] = Field(
                     ..., description="The color of the person's hair if known"
@@ -681,6 +683,7 @@ def tool_example_to_messages(
                 height_in_meters: Optional[str] = Field(
                     ..., description="Height in METERS"
                 )
+
 
             examples = [
                 (
@@ -697,9 +700,7 @@ def tool_example_to_messages(
             messages = []
 
             for txt, tool_call in examples:
-                messages.extend(
-                    tool_example_to_messages(txt, [tool_call])
-                )
+                messages.extend(tool_example_to_messages(txt, [tool_call]))
 
     """
     messages: list[BaseMessage] = [HumanMessage(content=input)]

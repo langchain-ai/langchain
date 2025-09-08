@@ -124,7 +124,7 @@ class UsageMetadata(TypedDict):
                 "output_token_details": {
                     "audio": 10,
                     "reasoning": 200,
-                }
+                },
             }
 
     .. versionchanged:: 0.3.9
@@ -465,13 +465,13 @@ def add_usage(
                 input_tokens=5,
                 output_tokens=0,
                 total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3)
+                input_token_details=InputTokenDetails(cache_read=3),
             )
             right = UsageMetadata(
                 input_tokens=0,
                 output_tokens=10,
                 total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             add_usage(left, right)
@@ -485,7 +485,7 @@ def add_usage(
                 output_tokens=10,
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
     """
@@ -522,13 +522,13 @@ def subtract_usage(
                 input_tokens=5,
                 output_tokens=10,
                 total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4)
+                input_token_details=InputTokenDetails(cache_read=4),
             )
             right = UsageMetadata(
                 input_tokens=3,
                 output_tokens=8,
                 total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             subtract_usage(left, right)
@@ -542,7 +542,7 @@ def subtract_usage(
                 output_tokens=2,
                 total_tokens=4,
                 input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0)
+                output_token_details=OutputTokenDetails(reasoning=0),
             )
 
     """

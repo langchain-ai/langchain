@@ -82,7 +82,7 @@ class Blob(BaseMedia):
             blob = Blob.from_data(
                 data="Hello, world!",
                 mime_type="text/plain",
-                metadata={"source": "https://example.com"}
+                metadata={"source": "https://example.com"},
             )
 
     Example: Load the blob from a file
@@ -263,8 +263,7 @@ class Document(BaseMedia):
             from langchain_core.documents import Document
 
             document = Document(
-                page_content="Hello, world!",
-                metadata={"source": "https://example.com"}
+                page_content="Hello, world!", metadata={"source": "https://example.com"}
             )
 
     """

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-def _retrieve_ref(path: str, schema: dict) -> dict:
+def _retrieve_ref(path: str, schema: dict) -> Union[list, dict]:
     components = path.split("/")
     if components[0] != "#":
         msg = (
@@ -17,9 +17,12 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
             "with #."
         )
         raise ValueError(msg)
-    out = schema
+    out: Union[list, dict] = schema
     for component in components[1:]:
         if component in out:
+            if isinstance(out, list):
+                msg = f"Reference '{path}' not found."
+                raise KeyError(msg)
             out = out[component]
         elif component.isdigit():
             index = int(component)

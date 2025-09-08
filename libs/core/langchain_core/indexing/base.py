@@ -256,7 +256,7 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring the structure is initialized."""  # noqa: E501
+        """In-memory schema creation is simply ensuring the structure is initialized."""
 
     @override
     def get_time(self) -> float:

@@ -32,7 +32,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
 
             from langchain_core.messages import ToolMessage
 
-            ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+            ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
 
 
     Example: A ToolMessage where only part of the tool output is sent to the model
@@ -45,7 +45,8 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             from langchain_core.messages import ToolMessage
 
             tool_output = {
-                "stdout": "From the graph we can see that the correlation between x and y is ...",
+                "stdout": "From the graph we can see that the correlation between "
+                "x and y is ...",
                 "stderr": None,
                 "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
             }
@@ -53,14 +54,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             ToolMessage(
                 content=tool_output["stdout"],
                 artifact=tool_output,
-                tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
             )
 
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
 
-    """  # noqa: E501
+    """
 
     tool_call_id: str
     """Tool call that this message is responding to."""
@@ -184,11 +185,7 @@ class ToolCall(TypedDict):
 
         .. code-block:: python
 
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
+            {"name": "foo", "args": {"a": 1}, "id": "123"}
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
@@ -236,12 +233,12 @@ class ToolCallChunk(TypedDict):
     .. code-block:: python
 
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
         (
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
 
     """
 
