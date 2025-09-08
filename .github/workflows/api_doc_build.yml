@@ -17,10 +17,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: langchain
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html
@@ -52,7 +52,6 @@ jobs:
         run: |
           # Get unique repositories
           REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
-
           # Checkout each unique repository
           for repo in $REPOS; do
             # Validate repository format (allow any org with proper format)
@@ -68,7 +67,6 @@ jobs:
               echo "Error: Invalid repository name: $REPO_NAME"
               exit 1
             fi
-
             echo "Checking out $repo to $REPO_NAME"
             git clone --depth 1 https://github.com/$repo.git $REPO_NAME
           done

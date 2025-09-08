@@ -7,12 +7,12 @@ authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.63",
+    "langchain-core<2.0.0,>=0.3.75",
     "pytest<9,>=7",
-    "pytest-asyncio<1,>=0.20",
-    "httpx<1,>=0.25.0",
+    "pytest-asyncio<2,>=0.20",
+    "httpx<1,>=0.28.1",
     "syrupy<5,>=4",
-    "pytest-socket<1,>=0.6.0",
+    "pytest-socket<1,>=0.7.0",
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-tests"
-version = "0.3.20"
+version = "0.3.21"
 description = "Standard tests for LangChain implementations"
 readme = "README.md"
 
@@ -32,9 +32,9 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<0.13,>=0.12.8"]
-typing = ["mypy<2,>=1", "langchain-core"]
+
+lint = ["ruff<0.13,>=0.12.10"]
+typing = ["mypy<2,>=1.17.1", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -55,8 +55,14 @@ ignore_missing_imports = true
 target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "PGH", "T201", "UP",]
+select = ["D", "E", "F", "I", "PGH", "T201", "UP",]
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1",]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -69,3 +75,4 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
