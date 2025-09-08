@@ -1285,7 +1285,7 @@ class InjectedToolCallId(InjectedToolArg):
 
 
 def _is_injected_arg_type(
-    type_: type, injected_type: Optional[type[InjectedToolArg]] = None
+    type_: Union[type, TypeVar], injected_type: Optional[type[InjectedToolArg]] = None
 ) -> bool:
     """Check if a type annotation indicates an injected argument.
 
@@ -1306,7 +1306,7 @@ def _is_injected_arg_type(
 
 def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
-) -> dict[str, type]:
+) -> dict[str, Union[type, TypeVar]]:
     """Get all annotations from a Pydantic BaseModel and its parents.
 
     Args:
@@ -1319,7 +1319,7 @@ def get_all_basemodel_annotations(
         fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
-        annotations: dict[str, type] = {}
+        annotations: dict[str, Union[type, TypeVar]] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
@@ -1373,11 +1373,11 @@ def get_all_basemodel_annotations(
 
 
 def _replace_type_vars(
-    type_: type,
+    type_: Union[type, TypeVar],
     generic_map: Optional[dict[TypeVar, type]] = None,
     *,
     default_to_bound: bool = True,
-) -> type:
+) -> Union[type, TypeVar]:
     """Replace TypeVars in a type annotation with concrete types.
 
     Args:
