@@ -3541,7 +3541,7 @@ def _construct_responses_api_payload(
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     # Remove temperature parameter for models that don't support it in responses API
-    model = payload.get("model", "")
+    model = payload.get("model") or ""
     if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
         payload.pop("temperature", None)
 
