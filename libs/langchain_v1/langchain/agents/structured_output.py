@@ -67,7 +67,7 @@ class StructuredOutputValidationError(StructuredOutputError):
 
 
 def _parse_with_schema(
-    schema: Union[type[SchemaT], dict], schema_kind: SchemaKind, data: dict[str, Any]
+    schema: type[SchemaT] | dict, schema_kind: SchemaKind, data: dict[str, Any]
 ) -> Any:
     """Parse data using for any supported schema type.
 
@@ -180,13 +180,9 @@ class ToolStrategy(Generic[SchemaT]):
     tool_message_content: str | None
     """The content of the tool message to be returned when the model calls an artificial structured output tool."""
 
-    handle_errors: Union[
-        bool,
-        str,
-        type[Exception],
-        tuple[type[Exception], ...],
-        Callable[[Exception], str],
-    ]
+    handle_errors: (
+        bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
+    )
     """Error handling strategy for structured output via ToolStrategy. Default is True.
 
     - True: Catch all errors with default error template
@@ -202,13 +198,11 @@ class ToolStrategy(Generic[SchemaT]):
         schema: type[SchemaT],
         *,
         tool_message_content: str | None = None,
-        handle_errors: Union[
-            bool,
-            str,
-            type[Exception],
-            tuple[type[Exception], ...],
-            Callable[[Exception], str],
-        ] = True,
+        handle_errors: bool
+        | str
+        | type[Exception]
+        | tuple[type[Exception], ...]
+        | Callable[[Exception], str] = True,
     ) -> None:
         """Initialize ToolStrategy with schemas, tool message content, and error handling strategy."""
         self.schema = schema
@@ -400,4 +394,4 @@ class ProviderStrategyBinding(Generic[SchemaT]):
         return str(content)
 
 
-ResponseFormat = Union[ToolStrategy[SchemaT], ProviderStrategy[SchemaT]]
+ResponseFormat = ToolStrategy[SchemaT] | ProviderStrategy[SchemaT]

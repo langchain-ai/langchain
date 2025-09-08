@@ -1,6 +1,6 @@
 """Interrupt types to use with agent inbox like setups."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from typing_extensions import TypedDict
 
@@ -89,4 +89,4 @@ class HumanResponse(TypedDict):
     """
 
     type: Literal["accept", "ignore", "response", "edit"]
-    args: Union[None, str, ActionRequest]
+    args: None | str | ActionRequest

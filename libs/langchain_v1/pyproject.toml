@@ -114,7 +114,6 @@ ignore = [
   "ISC001",  # Messes with the formatter
   "PERF203", # Rarely useful
   "SLF001",  # Private member access
-  "UP007",   # pyupgrade: non-pep604-annotation-union
   "PLC0415", # Imports should be at the top. Not always desirable
   "PLR0913", # Too many arguments in function definition
   "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports

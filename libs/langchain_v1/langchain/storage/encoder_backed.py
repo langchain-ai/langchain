@@ -4,7 +4,6 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
     TypeVar,
-    Union,
 )
 
 from langchain_core.stores import BaseStore
@@ -106,7 +105,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         self,
         *,
         prefix: str | None = None,
-    ) -> Union[Iterator[K], Iterator[str]]:
+    ) -> Iterator[K] | Iterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.
@@ -116,7 +115,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         self,
         *,
         prefix: str | None = None,
-    ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
+    ) -> AsyncIterator[K] | AsyncIterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.

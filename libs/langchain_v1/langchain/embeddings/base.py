@@ -2,7 +2,7 @@
 
 import functools
 from importlib import util
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
@@ -126,7 +126,7 @@ def init_embeddings(
     *,
     provider: str | None = None,
     **kwargs: Any,
-) -> Union[Embeddings, Runnable[Any, list[float]]]:
+) -> Embeddings | Runnable[Any, list[float]]:
     """Initialize an embeddings model from a model name and optional provider.
 
     **Note:** Must have the integration package corresponding to the model provider
