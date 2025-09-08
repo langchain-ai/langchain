@@ -270,11 +270,24 @@ class FlareChain(Chain):
                 "pip install langchain-openai"
             )
             raise ImportError(msg) from e
-        llm = ChatOpenAI(
-            max_completion_tokens=max_generation_len,
-            logprobs=True,
-            temperature=0,
-        )
+        # Preserve supplied llm instead of always creating a new ChatOpenAI.
+        # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
+        if not isinstance(llm, ChatOpenAI):
+            raise TypeError(
+                f"FlareChain.from_llm requires ChatOpenAI; got {type(llm).__name__}."
+            )
+        if not getattr(llm, "logprobs", False):  # attribute presence may vary
+            raise ValueError(
+                "Provided ChatOpenAI instance must be constructed with logprobs=True for FlareChain."
+            )
+        current_max = getattr(llm, "max_completion_tokens", None)
+        if current_max is not None and current_max != max_generation_len:
+            logger.debug(
+                "FlareChain.from_llm: supplied llm max_completion_tokens=%s differs from "
+                "requested max_generation_len=%s; leaving model unchanged.",
+                current_max,
+                max_generation_len,
+            )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(
