@@ -277,7 +277,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message_,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             llm=llm,
             prompt=prompt,
             tools=tools,

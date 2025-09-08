@@ -4,7 +4,7 @@ from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.utils import Input, Output
 
 
-class HubRunnable(RunnableBindingBase[Input, Output]):
+class HubRunnable(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
     """
     An instance of a runnable stored in the LangChain Hub.
     """

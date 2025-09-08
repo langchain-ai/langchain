@@ -46,6 +46,7 @@ packages:
 - name: langchain-chroma
   path: libs/partners/chroma
   repo: langchain-ai/langchain
+  js: '@langchain/community'
   downloads: 892000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-exa
@@ -58,6 +59,7 @@ packages:
 - name: langchain-fireworks
   path: libs/partners/fireworks
   repo: langchain-ai/langchain
+  js: '@langchain/community'
   downloads: 238000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-groq
@@ -69,6 +71,7 @@ packages:
 - name: langchain-huggingface
   path: libs/partners/huggingface
   repo: langchain-ai/langchain
+  js: '@langchain/community'
   downloads: 793000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-ibm
@@ -144,6 +147,7 @@ packages:
 - name: langchain-together
   path: libs/together
   repo: langchain-ai/langchain-together
+  js: '@langchain/community'
   downloads: 89000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-upstage
@@ -167,6 +171,7 @@ packages:
   name_title: DataStax Astra DB
   path: libs/astradb
   repo: langchain-ai/langchain-datastax
+  js: '@langchain/community'
   downloads: 117000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-google-genai
@@ -205,6 +210,7 @@ packages:
 - name: langchain-elasticsearch
   path: libs/elasticsearch
   repo: langchain-ai/langchain-elastic
+  js: '@langchain/community'
   downloads: 218000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-nvidia-ai-endpoints
@@ -292,6 +298,7 @@ packages:
 - name: langchain-neo4j
   path: libs/neo4j
   repo: langchain-ai/langchain-neo4j
+  js: '@langchain/community'
   downloads: 100000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-linkup
@@ -350,6 +357,7 @@ packages:
   downloads: 31000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-lindorm-integration
+  name_title: Lindorm
   path: .
   repo: AlwaysBluer/langchain-lindorm-integration
   provider_page: lindorm
@@ -444,6 +452,7 @@ packages:
   downloads: 1000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-discord-shikenso
+  name_title: Discord (Shikenso)
   path: .
   repo: Shikenso-Analytics/langchain-discord
   downloads: 138
@@ -571,7 +580,7 @@ packages:
   downloads: 3000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-naver-community
-  name_title: Naver (community-maintained)
+  name_title: Naver
   path: .
   repo: e7217/langchain-naver-community
   provider_page: naver
@@ -595,6 +604,7 @@ packages:
 - name: langchain-perplexity
   path: libs/partners/perplexity
   repo: langchain-ai/langchain
+  js: '@langchain/community'
   downloads: 348000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-runpod
@@ -700,6 +710,9 @@ packages:
 - name: langchain-tensorlake
   path: .
   repo: tensorlakeai/langchain-tensorlake
+- name: langchain-recallio
+  path: .
+  repo: recallio/langchain-recallio
   downloads: 781
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-gradient
@@ -714,6 +727,7 @@ packages:
   path: .
   repo: anchorbrowser/langchain-anchorbrowser
 - name: toolbox-langchain
+  name_title: MCP Toolbox
   repo: googleapis/mcp-toolbox-sdk-python
   path: packages/toolbox-langchain
 - name: langchain-scrapeless

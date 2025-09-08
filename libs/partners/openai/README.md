@@ -14,7 +14,7 @@ pip install langchain-openai
 
 ## Chat model
 
-See a [usage example](http://python.langchain.com/docs/integrations/chat/openai).
+See a [usage example](https://python.langchain.com/docs/integrations/chat/openai).
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -26,11 +26,11 @@ If you are using a model hosted on `Azure`, you should use different wrapper for
 from langchain_openai import AzureChatOpenAI
 ```
 
-For a more detailed walkthrough of the `Azure` wrapper, see [AzureChatOpenAI](http://python.langchain.com/docs/integrations/chat/azure_chat_openai)
+For a more detailed walkthrough of the `Azure` wrapper, see [AzureChatOpenAI](https://python.langchain.com/docs/integrations/chat/azure_chat_openai)
 
 ## Text Embedding Model
 
-See a [usage example](http://python.langchain.com/docs/integrations/text_embedding/openai)
+See a [usage example](https://python.langchain.com/docs/integrations/text_embedding/openai)
 
 ```python
 from langchain_openai import OpenAIEmbeddings
@@ -46,7 +46,7 @@ For a more detailed walkthrough of the `Azure` wrapper, see [AzureOpenAIEmbeddin
 
 ## LLM (Legacy)
 
-LLM refers to the legacy text-completion models that preceded chat models. See a [usage example](http://python.langchain.com/docs/integrations/llms/openai).
+LLM refers to the legacy text-completion models that preceded chat models. See a [usage example](https://python.langchain.com/docs/integrations/llms/openai).
 
 ```python
 from langchain_openai import OpenAI
@@ -58,4 +58,4 @@ If you are using a model hosted on `Azure`, you should use different wrapper for
 from langchain_openai import AzureOpenAI
 ```
 
-For a more detailed walkthrough of the `Azure` wrapper, see [Azure OpenAI](http://python.langchain.com/docs/integrations/llms/azure_openai)
+For a more detailed walkthrough of the `Azure` wrapper, see [Azure OpenAI](https://python.langchain.com/docs/integrations/llms/azure_openai)

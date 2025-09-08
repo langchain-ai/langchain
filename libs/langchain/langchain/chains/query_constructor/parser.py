@@ -9,6 +9,8 @@ from typing_extensions import TypedDict
 try:
     check_package_version("lark", gte_version="1.1.5")
     from lark import Lark, Transformer, v_args
+
+    _HAS_LARK = True
 except ImportError:
 
     def v_args(*_: Any, **__: Any) -> Any:  # type: ignore[misc]
@@ -17,6 +19,7 @@ except ImportError:
 
     Transformer = object  # type: ignore[assignment,misc]
     Lark = object  # type: ignore[assignment,misc]
+    _HAS_LARK = False
 
 from langchain_core.structured_query import (
     Comparator,
@@ -260,8 +263,7 @@ def get_parser(
     Returns:
         Lark parser for the query language.
     """
-    # QueryTransformer is None when Lark cannot be imported.
-    if QueryTransformer is None:
+    if not _HAS_LARK:
         msg = "Cannot import lark, please install it with 'pip install lark'."
         raise ImportError(msg)
     transformer = QueryTransformer(

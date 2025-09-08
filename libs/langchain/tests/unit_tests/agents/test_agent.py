@@ -514,20 +514,20 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results: list[RunLogPatch] = [  # type: ignore[no-redef]
+    log_results: list[RunLogPatch] = [
         r async for r in executor.astream_log({"question": "hello"})
     ]
     # # Let's stream just the llm tokens.
     messages = []
-    for log_record in results:
-        for op in log_record.ops:  # type: ignore[attr-defined]
+    for log_record in log_results:
+        for op in log_record.ops:
             if op["op"] == "add" and isinstance(op["value"], AIMessageChunk):
                 messages.append(op["value"])  # noqa: PERF401
 
     assert messages != []
 
     # Aggregate state
-    run_log = reduce(operator.add, results)
+    run_log = reduce(operator.add, log_results)
 
     assert isinstance(run_log, RunLog)
 

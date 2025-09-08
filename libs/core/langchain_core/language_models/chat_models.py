@@ -78,6 +78,11 @@ def _generate_response_from_error(error: BaseException) -> list[ChatGeneration]:
     if hasattr(error, "response"):
         response = error.response
         metadata: dict = {}
+        if hasattr(response, "json"):
+            try:
+                metadata["body"] = response.json()
+            except Exception:
+                metadata["body"] = getattr(response, "text", None)
         if hasattr(response, "headers"):
             try:
                 metadata["headers"] = dict(response.headers)
@@ -533,7 +538,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     generations = [generations_with_error_metadata]
                 run_manager.on_llm_error(
                     e,
-                    response=LLMResult(generations=generations),  # type: ignore[arg-type]
+                    response=LLMResult(generations=generations),
                 )
                 raise
 
@@ -627,7 +632,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 generations = [generations_with_error_metadata]
             await run_manager.on_llm_error(
                 e,
-                response=LLMResult(generations=generations),  # type: ignore[arg-type]
+                response=LLMResult(generations=generations),
             )
             raise
 
@@ -842,17 +847,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     run_managers[i].on_llm_error(
                         e,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]  # type: ignore[list-item]
+                            generations=[generations_with_error_metadata]
                         ),
                     )
                 raise
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item]
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])
         generations = [res.generations for res in results]
-        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
+        output = LLMResult(generations=generations, llm_output=llm_output)
         if run_managers:
             run_infos = []
             for manager, flattened_output in zip(run_managers, flattened_outputs):
@@ -962,7 +967,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     await run_managers[i].on_llm_error(
                         res,
                         response=LLMResult(
-                            generations=[generations_with_error_metadata]  # type: ignore[list-item]
+                            generations=[generations_with_error_metadata]
                         ),
                     )
                 exceptions.append(res)
@@ -972,7 +977,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                     *[
                         run_manager.on_llm_end(
                             LLMResult(
-                                generations=[res.generations],  # type: ignore[list-item, union-attr]
+                                generations=[res.generations],  # type: ignore[union-attr]
                                 llm_output=res.llm_output,  # type: ignore[union-attr]
                             )
                         )
@@ -982,12 +987,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 )
             raise exceptions[0]
         flattened_outputs = [
-            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[list-item, union-attr]
+            LLMResult(generations=[res.generations], llm_output=res.llm_output)  # type: ignore[union-attr]
             for res in results
         ]
         llm_output = self._combine_llm_outputs([res.llm_output for res in results])  # type: ignore[union-attr]
         generations = [res.generations for res in results]  # type: ignore[union-attr]
-        output = LLMResult(generations=generations, llm_output=llm_output)  # type: ignore[arg-type]
+        output = LLMResult(generations=generations, llm_output=llm_output)
         await asyncio.gather(
             *[
                 run_manager.on_llm_end(flattened_output)

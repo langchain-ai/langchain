@@ -31,8 +31,8 @@ from pydantic import BaseModel, Field
 from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
 from tests.unit_tests._utils import FakeCallbackHandler
 
-MODEL_NAME = "claude-3-5-haiku-20241022"
-IMAGE_MODEL_NAME = "claude-3-5-sonnet-20241022"
+MODEL_NAME = "claude-opus-4-1-20250805"
+IMAGE_MODEL_NAME = "claude-opus-4-1-20250805"
 
 
 def test_stream() -> None:
@@ -128,12 +128,11 @@ async def test_astream() -> None:
     async for event in stream:
         if event.type == "message_start":
             assert event.message.usage.input_tokens > 1
-            # Note: this single output token included in message start event
-            # does not appear to contribute to overall output token counts. It
-            # is excluded from the total token count.
-            assert event.message.usage.output_tokens == 1
+            # Different models may report different initial output token counts
+            # in the message_start event. Ensure it's a positive value.
+            assert event.message.usage.output_tokens >= 1
         elif event.type == "message_delta":
-            assert event.usage.output_tokens > 1
+            assert event.usage.output_tokens >= 1
         else:
             pass
 

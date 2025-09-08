@@ -1,3 +1,5 @@
+"""LangChain CLI."""
+
 from typing import Annotated, Optional
 
 import typer
@@ -34,20 +36,21 @@ app.command(
 )
 
 
-def version_callback(show_version: bool) -> None:  # noqa: FBT001
+def _version_callback(*, show_version: bool) -> None:
     if show_version:
         typer.echo(f"langchain-cli {__version__}")
         raise typer.Exit
 
 
 @app.callback()
-def main(
-    version: bool = typer.Option(  # noqa: FBT001
+def _main(
+    *,
+    version: bool = typer.Option(
         False,  # noqa: FBT003
         "--version",
         "-v",
         help="Print the current CLI version.",
-        callback=version_callback,
+        callback=_version_callback,
         is_eager=True,
     ),
 ) -> None:

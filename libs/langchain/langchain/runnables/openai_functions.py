@@ -20,7 +20,7 @@ class OpenAIFunction(TypedDict):
     """The parameters to the function."""
 
 
-class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
+class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):  # type: ignore[no-redef]
     """A runnable that routes to the selected function."""
 
     functions: Optional[list[OpenAIFunction]]

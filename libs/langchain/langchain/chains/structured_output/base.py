@@ -439,7 +439,7 @@ def create_structured_output_runnable(
             output_parser=output_parser,
             **kwargs,
         )
-    msg = (
+    msg = (  # type: ignore[unreachable]
         f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
         f"'openai-json'."
     )

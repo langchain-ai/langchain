@@ -18,12 +18,6 @@ Pip:
 pip install -U langchain-tests
 ```
 
-Poetry:
-
-```bash
-poetry add langchain-tests
-```
-
 uv:
 
 ```bash

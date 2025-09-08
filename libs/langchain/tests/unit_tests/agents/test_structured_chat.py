@@ -23,7 +23,7 @@ def get_action_and_input(text: str) -> tuple[str, str]:
         return output.tool, str(output.tool_input)
     if isinstance(output, AgentFinish):
         return output.return_values["output"], output.log
-    msg = "Unexpected output type"
+    msg = "Unexpected output type"  # type: ignore[unreachable]
     raise ValueError(msg)
 
 

@@ -29,6 +29,22 @@ model_with_structure = model.with_structured_output(schema)
 structured_output = model_with_structure.invoke(user_input)
 ```
 
+:::warning[Tool Order Matters]
+
+When combining structured output with additional tools, bind tools **first**, then apply structured output:
+
+```python
+# Correct
+model_with_tools = model.bind_tools([tool1, tool2])
+structured_model = model_with_tools.with_structured_output(schema)
+
+# Incorrect - will cause tool resolution errors
+structured_model = model.with_structured_output(schema)
+broken_model = structured_model.bind_tools([tool1, tool2])
+```
+
+:::
+
 ## Schema definition
 
 The central concept is that the output structure of model responses needs to be represented in some way.

@@ -162,7 +162,7 @@ def test_load_llmchain_with_non_serializable_arg() -> None:
     import httpx
     from langchain_openai import OpenAI
 
-    llm = OpenAI(  # type: ignore[call-arg]
+    llm = OpenAI(
         model="davinci",
         temperature=0.5,
         openai_api_key="hello",

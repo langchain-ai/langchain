@@ -26,7 +26,7 @@ jobs:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     name: '📑 Test Documentation Notebooks'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: '🐍 Set up Python + UV'
         uses: "./.github/actions/uv_setup"
@@ -35,12 +35,12 @@ jobs:
 
       - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
       - name: '🔐 Configure AWS Credentials'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

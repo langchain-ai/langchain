@@ -326,7 +326,7 @@ class SQLRecordManager(RecordManager):
                     records_to_upsert,
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
-                    "uix_key_namespace",  # Name of constraint
+                    constraint="uix_key_namespace",  # Name of constraint
                     set_={
                         "updated_at": pg_insert_stmt.excluded.updated_at,
                         "group_id": pg_insert_stmt.excluded.group_id,
@@ -408,7 +408,7 @@ class SQLRecordManager(RecordManager):
                     records_to_upsert,
                 )
                 stmt = pg_insert_stmt.on_conflict_do_update(  # type: ignore[assignment]
-                    "uix_key_namespace",  # Name of constraint
+                    constraint="uix_key_namespace",  # Name of constraint
                     set_={
                         "updated_at": pg_insert_stmt.excluded.updated_at,
                         "group_id": pg_insert_stmt.excluded.group_id,

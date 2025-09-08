@@ -407,7 +407,7 @@ class SelfQueryRetriever(BaseRetriever):
         query_constructor = query_constructor.with_config(
             run_name=QUERY_CONSTRUCTOR_RUN_NAME,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,

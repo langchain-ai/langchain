@@ -286,7 +286,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def output_keys(self) -> list[str]:
         """Keys expected to be in the chain output."""
 
-    def _validate_inputs(self, inputs: dict[str, Any]) -> None:
+    def _validate_inputs(self, inputs: Any) -> None:
         """Check that all inputs are present."""
         if not isinstance(inputs, dict):
             _input_keys = set(self.input_keys)

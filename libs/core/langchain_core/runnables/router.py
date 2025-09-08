@@ -87,7 +87,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         Args:
             runnables: A mapping of keys to Runnables.
         """
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 

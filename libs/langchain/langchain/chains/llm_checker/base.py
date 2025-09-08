@@ -56,7 +56,7 @@ def _load_question_to_checked_assertions_chain(
         revised_answer_chain,
     ]
     return SequentialChain(
-        chains=chains,  # type: ignore[arg-type]
+        chains=chains,
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,

@@ -143,7 +143,7 @@ class Comparison(FilterDirective):
             value: The value to compare to.
         """
         # super exists from BaseModel
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             comparator=comparator, attribute=attribute, value=value, **kwargs
         )
 
@@ -166,9 +166,7 @@ class Operation(FilterDirective):
             arguments: The arguments to the operator.
         """
         # super exists from BaseModel
-        super().__init__(  # type: ignore[call-arg]
-            operator=operator, arguments=arguments, **kwargs
-        )
+        super().__init__(operator=operator, arguments=arguments, **kwargs)
 
 
 class StructuredQuery(Expr):
@@ -196,6 +194,4 @@ class StructuredQuery(Expr):
             limit: The limit on the number of results.
         """
         # super exists from BaseModel
-        super().__init__(  # type: ignore[call-arg]
-            query=query, filter=filter, limit=limit, **kwargs
-        )
+        super().__init__(query=query, filter=filter, limit=limit, **kwargs)

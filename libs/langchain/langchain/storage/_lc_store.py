@@ -1,6 +1,6 @@
 """Create a key-value store for any langchain serializable object."""
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from langchain_core.documents import Document
 from langchain_core.load import Serializable, dumps, loads
@@ -14,7 +14,7 @@ def _dump_as_bytes(obj: Serializable) -> bytes:
     return dumps(obj).encode("utf-8")
 
 
-def _dump_document_as_bytes(obj: Document) -> bytes:
+def _dump_document_as_bytes(obj: Any) -> bytes:
     """Return a bytes representation of a document."""
     if not isinstance(obj, Document):
         msg = "Expected a Document instance"

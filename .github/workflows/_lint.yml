@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: '📋 Checkout Code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"

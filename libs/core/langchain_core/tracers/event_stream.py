@@ -999,7 +999,7 @@ async def _astream_events_implementation_v2(
                 continue
 
             # If it's the end event corresponding to the root runnable
-            # we dont include the input in the event since it's guaranteed
+            # we don't include the input in the event since it's guaranteed
             # to be included in the first event.
             if (
                 event["run_id"] == first_event_run_id

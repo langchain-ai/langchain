@@ -7,4 +7,4 @@ To learn how to contribute to LangChain, please follow the [contribution guide h
 
 ## New features
 
-For new features, please start a new [discussion](https://forum.langchain.com/), where the maintainers will help with scoping out the necessary changes.
+For new features, please start a new [discussion on our forum](https://forum.langchain.com/), where the maintainers will help with scoping out the necessary changes.

@@ -55,7 +55,7 @@ class OpenAIFunctionsAgentOutputParser(AgentOutputParser):
                 )
                 raise OutputParserException(msg) from e
 
-            # HACK HACK HACK:
+            # A hack here:
             # The code that encodes tool input into Open AI uses a special variable
             # name called `__arg1` to handle old style tools that do not expose a
             # schema and expect a single string argument as an input.

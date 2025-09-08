@@ -109,6 +109,9 @@ ignore = [
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.mypy]
 disallow_untyped_defs = true
 

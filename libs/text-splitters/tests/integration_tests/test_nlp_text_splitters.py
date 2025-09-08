@@ -20,7 +20,18 @@ def spacy() -> Any:
         import spacy
     except ImportError:
         pytest.skip("Spacy not installed.")
-    spacy.cli.download("en_core_web_sm")  # type: ignore[attr-defined,operator,unused-ignore]
+
+    # Check if en_core_web_sm model is available
+    try:
+        spacy.load("en_core_web_sm")
+    except OSError:
+        pytest.skip(
+            "en_core_web_sm model not installed. Install with: "
+            "uv add --group test_integration "
+            "https://github.com/explosion/spacy-models/releases/download/"
+            "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
+        )
+
     return spacy
 
 

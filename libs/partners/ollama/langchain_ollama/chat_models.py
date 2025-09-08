@@ -418,7 +418,7 @@ class ChatOllama(BaseChatModel):
     model: str
     """Model name to use."""
 
-    reasoning: Optional[bool] = None
+    reasoning: Optional[Union[bool, str]] = None
     """Controls the reasoning/thinking mode for
     `supported models <https://ollama.com/search?c=thinking>`__.
 
@@ -431,7 +431,13 @@ class ChatOllama(BaseChatModel):
     - ``None`` (Default): The model will use its default reasoning behavior. Note
       however, if the model's default behavior *is* to perform reasoning, think tags
       ()``<think>`` and ``</think>``) will be present within the main response content
-      unless you set ``reasoning`` to ``True``."""
+      unless you set ``reasoning`` to ``True``.
+    - ``str``: e.g. ``'low'``, ``'medium'``, ``'high'``. Enables reasoning with a custom
+      intensity level. Currently, this is only supported ``gpt-oss``. See the
+      `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
+      for more information.
+
+    """
 
     validate_model_on_init: bool = False
     """Whether to validate the model exists in Ollama locally on initialization.

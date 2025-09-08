@@ -238,7 +238,7 @@ def _wrap_in_chain_factory(
             return lambda: RunnableLambda(constructor)
         # Typical correct case
         return constructor
-    return llm_or_chain_factory
+    return llm_or_chain_factory  # type: ignore[unreachable]
 
 
 def _get_prompt(inputs: dict[str, Any]) -> str:
@@ -679,7 +679,7 @@ def _load_run_evaluators(
         elif callable(custom_evaluator):
             run_evaluators.append(run_evaluator_dec(custom_evaluator))
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Unsupported custom evaluator: {custom_evaluator}."
                 f" Expected RunEvaluator or StringEvaluator."
             )

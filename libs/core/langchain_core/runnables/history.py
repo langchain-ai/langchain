@@ -38,7 +38,7 @@ MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
-class RunnableWithMessageHistory(RunnableBindingBase):
+class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     """Runnable that manages chat message history for another Runnable.
 
     A chat message history is a sequence of messages that represent a conversation.

@@ -856,6 +856,13 @@ const FEATURE_TABLES = {
                 source: "Web interaction and structured data extraction from any web page using an AgentQL query or a Natural Language prompt",
                 api: "API",
                 apiLink: "https://python.langchain.com/docs/integrations/document_loaders/agentql/"
+            },
+            {
+                name: "Oxylabs",
+                link: "oxylabs",
+                source: "Web intelligence platform enabling the access to various data sources.",
+                api: "API",
+                apiLink: "https://github.com/oxylabs/langchain-oxylabs"
             }
         ]
     },
