@@ -3,7 +3,7 @@
 import gzip
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Any, Union
 
 import pytest
 import yaml
@@ -42,8 +42,9 @@ class CustomSerializer:
     def deserialize(data: bytes) -> dict:
         """Decompress data and convert it from YAML."""
         text = gzip.decompress(data).decode("utf-8")
-        cassette = yaml.safe_load(text)
-        cassette["requests"] = [Request(**request) for request in cassette["requests"]]
+        cassette["requests"] = [
+            [Request(**request) for request in cassette["requests"]]
+        ]
         return cassette
 
 
