@@ -765,7 +765,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
         payload = super()._get_request_payload(input_, stop=stop, **kwargs)
 
         # For Azure Responses API, use deployment name instead of model name
-        if self._use_responses_api(payload) and self.deployment_name:
+        if (
+            self._use_responses_api(payload)
+            and not payload.get("model")
+            and self.deployment_name
+        ):
             payload["model"] = self.deployment_name
 
         return payload
