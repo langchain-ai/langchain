@@ -957,13 +957,16 @@ def create_agent(  # noqa: D417
             ```python
             from dataclasses import dataclass
 
+
             @dataclass
             class ModelContext:
                 model_name: str = "gpt-3.5-turbo"
 
+
             # Instantiate models globally
             gpt4_model = ChatOpenAI(model="gpt-4")
             gpt35_model = ChatOpenAI(model="gpt-3.5-turbo")
+
 
             def select_model(state: AgentState, runtime: Runtime[ModelContext]) -> ChatOpenAI:
                 model_name = runtime.context.model_name
