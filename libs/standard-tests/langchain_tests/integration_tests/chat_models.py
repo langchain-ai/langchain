@@ -428,7 +428,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         on invoke and streaming responses. Defaults to ``True``.
 
         ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -525,7 +526,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         and stream.
 
         ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -549,7 +551,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def enable_vcr_tests(self) -> bool:
                     return True
 
-        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+        2. Configure VCR to exclude sensitive headers and other information from
+           cassettes.
 
             .. important::
                 VCR will by default record authentication headers and other sensitive
@@ -569,7 +572,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                 :caption: tests/conftest.py
 
                 import pytest
-                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                from langchain_tests.conftest import (
+                    _base_vcr_config as _base_vcr_config,
+                )
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -603,8 +608,13 @@ class ChatModelIntegrationTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
-                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
+                    from langchain_tests.conftest import (
+                        _base_vcr_config as _base_vcr_config,
+                    )
                     from vcr import VCR
 
                     _EXTRA_HEADERS = [
@@ -648,10 +658,15 @@ class ChatModelIntegrationTests(ChatModelTests):
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
 
                     cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
+                    requests, responses = CustomPersister().load_cassette(
+                        path, CustomSerializer()
+                    )
 
         3. Run tests to generate VCR cassettes.
 
@@ -697,9 +712,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(content="Output text")
-                    )]
+                    generations=[
+                        ChatGeneration(message=AIMessage(content="Output text"))
+                    ]
                 )
 
         """
@@ -730,9 +745,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(content="Output text")
-                    )]
+                    generations=[
+                        ChatGeneration(message=AIMessage(content="Output text"))
+                    ]
                 )
 
         """
@@ -763,9 +778,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                yield ChatGenerationChunk(
-                    message=AIMessageChunk(content="chunk text")
-                )
+                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
 
         """
         num_chunks = 0
@@ -800,9 +813,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                yield ChatGenerationChunk(
-                    message=AIMessageChunk(content="chunk text")
-                )
+                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
 
         """
         num_chunks = 0
@@ -920,10 +931,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
-            1. Your model API can handle double messages, or the integration should merge messages before sending them to the API.
+            1. Your model API can handle double messages, or the integration should
+               merge messages before sending them to the API.
             2. The response is a valid :class:`~langchain_core.messages.AIMessage`
 
-        """  # noqa: E501
+        """
         messages = [
             SystemMessage("hello"),
             SystemMessage("hello"),
@@ -1002,25 +1014,27 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(
-                            content="Output text",
-                            usage_metadata={
-                                "input_tokens": 350,
-                                "output_tokens": 240,
-                                "total_tokens": 590,
-                                "input_token_details": {
-                                    "audio": 10,
-                                    "cache_creation": 200,
-                                    "cache_read": 100,
+                    generations=[
+                        ChatGeneration(
+                            message=AIMessage(
+                                content="Output text",
+                                usage_metadata={
+                                    "input_tokens": 350,
+                                    "output_tokens": 240,
+                                    "total_tokens": 590,
+                                    "input_token_details": {
+                                        "audio": 10,
+                                        "cache_creation": 200,
+                                        "cache_read": 100,
+                                    },
+                                    "output_token_details": {
+                                        "audio": 10,
+                                        "reasoning": 200,
+                                    },
                                 },
-                                "output_token_details": {
-                                    "audio": 10,
-                                    "reasoning": 200,
-                                }
-                            }
+                            )
                         )
-                    )]
+                    ]
                 )
 
             Check also that the response includes a ``'model_name'`` key in its
@@ -1173,29 +1187,31 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 yield ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(
-                            content="Output text",
-                            usage_metadata={
-                                "input_tokens": (
-                                    num_input_tokens if is_first_chunk else 0
-                                ),
-                                "output_tokens": 11,
-                                "total_tokens": (
-                                    11+num_input_tokens if is_first_chunk else 11
-                                ),
-                                "input_token_details": {
-                                    "audio": 10,
-                                    "cache_creation": 200,
-                                    "cache_read": 100,
+                    generations=[
+                        ChatGeneration(
+                            message=AIMessage(
+                                content="Output text",
+                                usage_metadata={
+                                    "input_tokens": (
+                                        num_input_tokens if is_first_chunk else 0
+                                    ),
+                                    "output_tokens": 11,
+                                    "total_tokens": (
+                                        11 + num_input_tokens if is_first_chunk else 11
+                                    ),
+                                    "input_token_details": {
+                                        "audio": 10,
+                                        "cache_creation": 200,
+                                        "cache_read": 100,
+                                    },
+                                    "output_token_details": {
+                                        "audio": 10,
+                                        "reasoning": 200,
+                                    },
                                 },
-                                "output_token_details": {
-                                    "audio": 10,
-                                    "reasoning": 200,
-                                }
-                            }
+                            )
                         )
-                    )]
+                    ]
                 )
 
             Check also that the aggregated response includes a ``'model_name'`` key
@@ -1538,9 +1554,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include ``AIMessage`` objects with ``""`` content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly handled and passed to the model in an appropriate format.
-            3. The model can correctly handle ``ToolMessage`` objects with string content and arbitrary string values for ``tool_call_id``.
+            1. The model can correctly handle message histories that include
+               ``AIMessage`` objects with ``""`` content.
+            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
+               handled and passed to the model in an appropriate format.
+            3. The model can correctly handle ``ToolMessage`` objects with string
+               content and arbitrary string values for ``tool_call_id``.
 
             You can ``xfail`` the test if tool calling is implemented but this format
             is not supported.
@@ -1548,10 +1567,12 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_string_content(self, *args: Any) -> None:
+                def test_tool_message_histories_string_content(
+                    self, *args: Any
+                ) -> None:
                     super().test_tool_message_histories_string_content(*args)
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -1625,9 +1646,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include ``AIMessage`` objects with list content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly handled and passed to the model in an appropriate format.
-            3. The model can correctly handle ToolMessage objects with string content and arbitrary string values for ``tool_call_id``.
+            1. The model can correctly handle message histories that include
+               ``AIMessage`` objects with list content.
+            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
+               handled and passed to the model in an appropriate format.
+            3. The model can correctly handle ToolMessage objects with string content
+               and arbitrary string values for ``tool_call_id``.
 
             You can ``xfail`` the test if tool calling is implemented but this format
             is not supported.
@@ -1638,7 +1662,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_message_histories_list_content(self, *args: Any) -> None:
                     super().test_tool_message_histories_list_content(*args)
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -1766,13 +1790,15 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+                def test_tool_calling_with_no_arguments(
+                    self, model: BaseChatModel
+                ) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
             ``tool_choice`` supports the string ``'any'`` to force calling that tool.
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -2317,7 +2343,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
-
                     @property
                     def supports_pdf_inputs(self) -> bool:
                         return False
@@ -2394,7 +2419,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
-
                     @property
                     def supports_audio_inputs(self) -> bool:
                         return False
@@ -2704,7 +2728,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "content": [
                             {
                                 "type": "text",
-                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                                "text": "green is a great pick! "
+                                "that's my sister's favorite color",
                             }
                         ],
                         "is_error": False,
@@ -2732,14 +2757,17 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include message objects with list content.
-            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled and passed to the model in an appropriate format.
-            3. ``HumanMessage``s with "tool_result" content blocks are correctly handled.
+            1. The model can correctly handle message histories that include message
+               objects with list content.
+            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled
+               and passed to the model in an appropriate format.
+            3. ``HumanMessage``s with "tool_result" content blocks are correctly
+               handled.
 
             Otherwise, if Anthropic tool call and result formats are not supported,
             set the ``supports_anthropic_inputs`` property to False.
 
-        """  # noqa: E501
+        """
         if not self.supports_anthropic_inputs:
             pytest.skip("Model does not explicitly support Anthropic inputs.")
 
@@ -3017,13 +3045,15 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Args:
             model: The chat model to test
-            tool_choice: Tool choice parameter to pass to ``bind_tools()`` (provider-specific)
-            force_tool_call: Whether to force a tool call (use ``tool_choice=True`` if None)
+            tool_choice: Tool choice parameter to pass to ``bind_tools()``
+                (provider-specific)
+            force_tool_call: Whether to force a tool call
+                (use ``tool_choice=True`` if None)
 
         Tests that Unicode characters in tool call arguments are preserved correctly,
         not escaped as ``\\uXXXX`` sequences.
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling support.")
 
