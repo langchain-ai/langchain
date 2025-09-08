@@ -47,7 +47,8 @@ class MultipleStructuredOutputsError(StructuredOutputError):
         self.tool_names = tool_names
 
         super().__init__(
-            f"Model incorrectly returned multiple structured responses ({', '.join(tool_names)}) when only one is expected."
+            "Model incorrectly returned multiple structured responses "
+            f"({', '.join(tool_names)}) when only one is expected."
         )
 
 
@@ -98,7 +99,8 @@ class _SchemaSpec(Generic[SchemaT]):
     """Describes a structured output schema."""
 
     schema: type[SchemaT]
-    """The schema for the response, can be a Pydantic model, dataclass, TypedDict, or JSON schema dict."""
+    """The schema for the response, can be a Pydantic model, dataclass, TypedDict,
+    or JSON schema dict."""
 
     name: str
     """Name of the schema, used for tool calling.
@@ -178,7 +180,8 @@ class ToolStrategy(Generic[SchemaT]):
     """Schema specs for the tool calls."""
 
     tool_message_content: str | None
-    """The content of the tool message to be returned when the model calls an artificial structured output tool."""
+    """The content of the tool message to be returned when the model calls
+    an artificial structured output tool."""
 
     handle_errors: (
         bool | str | type[Exception] | tuple[type[Exception], ...] | Callable[[Exception], str]
@@ -204,7 +207,10 @@ class ToolStrategy(Generic[SchemaT]):
         | tuple[type[Exception], ...]
         | Callable[[Exception], str] = True,
     ) -> None:
-        """Initialize ToolStrategy with schemas, tool message content, and error handling strategy."""
+        """Initialize ToolStrategy.
+
+        Initialize ToolStrategy with schemas, tool message content, and error handling strategy.
+        """
         self.schema = schema
         self.tool_message_content = tool_message_content
         self.handle_errors = handle_errors
@@ -268,7 +274,8 @@ class OutputToolBinding(Generic[SchemaT]):
     """
 
     schema: type[SchemaT]
-    """The original schema provided for structured output (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
+    """The original schema provided for structured output
+    (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -321,7 +328,8 @@ class ProviderStrategyBinding(Generic[SchemaT]):
     """
 
     schema: type[SchemaT]
-    """The original schema provided for structured output (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
+    """The original schema provided for structured output
+    (Pydantic model, dataclass, TypedDict, or JSON schema dict)."""
 
     schema_kind: SchemaKind
     """Classification of the schema type for proper response construction."""
@@ -362,7 +370,10 @@ class ProviderStrategyBinding(Generic[SchemaT]):
             data = json.loads(raw_text)
         except Exception as e:
             schema_name = getattr(self.schema, "__name__", "response_format")
-            msg = f"Native structured output expected valid JSON for {schema_name}, but parsing failed: {e}."
+            msg = (
+                f"Native structured output expected valid JSON for {schema_name}, "
+                f"but parsing failed: {e}."
+            )
             raise ValueError(msg) from e
 
         # Parse according to schema

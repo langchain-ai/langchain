@@ -176,8 +176,9 @@ def _validate_chat_history(
     error_message = create_error_message(
         message="Found AIMessages with tool_calls that do not have a corresponding ToolMessage. "
         f"Here are the first few of those tool calls: {tool_calls_without_results[:3]}.\n\n"
-        "Every tool call (LLM requesting to call a tool) in the message history MUST have a corresponding ToolMessage "
-        "(result of a tool invocation to return to the LLM) - this is required by most LLM providers.",
+        "Every tool call (LLM requesting to call a tool) in the message history "
+        "MUST have a corresponding ToolMessage (result of a tool invocation to return to the LLM) -"
+        " this is required by most LLM providers.",
         error_code=ErrorCode.INVALID_CHAT_HISTORY,
     )
     raise ValueError(error_message)
@@ -216,7 +217,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         if isinstance(model, Runnable) and not isinstance(model, BaseChatModel):
             msg = (
                 "Expected `model` to be a BaseChatModel or a string, got {type(model)}."
-                "The `model` parameter should not have pre-bound tools, simply pass the model and tools separately."
+                "The `model` parameter should not have pre-bound tools, "
+                "simply pass the model and tools separately."
             )
             raise ValueError(msg)
 
@@ -308,7 +310,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             Command with structured response update if found, None otherwise
 
         Raises:
-            MultipleStructuredOutputsError: If multiple structured responses are returned and error handling is disabled
+            MultipleStructuredOutputsError: If multiple structured responses are returned
+                and error handling is disabled
             StructuredOutputParsingError: If parsing fails and error handling is disabled
         """
         if not isinstance(self.response_format, ToolStrategy) or not response.tool_calls:
@@ -452,7 +455,11 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
         return model.bind(**kwargs)
 
     def _handle_structured_response_native(self, response: AIMessage) -> Command | None:
-        """If native output is configured and there are no tool calls, parse using ProviderStrategyBinding."""
+        """Handle structured output using the native output.
+
+        If native output is configured and there are no tool calls,
+        parse using ProviderStrategyBinding.
+        """
         if self.native_output_binding is None:
             return None
         if response.tool_calls:
@@ -922,7 +929,8 @@ def create_agent(  # noqa: D417
 ) -> CompiledStateGraph[StateT, ContextT]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
-    For more details on using `create_agent`, visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
+    For more details on using `create_agent`,
+    visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
 
     Args:
         model: The language model for the agent. Supports static and dynamic
@@ -969,25 +977,35 @@ def create_agent(  # noqa: D417
                 must be a subset of those specified in the `tools` parameter.
 
         tools: A list of tools or a ToolNode instance.
-            If an empty list is provided, the agent will consist of a single LLM node without tool calling.
+            If an empty list is provided, the agent will consist of a single LLM node
+            without tool calling.
         prompt: An optional prompt for the LLM. Can take a few different forms:
 
-            - str: This is converted to a SystemMessage and added to the beginning of the list of messages in state["messages"].
-            - SystemMessage: this is added to the beginning of the list of messages in state["messages"].
-            - Callable: This function should take in full graph state and the output is then passed to the language model.
-            - Runnable: This runnable should take in full graph state and the output is then passed to the language model.
+            - str: This is converted to a SystemMessage and added to the beginning
+              of the list of messages in state["messages"].
+            - SystemMessage: this is added to the beginning of the list of messages
+              in state["messages"].
+            - Callable: This function should take in full graph state and the output is then passed
+              to the language model.
+            - Runnable: This runnable should take in full graph state and the output is then passed
+              to the language model.
 
         response_format: An optional UsingToolStrategy configuration for structured responses.
 
-            If provided, the agent will handle structured output via tool calls during the normal conversation flow.
-            When the model calls a structured output tool, the response will be captured and returned in the 'structured_response' state key.
+            If provided, the agent will handle structured output via tool calls
+            during the normal conversation flow.
+            When the model calls a structured output tool, the response will be captured
+            and returned in the 'structured_response' state key.
             If not provided, `structured_response` will not be present in the output state.
 
             The UsingToolStrategy should contain:
-                - schemas: A sequence of ResponseSchema objects that define the structured output format
+
+                - schemas: A sequence of ResponseSchema objects that define
+                  the structured output format
                 - tool_choice: Either "required" or "auto" to control when structured output is used
 
             Each ResponseSchema contains:
+
                 - schema: A Pydantic model that defines the structure
                 - name: Optional custom name for the tool (defaults to model name)
                 - description: Optional custom description (defaults to model docstring)
@@ -997,11 +1015,15 @@ def create_agent(  # noqa: D417
                 `response_format` requires the model to support tool calling
 
             !!! Note
-                Structured responses are handled directly in the model call node via tool calls, eliminating the need for separate structured response nodes.
+                Structured responses are handled directly in the model call node via tool calls,
+                eliminating the need for separate structured response nodes.
 
-        pre_model_hook: An optional node to add before the `agent` node (i.e., the node that calls the LLM).
-            Useful for managing long message histories (e.g., message trimming, summarization, etc.).
-            Pre-model hook must be a callable or a runnable that takes in current graph state and returns a state update in the form of
+        pre_model_hook: An optional node to add before the `agent` node
+            (i.e., the node that calls the LLM).
+            Useful for managing long message histories
+            (e.g., message trimming, summarization, etc.).
+            Pre-model hook must be a callable or a runnable that takes in current
+            graph state and returns a state update in the form of
                 ```python
                 # At least one of `messages` or `llm_input_messages` MUST be provided
                 {
@@ -1016,11 +1038,13 @@ def create_agent(  # noqa: D417
                 ```
 
             !!! Important
-                At least one of `messages` or `llm_input_messages` MUST be provided and will be used as an input to the `agent` node.
+                At least one of `messages` or `llm_input_messages` MUST be provided
+                and will be used as an input to the `agent` node.
                 The rest of the keys will be added to the graph state.
 
             !!! Warning
-                If you are returning `messages` in the pre-model hook, you should OVERWRITE the `messages` key by doing the following:
+                If you are returning `messages` in the pre-model hook,
+                you should OVERWRITE the `messages` key by doing the following:
 
                 ```python
                 {
@@ -1028,9 +1052,12 @@ def create_agent(  # noqa: D417
                     ...
                 }
                 ```
-        post_model_hook: An optional node to add after the `agent` node (i.e., the node that calls the LLM).
-            Useful for implementing human-in-the-loop, guardrails, validation, or other post-processing.
-            Post-model hook must be a callable or a runnable that takes in current graph state and returns a state update.
+        post_model_hook: An optional node to add after the `agent` node
+            (i.e., the node that calls the LLM).
+            Useful for implementing human-in-the-loop, guardrails, validation,
+            or other post-processing.
+            Post-model hook must be a callable or a runnable that takes in
+            current graph state and returns a state update.
 
             !!! Note
                 Only available with `version="v2"`.
@@ -1039,12 +1066,14 @@ def create_agent(  # noqa: D417
             Defaults to `AgentState` that defines those two keys.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object. This is used for persisting
-            the state of the graph (e.g., as chat memory) for a single thread (e.g., a single conversation).
+            the state of the graph (e.g., as chat memory) for a single thread
+            (e.g., a single conversation).
         store: An optional store object. This is used for persisting data
             across multiple threads (e.g., multiple conversations / users).
         interrupt_before: An optional list of node names to interrupt before.
             Should be one of the following: "agent", "tools".
-            This is useful if you want to add a user confirmation or other interrupt before taking an action.
+            This is useful if you want to add a user confirmation or other interrupt
+            before taking an action.
         interrupt_after: An optional list of node names to interrupt after.
             Should be one of the following: "agent", "tools".
             This is useful if you want to return directly or run additional processing on an output.
@@ -1059,7 +1088,8 @@ def create_agent(  # noqa: D417
                 node using the [Send](https://langchain-ai.github.io/langgraph/concepts/low_level/#send)
                 API.
         name: An optional name for the CompiledStateGraph.
-            This name will be automatically used when adding ReAct agent graph to another graph as a subgraph node -
+            This name will be automatically used when adding ReAct agent graph to
+            another graph as a subgraph node -
             particularly useful for building multi-agent systems.
 
     !!! warning "`config_schema` Deprecated"
@@ -1071,9 +1101,11 @@ def create_agent(  # noqa: D417
         A compiled LangChain runnable that can be used for chat interactions.
 
     The "agent" node calls the language model with the messages list (after applying the prompt).
-    If the resulting AIMessage contains `tool_calls`, the graph will then call the ["tools"][langgraph.prebuilt.tool_node.ToolNode].
-    The "tools" node executes the tools (1 tool per `tool_call`) and adds the responses to the messages list
-    as `ToolMessage` objects. The agent node then calls the language model again.
+    If the resulting AIMessage contains `tool_calls`,
+    the graph will then call the ["tools"][langgraph.prebuilt.tool_node.ToolNode].
+    The "tools" node executes the tools (1 tool per `tool_call`)
+    and adds the responses to the messages list as `ToolMessage` objects.
+    The agent node then calls the language model again.
     The process repeats until no more `tool_calls` are present in the response.
     The agent then returns the full list of messages as a dictionary containing the key "messages".
 
@@ -1135,7 +1167,8 @@ def create_agent(  # noqa: D417
     # Handle deprecated config_schema parameter
     if (config_schema := deprecated_kwargs.pop("config_schema", MISSING)) is not MISSING:
         warn(
-            "`config_schema` is deprecated and will be removed. Please use `context_schema` instead.",
+            "`config_schema` is deprecated and will be removed. "
+            "Please use `context_schema` instead.",
             category=DeprecationWarning,
             stacklevel=2,
         )

@@ -65,7 +65,10 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Right now, we do not support multiple tool calls with interrupts
         if len(interrupt_tool_calls) > 1:
             tool_names = [t["name"] for t in interrupt_tool_calls]
-            msg = f"Called the following tools which require interrupts: {tool_names}\n\nYou may only call ONE tool that requires an interrupt at a time"
+            msg = (
+                f"Called the following tools which require interrupts: {tool_names}\n\n"
+                "You may only call ONE tool that requires an interrupt at a time"
+            )
             return {
                 "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
                 "jump_to": "model",
@@ -74,7 +77,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Right now, we do not support interrupting a tool call if other tool calls exist
         if auto_approved_tool_calls:
             tool_names = [t["name"] for t in interrupt_tool_calls]
-            msg = f"Called the following tools which require interrupts: {tool_names}. You also called other tools that do not require interrupts. If you call a tool that requires and interrupt, you may ONLY call that tool."
+            msg = (
+                f"Called the following tools which require interrupts: {tool_names}. "
+                "You also called other tools that do not require interrupts. "
+                "If you call a tool that requires and interrupt, you may ONLY call that tool."
+            )
             return {
                 "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
                 "jump_to": "model",
