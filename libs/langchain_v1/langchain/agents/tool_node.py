@@ -23,9 +23,11 @@ Typical Usage:
     from langchain_core.tools import tool
     from langchain.agents import ToolNode
 
+
     @tool
     def my_tool(x: int) -> str:
         return f"Result: {x}"
+
 
     tool_node = ToolNode([my_tool])
     ```
@@ -368,6 +370,7 @@ class ToolNode(RunnableCallable):
         ```python
         def handle_errors(e: ValueError) -> str:
             return "Invalid input provided"
+
 
         tool_node = ToolNode([my_tool], handle_tool_errors=handle_errors)
         ```
@@ -887,8 +890,10 @@ def tools_condition(
         from langgraph.agents.tool_node import ToolNode, tools_condition
         from typing_extensions import TypedDict
 
+
         class State(TypedDict):
             messages: list
+
 
         graph = StateGraph(State)
         graph.add_node("llm", call_model)
@@ -896,7 +901,7 @@ def tools_condition(
         graph.add_conditional_edges(
             "llm",
             tools_condition,  # Routes to "tools" or "__end__"
-            {"tools": "tools", "__end__": "__end__"}
+            {"tools": "tools", "__end__": "__end__"},
         )
         ```
 
@@ -956,6 +961,7 @@ class InjectedState(InjectedToolArg):
             messages: List[BaseMessage]
             foo: str
 
+
         @tool
         def state_tool(x: int, state: Annotated[dict, InjectedState]) -> str:
             '''Do something with state.'''
@@ -964,10 +970,12 @@ class InjectedState(InjectedToolArg):
             else:
                 return "not enough messages"
 
+
         @tool
         def foo_tool(x: int, foo: Annotated[str, InjectedState("foo")]) -> str:
             '''Do something else with state.'''
             return foo + str(x + 1)
+
 
         node = ToolNode([state_tool, foo_tool])
 
@@ -982,8 +990,8 @@ class InjectedState(InjectedToolArg):
 
         ```pycon
         [
-            ToolMessage(content='not enough messages', name='state_tool', tool_call_id='1'),
-            ToolMessage(content='bar2', name='foo_tool', tool_call_id='2')
+            ToolMessage(content="not enough messages", name="state_tool", tool_call_id="1"),
+            ToolMessage(content="bar2", name="foo_tool", tool_call_id="2"),
         ]
         ```
 
