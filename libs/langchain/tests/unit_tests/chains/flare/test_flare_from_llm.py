@@ -1,20 +1,26 @@
+from __future__ import annotations
+
+from typing import Iterable
+
 import pytest
-
 from langchain.chains.flare.base import FlareChain
-from langchain_core.retrievers import BaseRetriever
 from langchain_core.documents import Document
-from typing import List
+from langchain_core.retrievers import BaseRetriever
 
 
-class _EmptyRetriever(BaseRetriever):  # Minimal retriever for tests
-    def _get_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
+class _EmptyRetriever(BaseRetriever):
+    """Minimal no-op retriever used only for constructing FlareChain in tests."""
+
+    def _get_relevant_documents(self, query: str) -> list[Document]:  # type: ignore[override]
+        del query  # mark used
         return []
 
-    async def _aget_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
+    async def _aget_relevant_documents(self, query: str) -> list[Document]:  # type: ignore[override]
+        del query  # mark used
         return []
 
 
-def test_from_llm_rejects_non_chatopenai():
+def test_from_llm_rejects_non_chatopenai() -> None:
     class Dummy:
         pass
 
@@ -22,7 +28,7 @@ def test_from_llm_rejects_non_chatopenai():
         FlareChain.from_llm(Dummy())  # type: ignore[arg-type]
 
 
-def test_from_llm_uses_supplied_chatopenai(monkeypatch):
+def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         from langchain_openai import ChatOpenAI
     except ImportError:  # pragma: no cover
@@ -35,13 +41,13 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch):
     chain = FlareChain.from_llm(
         supplied,
         max_generation_len=32,
-        retriever=_EmptyRetriever(),  # Provide required field
+        retriever=_EmptyRetriever(),
     )
 
     # Walk to ensure identical instance appears (not overwritten)
-    seen = set()
+    seen: set[int] = set()
 
-    def contains(target, obj):
+    def contains(target: object, obj: object) -> bool:
         if id(obj) in seen:
             return False
         seen.add(id(obj))
@@ -51,12 +57,12 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch):
             if name.startswith("__"):
                 continue
             try:
-                v = getattr(obj, name)
-            except Exception:  # noqa: BLE001
+                value = getattr(obj, name)
+            except AttributeError:  # attribute missing only
                 continue
-            if isinstance(v, (str, int, float, bool, type(None))):
+            if isinstance(value, (str, int, float, bool, type(None))):
                 continue
-            if contains(target, v):
+            if contains(target, value):
                 return True
         return False
 
