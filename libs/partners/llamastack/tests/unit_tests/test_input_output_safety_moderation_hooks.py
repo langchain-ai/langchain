@@ -4,12 +4,12 @@ from typing import Any
 from unittest.mock import Mock
 
 from langchain_llamastack.input_output_safety_moderation_hooks import (
+    SafeLLMWrapper,
     create_input_only_safe_llm,
     create_output_only_safe_llm,
     create_safe_llm,
     create_safe_llm_with_all_hooks,
     create_safety_hook,
-    SafeLLMWrapper,
 )
 from langchain_llamastack.safety import SafetyResult
 
