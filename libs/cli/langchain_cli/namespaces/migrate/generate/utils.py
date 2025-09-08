@@ -66,7 +66,7 @@ def is_subclass(class_obj: type, classes_: list[type]) -> bool:
         classes_: A list of classes to check against.
 
     Returns:
-        True if class_obj is a subclass of any class in classes_, False otherwise.
+        True if `class_obj` is a subclass of any class in `classes_`, False otherwise.
     """
     return any(
         issubclass(class_obj, kls)
@@ -83,7 +83,7 @@ def find_subclasses_in_module(module: ModuleType, classes_: list[type]) -> list[
         classes_: A list of classes to check against.
 
     Returns:
-        A list of class names that are subclasses of any class in classes_.
+        A list of class names that are subclasses of any class in `classes_`.
     """
     subclasses = []
     # Iterate over all attributes of the module that are classes
@@ -114,7 +114,7 @@ def identify_all_imports_in_file(
         from_package: If provided, only return imports from this package.
 
     Returns:
-        A list of tuples (module, name) representing the imports found in the file.
+        A list of tuples `(module, name)` representing the imports found in the file.
     """
     code = Path(file).read_text(encoding="utf-8")
     return find_imports_from_package(code, from_package=from_package)
@@ -131,7 +131,7 @@ def identify_pkg_source(pkg_root: str) -> pathlib.Path:
         Returns the path to the source code for the package.
 
     Raises:
-        ValueError: If there is not exactly one directory starting with "langchain_"
+        ValueError: If there is not exactly one directory starting with `'langchain_'`
             in the package root.
     """
     dirs = [d for d in Path(pkg_root).iterdir() if d.is_dir()]
@@ -149,7 +149,7 @@ def list_classes_by_package(pkg_root: str) -> list[tuple[str, str]]:
         pkg_root: the root of the package.
 
     Returns:
-        A list of tuples (module, class_name) representing all classes found in the
+        A list of tuples `(module, class_name)` representing all classes found in the
         package, excluding test files.
     """
     module_classes = []
@@ -171,7 +171,7 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
         pkg_root: the root of the package.
 
     Returns:
-        A list of tuples (module, name) representing the imports found in __init__.py
+        A list of tuples `(module, name)` representing the imports found in `__init__.py`
         files.
     """
     imports = []
@@ -200,7 +200,7 @@ def find_imports_from_package(
         from_package: If provided, only return imports from this package.
 
     Returns:
-        A list of tuples (module, name) representing the imports found.
+        A list of tuples `(module, name)` representing the imports found.
     """
     # Parse the code into an AST
     tree = ast.parse(code)

@@ -8,7 +8,7 @@ def split_package(package: str) -> tuple[str, str]:
         package: The full package name.
 
     Returns:
-        A tuple of (containing_package, final_name).
+        A tuple of `(containing_package, final_name)`.
     """
     parts = package.split(".")
     return ".".join(parts[:-1]), parts[-1]
@@ -19,7 +19,7 @@ def dump_migrations_as_grit(name: str, migration_pairs: list[tuple[str, str]]) -
 
     Args:
         name: The name of the migration.
-        migration_pairs: A list of tuples (from_module, to_module).
+        migration_pairs: A list of tuples `(from_module, to_module)`.
 
     Returns:
         The Grit file as a string.

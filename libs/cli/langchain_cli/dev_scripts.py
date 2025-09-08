@@ -18,15 +18,14 @@ def create_demo_server(
 
     Args:
         config_keys: Optional sequence of config keys to expose in the playground.
-        playground_type: The type of playground to use. Can be "default" or "chat".
-            Defaults to "default".
+        playground_type: The type of playground to use. Can be `'default'` or `'chat'`.
 
     Returns:
         The demo server.
 
     Raises:
-        KeyError: If the pyproject.toml file is missing required fields.
-        ImportError: If the module defined in pyproject.toml cannot be imported.
+        KeyError: If the `pyproject.toml` file is missing required fields.
+        ImportError: If the module defined in `pyproject.toml` cannot be imported.
     """
     app = FastAPI()
     package_root = get_package_root()

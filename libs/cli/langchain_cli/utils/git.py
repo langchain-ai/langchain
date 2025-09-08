@@ -154,7 +154,7 @@ def parse_dependencies(
         A list of DependencySource objects.
 
     Raises:
-        ValueError: if the number of dependencies, repos, branches, or api_paths
+        ValueError: if the number of `dependencies`, `repos`, `branches`, or `api_paths`
             do not match.
 
     """

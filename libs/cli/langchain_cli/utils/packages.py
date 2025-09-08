@@ -17,7 +17,7 @@ def get_package_root(cwd: Optional[Path] = None) -> Path:
         The path to the package root directory.
 
     Raises:
-        FileNotFoundError: If no pyproject.toml file is found in the directory
+        FileNotFoundError: If no `pyproject.toml` file is found in the directory
             hierarchy.
     """
     # traverse path for routes to host (any directory holding a pyproject.toml file)
@@ -50,16 +50,16 @@ class LangServeExport(TypedDict):
 
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
-    """Get LangServe export information from a pyproject.toml file.
+    """Get LangServe export information from a `pyproject.toml` file.
 
     Args:
-        filepath: Path to the pyproject.toml file.
+        filepath: Path to the `pyproject.toml` file.
 
     Returns:
         The LangServeExport information.
 
     Raises:
-        KeyError: If the pyproject.toml file is missing required fields.
+        KeyError: If the `pyproject.toml` file is missing required fields.
     """
     with filepath.open() as f:
         data: dict[str, Any] = load(f)

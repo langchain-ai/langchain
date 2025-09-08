@@ -16,7 +16,7 @@ def generate_raw_migrations(
     Args:
         from_package: The package to migrate from.
         to_package: The package to migrate to.
-        filter_by_all: Whether to only consider items in __all__.
+        filter_by_all: Whether to only consider items in `__all__`.
 
     Returns:
         A list of tuples containing the original import path and the new import path.
@@ -151,7 +151,7 @@ def generate_simplified_migrations(
     Args:
         from_package: The package to migrate from.
         to_package: The package to migrate to.
-        filter_by_all: Whether to only consider items in __all__.
+        filter_by_all: Whether to only consider items in `__all__`.
 
     Returns:
         A list of tuples containing the original import path and the simplified

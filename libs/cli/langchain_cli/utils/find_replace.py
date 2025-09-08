@@ -8,7 +8,7 @@ def find_and_replace(source: str, replacements: dict[str, str]) -> str:
 
     Args:
         source: The source string.
-        replacements: A dictionary of {find: replace} pairs.
+        replacements: A dictionary of `{find: replace}` pairs.
 
     Returns:
         The modified string.
