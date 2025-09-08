@@ -1057,24 +1057,27 @@ class ChatAnthropic(BaseChatModel):
 
         .. dropdown:: Extended caching
 
-            .. versionadded:: 0.3.15
-
             The cache lifetime is 5 minutes by default. If this is too short, you can
-            apply one hour caching by enabling the ``'extended-cache-ttl-2025-04-11'``
-            beta header:
+            apply one hour caching by setting ``ttl`` to ``'1h'``.
 
             .. code-block:: python
 
                 llm = ChatAnthropic(
                     model="claude-3-7-sonnet-20250219",
-                    betas=["extended-cache-ttl-2025-04-11"],
                 )
 
-            and specifying ``"cache_control": {"type": "ephemeral", "ttl": "1h"}``.
+                messages = [{
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "text",
+                                "text": f"{long_text}",
+                                "cache_control": {"type": "ephemeral", "ttl": "1h"},
+                            },
+                        ],
+                }]
 
-            .. important::
-                Specifying a `ttl` key under `cache_control` will not work unless the
-                beta header is set!
+                response = llm.invoke(messages)
 
             Details of cached token counts will be included on the ``InputTokenDetails``
             of response's ``usage_metadata``:
@@ -1493,6 +1496,7 @@ class ChatAnthropic(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: dict,
     ) -> dict:
+        """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
 
         for idx, message in enumerate(messages):
@@ -1525,23 +1529,6 @@ class ChatAnthropic(BaseChatModel):
         # If cache_control is provided in kwargs, add it to last message
         # and content block.
         if "cache_control" in kwargs and formatted_messages:
-            cache_control = kwargs["cache_control"]
-
-            # Validate TTL usage requires extended cache TTL beta header
-            if (
-                isinstance(cache_control, dict)
-                and "ttl" in cache_control
-                and (
-                    not self.betas or "extended-cache-ttl-2025-04-11" not in self.betas
-                )
-            ):
-                msg = (
-                    "Specifying a 'ttl' under 'cache_control' requires enabling "
-                    "the 'extended-cache-ttl-2025-04-11' beta header. "
-                    "Set betas=['extended-cache-ttl-2025-04-11'] when initializing "
-                    "ChatAnthropic."
-                )
-                warnings.warn(msg, stacklevel=2)
             if isinstance(formatted_messages[-1]["content"], list):
                 formatted_messages[-1]["content"][-1]["cache_control"] = kwargs.pop(
                     "cache_control"
@@ -1662,6 +1649,7 @@ class ChatAnthropic(BaseChatModel):
             _handle_anthropic_bad_request(e)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
 
@@ -2433,6 +2421,7 @@ def _make_message_chunk_from_anthropic_event(
             },
         )
         if message_chunk.response_metadata.get("stop_reason"):
+            # Mark final Anthropic stream chunk
             message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events

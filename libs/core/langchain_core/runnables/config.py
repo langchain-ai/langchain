@@ -10,23 +10,33 @@ from concurrent.futures import Executor, Future, ThreadPoolExecutor
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
-from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Optional,
+    ParamSpec,
+    TypeVar,
+    Union,
+    cast,
+)
 
-from typing_extensions import ParamSpec, TypedDict
+from langsmith.run_helpers import _set_tracing_context, get_tracing_context
+from typing_extensions import TypedDict
 
+from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.runnables.utils import (
     Input,
     Output,
     accepts_config,
     accepts_run_manager,
 )
+from langchain_core.tracers.langchain import LangChainTracer
 
 if TYPE_CHECKING:
     from langchain_core.callbacks.base import BaseCallbackManager, Callbacks
     from langchain_core.callbacks.manager import (
-        AsyncCallbackManager,
         AsyncCallbackManagerForChainRun,
-        CallbackManager,
         CallbackManagerForChainRun,
     )
 else:
@@ -125,9 +135,10 @@ def _set_config_context(
 
     Args:
         config (RunnableConfig): The config to set.
-    """
-    from langchain_core.tracers.langchain import LangChainTracer
 
+    Returns:
+        The token to reset the config and the previous tracing context.
+    """
     config_token = var_child_runnable_config.set(config)
     current_context = None
     if (
@@ -147,8 +158,6 @@ def _set_config_context(
         )
         and (run := tracer.run_map.get(str(parent_run_id)))
     ):
-        from langsmith.run_helpers import _set_tracing_context, get_tracing_context
-
         current_context = get_tracing_context()
         _set_tracing_context({"parent": run})
     return config_token, current_context
@@ -160,9 +169,10 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
 
     Args:
         config (RunnableConfig): The config to set.
-    """
-    from langsmith.run_helpers import _set_tracing_context
 
+    Yields:
+        The config context.
+    """
     ctx = copy_context()
     config_token, _ = ctx.run(_set_config_context, config)
     try:
@@ -475,8 +485,6 @@ def get_callback_manager_for_config(config: RunnableConfig) -> CallbackManager:
     Returns:
         CallbackManager: The callback manager.
     """
-    from langchain_core.callbacks.manager import CallbackManager
-
     return CallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -495,8 +503,6 @@ def get_async_callback_manager_for_config(
     Returns:
         AsyncCallbackManager: The async callback manager.
     """
-    from langchain_core.callbacks.manager import AsyncCallbackManager
-
     return AsyncCallbackManager.configure(
         inheritable_callbacks=config.get("callbacks"),
         inheritable_tags=config.get("tags"),
@@ -598,9 +604,6 @@ async def run_in_executor(
 
     Returns:
         Output: The output of the function.
-
-    Raises:
-        RuntimeError: If the function raises a StopIteration.
     """
 
     def wrapper() -> T:

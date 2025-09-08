@@ -12,16 +12,18 @@ from typing import (
     Callable,
     Literal,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import Callbacks
+from langchain_core.globals import get_verbose
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -29,12 +31,23 @@ from langchain_core.messages import (
     MessageLikeRepresentation,
     get_buffer_string,
 )
-from langchain_core.prompt_values import PromptValue
+from langchain_core.prompt_values import (
+    ChatPromptValueConcrete,
+    PromptValue,
+    StringPromptValue,
+)
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
+
+try:
+    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+
+    _HAS_TRANSFORMERS = True
+except ImportError:
+    _HAS_TRANSFORMERS = False
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -60,16 +73,20 @@ def get_tokenizer() -> Any:
 
     This function is cached to avoid re-loading the tokenizer every time it is called.
 
+    Raises:
+        ImportError: If the transformers package is not installed.
+
+    Returns:
+        The GPT-2 tokenizer instance.
+
     """
-    try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
-    except ImportError as e:
+    if not _HAS_TRANSFORMERS:
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -90,8 +107,6 @@ LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
 
 
 def _get_verbosity() -> bool:
-    from langchain_core.globals import get_verbose
-
     return get_verbose()
 
 
@@ -153,11 +168,6 @@ class BaseLanguageModel(
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
-
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
@@ -181,10 +191,11 @@ class BaseLanguageModel(
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of PromptValues. A PromptValue is an object that can be
@@ -217,10 +228,11 @@ class BaseLanguageModel(
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of PromptValues. A PromptValue is an object that can be

@@ -101,16 +101,14 @@ class BasePromptTemplate(
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Returns ["langchain", "schema", "prompt_template"].
+        Returns:
+            ``["langchain", "schema", "prompt_template"]``
         """
         return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable.
-
-        Returns True.
-        """
+        """Return True as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -212,7 +210,7 @@ class BasePromptTemplate(
         if self.metadata:
             config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
-            config["tags"] = config["tags"] + self.tags
+            config["tags"] += self.tags
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
@@ -341,9 +339,6 @@ class BasePromptTemplate(
 
         Returns:
             Dict: Dictionary representation of the prompt.
-
-        Raises:
-            NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -384,10 +379,10 @@ class BasePromptTemplate(
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"

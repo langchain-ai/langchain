@@ -5,7 +5,7 @@ import pytest
 from pydantic import BaseModel
 from syrupy.assertion import SnapshotAssertion
 
-from langchain.agents import create_react_agent
+from langchain.agents import create_agent
 
 from .model import FakeToolCallingModel
 
@@ -39,7 +39,7 @@ def test_react_agent_graph_structure(
     pre_model_hook: Union[Callable, None],
     post_model_hook: Union[Callable, None],
 ) -> None:
-    agent = create_react_agent(
+    agent = create_agent(
         model,
         tools=tools,
         pre_model_hook=pre_model_hook,

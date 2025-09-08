@@ -40,7 +40,6 @@ langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain", editable = true }
 
 [tool.ruff]
-target-version = "py310"
 exclude = [
     "langchain_cli/integration_template",
     "langchain_cli/package_template",
@@ -52,6 +51,7 @@ select = [ "ALL",]
 ignore = [
     "C90",     # McCabe complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "PERF203", # Rarely useful
     "PLR09",   # Too many something (arg, statements, etc)
@@ -78,7 +78,7 @@ pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [ "D1", "S", "SLF",]
+"tests/**" = [ "D1", "DOC", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
 
 [tool.mypy]

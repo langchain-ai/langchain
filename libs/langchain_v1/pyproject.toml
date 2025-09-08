@@ -8,13 +8,13 @@ license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
     "langchain-core<2.0.0,>=0.3.75",
-    "langchain-text-splitters<1.0.0,>=0.3.9",
-    "langgraph>=0.6.0",
+    "langchain-text-splitters<1.0.0,>=0.3.11",
+    "langgraph>=0.6.7",
     "pydantic>=2.7.4",
 ]
 
 name = "langchain"
-version = "1.0.0a2"
+version = "1.0.0a4"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -60,9 +60,9 @@ test = [
 codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
     "ruff>=0.12.2",
-    "mypy>=1.15",
 ]
 typing = [
+    "mypy<1.18,>=1.17.1",
     "types-toml>=0.10.8.20240310",
 ]
 
@@ -83,24 +83,18 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py310"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 line-length = 100
 
 [tool.mypy]
-strict = "True"
-strict_bytes = "True"
-ignore_missing_imports = "True"
+strict = true
+ignore_missing_imports = true
 enable_error_code = "deprecated"
-report_deprecated_as_note = "True"
 exclude = ["tests/unit_tests/agents/*", "tests/integration_tests/agents/*"]
 
 # TODO: activate for 'strict' checking
-disallow_untyped_calls = "False"
-disallow_any_generics = "False"
-disallow_untyped_decorators = "False"
-warn_return_any = "False"
-strict_equality = "False"
+disallow_any_generics = false
+warn_return_any = false
 
 [tool.codespell]
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
@@ -112,9 +106,6 @@ select = [
   "ALL"
 ]
 ignore = [
-  "D100",    # pydocstyle: Missing docstring in public module
-  "D104",    # pydocstyle: Missing docstring in public package
-  "D105",    # pydocstyle: Missing docstring in magic method
   "COM812",  # Messes with the formatter
   "ISC001",  # Messes with the formatter
   "PERF203", # Rarely useful
@@ -132,7 +123,7 @@ flake8-annotations.allow-star-arg-any = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-  "D", # Documentation rules
+  "D1", # Documentation rules
   "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
 "langchain/agents/*" = [
