@@ -153,7 +153,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 self.template_format,
                 self.input_variables + list(self.partial_variables),
             )
-        elif self.template_format or None:
+        elif self.template_format:
             self.input_variables = [
                 var
                 for var in get_template_variables(

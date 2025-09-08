@@ -5263,10 +5263,13 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[StreamEvent]:
+        def _error_stream_event(message: str) -> StreamEvent:
+            raise NotImplementedError(message)
+
         for _ in range(1):
-            msg = "RunnableEach does not support astream_events yet."
-            raise NotImplementedError(msg)
-            yield
+            yield _error_stream_event(
+                "RunnableEach does not support astream_events yet."
+            )
 
 
 class RunnableEach(RunnableEachBase[Input, Output]):
