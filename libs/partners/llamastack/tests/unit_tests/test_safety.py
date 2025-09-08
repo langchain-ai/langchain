@@ -269,7 +269,7 @@ class TestLlamaStackSafety:
         )
 
         # Ensure hasattr works correctly
-        def custom_hasattr(obj, name):
+        def custom_hasattr(obj: Any, name: str) -> bool:
             return name in [
                 "is_violation",
                 "violation_level",
