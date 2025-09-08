@@ -1,3 +1,5 @@
+"""Tools."""
+
 from langchain_core.tools import (
     BaseTool,
     InjectedToolArg,
