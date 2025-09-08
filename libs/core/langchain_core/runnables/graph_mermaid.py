@@ -155,7 +155,7 @@ def draw_mermaid(
         nonlocal mermaid_graph
         self_loop = len(edges) == 1 and edges[0].source == edges[0].target
         if prefix and not self_loop:
-            subgraph = prefix.split(":")[-1]
+            subgraph = prefix.rsplit(":", maxsplit=1)[-1]
             if subgraph in seen_subgraphs:
                 msg = (
                     f"Found duplicate subgraph '{subgraph}' -- this likely means that "
@@ -214,7 +214,7 @@ def draw_mermaid(
 
     # Add remaining subgraphs with edges
     for prefix, edges_ in edge_groups.items():
-        if ":" in prefix or prefix == "":
+        if not prefix or ":" in prefix:
             continue
         add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
