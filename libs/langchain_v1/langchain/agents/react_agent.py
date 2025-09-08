@@ -11,7 +11,6 @@ from typing import (
     Any,
     Generic,
     Literal,
-    Union,
     cast,
     get_type_hints,
 )
@@ -104,12 +103,12 @@ class AgentStateWithStructuredResponsePydantic(AgentStatePydantic, Generic[Struc
 
 PROMPT_RUNNABLE_NAME = "Prompt"
 
-Prompt = Union[
-    SystemMessage,
-    str,
-    Callable[[StateT], LanguageModelInput],
-    Runnable[StateT, LanguageModelInput],
-]
+Prompt = (
+    SystemMessage
+    | str
+    | Callable[[StateT], LanguageModelInput]
+    | Runnable[StateT, LanguageModelInput]
+)
 
 
 def _get_state_value(state: StateT, key: str, default: Any = None) -> Any:
@@ -189,12 +188,8 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
     def __init__(
         self,
-        model: Union[
-            str,
-            BaseChatModel,
-            SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
-        ],
-        tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
+        model: str | BaseChatModel | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
+        tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
         *,
         prompt: Prompt | None = None,
         response_format: ResponseFormat[StructuredResponseT] | None = None,
@@ -691,10 +686,10 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             return CallModelInputSchema
         return self._final_state_schema
 
-    def create_model_router(self) -> Callable[[StateT], Union[str, list[Send]]]:
+    def create_model_router(self) -> Callable[[StateT], str | list[Send]]:
         """Create routing function for model node conditional edges."""
 
-        def should_continue(state: StateT) -> Union[str, list[Send]]:
+        def should_continue(state: StateT) -> str | list[Send]:
             messages = _get_state_value(state, "messages")
             last_message = messages[-1]
 
@@ -731,10 +726,10 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
     def create_post_model_hook_router(
         self,
-    ) -> Callable[[StateT], Union[str, list[Send]]]:
+    ) -> Callable[[StateT], str | list[Send]]:
         """Create a routing function for post_model_hook node conditional edges."""
 
-        def post_model_hook_router(state: StateT) -> Union[str, list[Send]]:
+        def post_model_hook_router(state: StateT) -> str | list[Send]:
             messages = _get_state_value(state, "messages")
 
             # Check if the last message is a ToolMessage from a structured tool.
@@ -882,7 +877,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
 
 
 def _supports_native_structured_output(
-    model: Union[str, BaseChatModel, SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel]],
+    model: str | BaseChatModel | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
 ) -> bool:
     """Check if a model supports native structured output.
 
@@ -903,20 +898,14 @@ def _supports_native_structured_output(
 
 
 def create_agent(  # noqa: D417
-    model: Union[
-        str,
-        BaseChatModel,
-        SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
-    ],
-    tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
+    model: str | BaseChatModel | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
     *,
     middleware: Sequence[AgentMiddleware] = (),
     prompt: Prompt | None = None,
-    response_format: Union[
-        ToolStrategy[StructuredResponseT],
-        ProviderStrategy[StructuredResponseT],
-        type[StructuredResponseT],
-    ]
+    response_format: ToolStrategy[StructuredResponseT]
+    | ProviderStrategy[StructuredResponseT]
+    | type[StructuredResponseT]
     | None = None,
     pre_model_hook: RunnableLike | None = None,
     post_model_hook: RunnableLike | None = None,
@@ -1172,7 +1161,7 @@ def create_agent(  # noqa: D417
         model=model,
         tools=tools,
         prompt=prompt,
-        response_format=cast("Union[ResponseFormat[StructuredResponseT], None]", response_format),
+        response_format=cast("ResponseFormat[StructuredResponseT] | None", response_format),
         pre_model_hook=pre_model_hook,
         post_model_hook=post_model_hook,
         state_schema=state_schema,

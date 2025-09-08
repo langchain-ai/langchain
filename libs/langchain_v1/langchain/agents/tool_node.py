@@ -89,7 +89,7 @@ TOOL_EXECUTION_ERROR_TEMPLATE = "Error executing tool '{tool_name}' with kwargs 
 TOOL_INVOCATION_ERROR_TEMPLATE = "Error invoking tool '{tool_name}' with kwargs {tool_kwargs} with error:\n {error}\n Please fix the error and try again."
 
 
-def msg_content_output(output: Any) -> Union[str, list[dict]]:
+def msg_content_output(output: Any) -> str | list[dict]:
     """Convert tool output to valid message content format.
 
     LangChain ToolMessages accept either string content or a list of content blocks.
@@ -159,13 +159,7 @@ def _default_handle_tool_errors(e: Exception) -> str:
 def _handle_tool_error(
     e: Exception,
     *,
-    flag: Union[
-        bool,
-        str,
-        Callable[..., str],
-        type[Exception],
-        tuple[type[Exception], ...],
-    ],
+    flag: bool | str | Callable[..., str] | type[Exception] | tuple[type[Exception], ...],
 ) -> str:
     """Generate error message content based on exception handling configuration.
 
@@ -377,13 +371,15 @@ class ToolNode(RunnableCallable):
 
     def __init__(
         self,
-        tools: Sequence[Union[BaseTool, Callable]],
+        tools: Sequence[BaseTool | Callable],
         *,
         name: str = "tools",
         tags: list[str] | None = None,
-        handle_tool_errors: Union[
-            bool, str, Callable[..., str], type[Exception], tuple[type[Exception], ...]
-        ] = _default_handle_tool_errors,
+        handle_tool_errors: bool
+        | str
+        | Callable[..., str]
+        | type[Exception]
+        | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
     ) -> None:
         """Initialize the ToolNode with the provided tools and configuration.
@@ -417,11 +413,7 @@ class ToolNode(RunnableCallable):
 
     def _func(
         self,
-        input: Union[
-            list[AnyMessage],
-            dict[str, Any],
-            BaseModel,
-        ],
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
         store: Optional[BaseStore],  # noqa: UP045
@@ -436,11 +428,7 @@ class ToolNode(RunnableCallable):
 
     async def _afunc(
         self,
-        input: Union[
-            list[AnyMessage],
-            dict[str, Any],
-            BaseModel,
-        ],
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
         config: RunnableConfig,
         *,
         store: Optional[BaseStore],  # noqa: UP045
@@ -454,9 +442,9 @@ class ToolNode(RunnableCallable):
 
     def _combine_tool_outputs(
         self,
-        outputs: list[Union[ToolMessage, Command]],
+        outputs: list[ToolMessage | Command],
         input_type: Literal["list", "dict", "tool_calls"],
-    ) -> list[Union[Command, list[ToolMessage], dict[str, list[ToolMessage]]]]:
+    ) -> list[Command | list[ToolMessage] | dict[str, list[ToolMessage]]]:
         # preserve existing behavior for non-command tool outputs for backwards
         # compatibility
         if not any(isinstance(output, Command) for output in outputs):
@@ -499,7 +487,7 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
-    ) -> Union[ToolMessage, Command]:
+    ) -> ToolMessage | Command:
         """Run a single tool call synchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
@@ -553,7 +541,7 @@ class ToolNode(RunnableCallable):
         if isinstance(response, Command):
             return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
-            response.content = cast("Union[str, list]", msg_content_output(response.content))
+            response.content = cast("str | list", msg_content_output(response.content))
             return response
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
@@ -563,7 +551,7 @@ class ToolNode(RunnableCallable):
         call: ToolCall,
         input_type: Literal["list", "dict", "tool_calls"],
         config: RunnableConfig,
-    ) -> Union[ToolMessage, Command]:
+    ) -> ToolMessage | Command:
         """Run a single tool call asynchronously."""
         if invalid_tool_message := self._validate_tool_call(call):
             return invalid_tool_message
@@ -618,18 +606,14 @@ class ToolNode(RunnableCallable):
         if isinstance(response, Command):
             return self._validate_tool_command(response, call, input_type)
         if isinstance(response, ToolMessage):
-            response.content = cast("Union[str, list]", msg_content_output(response.content))
+            response.content = cast("str | list", msg_content_output(response.content))
             return response
         msg = f"Tool {call['name']} returned unexpected type: {type(response)}"
         raise TypeError(msg)
 
     def _parse_input(
         self,
-        input: Union[
-            list[AnyMessage],
-            dict[str, Any],
-            BaseModel,
-        ],
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
         store: BaseStore | None,
     ) -> tuple[list[ToolCall], Literal["list", "dict", "tool_calls"]]:
         input_type: Literal["list", "dict", "tool_calls"]
@@ -676,11 +660,7 @@ class ToolNode(RunnableCallable):
     def _inject_state(
         self,
         tool_call: ToolCall,
-        input: Union[
-            list[AnyMessage],
-            dict[str, Any],
-            BaseModel,
-        ],
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
     ) -> ToolCall:
         state_args = self._tool_to_state_args[tool_call["name"]]
         if state_args and isinstance(input, list):
@@ -737,11 +717,7 @@ class ToolNode(RunnableCallable):
     def inject_tool_args(
         self,
         tool_call: ToolCall,
-        input: Union[
-            list[AnyMessage],
-            dict[str, Any],
-            BaseModel,
-        ],
+        input: list[AnyMessage] | dict[str, Any] | BaseModel,
         store: BaseStore | None,
     ) -> ToolCall:
         """Inject graph state and store into tool call arguments.
@@ -850,7 +826,7 @@ class ToolNode(RunnableCallable):
 
 
 def tools_condition(
-    state: Union[list[AnyMessage], dict[str, Any], BaseModel],
+    state: list[AnyMessage] | dict[str, Any] | BaseModel,
     messages_key: str = "messages",
 ) -> Literal["tools", "__end__"]:
     """Conditional routing function for tool-calling workflows.
@@ -1078,7 +1054,7 @@ class InjectedStore(InjectedToolArg):
     """
 
 
-def _is_injection(type_arg: Any, injection_type: type[Union[InjectedState, InjectedStore]]) -> bool:
+def _is_injection(type_arg: Any, injection_type: type[InjectedState | InjectedStore]) -> bool:
     """Check if a type argument represents an injection annotation.
 
     This utility function determines whether a type annotation indicates that

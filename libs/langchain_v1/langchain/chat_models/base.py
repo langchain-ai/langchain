@@ -9,7 +9,6 @@ from typing import (
     Any,
     Literal,
     TypeAlias,
-    Union,
     cast,
     overload,
 )
@@ -55,7 +54,7 @@ def init_chat_model(
     model: str | None = None,
     *,
     model_provider: str | None = None,
-    configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = ...,
+    configurable_fields: Literal["any"] | list[str] | tuple[str, ...] = ...,
     config_prefix: str | None = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -68,10 +67,10 @@ def init_chat_model(
     model: str | None = None,
     *,
     model_provider: str | None = None,
-    configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] | None = None,
+    configurable_fields: Literal["any"] | list[str] | tuple[str, ...] | None = None,
     config_prefix: str | None = None,
     **kwargs: Any,
-) -> Union[BaseChatModel, _ConfigurableModel]:
+) -> BaseChatModel | _ConfigurableModel:
     """Initialize a ChatModel from the model name and provider.
 
     **Note:** Must have the integration package corresponding to the model provider
@@ -530,12 +529,12 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         *,
         default_config: dict | None = None,
-        configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = "any",
+        configurable_fields: Literal["any"] | list[str] | tuple[str, ...] = "any",
         config_prefix: str = "",
         queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
     ) -> None:
         self._default_config: dict = default_config or {}
-        self._configurable_fields: Union[Literal["any"], list[str]] = (
+        self._configurable_fields: Literal["any"] | list[str] = (
             configurable_fields if configurable_fields == "any" else list(configurable_fields)
         )
         self._config_prefix = (
@@ -638,11 +637,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
-        return Union[
-            str,
-            Union[StringPromptValue, ChatPromptValueConcrete],
-            list[AnyMessage],
-        ]
+        return str | StringPromptValue | ChatPromptValueConcrete | list[AnyMessage]
 
     @override
     def invoke(
@@ -684,7 +679,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def batch(
         self,
         inputs: list[LanguageModelInput],
-        config: Union[RunnableConfig, list[RunnableConfig]] | None = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
@@ -712,7 +707,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     async def abatch(
         self,
         inputs: list[LanguageModelInput],
-        config: Union[RunnableConfig, list[RunnableConfig]] | None = None,
+        config: RunnableConfig | list[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any | None,
@@ -740,11 +735,11 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def batch_as_completed(
         self,
         inputs: Sequence[LanguageModelInput],
-        config: Union[RunnableConfig, Sequence[RunnableConfig]] | None = None,
+        config: RunnableConfig | Sequence[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
-    ) -> Iterator[tuple[int, Union[Any, Exception]]]:
+    ) -> Iterator[tuple[int, Any | Exception]]:
         config = config or None
         # If <= 1 config use the underlying models batch implementation.
         if config is None or isinstance(config, dict) or len(config) <= 1:
@@ -769,7 +764,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     async def abatch_as_completed(
         self,
         inputs: Sequence[LanguageModelInput],
-        config: Union[RunnableConfig, Sequence[RunnableConfig]] | None = None,
+        config: RunnableConfig | Sequence[RunnableConfig] | None = None,
         *,
         return_exceptions: bool = False,
         **kwargs: Any,
@@ -867,7 +862,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         exclude_types: Sequence[str] | None = None,
         exclude_tags: Sequence[str] | None = None,
         **kwargs: Any,
-    ) -> Union[AsyncIterator[RunLogPatch], AsyncIterator[RunLog]]:
+    ) -> AsyncIterator[RunLogPatch] | AsyncIterator[RunLog]:
         async for x in self._model(config).astream_log(  # type: ignore[call-overload, misc]
             input,
             config=config,
@@ -915,7 +910,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def bind_tools(
         self,
-        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[dict[str, Any] | type[BaseModel] | Callable | BaseTool],
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
@@ -923,7 +918,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     # Explicitly added to satisfy downstream linters.
     def with_structured_output(
         self,
-        schema: Union[dict, type[BaseModel]],
+        schema: dict | type[BaseModel],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, dict | BaseModel]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
