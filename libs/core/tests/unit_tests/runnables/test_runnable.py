@@ -435,13 +435,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "$ref": "#/definitions/RouterInput",
         "definitions": {
             "RouterInput": {
-                "description": "Router input.\n"
-                "\n"
-                "Attributes:\n"
-                "    key: The key to route "
-                "on.\n"
-                "    input: The input to pass "
-                "to the selected Runnable.",
+                "description": "Router input.",
                 "properties": {
                     "input": {"title": "Input"},
                     "key": {"title": "Key", "type": "string"},

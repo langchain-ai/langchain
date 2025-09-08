@@ -38,15 +38,12 @@ if TYPE_CHECKING:
 
 
 class RouterInput(TypedDict):
-    """Router input.
-
-    Attributes:
-        key: The key to route on.
-        input: The input to pass to the selected Runnable.
-    """
+    """Router input."""
 
     key: str
+    """The key to route on."""
     input: Any
+    """The input to pass to the selected Runnable."""
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):

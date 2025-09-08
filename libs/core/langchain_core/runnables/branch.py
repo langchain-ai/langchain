@@ -48,10 +48,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     If no condition evaluates to True, the default branch is run on the input.
 
-    Parameters:
-        branches: A list of (condition, Runnable) pairs.
-        default: A Runnable to run if no condition is met.
-
     Examples:
 
         .. code-block:: python
@@ -71,7 +67,9 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    """A list of (condition, Runnable) pairs."""
     default: Runnable[Input, Output]
+    """A Runnable to run if no condition is met."""
 
     def __init__(
         self,

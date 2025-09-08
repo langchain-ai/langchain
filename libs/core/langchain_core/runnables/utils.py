@@ -551,22 +551,18 @@ async def aadd(addables: AsyncIterable[Addable]) -> Optional[Addable]:
 
 
 class ConfigurableField(NamedTuple):
-    """Field that can be configured by the user.
-
-    Parameters:
-        id: The unique identifier of the field.
-        name: The name of the field. Defaults to None.
-        description: The description of the field. Defaults to None.
-        annotation: The annotation of the field. Defaults to None.
-        is_shared: Whether the field is shared. Defaults to False.
-    """
+    """Field that can be configured by the user."""
 
     id: str
-
+    """The unique identifier of the field."""
     name: Optional[str] = None
+    """The name of the field. Defaults to None."""
     description: Optional[str] = None
+    """The description of the field. Defaults to None."""
     annotation: Optional[Any] = None
+    """The annotation of the field. Defaults to None."""
     is_shared: bool = False
+    """Whether the field is shared. Defaults to False."""
 
     @override
     def __hash__(self) -> int:
@@ -574,24 +570,20 @@ class ConfigurableField(NamedTuple):
 
 
 class ConfigurableFieldSingleOption(NamedTuple):
-    """Field that can be configured by the user with a default value.
-
-    Parameters:
-        id: The unique identifier of the field.
-        options: The options for the field.
-        default: The default value for the field.
-        name: The name of the field. Defaults to None.
-        description: The description of the field. Defaults to None.
-        is_shared: Whether the field is shared. Defaults to False.
-    """
+    """Field that can be configured by the user with a default value."""
 
     id: str
+    """The unique identifier of the field."""
     options: Mapping[str, Any]
+    """The options for the field."""
     default: str
-
+    """The default value for the field."""
     name: Optional[str] = None
+    """The name of the field. Defaults to None."""
     description: Optional[str] = None
+    """The description of the field. Defaults to None."""
     is_shared: bool = False
+    """Whether the field is shared. Defaults to False."""
 
     @override
     def __hash__(self) -> int:
@@ -599,24 +591,20 @@ class ConfigurableFieldSingleOption(NamedTuple):
 
 
 class ConfigurableFieldMultiOption(NamedTuple):
-    """Field that can be configured by the user with multiple default values.
-
-    Parameters:
-        id: The unique identifier of the field.
-        options: The options for the field.
-        default: The default values for the field.
-        name: The name of the field. Defaults to None.
-        description: The description of the field. Defaults to None.
-        is_shared: Whether the field is shared. Defaults to False.
-    """
+    """Field that can be configured by the user with multiple default values."""
 
     id: str
+    """The unique identifier of the field."""
     options: Mapping[str, Any]
+    """The options for the field."""
     default: Sequence[str]
-
+    """The default values for the field."""
     name: Optional[str] = None
+    """The name of the field. Defaults to None."""
     description: Optional[str] = None
+    """The description of the field. Defaults to None."""
     is_shared: bool = False
+    """Whether the field is shared. Defaults to False."""
 
     @override
     def __hash__(self) -> int:
@@ -629,26 +617,22 @@ AnyConfigurableField = Union[
 
 
 class ConfigurableFieldSpec(NamedTuple):
-    """Field that can be configured by the user. It is a specification of a field.
-
-    Parameters:
-        id: The unique identifier of the field.
-        annotation: The annotation of the field.
-        name: The name of the field. Defaults to None.
-        description: The description of the field. Defaults to None.
-        default: The default value for the field. Defaults to None.
-        is_shared: Whether the field is shared. Defaults to False.
-        dependencies: The dependencies of the field. Defaults to None.
-    """
+    """Field that can be configured by the user. It is a specification of a field."""
 
     id: str
+    """The unique identifier of the field."""
     annotation: Any
-
+    """The annotation of the field."""
     name: Optional[str] = None
+    """The name of the field. Defaults to None."""
     description: Optional[str] = None
+    """The description of the field. Defaults to None."""
     default: Any = None
+    """The default value for the field. Defaults to None."""
     is_shared: bool = False
+    """Whether the field is shared. Defaults to False."""
     dependencies: Optional[list[str]] = None
+    """The dependencies of the field. Defaults to None."""
 
 
 def get_unique_config_specs(
