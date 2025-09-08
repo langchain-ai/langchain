@@ -1,4 +1,4 @@
-"""Konly text splitter."""
+"""Konlpy text splitter."""
 
 from __future__ import annotations
 
