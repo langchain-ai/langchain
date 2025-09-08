@@ -1,7 +1,9 @@
 """Global values and configuration that apply to all of LangChain."""
 
+from __future__ import annotations
+
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
@@ -20,7 +22,7 @@ except ImportError:
 # https://github.com/langchain-ai/langchain/pull/11311#issuecomment-1743780004
 _verbose: bool = False
 _debug: bool = False
-_llm_cache: Optional["BaseCache"] = None
+_llm_cache: BaseCache | None = None
 
 
 def set_verbose(value: bool) -> None:  # noqa: FBT001
@@ -152,7 +154,7 @@ def get_debug() -> bool:
     return _debug or old_debug
 
 
-def set_llm_cache(value: Optional["BaseCache"]) -> None:
+def set_llm_cache(value: BaseCache | None) -> None:
     """Set a new LLM cache, overwriting the previous value, if any.
 
     Args:
@@ -182,7 +184,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
     _llm_cache = value
 
 
-def get_llm_cache() -> Optional["BaseCache"]:
+def get_llm_cache() -> BaseCache | None:
     """Get the value of the `llm_cache` global setting.
 
     Returns:
