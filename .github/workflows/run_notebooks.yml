@@ -26,7 +26,7 @@ jobs:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     name: '📑 Test Documentation Notebooks'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: '🐍 Set up Python + UV'
         uses: "./.github/actions/uv_setup"
