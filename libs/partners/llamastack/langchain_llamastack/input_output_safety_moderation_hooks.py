@@ -155,9 +155,7 @@ def create_safety_hook(
             if fail_open:
                 # Input hooks fail open - allow content to proceed but log error
                 return SafetyResult(
-                    is_safe=True,
-                    violations=[],
-                    explanation=f"Safety check failed: {e}",
+                    is_safe=True, violations=[], explanation=f"Safety check failed: {e}"
                 )
             else:
                 # Output hooks fail closed - block content on error
