@@ -9,9 +9,9 @@ A comprehensive LangChain integration for [Llama Stack](https://github.com/meta-
 - **Chat Completion**: Uses proven ChatOpenAI with LlamaStack auto-configuration
 - **Text Embeddings**: Vector embeddings for semantic search and RAG applications
 - **Safety Checking**: Content moderation using Llama Guard and other safety shields
-- **Model Discovery**: Automatic detection and filtering of available models by type (inference/embedding)
-- **Multi-Provider Support**: Works with Ollama, OpenAI, Together AI, Fireworks, Anthropic, Groq and more
-- **Streaming**: Real-time streaming responses for chat completions
+- **Model Discovery**: Automatic detection and filtering of available models by type (llm/embedding)
+- **Multi-Provider Support**: Works with Ollama, Together AI, Fireworks, and more
+- **Streaming**: Streaming responses for chat completions
 - **Provider Validation**: Built-in connection testing and model accessibility validation
 - **Semantic Search**: Vector similarity search with embedding models
 - **Auto-Fallback**: Automatically selects working models when requested model is unavailable
@@ -572,6 +572,7 @@ response = llm.invoke("Hello!")
 ## Troubleshooting
 
 ### Common Issues
+
 
 1. **Connection Refused**
    ```
