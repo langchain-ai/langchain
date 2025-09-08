@@ -123,6 +123,7 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 WellKnownTools = (
     "file_search",
     "web_search_preview",
+    "web_search",
     "computer_use_preview",
     "code_interpreter",
     "mcp",
@@ -2374,7 +2375,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
-            tool = {"type": "web_search_preview"}
+            tool = {"type": "web_search"}
             llm_with_tools = llm.bind_tools([tool])
 
             response = llm_with_tools.invoke(

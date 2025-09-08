@@ -1,3 +1,5 @@
+"""React agent implementation."""
+
 from __future__ import annotations
 
 import inspect
@@ -43,6 +45,7 @@ from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict, TypeVar
 
+from langchain.agents.middleware_agent import create_agent as create_middleware_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     OutputToolBinding,
@@ -64,6 +67,7 @@ if TYPE_CHECKING:
     from langchain.agents._internal._typing import (
         SyncOrAsync,
     )
+    from langchain.agents.types import AgentMiddleware
 
 StructuredResponseT = TypeVar("StructuredResponseT", default=None)
 
@@ -898,7 +902,7 @@ def _supports_native_structured_output(
     )
 
 
-def create_react_agent(  # noqa: D417
+def create_agent(  # noqa: D417
     model: Union[
         str,
         BaseChatModel,
@@ -906,6 +910,7 @@ def create_react_agent(  # noqa: D417
     ],
     tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
     *,
+    middleware: Sequence[AgentMiddleware] = (),
     prompt: Prompt | None = None,
     response_format: Union[
         ToolStrategy[StructuredResponseT],
@@ -928,7 +933,7 @@ def create_react_agent(  # noqa: D417
 ) -> CompiledStateGraph[StateT, ContextT]:
     """Creates an agent graph that calls tools in a loop until a stopping condition is met.
 
-    For more details on using `create_react_agent`, visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
+    For more details on using `create_agent`, visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
 
     Args:
         model: The language model for the agent. Supports static and dynamic
@@ -1096,13 +1101,13 @@ def create_react_agent(  # noqa: D417
 
     Example:
         ```python
-        from langchain.agents import create_react_agent
+        from langchain.agents import create_agent
 
         def check_weather(location: str) -> str:
             '''Return the weather forecast for the specified location.'''
             return f"It's always sunny in {location}"
 
-        graph = create_react_agent(
+        graph = create_agent(
             "anthropic:claude-3-7-sonnet-latest",
             tools=[check_weather],
             prompt="You are a helpful assistant",
@@ -1112,6 +1117,29 @@ def create_react_agent(  # noqa: D417
             print(chunk)
         ```
     """
+    if middleware:
+        assert isinstance(model, str | BaseChatModel)  # noqa: S101
+        assert isinstance(prompt, str | None)  # noqa: S101
+        assert not isinstance(response_format, tuple)  # noqa: S101
+        assert pre_model_hook is None  # noqa: S101
+        assert post_model_hook is None  # noqa: S101
+        assert state_schema is None  # noqa: S101
+        return create_middleware_agent(  # type: ignore[return-value]
+            model=model,
+            tools=tools,
+            system_prompt=prompt,
+            middleware=middleware,
+            response_format=response_format,
+            context_schema=context_schema,
+        ).compile(
+            checkpointer=checkpointer,
+            store=store,
+            name=name,
+            interrupt_after=interrupt_after,
+            interrupt_before=interrupt_before,
+            debug=debug,
+        )
+
     # Handle deprecated config_schema parameter
     if (config_schema := deprecated_kwargs.pop("config_schema", MISSING)) is not MISSING:
         warn(
@@ -1123,7 +1151,7 @@ def create_react_agent(  # noqa: D417
             context_schema = config_schema
 
     if len(deprecated_kwargs) > 0:
-        msg = f"create_react_agent() got unexpected keyword arguments: {deprecated_kwargs}"
+        msg = f"create_agent() got unexpected keyword arguments: {deprecated_kwargs}"
         raise TypeError(msg)
 
     if response_format and not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
@@ -1171,5 +1199,5 @@ __all__ = [
     "AgentStatePydantic",
     "AgentStateWithStructuredResponse",
     "AgentStateWithStructuredResponsePydantic",
-    "create_react_agent",
+    "create_agent",
 ]
