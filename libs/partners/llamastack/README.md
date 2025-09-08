@@ -112,9 +112,7 @@ llm = create_llamastack_llm(model="llama3.1:8b")
 
 # Add ChatOpenAI parameters directly
 llm = create_llamastack_llm(
-    model="llama3.1:8b",
-    temperature=0.7,
-    max_tokens=1000
+    model="llama3.1:8b"
 )
 
 # Simple completion
@@ -465,9 +463,7 @@ llm = create_llamastack_llm()
 
 # Specific model with custom parameters
 llm = create_llamastack_llm(
-    model="llama3.1:8b",
-    temperature=0.7,
-    max_tokens=1000
+    model="llama3.1:8b"
 )
 ```
 
@@ -504,15 +500,12 @@ llm = create_llamastack_llm(
 
 The `examples/` directory contains comprehensive usage examples:
 
-- `getting_started.py` - Complete setup and usage guide
 - `basic_usage.py` - Basic chat, embeddings, and safety examples
 - `advanced_usage.py` - Advanced features and integrations
 
 Run examples:
 
 ```bash
-# Complete getting started guide
-python examples/getting_started.py
 
 # Basic usage examples
 python examples/basic_usage.py
@@ -652,4 +645,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-For more examples and detailed documentation, explore the `examples/` directory and run the getting started guide.
+For more examples and detailed documentation, explore the `examples/` directory and run the basic_usage.py script.
