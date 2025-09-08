@@ -9,12 +9,12 @@ requires-python = ">=3.10"
 dependencies = [
     "langchain-core<2.0.0,>=0.3.75",
     "langchain-text-splitters<1.0.0,>=0.3.11",
-    "langgraph>=0.6.0",
+    "langgraph>=0.6.7",
     "pydantic>=2.7.4",
 ]
 
 name = "langchain"
-version = "1.0.0a3"
+version = "1.0.0a4"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -101,6 +101,9 @@ warn_return_any = false
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [

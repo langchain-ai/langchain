@@ -1,7 +1,8 @@
 """Test functionality related to prompts."""
 
 import re
-from typing import Any, Union
+from tempfile import NamedTemporaryFile
+from typing import Any, Literal, Union
 from unittest import mock
 
 import pytest
@@ -32,8 +33,6 @@ def test_from_file_encoding() -> None:
     input_variables = ["foo"]
 
     # First write to a file using CP-1252 encoding.
-    from tempfile import NamedTemporaryFile
-
     with NamedTemporaryFile(delete=True, mode="w", encoding="cp1252") as f:
         f.write(template)
         f.flush()
@@ -434,11 +433,9 @@ Will it get confused{ }?
     assert prompt == expected_prompt
 
 
-@pytest.mark.requires("jinja2")
 def test_basic_sandboxing_with_jinja2() -> None:
     """Test basic sandboxing with jinja2."""
-    import jinja2
-
+    jinja2 = pytest.importorskip("jinja2")
     template = " {{''.__class__.__bases__[0] }} "  # malicious code
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     with pytest.raises(jinja2.exceptions.SecurityError):
@@ -681,3 +678,54 @@ def test_prompt_with_template_variable_name_jinja2() -> None:
     template = "This is a {{template}} test."
     prompt = PromptTemplate.from_template(template, template_format="jinja2")
     assert prompt.invoke({"template": "bar"}).to_string() == "This is a bar test."
+
+
+def test_prompt_template_add_with_with_another_format() -> None:
+    with pytest.raises(ValueError, match=r"Cannot add templates"):
+        (
+            PromptTemplate.from_template("This is a {template}")
+            + PromptTemplate.from_template("So {{this}} is", template_format="mustache")
+        )
+
+
+@pytest.mark.parametrize(
+    ("template_format", "prompt1", "prompt2"),
+    [
+        ("f-string", "This is a {variable}", ". This is {another_variable}"),
+        pytest.param(
+            "jinja2",
+            "This is a {{variable}}",
+            ". This is {{another_variable}}",
+            marks=[pytest.mark.requires("jinja2")],
+        ),
+        ("mustache", "This is a {{variable}}", ". This is {{another_variable}}"),
+    ],
+)
+def test_prompt_template_add(
+    template_format: Literal["f-string", "mustache", "jinja2"],
+    prompt1: str,
+    prompt2: str,
+) -> None:
+    first_prompt = PromptTemplate.from_template(
+        prompt1,
+        template_format=template_format,
+    )
+    second_prompt = PromptTemplate.from_template(
+        prompt2,
+        template_format=template_format,
+    )
+
+    concated_prompt = first_prompt + second_prompt
+    prompt_of_concated = PromptTemplate.from_template(
+        prompt1 + prompt2,
+        template_format=template_format,
+    )
+
+    assert concated_prompt.input_variables == prompt_of_concated.input_variables
+    assert concated_prompt.format(
+        variable="template",
+        another_variable="other_template",
+    ) == prompt_of_concated.format(
+        variable="template",
+        another_variable="other_template",
+    )
