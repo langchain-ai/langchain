@@ -77,31 +77,44 @@ warn_return_any = "False"
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
-    "C90", # McCabe complexity
-    "COM812", # Messes with the formatter
-    "FA100", # Can't activate since we exclude UP007 for now
-    "FIX002", # Line contains TODO
-    "ISC001", # Messes with the formatter
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "PLC0414",  # Enable re-export
-    "PLR09", # Too many something (arg, statements, etc)
-    "RUF012", # Doesn't play well with Pydantic
-    "TC001", # Doesn't play well with Pydantic
-    "TC002", # Doesn't play well with Pydantic
-    "TC003", # Doesn't play well with Pydantic
-    "TD002", # Missing author in TODO
-    "TD003", # Missing issue link in TODO
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
-    "BLE",
-    "ERA",
-    "PLC0415",
-    "PLR2004",
+    "ANN401",  # No Any types
+    "BLE",     # Blind exceptions
+    "DOC",     # Docstrings (preview)
+    "ERA",     # No commented-out code
+    "PLR2004", # Comparison to magic number
 ]
 unfixable = ["PLW1510",]
 

@@ -6,9 +6,12 @@ from langchain.agents.middleware.types import AgentMiddleware, AgentState, Model
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
-    """Prompt Caching Middleware - Optimizes API usage by caching conversation prefixes for Anthropic models.
+    """Prompt Caching Middleware.
 
-    Learn more about anthropic prompt caching [here](https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching).
+    Optimizes API usage by caching conversation prefixes for Anthropic models.
+
+    Learn more about Anthropic prompt caching
+    `here <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching>`__.
     """
 
     def __init__(
@@ -22,7 +25,8 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         Args:
             type: The type of cache to use, only "ephemeral" is supported.
             ttl: The time to live for the cache, only "5m" and "1h" are supported.
-            min_messages_to_cache: The minimum number of messages until the cache is used, default is 0.
+            min_messages_to_cache: The minimum number of messages until the cache is used,
+                default is 0.
         """
         self.type = type
         self.ttl = ttl
@@ -34,15 +38,16 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
             from langchain_anthropic import ChatAnthropic
         except ImportError:
             msg = (
-                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models."
+                "AnthropicPromptCachingMiddleware caching middleware only supports "
+                "Anthropic models."
                 "Please install langchain-anthropic."
             )
             raise ValueError(msg)
 
         if not isinstance(request.model, ChatAnthropic):
             msg = (
-                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, "
-                f"not instances of {type(request.model)}"
+                "AnthropicPromptCachingMiddleware caching middleware only supports "
+                f"Anthropic models, not instances of {type(request.model)}"
             )
             raise ValueError(msg)
 

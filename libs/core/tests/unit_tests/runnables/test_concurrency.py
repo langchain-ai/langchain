@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from threading import Lock
 from typing import Any
 
 import pytest
@@ -80,7 +81,6 @@ def test_batch_concurrency() -> None:
     """Test that batch respects max_concurrency."""
     running_tasks = 0
     max_running_tasks = 0
-    from threading import Lock
 
     lock = Lock()
 
@@ -112,7 +112,6 @@ def test_batch_as_completed_concurrency() -> None:
     """Test that batch_as_completed respects max_concurrency."""
     running_tasks = 0
     max_running_tasks = 0
-    from threading import Lock
 
     lock = Lock()
 
