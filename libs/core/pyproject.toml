@@ -114,7 +114,6 @@ ignore = [
     "BLE",     # Blind exceptions
     "DOC",     # Docstrings (preview)
     "ERA",     # No commented-out code
-    "PLC0415", # Imports outside top level
     "PLR2004", # Comparison to magic number
 ]
 unfixable = ["PLW1510",]

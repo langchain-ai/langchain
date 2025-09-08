@@ -18,6 +18,7 @@ from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
@@ -29,7 +30,6 @@ from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
-    from langchain_core.messages.base import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
 
@@ -384,8 +384,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
-        from langchain_core.messages import BaseMessage
-
         fields: dict = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
@@ -447,8 +445,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> list[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
             if self.input_messages_key:
@@ -461,8 +457,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
         # If value is a string, convert to a human message
         if isinstance(input_val, str):
-            from langchain_core.messages import HumanMessage
-
             return [HumanMessage(content=input_val)]
         # If value is a single message, convert to a list
         if isinstance(input_val, BaseMessage):
@@ -489,8 +483,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> list[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
             if self.output_messages_key:
@@ -507,8 +499,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 output_val = output_val[key]
 
         if isinstance(output_val, str):
-            from langchain_core.messages import AIMessage
-
             return [AIMessage(content=output_val)]
         # If value is a single message, convert to a list
         if isinstance(output_val, BaseMessage):

@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Optional, Union, cast
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
 
+from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
 from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -272,8 +273,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        from langchain_core.callbacks.manager import CallbackManager
-
         if self.exception_key is not None and not all(
             isinstance(input_, dict) for input_ in inputs
         ):
@@ -366,8 +365,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        from langchain_core.callbacks.manager import AsyncCallbackManager
-
         if self.exception_key is not None and not all(
             isinstance(input_, dict) for input_ in inputs
         ):

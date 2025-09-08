@@ -21,7 +21,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -1852,7 +1852,6 @@ def generate_models() -> list[Any]:
 
 def generate_backwards_compatible_v1() -> list[Any]:
     """Generate a model with pydantic 2 from the v1 namespace."""
-    from pydantic.v1 import BaseModel as BaseModelV1
 
     class FooV1Namespace(BaseModelV1):
         a: int
@@ -1920,8 +1919,6 @@ def test_args_schema_explicitly_typed() -> None:
     is a pydantic 1 model!
 
     """
-    # Check with whatever pydantic model is passed in and not via v1 namespace
-    from pydantic import BaseModel
 
     class Foo(BaseModel):
         a: int
@@ -1964,7 +1961,6 @@ def test_args_schema_explicitly_typed() -> None:
 @pytest.mark.parametrize("pydantic_model", TEST_MODELS)
 def test_structured_tool_with_different_pydantic_versions(pydantic_model: Any) -> None:
     """This should test that one can type the args schema as a pydantic model."""
-    from langchain_core.tools import StructuredTool
 
     def foo(a: int, b: str) -> str:
         """Hahaha."""
@@ -2063,16 +2059,13 @@ def test__get_all_basemodel_annotations_v2(*, use_v1_namespace: bool) -> None:
     A = TypeVar("A")
 
     if use_v1_namespace:
-        from pydantic.v1 import BaseModel as BaseModel1
 
-        class ModelA(BaseModel1, Generic[A], extra="allow"):
+        class ModelA(BaseModelV1, Generic[A], extra="allow"):
             a: A
 
     else:
-        from pydantic import BaseModel as BaseModel2
-        from pydantic import ConfigDict
 
-        class ModelA(BaseModel2, Generic[A]):  # type: ignore[no-redef]
+        class ModelA(BaseModel, Generic[A]):  # type: ignore[no-redef]
             a: A
             model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
@@ -2208,12 +2201,8 @@ def test_create_retriever_tool() -> None:
 
 
 def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
-    from pydantic import BaseModel as BaseModelV2
-    from pydantic import Field as FieldV2
-    from pydantic import ValidationError as ValidationErrorV2
-
-    class Foo(BaseModelV2):
-        x: list[int] = FieldV2(
+    class Foo(BaseModel):
+        x: list[int] = Field(
             description="List of integers", min_length=10, max_length=15
         )
 
@@ -2240,7 +2229,7 @@ def test_tool_args_schema_pydantic_v2_with_metadata() -> None:
     }
 
     assert foo.invoke({"x": [0] * 10})
-    with pytest.raises(ValidationErrorV2):
+    with pytest.raises(ValidationError):
         foo.invoke({"x": [0] * 9})
 
 
@@ -2576,8 +2565,6 @@ def test_title_property_preserved() -> None:
 
     https://github.com/langchain-ai/langchain/issues/30456
     """
-    from langchain_core.tools import tool
-
     schema_to_be_extracted = {
         "type": "object",
         "required": [],

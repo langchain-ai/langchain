@@ -46,6 +46,10 @@ from langchain_core.messages import (
     message_chunk_to_message,
 )
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -1589,11 +1593,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
-
-        from langchain_core.output_parsers.openai_tools import (
-            JsonOutputKeyToolsParser,
-            PydanticToolsParser,
-        )
 
         if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."

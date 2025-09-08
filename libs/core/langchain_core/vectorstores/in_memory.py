@@ -27,6 +27,13 @@ if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
 
+try:
+    import numpy as np
+
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
+
 
 class InMemoryVectorStore(VectorStore):
     """In-memory vector store implementation.
@@ -496,14 +503,12 @@ class InMemoryVectorStore(VectorStore):
             filter=filter,
         )
 
-        try:
-            import numpy as np
-        except ImportError as e:
+        if not _HAS_NUMPY:
             msg = (
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
             )
-            raise ImportError(msg) from e
+            raise ImportError(msg)
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),

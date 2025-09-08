@@ -19,6 +19,8 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+from langchain_core.load.serializable import to_json_not_implemented
+from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
@@ -191,8 +193,6 @@ def node_data_str(
     Returns:
         A string representation of the data.
     """
-    from langchain_core.runnables.base import Runnable
-
     if not is_uuid(id) or data is None:
         return id
     data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
@@ -212,9 +212,6 @@ def node_data_json(
     Returns:
         A dictionary with the type of the data and the data itself.
     """
-    from langchain_core.load.serializable import to_json_not_implemented
-    from langchain_core.runnables.base import Runnable, RunnableSerializable
-
     if node.data is None:
         json: dict[str, Any] = {}
     elif isinstance(node.data, RunnableSerializable):
@@ -518,7 +515,8 @@ class Graph:
         Returns:
             The ASCII art string.
         """
-        from langchain_core.runnables.graph_ascii import draw_ascii
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_ascii import draw_ascii  # noqa: PLC0415
 
         return draw_ascii(
             {node.id: node.name for node in self.nodes.values()},
@@ -562,7 +560,8 @@ class Graph:
         Returns:
             The PNG image as bytes if output_file_path is None, None otherwise.
         """
-        from langchain_core.runnables.graph_png import PngDrawer
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_png import PngDrawer  # noqa: PLC0415
 
         default_node_labels = {node.id: node.name for node in self.nodes.values()}
 
@@ -617,7 +616,8 @@ class Graph:
             The Mermaid syntax string.
 
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import draw_mermaid  # noqa: PLC0415
 
         graph = self.reid()
         first_node = graph.first_node()
@@ -688,7 +688,10 @@ class Graph:
             The PNG image as bytes.
 
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
+            draw_mermaid_png,
+        )
 
         mermaid_syntax = self.draw_mermaid(
             curve_style=curve_style,

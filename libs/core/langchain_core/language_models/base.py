@@ -22,18 +22,30 @@ from typing_extensions import TypeAlias, TypedDict, override
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import Callbacks
+from langchain_core.globals import get_verbose
 from langchain_core.messages import (
     AnyMessage,
     BaseMessage,
     MessageLikeRepresentation,
     get_buffer_string,
 )
-from langchain_core.prompt_values import PromptValue
+from langchain_core.prompt_values import (
+    ChatPromptValueConcrete,
+    PromptValue,
+    StringPromptValue,
+)
 from langchain_core.runnables import Runnable, RunnableSerializable
 from langchain_core.utils import get_pydantic_field_names
 
 if TYPE_CHECKING:
     from langchain_core.outputs import LLMResult
+
+try:
+    from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
+
+    _HAS_TRANSFORMERS = True
+except ImportError:
+    _HAS_TRANSFORMERS = False
 
 
 class LangSmithParams(TypedDict, total=False):
@@ -66,15 +78,13 @@ def get_tokenizer() -> Any:
         The GPT-2 tokenizer instance.
 
     """
-    try:
-        from transformers import GPT2TokenizerFast  # type: ignore[import-not-found]
-    except ImportError as e:
+    if not _HAS_TRANSFORMERS:
         msg = (
             "Could not import transformers python package. "
             "This is needed in order to calculate get_token_ids. "
             "Please install it with `pip install transformers`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
     # create a GPT-2 tokenizer instance
     return GPT2TokenizerFast.from_pretrained("gpt2")
 
@@ -95,8 +105,6 @@ LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
 
 
 def _get_verbosity() -> bool:
-    from langchain_core.globals import get_verbose
-
     return get_verbose()
 
 
@@ -158,11 +166,6 @@ class BaseLanguageModel(
     @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
-        from langchain_core.prompt_values import (
-            ChatPromptValueConcrete,
-            StringPromptValue,
-        )
-
         # This is a version of LanguageModelInput which replaces the abstract
         # base class BaseMessage with a union of its subclasses, which makes
         # for a much better schema.
