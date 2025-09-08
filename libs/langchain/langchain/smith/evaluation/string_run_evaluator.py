@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Union, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -55,16 +55,20 @@ class StringRunMapper(Serializable):
 class LLMStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object."""
 
-    def serialize_chat_messages(self, messages: list[dict]) -> str:
+    def serialize_chat_messages(
+        self, messages: Union[list[dict], list[list[dict]]]
+    ) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
             if isinstance(messages[0], dict):
-                chat_messages = _get_messages_from_run_dict(messages)
+                chat_messages = _get_messages_from_run_dict(
+                    cast("list[dict]", messages)
+                )
             elif isinstance(messages[0], list):
                 # Runs from Tracer have messages as a list of lists of dicts
                 chat_messages = _get_messages_from_run_dict(messages[0])
             else:
-                msg = f"Could not extract messages to evaluate {messages}"
+                msg = f"Could not extract messages to evaluate {messages}"  # type: ignore[unreachable]
                 raise ValueError(msg)
             return get_buffer_string(chat_messages)
         msg = f"Could not extract messages to evaluate {messages}"
@@ -107,11 +111,11 @@ class LLMStringRunMapper(StringRunMapper):
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
             raise ValueError(msg)
-        generations: list[dict] = outputs["generations"]
+        generations: Union[list[dict], list[list[dict]]] = outputs["generations"]
         if not generations:
             msg = "Cannot evaluate LLM run with empty generations."
             raise ValueError(msg)
-        first_generation: dict = generations[0]
+        first_generation: Union[dict, list[dict]] = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
             # Whereas Runs from the API have a list of dicts
@@ -450,7 +454,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"
                 " amongst the dataset outputs keys."
