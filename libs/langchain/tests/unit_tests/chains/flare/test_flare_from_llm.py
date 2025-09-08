@@ -1,11 +1,10 @@
 """Tests for FlareChain.from_llm preserving supplied ChatOpenAI instance."""
 
 import pytest
-
-from langchain.chains.flare.base import FlareChain
-
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+
+from langchain.chains.flare.base import FlareChain
 
 
 class _EmptyRetriever(BaseRetriever):
