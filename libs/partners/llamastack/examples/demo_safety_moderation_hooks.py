@@ -2,8 +2,8 @@
 """
 Demo: Simplified Safety Hooks with LlamaStack
 
-This demo showcases the clean 2-hook approach that provides comprehensive safety checking
-using LlamaStack's run_shield API for input and output protection.
+This demo showcases the clean 2-hook approach that provides comprehensive
+safety checking using LlamaStack's run_shield API for input and output protection.
 
 Key features:
 - Only 2 API calls (input + output) for complete safety protection
@@ -11,14 +11,13 @@ Key features:
 - Clean and efficient API design
 """
 
-from langchain_llamastack import create_llamastack_llm, LlamaStackSafety
+from langchain_llamastack import LlamaStackSafety, create_llamastack_llm
 from langchain_llamastack.input_output_safety_moderation_hooks import (
+    SafeLLMWrapper,
     create_input_only_safe_llm,
     create_output_only_safe_llm,
     create_safe_llm,
-    create_safe_llm_with_all_hooks,
     create_safety_hook,
-    SafeLLMWrapper,
 )
 
 
@@ -68,20 +67,20 @@ def demo_factory_functions():
 
     print("\n2. Input Only Protection")
     print("-" * 40)
-    input_safe_llm = create_input_only_safe_llm(llm, safety)
+    _ = create_input_only_safe_llm(llm, safety)  # Create but don't need to use
     print("✅ Created LLM with input protection only")
     print("   - Use case: Filter user queries, trust model outputs")
 
     print("\n3. Output Only Protection")
     print("-" * 40)
-    output_safe_llm = create_output_only_safe_llm(llm, safety)
+    _ = create_output_only_safe_llm(llm, safety)  # Create but don't need to use
     print("✅ Created LLM with output protection only")
     print("   - Use case: Trust user inputs, filter model responses")
 
     print("\n4. Configurable Protection")
     print("-" * 40)
     # Different configurations
-    no_protection = create_safe_llm(llm, safety, input_check=False, output_check=False)
+    _ = create_safe_llm(llm, safety, input_check=False, output_check=False)
     print("✅ Created LLM with no protection (same as unwrapped LLM)")
 
     return safe_llm
@@ -178,7 +177,6 @@ def demo_error_handling():
             raise Exception("Safety service unavailable")
 
     failing_safety = FailingSafetyClient()
-    llm = create_llamastack_llm()
 
     # Test input hook error handling (fails open)
     print("\n1. Input Hook Error (Fails Open)")
@@ -234,9 +232,9 @@ def main():
 
     try:
         # Core demos
-        safety = demo_safety_client()
+        demo_safety_client()  # We don't need to use the returned safety client
         safe_llm = demo_factory_functions()
-        manual_llm = demo_manual_configuration()
+        demo_manual_configuration()  # We don't need to use the returned manual_llm
 
         # Usage demo
         demo_safe_llm_usage(safe_llm)

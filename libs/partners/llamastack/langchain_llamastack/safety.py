@@ -29,9 +29,6 @@ class LlamaStackSafety:
     """
     Llama Stack safety and moderation integration.
 
-    Setup:
-            export LLAMA_STACK_BASE_URL="http://localhost:8321"  # Optional
-
     Key init args — safety params:
         shield_type: str
             Name of safety shield to use for safety and moderation\
