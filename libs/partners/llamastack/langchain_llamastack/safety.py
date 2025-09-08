@@ -34,7 +34,8 @@ class LlamaStackSafety:
 
     Key init args — safety params:
         shield_type: str
-            Name of safety shield to use for safety and moderation (default: "llama_guard").
+            Name of safety shield to use for safety and moderation\
+             (default: "llama_guard").
 
     Key init args — client params:
         base_url: str

@@ -204,7 +204,8 @@ def create_safe_llm(
         safe_llm = create_safe_llm(llm, safety_client, input_check=False)
 
         # No protection (same as unwrapped LLM)
-        safe_llm = create_safe_llm(llm, safety_client, input_check=False, output_check=False)
+        safe_llm = create_safe_llm(llm, safety_client,\
+         input_check=False, output_check=False)
     """
     safe_llm = SafeLLMWrapper(llm, safety_client)
 
@@ -223,7 +224,8 @@ def create_safe_llm_with_all_hooks(llm: Any, safety_client: Any) -> SafeLLMWrapp
     Create a safe LLM with complete protection (both input and output checking).
 
     This provides maximum safety by checking both user input and model output.
-    Equivalent to: create_safe_llm(llm, safety_client, input_check=True, output_check=True)
+    Equivalent to: create_safe_llm(llm, safety_client, input_check=True,\
+     output_check=True)
 
     Args:
         llm: The language model to wrap
