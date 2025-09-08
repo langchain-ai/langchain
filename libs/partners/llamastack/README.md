@@ -108,11 +108,11 @@ from langchain_llamastack import create_llamastack_llm
 llm = create_llamastack_llm()
 
 # Specify a model with auto-fallback
-llm = create_llamastack_llm(model="llama3.1:8b", auto_fallback=True)
+llm = create_llamastack_llm(model="llama3.1:8b")
 
-# Add ChatOpenAI parameters directly
+# If you need to disable auto-fallback, specify a model and set auto_fallback=False
 llm = create_llamastack_llm(
-    model="llama3.1:8b"
+    model="llama3.1:8b", auto_fallback=False
 )
 
 # Simple completion
