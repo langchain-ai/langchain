@@ -26,6 +26,9 @@ def _custom_parser(multiline_string: Union[str, bytes, bytearray]) -> str:
     string containing unescaped newlines, tabs or quotes. This function
     replaces those characters with their escaped counterparts.
     (newlines in JSON must be double-escaped: `\\n`).
+
+    Returns:
+        The modified string with escaped newlines, tabs and quotes.
     """
     if isinstance(multiline_string, (bytes, bytearray)):
         multiline_string = multiline_string.decode()

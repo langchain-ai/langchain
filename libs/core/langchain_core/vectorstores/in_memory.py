@@ -189,7 +189,6 @@ class InMemoryVectorStore(VectorStore):
         ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
@@ -223,7 +222,6 @@ class InMemoryVectorStore(VectorStore):
     async def aadd_documents(
         self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 

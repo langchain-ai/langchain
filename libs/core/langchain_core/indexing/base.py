@@ -7,6 +7,8 @@ import time
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Optional, TypedDict
 
+from typing_extensions import override
+
 from langchain_core._api import beta
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
@@ -256,12 +258,12 @@ class InMemoryRecordManager(RecordManager):
     async def acreate_schema(self) -> None:
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
+    @override
     def get_time(self) -> float:
-        """Get the current server time as a high resolution timestamp!"""
         return time.time()
 
+    @override
     async def aget_time(self) -> float:
-        """Async get the current server time as a high resolution timestamp!"""
         return self.get_time()
 
     def update(
@@ -322,11 +324,6 @@ class InMemoryRecordManager(RecordManager):
                 raise an error.
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
-
-        Raises:
-            ValueError: If the length of keys doesn't match the length of group
-                ids.
-            ValueError: If time_at_least is in the future.
         """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 

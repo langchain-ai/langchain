@@ -125,6 +125,9 @@ def _set_config_context(
 
     Args:
         config (RunnableConfig): The config to set.
+
+    Returns:
+        The token to reset the config and the previous tracing context.
     """
     from langchain_core.tracers.langchain import LangChainTracer
 
@@ -160,6 +163,9 @@ def set_config_context(config: RunnableConfig) -> Generator[Context, None, None]
 
     Args:
         config (RunnableConfig): The config to set.
+
+    Yields:
+        The config context.
     """
     from langsmith.run_helpers import _set_tracing_context
 
@@ -598,9 +604,6 @@ async def run_in_executor(
 
     Returns:
         Output: The output of the function.
-
-    Raises:
-        RuntimeError: If the function raises a StopIteration.
     """
 
     def wrapper() -> T:

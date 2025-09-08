@@ -217,6 +217,9 @@ def tool_call(
         name: The name of the tool to be called.
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
+
+    Returns:
+        The created tool call.
     """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
@@ -267,6 +270,9 @@ def tool_call_chunk(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
+
+    Returns:
+        The created tool call chunk.
     """
     return ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
@@ -305,6 +311,9 @@ def invalid_tool_call(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
+
+    Returns:
+        The created invalid tool call.
     """
     return InvalidToolCall(
         name=name, args=args, id=id, error=error, type="invalid_tool_call"
@@ -314,7 +323,14 @@ def invalid_tool_call(
 def default_tool_parser(
     raw_tool_calls: list[dict],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
-    """Best-effort parsing of tools."""
+    """Best-effort parsing of tools.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        A list of tool calls and invalid tool calls.
+    """
     tool_calls = []
     invalid_tool_calls = []
     for raw_tool_call in raw_tool_calls:
@@ -342,7 +358,14 @@ def default_tool_parser(
 
 
 def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
-    """Best-effort parsing of tool chunks."""
+    """Best-effort parsing of tool chunks.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        List of parsed ToolCallChunk objects.
+    """
     tool_call_chunks = []
     for tool_call in raw_tool_calls:
         if "function" not in tool_call:

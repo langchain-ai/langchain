@@ -117,7 +117,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     validate_template: bool = False
@@ -367,7 +367,7 @@ class FewShotChatMessagePromptTemplate(
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     model_config = ConfigDict(

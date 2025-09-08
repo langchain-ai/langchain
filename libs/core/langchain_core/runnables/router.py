@@ -98,13 +98,17 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
