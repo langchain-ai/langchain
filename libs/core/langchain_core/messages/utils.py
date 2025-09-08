@@ -1046,6 +1046,10 @@ def convert_to_openai_messages(
                     with a single content block of type 'text'. If a message has content
                     blocks these are left as is.
 
+    Raises:
+        ValueError: if an unrecognized ``text_format`` is specified, or if a message
+            content block is missing expected keys.
+
     Returns:
         The return type depends on the input type:
             - dict:

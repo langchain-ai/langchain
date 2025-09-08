@@ -270,9 +270,6 @@ class VectorStore(ABC):
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of ids does not match the number of documents.
         """
         if type(self).add_texts != VectorStore.add_texts:
             if "ids" not in kwargs:
@@ -303,9 +300,6 @@ class VectorStore(ABC):
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of IDs does not match the number of documents.
         """
         # If the async method has been overridden, we'll use that.
         if type(self).aadd_texts != VectorStore.aadd_texts:

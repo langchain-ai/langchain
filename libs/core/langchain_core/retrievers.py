@@ -362,6 +362,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             query: String to find relevant documents for
             run_manager: The callback handler to use
+
         Returns:
             List of relevant documents
         """
