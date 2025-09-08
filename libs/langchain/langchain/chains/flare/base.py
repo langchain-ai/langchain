@@ -247,7 +247,7 @@ class FlareChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: Optional[BaseLanguageModel],
         max_generation_len: int = 32,
         **kwargs: Any,
     ) -> FlareChain:
@@ -272,23 +272,34 @@ class FlareChain(Chain):
             raise ImportError(msg) from e
         # Preserve supplied llm instead of always creating a new ChatOpenAI.
         # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
-        if not isinstance(llm, ChatOpenAI):
-            msg = f"FlareChain.from_llm requires ChatOpenAI; got {type(llm).__name__}."
-            raise TypeError(msg)
-        if not getattr(llm, "logprobs", False):  # attribute presence may vary
-            msg = (
-                "Provided ChatOpenAI instance must be constructed with "
-                "logprobs=True for FlareChain."
+        if llm is None:
+            llm = ChatOpenAI(
+                max_completion_tokens=max_generation_len,
+                logprobs=True,
+                temperature=0,
             )
-            raise ValueError(msg)
-        current_max = getattr(llm, "max_completion_tokens", None)
-        if current_max is not None and current_max != max_generation_len:
-            logger.debug(
-                "FlareChain.from_llm: supplied llm max_completion_tokens=%s differs "
-                "from requested max_generation_len=%s; leaving model unchanged.",
-                current_max,
-                max_generation_len,
-            )
+        else:
+            if not isinstance(llm, ChatOpenAI):
+                msg = (
+                    f"FlareChain.from_llm requires ChatOpenAI; got "
+                    f"{type(llm).__name__}."
+                )
+                raise TypeError(msg)
+            if not getattr(llm, "logprobs", False):  # attribute presence may vary
+                msg = (
+                    "Provided ChatOpenAI instance must be constructed with "
+                    "logprobs=True for FlareChain."
+                )
+                raise ValueError(msg)
+            current_max = getattr(llm, "max_completion_tokens", None)
+            if current_max is not None and current_max != max_generation_len:
+                logger.debug(
+                    "FlareChain.from_llm: supplied llm max_completion_tokens=%s "
+                    "differs from requested max_generation_len=%s; "
+                    "leaving model unchanged.",
+                    current_max,
+                    max_generation_len,
+                )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(
