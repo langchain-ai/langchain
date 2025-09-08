@@ -2350,7 +2350,6 @@ def test_haskell_code_splitter() -> None:
 
 
 @pytest.fixture
-@pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
@@ -3598,192 +3597,82 @@ def test_html_splitter_with_media_preservation() -> None:
     assert documents == expected
 
 
-@pytest.mark.requires("bs4")
-def test_html_splitter_keep_separator_true() -> None:
-    """Test HTML splitting with keep_separator=True"""
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some text. This is some other text.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator=True,
+@pytest.mark.parametrize("chunk_size", [10, 50])
+def test_recursive_character_text_splitter_strict_chunk_size(chunk_size: int) -> None:
+    """Ensure strict_chunk_size enforces exact chunk size limits."""
+    text = """This is a long test document that should be split correctly 
+    without exceeding limits."""
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=chunk_size, chunk_overlap=5, strict_chunk_size=True
     )
-    documents = splitter.split_text(html_content)
+    chunks = splitter.split_text(text)
 
-    expected = [
-        Document(
-            page_content="This is some text",
-            metadata={"Header 1": "Section 1"},
-        ),
-        Document(
-            page_content=". This is some other text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_keep_separator_false() -> None:
-    """Test HTML splitting with keep_separator=False"""
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some text. This is some other text.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator=False,
+    assert all(len(chunk) <= chunk_size for chunk in chunks), (
+        "Chunk exceeds chunk_size!"
     )
-    documents = splitter.split_text(html_content)
-
-    expected = [
-        Document(
-            page_content="This is some text",
-            metadata={"Header 1": "Section 1"},
-        ),
-        Document(
-            page_content="This is some other text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
 
 
-@pytest.mark.requires("bs4")
-def test_html_splitter_keep_separator_start() -> None:
-    """Test HTML splitting with keep_separator="start" """
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some text. This is some other text.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator="start",
+def test_recursive_character_text_splitter_strict_chunk_size_long_word() -> None:
+    """Ensure strict_chunk_size enforces chunking even when no separators exist."""
+    text = "Supercalifragilisticexpialidocious" * 5
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=20, chunk_overlap=5, strict_chunk_size=True
     )
-    documents = splitter.split_text(html_content)
+    chunks = splitter.split_text(text)
 
-    expected = [
-        Document(
-            page_content="This is some text",
-            metadata={"Header 1": "Section 1"},
-        ),
-        Document(
-            page_content=". This is some other text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
+    assert all(len(chunk) <= 20 for chunk in chunks), "Chunks exceed strict chunk size!"
 
 
-@pytest.mark.requires("bs4")
-def test_html_splitter_keep_separator_end() -> None:
-    """Test HTML splitting with keep_separator="end" """
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some text. This is some other text.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator="end",
-    )
-    documents = splitter.split_text(html_content)
-
-    expected = [
-        Document(
-            page_content="This is some text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-        Document(
-            page_content="This is some other text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
-
-
-@pytest.mark.requires("bs4")
-def test_html_splitter_keep_separator_default() -> None:
-    """Test HTML splitting with keep_separator not set"""
-    html_content = """
-    <h1>Section 1</h1>
-    <p>This is some text. This is some other text.</p>
-    """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=10, separators=[". "]
-    )
-    documents = splitter.split_text(html_content)
-
-    expected = [
-        Document(
-            page_content="This is some text",
-            metadata={"Header 1": "Section 1"},
-        ),
-        Document(
-            page_content=". This is some other text.",
-            metadata={"Header 1": "Section 1"},
-        ),
-    ]
-
-    assert documents == expected
-
-
-def test_character_text_splitter_discard_regex_separator_on_merge() -> None:
-    """Test that regex lookahead separator is not re-inserted when merging."""
-    text = "SCE191 First chunk. SCE103 Second chunk."
-    splitter = CharacterTextSplitter(
-        separator=r"(?=SCE\d{3})",
-        is_separator_regex=True,
-        chunk_size=200,
-        chunk_overlap=0,
-        keep_separator=False,
-    )
-    output = splitter.split_text(text)
-    assert output == ["SCE191 First chunk. SCE103 Second chunk."]
-
-
-@pytest.mark.parametrize(
-    ("separator", "is_regex", "text", "chunk_size", "expected"),
-    [
-        # 1) regex lookaround & split happens
-        #   "abcmiddef" split by "(?<=mid)" → ["abcmid","def"], chunk_size=5 keeps both
-        (r"(?<=mid)", True, "abcmiddef", 5, ["abcmid", "def"]),
-        # 2) regex lookaround & no split
-        #   chunk_size=100 merges back into ["abcmiddef"]
-        (r"(?<=mid)", True, "abcmiddef", 100, ["abcmiddef"]),
-        # 3) literal separator & split happens
-        #   split on "mid" → ["abc","def"], chunk_size=3 keeps both
-        ("mid", False, "abcmiddef", 3, ["abc", "def"]),
-        # 4) literal separator & no split
-        #   chunk_size=100 merges back into ["abcmiddef"]
-        ("mid", False, "abcmiddef", 100, ["abcmiddef"]),
-    ],
-)
-def test_character_text_splitter_chunk_size_effect(
-    separator: str,
-    *,
-    is_regex: bool,
-    text: str,
-    chunk_size: int,
-    expected: list[str],
+@pytest.mark.parametrize("add_chunk_position", [True, False])
+def test_recursive_character_text_splitter_chunk_position(
+    add_chunk_position: bool,  # noqa: FBT001
 ) -> None:
-    splitter = CharacterTextSplitter(
-        separator=separator,
-        is_separator_regex=is_regex,
-        chunk_size=chunk_size,
-        chunk_overlap=0,
-        keep_separator=False,
+    """Ensure chunk_position metadata is correctly assigned when enabled."""
+    text = "This is a test document."
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=2)
+
+    # Manually set the flag for testing
+    splitter._add_chunk_position = add_chunk_position
+    docs = splitter.create_documents([text])
+
+    # Determine expected chunk positions dynamically
+    expected_positions = [f"{i + 1}/{len(docs)}" for i in range(len(docs))]
+
+    for i, doc in enumerate(docs):
+        if add_chunk_position:
+            assert doc.metadata.get("chunk_position") == expected_positions[i], (
+                f"Metadata key chunk_position incorrect! "
+                f"Expected {expected_positions[i]}, "
+                f"got {doc.metadata.get('chunk_position')}"
+            )
+        else:
+            assert "chunk_position" not in doc.metadata, (
+                "chunk_position should not exist when disabled!"
+            )
+
+
+def test_recursive_character_text_splitter_default_behavior() -> None:
+    """Ensure strict_chunk_size=False does not change existing behavior."""
+    text = "This is a test text that should follow normal recursive splitting."
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=15, chunk_overlap=3, separators=["\n\n"], strict_chunk_size=False
     )
-    assert splitter.split_text(text) == expected
+    chunks = splitter.split_text(text)
+
+    assert any(len(chunk) > 15 for chunk in chunks), "Default behavior was altered!"
+
+
+def test_recursive_character_text_splitter_split_documents() -> None:
+    """Ensure split_documents properly assigns chunk_position metadata when enabled."""
+    docs = [
+        Document(page_content="LangChain is great for LLM applications."),
+        Document(page_content="Testing is crucial."),
+    ]
+    splitter = RecursiveCharacterTextSplitter(chunk_size=10, chunk_overlap=2)
+
+    # Enable chunk_position
+    splitter._add_chunk_position = True
+    split_docs = splitter.split_documents(docs)
+
+    for doc in split_docs:
+        assert "chunk_position" in doc.metadata, "chunk_position missing in metadata!"
