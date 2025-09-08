@@ -53,7 +53,7 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> N
         if obj is target:
             return True
         for name in dir(obj):
-            if name.startswith("__") or name.startswith("_"):
+            if name.startswith("_"):
                 continue
             try:
                 value = getattr(obj, name)
