@@ -27,6 +27,13 @@ if TYPE_CHECKING:
     from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
 
+try:
+    import numpy as np
+
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
+
 
 class InMemoryVectorStore(VectorStore):
     """In-memory vector store implementation.
@@ -83,7 +90,7 @@ class InMemoryVectorStore(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(query="thud", k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
@@ -96,6 +103,7 @@ class InMemoryVectorStore(VectorStore):
 
             def _filter_function(doc: Document) -> bool:
                 return doc.metadata.get("bar") == "baz"
+
 
             results = vector_store.similarity_search(
                 query="thud", k=1, filter=_filter_function
@@ -111,9 +119,7 @@ class InMemoryVectorStore(VectorStore):
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(
-                query="qux", k=1
-            )
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -135,7 +141,7 @@ class InMemoryVectorStore(VectorStore):
 
             # search with score
             results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
-            for doc,score in results:
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: none
@@ -190,7 +196,6 @@ class InMemoryVectorStore(VectorStore):
         ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
@@ -224,7 +229,6 @@ class InMemoryVectorStore(VectorStore):
     async def aadd_documents(
         self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
@@ -499,14 +503,12 @@ class InMemoryVectorStore(VectorStore):
             filter=filter,
         )
 
-        try:
-            import numpy as np
-        except ImportError as e:
+        if not _HAS_NUMPY:
             msg = (
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
             )
-            raise ImportError(msg) from e
+            raise ImportError(msg)
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
