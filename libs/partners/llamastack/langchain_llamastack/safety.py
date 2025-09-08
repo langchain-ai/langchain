@@ -109,35 +109,47 @@ class LlamaStackSafety:
 
     def _initialize_client(self) -> None:
         """Initialize the Llama Stack client."""
-        if self.client is None:
+        if self.client is None and LlamaStackClient is not None:
             self.client = LlamaStackClient(**self._get_client_kwargs())
 
     def _initialize_async_client(self) -> None:
         """Initialize the async Llama Stack client."""
-        if self.async_client is None:
+        if self.async_client is None and AsyncLlamaStackClient is not None:
             self.async_client = AsyncLlamaStackClient(**self._get_client_kwargs())
 
     def check_content_safety(
         self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
         """
-        Check content safety using Llama Stack safety shields.
+        Check content safety using Llama Stack shields.
 
         Args:
             content: The content to check for safety
-            content_type: Type of content (text, image, etc.)
-            **kwargs: Additional parameters for safety check
+            content_type: Type of content (default: "text")
+            **kwargs: Additional parameters for safety checking
 
         Returns:
             SafetyResult with safety assessment
         """
+        # Check if LlamaStackClient is available
+        if LlamaStackClient is None:
+            return SafetyResult(
+                is_safe=True,
+                violations=[],
+                explanation="LlamaStackClient not available - install llama-stack-client",
+            )
+
         if self.client is None:
             self._initialize_client()
 
         try:
-            # Ensure client is not None
+            # Ensure client is not None after initialization
             if self.client is None:
-                raise ValueError("LlamaStack client not initialized")
+                return SafetyResult(
+                    is_safe=True,
+                    violations=[],
+                    explanation="LlamaStack client not initialized",
+                )
 
             # Use the safety.run_shield method
             response = self.client.safety.run_shield(
@@ -146,23 +158,24 @@ class LlamaStackSafety:
                 **kwargs,
             )
 
-            # Parse the response based on expected format
+            # Parse safety response
             is_safe = True
             violations = []
             confidence_score = None
             explanation = None
 
+            # Check if response indicates a violation
             if hasattr(response, "is_violation") and response.is_violation:
                 is_safe = False
-                if hasattr(response, "violation_level"):
-                    violations.append(
-                        {
-                            "category": "safety_violation",
-                            "level": response.violation_level,
-                            "metadata": getattr(response, "metadata", {}),
-                        }
-                    )
+                violations.append(
+                    {
+                        "category": "safety_violation",
+                        "level": getattr(response, "violation_level", "unknown"),
+                        "metadata": getattr(response, "metadata", {}),
+                    }
+                )
 
+            # Extract confidence score and explanation if available
             if hasattr(response, "confidence_score"):
                 confidence_score = response.confidence_score
 

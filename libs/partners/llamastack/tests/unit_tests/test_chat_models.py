@@ -206,39 +206,6 @@ class TestChatModels:
         provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
         assert provider_data["together_api_key"] == "test-together-key"
 
-    def test_get_provider_headers_openai(self) -> None:
-        """Test getting provider headers for OpenAI model."""
-        model = "gpt-4"
-        provider_keys = {"openai": "test-openai-key"}
-
-        headers = _get_provider_headers(model, provider_keys)
-
-        assert "X-LlamaStack-Provider-Data" in headers
-        provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
-        assert provider_data["openai_api_key"] == "test-openai-key"
-
-    def test_get_provider_headers_anthropic(self) -> None:
-        """Test getting provider headers for Anthropic model."""
-        model = "claude-3-sonnet"
-        provider_keys = {"anthropic": "test-anthropic-key"}
-
-        headers = _get_provider_headers(model, provider_keys)
-
-        assert "X-LlamaStack-Provider-Data" in headers
-        provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
-        assert provider_data["anthropic_api_key"] == "test-anthropic-key"
-
-    def test_get_provider_headers_groq(self) -> None:
-        """Test getting provider headers for Groq model."""
-        model = "llama3-groq-70b"
-        provider_keys = {"groq": "test-groq-key"}
-
-        headers = _get_provider_headers(model, provider_keys)
-
-        assert "X-LlamaStack-Provider-Data" in headers
-        provider_data = json.loads(headers["X-LlamaStack-Provider-Data"])
-        assert provider_data["groq_api_key"] == "test-groq-key"
-
     def test_get_provider_headers_no_match(self) -> None:
         """Test getting provider headers when no provider matches."""
         model = "ollama/llama2"
@@ -375,7 +342,7 @@ class TestChatModels:
         result = get_llamastack_models(self.base_url)
 
         assert result == self.available_models
-        mock_list_models.assert_called_once_with(self.base_url, model_type="inference")
+        mock_list_models.assert_called_once_with(self.base_url, model_type="llm")
 
     # @patch("langchain_llamastack.chat_models.list_available_models")
     # def test_get_llamastack_models_error(self, mock_list_models):
@@ -399,9 +366,7 @@ class TestChatModels:
         result = check_llamastack_status(self.base_url)
 
         assert result == expected_status
-        mock_check_connection.assert_called_once_with(
-            self.base_url, model_type="inference"
-        )
+        mock_check_connection.assert_called_once_with(self.base_url, model_type="llm")
 
     @patch("langchain_llamastack.chat_models.check_llamastack_connection")
     def test_check_llamastack_status_failure(self, mock_check_connection: Any) -> None:

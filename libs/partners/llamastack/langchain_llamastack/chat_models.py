@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def check_llamastack_connection(
-    base_url: str, model_type: str = "inference"
+    base_url: str, model_type: str = "llm"
 ) -> dict[str, Any]:
     """Check LlamaStack connection and return available models."""
     try:
@@ -24,7 +24,7 @@ def check_llamastack_connection(
         client = LlamaStackClient(base_url=base_url)
         models = client.models.list()
 
-        # Filter models by type
+        # Filter models by type (LlamaStack uses "llm" not "inference")
         model_ids = []
         for model in models:
             if hasattr(model, "identifier") and hasattr(model, "model_type"):
@@ -47,7 +47,7 @@ def check_llamastack_connection(
         }
 
 
-def list_available_models(base_url: str, model_type: str = "inference") -> list[str]:
+def list_available_models(base_url: str, model_type: str = "llm") -> list[str]:
     """List available models from LlamaStack."""
     try:
         result = check_llamastack_connection(base_url, model_type)
@@ -254,20 +254,12 @@ def _get_provider_headers(
             provider_data["anthropic_api_key"] = api_key
             logger.info(f"Added Anthropic API key for model: {model}")
 
-    # Groq models
-    if "groq" in model.lower() or "llama3-groq" in model.lower():
-        api_key = provider_api_keys.get("groq") or os.getenv("GROQ_API_KEY")
-        if api_key:
-            provider_data["groq_api_key"] = api_key
-            logger.info(f"Added Groq API key for model: {model}")
-
     # Add provider data header if we have any provider keys
     if provider_data:
         headers["X-LlamaStack-Provider-Data"] = json.dumps(provider_data)
         logger.info(f"Set provider data header: {json.dumps(provider_data, indent=2)}")
     else:
         logger.debug(f"No provider API keys needed for model: {model}")
-
     return headers
 
 
@@ -366,7 +358,7 @@ def get_llamastack_models(base_url: str = "http://localhost:8321") -> list[str]:
         models = get_llamastack_models()
         print(f"Available models: {models}")
     """
-    return list_available_models(base_url, model_type="inference")
+    return list_available_models(base_url, model_type="llm")
 
 
 def check_llamastack_status(base_url: str = "http://localhost:8321") -> dict[str, Any]:
@@ -385,10 +377,4 @@ def check_llamastack_status(base_url: str = "http://localhost:8321") -> dict[str
         else:
             print(f"LlamaStack error: {status['error']}")
     """
-    return check_llamastack_connection(base_url, model_type="inference")
-
-
-# # Legacy aliases for backwards compatibility
-# CreateLlamaStackLLM = create_llamastack_llm
-# GetLlamaStackModels = get_llamastack_models
-# CheckLlamaStackStatus = check_llamastack_status
+    return check_llamastack_connection(base_url, model_type="llm")
