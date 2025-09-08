@@ -1,15 +1,13 @@
 """Standard tests."""
 
-from abc import ABC
 
-
-class BaseStandardTests(ABC):
+class BaseStandardTests:
     """Base class for standard tests.
 
     :private:
     """
 
-    def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:
+    def test_no_overrides_DO_NOT_OVERRIDE(self) -> None:  # noqa: N802
         """Test that no standard tests are overridden.
 
         :private:
