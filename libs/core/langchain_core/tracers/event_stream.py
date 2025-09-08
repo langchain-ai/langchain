@@ -9,21 +9,23 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Optional,
+    TypedDict,
     TypeVar,
     Union,
     cast,
 )
 from uuid import UUID, uuid4
 
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import NotRequired, override
 
-from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
 )
+from langchain_core.runnables import ensure_config
 from langchain_core.runnables.schema import (
     CustomStreamEvent,
     EventData,
@@ -36,6 +38,11 @@ from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers.log_stream import (
+    LogStreamCallbackHandler,
+    RunLog,
+    _astream_log_implementation,
+)
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
 
@@ -53,22 +60,20 @@ class RunInfo(TypedDict):
     """Information about a run.
 
     This is used to keep track of the metadata associated with a run.
-
-    Parameters:
-        name: The name of the run.
-        tags: The tags associated with the run.
-        metadata: The metadata associated with the run.
-        run_type: The type of the run.
-        inputs: The inputs to the run.
-        parent_run_id: The ID of the parent run.
     """
 
     name: str
+    """The name of the run."""
     tags: list[str]
+    """The tags associated with the run."""
     metadata: dict[str, Any]
+    """The metadata associated with the run."""
     run_type: str
+    """The type of the run."""
     inputs: NotRequired[Any]
+    """The inputs to the run."""
     parent_run_id: Optional[UUID]
+    """The ID of the parent run."""
 
 
 def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> str:
@@ -770,14 +775,6 @@ async def _astream_events_implementation_v1(
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    from langchain_core.runnables import ensure_config
-    from langchain_core.runnables.utils import _RootEventFilter
-    from langchain_core.tracers.log_stream import (
-        LogStreamCallbackHandler,
-        RunLog,
-        _astream_log_implementation,
-    )
-
     stream = LogStreamCallbackHandler(
         auto_close=False,
         include_names=include_names,
@@ -955,9 +952,6 @@ async def _astream_events_implementation_v2(
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
-    from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.runnables import ensure_config
-
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,

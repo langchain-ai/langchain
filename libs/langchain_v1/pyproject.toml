@@ -102,6 +102,9 @@ skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 select = [
   "ALL"
@@ -111,7 +114,6 @@ ignore = [
   "ISC001",  # Messes with the formatter
   "PERF203", # Rarely useful
   "SLF001",  # Private member access
-  "UP007",   # pyupgrade: non-pep604-annotation-union
   "PLC0415", # Imports should be at the top. Not always desirable
   "PLR0913", # Too many arguments in function definition
   "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
@@ -129,7 +131,6 @@ flake8-annotations.allow-star-arg-any = true
 ]
 "langchain/agents/*" = [
     "ANN401", # we use Any right now, need to narrow
-    "E501", # line too long, needs to fix
     "A002", # input is shadowing builtin
     "A001", # input is shadowing builtin
     "B904", # use from for exceptions

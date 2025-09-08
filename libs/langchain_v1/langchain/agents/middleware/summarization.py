@@ -48,7 +48,7 @@ Respond ONLY with the extracted context. Do not include any additional informati
 <messages>
 Messages to summarize:
 {messages}
-</messages>"""
+</messages>"""  # noqa: E501
 
 SUMMARY_PREFIX = "## Previous conversation summary:"
 

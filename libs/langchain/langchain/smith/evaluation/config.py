@@ -39,7 +39,7 @@ class EvalConfig(BaseModel):
     evaluator_type : EvaluatorType
         The type of evaluator to use.
 
-    Methods
+    Methods:
     -------
     get_kwargs()
         Get the keyword arguments for the evaluator configuration.
@@ -51,7 +51,7 @@ class EvalConfig(BaseModel):
     def get_kwargs(self) -> dict[str, Any]:
         """Get the keyword arguments for the load_evaluator call.
 
-        Returns
+        Returns:
         -------
         Dict[str, Any]
             The keyword arguments for the load_evaluator call.
@@ -360,6 +360,6 @@ class RunEvalConfig(BaseModel):
         prompt: Optional[BasePromptTemplate] = None
 
     class LabeledScoreString(ScoreString):
-        """ "Configuration for a labeled score string evaluator."""
+        """Configuration for a labeled score string evaluator."""
 
         evaluator_type: EvaluatorType = EvaluatorType.LABELED_SCORE_STRING

@@ -119,9 +119,9 @@ def dereference_refs(
       full_schema: The complete schema (defaults to schema_obj).
       skip_keys:
         - If None (the default), we skip recursion under '$defs' *and* only
-            shallow-inline refs.
+          shallow-inline refs.
         - If provided (even as an empty list), we will recurse under every key and
-            deep-inline all refs.
+          deep-inline all refs.
 
     Returns:
         The schema with refs dereferenced.

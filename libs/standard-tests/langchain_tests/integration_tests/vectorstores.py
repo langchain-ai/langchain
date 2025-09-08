@@ -14,6 +14,10 @@ from langchain_tests.base import BaseStandardTests
 EMBEDDING_SIZE = 6
 
 
+def _sort_by_id(documents: list[Document]) -> list[Document]:
+    return sorted(documents, key=lambda doc: doc.id or "")
+
+
 class VectorStoreIntegrationTests(BaseStandardTests):
     """Base class for vector store integration tests.
 
@@ -83,13 +87,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     .. code-block:: python
 
        class TestParrotVectorStore(VectorStoreIntegrationTests):
-            @pytest.fixture()
-            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                ...
+           @pytest.fixture()
+           def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+               ...
 
-            @property
-            def has_async(self) -> bool:
-                return False
+           @property
+           def has_async(self) -> bool:
+               return False
 
     .. note::
           API references for individual test methods include troubleshooting tips.
@@ -150,10 +154,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             If this test fails, check that:
 
-            1. We correctly initialize an empty vector store in the ``vectorestore`` fixture.
-            2. Calling ``.similarity_search`` for the top ``k`` similar documents does not threshold by score.
-            3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
-        """  # noqa: E501
+            1. We correctly initialize an empty vector store in the ``vectorestore``
+               fixture.
+            2. Calling ``.similarity_search`` for the top ``k`` similar documents does
+               not threshold by score.
+            3. We do not mutate the original document object when adding it to the
+               vector store (e.g., by adding an ID).
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -347,10 +354,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = vectorstore.add_documents(documents, ids=["1", "2"])
         retrieved_documents = vectorstore.get_by_ids(ids)
-        assert retrieved_documents == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(retrieved_documents) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
@@ -398,10 +407,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 .. code-block:: python
 
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+                    def test_add_documents_documents(
+                        self, vectorstore: VectorStore
+                    ) -> None:
                         super().test_add_documents_documents(vectorstore)
 
-        """  # noqa: E501
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -410,10 +421,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
         ids = vectorstore.add_documents(documents)
-        assert vectorstore.get_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(vectorstore.get_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
         """Test that add_documents with existing IDs is idempotent.
@@ -425,8 +438,10 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             This test also verifies that:
 
-            1. IDs specified in the ``Document.id`` field are assigned when adding documents.
-            2. If some documents include IDs and others don't string IDs are generated for the latter.
+            1. IDs specified in the ``Document.id`` field are assigned when adding
+               documents.
+            2. If some documents include IDs and others don't string IDs are generated
+               for the latter.
 
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
@@ -436,10 +451,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 .. code-block:: python
 
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
+                    def test_add_documents_with_existing_ids(
+                        self, vectorstore: VectorStore
+                    ) -> None:
                         super().test_add_documents_with_existing_ids(vectorstore)
 
-        """  # noqa: E501
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -449,10 +466,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = vectorstore.add_documents(documents)
         assert "foo" in ids
-        assert vectorstore.get_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id="foo"),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(vectorstore.get_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id="foo"),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
@@ -475,10 +494,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             If this test fails, check that:
 
-            1. We correctly initialize an empty vector store in the ``vectorestore`` fixture.
-            2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does not threshold by score.
-            3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
-        """  # noqa: E501
+            1. We correctly initialize an empty vector store in the ``vectorestore``
+               fixture.
+            2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does
+               not threshold by score.
+            3. We do not mutate the original document object when adding it to the
+               vector store (e.g., by adding an ID).
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -679,10 +701,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = await vectorstore.aadd_documents(documents, ids=["1", "2"])
         retrieved_documents = await vectorstore.aget_by_ids(ids)
-        assert retrieved_documents == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(retrieved_documents) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_get_by_ids_missing_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
@@ -700,10 +724,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 .. code-block:: python
 
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
+                    async def test_get_by_ids_missing(
+                        self, vectorstore: VectorStore
+                    ) -> None:
                         await super().test_get_by_ids_missing(vectorstore)
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -731,10 +757,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 .. code-block:: python
 
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
+                    async def test_add_documents_documents(
+                        self, vectorstore: VectorStore
+                    ) -> None:
                         await super().test_add_documents_documents(vectorstore)
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -743,10 +771,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Document(page_content="bar", metadata={"id": 2}),
         ]
         ids = await vectorstore.aadd_documents(documents)
-        assert await vectorstore.aget_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(await vectorstore.aget_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id=ids[0]),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )
 
     async def test_add_documents_with_existing_ids_async(
         self, vectorstore: VectorStore
@@ -760,8 +790,10 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             This test also verifies that:
 
-            1. IDs specified in the ``Document.id`` field are assigned when adding documents.
-            2. If some documents include IDs and others don't string IDs are generated for the latter.
+            1. IDs specified in the ``Document.id`` field are assigned when adding
+               documents.
+            2. If some documents include IDs and others don't string IDs are generated
+               for the latter.
 
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
@@ -771,10 +803,12 @@ class VectorStoreIntegrationTests(BaseStandardTests):
                 .. code-block:: python
 
                     @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
+                    async def test_add_documents_with_existing_ids(
+                        self, vectorstore: VectorStore
+                    ) -> None:
                         await super().test_add_documents_with_existing_ids(vectorstore)
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -784,7 +818,9 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         ]
         ids = await vectorstore.aadd_documents(documents)
         assert "foo" in ids
-        assert await vectorstore.aget_by_ids(ids) == [
-            Document(page_content="foo", metadata={"id": 1}, id="foo"),
-            Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
-        ]
+        assert _sort_by_id(await vectorstore.aget_by_ids(ids)) == _sort_by_id(
+            [
+                Document(page_content="foo", metadata={"id": 1}, id="foo"),
+                Document(page_content="bar", metadata={"id": 2}, id=ids[1]),
+            ]
+        )

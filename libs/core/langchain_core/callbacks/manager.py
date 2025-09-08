@@ -28,8 +28,18 @@ from langchain_core.callbacks.base import (
     ToolManagerMixin,
 )
 from langchain_core.callbacks.stdout import StdOutCallbackHandler
+from langchain_core.globals import get_debug
 from langchain_core.messages import BaseMessage, get_buffer_string
+from langchain_core.tracers.context import (
+    _configure_hooks,
+    _get_trace_callbacks,
+    _get_tracer_project,
+    _tracing_v2_is_enabled,
+    tracing_v2_callback_var,
+)
+from langchain_core.tracers.langchain import LangChainTracer
 from langchain_core.tracers.schemas import Run
+from langchain_core.tracers.stdout import ConsoleCallbackHandler
 from langchain_core.utils.env import env_var_is_set
 
 if TYPE_CHECKING:
@@ -46,8 +56,6 @@ logger = logging.getLogger(__name__)
 
 
 def _get_debug() -> bool:
-    from langchain_core.globals import get_debug
-
     return get_debug()
 
 
@@ -103,8 +111,6 @@ def trace_as_chain_group(
                 manager.on_chain_end({"output": res})
 
     """
-    from langchain_core.tracers.context import _get_trace_callbacks
-
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -189,8 +195,6 @@ async def atrace_as_chain_group(
                 await manager.on_chain_end({"output": res})
 
     """
-    from langchain_core.tracers.context import _get_trace_callbacks
-
     cb = _get_trace_callbacks(
         project_name, example_id, callback_manager=callback_manager
     )
@@ -2376,13 +2380,6 @@ def _configure(
     Returns:
         T: The configured callback manager.
     """
-    from langchain_core.tracers.context import (
-        _configure_hooks,
-        _get_tracer_project,
-        _tracing_v2_is_enabled,
-        tracing_v2_callback_var,
-    )
-
     tracing_context = get_tracing_context()
     tracing_metadata = tracing_context["metadata"]
     tracing_tags = tracing_context["tags"]
@@ -2459,9 +2456,6 @@ def _configure(
     tracer_project = _get_tracer_project()
     debug = _get_debug()
     if verbose or debug or tracing_v2_enabled_:
-        from langchain_core.tracers.langchain import LangChainTracer
-        from langchain_core.tracers.stdout import ConsoleCallbackHandler
-
         if verbose and not any(
             isinstance(handler, StdOutCallbackHandler)
             for handler in callback_manager.handlers
@@ -2630,7 +2624,8 @@ async def adispatch_custom_event(
     .. versionadded:: 0.2.15
 
     """
-    from langchain_core.runnables.config import (
+    # Import locally to prevent circular imports.
+    from langchain_core.runnables.config import (  # noqa: PLC0415
         ensure_config,
         get_async_callback_manager_for_config,
     )
@@ -2705,7 +2700,8 @@ def dispatch_custom_event(
     .. versionadded:: 0.2.15
 
     """
-    from langchain_core.runnables.config import (
+    # Import locally to prevent circular imports.
+    from langchain_core.runnables.config import (  # noqa: PLC0415
         ensure_config,
         get_callback_manager_for_config,
     )

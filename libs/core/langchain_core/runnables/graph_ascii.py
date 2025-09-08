@@ -3,12 +3,24 @@
 Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
 """
 
+from __future__ import annotations
+
 import math
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.runnables.graph import Edge as LangEdge
+try:
+    from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import-untyped]
+    from grandalf.layouts import SugiyamaLayout  # type: ignore[import-untyped]
+    from grandalf.routing import route_with_lines  # type: ignore[import-untyped]
+
+    _HAS_GRANDALF = True
+except ImportError:
+    _HAS_GRANDALF = False
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.graph import Edge as LangEdge
 
 
 class VertexViewer:
@@ -185,13 +197,9 @@ class _EdgeViewer:
 def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
-    try:
-        from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import-untyped]
-        from grandalf.layouts import SugiyamaLayout  # type: ignore[import-untyped]
-        from grandalf.routing import route_with_lines  # type: ignore[import-untyped]
-    except ImportError as exc:
+    if not _HAS_GRANDALF:
         msg = "Install grandalf to draw graphs: `pip install grandalf`."
-        raise ImportError(msg) from exc
+        raise ImportError(msg)
 
     #
     # Just a reminder about naming conventions:
