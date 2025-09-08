@@ -82,7 +82,7 @@ def l_sa_check(
     """
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
-        padding = literal.split("\n")[-1]
+        padding = literal.rsplit("\n", maxsplit=1)[-1]
 
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
@@ -214,17 +214,22 @@ def tokenize(
         def_rdel: The default right delimiter
             ("}}" by default, as in spec compliant mustache)
 
-    Returns:
-        A generator of mustache tags in the form of a tuple (tag_type, tag_key)
-            Where tag_type is one of:
-             * literal
-             * section
-             * inverted section
-             * end
-             * partial
-             * no escape
-            And tag_key is either the key or in the case of a literal tag,
-            the literal itself.
+    Yields:
+        Mustache tags in the form of a tuple (tag_type, tag_key)
+        where tag_type is one of:
+
+        * literal
+        * section
+        * inverted section
+        * end
+        * partial
+        * no escape
+
+        and tag_key is either the key or in the case of a literal tag,
+        the literal itself.
+
+    Raises:
+        ChevronError: If there is a syntax error in the template.
     """
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1
@@ -326,7 +331,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """HTML escape all of these " & < >."""
+    """Return the HTML-escaped string with these characters escaped: ``" & < >``."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",
@@ -349,7 +354,7 @@ def _get_key(
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Get a key from the current scope."""
+    """Return a key from the current scope."""
     # If the key is a dot
     if key == ".":
         # Then just return the current scope
@@ -407,7 +412,11 @@ def _get_key(
 
 
 def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
-    """Load a partial."""
+    """Load a partial.
+
+    Returns:
+        The partial.
+    """
     try:
         # Maybe the partial is in the dictionary
         return partials_dict[name]

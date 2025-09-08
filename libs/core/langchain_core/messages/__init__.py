@@ -48,6 +48,7 @@ if TYPE_CHECKING:
         DataContentBlock,
         FileContentBlock,
         ImageContentBlock,
+        InvalidToolCall,
         NonStandardAnnotation,
         NonStandardContentBlock,
         PlainTextContentBlock,
@@ -63,7 +64,6 @@ if TYPE_CHECKING:
     from langchain_core.messages.modifier import RemoveMessage
     from langchain_core.messages.system import SystemMessage, SystemMessageChunk
     from langchain_core.messages.tool import (
-        InvalidToolCall,
         ToolCall,
         ToolCallChunk,
         ToolMessage,

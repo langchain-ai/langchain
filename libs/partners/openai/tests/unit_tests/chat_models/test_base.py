@@ -2665,6 +2665,42 @@ def test_get_last_messages() -> None:
     assert response_id == "resp_123"
 
 
+def test_get_last_messages_with_mixed_response_metadata() -> None:
+    """Test that _get_last_messages correctly skips AIMessages without response_id."""
+    # Test case where the most recent AIMessage has no response_id,
+    # but an earlier AIMessage does have one
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
+    assert last_messages == [
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),
+        HumanMessage("What's up?"),
+    ]
+    assert previous_response_id == "resp_123"
+
+    # Test case where no AIMessage has response_id
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!"),  # No response_metadata
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return all messages when no AIMessage has response_id
+    assert last_messages == messages
+    assert previous_response_id is None
+
+
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
     llm = ChatOpenAI(

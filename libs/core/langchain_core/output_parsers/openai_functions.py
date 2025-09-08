@@ -261,6 +261,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects. Default is False.
 
+        Raises:
+            ValueError: If the pydantic schema is not valid.
+
         Returns:
             The parsed JSON object.
         """

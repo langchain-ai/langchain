@@ -99,8 +99,8 @@ The module defines several types of content blocks, including:
     # Direct construction:
     from langchain_core.messages.content import TextContentBlock, ImageContentBlock
 
-    multimodal_message: AIMessage(content_blocks=
-        [
+    multimodal_message: AIMessage(
+        content_blocks=[
             TextContentBlock(type="text", text="What is shown in this image?"),
             ImageContentBlock(
                 type="image",
@@ -113,8 +113,8 @@ The module defines several types of content blocks, including:
     # Using factories:
     from langchain_core.messages.content import create_text_block, create_image_block
 
-    multimodal_message: AIMessage(content=
-        [
+    multimodal_message: AIMessage(
+        content=[
             create_text_block("What is shown in this image?"),
             create_image_block(
                 url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
@@ -261,11 +261,7 @@ class ToolCall(TypedDict):
 
         .. code-block:: python
 
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
+            {"name": "foo", "args": {"a": 1}, "id": "123"}
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
@@ -316,12 +312,12 @@ class ToolCallChunk(TypedDict):
     .. code-block:: python
 
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
         (
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
 
     """
 

@@ -264,7 +264,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a1"
+version = "1.0.0a2"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -348,6 +348,7 @@ test = [
 typing = [
     { name = "langchain-core" },
     { name = "mypy" },
+    { name = "types-pyyaml" },
 ]
 
 [package.metadata]
@@ -372,7 +373,8 @@ test = [{ name = "langchain-core", editable = "../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../core" },
-    { name = "mypy", specifier = ">=1.17.1,<2" },
+    { name = "mypy", specifier = ">=1.17.1,<1.18" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
 [[package]]
@@ -1188,6 +1190,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/5b/b9/1ed31d167be802da0fc95020d04cd27b7d7065cc6fbefdd2f9186f60d7bd/tomli-2.2.1-cp313-cp313-win32.whl", hash = "sha256:d3f5614314d758649ab2ab3a62d4f2004c825922f9e370b29416484086b264ec", size = 98724, upload-time = "2024-11-27T22:38:32.837Z" },
     { url = "https://files.pythonhosted.org/packages/c7/32/b0963458706accd9afcfeb867c0f9175a741bf7b19cd424230714d722198/tomli-2.2.1-cp313-cp313-win_amd64.whl", hash = "sha256:a38aa0308e754b0e3c67e344754dff64999ff9b513e691d0e786265c93583c69", size = 109383, upload-time = "2024-11-27T22:38:34.455Z" },
     { url = "https://files.pythonhosted.org/packages/6e/c2/61d3e0f47e2b74ef40a68b9e6ad5984f6241a942f7cd3bbfbdbd03861ea9/tomli-2.2.1-py3-none-any.whl", hash = "sha256:cb55c73c5f4408779d0cf3eef9f762b9c9f147a77de7b258bef0a5628adc85cc", size = 14257, upload-time = "2024-11-27T22:38:35.385Z" },
+]
+
+[[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250822"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/85/90a442e538359ab5c9e30de415006fb22567aa4301c908c09f19e42975c2/types_pyyaml-6.0.12.20250822.tar.gz", hash = "sha256:259f1d93079d335730a9db7cff2bcaf65d7e04b4a56b5927d49a612199b59413", size = 17481, upload-time = "2025-08-22T03:02:16.209Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/8e/8f0aca667c97c0d76024b37cffa39e76e2ce39ca54a38f285a64e6ae33ba/types_pyyaml-6.0.12.20250822-py3-none-any.whl", hash = "sha256:1fe1a5e146aa315483592d292b72a172b65b946a6d98aa6ddd8e4aa838ab7098", size = 20314, upload-time = "2025-08-22T03:02:15.002Z" },
 ]
 
 [[package]]

@@ -1,5 +1,7 @@
+"""JavaScript framework text splitter."""
+
 import re
-from typing import Any, Optional
+from typing import Any
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -25,7 +27,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(
         self,
-        separators: Optional[list[str]] = None,
+        separators: list[str] | None = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         **kwargs: Any,

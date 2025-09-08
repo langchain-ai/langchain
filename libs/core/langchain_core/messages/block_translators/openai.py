@@ -136,7 +136,7 @@ def _convert_to_v1_from_chat_completions_input(
     Returns:
         Updated list with OpenAI blocks converted to v1 format.
     """
-    from langchain_core.messages import content as types
+    from langchain_core.messages import content as types  # noqa: PLC0415
 
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
@@ -232,7 +232,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert v0 AIMessage into ``output_version="responses/v1"`` format."""
-    from langchain_core.messages import AIMessageChunk
+    from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
     # Only update ChatOpenAI v0.3 AIMessages
     is_chatopenai_v03 = (
@@ -650,7 +650,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 ] = None
                 call_id = block.get("call_id", "")
 
-                from langchain_core.messages import AIMessageChunk
+                from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
                 if (
                     isinstance(message, AIMessageChunk)
@@ -790,7 +790,9 @@ def _register_openai_translator() -> None:
 
     Run automatically when the module is imported.
     """
-    from langchain_core.messages.block_translators import register_translator
+    from langchain_core.messages.block_translators import (  # noqa: PLC0415
+        register_translator,
+    )
 
     register_translator("openai", translate_content, translate_content_chunk)
 
