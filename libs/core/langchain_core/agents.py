@@ -14,13 +14,15 @@ Agents use language models to choose a sequence of actions to take.
 
 A basic agent works in the following manner:
 
-1. Given a prompt an agent uses an LLM to request an action to take (e.g., a tool to run).
+1. Given a prompt an agent uses an LLM to request an action to take
+   (e.g., a tool to run).
 2. The agent executes the action (e.g., runs the tool), and receives an observation.
-3. The agent returns the observation to the LLM, which can then be used to generate the next action.
+3. The agent returns the observation to the LLM, which can then be used to generate
+   the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
 The schemas for the agents themselves are defined in langchain.agents.agent.
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -84,7 +86,8 @@ class AgentAction(Serializable):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "agent"].
+        Returns:
+            ``["langchain", "schema", "agent"]``
         """
         return ["langchain", "schema", "agent"]
 
@@ -153,14 +156,15 @@ class AgentFinish(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "schema", "agent"].
+        Returns:
+            ``["langchain", "schema", "agent"]``
         """
         return ["langchain", "schema", "agent"]
 
