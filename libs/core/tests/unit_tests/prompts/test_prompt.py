@@ -2,7 +2,7 @@
 
 import re
 from tempfile import NamedTemporaryFile
-from typing import Any, Union
+from typing import Any, Literal, Union
 from unittest import mock
 
 import pytest
@@ -683,8 +683,8 @@ def test_prompt_with_template_variable_name_jinja2() -> None:
 def test_prompt_template_add_with_with_another_format() -> None:
     with pytest.raises(ValueError, match=r"Cannot add templates"):
         (
-            PromptTemplate.from_template("This is a {template}") +
-            PromptTemplate.from_template("So {{this}} is", template_format="mustache")
+            PromptTemplate.from_template("This is a {template}")
+            + PromptTemplate.from_template("So {{this}} is", template_format="mustache")
         )
 
 
@@ -696,12 +696,16 @@ def test_prompt_template_add_with_with_another_format() -> None:
             "jinja2",
             "This is a {{variable}}",
             ". This is {{another_variable}}",
-            marks=[pytest.mark.requires("jinja2")]
+            marks=[pytest.mark.requires("jinja2")],
         ),
         ("mustache", "This is a {{variable}}", ". This is {{another_variable}}"),
-    ]
+    ],
 )
-def test_prompt_template_add(template_format: str, prompt1: str, prompt2: str) -> None:
+def test_prompt_template_add(
+    template_format: Literal["f-string", "mustache", "jinja2"],
+    prompt1: str,
+    prompt2: str,
+) -> None:
     first_prompt = PromptTemplate.from_template(
         prompt1,
         template_format=template_format,
@@ -718,13 +722,10 @@ def test_prompt_template_add(template_format: str, prompt1: str, prompt2: str) -
     )
 
     assert concated_prompt.input_variables == prompt_of_concated.input_variables
-    assert (
-        concated_prompt.format(
-            variable="template",
-            another_variable="other_template",
-        ) ==
-        prompt_of_concated.format(
-            variable="template",
-            another_variable="other_template",
-        )
+    assert concated_prompt.format(
+        variable="template",
+        another_variable="other_template",
+    ) == prompt_of_concated.format(
+        variable="template",
+        another_variable="other_template",
     )
