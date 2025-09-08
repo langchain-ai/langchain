@@ -1,6 +1,17 @@
 import pytest
 
 from langchain.chains.flare.base import FlareChain
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.documents import Document
+from typing import List
+
+
+class _EmptyRetriever(BaseRetriever):  # Minimal retriever for tests
+    def _get_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
+        return []
+
+    async def _aget_relevant_documents(self, query: str) -> List[Document]:  # type: ignore[override]
+        return []
 
 
 def test_from_llm_rejects_non_chatopenai():
@@ -21,7 +32,11 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "TEST")
 
     supplied = ChatOpenAI(temperature=0.51, logprobs=True, max_completion_tokens=21)
-    chain = FlareChain.from_llm(supplied, max_generation_len=32)
+    chain = FlareChain.from_llm(
+        supplied,
+        max_generation_len=32,
+        retriever=_EmptyRetriever(),  # Provide required field
+    )
 
     # Walk to ensure identical instance appears (not overwritten)
     seen = set()
