@@ -63,6 +63,9 @@ def beta(
         addendum : str, optional
             Additional text appended directly to the final message.
 
+    Returns:
+        A decorator which can be used to mark functions or classes as beta.
+
     Examples:
 
         .. code-block:: python

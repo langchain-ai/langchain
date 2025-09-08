@@ -84,6 +84,9 @@ class LangSmithLoader(BaseLoader):
             client: LangSmith Client. If not provided will be initialized from below args.
             client_kwargs: Keyword args to pass to LangSmith client init. Should only be
                 specified if ``client`` isn't.
+
+        Raises:
+            ValueError: If both ``client`` and ``client_kwargs`` are provided.
         """  # noqa: E501
         if client and client_kwargs:
             raise ValueError

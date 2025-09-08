@@ -161,6 +161,9 @@ def generate_from_stream(stream: Iterator[ChatGenerationChunk]) -> ChatResult:
     Args:
         stream: Iterator of ``ChatGenerationChunk``.
 
+    Raises:
+        ValueError: If no generations are found in the stream.
+
     Returns:
         ChatResult: Chat result.
 
@@ -328,16 +331,13 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     @model_validator(mode="before")
     @classmethod
     def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if ``callback_manager`` is used.
+        """Emit deprecation warning if ``callback_manager`` is used.
 
         Args:
             values (Dict): Values to validate.
 
         Returns:
             Dict: Validated values.
-
-        Raises:
-            DeprecationWarning: If ``callback_manager`` is used.
 
         """
         if values.get("callback_manager") is not None:
@@ -1185,7 +1185,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
+        """Generate the result.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Returns:
+            The chat result.
+        """
 
     async def _agenerate(
         self,
@@ -1194,7 +1204,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call."""
+        """Generate the result.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Returns:
+            The chat result.
+        """
         return await run_in_executor(
             None,
             self._generate,
@@ -1211,6 +1231,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Yields:
+            The chat generation chunks.
+        """
         raise NotImplementedError
 
     async def _astream(
@@ -1220,6 +1251,17 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        """Stream the output of the model.
+
+        Args:
+            messages: The messages to generate from.
+            stop: Optional list of stop words to use when generating.
+            run_manager: Optional callback manager to use for this call.
+            **kwargs: Additional keyword arguments to pass to the model.
+
+        Yields:
+            The chat generation chunks.
+        """
         iterator = await run_in_executor(
             None,
             self._stream,
@@ -1258,6 +1300,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 functionality, such as logging or streaming, throughout generation.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If the generation is not a chat generation.
 
         Returns:
             The model output message.
@@ -1319,6 +1364,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 first occurrence of any of these substrings.
             **kwargs: Arbitrary additional keyword arguments. These are usually passed
                 to the model provider API call.
+
+        Raises:
+            ValueError: If the output is not a string.
 
         Returns:
             The predicted output string.
@@ -1434,6 +1482,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
+        Raises:
+            ValueError: If there are any unsupported ``kwargs``.
+            NotImplementedError: If the model does not implement
+                ``with_structured_output()``.
+
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
 
@@ -1453,15 +1506,20 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatModel(model="model-name", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -1473,15 +1531,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
 
-                llm = ChatModel(model="model-name", temperature=0)
-                structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                llm = ChatModel(model="model-name", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, include_raw=True
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1494,16 +1559,21 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
                 from pydantic import BaseModel
                 from langchain_core.utils.function_calling import convert_to_openai_tool
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 dict_schema = convert_to_openai_tool(AnswerWithJustification)
                 llm = ChatModel(model="model-name", temperature=0)
                 structured_llm = llm.with_structured_output(dict_schema)
 
-                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'

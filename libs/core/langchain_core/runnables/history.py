@@ -145,11 +145,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "You're an assistant who's good at {ability}"),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{question}"),
-            ])
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You're an assistant who's good at {ability}"),
+                    MessagesPlaceholder(variable_name="history"),
+                    ("human", "{question}"),
+                ]
+            )
 
             chain = prompt | ChatAnthropic(model="claude-2")
 
@@ -162,18 +164,22 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 history_messages_key="history",
             )
 
-            print(chain_with_history.invoke(  # noqa: T201
-                {"ability": "math", "question": "What does cosine mean?"},
-                config={"configurable": {"session_id": "foo"}}
-            ))
+            print(
+                chain_with_history.invoke(  # noqa: T201
+                    {"ability": "math", "question": "What does cosine mean?"},
+                    config={"configurable": {"session_id": "foo"}},
+                )
+            )
 
             # Uses the store defined in the example above.
             print(store)  # noqa: T201
 
-            print(chain_with_history.invoke(  # noqa: T201
-                {"ability": "math", "question": "What's its inverse"},
-                config={"configurable": {"session_id": "foo"}}
-            ))
+            print(
+                chain_with_history.invoke(  # noqa: T201
+                    {"ability": "math", "question": "What's its inverse"},
+                    config={"configurable": {"session_id": "foo"}},
+                )
+            )
 
             print(store)  # noqa: T201
 
@@ -184,6 +190,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
             store = {}
 
+
             def get_session_history(
                 user_id: str, conversation_id: str
             ) -> BaseChatMessageHistory:
@@ -191,11 +198,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                     store[(user_id, conversation_id)] = InMemoryHistory()
                 return store[(user_id, conversation_id)]
 
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "You're an assistant who's good at {ability}"),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{question}"),
-            ])
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You're an assistant who's good at {ability}"),
+                    MessagesPlaceholder(variable_name="history"),
+                    ("human", "{question}"),
+                ]
+            )
 
             chain = prompt | ChatAnthropic(model="claude-2")
 
@@ -226,7 +236,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
 
             with_message_history.invoke(
                 {"ability": "math", "question": "What does cosine mean?"},
-                config={"configurable": {"user_id": "123", "conversation_id": "1"}}
+                config={"configurable": {"user_id": "123", "conversation_id": "1"}},
             )
 
     """
@@ -280,11 +290,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                 .. code-block:: python
 
                     def get_session_history(
-                        session_id: str,
-                        *,
-                        user_id: Optional[str]=None
-                    ) -> BaseChatMessageHistory:
-                      ...
+                        session_id: str, *, user_id: Optional[str] = None
+                    ) -> BaseChatMessageHistory: ...
 
                 Or it should take keyword arguments that match the keys of
                 `session_history_config_specs` and return a corresponding
@@ -296,8 +303,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
                         *,
                         user_id: str,
                         thread_id: str,
-                    ) -> BaseChatMessageHistory:
-                        ...
+                    ) -> BaseChatMessageHistory: ...
 
             input_messages_key: Must be specified if the base runnable accepts a dict
                 as input. Default is None.

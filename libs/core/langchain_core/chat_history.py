@@ -109,6 +109,9 @@ class BaseChatMessageHistory(ABC):
 
         In general, fetching messages may involve IO to the underlying
         persistence layer.
+
+        Returns:
+            The messages.
         """
         from langchain_core.runnables.config import run_in_executor
 

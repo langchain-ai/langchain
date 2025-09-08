@@ -19,7 +19,8 @@ class StrOutputParser(BaseTransformOutputParser[str]):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "output_parser"].
+        Returns:
+            ``["langchain", "schema", "output_parser"]``
         """
         return ["langchain", "schema", "output_parser"]
 

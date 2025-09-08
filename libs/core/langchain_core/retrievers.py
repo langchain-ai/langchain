@@ -109,6 +109,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
 
             from sklearn.metrics.pairwise import cosine_similarity
 
+
             class TFIDFRetriever(BaseRetriever, BaseModel):
                 vectorizer: Any
                 docs: list[Document]
@@ -122,10 +123,12 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
                     # Ip -- (n_docs,x), Op -- (n_docs,n_Feats)
                     query_vec = self.vectorizer.transform([query])
                     # Op -- (n_docs,1) -- Cosine Sim with each doc
-                    results = cosine_similarity(self.tfidf_array, query_vec).reshape((-1,))
+                    results = cosine_similarity(self.tfidf_array, query_vec).reshape(
+                        (-1,)
+                    )
                     return [self.docs[i] for i in results.argsort()[-self.k :][::-1]]
 
-    """  # noqa: E501
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -359,6 +362,7 @@ class BaseRetriever(RunnableSerializable[RetrieverInput, RetrieverOutput], ABC):
         Args:
             query: String to find relevant documents for
             run_manager: The callback handler to use
+
         Returns:
             List of relevant documents
         """
