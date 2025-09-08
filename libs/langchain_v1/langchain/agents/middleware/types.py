@@ -58,7 +58,8 @@ StateT = TypeVar("StateT", bound=AgentState)
 class AgentMiddleware(Generic[StateT]):
     """Base middleware class for an agent.
 
-    Subclass this and implement any of the defined methods to customize agent behavior between steps in the main agent loop.
+    Subclass this and implement any of the defined methods to customize agent behavior
+    between steps in the main agent loop.
     """
 
     state_schema: type[StateT] = cast("type[StateT]", AgentState)

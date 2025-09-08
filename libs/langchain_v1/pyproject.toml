@@ -129,7 +129,6 @@ flake8-annotations.allow-star-arg-any = true
 ]
 "langchain/agents/*" = [
     "ANN401", # we use Any right now, need to narrow
-    "E501", # line too long, needs to fix
     "A002", # input is shadowing builtin
     "A001", # input is shadowing builtin
     "B904", # use from for exceptions
