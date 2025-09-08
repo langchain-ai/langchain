@@ -1,3 +1,5 @@
+"""Factory functions for chat models."""
+
 from __future__ import annotations
 
 import warnings
