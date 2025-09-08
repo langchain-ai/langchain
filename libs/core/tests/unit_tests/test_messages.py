@@ -28,9 +28,9 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.tool import (
     invalid_tool_call as create_invalid_tool_call,
+    tool_call as create_tool_call,
+    tool_call_chunk as create_tool_call_chunk,
 )
-from langchain_core.messages.tool import tool_call as create_tool_call
-from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
 
 
@@ -49,7 +49,7 @@ def test_message_chunks() -> None:
         content=" indeed."
     ) == AIMessageChunk(content="I am indeed.", id="ai3")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*id"):
         AIMessageChunk(content="I am", id="ai3") + AIMessageChunk(
             content=" indeed.", id="ai4"
         )
@@ -130,7 +130,7 @@ def test_system_message_chunks() -> None:
         content=" indeed."
     ) == SystemMessageChunk(content="I am indeed.", id="ai3")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*id"):
         SystemMessageChunk(content="I am", id="ai3") + SystemMessageChunk(
             content=" indeed.", id="ai4"
         )
@@ -153,7 +153,7 @@ def test_human_message_chunks() -> None:
         content=" indeed."
     ) == HumanMessageChunk(content="I am indeed.", id="ai3")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*id"):
         HumanMessageChunk(content="I am", id="ai3") + HumanMessageChunk(
             content=" indeed.", id="ai4"
         )
@@ -176,12 +176,12 @@ def test_chat_message_chunks() -> None:
         content=" indeed.", role="foo"
     ) == ChatMessageChunk(content="I am indeed.", role="foo", id="ai3")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*id"):
         ChatMessageChunk(content="I am", role="foo", id="ai3") + ChatMessageChunk(
             content=" indeed.", role="foo", id="ai4"
         )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*role"):
         ChatMessageChunk(content="I am", role="foo") + ChatMessageChunk(
             content=" indeed.", role="bar"
         )
@@ -206,12 +206,12 @@ def test_function_message_chunks() -> None:
         content="I am indeed.", name="foo", id="ai3"
     )
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*id"):
         FunctionMessageChunk(
             content="I am", name="foo", id="ai3"
         ) + FunctionMessageChunk(content=" indeed.", name="foo", id="ai4")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Cannot concatenate.*different.*name"):
         FunctionMessageChunk(content="I am", name="foo") + FunctionMessageChunk(
             content=" indeed.", name="bar"
         )

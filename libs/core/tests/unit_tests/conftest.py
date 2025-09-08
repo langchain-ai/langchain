@@ -22,7 +22,10 @@ except ImportError:
 
 @pytest.fixture(autouse=True)
 def blockbuster() -> Iterator[Optional[BlockBuster]]:
-    """Blockbuster fixture for test isolation - gracefully handles missing dependency."""
+    """Blockbuster fixture for test isolation.
+
+    Gracefully handles missing dependency.
+    """
     if not HAS_BLOCKBUSTER:
         # When blockbuster is not available, provide a no-op fixture
         yield None
