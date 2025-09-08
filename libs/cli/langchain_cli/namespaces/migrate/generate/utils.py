@@ -171,8 +171,8 @@ def list_init_imports_by_package(pkg_root: str) -> list[tuple[str, str]]:
         pkg_root: the root of the package.
 
     Returns:
-        A list of tuples `(module, name)` representing the imports found in `__init__.py`
-        files.
+        A list of tuples `(module, name)` representing the imports found in
+        `__init__.py` files.
     """
     imports = []
     pkg_source = identify_pkg_source(pkg_root)
