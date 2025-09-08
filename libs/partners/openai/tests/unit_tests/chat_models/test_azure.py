@@ -106,7 +106,6 @@ def test_responses_api_uses_deployment_name() -> None:
     """Test that Azure deployment name is used for Responses API."""
     llm = AzureChatOpenAI(
         azure_deployment="your_deployment",
-        model="gpt-5",  # This is the OpenAI model name
         api_version="2025-04-01-preview",
         azure_endpoint="your_endpoint",
         api_key=SecretStr("your_api_key"),
