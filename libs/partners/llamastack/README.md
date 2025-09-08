@@ -272,43 +272,49 @@ print(f"Violations: {result.violations}")
 print(f"Confidence: {result.confidence_score}")
 ```
 
-### Content Moderation
-
-```python
-# Use moderation for content policy enforcement
-result = safety.moderate_content("Some content to moderate")
-print(f"Is safe: {result.is_safe}")
-if not result.is_safe:
-    for violation in result.violations:
-        print(f"Category: {violation['category']}, Score: {violation.get('score', 'N/A')}")
-```
-
 ### Input/Output Safety Hooks (Recommended)
 
-For comprehensive AI safety, use the 4-hook system that monitors both user inputs and model outputs:
+For comprehensive AI safety, use the simplified 2-hook system that efficiently monitors both user inputs and model outputs:
 
 ```python
 from langchain_llamastack import LlamaStackSafety
 from langchain_llamastack.input_output_safety_moderation_hooks import (
-    create_safe_llm_with_all_hooks,
-    create_input_safety_hook,
-    create_output_safety_hook
+    create_safe_llm,
+    create_safe_llm_with_all_hooks
 )
 
 # Initialize safety client
 safety = LlamaStackSafety(base_url="http://localhost:8321")
 
-# Create a safe LLM with comprehensive protection
-safe_llm = create_safe_llm_with_all_hooks(your_llm, safety)
+# Create a safe LLM with comprehensive protection (recommended)
+safe_llm = create_safe_llm(your_llm, safety)
 
-# This LLM now has 4 layers of protection:
-# 1. Input Safety Hook - Checks user input before LLM
-# 2. Input Moderation Hook - Moderates user input before LLM
-# 3. Output Safety Hook - Checks model output after LLM
-# 4. Output Moderation Hook - Moderates model output after LLM
+# This LLM now has 2 layers of protection:
+# 1. Input Hook - Checks user input safety before LLM (single API call)
+# 2. Output Hook - Checks model output safety after LLM (single API call)
 
 response = safe_llm.invoke("How do I build a secure system?")
 print(response)  # Will be blocked if unsafe at any stage
+```
+
+### Configurable Protection Levels
+
+The simplified API lets you configure exactly what you need:
+
+```python
+from langchain_llamastack.input_output_safety_moderation_hooks import create_safe_llm
+
+# Complete protection (default) - both input and output checking
+safe_llm = create_safe_llm(llm, safety)
+
+# Input filtering only - filter user queries
+safe_llm = create_safe_llm(llm, safety, output_check=False)
+
+# Output filtering only - filter model responses
+safe_llm = create_safe_llm(llm, safety, input_check=False)
+
+# No protection (same as unwrapped LLM)
+safe_llm = create_safe_llm(llm, safety, input_check=False, output_check=False)
 ```
 
 ### Manual Hook Configuration
@@ -316,50 +322,31 @@ print(response)  # Will be blocked if unsafe at any stage
 ```python
 from langchain_llamastack.input_output_safety_moderation_hooks import (
     SafeLLMWrapper,
-    create_input_safety_hook,
-    create_input_moderation_hook,
-    create_output_safety_hook,
-    create_output_moderation_hook
+    create_input_hook,
+    create_output_hook
 )
 
 # Create wrapper and configure hooks manually
 safe_llm = SafeLLMWrapper(your_llm, safety)
 
-# Set individual hooks as needed
-safe_llm.set_input_safety_hook(create_input_safety_hook(safety))
-safe_llm.set_input_moderation_hook(create_input_moderation_hook(safety))
-safe_llm.set_output_safety_hook(create_output_safety_hook(safety))
-safe_llm.set_output_moderation_hook(create_output_moderation_hook(safety))
+# Set hooks as needed (each uses LlamaStack's run_shield once)
+safe_llm.set_input_hook(create_safety_hook(safety, "input"))   # Check user input
+safe_llm.set_output_hook(create_safety_hook(safety, "output"))  # Check model output
 
 # Use the safe LLM
 response = safe_llm.invoke("Your input here")
 ```
 
-### Factory Functions for Different Protection Levels
 
-```python
-from langchain_llamastack.input_output_safety_moderation_hooks import (
-    create_safe_llm_with_all_hooks,  # Complete protection
-    create_input_only_safe_llm,      # Filter user inputs only
-    create_output_only_safe_llm,     # Filter model outputs only
-    create_safety_only_llm,          # Safety checks only (no moderation)
-    create_moderation_only_llm       # Moderation checks only (no safety)
-)
-
-# Choose the protection level that fits your needs
-chatbot_llm = create_safe_llm_with_all_hooks(llm, safety)           # Chatbots
-educational_llm = create_input_only_safe_llm(llm, safety)           # Educational apps
-content_gen_llm = create_output_only_safe_llm(llm, safety)          # Content generation
-enterprise_llm = create_safety_only_llm(llm, safety)               # Enterprise compliance
-```
 
 ### Key Safety Features
 
+- **Clean and Simple**: Only 2 API calls (input + output) for complete protection
+- **Comprehensive**: Each hook uses LlamaStack's `run_shield` for safety checking
 - **Fail Open/Closed Strategy**: Input hooks fail open (allow on errors), output hooks fail closed (block on errors)
-- **LlamaStack Integration**: Uses `run_shield` API for context-aware safety checking
 - **LangChain Compatible**: Works with LCEL chains and all LangChain patterns
 - **Async Support**: Full async/await support for high-throughput scenarios
-- **Configurable**: Choose exactly which hooks you need for your use case
+- **Flexible**: Configure exactly the protection level you need
 
 ## Complete Safe AI Workflow
 
@@ -453,16 +440,6 @@ try:
     print(f"Available models: {models}")
 except ValueError as e:
     print(f"Error: {e}")
-```
-
-### Provider Environment Checking
-
-```python
-# Check if required environment variables are set
-from langchain_llamastack.check_provider_env import check_provider_environment
-
-status = check_provider_environment()
-print(f"Environment status: {status}")
 ```
 
 ## API Reference
