@@ -8,7 +8,7 @@ from langchain_core.runnables.graph import Graph, LabelsDict
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires `graphviz` and `pygraphviz` to be installed.
+    It requires ``graphviz`` and ``pygraphviz`` to be installed.
 
     Example:
 

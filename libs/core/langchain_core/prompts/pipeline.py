@@ -42,17 +42,17 @@ class PipelinePromptTemplate(BasePromptTemplate):
 
     - final_prompt: This is the final prompt that is returned
     - pipeline_prompts: This is a list of tuples, consisting
-      of a string (`name`) and a Prompt Template.
+      of a string (``name``) and a Prompt Template.
       Each PromptTemplate will be formatted and then passed
       to future prompt templates as a variable with
-      the same name as `name`
+      the same name as ``name``
 
     """
 
     final_prompt: BasePromptTemplate
     """The final prompt that is returned."""
     pipeline_prompts: list[tuple[str, BasePromptTemplate]]
-    """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
+    """A list of tuples, consisting of a string (``name``) and a Prompt Template."""
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
