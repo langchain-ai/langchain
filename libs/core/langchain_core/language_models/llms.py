@@ -853,10 +853,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. take advantage of batched calls,
+        2. need more output from the model than just the top generated value,
+        3. are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
@@ -1118,10 +1119,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. take advantage of batched calls,
+        2. need more output from the model than just the top generated value,
+        3. are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.

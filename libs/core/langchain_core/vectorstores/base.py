@@ -429,6 +429,7 @@ class VectorStore(ABC):
         """The 'correct' relevance function.
 
         may differ depending on a few things, including:
+
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
         - embedding dimensionality

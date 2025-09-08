@@ -92,12 +92,13 @@ def tool(
             positional argument.
         description: Optional description for the tool.
             Precedence for the tool description value is as follows:
-                - `description` argument
-                    (used even if docstring and/or `args_schema` are provided)
-                - tool function docstring
-                    (used even if `args_schema` is provided)
-                - `args_schema` description
-                    (used only if `description` / docstring are not provided)
+
+            - `description` argument
+                (used even if docstring and/or `args_schema` are provided)
+            - tool function docstring
+                (used even if `args_schema` is provided)
+            - `args_schema` description
+                (used only if `description` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
