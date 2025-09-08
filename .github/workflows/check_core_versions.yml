@@ -20,15 +20,30 @@ jobs:
 
       - name: '✅ Verify pyproject.toml & version.py Match'
         run: |
-          PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
-          VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' libs/core/langchain_core/version.py)
+          # Check core versions
+          CORE_PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/core/pyproject.toml)
+          CORE_VERSION_PY_VERSION=$(grep -Po '(?<=^VERSION = ")[^"]*' libs/core/langchain_core/version.py)
 
-          # Compare the two versions
-          if [ "$PYPROJECT_VERSION" != "$VERSION_PY_VERSION" ]; then
+          # Compare core versions
+          if [ "$CORE_PYPROJECT_VERSION" != "$CORE_VERSION_PY_VERSION" ]; then
             echo "langchain-core versions in pyproject.toml and version.py do not match!"
-            echo "pyproject.toml version: $PYPROJECT_VERSION"
-            echo "version.py version: $VERSION_PY_VERSION"
+            echo "pyproject.toml version: $CORE_PYPROJECT_VERSION"
+            echo "version.py version: $CORE_VERSION_PY_VERSION"
             exit 1
           else
-            echo "Versions match: $PYPROJECT_VERSION"
+            echo "Core versions match: $CORE_PYPROJECT_VERSION"
+          fi
+
+          # Check langchain_v1 versions
+          LANGCHAIN_PYPROJECT_VERSION=$(grep -Po '(?<=^version = ")[^"]*' libs/langchain_v1/pyproject.toml)
+          LANGCHAIN_INIT_PY_VERSION=$(grep -Po '(?<=^__version__ = ")[^"]*' libs/langchain_v1/langchain/__init__.py)
+
+          # Compare langchain_v1 versions
+          if [ "$LANGCHAIN_PYPROJECT_VERSION" != "$LANGCHAIN_INIT_PY_VERSION" ]; then
+            echo "langchain_v1 versions in pyproject.toml and __init__.py do not match!"
+            echo "pyproject.toml version: $LANGCHAIN_PYPROJECT_VERSION"
+            echo "version.py version: $LANGCHAIN_INIT_PY_VERSION"
+            exit 1
+          else
+            echo "Langchain v1 versions match: $LANGCHAIN_PYPROJECT_VERSION"
           fi

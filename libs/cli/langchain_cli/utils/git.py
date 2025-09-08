@@ -6,7 +6,7 @@ import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from git import Repo
 
@@ -26,7 +26,7 @@ class DependencySource(TypedDict):
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: dict
+    event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format
@@ -138,8 +138,8 @@ def parse_dependencies(
     if (
         (dependencies and len(dependencies) != num_deps)
         or (api_path and len(api_path) != num_deps)
-        or (repo and len(repo) not in [1, num_deps])
-        or (branch and len(branch) not in [1, num_deps])
+        or (repo and len(repo) not in {1, num_deps})
+        or (branch and len(branch) not in {1, num_deps})
     ):
         msg = (
             "Number of defined repos/branches/api_paths did not match the "
@@ -151,15 +151,15 @@ def parse_dependencies(
     inner_repos = _list_arg_to_length(repo, num_deps)
     inner_branches = _list_arg_to_length(branch, num_deps)
 
-    return [
-        parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
-        for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
+    return list(
+        map(
+            parse_dependency_string,
             inner_deps,
             inner_repos,
             inner_branches,
             inner_api_paths,
         )
-    ]
+    )
 
 
 def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
@@ -167,7 +167,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     ref_str = ref if ref is not None else ""
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
-    removed_protocol = gitstring.split("://")[-1]
+    removed_protocol = gitstring.split("://", maxsplit=1)[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, maxsplit=1)[-1]
     removed_extras = removed_basename.split("#")[0]
     foldername = re.sub(r"\W", "_", removed_extras)

@@ -6,7 +6,7 @@ app = FastAPI()
 
 
 @app.get("/")
-async def redirect_root_to_docs():
+async def redirect_root_to_docs() -> RedirectResponse:
     return RedirectResponse("/docs")
 
 

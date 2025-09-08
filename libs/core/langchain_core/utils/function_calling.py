@@ -515,6 +515,7 @@ _WellKnownOpenAITools = (
     "mcp",
     "image_generation",
     "web_search_preview",
+    "web_search",
 )
 
 
