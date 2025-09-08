@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable
-
 import pytest
+
 from langchain.chains.flare.base import FlareChain
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
@@ -54,11 +53,11 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> N
         if obj is target:
             return True
         for name in dir(obj):
-            if name.startswith("__"):
+            if name.startswith("__") or name.startswith("_"):
                 continue
             try:
                 value = getattr(obj, name)
-            except AttributeError:  # attribute missing only
+            except (AttributeError, NotImplementedError):
                 continue
             if isinstance(value, (str, int, float, bool, type(None))):
                 continue
