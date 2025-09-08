@@ -273,10 +273,7 @@ class FlareChain(Chain):
         # Preserve supplied llm instead of always creating a new ChatOpenAI.
         # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
         if not isinstance(llm, ChatOpenAI):
-            msg = (
-                "FlareChain.from_llm requires ChatOpenAI; got "
-                f"{type(llm).__name__}."
-            )
+            msg = f"FlareChain.from_llm requires ChatOpenAI; got {type(llm).__name__}."
             raise TypeError(msg)
         if not getattr(llm, "logprobs", False):  # attribute presence may vary
             msg = (
