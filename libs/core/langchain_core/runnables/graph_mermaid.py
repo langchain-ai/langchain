@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import random
 import re
 import time
@@ -148,7 +149,7 @@ def draw_mermaid(
                 + "</em></small>"
             )
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
-            _escape_node_label(key), label
+            _sanitize_node_label(key), label
         )
         return f"{indent}{node_label}\n"
 
@@ -211,8 +212,8 @@ def draw_mermaid(
                 edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
-                f"\t{_escape_node_label(source)}{edge_label}"
-                f"{_escape_node_label(target)};\n"
+                f"\t{_sanitize_node_label(source)}{edge_label}"
+                f"{_sanitize_node_label(target)};\n"
             )
 
         # Recursively add nested subgraphs
@@ -256,9 +257,18 @@ def draw_mermaid(
     return mermaid_graph
 
 
-def _escape_node_label(node_label: str) -> str:
-    """Escapes the node label for Mermaid syntax."""
-    return re.sub(r"[^a-zA-Z-_0-9]", "_", node_label)
+def _sanitize_node_label(node_label: str) -> str:
+    """Convert a string into a Mermaid-compatible node label.
+
+    Any character outside [a-zA-Z0-9_-] is replaced with a 3-digit hash
+    fragment so that the output is safe to use as a Mermaid identifier.
+    """
+
+    def replacer(match: re.Match[str]) -> str:
+        non_allowed_ch = match.group(0)
+        return hashlib.md5(non_allowed_ch.encode("utf-8")).hexdigest()[:3]  # noqa: S324
+
+    return re.sub(r"[^a-zA-Z0-9_-]", replacer, node_label)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
