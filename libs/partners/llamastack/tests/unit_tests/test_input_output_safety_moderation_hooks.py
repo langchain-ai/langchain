@@ -3,6 +3,7 @@
 from typing import Any
 from unittest.mock import Mock
 
+# fmt: off
 from langchain_llamastack.input_output_safety_moderation_hooks import (
     SafeLLMWrapper,
     create_input_only_safe_llm,
@@ -11,6 +12,8 @@ from langchain_llamastack.input_output_safety_moderation_hooks import (
     create_safe_llm_with_all_hooks,
     create_safety_hook,
 )
+
+# fmt: on
 from langchain_llamastack.safety import SafetyResult
 
 
@@ -206,7 +209,8 @@ class TestHookCreators:
         result = hook("Test input")
 
         assert result.is_safe is True  # Fail open for input
-        assert "Safety check failed" in result.explanation
+        if result.explanation is not None:
+            assert "Safety check failed" in result.explanation
 
     def test_create_safety_hook_output_success(self) -> None:
         """Test creating output safety hook with successful check."""

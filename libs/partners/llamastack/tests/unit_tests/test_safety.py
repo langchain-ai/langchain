@@ -171,7 +171,7 @@ class TestLlamaStackSafety:
         mock_response.confidence_score = 0.92
 
         # Ensure hasattr returns True for these attributes
-        def mock_hasattr(obj, attr):
+        def mock_hasattr(obj: Any, attr: str) -> bool:
             return attr in [
                 "is_violation",
                 "violation_level",
@@ -291,7 +291,7 @@ class TestLlamaStackSafety:
 
         original_hasattr = builtins.hasattr
 
-        def patched_hasattr(obj, name):
+        def patched_hasattr(obj: Any, name: str) -> bool:
             if obj is mock_response:
                 return custom_hasattr(obj, name)
             return original_hasattr(obj, name)
