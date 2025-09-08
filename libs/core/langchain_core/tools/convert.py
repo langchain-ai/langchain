@@ -119,6 +119,17 @@ def tool(
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
 
+    Raises:
+        ValueError: If too many positional arguments are provided.
+        ValueError: If a runnable is provided without a string name.
+        ValueError: If the first argument is not a string or callable with
+            a ``__name__`` attribute.
+        ValueError: If the function does not have a docstring and description
+            is not provided and ``infer_schema`` is False.
+        ValueError: If ``parse_docstring`` is True and the function has an invalid
+            Google-style docstring and ``error_on_invalid_docstring`` is True.
+        ValueError: If a Runnable is provided that does not have an object schema.
+
     Returns:
         The tool.
 
@@ -134,10 +145,12 @@ def tool(
                 # Searches the API for the query.
                 return
 
+
             @tool("search", return_direct=True)
             def search_api(query: str) -> str:
                 # Searches the API for the query.
                 return
+
 
             @tool(response_format="content_and_artifact")
             def search_api(query: str) -> tuple[str, dict]:
@@ -171,18 +184,15 @@ def tool(
                     "bar": {
                         "title": "Bar",
                         "description": "The bar.",
-                        "type": "string"
+                        "type": "string",
                     },
                     "baz": {
                         "title": "Baz",
                         "description": "The baz.",
-                        "type": "integer"
-                    }
+                        "type": "integer",
+                    },
                 },
-                "required": [
-                    "bar",
-                    "baz"
-                ]
+                "required": ["bar", "baz"],
             }
 
         Note that parsing by default will raise ``ValueError`` if the docstring

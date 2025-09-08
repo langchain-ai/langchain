@@ -28,11 +28,19 @@ class BaseLoader(ABC):  # noqa: B024
     # Sub-classes should not implement this method directly. Instead, they
     # should implement the lazy load method.
     def load(self) -> list[Document]:
-        """Load data into Document objects."""
+        """Load data into Document objects.
+
+        Returns:
+            the documents.
+        """
         return list(self.lazy_load())
 
     async def aload(self) -> list[Document]:
-        """Load data into Document objects."""
+        """Load data into Document objects.
+
+        Returns:
+            the documents.
+        """
         return [document async for document in self.alazy_load()]
 
     def load_and_split(
@@ -44,7 +52,11 @@ class BaseLoader(ABC):  # noqa: B024
 
         Args:
             text_splitter: TextSplitter instance to use for splitting documents.
-              Defaults to RecursiveCharacterTextSplitter.
+                Defaults to RecursiveCharacterTextSplitter.
+
+        Raises:
+            ImportError: If langchain-text-splitters is not installed
+                and no text_splitter is provided.
 
         Returns:
             List of Documents.
@@ -69,14 +81,22 @@ class BaseLoader(ABC):  # noqa: B024
     # Attention: This method will be upgraded into an abstractmethod once it's
     #            implemented in all the existing subclasses.
     def lazy_load(self) -> Iterator[Document]:
-        """A lazy loader for Documents."""
+        """A lazy loader for Documents.
+
+        Yields:
+            the documents.
+        """
         if type(self).load != BaseLoader.load:
             return iter(self.load())
         msg = f"{self.__class__.__name__} does not implement lazy_load()"
         raise NotImplementedError(msg)
 
     async def alazy_load(self) -> AsyncIterator[Document]:
-        """A lazy loader for Documents."""
+        """A lazy loader for Documents.
+
+        Yields:
+            the documents.
+        """
         iterator = await run_in_executor(None, self.lazy_load)
         done = object()
         while True:

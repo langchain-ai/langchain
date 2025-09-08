@@ -56,12 +56,12 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_core.chat_models.openai import ChatOpenAI
             from langchain_core.chat_models.anthropic import ChatAnthropic
 
-            model = ChatAnthropic(
-                model="claude-3-haiku-20240307"
-            ).with_fallbacks([ChatOpenAI(model="gpt-3.5-turbo-0125")])
+            model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
+                [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+            )
             # Will usually use ChatAnthropic, but fallback to ChatOpenAI
             # if ChatAnthropic fails.
-            model.invoke('hello')
+            model.invoke("hello")
 
             # And you can also use fallbacks at the level of a chain.
             # Here if both LLM providers fail, we'll fallback to a good hardcoded
@@ -71,12 +71,16 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             from langchain_core.output_parser import StrOutputParser
             from langchain_core.runnables import RunnableLambda
 
+
             def when_all_is_lost(inputs):
-                return ("Looks like our LLM providers are down. "
-                        "Here's a nice 🦜️ emoji for you instead.")
+                return (
+                    "Looks like our LLM providers are down. "
+                    "Here's a nice 🦜️ emoji for you instead."
+                )
+
 
             chain_with_fallback = (
-                PromptTemplate.from_template('Tell me a joke about {topic}')
+                PromptTemplate.from_template("Tell me a joke about {topic}")
                 | model
                 | StrOutputParser()
             ).with_fallbacks([RunnableLambda(when_all_is_lost)])
@@ -136,6 +140,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
@@ -143,13 +148,18 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Defaults to ["langchain", "schema", "runnable"].
+        Returns:
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
     @property
     def runnables(self) -> Iterator[Runnable[Input, Output]]:
-        """Iterator over the Runnable and its fallbacks."""
+        """Iterator over the Runnable and its fallbacks.
+
+        Yields:
+            The Runnable then its fallbacks.
+        """
         yield self.runnable
         yield from self.fallbacks
 

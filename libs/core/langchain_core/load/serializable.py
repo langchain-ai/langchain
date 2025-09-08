@@ -79,9 +79,6 @@ def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
 
     Returns:
         Whether the value is different from the default.
-
-    Raises:
-        Exception: If the key is not in the model.
     """
     field = type(model).model_fields[key]
     return _try_neq_default(value, field)
@@ -148,6 +145,9 @@ class Serializable(BaseModel, ABC):
 
         For example, if the class is `langchain.llms.openai.OpenAI`, then the
         namespace is ["langchain", "llms", "openai"]
+
+        Returns:
+            The namespace as a list of strings.
         """
         return cls.__module__.split(".")
 
@@ -171,7 +171,7 @@ class Serializable(BaseModel, ABC):
 
     @classmethod
     def lc_id(cls) -> list[str]:
-        """A unique identifier for this class for serialization purposes.
+        """Return a unique identifier for this class for serialization purposes.
 
         The unique identifier is a list of strings that describes the path
         to the object.
@@ -202,6 +202,9 @@ class Serializable(BaseModel, ABC):
 
     def to_json(self) -> Union[SerializedConstructor, SerializedNotImplemented]:
         """Serialize the object to JSON.
+
+        Raises:
+            ValueError: If the class has deprecated attributes.
 
         Returns:
             A json serializable object or a SerializedNotImplemented object.
@@ -276,7 +279,11 @@ class Serializable(BaseModel, ABC):
         }
 
     def to_json_not_implemented(self) -> SerializedNotImplemented:
-        """Serialize a "not implemented" object."""
+        """Serialize a "not implemented" object.
+
+        Returns:
+            SerializedNotImplemented.
+        """
         return to_json_not_implemented(self)
 
 

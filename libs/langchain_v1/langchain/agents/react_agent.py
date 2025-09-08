@@ -1,3 +1,5 @@
+"""React agent implementation."""
+
 from __future__ import annotations
 
 import inspect
@@ -43,6 +45,7 @@ from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
 from typing_extensions import NotRequired, TypedDict, TypeVar
 
+from langchain.agents.middleware_agent import create_agent as create_middleware_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     OutputToolBinding,
@@ -64,6 +67,7 @@ if TYPE_CHECKING:
     from langchain.agents._internal._typing import (
         SyncOrAsync,
     )
+    from langchain.agents.types import AgentMiddleware
 
 StructuredResponseT = TypeVar("StructuredResponseT", default=None)
 
@@ -906,6 +910,7 @@ def create_agent(  # noqa: D417
     ],
     tools: Union[Sequence[Union[BaseTool, Callable, dict[str, Any]]], ToolNode],
     *,
+    middleware: Sequence[AgentMiddleware] = (),
     prompt: Prompt | None = None,
     response_format: Union[
         ToolStrategy[StructuredResponseT],
@@ -1112,6 +1117,29 @@ def create_agent(  # noqa: D417
             print(chunk)
         ```
     """
+    if middleware:
+        assert isinstance(model, str | BaseChatModel)  # noqa: S101
+        assert isinstance(prompt, str | None)  # noqa: S101
+        assert not isinstance(response_format, tuple)  # noqa: S101
+        assert pre_model_hook is None  # noqa: S101
+        assert post_model_hook is None  # noqa: S101
+        assert state_schema is None  # noqa: S101
+        return create_middleware_agent(  # type: ignore[return-value]
+            model=model,
+            tools=tools,
+            system_prompt=prompt,
+            middleware=middleware,
+            response_format=response_format,
+            context_schema=context_schema,
+        ).compile(
+            checkpointer=checkpointer,
+            store=store,
+            name=name,
+            interrupt_after=interrupt_after,
+            interrupt_before=interrupt_before,
+            debug=debug,
+        )
+
     # Handle deprecated config_schema parameter
     if (config_schema := deprecated_kwargs.pop("config_schema", MISSING)) is not MISSING:
         warn(

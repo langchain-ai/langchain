@@ -1,3 +1,5 @@
+"""Factory functions for embeddings."""
+
 import functools
 from importlib import util
 from typing import Any, Union

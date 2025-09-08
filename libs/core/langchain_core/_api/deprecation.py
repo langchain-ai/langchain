@@ -129,11 +129,14 @@ def deprecated(
         package: str, optional
             The package of the deprecated object.
 
+    Returns:
+        A decorator to mark a function or class as deprecated.
+
     Examples:
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
 
@@ -543,6 +546,15 @@ def rename_parameter(
     The actual implementation of *func* should use *new*, not *old*.  If *old*
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
+
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
 
     Example:
 

@@ -122,7 +122,12 @@ def accepts_context(callable: Callable[..., Any]) -> bool:  # noqa: A002
 
 @lru_cache(maxsize=1)
 def asyncio_accepts_context() -> bool:
-    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg."""
+    """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
+
+    Returns:
+        bool: True if ``asyncio.create_task`` accepts a context argument, False
+            otherwise.
+    """
     return accepts_context(asyncio.create_task)
 
 
@@ -160,14 +165,11 @@ class IsLocalDict(ast.NodeVisitor):
         self.keys = keys
 
     @override
-    def visit_Subscript(self, node: ast.Subscript) -> Any:
+    def visit_Subscript(self, node: ast.Subscript) -> None:
         """Visit a subscript node.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if (
             isinstance(node.ctx, ast.Load)
@@ -180,14 +182,11 @@ class IsLocalDict(ast.NodeVisitor):
             self.keys.add(node.slice.value)
 
     @override
-    def visit_Call(self, node: ast.Call) -> Any:
+    def visit_Call(self, node: ast.Call) -> None:
         """Visit a call node.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if (
             isinstance(node.func, ast.Attribute)
@@ -210,14 +209,11 @@ class IsFunctionArgDict(ast.NodeVisitor):
         self.keys: set[str] = set()
 
     @override
-    def visit_Lambda(self, node: ast.Lambda) -> Any:
+    def visit_Lambda(self, node: ast.Lambda) -> None:
         """Visit a lambda function.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if not node.args.args:
             return
@@ -225,14 +221,11 @@ class IsFunctionArgDict(ast.NodeVisitor):
         IsLocalDict(input_arg_name, self.keys).visit(node.body)
 
     @override
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Visit a function definition.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if not node.args.args:
             return
@@ -240,14 +233,11 @@ class IsFunctionArgDict(ast.NodeVisitor):
         IsLocalDict(input_arg_name, self.keys).visit(node)
 
     @override
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Visit an async function definition.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if not node.args.args:
             return
@@ -264,14 +254,11 @@ class NonLocals(ast.NodeVisitor):
         self.stores: set[str] = set()
 
     @override
-    def visit_Name(self, node: ast.Name) -> Any:
+    def visit_Name(self, node: ast.Name) -> None:
         """Visit a name node.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if isinstance(node.ctx, ast.Load):
             self.loads.add(node.id)
@@ -279,14 +266,11 @@ class NonLocals(ast.NodeVisitor):
             self.stores.add(node.id)
 
     @override
-    def visit_Attribute(self, node: ast.Attribute) -> Any:
+    def visit_Attribute(self, node: ast.Attribute) -> None:
         """Visit an attribute node.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         if isinstance(node.ctx, ast.Load):
             parent = node.value
@@ -321,42 +305,33 @@ class FunctionNonLocals(ast.NodeVisitor):
         self.nonlocals: set[str] = set()
 
     @override
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> Any:
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Visit a function definition.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         visitor = NonLocals()
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
     @override
-    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> Any:
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Visit an async function definition.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         visitor = NonLocals()
         visitor.visit(node)
         self.nonlocals.update(visitor.loads - visitor.stores)
 
     @override
-    def visit_Lambda(self, node: ast.Lambda) -> Any:
+    def visit_Lambda(self, node: ast.Lambda) -> None:
         """Visit a lambda function.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         visitor = NonLocals()
         visitor.visit(node)
@@ -372,14 +347,11 @@ class GetLambdaSource(ast.NodeVisitor):
         self.count = 0
 
     @override
-    def visit_Lambda(self, node: ast.Lambda) -> Any:
+    def visit_Lambda(self, node: ast.Lambda) -> None:
         """Visit a lambda function.
 
         Args:
             node: The node to visit.
-
-        Returns:
-            Any: The result of the visit.
         """
         self.count += 1
         if hasattr(ast, "unparse"):
@@ -496,6 +468,9 @@ class AddableDict(dict[str, Any]):
 
         Args:
             other: The other dictionary to add.
+
+        Returns:
+            A dictionary that is the result of adding the two dictionaries.
         """
         chunk = AddableDict(self)
         for key in other:
@@ -514,6 +489,9 @@ class AddableDict(dict[str, Any]):
 
         Args:
             other: The other dictionary to be added to.
+
+        Returns:
+            A dictionary that is the result of adding the two dictionaries.
         """
         chunk = AddableDict(other)
         for key in self:
