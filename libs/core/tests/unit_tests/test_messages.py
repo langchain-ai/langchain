@@ -1,16 +1,11 @@
 import unittest
-import uuid
-from typing import Optional, Union
 
 import pytest
-
-from langchain_core.documents import Document
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     ChatMessage,
     ChatMessageChunk,
     FunctionMessage,
@@ -19,6 +14,7 @@ from langchain_core.messages import (
     HumanMessageChunk,
     RemoveMessage,
     SystemMessage,
+    SystemMessageChunk,
     ToolMessage,
     convert_to_messages,
     convert_to_openai_image_block,
@@ -30,7 +26,9 @@ from langchain_core.messages import (
     messages_from_dict,
     messages_to_dict,
 )
-from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import (
+    invalid_tool_call as create_invalid_tool_call,
+)
 from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_lists
@@ -73,7 +71,9 @@ def test_message_chunks() -> None:
         additional_kwargs={"foo": "bar"},
         response_metadata={"hello": "world"},
         tool_calls=[create_tool_call(name="search", args={"query": "foo"}, id="1")],
-        invalid_tool_calls=[create_invalid_tool_call(name="search", args="blah", id="2")],
+        invalid_tool_calls=[
+            create_invalid_tool_call(name="search", args="blah", id="2")
+        ],
         usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
         id="ai3",
     ) + AIMessageChunk(
@@ -81,7 +81,9 @@ def test_message_chunks() -> None:
         additional_kwargs={"foo": "baz", "key": "value"},
         response_metadata={"hello": "universe", "key": "value"},
         tool_calls=[create_tool_call(name="search", args={"query": "bar"}, id="3")],
-        invalid_tool_calls=[create_invalid_tool_call(name="search", args="oops", id="4")],
+        invalid_tool_calls=[
+            create_invalid_tool_call(name="search", args="oops", id="4")
+        ],
         usage_metadata={"input_tokens": 2, "output_tokens": 3, "total_tokens": 5},
     ) == AIMessageChunk(
         content="I am indeed.",
@@ -246,7 +248,9 @@ def test_message_from_dict() -> None:
     assert result == [RemoveMessage(id="foo")]
 
     # Test with remove message with `tool_call_id` -- should be ignored
-    result = messages_from_dict([{"type": "remove", "id": "foo", "tool_call_id": "bar"}])
+    result = messages_from_dict(
+        [{"type": "remove", "id": "foo", "tool_call_id": "bar"}]
+    )
     assert result == [RemoveMessage(id="foo")]
 
 
@@ -283,7 +287,9 @@ def test_message_chunk_to_message() -> None:
     chunk = AIMessageChunk(
         content="foo",
         tool_calls=[create_tool_call(name="search", args={"query": "foo"}, id="1")],
-        invalid_tool_calls=[create_invalid_tool_call(name="search", args="blah", id="2")],
+        invalid_tool_calls=[
+            create_invalid_tool_call(name="search", args="blah", id="2")
+        ],
         usage_metadata={"input_tokens": 1, "output_tokens": 2, "total_tokens": 3},
     )
     result = message_chunk_to_message(chunk)
@@ -340,7 +346,13 @@ def test_message_to_dict() -> None:
 
     message = ChatMessage(content="foo", role="bar")
     result = message_to_dict(message)
-    expected = {"type": "chat", "content": "foo", "id": message.id, "name": None, "role": "bar"}
+    expected = {
+        "type": "chat",
+        "content": "foo",
+        "id": message.id,
+        "name": None,
+        "role": "bar",
+    }
     assert result == expected
 
     message = FunctionMessage(content="foo", name="bar")
@@ -350,7 +362,13 @@ def test_message_to_dict() -> None:
 
     message = ToolMessage(content="foo", tool_call_id="bar")
     result = message_to_dict(message)
-    expected = {"type": "tool", "content": "foo", "id": message.id, "name": None, "tool_call_id": "bar"}
+    expected = {
+        "type": "tool",
+        "content": "foo",
+        "id": message.id,
+        "name": None,
+        "tool_call_id": "bar",
+    }
     assert result == expected
 
 
@@ -598,7 +616,7 @@ def test_legacy_anthropic_image_block_direct() -> None:
 
 
 def test_legacy_anthropic_image_block_cached() -> None:
-    """Test converting legacy Anthropic image block with cache control to OpenAI format."""
+    """Test converting legacy Anthropic image block with cache control."""
     input_block = {
         "type": "image",
         "source_type": "base64",
