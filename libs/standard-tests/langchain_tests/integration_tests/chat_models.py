@@ -37,7 +37,7 @@ from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-def _get_joke_class(
+def _get_joke_class(  # noqa: RET503
     schema_type: Literal["pydantic", "typeddict", "json_schema"],
 ) -> Any:
     class Joke(BaseModel):
