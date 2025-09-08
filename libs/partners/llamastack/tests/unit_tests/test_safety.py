@@ -80,9 +80,7 @@ class TestLlamaStackSafety:
     @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
     def test_init_env_vars(self) -> None:
         """Test initialization with environment variables."""
-        env_vars = {
-            "LLAMA_STACK_BASE_URL": "http://env-server:8321",
-        }
+        env_vars = {"LLAMA_STACK_BASE_URL": "http://env-server:8321"}
 
         with patch.dict(os.environ, env_vars):
             safety = LlamaStackSafety()
@@ -99,11 +97,7 @@ class TestLlamaStackSafety:
 
         kwargs = safety._get_client_kwargs()
 
-        expected = {
-            "base_url": self.base_url,
-            "timeout": 60.0,
-            "max_retries": 5,
-        }
+        expected = {"base_url": self.base_url, "timeout": 60.0, "max_retries": 5}
         assert kwargs == expected
 
     @patch("langchain_llamastack.safety.LlamaStackClient")

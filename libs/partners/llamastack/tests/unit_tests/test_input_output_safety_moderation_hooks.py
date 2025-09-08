@@ -4,12 +4,12 @@ from typing import Any
 from unittest.mock import Mock
 
 from langchain_llamastack.input_output_safety_moderation_hooks import (
-    SafeLLMWrapper,
     create_input_only_safe_llm,
     create_output_only_safe_llm,
     create_safe_llm,
     create_safe_llm_with_all_hooks,
     create_safety_hook,
+    SafeLLMWrapper,
 )
 from langchain_llamastack.safety import SafetyResult
 
@@ -352,8 +352,5 @@ class TestFactoryFunctions:
         safe_llm.invoke("Test input")
 
         # Verify execution order: input -> LLM -> output
-        expected_order = [
-            "input_Test input",
-            "output_Test response",
-        ]
+        expected_order = ["input_Test input", "output_Test response"]
         assert call_order == expected_order
