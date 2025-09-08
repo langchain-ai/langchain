@@ -273,18 +273,22 @@ class FlareChain(Chain):
         # Preserve supplied llm instead of always creating a new ChatOpenAI.
         # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
         if not isinstance(llm, ChatOpenAI):
-            raise TypeError(
-                f"FlareChain.from_llm requires ChatOpenAI; got {type(llm).__name__}."
+            msg = (
+                "FlareChain.from_llm requires ChatOpenAI; got "
+                f"{type(llm).__name__}."
             )
+            raise TypeError(msg)
         if not getattr(llm, "logprobs", False):  # attribute presence may vary
-            raise ValueError(
-                "Provided ChatOpenAI instance must be constructed with logprobs=True for FlareChain."
+            msg = (
+                "Provided ChatOpenAI instance must be constructed with "
+                "logprobs=True for FlareChain."
             )
+            raise ValueError(msg)
         current_max = getattr(llm, "max_completion_tokens", None)
         if current_max is not None and current_max != max_generation_len:
             logger.debug(
-                "FlareChain.from_llm: supplied llm max_completion_tokens=%s differs from "
-                "requested max_generation_len=%s; leaving model unchanged.",
+                "FlareChain.from_llm: supplied llm max_completion_tokens=%s differs "
+                "from requested max_generation_len=%s; leaving model unchanged.",
                 current_max,
                 max_generation_len,
             )
