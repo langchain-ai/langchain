@@ -2850,7 +2850,7 @@ def test_split_text_on_tokens() -> None:
 
 
 def test_decode_returns_no_chunks() -> None:
-    """Test that whitespace-only input results in empty output, not ['']."""
+    """Test that when decode returns only empty strings, output is empty, not [''].""" 
     text = "foo bar baz 123"
 
     tokenizer = Tokenizer(
