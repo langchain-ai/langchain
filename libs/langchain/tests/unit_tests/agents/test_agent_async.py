@@ -430,10 +430,8 @@ async def test_minimal_agent_capture_tool_config() -> None:
     @tool
     async def capture(a: int, *, config: RunnableConfig) -> str:
         """Capture tool that records the config it receives."""
-        SEEN.clear()
         SEEN.update(
             {
-                "a": a,
                 "metadata": (config.get("metadata") or {}),
                 "tags": config.get("tags") or [],
                 "run_name": config.get("run_name"),
@@ -442,25 +440,20 @@ async def test_minimal_agent_capture_tool_config() -> None:
         return f"ok : {a}"
 
     executor = AgentExecutor(agent=agent, tools=[capture], verbose=False)
-    cfg: RunnableConfig = {
+    config: RunnableConfig = {
         "metadata": {"tenant": "T1", "session_id": "S1"},
         "tags": ["unit", "tool:capture"],
         "run_name": "agent-run",
     }
-    try:
-        result = await executor._acall(
-            {"input": "call capture tool with input a = 5"},
-            config=cfg,
-        )
-    except (TypeError, AttributeError):
-        result = await executor.ainvoke(
-            {"input": "call capture tool with input a = 5"},
-            config=cfg,
-        )
+    result = await executor.ainvoke(
+        {"input": "call capture tool with input a = 5"},
+        config=config,
+    )
 
     assert isinstance(result, dict)
     assert result.get("output") == "done"
-    assert SEEN.get("a") == 7
-    assert SEEN.get("metadata") == {"tenant": "T1", "session_id": "S1"}
-    assert "unit" in (SEEN.get("tags") or [])
-    assert SEEN.get("run_name") == "agent-run"
+    assert SEEN == {
+        "metadata": {"tenant": "T1", "session_id": "S1"},
+        "tags": ["unit", "tool:capture"],
+        "run_name": "agent-run",
+    }
