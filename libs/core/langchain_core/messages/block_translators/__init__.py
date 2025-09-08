@@ -53,26 +53,28 @@ def _register_translators() -> None:
     For translators implemented outside langchain-core, they can be registered by
     calling ``register_translator`` from within the integration package.
     """
-    from langchain_core.messages.block_translators.anthropic import (
+    from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
         _register_anthropic_translator,
     )
-    from langchain_core.messages.block_translators.bedrock import (
+    from langchain_core.messages.block_translators.bedrock import (  # noqa: PLC0415
         _register_bedrock_translator,
     )
-    from langchain_core.messages.block_translators.bedrock_converse import (
+    from langchain_core.messages.block_translators.bedrock_converse import (  # noqa: PLC0415
         _register_bedrock_converse_translator,
     )
-    from langchain_core.messages.block_translators.google_genai import (
+    from langchain_core.messages.block_translators.google_genai import (  # noqa: PLC0415
         _register_google_genai_translator,
     )
-    from langchain_core.messages.block_translators.google_vertexai import (
+    from langchain_core.messages.block_translators.google_vertexai import (  # noqa: PLC0415
         _register_google_vertexai_translator,
     )
-    from langchain_core.messages.block_translators.groq import _register_groq_translator
-    from langchain_core.messages.block_translators.ollama import (
+    from langchain_core.messages.block_translators.groq import (  # noqa: PLC0415
+        _register_groq_translator,
+    )
+    from langchain_core.messages.block_translators.ollama import (  # noqa: PLC0415
         _register_ollama_translator,
     )
-    from langchain_core.messages.block_translators.openai import (
+    from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
         _register_openai_translator,
     )
 

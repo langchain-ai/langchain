@@ -72,9 +72,7 @@ def new(
         name_str = name
         pip_bool = bool(pip)  # None should be false
     else:
-        name_str = (
-            name if name else typer.prompt("What folder would you like to create?")
-        )
+        name_str = name or typer.prompt("What folder would you like to create?")
         if not has_packages:
             package = []
             package_prompt = "What package would you like to add? (leave blank to skip)"

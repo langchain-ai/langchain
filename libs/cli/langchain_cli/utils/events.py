@@ -22,7 +22,14 @@ class EventDict(TypedDict):
 
 
 def create_events(events: list[EventDict]) -> dict[str, Any] | None:
-    """Create events."""
+    """Create events.
+
+    Args:
+        events: A list of event dictionaries.
+
+    Returns:
+        The response from the event tracking service, or None if there was an error.
+    """
     try:
         data = {
             "events": [

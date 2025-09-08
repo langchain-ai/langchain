@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
+from typing_extensions import override
 
 
 class ChatParrotLink(BaseChatModel):
@@ -41,6 +42,7 @@ class ChatParrotLink(BaseChatModel):
     stop: list[str] | None = None
     max_retries: int = 2
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -92,6 +94,7 @@ class ChatParrotLink(BaseChatModel):
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],

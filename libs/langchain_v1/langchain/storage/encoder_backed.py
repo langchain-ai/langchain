@@ -1,3 +1,5 @@
+"""Encoder-backed store implementation."""
+
 from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,

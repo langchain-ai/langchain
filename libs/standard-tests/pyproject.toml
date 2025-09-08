@@ -32,37 +32,72 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-
 lint = ["ruff<0.13,>=0.12.10"]
-typing = ["mypy<2,>=1.17.1", "langchain-core"]
+typing = [
+    "mypy<1.18,>=1.17.1",
+    "types-pyyaml<7.0.0.0,>=6.0.12.2",
+    "langchain-core",
+]
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
 
 [tool.mypy]
-disallow_untyped_defs = "True"
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = false
 
 [[tool.mypy.overrides]]
-module = "yaml"
+module = ["vcr.*",]
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "vcr.*"
-ignore_missing_imports = true
-
 
 [tool.ruff]
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["D", "E", "F", "I", "PGH", "T201", "UP",]
-pyupgrade.keep-runtime-typing = true
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FA100",   # Can't activate since we exclude UP007 for now
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR2004", # Magic numbers
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "S101",    # Asserts allowed in tests
+    "S311",    # No need for strong crypto in tests
+    "SLF001",  # Tests may call private methods
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
 
-[tool.ruff.lint.pydocstyle]
-convention = "google"
+    # TODO rules
+    "ANN401",
+    "BLE",
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [ "D1",]
+"scripts/**" = [ "INP",]
 
 [tool.coverage.run]
 omit = ["tests/*"]
