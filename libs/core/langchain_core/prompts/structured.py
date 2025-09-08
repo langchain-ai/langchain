@@ -89,9 +89,11 @@ class StructuredPrompt(ChatPromptTemplate):
 
                 from langchain_core.prompts import StructuredPrompt
 
+
                 class OutputSchema(BaseModel):
                     name: str
                     value: int
+
 
                 template = StructuredPrompt(
                     [

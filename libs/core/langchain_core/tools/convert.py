@@ -134,10 +134,12 @@ def tool(
                 # Searches the API for the query.
                 return
 
+
             @tool("search", return_direct=True)
             def search_api(query: str) -> str:
                 # Searches the API for the query.
                 return
+
 
             @tool(response_format="content_and_artifact")
             def search_api(query: str) -> tuple[str, dict]:
@@ -171,18 +173,15 @@ def tool(
                     "bar": {
                         "title": "Bar",
                         "description": "The bar.",
-                        "type": "string"
+                        "type": "string",
                     },
                     "baz": {
                         "title": "Baz",
                         "description": "The baz.",
-                        "type": "integer"
-                    }
+                        "type": "integer",
+                    },
                 },
-                "required": [
-                    "bar",
-                    "baz"
-                ]
+                "required": ["bar", "baz"],
             }
 
         Note that parsing by default will raise ``ValueError`` if the docstring
