@@ -1,4 +1,4 @@
-"""Javascript framework text splitter."""
+"""JavaScript framework text splitter."""
 
 import re
 from typing import Any, Optional
