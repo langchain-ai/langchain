@@ -1,4 +1,4 @@
-from __future__ import annotations
+"""Tests for FlareChain.from_llm preserving supplied ChatOpenAI instance."""
 
 import pytest
 
