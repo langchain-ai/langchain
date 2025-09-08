@@ -25,8 +25,8 @@ typing = [
     "mypy<1.18,>=1.17.1",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
-    "tiktoken<1.0.0,>=0.8.0",
-    "beautifulsoup4<5.0.0,>=4.13.4",
+    "tiktoken<1.0.0,>=0.11.0",
+    "beautifulsoup4<5.0.0,>=4.13.5",
 ]
 dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
 test = [
