@@ -71,14 +71,14 @@ def test_return_direct_integration_matrix(case: TestCase) -> None:
     )
 
     if case.response_format:
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
             prompt=AGENT_PROMPT,
             response_format=ToolStrategy(case.response_format),
         )
     else:
-        agent = create_react_agent(
+        agent = create_agent(
             model,
             tools=[poll_tool["tool"]],
             prompt=AGENT_PROMPT,
