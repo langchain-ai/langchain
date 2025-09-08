@@ -89,6 +89,7 @@ class QueryTransformer(Transformer):
         """Initialize the QueryTransformer.
 
         Args:
+            *args: Positional arguments.
             allowed_comparators: Optional sequence of allowed comparators.
             allowed_operators: Optional sequence of allowed operators.
             allowed_attributes: Optional sequence of allowed attributes for comparators.
@@ -109,8 +110,10 @@ class QueryTransformer(Transformer):
         Args:
             func_name: The name of the function.
             args: The arguments passed to the function.
+
         Returns:
             FilterDirective: The filter directive.
+
         Raises:
             ValueError: If the function is a comparator and the first arg is not in the
             allowed attributes.
@@ -204,6 +207,7 @@ class QueryTransformer(Transformer):
 
         Args:
             item: The item to transform.
+
         Raises:
             ValueError: If the item is not in ISO 8601 date format.
         """
@@ -223,6 +227,7 @@ class QueryTransformer(Transformer):
 
         Args:
             item: The item to transform.
+
         Raises:
             ValueError: If the item is not in ISO 8601 datetime format.
         """
@@ -257,8 +262,9 @@ def get_parser(
     """Return a parser for the query language.
 
     Args:
-        allowed_comparators: Optional[Sequence[Comparator]]
-        allowed_operators: Optional[Sequence[Operator]]
+        allowed_comparators: The allowed comparators.
+        allowed_operators: The allowed operators.
+        allowed_attributes: The allowed attributes.
 
     Returns:
         Lark parser for the query language.

@@ -164,9 +164,6 @@ ignore = [
     "BLE",
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
-    "D2",
-    "D3",
-    "D4",
     "ERA",
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try

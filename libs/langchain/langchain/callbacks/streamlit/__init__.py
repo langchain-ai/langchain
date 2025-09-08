@@ -42,7 +42,7 @@ def StreamlitCallbackHandler(  # noqa: N802
         An optional custom LLMThoughtLabeler instance. If unspecified, the handler
         will use the default thought labeling logic. Defaults to None.
 
-    Returns
+    Returns:
     -------
     A new StreamlitCallbackHandler instance.
 

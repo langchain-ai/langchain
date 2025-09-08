@@ -1,5 +1,4 @@
-"""
-**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+"""**Agent** is a class that uses an LLM to choose a sequence of actions to take.
 
 In Chains, a sequence of actions is hardcoded. In Agents,
 a language model is used as a reasoning engine to determine which actions
