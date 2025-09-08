@@ -8,25 +8,14 @@ from langchain_core.runnables.graph import Graph, LabelsDict
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires `graphviz` and `pygraphviz` to be installed.
-    :param fontname: The font to use for the labels
-    :param labels: A dictionary of label overrides. The dictionary
-        should have the following format:
-        {
-            "nodes": {
-                "node1": "CustomLabel1",
-                "node2": "CustomLabel2",
-                "__end__": "End Node"
-            },
-            "edges": {
-                "continue": "ContinueLabel",
-                "end": "EndLabel"
-            }
-        }
-        The keys are the original labels, and the values are the new labels.
-    Usage:
-        drawer = PngDrawer()
-        drawer.draw(state_graph, 'graph.png')
+    It requires ``graphviz`` and ``pygraphviz`` to be installed.
+
+    Example:
+
+        .. code-block:: python
+
+            drawer = PngDrawer()
+            drawer.draw(state_graph, "graph.png")
     """
 
     def __init__(
