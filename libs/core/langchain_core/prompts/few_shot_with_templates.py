@@ -49,7 +49,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "prompts", "few_shot_with_templates"]
+            ``["langchain", "prompts", "few_shot_with_templates"]``
         """
         return ["langchain", "prompts", "few_shot_with_templates"]
 

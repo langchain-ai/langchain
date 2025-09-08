@@ -134,7 +134,7 @@ class PngDrawer:
             ImportError: If ``pygraphviz`` is not installed.
 
         Returns:
-            The PNG bytes if output_path is None, else None.
+            The PNG bytes if ``output_path`` is None, else None.
         """
         try:
             import pygraphviz as pgv  # type: ignore[import-not-found]

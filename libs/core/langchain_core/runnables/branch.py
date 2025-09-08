@@ -153,7 +153,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 

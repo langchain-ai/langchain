@@ -111,7 +111,7 @@ class BaseChatMessageHistory(ABC):
         persistence layer.
 
         Returns:
-            the messages.
+            The messages.
         """
         from langchain_core.runnables.config import run_in_executor
 

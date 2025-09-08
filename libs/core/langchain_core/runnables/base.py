@@ -612,7 +612,7 @@ class Runnable(ABC, Generic[Input, Output]):
             other: Another ``Runnable`` or a ``Runnable``-like object.
 
         Returns:
-            a new ``Runnable``.
+            A new ``Runnable``.
         """
         return RunnableSequence(self, coerce_to_runnable(other))
 
@@ -635,7 +635,7 @@ class Runnable(ABC, Generic[Input, Output]):
             other: Another ``Runnable`` or a ``Runnable``-like object.
 
         Returns:
-            a new ``Runnable``.
+            A new ``Runnable``.
         """
         return RunnableSequence(coerce_to_runnable(other), self)
 
@@ -685,7 +685,7 @@ class Runnable(ABC, Generic[Input, Output]):
             name: An optional name for the resulting ``RunnableSequence``.
 
         Returns:
-            a new ``Runnable``.
+            A new ``Runnable``.
         """
         return RunnableSequence(self, *others, name=name)
 
@@ -795,7 +795,7 @@ class Runnable(ABC, Generic[Input, Output]):
                 that will be invoked with the entire output dict of this ``Runnable``.
 
         Returns:
-            a new ``Runnable``.
+            A new ``Runnable``.
 
         """
         from langchain_core.runnables.passthrough import RunnableAssign
@@ -943,7 +943,7 @@ class Runnable(ABC, Generic[Input, Output]):
             **kwargs: Additional keyword arguments to pass to the ``Runnable``.
 
         Yields:
-            tuples of the index of the input and the output from the ``Runnable``.
+            Tuples of the index of the input and the output from the ``Runnable``.
 
         """
         if not inputs:
@@ -2976,7 +2976,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -3773,7 +3773,7 @@ class RunnableParallel(RunnableSerializable[Input, dict[str, Any]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -5326,7 +5326,7 @@ class RunnableEachBase(RunnableSerializable[list[Input], list[Output]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -5656,7 +5656,7 @@ class RunnableBindingBase(RunnableSerializable[Input, Output]):  # type: ignore[
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 

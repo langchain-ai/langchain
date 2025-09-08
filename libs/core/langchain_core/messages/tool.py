@@ -219,7 +219,7 @@ def tool_call(
         id: An identifier associated with the tool call.
 
     Returns:
-        the created tool call.
+        The created tool call.
     """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
@@ -272,7 +272,7 @@ def tool_call_chunk(
         index: The index of the tool call in a sequence.
 
     Returns:
-        the created tool call chunk.
+        The created tool call chunk.
     """
     return ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
@@ -313,7 +313,7 @@ def invalid_tool_call(
         error: An error message associated with the tool call.
 
     Returns:
-        the created invalid tool call.
+        The created invalid tool call.
     """
     return InvalidToolCall(
         name=name, args=args, id=id, error=error, type="invalid_tool_call"

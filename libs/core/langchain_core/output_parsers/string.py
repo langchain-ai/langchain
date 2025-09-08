@@ -20,7 +20,7 @@ class StrOutputParser(BaseTransformOutputParser[str]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "output_parser"]
+            ``["langchain", "schema", "output_parser"]``
         """
         return ["langchain", "schema", "output_parser"]
 

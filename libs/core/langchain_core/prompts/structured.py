@@ -68,8 +68,8 @@ class StructuredPrompt(ChatPromptTemplate):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        For example, if the class is ``langchain.llms.openai.OpenAI``, then the
+        namespace is ``["langchain", "llms", "openai"]``
 
         Returns:
             The namespace of the langchain object.

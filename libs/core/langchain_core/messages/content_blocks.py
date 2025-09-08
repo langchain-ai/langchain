@@ -94,8 +94,8 @@ def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
         content_block: The content block to convert.
 
     Raises:
-        ValueError: If the source type is not supported or if mime_type is missing for
-            base64 data.
+        ValueError: If the source type is not supported or if ``mime_type`` is missing
+            for base64 data.
 
     Returns:
         A dictionary formatted for OpenAI's API.

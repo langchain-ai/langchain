@@ -377,8 +377,8 @@ def index(
         ValueError: If vectorstore does not have
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-        TypeError: If vectorstore is not a VectorStore or a DocumentIndex.
-        AssertionError: If source_id is None when cleanup mode is incremental.
+        TypeError: If ``vectorstore`` is not a VectorStore or a DocumentIndex.
+        AssertionError: If ``source_id`` is None when cleanup mode is incremental.
             (should be unreachable code).
 
     .. version_modified:: 0.3.25
@@ -714,9 +714,9 @@ async def aindex(
         ValueError: If vectorstore does not have
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-        TypeError: If vector_store is not a VectorStore or DocumentIndex.
-        AssertionError: If source_id_key is None when cleanup mode is
-            incremental or scoped_full (should be unreachable).
+        TypeError: If ``vector_store`` is not a VectorStore or DocumentIndex.
+        AssertionError: If ``source_id_key`` is None when cleanup mode is
+            incremental or ``scoped_full`` (should be unreachable).
 
     .. version_modified:: 0.3.25
 

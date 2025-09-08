@@ -20,7 +20,7 @@ def get_headers(*args: Any, **kwargs: Any) -> Any:  # noqa: ARG001
 
 
 def LangChainTracerV1(*args: Any, **kwargs: Any) -> Any:  # noqa: N802,ARG001
-    """Throw an error because this has been replaced by LangChainTracer.
+    """Throw an error because this has been replaced by ``LangChainTracer``.
 
     Raises:
         RuntimeError: Always, because this class is deprecated.

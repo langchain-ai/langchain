@@ -110,16 +110,16 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogPatch instances.
+        """Combine two ``RunLogPatch`` instances.
 
         Args:
-            other: The other RunLogPatch to combine with.
+            other: The other ``RunLogPatch`` to combine with.
 
         Raises:
-            TypeError: If the other object is not a RunLogPatch.
+            TypeError: If the other object is not a ``RunLogPatch``.
 
         Returns:
-            A new RunLog representing the combination of the two.
+            A new ``RunLog`` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -160,16 +160,16 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogs.
+        """Combine two ``RunLog``s.
 
         Args:
-            other: The other RunLog or RunLogPatch to combine with.
+            other: The other ``RunLog`` or ``RunLogPatch`` to combine with.
 
         Raises:
-            TypeError: If the other object is not a RunLog or RunLogPatch.
+            TypeError: If the other object is not a ``RunLog`` or ``RunLogPatch``.
 
         Returns:
-            A new RunLog representing the combination of the two.
+            A new ``RunLog`` representing the combination of the two.
         """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
@@ -187,13 +187,13 @@ class RunLog(RunLogPatch):
 
     @override
     def __eq__(self, other: object) -> bool:
-        """Check if two RunLogs are equal.
+        """Check if two ``RunLog``s are equal.
 
         Args:
-            other: The other RunLog to compare to.
+            other: The other ``RunLog`` to compare to.
 
         Returns:
-            True if the RunLogs are equal, False otherwise.
+            True if the ``RunLog``s are equal, False otherwise.
         """
         # First compare that the state is the same
         if not isinstance(other, RunLog):

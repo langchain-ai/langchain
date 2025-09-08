@@ -50,8 +50,8 @@ class AsciiCanvas:
         """Create an ASCII canvas.
 
         Args:
-            cols: number of columns in the canvas. Should be > 1.
-            lines: number of lines in the canvas. Should be > 1.
+            cols: number of columns in the canvas. Should be ``> 1``.
+            lines: number of lines in the canvas. Should be ``> 1``.
 
         Raises:
             ValueError: if canvas dimensions are invalid.
@@ -78,9 +78,9 @@ class AsciiCanvas:
         """Create a point on ASCII canvas.
 
         Args:
-            x: x coordinate. Should be >= 0 and < number of columns in
+            x: x coordinate. Should be ``>= 0`` and ``<`` number of columns in
                 the canvas.
-            y: y coordinate. Should be >= 0 an < number of lines in the
+            y: y coordinate. Should be ``>= 0`` an ``<`` number of lines in the
                 canvas.
             char: character to place in the specified point on the
                 canvas.

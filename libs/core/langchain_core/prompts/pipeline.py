@@ -58,7 +58,7 @@ class PipelinePromptTemplate(BasePromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "prompts", "pipeline"]
+            ``["langchain", "prompts", "pipeline"]``
         """
         return ["langchain", "prompts", "pipeline"]
 

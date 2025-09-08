@@ -509,7 +509,8 @@ class ChildTool(BaseTool):
         """Initialize the tool.
 
         Raises:
-            TypeError: If args_schema is not a subclass of pydantic BaseModel or dict.
+            TypeError: If ``args_schema`` is not a subclass of pydantic ``BaseModel`` or
+                dict.
         """
         if (
             "args_schema" in kwargs
@@ -632,10 +633,10 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema args_schema.
-            ValueError: If InjectedToolCallId is required but tool_call_id is not
+            ValueError: If string input is provided with JSON schema ``args_schema``.
+            ValueError: If InjectedToolCallId is required but ``tool_call_id`` is not
                 provided.
-            TypeError: If args_schema is not a Pydantic BaseModel or dict.
+            TypeError: If args_schema is not a Pydantic ``BaseModel`` or dict.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):

@@ -18,10 +18,10 @@ from langchain_core._api import deprecated
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
 def RunTypeEnum() -> type[RunTypeEnumDep]:  # noqa: N802
-    """RunTypeEnum.
+    """``RunTypeEnum``.
 
     Returns:
-        The RunTypeEnum class.
+        The ``RunTypeEnum`` class.
     """
     warnings.warn(
         "RunTypeEnum is deprecated. Please directly use a string instead"

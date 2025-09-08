@@ -47,7 +47,7 @@ class Generation(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "output"]
+            ``["langchain", "schema", "output"]``
         """
         return ["langchain", "schema", "output"]
 
@@ -56,16 +56,16 @@ class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
-        """Concatenate two GenerationChunks.
+        """Concatenate two ``GenerationChunk``s.
 
         Args:
-            other: Another GenerationChunk to concatenate with.
+            other: Another ``GenerationChunk`` to concatenate with.
 
         Raises:
-            TypeError: If other is not a GenerationChunk.
+            TypeError: If other is not a ``GenerationChunk``.
 
         Returns:
-            A new GenerationChunk concatenated from self and other.
+            A new ``GenerationChunk`` concatenated from self and other.
         """
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(

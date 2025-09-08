@@ -531,11 +531,11 @@ class _TracerCore(ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict) -> _TracerCore:
-        """Return self."""
+        """Return self deepcopied."""
         return self
 
     def __copy__(self) -> _TracerCore:
-        """Return self."""
+        """Return self copied."""
         return self
 
     def _end_trace(self, run: Run) -> Union[None, Coroutine[Any, Any, None]]:  # noqa: ARG002

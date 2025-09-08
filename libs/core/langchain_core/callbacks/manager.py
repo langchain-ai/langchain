@@ -2371,7 +2371,7 @@ def _configure(
             Defaults to None.
 
     Raises:
-        RuntimeError: If LANGCHAIN_TRACING is set but LANGCHAIN_TRACING_V2 is not.
+        RuntimeError: If `LANGCHAIN_TRACING` is set but `LANGCHAIN_TRACING_V2` is not.
 
     Returns:
         T: The configured callback manager.

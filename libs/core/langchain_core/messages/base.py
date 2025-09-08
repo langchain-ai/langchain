@@ -85,7 +85,7 @@ class BaseMessage(Serializable):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "messages"]
+            ``["langchain", "schema", "messages"]``
         """
         return ["langchain", "schema", "messages"]
 

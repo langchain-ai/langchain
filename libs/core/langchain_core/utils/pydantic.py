@@ -80,7 +80,7 @@ def is_pydantic_v1_subclass(cls: type) -> bool:
     """Check if the given class is Pydantic v1-like.
 
     Returns:
-        True if the given class is a subclass of Pydantic BaseModel 1.x.
+        True if the given class is a subclass of Pydantic ``BaseModel`` 1.x.
     """
     return issubclass(cls, BaseModelV1)
 
@@ -103,7 +103,7 @@ def is_basemodel_subclass(cls: type) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
 
     Returns:
-        True if the given class is a subclass of Pydantic BaseModel.
+        True if the given class is a subclass of Pydantic ``BaseModel``.
     """
     # Before we can use issubclass on the cls we need to check if it is a class
     if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
@@ -121,7 +121,7 @@ def is_basemodel_instance(obj: Any) -> bool:
     * pydantic.v1.BaseModel in Pydantic 2.x
 
     Returns:
-        True if the given class is an instance of Pydantic BaseModel.
+        True if the given class is an instance of Pydantic ``BaseModel``.
     """
     return isinstance(obj, (BaseModel, BaseModelV1))
 

@@ -331,7 +331,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """Return the HTML-escaped string with all of these characters escaped: " & < >."""
+    """Return the HTML-escaped string with these characters escaped: ``" & < >``."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",

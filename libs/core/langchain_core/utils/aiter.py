@@ -327,7 +327,7 @@ async def abatch_iterate(
         iterable: The async iterable to batch.
 
     Yields:
-        the batches.
+        The batches.
     """
     batch: list[T] = []
     async for element in iterable:

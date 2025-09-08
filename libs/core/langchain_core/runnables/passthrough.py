@@ -201,7 +201,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -431,7 +431,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -741,7 +741,7 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 

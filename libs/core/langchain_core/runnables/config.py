@@ -127,7 +127,7 @@ def _set_config_context(
         config (RunnableConfig): The config to set.
 
     Returns:
-        the token to reset the config and the previous tracing context.
+        The token to reset the config and the previous tracing context.
     """
     from langchain_core.tracers.langchain import LangChainTracer
 

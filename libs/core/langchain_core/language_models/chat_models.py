@@ -1484,7 +1484,8 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
 
         Raises:
             ValueError: If there are any unsupported ``kwargs``.
-            NotImplementedError: If the model does not implement with_structured_output.
+            NotImplementedError: If the model does not implement
+                ``with_structured_output()``.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.

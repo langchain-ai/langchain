@@ -125,7 +125,8 @@ def asyncio_accepts_context() -> bool:
     """Cache the result of checking if asyncio.create_task accepts a ``context`` arg.
 
     Returns:
-        bool: True if asyncio.create_task accepts a context argument, False otherwise.
+        bool: True if ``asyncio.create_task`` accepts a context argument, False
+            otherwise.
     """
     return accepts_context(asyncio.create_task)
 

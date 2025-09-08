@@ -311,7 +311,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
         """Initialize tool calls from tool call chunks.
 
         Returns:
-            This AIMessageChunk.
+            This ``AIMessageChunk``.
         """
         if not self.tool_call_chunks:
             if self.tool_calls:
@@ -386,17 +386,17 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple AIMessageChunks together.
+    """Add multiple ``AIMessageChunk``s together.
 
     Args:
-        left: The first AIMessageChunk.
-        *others: Other AIMessageChunks to add.
+        left: The first ``AIMessageChunk``.
+        *others: Other ``AIMessageChunk``s to add.
 
     Raises:
         ValueError: If the example values of the chunks are not the same.
 
     Returns:
-        The resulting AIMessageChunk.
+        The resulting ``AIMessageChunk``.
 
     """
     if any(left.example != o.example for o in others):
@@ -498,11 +498,11 @@ def add_usage(
             )
 
     Args:
-        left: The first UsageMetadata object.
-        right: The second UsageMetadata object.
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
 
     Returns:
-        The sum of the two UsageMetadata objects.
+        The sum of the two ``UsageMetadata`` objects.
 
     """
     if not (left or right):
@@ -562,11 +562,11 @@ def subtract_usage(
             )
 
     Args:
-        left: The first UsageMetadata object.
-        right: The second UsageMetadata object.
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
 
     Returns:
-        The resulting UsageMetadata after subtraction.
+        The resulting ``UsageMetadata`` after subtraction.
 
     """
     if not (left or right):

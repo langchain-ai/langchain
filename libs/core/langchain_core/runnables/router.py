@@ -107,7 +107,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 

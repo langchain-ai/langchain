@@ -151,7 +151,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "output_parsers", "list"]
+            ``["langchain", "output_parsers", "list"]``
         """
         return ["langchain", "output_parsers", "list"]
 

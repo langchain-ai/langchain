@@ -44,8 +44,8 @@ class OutputParserException(ValueError, LangChainException):  # noqa: N818
                 Defaults to False.
 
         Raises:
-            ValueError: If send_to_llm is True but either observation or llm_output
-                are not provided.
+            ValueError: If ``send_to_llm`` is True but either observation or
+                ``llm_output`` are not provided.
         """
         if isinstance(error, str):
             error = create_message(
@@ -83,7 +83,7 @@ def create_message(*, message: str, error_code: ErrorCode) -> str:
         error_code: The error code to display.
 
     Returns:
-        the full message with the troubleshooting link.
+        The full message with the troubleshooting link.
     """
     return (
         f"{message}\n"

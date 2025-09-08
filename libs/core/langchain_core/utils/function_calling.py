@@ -611,7 +611,7 @@ def convert_to_json_schema(
     """Convert a schema representation to a JSON schema.
 
     Args:
-        schema: the schema to convert.
+        schema: The schema to convert.
         strict: If True, model output is guaranteed to exactly match the JSON Schema
             provided in the function definition. If None, ``strict`` argument will not
             be included in function definition.

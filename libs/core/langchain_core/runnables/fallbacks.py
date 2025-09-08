@@ -149,7 +149,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "runnable"]
+            ``["langchain", "schema", "runnable"]``
         """
         return ["langchain", "schema", "runnable"]
 
@@ -158,7 +158,7 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
         """Iterator over the Runnable and its fallbacks.
 
         Yields:
-            the Runnable then its fallbacks.
+            The Runnable then its fallbacks.
         """
         yield self.runnable
         yield from self.fallbacks

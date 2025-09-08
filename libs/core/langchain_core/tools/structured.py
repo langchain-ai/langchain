@@ -186,7 +186,7 @@ class StructuredTool(BaseTool):
             ValueError: If the function is not provided.
             ValueError: If the function does not have a docstring and description
                 is not provided.
-            TypeError: If the args_schema is not a BaseModel or dict.
+            TypeError: If the ``args_schema`` is not a ``BaseModel`` or dict.
 
         Examples:
 

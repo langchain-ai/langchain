@@ -989,7 +989,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "prompts", "chat"]
+            ``["langchain", "prompts", "chat"]``
         """
         return ["langchain", "prompts", "chat"]
 
@@ -1311,7 +1311,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
 
         Returns:
             If index is an int, returns the message at that index.
-            If index is a slice, returns a new ChatPromptTemplate
+            If index is a slice, returns a new ``ChatPromptTemplate``
             containing the messages in that slice.
         """
         if isinstance(index, slice):

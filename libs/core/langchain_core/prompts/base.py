@@ -102,7 +102,7 @@ class BasePromptTemplate(
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "schema", "prompt_template"]
+            ``["langchain", "schema", "prompt_template"]``
         """
         return ["langchain", "schema", "prompt_template"]
 

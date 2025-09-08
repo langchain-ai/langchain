@@ -878,8 +878,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
 
         Raises:
             ValueError: If prompts is not a list.
-            ValueError: If the length of callbacks, tags, metadata, or run_name
-                (if provided) does not match the length of prompts.
+            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
+                ``run_name`` (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input
@@ -1142,8 +1142,8 @@ class BaseLLM(BaseLanguageModel[str], ABC):
                 to the model provider API call.
 
         Raises:
-            ValueError: If the length of callbacks, tags, metadata, or run_name
-                (if provided) does not match the length of prompts.
+            ValueError: If the length of ``callbacks``, ``tags``, ``metadata``, or
+                ``run_name`` (if provided) does not match the length of prompts.
 
         Returns:
             An LLMResult, which contains a list of candidate Generations for each input

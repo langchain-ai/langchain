@@ -477,7 +477,7 @@ class Graph:
         When drawing the graph, this node would be the origin.
 
         Returns:
-            the first node, or None if there is no such node or multiple
+            The first node, or None if there is no such node or multiple
             candidates.
         """
         return _first_node(self)
@@ -489,7 +489,7 @@ class Graph:
         When drawing the graph, this node would be the destination.
 
         Returns:
-            the last node, or None if there is no such node or multiple
+            The last node, or None if there is no such node or multiple
             candidates.
         """
         return _last_node(self)

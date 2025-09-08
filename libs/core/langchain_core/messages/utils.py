@@ -1047,7 +1047,7 @@ def convert_to_openai_messages(
                     blocks these are left as is.
 
     Raises:
-        ValueError: if an unrecognized text_format is specified, or if a message
+        ValueError: if an unrecognized ``text_format`` is specified, or if a message
             content block is missing expected keys.
 
     Returns:

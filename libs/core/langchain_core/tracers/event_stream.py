@@ -468,7 +468,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_id (UUID): The run ID. This is the ID of the current run.
 
         Raises:
-            ValueError: If the run type is not "llm" or "chat_model".
+            ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.
         """
         run_info = self.run_map.pop(run_id)
         inputs_ = run_info["inputs"]

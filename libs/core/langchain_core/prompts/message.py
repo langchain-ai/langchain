@@ -26,7 +26,7 @@ class BaseMessagePromptTemplate(Serializable, ABC):
         """Get the namespace of the langchain object.
 
         Returns:
-            ["langchain", "prompts", "chat"]
+            ``["langchain", "prompts", "chat"]``
         """
         return ["langchain", "prompts", "chat"]
 
