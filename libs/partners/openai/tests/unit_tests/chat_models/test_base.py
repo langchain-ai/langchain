@@ -601,7 +601,7 @@ def test_openai_invoke(mock_client: MagicMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_client.create.called
+    assert mock_client.with_raw_response.create.called
 
 
 async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
@@ -613,7 +613,7 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 
         # headers are not in response_metadata if include_response_headers not set
         assert "headers" not in res.response_metadata
-    assert mock_async_client.create.called
+    assert mock_async_client.with_raw_response.create.called
 
 
 @pytest.mark.parametrize(
@@ -638,7 +638,7 @@ def test_openai_invoke_name(mock_client: MagicMock) -> None:
     with patch.object(llm, "client", mock_client):
         messages = [HumanMessage(content="Foo", name="Katie")]
         res = llm.invoke(messages)
-        call_args, call_kwargs = mock_client.create.call_args
+        call_args, call_kwargs = mock_client.with_raw_response.create.call_args
         assert len(call_args) == 0  # no positional args
         call_messages = call_kwargs["messages"]
         assert len(call_messages) == 1
@@ -678,7 +678,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     ]
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "tool_calls" in tool_call_message_payload
@@ -688,7 +688,7 @@ def test_function_calls_with_tool_calls(mock_client: MagicMock) -> None:
     cast(AIMessage, messages[1]).tool_calls = []
     with patch.object(llm, "client", mock_client):
         _ = llm.invoke(messages)
-        _, call_kwargs = mock_client.create.call_args
+        _, call_kwargs = mock_client.with_raw_response.create.call_args
         call_messages = call_kwargs["messages"]
         tool_call_message_payload = call_messages[1]
         assert "function_call" in tool_call_message_payload
@@ -2153,7 +2153,11 @@ def test__construct_responses_api_input_ai_message_with_tool_calls_and_content()
 
     assert result[0]["role"] == "assistant"
     assert result[0]["content"] == [
-        {"type": "output_text", "text": "I'll check the weather for you."}
+        {
+            "type": "output_text",
+            "text": "I'll check the weather for you.",
+            "annotations": [],
+        }
     ]
 
     assert result[1]["type"] == "function_call"
@@ -2255,6 +2259,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
         {
             "type": "output_text",
             "text": "The weather in San Francisco is 72°F and sunny.",
+            "annotations": [],
         }
     ]
 
@@ -2321,8 +2326,9 @@ def test_mcp_tracing() -> None:
     tracer = FakeTracer()
     mock_client = MagicMock()
 
-    def mock_create(*args: Any, **kwargs: Any) -> Response:
-        return Response(
+    def mock_create(*args: Any, **kwargs: Any) -> MagicMock:
+        mock_raw_response = MagicMock()
+        mock_raw_response.parse.return_value = Response(
             id="resp_123",
             created_at=1234567890,
             model="o4-mini",
@@ -2344,8 +2350,9 @@ def test_mcp_tracing() -> None:
                 )
             ],
         )
+        return mock_raw_response
 
-    mock_client.responses.create = mock_create
+    mock_client.responses.with_raw_response.create = mock_create
     input_message = HumanMessage("Test query")
     tools = [
         {
@@ -2503,6 +2510,42 @@ def test_get_last_messages() -> None:
     last_messages, response_id = _get_last_messages(messages)
     assert last_messages == []
     assert response_id == "resp_123"
+
+
+def test_get_last_messages_with_mixed_response_metadata() -> None:
+    """Test that _get_last_messages correctly skips AIMessages without response_id."""
+    # Test case where the most recent AIMessage has no response_id,
+    # but an earlier AIMessage does have one
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
+    assert last_messages == [
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),
+        HumanMessage("What's up?"),
+    ]
+    assert previous_response_id == "resp_123"
+
+    # Test case where no AIMessage has response_id
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!"),  # No response_metadata
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return all messages when no AIMessage has response_id
+    assert last_messages == messages
+    assert previous_response_id is None
 
 
 def test_get_request_payload_use_previous_response_id() -> None:
@@ -2673,3 +2716,21 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("use_responses_api", [False, True])
+def test_gpt_5_temperature(use_responses_api: bool) -> None:
+    llm = ChatOpenAI(
+        model="gpt-5-nano", temperature=0.5, use_responses_api=use_responses_api
+    )
+
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert "temperature" not in payload  # not supported for gpt-5 family models
+
+    llm = ChatOpenAI(
+        model="gpt-5-chat", temperature=0.5, use_responses_api=use_responses_api
+    )
+    messages = [HumanMessage(content="Hello")]
+    payload = llm._get_request_payload(messages)
+    assert payload["temperature"] == 0.5  # gpt-5-chat is exception
