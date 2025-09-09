@@ -250,8 +250,8 @@ def test_batch_no_race_conditions() -> None:
     expected = [i * 2 for i in range(50)]
     assert outputs == expected, "Outputs should be correct and in order"
 
-    # Note: The counter might not be 50 due to race conditions in the test runnable itself,
-    # but the batch processing order should still be preserved
+    # Note: The counter might not be 50 due to race conditions in the test
+    # runnable itself, but the batch processing order should still be preserved
 
 
 def test_batch_with_varying_processing_times() -> None:
@@ -308,6 +308,7 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
 
