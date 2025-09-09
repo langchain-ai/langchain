@@ -64,40 +64,41 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     .. code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
-                ConversationVectorStoreTokenBufferMemory
+            ConversationVectorStoreTokenBufferMemory,
         )
         from langchain_chroma import Chroma
         from langchain_community.embeddings import HuggingFaceInstructEmbeddings
         from langchain_openai import OpenAI
 
         embedder = HuggingFaceInstructEmbeddings(
-                        query_instruction="Represent the query for retrieval: "
+            query_instruction="Represent the query for retrieval: "
         )
-        chroma = Chroma(collection_name="demo",
-                        embedding_function=embedder,
-                        collection_metadata={"hnsw:space": "cosine"},
-                        )
+        chroma = Chroma(
+            collection_name="demo",
+            embedding_function=embedder,
+            collection_metadata={"hnsw:space": "cosine"},
+        )
 
         retriever = chroma.as_retriever(
-                search_type="similarity_score_threshold",
-                search_kwargs={
-                    'k': 5,
-                    'score_threshold': 0.75,
-                },
+            search_type="similarity_score_threshold",
+            search_kwargs={
+                "k": 5,
+                "score_threshold": 0.75,
+            },
         )
 
         conversation_memory = ConversationVectorStoreTokenBufferMemory(
-                return_messages=True,
-                llm=OpenAI(),
-                retriever=retriever,
-                max_token_limit = 1000,
+            return_messages=True,
+            llm=OpenAI(),
+            retriever=retriever,
+            max_token_limit=1000,
         )
 
-        conversation_memory.save_context({"Human": "Hi there"},
-                                          {"AI": "Nice to meet you!"}
+        conversation_memory.save_context(
+            {"Human": "Hi there"}, {"AI": "Nice to meet you!"}
         )
-        conversation_memory.save_context({"Human": "Nice day isn't it?"},
-                                          {"AI": "I love Wednesdays."}
+        conversation_memory.save_context(
+            {"Human": "Nice day isn't it?"}, {"AI": "I love Wednesdays."}
         )
         conversation_memory.load_memory_variables({"input": "What time is it?"})
 

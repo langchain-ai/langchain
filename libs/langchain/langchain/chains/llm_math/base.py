@@ -40,7 +40,8 @@ class LLMMathChain(Chain):
         - Uses LLM tool calling features;
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
-        - Easier to modify or extend (e.g., with additional tools, structured responses, etc.)
+        - Easier to modify or extend
+          (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 
@@ -146,6 +147,7 @@ class LLMMathChain(Chain):
 
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
+
             llm_math = LLMMathChain.from_llm(OpenAI())
 
     """  # noqa: E501

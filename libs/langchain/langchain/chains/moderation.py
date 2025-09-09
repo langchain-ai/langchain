@@ -26,6 +26,7 @@ class OpenAIModerationChain(Chain):
         .. code-block:: python
 
             from langchain.chains import OpenAIModerationChain
+
             moderation = OpenAIModerationChain()
 
     """

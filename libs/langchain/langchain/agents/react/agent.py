@@ -29,9 +29,12 @@ def create_react_agent(
     (https://arxiv.org/abs/2210.03629)
 
     .. warning::
-       This implementation is based on the foundational ReAct paper but is older and not well-suited for production applications.
-       For a more robust and feature-rich implementation, we recommend using the `create_react_agent` function from the LangGraph library.
-       See the [reference doc](https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent)
+       This implementation is based on the foundational ReAct paper but is older and
+       not well-suited for production applications.
+       For a more robust and feature-rich implementation, we recommend using the
+       `create_react_agent` function from the LangGraph library.
+       See the
+       `reference doc <https://langchain-ai.github.io/langgraph/reference/prebuilt/#langgraph.prebuilt.chat_agent_executor.create_react_agent>`__
        for more information.
 
     Args:
@@ -73,6 +76,7 @@ def create_react_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -87,7 +91,8 @@ def create_react_agent(
         The prompt must have input keys:
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
-            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a
+               string.
 
         Here's an example:
 

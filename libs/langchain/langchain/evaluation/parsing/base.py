@@ -105,7 +105,7 @@ class JsonEqualityEvaluator(StringEvaluator):
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')
         {'score': False}
 
-        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x['a'] == y['a'])
+        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x["a"] == y["a"])
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 1}')
         {'score': True}
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')

@@ -57,6 +57,7 @@ def load_dataset(uri: str) -> list[dict]:
     .. code-block:: python
 
         from langchain.evaluation import load_dataset
+
         ds = load_dataset("llm-math")
 
     """

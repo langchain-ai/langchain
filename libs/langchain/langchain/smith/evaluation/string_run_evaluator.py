@@ -410,30 +410,33 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         reference_key: Optional[str] = None,
         tags: Optional[list[str]] = None,
     ) -> StringRunEvaluatorChain:
-        """Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
+        """Create a StringRunEvaluatorChain.
+
+        Create a StringRunEvaluatorChain from an evaluator and the run and dataset
+        types.
 
         This method provides an easy way to instantiate a StringRunEvaluatorChain, by
         taking an evaluator and information about the type of run and the data.
         The method supports LLM and chain runs.
 
         Args:
-            evaluator (StringEvaluator): The string evaluator to use.
-            run_type (str): The type of run being evaluated.
+            evaluator: The string evaluator to use.
+            run_type: The type of run being evaluated.
                 Supported types are LLM and Chain.
-            data_type (DataType): The type of dataset used in the run.
-            input_key (str, optional): The key used to map the input from the run.
-            prediction_key (str, optional): The key used to map the prediction from the run.
-            reference_key (str, optional): The key used to map the reference from the dataset.
-            tags (List[str], optional): List of tags to attach to the evaluation chain.
+            data_type: The type of dataset used in the run.
+            input_key: The key used to map the input from the run.
+            prediction_key: The key used to map the prediction from the run.
+            reference_key: The key used to map the reference from the dataset.
+            tags: List of tags to attach to the evaluation chain.
 
         Returns:
-            StringRunEvaluatorChain: The instantiated evaluation chain.
+            The instantiated evaluation chain.
 
         Raises:
-            ValueError: If the run type is not supported, or if the evaluator requires a
-                reference from the dataset but the reference key is not provided.
+            If the run type is not supported, or if the evaluator requires a
+            reference from the dataset but the reference key is not provided.
 
-        """  # noqa: E501
+        """
         # Configure how run inputs/predictions are passed to the evaluator
         if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()
