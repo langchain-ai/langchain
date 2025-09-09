@@ -7,8 +7,7 @@ from typing import Any
 
 import pytest
 
-from langchain_core.runnables import RunnableConfig, RunnableLambda
-from langchain_core.runnables.base import Runnable
+from langchain_core.runnables import Runnable, RunnableConfig, RunnableLambda
 
 
 @pytest.mark.asyncio
@@ -97,7 +96,7 @@ def test_batch_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable: Runnable = RunnableLambda(tracked_function)
+    runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
@@ -128,7 +127,7 @@ def test_batch_as_completed_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable: Runnable = RunnableLambda(tracked_function)
+    runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
