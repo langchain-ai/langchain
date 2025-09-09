@@ -549,19 +549,19 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         """
         # Convert iterables to lists to get their length and allow indexing
         iterables_as_lists = [list(iterable) for iterable in iterables]
-        
+
         # Create contexts for each item in the first iterable
         contexts = [copy_context() for _ in range(len(iterables_as_lists[0]))]
-        
+
         # Create a wrapper that includes the index with the arguments
         def _wrapped_fn_with_index(index: int, *args: Any) -> T:
             # Use the index to get the corresponding context
             return contexts[index].run(fn, *args)
-        
+
         # Create indexed versions: first element is the index, rest are the actual values
         indices = list(range(len(iterables_as_lists[0])))
         indexed_iterables = [indices] + iterables_as_lists
-        
+
         # Map the wrapped function over the indexed iterables
         return super().map(
             _wrapped_fn_with_index,
@@ -625,6 +625,3 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
-
-
-
