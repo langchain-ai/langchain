@@ -108,7 +108,7 @@ def _handle_structured_output_error(
 ResponseT = TypeVar("ResponseT")
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(
     *,
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
@@ -296,13 +296,13 @@ def create_agent(  # noqa: PLR0915
                         ],
                         "response": structured_response,
                     }
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise exception from exc
 
                     return {
                         "messages": [

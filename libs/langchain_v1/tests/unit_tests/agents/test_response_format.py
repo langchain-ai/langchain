@@ -1,11 +1,12 @@
 """Test suite for create_agent with structured output response_format permutations."""
 
-import pytest
-
 from dataclasses import dataclass
-from typing import Union
 
+import pytest
 from langchain_core.messages import HumanMessage
+from pydantic import BaseModel, Field
+from typing_extensions import TypedDict
+
 from langchain.agents import create_agent
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
@@ -13,9 +14,6 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
-from pydantic import BaseModel, Field
-from typing_extensions import TypedDict
-
 from tests.unit_tests.agents.model import FakeToolCallingModel
 
 
@@ -76,13 +74,11 @@ location_json_schema = {
 
 def get_weather() -> str:
     """Get the weather."""
-
     return "The weather is sunny and 75°F."
 
 
 def get_location() -> str:
     """Get the current location."""
-
     return "You are in New York, USA."
 
 
@@ -334,14 +330,12 @@ class TestResponseFormatAsToolStrategy:
             ],
         ]
 
-        model = FakeToolCallingModel[Union[WeatherBaseModel, LocationResponse]](
-            tool_calls=tool_calls
-        )
+        model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](tool_calls=tool_calls)
 
         agent = create_agent(
             model,
             [get_weather, get_location],
-            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
         )
         response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -365,7 +359,7 @@ class TestResponseFormatAsToolStrategy:
         agent_location = create_agent(
             model_location,
             [get_weather, get_location],
-            response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+            response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
         )
         response_location = agent_location.invoke({"messages": [HumanMessage("Where am I?")]})
 
@@ -373,7 +367,11 @@ class TestResponseFormatAsToolStrategy:
         assert len(response_location["messages"]) == 5
 
     def test_multiple_structured_outputs_error_without_retry(self) -> None:
-        """Test that MultipleStructuredOutputsError is raised when model returns multiple structured tool calls without retry."""
+        """Test multiple structured outputs error without retry.
+
+        Test that MultipleStructuredOutputsError is raised when model returns multiple
+        structured tool calls without retry.
+        """
         tool_calls = [
             [
                 {
@@ -395,14 +393,14 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=False,
             ),
         )
 
         with pytest.raises(
             MultipleStructuredOutputsError,
-            match=".*WeatherBaseModel.*LocationResponse.*",
+            match=r".*WeatherBaseModel.*LocationResponse.*",
         ):
             agent.invoke({"messages": [HumanMessage("Give me weather and location")]})
 
@@ -436,7 +434,7 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=True,
             ),
         )
@@ -448,7 +446,11 @@ class TestResponseFormatAsToolStrategy:
         assert response["structured_response"] == EXPECTED_WEATHER_PYDANTIC
 
     def test_structured_output_parsing_error_without_retry(self) -> None:
-        """Test that StructuredOutputParsingError is raised when tool args fail to parse without retry."""
+        """Test structured output parsing error without retry.
+
+        Test that StructuredOutputParsingError is raised when tool args fail to parse
+        without retry.
+        """
         tool_calls = [
             [
                 {
@@ -472,7 +474,7 @@ class TestResponseFormatAsToolStrategy:
 
         with pytest.raises(
             StructuredOutputValidationError,
-            match=".*WeatherBaseModel.*",
+            match=r".*WeatherBaseModel.*",
         ):
             agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
@@ -547,7 +549,7 @@ class TestResponseFormatAsToolStrategy:
             model,
             [],
             response_format=ToolStrategy(
-                Union[WeatherBaseModel, LocationResponse],
+                WeatherBaseModel | LocationResponse,
                 handle_errors=custom_message,
             ),
         )
@@ -689,14 +691,14 @@ def test_union_of_types() -> None:
         ],
     ]
 
-    model = FakeToolCallingModel[Union[WeatherBaseModel, LocationResponse]](
+    model = FakeToolCallingModel[WeatherBaseModel | LocationResponse](
         tool_calls=tool_calls, structured_response=EXPECTED_WEATHER_PYDANTIC
     )
 
     agent = create_agent(
         model,
         [get_weather, get_location],
-        response_format=ToolStrategy(Union[WeatherBaseModel, LocationResponse]),
+        response_format=ToolStrategy(WeatherBaseModel | LocationResponse),
     )
     response = agent.invoke({"messages": [HumanMessage("What's the weather?")]})
 
