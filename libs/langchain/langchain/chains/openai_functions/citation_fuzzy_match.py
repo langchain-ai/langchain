@@ -58,8 +58,11 @@ class FactWithEvidence(BaseModel):
 
 
 class QuestionAnswer(BaseModel):
-    """A question and its answer as a list of facts each one should have a source.
-    each sentence contains a body and a list of sources."""
+    """A question and its answer as a list of facts.
+
+    Each fact should have a source.
+    Each sentence contains a body and a list of sources.
+    """
 
     question: str = Field(..., description="Question that was asked")
     answer: list[FactWithEvidence] = Field(

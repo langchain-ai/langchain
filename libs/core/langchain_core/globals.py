@@ -6,6 +6,13 @@ from typing import TYPE_CHECKING, Optional
 if TYPE_CHECKING:
     from langchain_core.caches import BaseCache
 
+try:
+    import langchain  # type: ignore[import-not-found]
+
+    _HAS_LANGCHAIN = True
+except ImportError:
+    _HAS_LANGCHAIN = False
+
 
 # DO NOT USE THESE VALUES DIRECTLY!
 # Use them only via `get_<X>()` and `set_<X>()` below,
@@ -22,9 +29,7 @@ def set_verbose(value: bool) -> None:  # noqa: FBT001
     Args:
         value: The new value for the `verbose` global setting.
     """
-    try:
-        import langchain  # type: ignore[import-not-found]
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -43,8 +48,6 @@ def set_verbose(value: bool) -> None:  # noqa: FBT001
             # Remove it once `langchain.verbose` is no longer supported, and once all
             # users have migrated to using `set_verbose()` here.
             langchain.verbose = value
-    except ImportError:
-        pass
 
     global _verbose  # noqa: PLW0603
     _verbose = value
@@ -56,9 +59,7 @@ def get_verbose() -> bool:
     Returns:
         The value of the `verbose` global setting.
     """
-    try:
-        import langchain
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -83,7 +84,7 @@ def get_verbose() -> bool:
             # deprecation warnings directing them to use `set_verbose()` when they
             # import `langchain.verbose`.
             old_verbose = langchain.verbose
-    except ImportError:
+    else:
         old_verbose = False
 
     return _verbose or old_verbose
@@ -95,9 +96,7 @@ def set_debug(value: bool) -> None:  # noqa: FBT001
     Args:
         value: The new value for the `debug` global setting.
     """
-    try:
-        import langchain
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -114,8 +113,6 @@ def set_debug(value: bool) -> None:  # noqa: FBT001
             # Remove it once `langchain.debug` is no longer supported, and once all
             # users have migrated to using `set_debug()` here.
             langchain.debug = value
-    except ImportError:
-        pass
 
     global _debug  # noqa: PLW0603
     _debug = value
@@ -127,9 +124,7 @@ def get_debug() -> bool:
     Returns:
         The value of the `debug` global setting.
     """
-    try:
-        import langchain
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -151,7 +146,7 @@ def get_debug() -> bool:
             # to using `set_debug()` yet. Those users are getting deprecation warnings
             # directing them to use `set_debug()` when they import `langchain.debug`.
             old_debug = langchain.debug
-    except ImportError:
+    else:
         old_debug = False
 
     return _debug or old_debug
@@ -163,9 +158,7 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
     Args:
         value: The new LLM cache to use. If `None`, the LLM cache is disabled.
     """
-    try:
-        import langchain
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -184,22 +177,18 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
             # Remove it once `langchain.llm_cache` is no longer supported, and
             # once all users have migrated to using `set_llm_cache()` here.
             langchain.llm_cache = value
-    except ImportError:
-        pass
 
     global _llm_cache  # noqa: PLW0603
     _llm_cache = value
 
 
-def get_llm_cache() -> "BaseCache":
+def get_llm_cache() -> Optional["BaseCache"]:
     """Get the value of the `llm_cache` global setting.
 
     Returns:
         The value of the `llm_cache` global setting.
     """
-    try:
-        import langchain
-
+    if _HAS_LANGCHAIN:
         # We're about to run some deprecated code, don't report warnings from it.
         # The user called the correct (non-deprecated) code path and shouldn't get
         # warnings.
@@ -225,7 +214,7 @@ def get_llm_cache() -> "BaseCache":
             # Those users are getting deprecation warnings directing them
             # to use `set_llm_cache()` when they import `langchain.llm_cache`.
             old_llm_cache = langchain.llm_cache
-    except ImportError:
+    else:
         old_llm_cache = None
 
     return _llm_cache or old_llm_cache

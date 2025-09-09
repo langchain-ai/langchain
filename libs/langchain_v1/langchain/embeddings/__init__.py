@@ -1,3 +1,5 @@
+"""Embeddings."""
+
 from langchain_core.embeddings import Embeddings
 
 from langchain.embeddings.base import init_embeddings

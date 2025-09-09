@@ -39,14 +39,15 @@ class Generation(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "schema", "output"].
+        Returns:
+            ``["langchain", "schema", "output"]``
         """
         return ["langchain", "schema", "output"]
 
@@ -55,7 +56,17 @@ class GenerationChunk(Generation):
     """Generation chunk, which can be concatenated with other Generation chunks."""
 
     def __add__(self, other: GenerationChunk) -> GenerationChunk:
-        """Concatenate two GenerationChunks."""
+        """Concatenate two ``GenerationChunk``s.
+
+        Args:
+            other: Another ``GenerationChunk`` to concatenate with.
+
+        Raises:
+            TypeError: If other is not a ``GenerationChunk``.
+
+        Returns:
+            A new ``GenerationChunk`` concatenated from self and other.
+        """
         if isinstance(other, GenerationChunk):
             generation_info = merge_dicts(
                 self.generation_info or {},

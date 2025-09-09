@@ -43,7 +43,11 @@ run_collector_var: ContextVar[Optional[RunCollectorCallbackHandler]] = ContextVa
 def tracing_enabled(
     session_name: str = "default",  # noqa: ARG001
 ) -> Generator[TracerSessionV1, None, None]:
-    """Throw an error because this has been replaced by tracing_v2_enabled."""
+    """Throw an error because this has been replaced by ``tracing_v2_enabled``.
+
+    Raises:
+        RuntimeError: Always, because this function is deprecated.
+    """
     msg = (
         "tracing_enabled is no longer supported. Please use tracing_enabled_v2 instead."
     )

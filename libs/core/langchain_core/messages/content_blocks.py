@@ -88,7 +88,18 @@ def is_data_content_block(
 
 
 def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
-    """Convert image content block to format expected by OpenAI Chat Completions API."""
+    """Convert image content block to format expected by OpenAI Chat Completions API.
+
+    Args:
+        content_block: The content block to convert.
+
+    Raises:
+        ValueError: If the source type is not supported or if ``mime_type`` is missing
+            for base64 data.
+
+    Returns:
+        A dictionary formatted for OpenAI's API.
+    """
     if content_block["source_type"] == "url":
         return {
             "type": "image_url",
@@ -112,7 +123,17 @@ def convert_to_openai_image_block(content_block: dict[str, Any]) -> dict:
 
 
 def convert_to_openai_data_block(block: dict) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
+    """Format standard data content block to format expected by OpenAI.
+
+    Args:
+        block: A data content block.
+
+    Raises:
+        ValueError: If the block type or source type is not supported.
+
+    Returns:
+        A dictionary formatted for OpenAI's API.
+    """
     if block["type"] == "image":
         formatted_block = convert_to_openai_image_block(block)
 
