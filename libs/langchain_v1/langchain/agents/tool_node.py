@@ -40,6 +40,7 @@ import inspect
 import json
 from copy import copy, deepcopy
 from dataclasses import replace
+from types import UnionType
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -246,7 +247,7 @@ def _infer_handled_types(handler: Callable[..., str]) -> tuple[type[Exception], 
         type_hints = get_type_hints(handler)
         if first_param.name in type_hints:
             origin = get_origin(first_param.annotation)
-            if origin is Union:
+            if origin in [Union, UnionType]:
                 args = get_args(first_param.annotation)
                 if all(issubclass(arg, Exception) for arg in args):
                     return tuple(args)

@@ -160,10 +160,9 @@ ignore = [
     "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
+    "ANN401",  # No type Any
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
-    "ERA",
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try
 ]

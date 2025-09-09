@@ -659,10 +659,7 @@ class ChildTool(BaseTool):
                 return tool_input
             if issubclass(input_args, BaseModel):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -677,10 +674,7 @@ class ChildTool(BaseTool):
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
