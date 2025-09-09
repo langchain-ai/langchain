@@ -435,6 +435,12 @@ class Chroma(VectorStore):
 
     def __ensure_collection(self) -> None:
         """Ensure that the collection exists or create it."""
+        if self._client is None:
+            msg = (
+                "Cannot ensure collection synchronously when only async_client is provided. "
+                "Use async methods or provide a sync client."
+            )
+            raise ValueError(msg)
         self._chroma_collection = self._client.get_or_create_collection(
             name=self._collection_name,
             embedding_function=None,
@@ -1432,6 +1438,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
