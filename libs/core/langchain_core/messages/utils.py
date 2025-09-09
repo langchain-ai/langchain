@@ -229,14 +229,17 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
 
 
 MessageLikeRepresentation = (
-    BaseMessage | list[str] | tuple[str, str] | str | dict[str, Any]
+    BaseMessage
+    | list[str]
+    | tuple[str, str | list[str | dict[str, Any]]]
+    | str
+    | dict[str, Any]
 )
-"""A type representing the various ways a message can be represented."""
 
 
 def _create_message_from_message_type(
     message_type: str,
-    content: str,
+    content: str | list[str | dict[str, Any]],
     name: str | None = None,
     tool_call_id: str | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
@@ -246,13 +249,13 @@ def _create_message_from_message_type(
     """Create a message from a `Message` type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., `'human'`, `'ai'`, etc.).
-        content: (str) the content string.
-        name: (str) the name of the message.
-        tool_call_id: (str) the tool call id.
-        tool_calls: (list[dict[str, Any]]) the tool calls.
-        id: (str) the id of the message.
-        additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        message_type: the type of the message (e.g., `'human'`, `'ai'`, etc.).
+        content: the content string.
+        name: the name of the message.
+        tool_call_id: the tool call id.
+        tool_calls: the tool calls.
+        id: the id of the message.
+        additional_kwargs: additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
@@ -1243,12 +1246,13 @@ def convert_to_openai_messages(
 
     oai_messages: list[dict] = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict, str)):
-        messages = [messages]
+    messages_ = (
+        [messages]
+        if (is_single := isinstance(messages, (BaseMessage, dict, str, tuple)))
+        else messages
+    )
 
-    messages = convert_to_messages(messages)
-
-    for i, message in enumerate(messages):
+    for i, message in enumerate(convert_to_messages(messages_)):
         oai_msg: dict = {"role": _get_message_openai_role(message)}
         tool_messages: list = []
         content: str | list[dict]

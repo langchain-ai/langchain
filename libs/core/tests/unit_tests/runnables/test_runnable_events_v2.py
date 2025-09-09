@@ -73,12 +73,6 @@ def _with_nulled_run_id(events: Sequence[StreamEvent]) -> list[StreamEvent]:
     )
 
 
-async def _as_async_iterator(iterable: list) -> AsyncIterator:
-    """Converts an iterable into an async iterator."""
-    for item in iterable:
-        yield item
-
-
 async def _collect_events(
     events: AsyncIterator[StreamEvent], *, with_nulled_ids: bool = True
 ) -> list[StreamEvent]:
@@ -1926,7 +1920,7 @@ async def test_runnable_with_message_history() -> None:
 
     # Here we use a global variable to store the chat message history.
     # This will make it easier to inspect it to see the underlying results.
-    store: dict = {}
+    store: dict[str, list[BaseMessage]] = {}
 
     def get_by_session_id(session_id: str) -> BaseChatMessageHistory:
         """Get a chat message history."""
