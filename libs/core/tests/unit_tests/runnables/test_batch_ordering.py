@@ -24,8 +24,8 @@ class OrderTrackingRunnable(Runnable[str, str]):
         self.name = name
         self.delay = delay
         self.fail_on = fail_on
-        self.processed_items = []
-        self.processing_order = []
+        self.processed_items: list[tuple[str, str]] = []
+        self.processing_order: list[str] = []
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -308,3 +308,4 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
