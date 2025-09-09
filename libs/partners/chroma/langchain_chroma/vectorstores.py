@@ -1147,6 +1147,21 @@ class Chroma(VectorStore):
         self._client.delete_collection(self._collection.name)
         self._chroma_collection = None
 
+    async def adelete_collection(self) -> None:
+        """Delete the collection asynchronously."""
+        if self._async_client is None:
+            msg = (
+                "Cannot delete collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        if self._async_initialized:
+            collection = await self._aget_collection()
+            await self._async_client.delete_collection(collection.name)
+            self._async_chroma_collection = None
+            self._async_initialized = False
+
     def reset_collection(self) -> None:
         """Resets the collection.
 
@@ -1154,6 +1169,21 @@ class Chroma(VectorStore):
         """
         self.delete_collection()
         self.__ensure_collection()
+
+    async def areset_collection(self) -> None:
+        """Resets the collection asynchronously.
+
+        Resets the collection by deleting the collection and recreating an empty one.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot reset collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        await self.adelete_collection()
+        await self._aensure_collection()
 
     def get(
         self,
@@ -1477,6 +1507,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
