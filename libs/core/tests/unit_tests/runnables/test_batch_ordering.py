@@ -243,7 +243,7 @@ def test_batch_no_race_conditions() -> None:
     inputs = list(range(50))
 
     # Process with high concurrency
-    config = {"max_concurrency": 10}
+    config: RunnableConfig = {"max_concurrency": 10}
     outputs = runnable.batch(inputs, config=config)
 
     # Verify outputs are correct and in order
@@ -308,6 +308,7 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
 
