@@ -558,9 +558,9 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
             # Use the index to get the corresponding context
             return contexts[index].run(fn, *args)
 
-        # Create indexed versions: first element is the index, rest are the actual values
+        # Create indexed versions: index is first, then actual values
         indices = list(range(len(iterables_as_lists[0])))
-        indexed_iterables = [indices] + iterables_as_lists
+        indexed_iterables = [indices, *iterables_as_lists]
 
         # Map the wrapped function over the indexed iterables
         return super().map(
@@ -625,3 +625,4 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
