@@ -230,6 +230,7 @@ def test_batch_no_race_conditions() -> None:
         def invoke(
             self, input: int, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> int:
+            del config, kwargs  # Unused but required by interface
             # Simulate race condition scenario
             current = self.counter
             time.sleep(0.001)  # Give other threads a chance to interfere
@@ -307,6 +308,7 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
 
