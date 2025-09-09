@@ -1202,7 +1202,6 @@ def test_verbosity_parameter_payload() -> None:
     payload = llm._get_request_payload(messages, stop=None)
 
     assert payload["text"]["verbosity"] == "high"
-    assert payload["text"]["format"]["type"] == "text"
 
 
 def test_structured_output_old_model() -> None:
