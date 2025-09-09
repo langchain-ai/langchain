@@ -37,7 +37,8 @@ class OrderTrackingRunnable(Runnable[str, str]):
 
         # Check if we should fail
         if self.fail_on and input.startswith(self.fail_on):
-            raise ValueError(f"{self.name} failed on input: {input}")
+            msg = f"{self.name} failed on input: {input}"
+            raise ValueError(msg)
 
         # Process and track
         result = f"{input}_{self.name}"
@@ -48,7 +49,7 @@ class OrderTrackingRunnable(Runnable[str, str]):
 class ContextCapturingRunnable(Runnable[str, str]):
     """A runnable that captures context information to verify uniqueness."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize the runnable."""
         self.contexts_seen = []
         self.input_context_map = {}
@@ -76,7 +77,7 @@ class ContextCapturingRunnable(Runnable[str, str]):
         return f"{input}_ctx{context_id}"
 
 
-def test_batch_preserves_order():
+def test_batch_preserves_order() -> None:
     """Test that batch processing preserves input/output order."""
     runnable = OrderTrackingRunnable("test", delay=0.01)
     inputs = [f"input_{i}" for i in range(10)]
@@ -94,7 +95,7 @@ def test_batch_preserves_order():
     assert set(processed_inputs) == set(inputs), "All inputs should be processed"
 
 
-def test_batch_with_return_exceptions():
+def test_batch_with_return_exceptions() -> None:
     """Test that batch with return_exceptions=True preserves order."""
     runnable = OrderTrackingRunnable("test", delay=0.01, fail_on="fail")
     inputs = ["input_0", "fail_1", "input_2", "fail_3", "input_4"]
@@ -113,7 +114,7 @@ def test_batch_with_return_exceptions():
     assert outputs[4] == "input_4_test", "Fifth output should be processed normally"
 
 
-def test_batch_high_concurrency():
+def test_batch_high_concurrency() -> None:
     """Test batch processing with high concurrency to expose race conditions."""
     runnable = OrderTrackingRunnable("test", delay=0.001)
 
@@ -135,13 +136,13 @@ def test_batch_high_concurrency():
     assert len(outputs) == 100, "All inputs should produce outputs"
 
 
-def test_batch_unique_contexts():
+def test_batch_unique_contexts() -> None:
     """Test that each input gets a unique context without duplicates."""
     runnable = ContextCapturingRunnable()
     inputs = [f"input_{i}" for i in range(20)]
 
     # Process batch
-    outputs = runnable.batch(inputs)
+    runnable.batch(inputs)
 
     # Verify each input was processed
     assert len(runnable.contexts_seen) == 20, "Each input should be processed once"
@@ -152,7 +153,7 @@ def test_batch_unique_contexts():
     assert len(set(inputs_seen)) == len(inputs), "No input should be processed twice"
 
 
-def test_sequence_batch_with_exceptions():
+def test_sequence_batch_with_exceptions() -> None:
     """Test RunnableSequence batch with return_exceptions=True."""
     # Create a sequence of runnables
     step1 = OrderTrackingRunnable("step1", delay=0.001)
@@ -178,7 +179,7 @@ def test_sequence_batch_with_exceptions():
     assert outputs[2] == "input_2_step1_step2_step3"
 
 
-def test_context_thread_pool_executor_map_order():
+def test_context_thread_pool_executor_map_order() -> None:
     """Test ContextThreadPoolExecutor.map preserves order."""
 
     def process_item(item: str) -> str:
@@ -195,7 +196,7 @@ def test_context_thread_pool_executor_map_order():
         assert results == expected, "Map should preserve order"
 
 
-def test_context_thread_pool_executor_map_with_multiple_iterables():
+def test_context_thread_pool_executor_map_with_multiple_iterables() -> None:
     """Test ContextThreadPoolExecutor.map with multiple iterables."""
 
     def combine_items(a: str, b: int, c: float) -> str:
@@ -213,13 +214,13 @@ def test_context_thread_pool_executor_map_with_multiple_iterables():
         assert results == expected, "Map with multiple iterables should preserve order"
 
 
-def test_batch_no_race_conditions():
+def test_batch_no_race_conditions() -> None:
     """Test that batch processing has no race conditions with shared state."""
 
     class SharedStateRunnable(Runnable[int, int]):
         """A runnable that modifies shared state."""
 
-        def __init__(self):
+        def __init__(self) -> None:
             self.counter = 0
             self.results = []
 
@@ -249,7 +250,7 @@ def test_batch_no_race_conditions():
     # but the batch processing order should still be preserved
 
 
-def test_batch_with_varying_processing_times():
+def test_batch_with_varying_processing_times() -> None:
     """Test that batch preserves order even with varying processing times."""
     import random
 
@@ -276,14 +277,14 @@ def test_batch_with_varying_processing_times():
         )
 
 
-def test_batch_empty_input():
+def test_batch_empty_input() -> None:
     """Test batch with empty input list."""
     runnable = OrderTrackingRunnable("test")
     outputs = runnable.batch([])
     assert outputs == [], "Empty input should return empty output"
 
 
-def test_batch_single_input():
+def test_batch_single_input() -> None:
     """Test batch with single input."""
     runnable = OrderTrackingRunnable("test")
     outputs = runnable.batch(["single"])
@@ -303,4 +304,3 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
-    print("All tests passed!")
