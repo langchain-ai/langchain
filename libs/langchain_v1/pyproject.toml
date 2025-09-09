@@ -82,7 +82,6 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py310"
 line-length = 100
 output-format = "concise"
 
