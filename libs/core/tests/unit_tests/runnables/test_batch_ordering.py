@@ -62,8 +62,7 @@ class ContextCapturingRunnable(Runnable[str, str]):
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> str:
         """Process input and capture context."""
-        import threading
-        from contextvars import copy_context
+        del config, kwargs  # Unused but required by interface
 
         # Capture current context and thread info
         context_id = id(copy_context())
@@ -308,5 +307,6 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
