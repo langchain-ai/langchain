@@ -10,9 +10,9 @@ from langchain.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from langchain_llamastack import (
-    LlamaStackSafety,
     create_llamastack_llm,
     get_llamastack_models,
+    LlamaStackSafety,
 )
 
 
@@ -124,7 +124,7 @@ def safe_conversation_agent():
         llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
 
         safety = LlamaStackSafety(
-            base_url="http://localhost:8321", shield_id="code-scanner"
+            base_url="http://localhost:8321", shield_type="llama_guard"
         )
 
         class SafeConversationalAgent:
@@ -147,13 +147,15 @@ def safe_conversation_agent():
                 """Safe chat with comprehensive safety checking."""
 
                 # Check input safety
-                input_safety = self.safety.check_content(user_input)
+                input_safety = self.safety.check_content_safety(user_input)
                 if not input_safety.is_safe:
                     return {
-                        "response": "I can't process that \
-                        request due to safety concerns.",
+                        "response": "I can't process that request due to safety concerns.",
                         "status": "input_rejected",
-                        "safety_info": input_safety.to_dict(),
+                        "safety_info": {
+                            "violations": input_safety.violations,
+                            "confidence_score": input_safety.confidence_score,
+                        },
                     }
 
                 try:
@@ -161,13 +163,15 @@ def safe_conversation_agent():
                     response = self.conversation.predict(input=user_input)
 
                     # Check output safety
-                    output_safety = self.safety.check_content(response)
+                    output_safety = self.safety.check_content_safety(response)
                     if not output_safety.is_safe:
                         return {
-                            "response": "I need to revise my response\
-                             for safety reasons. Could you rephrase your question?",
+                            "response": "I need to revise my response for safety reasons. Could you rephrase your question?",
                             "status": "output_filtered",
-                            "safety_info": output_safety.to_dict(),
+                            "safety_info": {
+                                "violations": output_safety.violations,
+                                "confidence_score": output_safety.confidence_score,
+                            },
                         }
 
                     return {
@@ -287,16 +291,8 @@ def safety_policy_testing():
 
     try:
         safety = LlamaStackSafety(
-            base_url="http://localhost:8321", shield_id="code-scanner"
+            base_url="http://localhost:8321", shield_type="llama_guard"
         )
-
-        # Get available shields
-        shields = safety.get_available_shields()
-        print(f"Available shields: {shields}")
-
-        if not shields:
-            print("No safety shields available for testing")
-            return False
 
         # Test content with different safety levels
         test_contents = [
@@ -306,29 +302,27 @@ def safety_policy_testing():
             ("Technical question", "What are the best practices for AI development?"),
         ]
 
-        # Test with different shields (if multiple available)
-        shields_to_test = shields[:2]  # Test first 2 shields
+        print("Testing content safety with LlamaStack...")
 
-        for shield_id in shields_to_test:
-            print(f"\n--- Testing with {shield_id} ---")
-
-            # Get shield info
-            shield_info = safety.get_shield_info(shield_id)
-            print(f"Shield info: {shield_info}")
-
-            for label, content in test_contents:
-                result = safety.check_content(content, shield_id=shield_id)
+        for label, content in test_contents:
+            try:
+                result = safety.check_content_safety(content)
                 status = "✅ SAFE" if result.is_safe else "❌ UNSAFE"
                 print(f"{status} - {label}: {content[:50]}...")
 
                 if not result.is_safe:
-                    print(f"  Violation: {result.violation_type}")
-                    print(f"  Confidence: {result.confidence_score:.2f}")
+                    print(f"  Violations: {result.violations}")
+                    if result.confidence_score:
+                        print(f"  Confidence: {result.confidence_score:.2f}")
+
+            except Exception as content_error:
+                print(f"⚠️  Error checking {label}: {content_error}")
 
         return True
 
     except Exception as e:
         print(f"Error: {e}")
+        print("💡 This requires LlamaStack safety shields to be configured")
         return False
 
 
