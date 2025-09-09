@@ -37,8 +37,8 @@ def set_verbose(value: bool) -> None:  # noqa: FBT001
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing verbose from langchain root module "
-                    "is no longer supported"
+                    ".*Importing verbose from langchain root module "
+                    "is no longer supported.*"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -68,7 +68,7 @@ def get_verbose() -> bool:
                 "ignore",
                 message=(
                     ".*Importing verbose from langchain root module "
-                    "is no longer supported"
+                    "is no longer supported.*"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -103,8 +103,8 @@ def set_debug(value: bool) -> None:  # noqa: FBT001
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                message="Importing debug from langchain root module "
-                "is no longer supported",
+                message=".*Importing debug from langchain root module "
+                "is no longer supported.*",
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
             #       module-level `__getattr__()` implementation:
@@ -131,8 +131,8 @@ def get_debug() -> bool:
         with warnings.catch_warnings():
             warnings.filterwarnings(
                 "ignore",
-                message="Importing debug from langchain root module "
-                "is no longer supported",
+                message=".*Importing debug from langchain root module "
+                "is no longer supported.*",
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
             #       module-level `__getattr__()` implementation:
@@ -166,8 +166,8 @@ def set_llm_cache(value: Optional["BaseCache"]) -> None:
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing llm_cache from langchain root module "
-                    "is no longer supported"
+                    ".*Importing llm_cache from langchain root module "
+                    "is no longer supported.*"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
@@ -196,8 +196,8 @@ def get_llm_cache() -> Optional["BaseCache"]:
             warnings.filterwarnings(
                 "ignore",
                 message=(
-                    "Importing llm_cache from langchain root module "
-                    "is no longer supported"
+                    ".*Importing llm_cache from langchain root module "
+                    "is no longer supported.*"
                 ),
             )
             # N.B.: This is a workaround for an unfortunate quirk of Python's
