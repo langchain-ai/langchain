@@ -1,7 +1,5 @@
 """Test for CombinedMemory class."""
 
-# from langchain_core.prompts import PromptTemplate
-
 import pytest
 
 from langchain.memory import CombinedMemory, ConversationBufferMemory
