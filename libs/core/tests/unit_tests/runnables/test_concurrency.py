@@ -99,7 +99,7 @@ def test_batch_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable: Runnable = RunnableLambda(tracked_function)
+    runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
@@ -130,7 +130,7 @@ def test_batch_as_completed_concurrency() -> None:
 
         return f"Completed {x}"
 
-    runnable: Runnable = RunnableLambda(tracked_function)
+    runnable = RunnableLambda(tracked_function)
     num_tasks = 10
     max_concurrency = 3
 
