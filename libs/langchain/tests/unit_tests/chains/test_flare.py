@@ -1,8 +1,11 @@
 """Tests for FlareChain.from_llm preserving supplied ChatOpenAI instance."""
 
+from typing import cast
+
 import pytest
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from langchain_core.runnables import RunnableSequence
 
 from langchain.chains.flare.base import FlareChain
 
@@ -27,6 +30,7 @@ def test_from_llm_rejects_non_chatopenai() -> None:
         FlareChain.from_llm(Dummy())  # type: ignore[arg-type]
 
 
+@pytest.mark.requires("langchain_openai")
 def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> None:
     try:
         from langchain_openai import ChatOpenAI
@@ -43,26 +47,5 @@ def test_from_llm_uses_supplied_chatopenai(monkeypatch: pytest.MonkeyPatch) -> N
         retriever=_EmptyRetriever(),
     )
 
-    # Walk to ensure identical instance appears (not overwritten)
-    seen: set[int] = set()
-
-    def contains(target: object, obj: object) -> bool:
-        if id(obj) in seen:
-            return False
-        seen.add(id(obj))
-        if obj is target:
-            return True
-        for name in dir(obj):
-            if name.startswith("_"):
-                continue
-            try:
-                value = getattr(obj, name)
-            except (AttributeError, NotImplementedError):
-                continue
-            if isinstance(value, (str, int, float, bool, type(None))):
-                continue
-            if contains(target, value):
-                return True
-        return False
-
-    assert contains(supplied, chain), "Supplied ChatOpenAI not found (was overwritten)."
+    llm_in_chain = cast("RunnableSequence", chain.question_generator_chain).steps[1]
+    assert llm_in_chain is supplied
