@@ -28,6 +28,7 @@ from langchain_core.utils import xor_args
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
+    from chromadb.api import AsyncClientAPI, ClientAPI
     from chromadb.api.types import Where, WhereDocument
 
 logger = logging.getLogger()
@@ -1414,3 +1415,4 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
