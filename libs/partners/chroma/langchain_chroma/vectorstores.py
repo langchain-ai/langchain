@@ -310,11 +310,12 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
-        client: Optional[chromadb.ClientAPI] = None,
+        client: Optional[ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT001, FBT002
         *,
         ssl: bool = False,
+        async_client: Optional[AsyncClientAPI] = None,
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -342,6 +343,8 @@ class Chroma(VectorStore):
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to True.
+            async_client: Async Chroma client for async operations.
+                    If provided, async methods will use this client.
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
@@ -1415,4 +1418,5 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
