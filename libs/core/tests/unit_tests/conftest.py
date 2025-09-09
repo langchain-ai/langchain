@@ -30,7 +30,7 @@ def blockbuster() -> Iterator[Optional[BlockBuster]]:
         # When blockbuster is not available, provide a no-op fixture
         yield None
         return
-        
+
     with blockbuster_ctx("langchain_core") as bb:
         for func in ["os.stat", "os.path.abspath"]:
             (
