@@ -33,7 +33,7 @@ Rating: 10"""
 
     text = """This answer is really good.
 Rating: [[0]]"""
-    # Not in range [1, 10]
+    # Rating is not in range [1, 10]
     with pytest.raises(ValueError, match="with the verdict between 1 and 10"):
         output_parser.parse(text)
 
