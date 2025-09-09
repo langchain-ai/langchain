@@ -7,7 +7,6 @@ import uuid
 import warnings
 from collections.abc import Awaitable, Generator, Iterable, Iterator, Sequence
 from concurrent.futures import Executor, Future, ThreadPoolExecutor
-from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
 from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Optional, TypeVar, Union, cast
@@ -669,4 +668,5 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
