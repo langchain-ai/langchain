@@ -2718,51 +2718,50 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["temperature"] == 0.5
 
 
-def test_structured_output_with_text_model_kwargs() -> None:
-    """Test that structured output works with text parameter in `model_kwargs`.
+@pytest.mark.parametrize("verbosity_format", ["model_kwargs", "top_level"])
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("schema_format", ["pydantic", "dict"])
+def test_structured_output_verbosity(
+    verbosity_format: str, streaming: bool, schema_format: str
+) -> None:
+    class MySchema(BaseModel):
+        foo: str
 
-    This test ensures that when using structured output with the `json_schema` method
-    and `text` parameters in `model_kwargs`, both parameters are properly merged.
+    if verbosity_format == "model_kwargs":
+        init_params: dict[str, Any] = {"model_kwargs": {"text": {"verbosity": "high"}}}
+    else:
+        init_params = {"verbosity": "high"}
 
-    """
+    if streaming:
+        init_params["streaming"] = True
 
-    schema = {
-        "title": "MovieAnalysis",
-        "description": "Analysis of a movie",
-        "type": "object",
-        "properties": {
-            "title": {"type": "string", "description": "The movie title"},
-            "genre": {"type": "string", "description": "The genre"},
-            "rating": {"type": "integer", "description": "Rating out of 10"},
-        },
-        "required": ["title", "genre", "rating"],
-    }
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True, **init_params)
 
-    llm = ChatOpenAI(model="gpt-4o", model_kwargs={"text": {"verbosity": "high"}})
-    structured_llm = llm.with_structured_output(schema, method="json_schema")
+    if schema_format == "pydantic":
+        schema: Any = MySchema
+    else:
+        schema = MySchema.model_json_schema()
 
-    # Get the payload to verify text parameter is merged correctly
-    messages = [HumanMessage(content="Analyze the movie Inception")]
-
-    # Get the bound llm and its kwargs
-    # Type cast for mypy - structured_llm is a RunnableSequence with a
-    # RunnableBinding first element
+    structured_llm = llm.with_structured_output(schema)
     sequence = cast(RunnableSequence, structured_llm)
     binding = cast(RunnableBinding, sequence.first)
     bound_llm = cast(ChatOpenAI, binding.bound)
     bound_kwargs = binding.kwargs
 
+    messages = [HumanMessage(content="Hello")]
     payload = bound_llm._get_request_payload(messages, **bound_kwargs)
 
-    # Verify that it uses responses API when text parameter is present
-    assert bound_llm._use_responses_api(payload)
-
-    # Verify that both verbosity and format parameters are present in text
+    # Verify that verbosity is present in `text` param
     assert "text" in payload
     assert "verbosity" in payload["text"]
     assert payload["text"]["verbosity"] == "high"
-    assert "format" in payload["text"]
-    assert payload["text"]["format"]["type"] == "json_schema"
+
+    # Verify that schema is passed correctly
+    if schema_format == "pydantic" and not streaming:
+        assert payload["text_format"] == schema
+    else:
+        assert "format" in payload["text"]
+        assert payload["text"]["format"]["type"] == "json_schema"
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])
