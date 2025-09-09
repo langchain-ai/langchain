@@ -161,7 +161,6 @@ ignore = [
 
     # TODO rules
     "ANN401",  # No type Any
-    "BLE",     # Blind exceptions
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
     "PLC0415", # pylint: import-outside-top-level

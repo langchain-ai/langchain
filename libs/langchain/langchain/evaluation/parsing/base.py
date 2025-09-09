@@ -1,6 +1,7 @@
 """Evaluators for parsing strings."""
 
 import json
+import logging
 from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
@@ -8,6 +9,8 @@ from langchain_core.utils.json import parse_json_markdown
 from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
+
+_logger = logging.getLogger(__name__)
 
 
 class JsonValidityEvaluator(StringEvaluator):
@@ -75,7 +78,10 @@ class JsonValidityEvaluator(StringEvaluator):
         """
         try:
             parse_json_markdown(prediction, parser=json.loads)
+        except json.JSONDecodeError as e:
+            return {"score": 0, "reasoning": str(e)}
         except Exception as e:
+            _logger.exception("Passing JSON failed with unexpected error.")
             return {"score": 0, "reasoning": str(e)}
         return {"score": 1}
 

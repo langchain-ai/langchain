@@ -851,7 +851,7 @@ async def _arun_llm_or_chain(
                 metadata=config.get("metadata"),
             )
         result = output
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning(
             "%s failed for example %s with inputs %s\n%s",
             chain_or_llm,
@@ -1014,7 +1014,7 @@ def _run_llm_or_chain(
                 metadata=config.get("metadata"),
             )
         result = output
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         error_type = type(e).__name__
         logger.warning(
             "%s failed for example %s with inputs %s\nError Type: %s, Message: %s",
@@ -1214,7 +1214,7 @@ class _DatasetRunContainer:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
@@ -1222,7 +1222,7 @@ class _DatasetRunContainer:
                 self.project.id,
                 end_time=datetime.now(timezone.utc),
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 
