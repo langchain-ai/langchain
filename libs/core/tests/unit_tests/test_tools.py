@@ -2349,6 +2349,28 @@ def test_tool_injected_tool_call_id() -> None:
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[call-overload]
 
 
+def test_tool_injected_tool_call_id_override_llm_generated() -> None:
+    """Test that InjectedToolCallId overrides LLM-generated values."""
+
+    @tool
+    def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
+        """Foo."""
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+
+    # Test that when LLM generates the tool_call_id, it gets overridden
+    result = foo.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0, "tool_call_id": "fake_llm_id"},  # LLM generated this
+            "name": "foo",
+            "id": "real_tool_call_id",  # This should be used instead
+        }
+    )
+
+    # The tool should receive the real tool call ID, not the LLM-generated one
+    assert result == ToolMessage(0, tool_call_id="real_tool_call_id")  # type: ignore[arg-type]
+
+
 def test_tool_uninjected_tool_call_id() -> None:
     @tool
     def foo(x: int, tool_call_id: str) -> ToolMessage:

@@ -12,7 +12,7 @@ particularly for summarization chains and other document processing workflows.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Awaitable, Callable
@@ -24,11 +24,7 @@ if TYPE_CHECKING:
 
 
 def resolve_prompt(
-    prompt: Union[
-        str,
-        None,
-        Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
-    ],
+    prompt: str | None | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,
@@ -89,12 +85,10 @@ def resolve_prompt(
 
 
 async def aresolve_prompt(
-    prompt: Union[
-        str,
-        None,
-        Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
-        Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
-    ],
+    prompt: str
+    | None
+    | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]]
+    | Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,

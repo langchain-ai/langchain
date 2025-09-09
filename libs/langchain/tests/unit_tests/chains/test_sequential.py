@@ -203,8 +203,10 @@ def test_simple_sequential_functionality() -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize("isAsync", [False, True])
-async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) -> None:
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_simple_sequential_functionality_with_callbacks(
+    *, is_async: bool
+) -> None:
     """Test simple sequential functionality."""
     handler_1 = FakeCallbackHandler()
     handler_2 = FakeCallbackHandler()
@@ -225,7 +227,7 @@ async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) 
         callbacks=[handler_3],
     )
     chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
-    if isAsync:
+    if is_async:
         output = await chain.ainvoke({"input": "123"})
     else:
         output = chain({"input": "123"})

@@ -39,12 +39,8 @@ test_integration = []
 langchain-core = { path = "../core", editable = true }
 langchain = { path = "../langchain", editable = true }
 
-[tool.ruff]
-exclude = [
-    "langchain_cli/integration_template",
-    "langchain_cli/package_template",
-    "langchain_cli/project_template",
-]
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [ "ALL",]

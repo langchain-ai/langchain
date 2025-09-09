@@ -106,8 +106,7 @@ class CohereRerank(BaseDocumentCompressor):
         query: str,
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        """
-        Compress documents using Cohere's rerank API.
+        """Compress documents using Cohere's rerank API.
 
         Args:
             documents: A sequence of documents to compress.

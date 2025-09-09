@@ -2,7 +2,7 @@
 
 import itertools
 from collections.abc import Callable, Sequence
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -59,7 +59,7 @@ def _filter_state_for_schema(state: dict[str, Any], schema: type) -> dict[str, A
     return {k: v for k, v in state.items() if k in schema_fields}
 
 
-def _supports_native_structured_output(model: Union[str, BaseChatModel]) -> bool:
+def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
     """Check if a model supports native structured output."""
     model_name: str | None = None
     if isinstance(model, str):
