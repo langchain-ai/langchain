@@ -1259,7 +1259,7 @@ class Chroma(VectorStore):
         tenant: Optional[str] = None,
         database: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.ClientAPI] = None,
+        client: Optional[ClientAPI] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
         *,
@@ -1432,6 +1432,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
