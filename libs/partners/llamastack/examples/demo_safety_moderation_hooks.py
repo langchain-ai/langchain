@@ -11,13 +11,13 @@ Key features:
 - Clean and efficient API design
 """
 
-from langchain_llamastack import LlamaStackSafety, create_llamastack_llm
+from langchain_llamastack import create_llamastack_llm, LlamaStackSafety
 from langchain_llamastack.input_output_safety_moderation_hooks import (
-    SafeLLMWrapper,
     create_input_only_safe_llm,
     create_output_only_safe_llm,
     create_safe_llm,
     create_safety_hook,
+    SafeLLMWrapper,
 )
 
 
@@ -54,7 +54,11 @@ def demo_factory_functions():
     print("=" * 50)
 
     # Initialize base components
-    llm = create_llamastack_llm(model="llama3.1:8b")
+    # ollama/llama3:70b-instruct model is used for demo purposes
+    # You can replace it with your own model or use a different one
+    # See https://github.com/llamastack/llamastack/blob/main/docs/models.md for more info
+    # if the model is not available locally, the list of available models will be printed
+    llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
     safety = LlamaStackSafety()
 
     print("\n1. Complete Protection (Recommended)")
