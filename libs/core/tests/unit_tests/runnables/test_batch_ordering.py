@@ -308,8 +308,3 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
-
-
-
-
-
