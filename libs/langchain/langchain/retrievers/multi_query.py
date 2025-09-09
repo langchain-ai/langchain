@@ -14,6 +14,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 
@@ -23,6 +24,7 @@ logger = logging.getLogger(__name__)
 class LineListOutputParser(BaseOutputParser[list[str]]):
     """Output parser for a list of lines."""
 
+    @override
     def parse(self, text: str) -> list[str]:
         lines = text.strip().split("\n")
         return list(filter(None, lines))  # Remove empty lines
@@ -65,7 +67,7 @@ class MultiQueryRetriever(BaseRetriever):
         retriever: BaseRetriever,
         llm: BaseLanguageModel,
         prompt: BasePromptTemplate = DEFAULT_QUERY_PROMPT,
-        parser_key: Optional[str] = None,
+        parser_key: Optional[str] = None,  # noqa: ARG003
         include_original: bool = False,  # noqa: FBT001,FBT002
     ) -> "MultiQueryRetriever":
         """Initialize from llm using default template.
@@ -75,6 +77,8 @@ class MultiQueryRetriever(BaseRetriever):
             llm: llm for query generation using DEFAULT_QUERY_PROMPT
             prompt: The prompt which aims to generate several different versions
                 of the given user query
+            parser_key: DEPRECATED. `parser_key` is no longer used and should not be
+                specified.
             include_original: Whether to include the original query in the list of
                 generated queries.
 
@@ -99,6 +103,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             query: user query
+            run_manager: the callback handler to use.
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -118,6 +123,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             question: user query
+            run_manager: the callback handler to use.
 
         Returns:
             List of LLM generated queries that are similar to the user input
@@ -140,6 +146,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             queries: query list
+            run_manager: the callback handler to use
 
         Returns:
             List of retrieved Documents
@@ -165,6 +172,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             query: user query
+            run_manager: the callback handler to use.
 
         Returns:
             Unique union of relevant documents from all generated queries
@@ -184,6 +192,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             question: user query
+            run_manager: run manager for callbacks
 
         Returns:
             List of LLM generated queries that are similar to the user input
@@ -206,6 +215,7 @@ class MultiQueryRetriever(BaseRetriever):
 
         Args:
             queries: query list
+            run_manager: run manager for callbacks
 
         Returns:
             List of retrieved Documents

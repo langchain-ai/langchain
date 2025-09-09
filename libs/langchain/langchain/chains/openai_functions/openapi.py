@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
@@ -12,7 +13,8 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
-from requests import Response
+from requests import JSONDecodeError, Response
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -21,6 +23,8 @@ from langchain.chains.sequential import SequentialChain
 if TYPE_CHECKING:
     from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
+
+_logger = logging.getLogger(__name__)
 
 
 def _format_url(url: str, path_params: dict) -> str:
@@ -51,13 +55,12 @@ def _format_url(url: str, path_params: dict) -> str:
                 sep = ","
                 new_val = ""
             new_val += sep.join(kv_strs)
+        elif param[0] == ".":
+            new_val = f".{val}"
+        elif param[0] == ";":
+            new_val = f";{clean_param}={val}"
         else:
-            if param[0] == ".":
-                new_val = f".{val}"
-            elif param[0] == ";":
-                new_val = f";{clean_param}={val}"
-            else:
-                new_val = val
+            new_val = val
         new_params[param] = new_val
     return url.format(**new_params)
 
@@ -82,8 +85,10 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
 ) -> tuple[list[dict[str, Any]], Callable]:
-    """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
-        functions.
+    """OpenAPI spec to OpenAI function JSON Schema.
+
+    Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
+    functions.
 
     Args:
         spec: OpenAPI spec to convert.
@@ -203,10 +208,12 @@ class SimpleRequestChain(Chain):
     """Key to use for the input of the request."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 
@@ -224,7 +231,7 @@ class SimpleRequestChain(Chain):
         _text = f"Calling endpoint {_pretty_name} with arguments:\n" + _pretty_args
         _run_manager.on_text(_text)
         api_response: Response = self.request_method(name, args)
-        if api_response.status_code != 200:
+        if api_response.status_code != requests.codes.ok:
             response = (
                 f"{api_response.status_code}: {api_response.reason}"
                 f"\nFor {name} "
@@ -233,7 +240,10 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
+            except JSONDecodeError:
+                response = api_response.text
             except Exception:
+                _logger.exception("Unexpected error parsing response as JSON")
                 response = api_response.text
         return {self.output_key: response}
 
@@ -343,7 +353,13 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
-    """  # noqa: E501
+        params: Request parameters.
+        headers: Request headers.
+        verbose: Whether to run the chain in verbose mode.
+        llm_chain_kwargs: LLM chain additional keyword arguments.
+        **kwargs: Additional keyword arguments to pass to the chain.
+
+    """  # noqa: E501,D301
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:
@@ -361,13 +377,17 @@ def get_openapi_chain(
             try:
                 spec = conversion(spec)
                 break
-            except ImportError as e:
-                raise e
-            except Exception:  # noqa: S110
-                pass
+            except ImportError:
+                raise
+            except Exception:  # noqa: BLE001
+                _logger.debug(
+                    "Parse spec failed for OpenAPISpec.%s",
+                    conversion.__name__,
+                    exc_info=True,
+                )
         if isinstance(spec, str):
             msg = f"Unable to parse spec from source {spec}"
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     openai_fns, call_api_fn = openapi_spec_to_openai_fn(spec)
     if not llm:
         msg = (

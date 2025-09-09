@@ -22,14 +22,18 @@ class EncoderBackedStore(BaseStore[K, V]):
 
         import json
 
+
         def key_encoder(key: int) -> str:
             return json.dumps(key)
+
 
         def value_serializer(value: float) -> str:
             return json.dumps(value)
 
+
         def value_deserializer(serialized_value: str) -> float:
             return json.loads(serialized_value)
+
 
         # Create an instance of the abstract store
         abstract_store = MyCustomStore()
@@ -39,13 +43,14 @@ class EncoderBackedStore(BaseStore[K, V]):
             store=abstract_store,
             key_encoder=key_encoder,
             value_serializer=value_serializer,
-            value_deserializer=value_deserializer
+            value_deserializer=value_deserializer,
         )
 
         # Use the encoder-backed store methods
         store.mset([(1, 3.14), (2, 2.718)])
         values = store.mget([1, 2])  # Retrieves [3.14, 2.718]
         store.mdelete([1, 2])  # Deletes the keys 1 and 2
+
     """
 
     def __init__(

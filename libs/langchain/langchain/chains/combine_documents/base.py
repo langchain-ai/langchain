@@ -14,6 +14,7 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import BaseModel, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -46,6 +47,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
     input_key: str = "input_documents"  #: :meta private:
     output_key: str = "output_text"  #: :meta private:
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -55,6 +57,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
             **{self.input_key: (list[Document], None)},
         )
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -80,7 +83,7 @@ class BaseCombineDocumentsChain(Chain, ABC):
         """
         return [self.output_key]
 
-    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:
+    def prompt_length(self, docs: list[Document], **kwargs: Any) -> Optional[int]:  # noqa: ARG002
         """Return the prompt length given the documents passed in.
 
         This can be used by a caller to determine whether passing in a list
@@ -89,8 +92,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         context limit.
 
         Args:
-            docs: List[Document], a list of documents to use to calculate the
-                total prompt length.
+            docs: a list of documents to use to calculate the total prompt length.
+            **kwargs: additional parameters that may be needed to calculate the
+                prompt length.
 
         Returns:
             Returns None if the method does not depend on the prompt length,
@@ -202,9 +206,7 @@ class AnalyzeDocumentChain(Chain):
             from operator import itemgetter
             from langchain_core.runnables import RunnableLambda, RunnableParallel
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnableParallel(
                 question=itemgetter("question"),
                 input_documents=itemgetter("input_document") | split_text,
@@ -222,15 +224,15 @@ class AnalyzeDocumentChain(Chain):
                 RunnablePassthrough,
             )
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnablePassthrough.assign(
                 output_text=RunnableParallel(
                     question=itemgetter("question"),
                     input_documents=itemgetter("input_document") | split_text,
-                ) | chain.pick("output_text")
+                )
+                | chain.pick("output_text")
             )
+
     """
 
     input_key: str = "input_document"  #: :meta private:
@@ -253,6 +255,7 @@ class AnalyzeDocumentChain(Chain):
         """
         return self.combine_docs_chain.output_keys
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -262,6 +265,7 @@ class AnalyzeDocumentChain(Chain):
             **{self.input_key: (str, None)},
         )
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,

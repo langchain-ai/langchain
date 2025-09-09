@@ -11,7 +11,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.llm import LLMChain
@@ -28,11 +28,11 @@ from langchain.output_parsers.regex import RegexParser
     ),
 )
 class MapRerankDocumentsChain(BaseCombineDocumentsChain):
-    """Combining documents by mapping a chain over them, then reranking results.
+    r"""Combining documents by mapping a chain over them, then reranking results.
 
     This algorithm calls an LLMChain on each input document. The LLMChain is expected
-    to have an OutputParser that parses the result into both an answer (`answer_key`)
-    and a score (`rank_key`). The answer with the highest score is then returned.
+    to have an OutputParser that parses the result into both an answer (``answer_key``)
+    and a score (``rank_key``). The answer with the highest score is then returned.
 
     Example:
         .. code-block:: python
@@ -69,6 +69,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 rank_key="score",
                 answer_key="answer",
             )
+
     """
 
     llm_chain: LLMChain
@@ -91,6 +92,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         extra="forbid",
     )
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -127,7 +129,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                 "Output parser of llm_chain should be a RegexParser,"
                 f" got {output_parser}"
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         output_keys = output_parser.output_keys
         if self.rank_key not in output_keys:
             msg = (
@@ -161,13 +163,12 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     def combine_docs(
@@ -229,7 +230,7 @@ class MapRerankDocumentsChain(BaseCombineDocumentsChain):
         docs: list[Document],
         results: Sequence[Union[str, list[str], dict[str, str]]],
     ) -> tuple[str, dict]:
-        typed_results = cast(list[dict], results)
+        typed_results = cast("list[dict]", results)
         sorted_res = sorted(
             zip(typed_results, docs),
             key=lambda x: -int(x[0][self.rank_key]),

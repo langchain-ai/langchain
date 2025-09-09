@@ -4,6 +4,9 @@ from typing import Any
 
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.utils import pre_init
+from typing_extensions import override
+
+_MIN_PARSERS = 2
 
 
 class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
@@ -12,6 +15,7 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     parsers: list[BaseOutputParser]
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return True
 
@@ -19,14 +23,14 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
     def validate_parsers(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Validate the parsers."""
         parsers = values["parsers"]
-        if len(parsers) < 2:
+        if len(parsers) < _MIN_PARSERS:
             msg = "Must have at least two parsers"
             raise ValueError(msg)
         for parser in parsers:
-            if parser._type == "combining":
+            if parser._type == "combining":  # noqa: SLF001
                 msg = "Cannot nest combining parsers"
                 raise ValueError(msg)
-            if parser._type == "list":
+            if parser._type == "list":  # noqa: SLF001
                 msg = "Cannot combine list parsers"
                 raise ValueError(msg)
         return values
@@ -38,7 +42,6 @@ class CombiningOutputParser(BaseOutputParser[dict[str, Any]]):
 
     def get_format_instructions(self) -> str:
         """Instructions on how the LLM output should be formatted."""
-
         initial = f"For your first output: {self.parsers[0].get_format_instructions()}"
         subsequent = "\n".join(
             f"Complete that output fully. Then produce another output, separated by two newline characters: {p.get_format_instructions()}"  # noqa: E501

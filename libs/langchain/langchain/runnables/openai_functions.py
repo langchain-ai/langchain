@@ -10,7 +10,7 @@ from typing_extensions import TypedDict
 
 
 class OpenAIFunction(TypedDict):
-    """A function description for ChatOpenAI"""
+    """A function description for ChatOpenAI."""
 
     name: str
     """The name of the function."""
@@ -20,7 +20,7 @@ class OpenAIFunction(TypedDict):
     """The parameters to the function."""
 
 
-class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
+class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):  # type: ignore[no-redef]
     """A runnable that routes to the selected function."""
 
     functions: Optional[list[OpenAIFunction]]
@@ -36,6 +36,12 @@ class OpenAIFunctionsRouter(RunnableBindingBase[BaseMessage, Any]):
         ],
         functions: Optional[list[OpenAIFunction]] = None,
     ):
+        """Initialize the OpenAIFunctionsRouter.
+
+        Args:
+            runnables: A mapping of function names to runnables.
+            functions: Optional list of functions to check against the runnables.
+        """
         if functions is not None:
             if len(functions) != len(runnables):
                 msg = "The number of functions does not match the number of runnables."

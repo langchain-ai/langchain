@@ -56,7 +56,7 @@ def _load_question_to_checked_assertions_chain(
         revised_answer_chain,
     ]
     return SequentialChain(
-        chains=chains,  # type: ignore[arg-type]
+        chains=chains,
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
@@ -80,8 +80,10 @@ class LLMCheckerChain(Chain):
 
             from langchain_community.llms import OpenAI
             from langchain.chains import LLMCheckerChain
+
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
+
     """
 
     question_to_checked_assertions_chain: SequentialChain
@@ -106,7 +108,7 @@ class LLMCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
@@ -179,6 +181,16 @@ class LLMCheckerChain(Chain):
         revised_answer_prompt: PromptTemplate = REVISED_ANSWER_PROMPT,
         **kwargs: Any,
     ) -> LLMCheckerChain:
+        """Create an LLMCheckerChain from a language model.
+
+        Args:
+            llm: a language model
+            create_draft_answer_prompt: prompt to create a draft answer
+            list_assertions_prompt: prompt to list assertions
+            check_assertions_prompt: prompt to check assertions
+            revised_answer_prompt: prompt to revise the answer
+            **kwargs: additional arguments
+        """
         question_to_checked_assertions_chain = (
             _load_question_to_checked_assertions_chain(
                 llm,

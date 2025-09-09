@@ -17,6 +17,13 @@ def import_attr(
         module_name: The name of the module to import from. If None, the attribute
             is imported from the package itself.
         package: The name of the package where the module is located.
+
+    Raises:
+        ImportError: If the module cannot be found.
+        AttributeError: If the attribute does not exist in the module or package.
+
+    Returns:
+        The imported attribute.
     """
     if module_name == "__module__" or module_name is None:
         try:
@@ -27,8 +34,8 @@ def import_attr(
     else:
         try:
             module = import_module(f".{module_name}", package=package)
-        except ModuleNotFoundError:
-            msg = f"module '{package!r}.{module_name!r}' not found"
+        except ModuleNotFoundError as err:
+            msg = f"module '{package!r}.{module_name!r}' not found ({err})"
             raise ImportError(msg) from None
         result = getattr(module, attr_name)
     return result

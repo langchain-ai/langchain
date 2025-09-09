@@ -231,15 +231,47 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 If False, the output will be the full JSON object.
                 Default is False.
 
+        Raises:
+            OutputParserException: If the generation is not a chat generation.
+
         Returns:
             The parsed tool calls.
         """
-        parsed_result = super().parse_result(result, partial=partial)
-
+        generation = result[0]
+        if not isinstance(generation, ChatGeneration):
+            msg = "This output parser can only be used with a chat generation."
+            raise OutputParserException(msg)
+        message = generation.message
+        if isinstance(message, AIMessage) and message.tool_calls:
+            parsed_tool_calls = [dict(tc) for tc in message.tool_calls]
+            for tool_call in parsed_tool_calls:
+                if not self.return_id:
+                    _ = tool_call.pop("id")
+        else:
+            try:
+                # This exists purely for backward compatibility / cached messages
+                # All new messages should use `message.tool_calls`
+                raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
+            except KeyError:
+                if self.first_tool_only:
+                    return None
+                return []
+            parsed_tool_calls = parse_tool_calls(
+                raw_tool_calls,
+                partial=partial,
+                strict=self.strict,
+                return_id=self.return_id,
+            )
+        # For backwards compatibility
+        for tc in parsed_tool_calls:
+            tc["type"] = tc.pop("name")
         if self.first_tool_only:
+            parsed_result = list(
+                filter(lambda x: x["type"] == self.key_name, parsed_tool_calls)
+            )
             single_result = (
-                parsed_result
-                if parsed_result and parsed_result["type"] == self.key_name
+                parsed_result[0]
+                if parsed_result and parsed_result[0]["type"] == self.key_name
                 else None
             )
             if self.return_id:
@@ -247,10 +279,13 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
             if single_result:
                 return single_result["args"]
             return None
-        parsed_result = [res for res in parsed_result if res["type"] == self.key_name]
-        if not self.return_id:
-            parsed_result = [res["args"] for res in parsed_result]
-        return parsed_result
+        return (
+            [res for res in parsed_tool_calls if res["type"] == self.key_name]
+            if self.return_id
+            else [
+                res["args"] for res in parsed_tool_calls if res["type"] == self.key_name
+            ]
+        )
 
 
 # Common cause of ValidationError is truncated output due to max_tokens.
@@ -284,7 +319,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
             The parsed Pydantic objects.
 
         Raises:
-            OutputParserException: If the output is not valid JSON.
+            ValueError: If the tool call arguments are not a dict.
+            ValidationError: If the tool call arguments do not conform
+                to the Pydantic model.
         """
         json_results = super().parse_result(result, partial=partial)
         if not json_results:

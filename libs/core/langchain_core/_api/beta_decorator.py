@@ -63,6 +63,9 @@ def beta(
         addendum : str, optional
             Additional text appended directly to the final message.
 
+    Returns:
+        A decorator which can be used to mark functions or classes as beta.
+
     Examples:
 
         .. code-block:: python
@@ -70,6 +73,7 @@ def beta(
             @beta
             def the_function_to_annotate():
                 pass
+
     """
 
     def beta(
@@ -143,59 +147,33 @@ def beta(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, property):
-            # note(erick): this block doesn't seem to be used?
             if not _obj_type:
                 _obj_type = "attribute"
             wrapped = None
             _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _BetaProperty(property):
-                """A beta property."""
+            def _fget(instance: Any) -> Any:
+                if instance is not None:
+                    emit_warning()
+                return obj.fget(instance)
 
-                def __init__(
-                    self,
-                    fget: Union[Callable[[Any], Any], None] = None,
-                    fset: Union[Callable[[Any, Any], None], None] = None,
-                    fdel: Union[Callable[[Any], None], None] = None,
-                    doc: Union[str, None] = None,
-                ) -> None:
-                    super().__init__(fget, fset, fdel, doc)
-                    self.__orig_fget = fget
-                    self.__orig_fset = fset
-                    self.__orig_fdel = fdel
+            def _fset(instance: Any, value: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fset(instance, value)
 
-                def __get__(
-                    self, instance: Any, owner: Union[type, None] = None
-                ) -> Any:
-                    if instance is not None or owner is not None:
-                        emit_warning()
-                    return self.fget(instance)
+            def _fdel(instance: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fdel(instance)
 
-                def __set__(self, instance: Any, value: Any) -> None:
-                    if instance is not None:
-                        emit_warning()
-                    return self.fset(instance, value)
-
-                def __delete__(self, instance: Any) -> None:
-                    if instance is not None:
-                        emit_warning()
-                    return self.fdel(instance)
-
-                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
-                    nonlocal _name
-                    if _name == "<lambda>":
-                        _name = set_name
-
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:  # noqa: ARG001
+            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
-                return _BetaProperty(
-                    fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
-                )
-
+                return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
         else:
             _name = _name or obj.__qualname__
             if not _obj_type:

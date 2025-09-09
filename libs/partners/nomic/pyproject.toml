@@ -51,7 +51,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -101,6 +100,9 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.mypy]
 disallow_untyped_defs = "True"

@@ -10,6 +10,7 @@ from langchain_core.prompts.chat import AIMessagePromptTemplate, ChatPromptTempl
 from langchain_core.runnables import Runnable, RunnablePassthrough
 from langchain_core.tools import BaseTool
 from langchain_core.tools.render import ToolsRenderer, render_text_description
+from typing_extensions import override
 
 from langchain.agents.agent import BaseSingleActionAgent
 from langchain.agents.format_scratchpad import format_xml
@@ -36,7 +37,6 @@ class XMLAgent(BaseSingleActionAgent):
             tools = ...
             model =
 
-
     """
 
     tools: list[BaseTool]
@@ -45,11 +45,13 @@ class XMLAgent(BaseSingleActionAgent):
     """Chain to use to predict action."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return ["input"]
 
     @staticmethod
     def get_default_prompt() -> ChatPromptTemplate:
+        """Return the default prompt for the XML agent."""
         base_prompt = ChatPromptTemplate.from_template(agent_instructions)
         return base_prompt + AIMessagePromptTemplate.from_template(
             "{intermediate_steps}",
@@ -57,8 +59,10 @@ class XMLAgent(BaseSingleActionAgent):
 
     @staticmethod
     def get_default_output_parser() -> XMLAgentOutputParser:
+        """Return an XMLAgentOutputParser."""
         return XMLAgentOutputParser()
 
+    @override
     def plan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
@@ -83,6 +87,7 @@ class XMLAgent(BaseSingleActionAgent):
         response = self.llm_chain(inputs, callbacks=callbacks)
         return response[self.llm_chain.output_key]
 
+    @override
     async def aplan(
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
@@ -116,7 +121,7 @@ def create_xml_agent(
     *,
     stop_sequence: Union[bool, list[str]] = True,
 ) -> Runnable:
-    """Create an agent that uses XML to format its logic.
+    r"""Create an agent that uses XML to format its logic.
 
     Args:
         llm: LLM to use as the agent.
@@ -158,12 +163,13 @@ def create_xml_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
                 }
             )
 
@@ -171,7 +177,8 @@ def create_xml_agent(
 
         The prompt must have input keys:
             * `tools`: contains descriptions for each tool.
-            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as
+              an XML string.
 
         Here's an example:
 
@@ -203,6 +210,7 @@ def create_xml_agent(
             Question: {input}
             {agent_scratchpad}'''
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     missing_vars = {"tools", "agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

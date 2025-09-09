@@ -12,6 +12,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import BaseTool, Tool
 from langchain_core.tools.render import render_text_description
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentExecutor, AgentOutputParser
@@ -51,6 +52,7 @@ class ZeroShotAgent(Agent):
     output_parser: AgentOutputParser = Field(default_factory=MRKLOutputParser)
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return MRKLOutputParser()
 
@@ -168,7 +170,7 @@ class ZeroShotAgent(Agent):
             raise ValueError(msg)
         for tool in tools:
             if tool.description is None:
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )

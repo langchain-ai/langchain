@@ -42,11 +42,16 @@ from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 
 if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+
+try:
+    from langchain_text_splitters import TextSplitter
+
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = True
+except ImportError:
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = False
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +116,7 @@ def get_buffer_string(
             ]
             get_buffer_string(messages)
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+
     """
     string_messages = []
     for m in messages:
@@ -181,7 +187,7 @@ def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
 
-def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     """Convert a message chunk to a message.
 
     Args:
@@ -212,7 +218,7 @@ def _create_message_from_message_type(
     name: Optional[str] = None,
     tool_call_id: Optional[str] = None,
     tool_calls: Optional[list[dict[str, Any]]] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
     """Create a message from a message type and content string.
@@ -360,7 +366,7 @@ def convert_to_messages(
         list of messages (BaseMessages).
     """
     # Import here to avoid circular imports
-    from langchain_core.prompt_values import PromptValue
+    from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
@@ -385,7 +391,8 @@ def _runnable_support(func: Callable) -> Callable:
         list[BaseMessage],
         Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
-        from langchain_core.runnables.base import RunnableLambda
+        # Import locally to prevent circular import.
+        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
             return func(messages, **kwargs)
@@ -423,11 +430,16 @@ def filter_messages(
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
-            - `True`: all AIMessages with tool calls and all ToolMessages will be excluded.
+
+            - ``True``: Each ``AIMessages`` with tool calls and all ``ToolMessages``
+              will be excluded.
             - a sequence of tool call IDs to exclude:
+
               - ToolMessages with the corresponding tool call ID will be excluded.
-              - The `tool_calls` in the AIMessage will be updated to exclude matching tool calls.
-                If all tool_calls are filtered from an AIMessage, the whole message is excluded.
+              - The ``tool_calls`` in the AIMessage will be updated to exclude matching
+                tool calls.
+                If all tool_calls are filtered from an AIMessage,
+                the whole message is excluded.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -440,14 +452,25 @@ def filter_messages(
     Example:
         .. code-block:: python
 
-            from langchain_core.messages import filter_messages, AIMessage, HumanMessage, SystemMessage
+            from langchain_core.messages import (
+                filter_messages,
+                AIMessage,
+                HumanMessage,
+                SystemMessage,
+            )
 
             messages = [
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
                 AIMessage("steve-o", id="bar", name="example_assistant"),
-                HumanMessage("what's your favorite color", id="baz",),
-                AIMessage("silicon blue", id="blah",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="baz",
+                ),
+                AIMessage(
+                    "silicon blue",
+                    id="blah",
+                ),
             ]
 
             filter_messages(
@@ -463,7 +486,8 @@ def filter_messages(
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
-    """  # noqa: E501
+
+    """
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
     for msg in messages:
@@ -542,12 +566,14 @@ def merge_message_runs(
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
         messages. By default, if two messages being merged both have string contents,
-        the merged content is a concatenation of the two strings with a new-line separator.
+        the merged content is a concatenation of the two strings with a new-line
+        separator.
         The separator inserted between message chunks can be controlled by specifying
-        any string with ``chunk_separator``. If at least one of the messages has a list of
-        content blocks, the merged content is a list of content blocks.
+        any string with ``chunk_separator``. If at least one of the messages has a list
+        of content blocks, the merged content is a list of content blocks.
 
     Example:
+
         .. code-block:: python
 
             from langchain_core.messages import (
@@ -560,16 +586,33 @@ def merge_message_runs(
 
             messages = [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color", id="foo",),
-                HumanMessage("wait your favorite food", id="bar",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="foo",
+                ),
+                HumanMessage(
+                    "wait your favorite food",
+                    id="bar",
+                ),
                 AIMessage(
                     "my favorite colo",
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool", args={"x": 2}, id="123", type="tool_call"
+                        )
+                    ],
                     id="baz",
                 ),
                 AIMessage(
                     [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool",
+                            args={"x": -10},
+                            id="456",
+                            type="tool_call",
+                        )
+                    ],
                     id="blur",
                 ),
             ]
@@ -580,21 +623,34 @@ def merge_message_runs(
 
             [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color\\nwait your favorite food", id="foo",),
+                HumanMessage(
+                    "what's your favorite color\\n"
+                    "wait your favorite food", id="foo",
+                ),
                 AIMessage(
                     [
                         "my favorite colo",
                         {"type": "text", "text": "my favorite dish is lasagna"}
                     ],
                     tool_calls=[
-                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123", "type": "tool_call"}),
-                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456", "type": "tool_call"})
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": 2},
+                            "id": "123",
+                            "type": "tool_call"
+                        }),
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": -10},
+                            "id": "456",
+                            "type": "tool_call"
+                        })
                     ]
                     id="baz"
                 ),
             ]
 
-    """  # noqa: E501
+    """
     if not messages:
         return []
     messages = convert_to_messages(messages)
@@ -654,22 +710,23 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
-       by a `HumanMessage`. To achieve this, set `start_on="human"`.
-       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage``
+       followed by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
-       To achieve this set the `strategy="last"`.
-    3. Usually, the new chat history should include the `SystemMessage` if it
-       was present in the original chat history since the `SystemMessage` includes
-       special instructions to the chat model. The `SystemMessage` is almost always
+       To achieve this set the ``strategy="last"``.
+    3. Usually, the new chat history should include the ``SystemMessage`` if it
+       was present in the original chat history since the ``SystemMessage`` includes
+       special instructions to the chat model. The ``SystemMessage`` is almost always
        the first message in the history if present. To achieve this set the
-       `include_system=True`.
+       ``include_system=True``.
 
-    **Note** The examples below show how to configure `trim_messages` to achieve
-        a behavior consistent with the above properties.
+    .. note::
+        The examples below show how to configure ``trim_messages`` to achieve a behavior
+        consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
@@ -685,9 +742,11 @@ def trim_messages(
                 exact token counting is not necessary.
 
         strategy: Strategy for trimming.
+
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
-            Default is "last".
+
+            Default is ``'last'``.
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
             are included. If ``strategy="first"`` then the first partial contents of a
@@ -745,14 +804,18 @@ def trim_messages(
             )
 
             messages = [
-                SystemMessage("you're a good assistant, you always respond with a joke."),
+                SystemMessage(
+                    "you're a good assistant, you always respond with a joke."
+                ),
                 HumanMessage("i wonder why it's called langchain"),
                 AIMessage(
-                    'Well, I guess they thought "WordRope" and "SentenceString" just didn\'t have the same ring to it!'
+                    'Well, I guess they thought "WordRope" and "SentenceString" just '
+                    "didn't have the same ring to it!"
                 ),
                 HumanMessage("and who is harrison chasing anyways"),
                 AIMessage(
-                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"
+                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last "
+                    "cup of coffee in the office!"
                 ),
                 HumanMessage("what do you call a speechless parrot"),
             ]
@@ -777,8 +840,10 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
         Trim chat history based on the message count, keeping the SystemMessage if
@@ -808,10 +873,15 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='and who is harrison chasing anyways'),
-                AIMessage(content="Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="and who is harrison chasing anyways"),
+                AIMessage(
+                    content="Hmmm let me think.\n\nWhy, he's probably chasing after "
+                    "the last cup of coffee in the office!"
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
 
@@ -822,7 +892,9 @@ def trim_messages(
 
             messages = [
                 SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="first"
+                ),
                 AIMessage(
                     [
                         {"type": "text", "text": "This is the FIRST 4 token block."},
@@ -830,9 +902,15 @@ def trim_messages(
                     ],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="third"
+                ),
+                AIMessage(
+                    "This is a 4 token text. The full message is 10 tokens.",
+                    id="fourth",
+                ),
             ]
+
 
             def dummy_token_counter(messages: list[BaseMessage]) -> int:
                 # treat each message like it adds 3 default tokens at the beginning
@@ -846,9 +924,17 @@ def trim_messages(
                 count = 0
                 for msg in messages:
                     if isinstance(msg.content, str):
-                        count += default_msg_prefix_len + default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + default_content_len
+                            + default_msg_suffix_len
+                        )
                     if isinstance(msg.content, list):
-                        count += default_msg_prefix_len + len(msg.content) *  default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + len(msg.content) * default_content_len
+                            + default_msg_suffix_len
+                        )
                 return count
 
         First 30 tokens, allowing partial messages:
@@ -865,11 +951,20 @@ def trim_messages(
             .. code-block:: python
 
                 [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                    AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
+                    SystemMessage(
+                        "This is a 4 token text. The full message is 10 tokens."
+                    ),
+                    HumanMessage(
+                        "This is a 4 token text. The full message is 10 tokens.",
+                        id="first",
+                    ),
+                    AIMessage(
+                        [{"type": "text", "text": "This is the FIRST 4 token block."}],
+                        id="second",
+                    ),
                 ]
-    """  # noqa: E501
+
+    """
     # Validate arguments
     if start_on and strategy == "first":
         msg = "start_on parameter is only valid with strategy='last'"
@@ -900,17 +995,12 @@ def trim_messages(
         )
         raise ValueError(msg)
 
-    try:
-        from langchain_text_splitters import TextSplitter
-    except ImportError:
-        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
+    if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
+        text_splitter_fn = text_splitter.split_text
+    elif text_splitter:
+        text_splitter_fn = cast("Callable", text_splitter)
     else:
-        if isinstance(text_splitter, TextSplitter):
-            text_splitter_fn = text_splitter.split_text
-        else:
-            text_splitter_fn = text_splitter
-
-    text_splitter_fn = text_splitter_fn or _default_text_splitter
+        text_splitter_fn = _default_text_splitter
 
     if strategy == "first":
         return _first_max_tokens(
@@ -948,25 +1038,30 @@ def convert_to_openai_messages(
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
 
-                - "string":
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type 'text', these are
-                    joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type 'text', then
-                    all blocks are left as dicts.
-                - "block":
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type 'text'. If a message has content
-                    blocks these are left as is.
+            - ``'string'``:
+              If a message has a string content, this is left as a string. If
+              a message has content blocks that are all of type 'text', these are
+              joined with a newline to make a single string. If a message has
+              content blocks and at least one isn't of type 'text', then
+              all blocks are left as dicts.
+            - ``'block'``:
+              If a message has a string content, this is turned into a list
+              with a single content block of type 'text'. If a message has content
+              blocks these are left as is.
+
+    Raises:
+        ValueError: if an unrecognized ``text_format`` is specified, or if a message
+            content block is missing expected keys.
 
     Returns:
         The return type depends on the input type:
-            - dict:
-                If a single message-like object is passed in, a single OpenAI message
-                dict is returned.
-            - list[dict]:
-                If a sequence of message-like objects are passed in, a list of OpenAI
-                message dicts is returned.
+
+        - dict:
+          If a single message-like object is passed in, a single OpenAI message
+          dict is returned.
+        - list[dict]:
+          If a sequence of message-like objects are passed in, a list of OpenAI
+          message dicts is returned.
 
     Example:
 
@@ -981,8 +1076,27 @@ def convert_to_openai_messages(
 
             messages = [
                 SystemMessage([{"type": "text", "text": "foo"}]),
-                {"role": "user", "content": [{"type": "text", "text": "whats in this"}, {"type": "image_url", "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"}}]},
-                AIMessage("", tool_calls=[{"name": "analyze", "args": {"baz": "buz"}, "id": "1", "type": "tool_call"}]),
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "whats in this"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
+                        },
+                    ],
+                },
+                AIMessage(
+                    "",
+                    tool_calls=[
+                        {
+                            "name": "analyze",
+                            "args": {"baz": "buz"},
+                            "id": "1",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
                 ToolMessage("foobar", tool_call_id="1", name="bar"),
                 {"role": "assistant", "content": "thats nice"},
             ]
@@ -1176,7 +1290,9 @@ def convert_to_openai_messages(
                                 "id": block["id"],
                                 "function": {
                                     "name": block["name"],
-                                    "arguments": json.dumps(block["input"]),
+                                    "arguments": json.dumps(
+                                        block["input"], ensure_ascii=False
+                                    ),
                                 },
                             }
                         )
@@ -1550,7 +1666,7 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
             "id": tool_call["id"],
             "function": {
                 "name": tool_call["name"],
-                "arguments": json.dumps(tool_call["args"]),
+                "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             },
         }
         for tool_call in tool_calls
@@ -1575,26 +1691,26 @@ def count_tokens_approximately(
         chars_per_token: Number of characters per token to use for the approximation.
             Default is 4 (one token corresponds to ~4 chars for common English text).
             You can also specify float values for more fine-grained control.
-            See more here: https://platform.openai.com/tokenizer
+            `See more here. <https://platform.openai.com/tokenizer>`__
         extra_tokens_per_message: Number of extra tokens to add per message.
             Default is 3 (special tokens, including beginning/end of message).
             You can also specify float values for more fine-grained control.
-            See more here:
-            https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb
+            `See more here. <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>`__
         count_name: Whether to include message names in the count.
             Enabled by default.
 
     Returns:
         Approximate number of tokens in the messages.
 
-    Note:
-        This is a simple approximation that may not match the exact token count
-        used by specific models. For accurate counts, use model-specific tokenizers.
+    .. note::
+        This is a simple approximation that may not match the exact token count used by
+        specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
     .. versionadded:: 0.3.46
+
     """
     token_count = 0.0
     for message in convert_to_messages(messages):

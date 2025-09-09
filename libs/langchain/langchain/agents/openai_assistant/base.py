@@ -149,11 +149,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
 
             interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview"
+                model="gpt-4-1106-preview",
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = interpreter_assistant.invoke(
+                {"content": "What's 10 - 4 raised to the 2.7"}
+            )
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -166,10 +169,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
@@ -188,11 +192,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
+
 
             def execute_agent(agent, tools, input):
                 tool_map = {tool.name: tool for tool in tools}
@@ -201,21 +207,30 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                        tool_outputs.append(
+                            {"output": tool_output, "tool_call_id": action.tool_call_id}
+                        )
                     response = agent.invoke(
                         {
                             "tool_outputs": tool_outputs,
                             "run_id": action.run_id,
-                            "thread_id": action.thread_id
+                            "thread_id": action.thread_id,
                         }
                     )
 
                 return response
 
-            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
-            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
 
-    """  # noqa: E501
+            response = execute_agent(
+                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+            )
+            next_response = execute_agent(
+                agent,
+                tools,
+                {"content": "now add 17.241", "thread_id": response.thread_id},
+            )
+
+    """
 
     client: Any = Field(default_factory=_get_openai_client)
     """OpenAI or AzureOpenAI client."""
@@ -229,7 +244,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
     @model_validator(mode="after")
-    def validate_async_client(self) -> Self:
+    def _validate_async_client(self) -> Self:
         if self.async_client is None:
             import openai
 
@@ -302,6 +317,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
             config: Runnable config. Defaults to None.
+            **kwargs: Additional arguments.
 
         Return:
             If self.as_agent, will return
@@ -309,7 +325,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -358,12 +373,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = self._wait_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -390,6 +405,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
                 Will create default async_client if not specified.
+            **kwargs: Additional arguments.
 
         Returns:
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
@@ -442,7 +458,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = config or {}
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -494,12 +509,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = await self._await_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -582,7 +597,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = self.client.beta.threads.messages.list(
@@ -739,7 +754,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = await self.async_client.beta.threads.messages.list(

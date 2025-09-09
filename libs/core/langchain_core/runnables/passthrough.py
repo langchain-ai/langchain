@@ -96,22 +96,22 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             )
 
             runnable = RunnableParallel(
-                origin=RunnablePassthrough(),
-                modified=lambda x: x+1
+                origin=RunnablePassthrough(), modified=lambda x: x + 1
             )
 
-            runnable.invoke(1) # {'origin': 1, 'modified': 2}
+            runnable.invoke(1)  # {'origin': 1, 'modified': 2}
 
 
-            def fake_llm(prompt: str) -> str: # Fake LLM for the example
+            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
                 return "completion"
 
+
             chain = RunnableLambda(fake_llm) | {
-                'original': RunnablePassthrough(), # Original LLM output
-                'parsed': lambda text: text[::-1] # Parsing logic
+                "original": RunnablePassthrough(),  # Original LLM output
+                "parsed": lambda text: text[::-1],  # Parsing logic
             }
 
-            chain.invoke('hello') # {'original': 'completion', 'parsed': 'noitelpmoc'}
+            chain.invoke("hello")  # {'original': 'completion', 'parsed': 'noitelpmoc'}
 
     In some cases, it may be useful to pass the input through while adding some
     keys to the output. In this case, you can use the `assign` method:
@@ -120,18 +120,21 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
             from langchain_core.runnables import RunnablePassthrough
 
-            def fake_llm(prompt: str) -> str: # Fake LLM for the example
+
+            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
                 return "completion"
 
+
             runnable = {
-                'llm1':  fake_llm,
-                'llm2':  fake_llm,
+                "llm1": fake_llm,
+                "llm2": fake_llm,
             } | RunnablePassthrough.assign(
-                total_chars=lambda inputs: len(inputs['llm1'] + inputs['llm2'])
+                total_chars=lambda inputs: len(inputs["llm1"] + inputs["llm2"])
             )
 
-            runnable.invoke('hello')
+            runnable.invoke("hello")
             # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
+
     """
 
     input_type: Optional[type[Other]] = None
@@ -185,16 +188,21 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
             afunc = func
             func = None
 
-        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)  # type: ignore[call-arg]
+        super().__init__(func=func, afunc=afunc, input_type=input_type, **kwargs)
 
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
-    @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
@@ -377,11 +385,15 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             )
             from langchain_core.runnables.base import RunnableLambda
 
+
             def add_ten(x: dict[str, int]) -> dict[str, int]:
                 return {"added": x["input"] + 10}
 
+
             mapper = RunnableParallel(
-                {"add_step": RunnableLambda(add_ten),}
+                {
+                    "add_step": RunnableLambda(add_ten),
+                }
             )
 
             runnable_assign = RunnableAssign(mapper)
@@ -393,6 +405,7 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             # Asynchronous example
             await runnable_assign.ainvoke({"input": 5})
             # returns {'input': 5, 'add_step': {'added': 15}}
+
     """
 
     mapper: RunnableParallel
@@ -404,16 +417,22 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             mapper: A ``RunnableParallel`` instance that will be used to transform the
                 input dictionary.
         """
-        super().__init__(mapper=mapper, **kwargs)  # type: ignore[call-arg]
+        super().__init__(mapper=mapper, **kwargs)
 
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
@@ -686,17 +705,18 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
             from langchain_core.runnables.passthrough import RunnablePick
 
             input_data = {
-                'name': 'John',
-                'age': 30,
-                'city': 'New York',
-                'country': 'USA'
+                "name": "John",
+                "age": 30,
+                "city": "New York",
+                "country": "USA",
             }
 
-            runnable = RunnablePick(keys=['name', 'age'])
+            runnable = RunnablePick(keys=["name", "age"])
 
             output_data = runnable.invoke(input_data)
 
             print(output_data)  # Output: {'name': 'John', 'age': 30}
+
     """
 
     keys: Union[str, list[str]]
@@ -707,17 +727,22 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         Args:
             keys: A single key or a list of keys to pick from the input dictionary.
         """
-        super().__init__(keys=keys, **kwargs)  # type: ignore[call-arg]
+        super().__init__(keys=keys, **kwargs)
 
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
@@ -727,7 +752,8 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
         name = (
             name
             or self.name
-            or f"RunnablePick<{','.join([self.keys] if isinstance(self.keys, str) else self.keys)}>"  # noqa: E501
+            or "RunnablePick"
+            f"<{','.join([self.keys] if isinstance(self.keys, str) else self.keys)}>"
         )
         return super().get_name(suffix, name=name)
 

@@ -1,11 +1,11 @@
 Upstash offers developers serverless databases and messaging
-platforms to build powerful applications without having to worry 
+platforms to build powerful applications without having to worry
 about the operational complexity of running databases at scale.
 
 One significant advantage of Upstash is that their databases support HTTP and all of their SDKs use HTTP.
 This means that you can run this in serverless platforms, edge or any platform that does not support TCP connections.
 
-Currently, there are two Upstash integrations available for LangChain: 
+Currently, there are two Upstash integrations available for LangChain:
 Upstash Vector as a vector embedding database and Upstash Redis as a cache and memory store.
 
 # Upstash Vector
@@ -166,7 +166,7 @@ store.delete(["id1", "id2"])
 
 You can get information about your database like the distance metric dimension using the info function.
 
-When an insert happens, the database an indexing takes place. While this is happening new vectors can not be queried. `pendingVectorCount` represents the number of vector that are currently being indexed. 
+When an insert happens, the database an indexing takes place. While this is happening new vectors can not be queried. `pendingVectorCount` represents the number of vector that are currently being indexed.
 
 ```python
 info = store.info()

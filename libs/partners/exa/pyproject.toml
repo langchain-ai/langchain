@@ -54,7 +54,6 @@ select = [
     "C4",     # flake8-comprehensions
     "COM",    # flake8-commas
     "D",      # pydocstyle
-    "DOC",    # pydoclint
     "E",      # pycodestyle error
     "EM",     # flake8-errmsg
     "F",      # pyflakes
@@ -92,6 +91,8 @@ ignore = [
     "D104",    # Missing docstring in public package
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
+    "D203",    # Incompatible with D211 (blank line before class)
+    "D213",    # Incompatible with D212 (multi-line summary)
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -113,6 +114,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [

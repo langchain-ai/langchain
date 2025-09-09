@@ -15,6 +15,8 @@ integration_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 
 
 class Replacements(TypedDict):
+    """Replacements."""
+
     __package_name__: str
     __module_name__: str
     __ModuleName__: str
@@ -127,6 +129,7 @@ def new(
         subprocess.run(
             ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
             cwd=destination_dir,
+            check=True,
         )
     else:
         # confirm src and dst are the same length

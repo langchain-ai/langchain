@@ -1,4 +1,4 @@
-"""Interface with the LangChain Hub."""
+"""Interface with the `LangChain Hub <https://smith.langchain.com/hub>`__."""
 
 from __future__ import annotations
 
@@ -49,8 +49,7 @@ def push(
     readme: Optional[str] = None,
     tags: Optional[Sequence[str]] = None,
 ) -> str:
-    """
-    Push an object to the hub and returns the URL it can be viewed at in a browser.
+    """Push an object to the hub and returns the URL it can be viewed at in a browser.
 
     :param repo_full_name: The full name of the prompt to push to in the format of
         `owner/prompt_name` or `prompt_name`.
@@ -97,8 +96,7 @@ def pull(
     api_url: Optional[str] = None,
     api_key: Optional[str] = None,
 ) -> Any:
-    """
-    Pull an object from the hub and returns it as a LangChain object.
+    """Pull an object from the hub and returns it as a LangChain object.
 
     :param owner_repo_commit: The full name of the prompt to pull from in the format of
         `owner/prompt_name:commit_hash` or `owner/prompt_name`

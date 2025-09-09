@@ -253,7 +253,7 @@ class ContextSet(RunnableSerializable):
         """
         if key is not None:
             kwargs[key] = value
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             keys={
                 k: _coerce_set_value(v) if v is not None else None
                 for k, v in kwargs.items()
@@ -344,8 +344,7 @@ class Context:
             chain = (
                 Context.setter("input")
                 | {
-                    "context": RunnablePassthrough()
-                            | Context.setter("context"),
+                    "context": RunnablePassthrough() | Context.setter("context"),
                     "question": RunnablePassthrough(),
                 }
                 | PromptTemplate.from_template("{context} {question}")
@@ -363,6 +362,7 @@ class Context:
             print(output["result"])  # Output: "hello"
             print(output["context"])  # Output: "What's your name?"
             print(output["input"])  # Output: "What's your name?
+
     """
 
     @staticmethod

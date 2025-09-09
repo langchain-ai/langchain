@@ -18,6 +18,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -146,6 +147,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -190,6 +192,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -261,6 +264,7 @@ class RetrievalQA(BaseRetrievalQA):
             from langchain.chains import RetrievalQA
             from langchain_community.vectorstores import FAISS
             from langchain_core.vectorstores import VectorStoreRetriever
+
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 
@@ -330,6 +334,7 @@ class VectorDBQA(BaseRetrievalQA):
                 raise ValueError(msg)
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,

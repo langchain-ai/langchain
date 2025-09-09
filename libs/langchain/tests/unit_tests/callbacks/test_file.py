@@ -1,7 +1,9 @@
 import pathlib
+import re
 from typing import Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
+from typing_extensions import override
 
 from langchain.callbacks import FileCallbackHandler
 from langchain.chains.base import Chain
@@ -24,12 +26,23 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
     ) -> dict[str, str]:
         return {"bar": "bar"}
+
+
+def strip_ansi(text: str) -> str:
+    """Removes ANSI escape sequences from a string.
+
+    Args:
+        text: The string potentially containing ANSI codes.
+    """
+    ansi_escape = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+    return ansi_escape.sub("", text)
 
 
 def test_filecallback(tmp_path: pathlib.Path) -> None:
@@ -40,7 +53,7 @@ def test_filecallback(tmp_path: pathlib.Path) -> None:
     chain_test.invoke({"foo": "bar"})
     handler.close()
     # Assert the output is as expected
-    assert "Entering new FakeChain chain" in log1.read_text()
+    assert "Entering new FakeChain chain" in strip_ansi(log1.read_text())
 
     # Test using a callback manager
     log2 = tmp_path / "output2.log"
@@ -49,12 +62,11 @@ def test_filecallback(tmp_path: pathlib.Path) -> None:
         chain_test = FakeChain(callbacks=[handler_cm])
         chain_test.invoke({"foo": "bar"})
 
-    assert "Entering new FakeChain chain" in log2.read_text()
+    assert "Entering new FakeChain chain" in strip_ansi(log2.read_text())
 
     # Test passing via invoke callbacks
-
     log3 = tmp_path / "output3.log"
 
     with FileCallbackHandler(str(log3)) as handler_cm:
         chain_test.invoke({"foo": "bar"}, {"callbacks": [handler_cm]})
-    assert "Entering new FakeChain chain" in log3.read_text()
+    assert "Entering new FakeChain chain" in strip_ansi(log3.read_text())

@@ -47,6 +47,7 @@ def _parse_model_string(model_name: str) -> tuple[str, str]:
     Raises:
         ValueError: If the model string is not in the correct format or
             the provider is unsupported
+
     """
     if ":" not in model_name:
         providers = _SUPPORTED_PROVIDERS
@@ -89,7 +90,6 @@ def _infer_model_and_provider(
     if provider is None and ":" in model:
         provider, model_name = _parse_model_string(model)
     else:
-        provider = provider
         model_name = model
 
     if not provider:
@@ -165,19 +165,14 @@ def init_embeddings(
             model.embed_query("Hello, world!")
 
             # Using explicit provider
-            model = init_embeddings(
-                model="text-embedding-3-small",
-                provider="openai"
-            )
+            model = init_embeddings(model="text-embedding-3-small", provider="openai")
             model.embed_documents(["Hello, world!", "Goodbye, world!"])
 
             # With additional parameters
-            model = init_embeddings(
-                "openai:text-embedding-3-small",
-                api_key="sk-..."
-            )
+            model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
 
     .. versionadded:: 0.3.9
+
     """
     if not model:
         providers = _SUPPORTED_PROVIDERS.keys()

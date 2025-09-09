@@ -92,12 +92,13 @@ def tool(
             positional argument.
         description: Optional description for the tool.
             Precedence for the tool description value is as follows:
-                - `description` argument
-                    (used even if docstring and/or `args_schema` are provided)
-                - tool function docstring
-                    (used even if `args_schema` is provided)
-                - `args_schema` description
-                    (used only if `description` / docstring are not provided)
+
+            - ``description`` argument
+                (used even if docstring and/or ``args_schema`` are provided)
+            - tool function docstring
+                (used even if ``args_schema`` is provided)
+            - ``args_schema`` description
+                (used only if `description` / docstring are not provided)
         *args: Extra positional arguments. Must be empty.
         return_direct: Whether to return directly from the tool rather
             than continuing the agent loop. Defaults to False.
@@ -119,6 +120,17 @@ def tool(
             whether to raise ValueError on invalid Google Style docstrings.
             Defaults to True.
 
+    Raises:
+        ValueError: If too many positional arguments are provided.
+        ValueError: If a runnable is provided without a string name.
+        ValueError: If the first argument is not a string or callable with
+            a ``__name__`` attribute.
+        ValueError: If the function does not have a docstring and description
+            is not provided and ``infer_schema`` is False.
+        ValueError: If ``parse_docstring`` is True and the function has an invalid
+            Google-style docstring and ``error_on_invalid_docstring`` is True.
+        ValueError: If a Runnable is provided that does not have an object schema.
+
     Returns:
         The tool.
 
@@ -134,17 +146,20 @@ def tool(
                 # Searches the API for the query.
                 return
 
+
             @tool("search", return_direct=True)
             def search_api(query: str) -> str:
                 # Searches the API for the query.
                 return
+
 
             @tool(response_format="content_and_artifact")
             def search_api(query: str) -> tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
     .. versionadded:: 0.2.14
-    Parse Google-style docstrings:
+
+        Parse Google-style docstrings:
 
         .. code-block:: python
 
@@ -170,18 +185,15 @@ def tool(
                     "bar": {
                         "title": "Bar",
                         "description": "The bar.",
-                        "type": "string"
+                        "type": "string",
                     },
                     "baz": {
                         "title": "Baz",
                         "description": "The baz.",
-                        "type": "integer"
-                    }
+                        "type": "integer",
+                    },
                 },
-                "required": [
-                    "bar",
-                    "baz"
-                ]
+                "required": ["bar", "baz"],
             }
 
         Note that parsing by default will raise ``ValueError`` if the docstring
@@ -214,6 +226,7 @@ def tool(
                     monkey: The baz.
                 \"\"\"
                 return bar
+
     """  # noqa: D214, D410, D411
 
     def _create_tool_factory(

@@ -68,8 +68,11 @@ class StructuredPrompt(ChatPromptTemplate):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        For example, if the class is `langchain.llms.openai.OpenAI`, then the
-        namespace is ["langchain", "llms", "openai"]
+        For example, if the class is ``langchain.llms.openai.OpenAI``, then the
+        namespace is ``["langchain", "llms", "openai"]``
+
+        Returns:
+            The namespace of the langchain object.
         """
         return cls.__module__.split(".")
 
@@ -89,9 +92,11 @@ class StructuredPrompt(ChatPromptTemplate):
 
                 from langchain_core.prompts import StructuredPrompt
 
+
                 class OutputSchema(BaseModel):
                     name: str
                     value: int
+
 
                 template = StructuredPrompt(
                     [
@@ -115,6 +120,7 @@ class StructuredPrompt(ChatPromptTemplate):
 
         Returns:
             a structured prompt template
+
         """
         return cls(messages, schema, **kwargs)
 

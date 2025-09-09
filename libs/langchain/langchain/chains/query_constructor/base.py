@@ -22,6 +22,7 @@ from langchain_core.structured_query import (
     Operator,
     StructuredQuery,
 )
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.chains.query_constructor.parser import get_parser
@@ -46,6 +47,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
     ast_parse: Callable
     """Callable that parses dict into internal representation of query language."""
 
+    @override
     def parse(self, text: str) -> StructuredQuery:
         try:
             expected_keys = ["query", "filter"]
@@ -74,12 +76,13 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
         allowed_attributes: Optional[Sequence[str]] = None,
         fix_invalid: bool = False,  # noqa: FBT001,FBT002
     ) -> StructuredQueryOutputParser:
-        """
-        Create a structured query output parser from components.
+        """Create a structured query output parser from components.
 
         Args:
             allowed_comparators: allowed comparators
             allowed_operators: allowed operators
+            allowed_attributes: allowed attributes
+            fix_invalid: whether to fix invalid filter directives
 
         Returns:
             a structured query output parser
@@ -89,7 +92,7 @@ class StructuredQueryOutputParser(BaseOutputParser[StructuredQuery]):
 
             def ast_parse(raw_filter: str) -> Optional[FilterDirective]:
                 filter_directive = cast(
-                    Optional[FilterDirective],
+                    "Optional[FilterDirective]",
                     get_parser().parse(raw_filter),
                 )
                 return fix_filter_directive(
@@ -142,7 +145,7 @@ def fix_filter_directive(
             return None
         args = [
             cast(
-                FilterDirective,
+                "FilterDirective",
                 fix_filter_directive(
                     arg,
                     allowed_comparators=allowed_comparators,

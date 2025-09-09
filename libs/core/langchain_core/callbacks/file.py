@@ -49,10 +49,11 @@ class FileCallbackHandler(BaseCallbackHandler):
         mode: The file open mode. Defaults to ``'a'`` (append).
         color: Default color for text output. Defaults to ``None``.
 
-    Note:
+    .. note::
         When not used as a context manager, a deprecation warning will be issued
         on first use. The file will be opened immediately in ``__init__`` and closed
         in ``__del__`` or when ``close()`` is called explicitly.
+
     """
 
     def __init__(
@@ -64,6 +65,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             filename: Path to the output file.
             mode: File open mode (e.g., ``'w'``, ``'a'``, ``'x'``). Defaults to ``'a'``.
             color: Default text color for output. Defaults to ``None``.
+
         """
         self.filename = filename
         self.mode = mode
@@ -81,9 +83,10 @@ class FileCallbackHandler(BaseCallbackHandler):
         Returns:
             The FileCallbackHandler instance.
 
-        Note:
+        .. note::
             The file is already opened in ``__init__``, so this just marks that
             the handler is being used as a context manager.
+
         """
         self._file_opened_in_context = True
         return self
@@ -100,6 +103,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             exc_type: Exception type if an exception occurred.
             exc_val: Exception value if an exception occurred.
             exc_tb: Exception traceback if an exception occurred.
+
         """
         self.close()
 
@@ -112,6 +116,7 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         This method is safe to call multiple times and will only close
         the file if it's currently open.
+
         """
         if hasattr(self, "file") and self.file and not self.file.closed:
             self.file.close()
@@ -132,6 +137,7 @@ class FileCallbackHandler(BaseCallbackHandler):
 
         Raises:
             RuntimeError: If the file is closed or not available.
+
         """
         global _GLOBAL_DEPRECATION_WARNED  # noqa: PLW0603
         if not self._file_opened_in_context and not _GLOBAL_DEPRECATION_WARNED:
@@ -162,6 +168,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             serialized: The serialized chain information.
             inputs: The inputs to the chain.
             **kwargs: Additional keyword arguments that may contain ``'name'``.
+
         """
         name = (
             kwargs.get("name")
@@ -177,6 +184,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Args:
             outputs: The outputs of the chain.
             **kwargs: Additional keyword arguments.
+
         """
         self._write("\n> Finished chain.", end="\n")
 
@@ -191,6 +199,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             color: Color override for this specific output. If ``None``, uses
                 ``self.color``.
             **kwargs: Additional keyword arguments.
+
         """
         self._write(action.log, color=color or self.color)
 
@@ -212,6 +221,7 @@ class FileCallbackHandler(BaseCallbackHandler):
             observation_prefix: Optional prefix to write before the output.
             llm_prefix: Optional prefix to write after the output.
             **kwargs: Additional keyword arguments.
+
         """
         if observation_prefix is not None:
             self._write(f"\n{observation_prefix}")
@@ -231,6 +241,7 @@ class FileCallbackHandler(BaseCallbackHandler):
                 ``self.color``.
             end: String appended after the text. Defaults to ``""``.
             **kwargs: Additional keyword arguments.
+
         """
         self._write(text, color=color or self.color, end=end)
 
@@ -245,5 +256,6 @@ class FileCallbackHandler(BaseCallbackHandler):
             color: Color override for this specific output. If ``None``, uses
                 ``self.color``.
             **kwargs: Additional keyword arguments.
+
         """
         self._write(finish.log, color=color or self.color, end="\n")

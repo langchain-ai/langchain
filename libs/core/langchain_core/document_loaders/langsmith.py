@@ -36,6 +36,7 @@ class LangSmithLoader(BaseLoader):
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 
     .. versionadded:: 0.2.34
+
     """  # noqa: E501
 
     def __init__(
@@ -61,7 +62,7 @@ class LangSmithLoader(BaseLoader):
         Args:
             dataset_id: The ID of the dataset to filter by. Defaults to None.
             dataset_name: The name of the dataset to filter by. Defaults to None.
-            content_key: The inputs key to set as Document page content. ``"."`` characters
+            content_key: The inputs key to set as Document page content. ``'.'`` characters
                 are interpreted as nested keys. E.g. ``content_key="first.second"`` will
                 result in
                 ``Document(page_content=format_content(example.inputs["first"]["second"]))``
@@ -83,6 +84,9 @@ class LangSmithLoader(BaseLoader):
             client: LangSmith Client. If not provided will be initialized from below args.
             client_kwargs: Keyword args to pass to LangSmith client init. Should only be
                 specified if ``client`` isn't.
+
+        Raises:
+            ValueError: If both ``client`` and ``client_kwargs`` are provided.
         """  # noqa: E501
         if client and client_kwargs:
             raise ValueError
