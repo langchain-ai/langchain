@@ -19,7 +19,7 @@ from langchain_core.runnables.base import RunnableLambda, RunnableParallel
 from langchain_core.tracers.langchain import LangChainTracer
 
 
-def _get_posts(client: Client) -> list:
+def _get_posts(client: Client) -> list[dict[str, Any]]:
     mock_calls = client.session.request.mock_calls  # type: ignore[attr-defined]
     posts = []
     for call in mock_calls:
@@ -278,7 +278,7 @@ class TestRunnableSequenceParallelTraceNesting:
         def before(x: int) -> int:
             return x
 
-        def after(x: dict) -> int:
+        def after(x: dict[str, Any]) -> int:
             return x["chain_result"]
 
         sequence = before | parallel | after
