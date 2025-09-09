@@ -3615,12 +3615,7 @@ def _construct_responses_api_payload(
                 if "text" in payload and isinstance(payload["text"], dict):
                     payload["text"]["format"] = format_value
                 else:
-                    payload["text"] = {
-                        "format": {
-                            "type": "json_schema",
-                            **response_format["json_schema"],
-                        }
-                    }
+                    payload["text"] = {"format": format_value}
             else:
                 pass
 
