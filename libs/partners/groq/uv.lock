@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -450,7 +450,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.21"
+version = "0.3.20"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -489,8 +489,7 @@ test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1.17.1,<1.18" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
+    { name = "mypy", specifier = ">=1.17.1,<2" },
 ]
 
 [[package]]
