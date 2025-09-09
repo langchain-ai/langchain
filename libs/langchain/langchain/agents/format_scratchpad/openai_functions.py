@@ -1,5 +1,6 @@
 import json
 from collections.abc import Sequence
+from typing import Any
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
@@ -15,6 +16,7 @@ def _convert_agent_action_to_messages(
 
     Args:
         agent_action: Agent action to convert.
+        observation: The result of the tool invocation.
 
     Returns:
         AIMessage or the previous messages plus a FunctionMessage that corresponds to
@@ -30,12 +32,14 @@ def _convert_agent_action_to_messages(
 
 def _create_function_message(
     agent_action: AgentAction,
-    observation: str,
+    observation: Any,
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
         agent_action: the tool invocation request from the agent.
         observation: the result of the tool invocation.
+
     Returns:
         FunctionMessage that corresponds to the original tool invocation.
 

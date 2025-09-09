@@ -366,7 +366,6 @@ class BaseMultiActionAgent(BaseModel):
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
-
         return {}
 
 
@@ -1375,7 +1374,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
@@ -1514,7 +1513,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
@@ -1551,7 +1550,7 @@ class AgentExecutor(Chain):
             ],
         )
 
-        # TODO This could yield each result as it becomes available
+        # TODO: This could yield each result as it becomes available
         for chunk in result:
             yield chunk
 
@@ -1807,7 +1806,6 @@ class AgentExecutor(Chain):
         Yields:
             AddableDict: Addable dictionary.
         """
-
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,

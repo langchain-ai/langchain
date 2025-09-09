@@ -439,7 +439,7 @@ def create_structured_output_runnable(
             output_parser=output_parser,
             **kwargs,
         )
-    msg = (
+    msg = (  # type: ignore[unreachable]
         f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
         f"'openai-json'."
     )
@@ -527,7 +527,6 @@ def _create_openai_json_runnable(
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
-    """"""
     if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
             pydantic_object=output_schema,

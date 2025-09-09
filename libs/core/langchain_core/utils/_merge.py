@@ -97,7 +97,7 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
-                        if e_left["index"] == e["index"]
+                        if "index" in e_left and e_left["index"] == e["index"]
                     ]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special

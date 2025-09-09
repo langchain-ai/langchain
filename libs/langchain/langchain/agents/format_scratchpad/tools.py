@@ -1,5 +1,6 @@
 import json
 from collections.abc import Sequence
+from typing import Any
 
 from langchain_core.agents import AgentAction
 from langchain_core.messages import (
@@ -13,13 +14,14 @@ from langchain.agents.output_parsers.tools import ToolAgentAction
 
 def _create_tool_message(
     agent_action: ToolAgentAction,
-    observation: str,
+    observation: Any,
 ) -> ToolMessage:
     """Convert agent action and observation into a tool message.
 
     Args:
         agent_action: the tool invocation request from the agent.
         observation: the result of the tool invocation.
+
     Returns:
         ToolMessage that corresponds to the original tool invocation.
 

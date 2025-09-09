@@ -1,5 +1,4 @@
-"""
-Class for a conversation memory buffer with older messages stored in a vectorstore .
+"""Class for a conversation memory buffer with older messages stored in a vectorstore .
 
 This implements a conversation memory in which the messages are stored in a memory
 buffer up to a specified token limit. When the limit is exceeded, older messages are
@@ -9,7 +8,7 @@ sessions.
 
 import warnings
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
@@ -109,7 +108,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore[assignment]
+    _memory_retriever: Optional[VectorStoreRetrieverMemory] = PrivateAttr(default=None)
     _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property
@@ -155,8 +154,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
 
     def save_remainder(self) -> None:
-        """
-        Save the remainder of the conversation buffer to the vector store.
+        """Save the remainder of the conversation buffer to the vector store.
 
         This is useful if you have made the vectorstore persistent, in which
         case this can be called before the end of the session to store the

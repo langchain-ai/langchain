@@ -1,4 +1,4 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import json
 import os
@@ -116,9 +116,9 @@ class TestClass(Serializable):
 
 def test_aliases_hidden() -> None:
     test_class = TestClass(
-        my_favorite_secret="hello",  # noqa: S106 # type: ignore[call-arg]
+        my_favorite_secret="hello",  # noqa: S106
         my_other_secret="world",  # noqa: S106
-    )  # type: ignore[call-arg]
+    )
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
@@ -143,7 +143,7 @@ def test_aliases_hidden() -> None:
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(
+    test_class = TestClass(  # type: ignore[call-arg]
         my_favorite_secret_alias="hello",  # noqa: S106
         my_other_secret="parrot party",  # noqa: S106
     )

@@ -62,7 +62,9 @@ class BaseStoreSyncTests(BaseStandardTests, Generic[V]):
         assert kv_store.mget(["foo", "bar"]) == [foo, bar]
 
     def test_store_still_empty(self, kv_store: BaseStore[str, V]) -> None:
-        """This test should follow a test that sets values.
+        """Test that the store is still empty.
+
+        This test should follow a test that sets values.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
@@ -192,7 +194,9 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         assert await kv_store.amget(["foo", "bar"]) == [foo, bar]
 
     async def test_store_still_empty(self, kv_store: BaseStore[str, V]) -> None:
-        """This test should follow a test that sets values.
+        """Test that the store is still empty.
+
+        This test should follow a test that sets values.
 
         This just verifies that the fixture is set up properly to be empty
         after each test.
@@ -235,7 +239,7 @@ class BaseStoreAsyncTests(BaseStandardTests, Generic[V]):
         await kv_store.amset(key_value_pairs)
         await kv_store.amset(key_value_pairs)
         assert await kv_store.amget(["foo", "bar"]) == [foo, bar]
-        assert sorted(kv_store.yield_keys()) == ["bar", "foo"]
+        assert sorted([key async for key in kv_store.ayield_keys()]) == ["bar", "foo"]
 
     async def test_get_can_get_same_value(
         self, kv_store: BaseStore[str, V], three_values: tuple[V, V, V]

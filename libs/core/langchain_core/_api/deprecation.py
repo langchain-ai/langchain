@@ -129,11 +129,14 @@ def deprecated(
         package: str, optional
             The package of the deprecated object.
 
+    Returns:
+        A decorator to mark a function or class as deprecated.
+
     Examples:
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
 
@@ -225,7 +228,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -358,7 +361,8 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative = f":meth:`~{_alternative}`"
         elif _alternative:
@@ -366,8 +370,8 @@ def deprecated(
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative_import = f":meth:`~{_alternative_import}`"
         elif _alternative_import:
@@ -471,7 +475,7 @@ def warn_deprecated(
     if not message:
         message = ""
         package_ = (
-            package or name.split(".")[0].replace("_", "-")
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -490,7 +494,7 @@ def warn_deprecated(
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
             if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
@@ -543,6 +547,15 @@ def rename_parameter(
     The actual implementation of *func* should use *new*, not *old*.  If *old*
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
+
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
 
     Example:
 

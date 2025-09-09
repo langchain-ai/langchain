@@ -49,14 +49,14 @@ def test_loading_from_json() -> None:
 def test_loading_jinja_from_json() -> None:
     """Test that loading jinja2 format prompts from JSON raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.json"
-    with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
+    with pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"):
         load_prompt(prompt_path)
 
 
 def test_loading_jinja_from_yaml() -> None:
     """Test that loading jinja2 format prompts from YAML raises ValueError."""
     prompt_path = EXAMPLE_DIR / "jinja_injection_prompt.yaml"
-    with pytest.raises(ValueError, match=".*can lead to arbitrary code execution.*"):
+    with pytest.raises(ValueError, match=r".*can lead to arbitrary code execution.*"):
         load_prompt(prompt_path)
 
 

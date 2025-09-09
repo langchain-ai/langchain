@@ -33,8 +33,9 @@ from langchain.chains.llm_math.prompt import PROMPT
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
-    Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+    .. note::
+        This class is deprecated. See below for a replacement implementation using
+        LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features;
         - Support for both token-by-token and step-by-step streaming;
@@ -69,7 +70,7 @@ class LLMMathChain(Chain):
                 Expression should be a single line mathematical expression
                 that solves the problem.
 
-                Examples:
+    Examples:
                     "37593 * 67" for "37593 times 67"
                     "37593**(1/5)" for "37593^(1/5)"
                 \"\"\"
