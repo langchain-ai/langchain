@@ -1,9 +1,12 @@
 import json
+import logging
 from collections.abc import Sequence
 from typing import Any
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
+
+_logger = logging.getLogger(__name__)
 
 
 def _convert_agent_action_to_messages(
@@ -49,7 +52,10 @@ def _create_function_message(
     if not isinstance(observation, str):
         try:
             content = json.dumps(observation, ensure_ascii=False)
+        except TypeError:
+            content = str(observation)
         except Exception:
+            _logger.exception("Unexpected error converting observation to string.")
             content = str(observation)
     else:
         content = observation

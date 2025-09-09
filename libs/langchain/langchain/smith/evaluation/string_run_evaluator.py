@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from abc import abstractmethod
 from typing import Any, Optional, Union, cast
@@ -21,6 +22,8 @@ from typing_extensions import override
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import RUN_KEY
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
@@ -373,6 +376,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             result = self({"run": run, "example": example}, include_run_info=True)
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
@@ -394,6 +398,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
