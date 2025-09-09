@@ -547,32 +547,28 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         Returns:
             Iterator[T]: The iterator for the mapped function.
         """
-        # Create contexts for each item in the iterables
-        contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
+        # Convert iterables to lists to get their length and allow indexing
+        iterables_as_lists = [list(iterable) for iterable in iterables]
         
-        # Create indexed versions of all iterables to track position
-        # This ensures each thread gets the correct context based on position
-        indexed_iterables = [list(enumerate(iterable)) for iterable in iterables]
+        # Create contexts for each item in the first iterable
+        contexts = [copy_context() for _ in range(len(iterables_as_lists[0]))]
         
-        def _wrapped_fn(*indexed_args: Any) -> T:
-            # All arguments are tuples of (index, value)
-            # Extract the index from the first argument
-            index = indexed_args[0][0]
-            # Extract the actual values from all arguments
-            actual_args = [arg[1] for arg in indexed_args]
+        # Create a wrapper that includes the index with the arguments
+        def _wrapped_fn_with_index(index: int, *args: Any) -> T:
             # Use the index to get the corresponding context
-            return contexts[index].run(fn, *actual_args)
-
+            return contexts[index].run(fn, *args)
+        
+        # Create indexed versions: first element is the index, rest are the actual values
+        indices = list(range(len(iterables_as_lists[0])))
+        indexed_iterables = [indices] + iterables_as_lists
+        
         # Map the wrapped function over the indexed iterables
-        results = super().map(
-            _wrapped_fn,
+        return super().map(
+            _wrapped_fn_with_index,
             *indexed_iterables,
             timeout=timeout,
             chunksize=chunksize,
         )
-        
-        # Return results in the original order
-        return results
 
 
 @contextmanager
@@ -629,5 +625,6 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
 
