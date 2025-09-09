@@ -256,7 +256,6 @@ def test_batch_no_race_conditions() -> None:
 
 def test_batch_with_varying_processing_times() -> None:
     """Test that batch preserves order even with varying processing times."""
-    import random
 
     class VariableDelayRunnable(Runnable[str, str]):
         """A runnable with variable processing delays."""
@@ -264,6 +263,7 @@ def test_batch_with_varying_processing_times() -> None:
         def invoke(
             self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
         ) -> str:
+            del config, kwargs  # Unused but required by interface
             # Random delay to simulate varying processing times
             delay = random.uniform(0.001, 0.01)
             time.sleep(delay)
@@ -308,6 +308,7 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
 
