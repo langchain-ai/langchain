@@ -547,17 +547,28 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         Returns:
             Iterator[T]: The iterator for the mapped function.
         """
+        # Create contexts for each item in the iterables
         contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
+        
+        # Create an enumerated version of the first iterable to track indices
+        indexed_iterables = [enumerate(iterables[0])] + list(iterables[1:])
+        
+        def _wrapped_fn(index_and_first: tuple[int, Any], *rest_args: Any) -> T:
+            # Extract the index and the actual first argument
+            index, first_arg = index_and_first
+            # Use the index to get the corresponding context
+            return contexts[index].run(fn, first_arg, *rest_args)
 
-        def _wrapped_fn(*args: Any) -> T:
-            return contexts.pop().run(fn, *args)
-
-        return super().map(
+        # Map the wrapped function over the indexed iterables
+        results = super().map(
             _wrapped_fn,
-            *iterables,
+            *indexed_iterables,
             timeout=timeout,
             chunksize=chunksize,
         )
+        
+        # Return results in the original order
+        return results
 
 
 @contextmanager
@@ -614,3 +625,4 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
