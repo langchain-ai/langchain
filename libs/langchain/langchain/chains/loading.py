@@ -244,7 +244,7 @@ def _load_reduce_documents_chain(config: dict, **kwargs: Any) -> ReduceDocuments
 
 
 def _load_llm_bash_chain(config: dict, **kwargs: Any) -> Any:
-    """Load LLM Bash chain from config dict"""
+    """Load LLM Bash chain from config dict."""
     msg = (
         "LLMBash Chain is not available through LangChain anymore. "
         "The relevant code can be found in langchain_experimental, "

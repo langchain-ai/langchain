@@ -8,8 +8,7 @@ from langchain.evaluation.schema import StringEvaluator
 
 
 class JsonEditDistanceEvaluator(StringEvaluator):
-    """
-    An evaluator that calculates the edit distance between JSON strings.
+    """An evaluator that calculates the edit distance between JSON strings.
 
     This evaluator computes a normalized Damerau-Levenshtein distance between two JSON strings
     after parsing them and converting them to a canonical format (i.e., whitespace and key order are normalized).
@@ -98,7 +97,6 @@ class JsonEditDistanceEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:

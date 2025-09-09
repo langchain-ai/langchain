@@ -105,7 +105,6 @@ class ChatAgent(Agent):
         Returns:
             A prompt template.
         """
-
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
