@@ -3586,13 +3586,6 @@ def _construct_responses_api_payload(
 
     # Structured output
     if schema := payload.pop("response_format", None):
-        if payload.get("text"):
-            text = payload["text"]
-            raise ValueError(
-                "Can specify at most one of 'response_format' or 'text', received both:"
-                f"\n{schema=}\n{text=}"
-            )
-
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
         strict = payload.pop("strict", None)
@@ -3605,7 +3598,10 @@ def _construct_responses_api_payload(
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                payload["text"] = {"format": {"type": "json_object"}}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = {"type": "json_object"}
+                else:
+                    payload["text"] = {"format": {"type": "json_object"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -3615,17 +3611,20 @@ def _construct_responses_api_payload(
                 and (isinstance(response_format, dict))
                 and (response_format["type"] == "json_schema")
             ):
-                payload["text"] = {
-                    "format": {"type": "json_schema", **response_format["json_schema"]}
-                }
+                format_value = {"type": "json_schema", **response_format["json_schema"]}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = format_value
+                else:
+                    payload["text"] = {"format": format_value}
             else:
                 pass
 
     verbosity = payload.pop("verbosity", None)
     if verbosity is not None:
-        if "text" not in payload:
-            payload["text"] = {"format": {"type": "text"}}
-        payload["text"]["verbosity"] = verbosity
+        if "text" in payload and isinstance(payload["text"], dict):
+            payload["text"]["verbosity"] = verbosity
+        else:
+            payload["text"] = {"verbosity": verbosity}
 
     return payload
 
