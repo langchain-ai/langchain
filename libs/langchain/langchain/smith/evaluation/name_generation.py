@@ -1,3 +1,5 @@
+"""Evaluation name generation."""
+
 import random
 
 adjectives = [

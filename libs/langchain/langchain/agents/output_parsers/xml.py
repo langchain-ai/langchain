@@ -1,3 +1,5 @@
+"""XML agent output parser."""
+
 import re
 from typing import Literal, Optional, Union
 

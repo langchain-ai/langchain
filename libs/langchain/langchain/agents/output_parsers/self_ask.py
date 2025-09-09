@@ -1,3 +1,5 @@
+"""Self-ask agent output parser."""
+
 from collections.abc import Sequence
 from typing import Union
 

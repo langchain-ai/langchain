@@ -1,3 +1,5 @@
+"""Moved to langchain_core.runnables."""
+
 from langchain_core.runnables.config import (
     EmptyDict,
     RunnableConfig,

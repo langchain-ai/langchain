@@ -1,3 +1,5 @@
+"""News API documentation."""
+
 NEWS_DOCS = """API documentation:
 Endpoint: https://newsapi.org
 Top headlines /v2/top-headlines

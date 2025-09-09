@@ -1,3 +1,5 @@
+"""JSON chat agent."""
+
 from collections.abc import Sequence
 from typing import Union
 

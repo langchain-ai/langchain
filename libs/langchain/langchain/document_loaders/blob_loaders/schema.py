@@ -1,3 +1,5 @@
+"""Moved to langchain_community.document_loaders."""
+
 from typing import Any
 
 from langchain_core.document_loaders import Blob, BlobLoader

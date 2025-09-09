@@ -1,3 +1,5 @@
+"""Structured output chains."""
+
 import json
 from collections.abc import Sequence
 from typing import Any, Callable, Literal, Optional, Union

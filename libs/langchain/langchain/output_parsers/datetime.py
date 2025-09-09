@@ -1,3 +1,5 @@
+"""Datetime output parser."""
+
 from datetime import datetime, timedelta, timezone
 
 from langchain_core.exceptions import OutputParserException

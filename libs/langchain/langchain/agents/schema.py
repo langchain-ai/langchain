@@ -1,3 +1,5 @@
+"""Agents schemas."""
+
 from typing import Any
 
 from langchain_core.agents import AgentAction

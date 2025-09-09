@@ -1,3 +1,5 @@
+"""Tool calling agent."""
+
 from collections.abc import Sequence
 from typing import Callable
 

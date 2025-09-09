@@ -1,3 +1,5 @@
+"""Chat agent."""
+
 from collections.abc import Sequence
 from typing import Any, Optional
 

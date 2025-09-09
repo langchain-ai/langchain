@@ -1,3 +1,5 @@
+"""TMDB API docs."""
+
 TMDB_DOCS = """API documentation:
 Endpoint: https://api.themoviedb.org/3
 GET /search/movie

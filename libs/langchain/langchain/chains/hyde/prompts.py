@@ -1,3 +1,5 @@
+"""Hyde chain prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 web_search_template = """Please write a passage to answer the question

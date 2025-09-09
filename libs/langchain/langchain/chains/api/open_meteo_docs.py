@@ -1,3 +1,5 @@
+"""Open-meteo API documentation."""
+
 OPEN_METEO_DOCS = """BASE URL: https://api.open-meteo.com/
 
 API Documentation

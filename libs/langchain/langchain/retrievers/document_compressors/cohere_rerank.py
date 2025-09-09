@@ -1,3 +1,5 @@
+"""Cohere Rerank Document Compressor."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence

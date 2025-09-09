@@ -1,3 +1,5 @@
+"""Merger Retriever."""
+
 import asyncio
 
 from langchain_core.callbacks import (

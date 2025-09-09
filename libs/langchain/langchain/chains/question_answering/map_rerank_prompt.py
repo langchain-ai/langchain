@@ -1,3 +1,5 @@
+"""Question Answering map rerank prompt."""
+
 from langchain_core.prompts import PromptTemplate
 
 from langchain.output_parsers.regex import RegexParser

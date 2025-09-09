@@ -1,3 +1,5 @@
+"""QA generation prompts."""
+
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
     HumanMessagePromptTemplate,

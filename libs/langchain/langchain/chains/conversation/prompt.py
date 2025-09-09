@@ -1,3 +1,5 @@
+"""Conversation prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 from langchain.memory.prompt import (

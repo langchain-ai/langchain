@@ -1,3 +1,5 @@
+"""OpenAI functions conversational retrieval agent."""
+
 from typing import Any, Optional
 
 from langchain_core.language_models import BaseLanguageModel

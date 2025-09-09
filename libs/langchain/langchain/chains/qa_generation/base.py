@@ -1,3 +1,5 @@
+"""QA generation chain."""
+
 from __future__ import annotations
 
 import json

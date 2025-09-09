@@ -1,3 +1,5 @@
+"""Constitutional AI prompts."""
+
 from langchain_core.prompts.few_shot import FewShotPromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 

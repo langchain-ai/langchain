@@ -1,3 +1,5 @@
+"""OpenAI tools agent."""
+
 from collections.abc import Sequence
 from typing import Optional
 

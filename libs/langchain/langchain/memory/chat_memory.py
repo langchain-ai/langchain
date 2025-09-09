@@ -1,3 +1,5 @@
+"""Base chat memory."""
+
 import warnings
 from abc import ABC
 from typing import Any, Optional

@@ -1,3 +1,5 @@
+"""Conversational agent output parser."""
+
 import re
 from typing import Union
 

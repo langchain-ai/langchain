@@ -1,3 +1,5 @@
+"""Base cross encoder."""
+
 from abc import ABC, abstractmethod
 
 

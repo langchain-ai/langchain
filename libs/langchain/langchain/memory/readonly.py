@@ -1,3 +1,5 @@
+"""Read-only memory."""
+
 from typing import Any
 
 from langchain_core.memory import BaseMemory

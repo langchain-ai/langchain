@@ -1,3 +1,5 @@
+"""Moved to langchain_core.prompts."""
+
 from langchain_core.prompts.few_shot import (
     FewShotChatMessagePromptTemplate,
     FewShotPromptTemplate,

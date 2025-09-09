@@ -1,3 +1,5 @@
+"""JSON Schema Evaluator."""
+
 from typing import Any, Union
 
 from langchain_core.utils.json import parse_json_markdown

@@ -1,3 +1,5 @@
+"""Moved to langchain_core."""
+
 from langchain_core.callbacks.manager import (
     AsyncCallbackManager,
     AsyncCallbackManagerForChainGroup,

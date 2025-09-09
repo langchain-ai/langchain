@@ -1,3 +1,5 @@
+"""Format scratchpad as XML."""
+
 from typing import Literal, Optional
 
 from langchain_core.agents import AgentAction

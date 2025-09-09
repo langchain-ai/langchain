@@ -1,3 +1,5 @@
+"""Conversation token buffer memory."""
+
 from typing import Any
 
 from langchain_core._api import deprecated

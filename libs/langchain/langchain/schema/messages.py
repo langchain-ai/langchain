@@ -1,3 +1,5 @@
+"""Moved to langchain_core.messages."""
+
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,

@@ -1,3 +1,5 @@
+"""Logging callback handler."""
+
 __all__ = ["LoggingCallbackHandler"]
 
 import logging

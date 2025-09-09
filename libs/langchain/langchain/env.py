@@ -1,3 +1,5 @@
+"""LangChain runtime environment."""
+
 import platform
 from functools import lru_cache
 

@@ -1,3 +1,5 @@
+"""Conversation summary buffer memory."""
+
 from typing import Any, Union
 
 from langchain_core._api import deprecated

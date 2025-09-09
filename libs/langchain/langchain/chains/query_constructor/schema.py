@@ -1,3 +1,5 @@
+"""Query constructor schema."""
+
 from pydantic import BaseModel, ConfigDict
 
 

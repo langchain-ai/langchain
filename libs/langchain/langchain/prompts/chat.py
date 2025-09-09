@@ -1,3 +1,5 @@
+"""Moved to langchain_core."""
+
 from langchain_core.prompt_values import ChatPromptValue, ChatPromptValueConcrete
 from langchain_core.prompts.chat import (
     AIMessagePromptTemplate,

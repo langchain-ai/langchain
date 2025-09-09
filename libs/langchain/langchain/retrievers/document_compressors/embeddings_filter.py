@@ -1,3 +1,5 @@
+"""Embedding filter document compressor."""
+
 from collections.abc import Sequence
 from typing import Callable, Optional
 

@@ -1,3 +1,5 @@
+"""OpenAI functions runnables."""
+
 from collections.abc import Mapping
 from operator import itemgetter
 from typing import Any, Callable, Optional, Union

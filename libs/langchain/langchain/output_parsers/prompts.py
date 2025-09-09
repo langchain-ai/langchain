@@ -1,3 +1,5 @@
+"""Output parsers prompts."""
+
 from langchain_core.prompts.prompt import PromptTemplate
 
 NAIVE_FIX = """Instructions:

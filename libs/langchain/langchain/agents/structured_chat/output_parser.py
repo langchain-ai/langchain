@@ -1,3 +1,5 @@
+"""Structured chat output parser."""
+
 from __future__ import annotations
 
 import json

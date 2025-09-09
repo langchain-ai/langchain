@@ -1,3 +1,5 @@
+"""JSON chat agent prompts."""
+
 TEMPLATE_TOOL_RESPONSE = """TOOL RESPONSE:
 ---------------------
 {observation}

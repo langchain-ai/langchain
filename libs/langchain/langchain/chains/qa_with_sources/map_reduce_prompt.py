@@ -1,3 +1,5 @@
+"""QA with sources map reduce prompts."""
+
 from langchain_core.prompts import PromptTemplate
 
 question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question.

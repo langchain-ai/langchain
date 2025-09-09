@@ -1,3 +1,5 @@
+"""Output parsers format instructions."""
+
 STRUCTURED_FORMAT_INSTRUCTIONS = """The output should be a markdown code snippet formatted in the following schema, including the leading and trailing "```json" and "```":
 
 ```json

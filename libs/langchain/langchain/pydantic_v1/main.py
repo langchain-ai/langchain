@@ -1,3 +1,5 @@
+"""DEPRECATED - Use pydantic.v1 or pydantic directly instead."""
+
 from langchain_core._api import warn_deprecated
 from pydantic.v1.main import *  # noqa: F403
 

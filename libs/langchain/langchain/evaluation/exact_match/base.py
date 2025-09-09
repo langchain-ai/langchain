@@ -1,3 +1,5 @@
+"""Exact Match String Evaluator."""
+
 import string
 from typing import Any
 

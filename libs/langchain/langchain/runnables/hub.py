@@ -1,3 +1,5 @@
+"""Langchain Hub runnable."""
+
 from typing import Any, Optional
 
 from langchain_core.runnables.base import RunnableBindingBase

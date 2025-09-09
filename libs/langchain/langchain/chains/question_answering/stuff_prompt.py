@@ -1,3 +1,5 @@
+"""Question Answering prompt."""
+
 from langchain_core.prompts import PromptTemplate
 from langchain_core.prompts.chat import (
     ChatPromptTemplate,
