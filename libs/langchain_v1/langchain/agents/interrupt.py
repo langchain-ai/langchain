@@ -1,6 +1,6 @@
 """Interrupt types to use with agent inbox like setups."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from typing_extensions import TypedDict
 
@@ -74,19 +74,24 @@ class HumanInterrupt(TypedDict):
 
 
 class HumanResponse(TypedDict):
-    """The response provided by a human to an interrupt, which is returned when graph execution resumes.
+    """Human response.
+
+    The response provided by a human to an interrupt,
+    which is returned when graph execution resumes.
 
     Attributes:
         type: The type of response:
+
             - "accept": Approves the current state without changes
             - "ignore": Skips/ignores the current step
             - "response": Provides text feedback or instructions
             - "edit": Modifies the current state/content
         args: The response payload:
+
             - None: For ignore/accept actions
             - str: For text responses
             - ActionRequest: For edit actions with updated content
     """
 
     type: Literal["accept", "ignore", "response", "edit"]
-    args: Union[None, str, ActionRequest]
+    args: None | str | ActionRequest
