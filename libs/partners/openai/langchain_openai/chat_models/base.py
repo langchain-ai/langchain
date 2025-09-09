@@ -3586,31 +3586,22 @@ def _construct_responses_api_payload(
 
     # Structured output
     if schema := payload.pop("response_format", None):
-        existing_text = payload.pop("text", None)
-
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
         strict = payload.pop("strict", None)
         if not payload.get("stream") and _is_pydantic_class(schema):
-            verbosity = payload.pop("verbosity", None)
             payload["text_format"] = schema
-
-            text_content = (
-                existing_text.copy() if isinstance(existing_text, dict) else {}
-            )
-            if verbosity is not None:
-                text_content["verbosity"] = verbosity
-            if text_content and "format" not in text_content:
-                payload["text"] = text_content
         else:
-            # For responses.create, use response_format in text.format
             if _is_pydantic_class(schema):
                 schema_dict = schema.model_json_schema()
                 strict = True
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                structured_text = {"format": {"type": "json_object"}}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = {"type": "json_object"}
+                else:
+                    payload["text"] = {"format": {"type": "json_object"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -3620,36 +3611,25 @@ def _construct_responses_api_payload(
                 and (isinstance(response_format, dict))
                 and (response_format["type"] == "json_schema")
             ):
-                structured_text = {
-                    "format": {"type": "json_schema", **response_format["json_schema"]}
-                }
-            else:
-                structured_text = {}
-
-            # Merge existing text parameters with structured output text
-            if existing_text or structured_text:
-                merged_text = {}
-                if existing_text and isinstance(existing_text, dict):
-                    merged_text.update(existing_text)
-                if structured_text:
-                    merged_text.update(structured_text)
-                payload["text"] = merged_text
+                format_value = {"type": "json_schema", **response_format["json_schema"]}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = format_value
+                else:
+                    payload["text"] = {
+                        "format": {
+                            "type": "json_schema",
+                            **response_format["json_schema"],
+                        }
+                    }
             else:
                 pass
 
-            # Handle verbosity for responses.create path
-            verbosity = payload.pop("verbosity", None)
-            if verbosity is not None:
-                if "text" not in payload:
-                    payload["text"] = {"format": {"type": "text"}}
-                payload["text"]["verbosity"] = verbosity
-    else:
-        # No structured output, handle verbosity normally
-        verbosity = payload.pop("verbosity", None)
-        if verbosity is not None:
-            if "text" not in payload:
-                payload["text"] = {"format": {"type": "text"}}
+    verbosity = payload.pop("verbosity", None)
+    if verbosity is not None:
+        if "text" in payload and isinstance(payload["text"], dict):
             payload["text"]["verbosity"] = verbosity
+        else:
+            payload["text"] = {"verbosity": verbosity}
 
     return payload
 
