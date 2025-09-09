@@ -31,6 +31,7 @@ class OrderTrackingRunnable(Runnable[str, str]):
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> str:
         """Process input and track order."""
+        del config, kwargs  # Unused but required by interface
         # Track when this item started processing
         self.processing_order.append(input)
 
@@ -307,4 +308,5 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
