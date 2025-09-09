@@ -350,6 +350,10 @@ class Chroma(VectorStore):
         _database = database or chromadb.DEFAULT_DATABASE
         _settings = client_settings or Settings()
 
+        # Store async client if provided
+        self._async_client = async_client
+        self._async_initialized = False
+
         client_args = {
             "persist_directory": persist_directory,
             "host": host,
@@ -368,7 +372,9 @@ class Chroma(VectorStore):
 
         if client is not None:
             self._client = client
-
+        elif async_client is not None:
+            # If only async_client is provided, we don't create a sync client
+            self._client = None
         # PersistentClient
         elif persist_directory is not None:
             self._client = chromadb.PersistentClient(
@@ -413,10 +419,18 @@ class Chroma(VectorStore):
         self._collection_name = collection_name
         self._collection_metadata = collection_metadata
         self._collection_configuration = collection_configuration
+        
+        # Only initialize collection synchronously if we have a sync client and not using async
         if create_collection_if_not_exists:
-            self.__ensure_collection()
+            if self._async_client is None and self._client is not None:
+                self.__ensure_collection()
+            elif self._client is not None:
+                # If both sync and async clients exist, initialize sync collection
+                self.__ensure_collection()
         else:
-            self._chroma_collection = self._client.get_collection(name=collection_name)
+            if self._client is not None:
+                self._chroma_collection = self._client.get_collection(name=collection_name)
+        
         self.override_relevance_score_fn = relevance_score_fn
 
     def __ensure_collection(self) -> None:
@@ -1418,5 +1432,6 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
