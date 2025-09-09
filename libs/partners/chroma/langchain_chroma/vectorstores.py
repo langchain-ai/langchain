@@ -448,6 +448,45 @@ class Chroma(VectorStore):
             configuration=self._collection_configuration,
         )
 
+    async def _aensure_collection(self) -> None:
+        """Ensure that the async collection exists or create it."""
+        if self._async_client is None:
+            msg = (
+                "Cannot ensure collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        # Get or create the collection asynchronously
+        self._async_chroma_collection = await self._async_client.get_or_create_collection(
+            name=self._collection_name,
+            embedding_function=None,
+            metadata=self._collection_metadata,
+            configuration=self._collection_configuration,
+        )
+        self._async_initialized = True
+
+    async def _aget_collection(self) -> Any:
+        """Get the async collection, initializing if necessary."""
+        if self._async_client is None:
+            msg = (
+                "Cannot get async collection without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        if not self._async_initialized:
+            await self._aensure_collection()
+        
+        if not hasattr(self, '_async_chroma_collection') or self._async_chroma_collection is None:
+            msg = (
+                "Async Chroma collection not initialized. "
+                "Call _aensure_collection() first."
+            )
+            raise ValueError(msg)
+        
+        return self._async_chroma_collection
+
     @property
     def _collection(self) -> chromadb.Collection:
         """Returns the underlying Chroma collection or throws an exception."""
@@ -1438,6 +1477,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
