@@ -225,7 +225,7 @@ def test_batch_no_race_conditions() -> None:
 
         def __init__(self) -> None:
             self.counter = 0
-            self.results = []
+            self.results: list[tuple[int, int]] = []
 
         def invoke(
             self, input: int, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -308,6 +308,7 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
 
