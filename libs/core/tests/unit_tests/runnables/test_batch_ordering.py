@@ -125,7 +125,7 @@ def test_batch_high_concurrency() -> None:
     inputs = [f"input_{i:03d}" for i in range(100)]
 
     # Process with high concurrency
-    config = {"max_concurrency": 20}
+    config: RunnableConfig = {"max_concurrency": 20}
     outputs = runnable.batch(inputs, config=config)
 
     # Verify order is preserved despite high concurrency
@@ -308,5 +308,6 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
 
