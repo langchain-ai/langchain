@@ -20,7 +20,9 @@ class JsonEditDistanceEvaluator(StringEvaluator):
 
     Examples:
         >>> evaluator = JsonEditDistanceEvaluator()
-        >>> result = evaluator.evaluate_strings(prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 3}')
+        >>> result = evaluator.evaluate_strings(
+        ...     prediction='{"a": 1, "b": 2}', reference='{"a": 1, "b": 3}'
+        ... )
         >>> assert result["score"] is not None
 
     Raises:

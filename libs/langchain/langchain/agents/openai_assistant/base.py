@@ -149,11 +149,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
 
             interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview"
+                model="gpt-4-1106-preview",
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = interpreter_assistant.invoke(
+                {"content": "What's 10 - 4 raised to the 2.7"}
+            )
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -166,10 +169,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
@@ -188,11 +192,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
+
 
             def execute_agent(agent, tools, input):
                 tool_map = {tool.name: tool for tool in tools}
@@ -201,21 +207,30 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                        tool_outputs.append(
+                            {"output": tool_output, "tool_call_id": action.tool_call_id}
+                        )
                     response = agent.invoke(
                         {
                             "tool_outputs": tool_outputs,
                             "run_id": action.run_id,
-                            "thread_id": action.thread_id
+                            "thread_id": action.thread_id,
                         }
                     )
 
                 return response
 
-            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
-            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
 
-    """  # noqa: E501
+            response = execute_agent(
+                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+            )
+            next_response = execute_agent(
+                agent,
+                tools,
+                {"content": "now add 17.241", "thread_id": response.thread_id},
+            )
+
+    """
 
     client: Any = Field(default_factory=_get_openai_client)
     """OpenAI or AzureOpenAI client."""

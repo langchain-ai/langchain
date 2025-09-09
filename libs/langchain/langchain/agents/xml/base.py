@@ -163,6 +163,7 @@ def create_xml_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -176,7 +177,8 @@ def create_xml_agent(
 
         The prompt must have input keys:
             * `tools`: contains descriptions for each tool.
-            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as
+              an XML string.
 
         Here's an example:
 

@@ -1241,7 +1241,8 @@ async def test_openai_agent_tools_agent() -> None:
             {
                 "messages": [
                     FunctionMessage(
-                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        content="check_time is not a valid tool, "
+                        "try one of [find_pet].",
                         name="check_time",
                     ),
                 ],
