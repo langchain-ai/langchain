@@ -1,4 +1,4 @@
-"""Test PandasDataframeParser"""
+"""Test PandasDataframeParser."""
 
 from typing import Any
 

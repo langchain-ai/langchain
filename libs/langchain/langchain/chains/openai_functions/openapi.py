@@ -82,8 +82,10 @@ def _openapi_params_to_json_schema(params: list[Parameter], spec: OpenAPISpec) -
 def openapi_spec_to_openai_fn(
     spec: OpenAPISpec,
 ) -> tuple[list[dict[str, Any]], Callable]:
-    """Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
-        functions.
+    """OpenAPI spec to OpenAI function JSON Schema.
+
+    Convert a valid OpenAPI spec to the JSON Schema format expected for OpenAI
+    functions.
 
     Args:
         spec: OpenAPI spec to convert.
@@ -345,8 +347,13 @@ def get_openapi_chain(
             `ChatOpenAI(model="gpt-3.5-turbo-0613")`.
         prompt: Main prompt template to use.
         request_chain: Chain for taking the functions output and executing the request.
+        params: Request parameters.
+        headers: Request headers.
+        verbose: Whether to run the chain in verbose mode.
+        llm_chain_kwargs: LLM chain additional keyword arguments.
+        **kwargs: Additional keyword arguments to pass to the chain.
 
-    """  # noqa: E501
+    """  # noqa: E501,D301
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:

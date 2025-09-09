@@ -23,7 +23,7 @@ def create_react_agent(
     *,
     stop_sequence: Union[bool, list[str]] = True,
 ) -> Runnable:
-    """Create an agent that uses ReAct prompting.
+    r"""Create an agent that uses ReAct prompting.
 
     Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
     (https://arxiv.org/abs/2210.03629)
@@ -78,7 +78,7 @@ def create_react_agent(
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
                 }
             )
 
