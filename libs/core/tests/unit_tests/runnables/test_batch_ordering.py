@@ -55,8 +55,8 @@ class ContextCapturingRunnable(Runnable[str, str]):
 
     def __init__(self) -> None:
         """Initialize the runnable."""
-        self.contexts_seen = []
-        self.input_context_map = {}
+        self.contexts_seen: list[dict[str, Any]] = []
+        self.input_context_map: dict[str, dict[str, Any]] = {}
 
     def invoke(
         self, input: str, config: Optional[RunnableConfig] = None, **kwargs: Any
@@ -308,4 +308,5 @@ if __name__ == "__main__":
     test_batch_with_varying_processing_times()
     test_batch_empty_input()
     test_batch_single_input()
+
 
