@@ -1028,6 +1028,54 @@ class Chroma(VectorStore):
 
         return _results_to_docs_and_scores(results)
 
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
+        where_document: Optional[dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Run similarity search with Chroma with distance asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by document contents.
+                    E.g. {"$contains": "hello"}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and
+            distance in float for each. Lower score represents more similarity.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot perform similarity search asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        if self._embedding_function is None:
+            results = await self.__aquery_collection(
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                **kwargs,
+            )
+        else:
+            query_embedding = await self._embedding_function.aembed_query(query)
+            results = await self.__aquery_collection(
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                **kwargs,
+            )
+        return _results_to_docs_and_scores(results)
+
     def similarity_search_with_vectors(
         self,
         query: str,
@@ -1666,6 +1714,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
