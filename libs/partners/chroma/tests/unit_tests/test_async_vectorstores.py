@@ -367,7 +367,7 @@ def test_both_sync_and_async_clients() -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_with_metadata_filtering():
+async def test_async_with_metadata_filtering() -> None:
     """Test async operations with metadata filtering."""
     async_client = MockAsyncClient()
 
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
