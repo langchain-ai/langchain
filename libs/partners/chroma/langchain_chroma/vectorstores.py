@@ -1375,7 +1375,7 @@ class Chroma(VectorStore):
         if self._async_initialized:
             collection = await self._aget_collection()
             await self._async_client.delete_collection(collection.name)
-            self._async_chroma_collection = None
+            self._async_chroma_collection = None  # type: ignore[assignment]
             self._async_initialized = False
 
     def reset_collection(self) -> None:
@@ -1758,4 +1758,5 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
 
