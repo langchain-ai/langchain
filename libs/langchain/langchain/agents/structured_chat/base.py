@@ -207,6 +207,7 @@ def create_structured_chat_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -222,7 +223,8 @@ def create_structured_chat_agent(
         The prompt must have input keys:
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
-            * `agent_scratchpad`: contains previous agent actions and tool outputs as a string.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as a
+              string.
 
         Here's an example:
 

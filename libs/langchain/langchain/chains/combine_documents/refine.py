@@ -53,16 +53,13 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                 template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             initial_llm_chain = LLMChain(llm=llm, prompt=prompt)
             initial_response_name = "prev_response"
             # The prompt here should take as an input variable the
@@ -183,8 +180,7 @@ class RefineDocumentsChain(BaseCombineDocumentsChain):
         callbacks: Callbacks = None,
         **kwargs: Any,
     ) -> tuple[str, dict]:
-        """Async combine by mapping a first chain over all, then stuffing
-         into a final chain.
+        """Combine by mapping a first chain over all, then stuffing into a final chain.
 
         Args:
             docs: List of documents to combine

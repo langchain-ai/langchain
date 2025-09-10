@@ -9,8 +9,11 @@ UV_FROZEN = true
 # Define a variable for the test file path.
 TEST_FILE ?= tests/unit_tests/
 integration_test: TEST_FILE = tests/integration_tests/
-# note: leaving out integration_tests (with s) command to skip release testing for now
 # TODO(erick) configure ollama server to run in CI, in separate repo
+
+# Define variables for test model configuration
+OLLAMA_TEST_MODEL ?= llama3.1
+OLLAMA_REASONING_TEST_MODEL ?= deepseek-r1:1.5b
 
 
 # unit tests are run with the --disable-socket flag to prevent network calls
@@ -23,9 +26,9 @@ test_watch:
 
 # integration tests are run without the --disable-socket flag to allow network calls
 integration_test:
-	uv run --group test --group test_integration pytest $(TEST_FILE)
-# note: leaving out integration_tests (with s) command to skip release testing for now
-# TODO(erick) configure ollama server to run in CI, in separate repo
+	OLLAMA_TEST_MODEL=$(OLLAMA_TEST_MODEL) OLLAMA_REASONING_TEST_MODEL=$(OLLAMA_REASONING_TEST_MODEL) uv run --group test --group test_integration pytest $(TEST_FILE)
+
+# CI integration tests - disabled until ollama service is configured in CI
 
 ######################
 # LINTING AND FORMATTING
@@ -49,12 +52,6 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
-spell_check:
-	uv run --all-groups codespell --toml pyproject.toml
-
-spell_fix:
-	uv run --all-groups codespell --toml pyproject.toml -w
-
 check_imports: $(shell find langchain_ollama -name '*.py')
 	uv run --all-groups python ./scripts/check_imports.py $^
 
@@ -70,3 +67,6 @@ help:
 	@echo 'test                         - run unit tests'
 	@echo 'tests                        - run unit tests'
 	@echo 'test TEST_FILE=<test_file>   - run all tests in file'
+	@echo 'integration_test             - run integration tests'
+	@echo 'integration_test OLLAMA_TEST_MODEL=<model> - run integration tests with specific model'
+	@echo '  Example: make integration_test OLLAMA_TEST_MODEL=llama3.1'

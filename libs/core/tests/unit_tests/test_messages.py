@@ -1,4 +1,3 @@
-import unittest
 import uuid
 from typing import Optional, Union
 
@@ -203,7 +202,7 @@ def test_chat_message_chunks() -> None:
     )
 
     with pytest.raises(
-        ValueError, match="Cannot concatenate ChatMessageChunks with different roles."
+        ValueError, match="Cannot concatenate ChatMessageChunks with different roles"
     ):
         ChatMessageChunk(role="User", content="I am") + ChatMessageChunk(
             role="Assistant", content=" indeed."
@@ -312,7 +311,7 @@ def test_function_message_chunks() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Cannot concatenate FunctionMessageChunks with different names.",
+        match="Cannot concatenate FunctionMessageChunks with different names",
     ):
         FunctionMessageChunk(name="hello", content="I am") + FunctionMessageChunk(
             name="bye", content=" indeed."
@@ -328,61 +327,52 @@ def test_ai_message_chunks() -> None:
 
     with pytest.raises(
         ValueError,
-        match="Cannot concatenate AIMessageChunks with different example values.",
+        match="Cannot concatenate AIMessageChunks with different example values",
     ):
         AIMessageChunk(example=True, content="I am") + AIMessageChunk(
             example=False, content=" indeed."
         )
 
 
-class TestGetBufferString(unittest.TestCase):
-    def setUp(self) -> None:
-        self.human_msg = HumanMessage(content="human")
-        self.ai_msg = AIMessage(content="ai")
-        self.sys_msg = SystemMessage(content="system")
-        self.func_msg = FunctionMessage(name="func", content="function")
-        self.tool_msg = ToolMessage(tool_call_id="tool_id", content="tool")
-        self.chat_msg = ChatMessage(role="Chat", content="chat")
-        self.tool_calls_msg = AIMessage(content="tool")
+class TestGetBufferString:
+    _HUMAN_MSG = HumanMessage(content="human")
+    _AI_MSG = AIMessage(content="ai")
 
     def test_empty_input(self) -> None:
-        assert get_buffer_string([]) == ""
+        assert not get_buffer_string([])
 
     def test_valid_single_message(self) -> None:
-        expected_output = f"Human: {self.human_msg.content}"
-        assert get_buffer_string([self.human_msg]) == expected_output
+        expected_output = "Human: human"
+        assert get_buffer_string([self._HUMAN_MSG]) == expected_output
 
     def test_custom_human_prefix(self) -> None:
-        prefix = "H"
-        expected_output = f"{prefix}: {self.human_msg.content}"
-        assert get_buffer_string([self.human_msg], human_prefix="H") == expected_output
+        expected_output = "H: human"
+        assert get_buffer_string([self._HUMAN_MSG], human_prefix="H") == expected_output
 
     def test_custom_ai_prefix(self) -> None:
-        prefix = "A"
-        expected_output = f"{prefix}: {self.ai_msg.content}"
-        assert get_buffer_string([self.ai_msg], ai_prefix="A") == expected_output
+        expected_output = "A: ai"
+        assert get_buffer_string([self._AI_MSG], ai_prefix="A") == expected_output
 
     def test_multiple_msg(self) -> None:
         msgs = [
-            self.human_msg,
-            self.ai_msg,
-            self.sys_msg,
-            self.func_msg,
-            self.tool_msg,
-            self.chat_msg,
-            self.tool_calls_msg,
+            self._HUMAN_MSG,
+            self._AI_MSG,
+            SystemMessage(content="system"),
+            FunctionMessage(name="func", content="function"),
+            ToolMessage(tool_call_id="tool_id", content="tool"),
+            ChatMessage(role="Chat", content="chat"),
+            AIMessage(content="tool"),
         ]
-        expected_output = "\n".join(  # noqa: FLY002
-            [
-                "Human: human",
-                "AI: ai",
-                "System: system",
-                "Function: function",
-                "Tool: tool",
-                "Chat: chat",
-                "AI: tool",
-            ]
+        expected_output = (
+            "Human: human\n"
+            "AI: ai\n"
+            "System: system\n"
+            "Function: function\n"
+            "Tool: tool\n"
+            "Chat: chat\n"
+            "AI: tool"
         )
+
         assert get_buffer_string(msgs) == expected_output
 
 
@@ -455,9 +445,9 @@ def test_message_chunk_to_message() -> None:
         tool_calls=[
             create_tool_call(name="tool1", args={"a": 1}, id="1"),
             create_tool_call(name="tool2", args={}, id="2"),
+            create_tool_call(name="tool3", args={}, id="3"),
         ],
         invalid_tool_calls=[
-            create_invalid_tool_call(name="tool3", args=None, id="3", error=None),
             create_invalid_tool_call(name="tool4", args="abc", id="4", error=None),
         ],
     )
@@ -1062,7 +1052,7 @@ def test_message_text() -> None:
     # content dict types: [text], [not text], [no type]
 
     assert HumanMessage(content="foo").text() == "foo"
-    assert AIMessage(content=[]).text() == ""
+    assert not AIMessage(content=[]).text()
     assert AIMessage(content=["foo", "bar"]).text() == "foobar"
     assert (
         AIMessage(
@@ -1102,14 +1092,11 @@ def test_message_text() -> None:
     assert (
         AIMessage(content=[{"text": "hi there"}, "hi"]).text() == "hi"
     )  # missing type: text
-    assert AIMessage(content=[{"type": "nottext", "text": "hi"}]).text() == ""
-    assert AIMessage(content=[]).text() == ""
-    assert (
-        AIMessage(
-            content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
-        ).text()
-        == ""
-    )
+    assert not AIMessage(content=[{"type": "nottext", "text": "hi"}]).text()
+    assert not AIMessage(content=[]).text()
+    assert not AIMessage(
+        content="", tool_calls=[create_tool_call(name="a", args={"b": 1}, id=None)]
+    ).text()
 
 
 def test_is_data_content_block() -> None:
