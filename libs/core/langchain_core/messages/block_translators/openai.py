@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import warnings
 from collections.abc import Iterable
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from langchain_core.language_models._utils import (
     _is_openai_data_block,
@@ -42,10 +42,23 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
     raise ValueError(error_message)
 
 
-def convert_to_openai_data_block(block: dict) -> dict:
+def convert_to_openai_data_block(
+    block: dict, api: Literal["chat/completions", "responses"] = "chat/completions"
+) -> dict:
     """Format standard data content block to format expected by OpenAI."""
     if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)
+        chat_completions_block = convert_to_openai_image_block(block)
+        if api == "responses":
+            formatted_block = {
+                "type": "input_image",
+                "image_url": chat_completions_block["image_url"]["url"],
+            }
+            if chat_completions_block["image_url"].get("detail"):
+                formatted_block["detail"] = chat_completions_block["image_url"][
+                    "detail"
+                ]
+        else:
+            formatted_block = chat_completions_block
 
     elif block["type"] == "file":
         if "base64" in block or block.get("source_type") == "base64":
@@ -68,12 +81,19 @@ def convert_to_openai_data_block(block: dict) -> dict:
                     stacklevel=1,
                 )
             formatted_block = {"type": "file", "file": file}
+            if api == "responses":
+                formatted_block = {"type": "input_file", **formatted_block["file"]}
         elif "file_id" in block or block.get("source_type") == "id":
             # Handle v0 format: {"source_type": "id", "id": "...", ...}
             # Handle v1 format: {"file_id": "...", ...}
             file_id = block["id"] if "source_type" in block else block["file_id"]
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
+            if api == "responses":
+                formatted_block = {"type": "input_file", **formatted_block["file"]}
         elif "url" in block:
+            if api == "chat/completions":
+                error_msg = "OpenAI Chat Completions does not support file URLs."
+                raise ValueError(error_msg)
             # Only supported by Responses API; return in that format
             formatted_block = {"type": "input_file", "file_url": block["url"]}
         else:

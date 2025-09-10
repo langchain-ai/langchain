@@ -1283,10 +1283,6 @@ def test_convert_to_openai_messages_multimodal() -> None:
                 },
                 {
                     "type": "file",
-                    "url": "https://example.com/test.pdf",
-                },
-                {
-                    "type": "file",
                     "file_id": "file-abc123",
                 },
                 {
@@ -1300,7 +1296,7 @@ def test_convert_to_openai_messages_multimodal() -> None:
     result = convert_to_openai_messages(messages, text_format="block")
     assert len(result) == 1
     message = result[0]
-    assert len(message["content"]) == 14
+    assert len(message["content"]) == 13
 
     # Test auto-adding filename
     messages = [
