@@ -286,8 +286,6 @@ def _create_message_from_message_type(
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
         artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
-        # Fix for issue #32835: Extract status field from additional_kwargs
-        # to ensure it's passed as a direct parameter to ToolMessage
         status = kwargs.get("additional_kwargs", {}).pop("status", None)
         if status is not None:
             kwargs["status"] = status
