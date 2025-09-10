@@ -70,6 +70,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             compressed_docs = reranker.compress_documents(documents, "Who is steve")
             assert len(compressed_docs) == 3
             assert "Steve" in compressed_docs[0].page_content
+
     """
 
     reranker: Runnable[dict, list[Document]]
@@ -116,7 +117,6 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
         """
-
         if llm.with_structured_output == BaseLanguageModel.with_structured_output:
             msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
@@ -125,7 +125,9 @@ class LLMListwiseRerank(BaseDocumentCompressor):
 
         class RankDocuments(BaseModel):
             """Rank the documents by their relevance to the user question.
-            Rank from most to least relevant."""
+
+            Rank from most to least relevant.
+            """
 
             ranked_document_ids: list[int] = Field(
                 ...,

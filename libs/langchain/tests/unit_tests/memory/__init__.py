@@ -1,1 +1,1 @@
-"""Unit tests for memory module"""
+"""Unit tests for memory module."""

@@ -69,16 +69,18 @@ class LLMChain(Chain):
             from langchain.chains import LLMChain
             from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
+
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
     @override
-    def is_lc_serializable(self) -> bool:
+    def is_lc_serializable(cls) -> bool:
         return True
 
     prompt: BasePromptTemplate
@@ -323,6 +325,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -340,6 +343,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 

@@ -31,7 +31,7 @@ class DocumentIndexerTestSuite(ABC):
         """Get the index."""
 
     def test_upsert_documents_has_no_ids(self, index: DocumentIndex) -> None:
-        """Verify that there is not parameter called ids in upsert."""
+        """Verify that there is no parameter called ids in upsert."""
         signature = inspect.signature(index.upsert)
         assert "ids" not in signature.parameters
 
@@ -67,7 +67,7 @@ class DocumentIndexerTestSuite(ABC):
             )
 
     def test_upsert_some_ids(self, index: DocumentIndex) -> None:
-        """Test an upsert where some docs have ids and some dont."""
+        """Test an upsert where some docs have ids and some don't."""
         foo_uuid = str(uuid.UUID(int=7))
         documents = [
             Document(id=foo_uuid, page_content="foo", metadata={"id": 1}),
@@ -175,7 +175,7 @@ class DocumentIndexerTestSuite(ABC):
 
     def test_delete_no_args(self, index: DocumentIndex) -> None:
         """Test delete with no args raises ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             index.delete()
 
     def test_delete_missing_content(self, index: DocumentIndex) -> None:
@@ -257,7 +257,7 @@ class AsyncDocumentIndexTestSuite(ABC):
             )
 
     async def test_upsert_some_ids(self, index: DocumentIndex) -> None:
-        """Test an upsert where some docs have ids and some dont."""
+        """Test an upsert where some docs have ids and some don't."""
         foo_uuid = str(uuid.UUID(int=7))
         documents = [
             Document(id=foo_uuid, page_content="foo", metadata={"id": 1}),
@@ -367,7 +367,7 @@ class AsyncDocumentIndexTestSuite(ABC):
 
     async def test_delete_no_args(self, index: DocumentIndex) -> None:
         """Test delete with no args raises ValueError."""
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             await index.adelete()
 
     async def test_delete_missing_content(self, index: DocumentIndex) -> None:

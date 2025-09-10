@@ -9,6 +9,14 @@ This project utilizes [uv](https://docs.astral.sh/uv/) v0.5+ as a dependency man
 
 Install `uv`: **[documentation on how to install it](https://docs.astral.sh/uv/getting-started/installation/)**.
 
+### Windows Users
+
+If you're on Windows and don't have `make` installed, you can install it via:
+- **Option 1**: Install via [Chocolatey](https://chocolatey.org/): `choco install make`
+- **Option 2**: Install via [Scoop](https://scoop.sh/): `scoop install make`
+- **Option 3**: Use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/)
+- **Option 4**: Use the direct `uv` commands shown in the sections below
+
 ## Different packages
 
 This repository contains multiple packages:
@@ -48,7 +56,11 @@ uv sync
 Then verify dependency installation:
 
 ```bash
+# If you have `make` installed:
 make test
+
+# If you don't have `make` (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
 ## Testing
@@ -61,7 +73,11 @@ If you add new logic, please add a unit test.
 To run unit tests:
 
 ```bash
+# If you have `make` installed:
 make test
+
+# If you don't have make (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
 There are also [integration tests and code-coverage](../testing.mdx) available.
@@ -72,7 +88,12 @@ If you are only developing `langchain_core`, you can simply install the dependen
 
 ```bash
 cd libs/core
+
+# If you have `make` installed:
 make test
+
+# If you don't have `make` (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
 ## Formatting and linting
@@ -86,20 +107,37 @@ Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules
 To run formatting for docs, cookbook and templates:
 
 ```bash
+# If you have `make` installed:
 make format
+
+# If you don't have make (Windows alternative):
+uv run --all-groups ruff format .
+uv run --all-groups ruff check --fix .
 ```
 
 To run formatting for a library, run the same command from the relevant library directory:
 
 ```bash
 cd libs/{LIBRARY}
+
+# If you have `make` installed:
 make format
+
+# If you don't have make (Windows alternative):
+uv run --all-groups ruff format .
+uv run --all-groups ruff check --fix .
 ```
 
 Additionally, you can run the formatter only on the files that have been modified in your current branch as compared to the master branch using the format_diff command:
 
 ```bash
+# If you have `make` installed:
 make format_diff
+
+# If you don't have `make` (Windows alternative):
+# First, get the list of modified files:
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check --fix
 ```
 
 This is especially useful when you have made changes to a subset of the project and want to ensure your changes are properly formatted without affecting the rest of the codebase.
@@ -111,20 +149,40 @@ Linting for this project is done via a combination of [ruff](https://docs.astral
 To run linting for docs, cookbook and templates:
 
 ```bash
+# If you have `make` installed:
 make lint
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups ruff check .
+uv run --all-groups ruff format . --diff
+uv run --all-groups mypy . --cache-dir .mypy_cache
 ```
 
 To run linting for a library, run the same command from the relevant library directory:
 
 ```bash
 cd libs/{LIBRARY}
+
+# If you have `make` installed:
 make lint
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups ruff check .
+uv run --all-groups ruff format . --diff
+uv run --all-groups mypy . --cache-dir .mypy_cache
 ```
 
 In addition, you can run the linter only on the files that have been modified in your current branch as compared to the master branch using the lint_diff command:
 
 ```bash
+# If you have `make` installed:
 make lint_diff
+
+# If you don't have `make` (Windows alternative):
+# First, get the list of modified files:
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format --diff
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups mypy --cache-dir .mypy_cache
 ```
 
 This can be very helpful when you've made changes to only certain parts of the project and want to ensure your changes meet the linting standards without having to check the entire codebase.
@@ -139,13 +197,21 @@ Note that `codespell` finds common typos, so it could have false-positive (corre
 To check spelling for this project:
 
 ```bash
+# If you have `make` installed:
 make spell_check
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups codespell --toml pyproject.toml
 ```
 
 To fix spelling in place:
 
 ```bash
+# If you have `make` installed:
 make spell_fix
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups codespell --toml pyproject.toml -w
 ```
 
 If codespell is incorrectly flagging a word, you can skip spellcheck for that word by adding it to the codespell config in the `pyproject.toml` file.
@@ -156,6 +222,49 @@ If codespell is incorrectly flagging a word, you can skip spellcheck for that wo
 # Add here:
 ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
 ```
+
+### Pre-commit
+
+We use [pre-commit](https://pre-commit.com/) to ensure commits are formatted/linted.
+
+#### Installing Pre-commit
+
+First, install pre-commit:
+
+```bash
+# Option 1: Using uv (recommended)
+uv tool install pre-commit
+
+# Option 2: Using Homebrew (globally for macOS/Linux)
+brew install pre-commit
+
+# Option 3: Using pip
+pip install pre-commit
+```
+
+Then install the git hook scripts:
+
+```bash
+pre-commit install
+```
+
+#### How Pre-commit Works
+
+Once installed, pre-commit will automatically run on every `git commit`. Hooks are specified in `.pre-commit-config.yaml` and will:
+
+- Format code using `ruff` for the specific library/package you're modifying
+- Only run on files that have changed
+- Prevent commits if formatting fails
+
+#### Skipping Pre-commit
+
+In exceptional cases, you can skip pre-commit hooks with:
+
+```bash
+git commit --no-verify
+```
+
+However, this is discouraged as the CI system will still enforce the same formatting rules.
 
 ## Working with optional dependencies
 

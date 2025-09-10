@@ -18,7 +18,7 @@ class MockRetriever(BaseRetriever):
         *,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> list[Document]:
-        """Return the documents"""
+        """Return the documents."""
         return self.docs
 
 

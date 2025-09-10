@@ -3,14 +3,14 @@
 This page demonstrates how to use [Xinference](https://github.com/xorbitsai/inference)
 with LangChain.
 
-`Xinference` is a powerful and versatile library designed to serve LLMs, 
-speech recognition models, and multimodal models, even on your laptop. 
-With Xorbits Inference, you can effortlessly deploy and serve your or 
+`Xinference` is a powerful and versatile library designed to serve LLMs,
+speech recognition models, and multimodal models, even on your laptop.
+With Xorbits Inference, you can effortlessly deploy and serve your or
 state-of-the-art built-in models using just a single command.
 
 ## Installation and Setup
 
-Xinference can be installed via pip from PyPI: 
+Xinference can be installed via pip from PyPI:
 
 ```bash
 pip install "xinference[all]"
@@ -18,7 +18,7 @@ pip install "xinference[all]"
 
 ## LLM
 
-Xinference supports various models compatible with GGML, including chatglm, baichuan, whisper, 
+Xinference supports various models compatible with GGML, including chatglm, baichuan, whisper,
 vicuna, and orca. To view the builtin models, run the command:
 
 ```bash
@@ -54,18 +54,18 @@ You can also start a local instance of Xinference by running:
 xinference
 ```
 
-Once Xinference is running, an endpoint will be accessible for model management via CLI or 
-Xinference client. 
+Once Xinference is running, an endpoint will be accessible for model management via CLI or
+Xinference client.
 
-For local deployment, the endpoint will be http://localhost:9997. 
+For local deployment, the endpoint will be http://localhost:9997.
 
 
 For cluster deployment, the endpoint will be http://$\{supervisor_host\}:9997.
 
 
-Then, you need to launch a model. You can specify the model names and other attributes 
-including model_size_in_billions and quantization. You can use command line interface (CLI) to 
-do it. For example, 
+Then, you need to launch a model. You can specify the model names and other attributes
+including model_size_in_billions and quantization. You can use command line interface (CLI) to
+do it. For example,
 
 ```bash
 xinference launch -n orca -s 3 -q q4_0
@@ -98,7 +98,7 @@ For more information and detailed examples, refer to the
 ### Embeddings
 
 Xinference also supports embedding queries and documents. See
-[example for xinference embeddings](/docs/integrations/text_embedding/xinference) 
+[example for xinference embeddings](/docs/integrations/text_embedding/xinference)
 for a more detailed demo.
 
 

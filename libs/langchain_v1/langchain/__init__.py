@@ -1,18 +1,15 @@
-"""Main entrypoint into package."""
+"""Main entrypoint into LangChain."""
 
-from importlib import metadata
 from typing import Any
 
-try:
-    __version__ = metadata.version(__package__)
-except metadata.PackageNotFoundError:
-    # Case where package metadata is not available.
-    __version__ = ""
-del metadata  # optional, avoids polluting the results of dir(__package__)
+__version__ = "1.0.0a4"
 
 
 def __getattr__(name: str) -> Any:  # noqa: ANN401
-    """Get an attribute from the package."""
+    """Get an attribute from the package.
+
+    TODO: will be removed in a future alpha version.
+    """
     if name == "verbose":
         from langchain.globals import _verbose
 

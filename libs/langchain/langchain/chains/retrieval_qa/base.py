@@ -147,6 +147,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -191,6 +192,7 @@ class BaseRetrievalQA(Chain):
 
         res = indexqa({'query': 'This is my query'})
         answer, docs = res['result'], res['source_documents']
+
         """
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
@@ -262,6 +264,7 @@ class RetrievalQA(BaseRetrievalQA):
             from langchain.chains import RetrievalQA
             from langchain_community.vectorstores import FAISS
             from langchain_core.vectorstores import VectorStoreRetriever
+
             retriever = VectorStoreRetriever(vectorstore=FAISS(...))
             retrievalQA = RetrievalQA.from_llm(llm=OpenAI(), retriever=retriever)
 

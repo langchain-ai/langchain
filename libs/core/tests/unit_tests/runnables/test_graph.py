@@ -14,9 +14,7 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.graph import Edge, Graph, Node
 from langchain_core.runnables.graph_mermaid import _escape_node_label
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
-)
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 

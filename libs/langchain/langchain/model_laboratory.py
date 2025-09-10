@@ -20,10 +20,10 @@ class ModelLaboratory:
         """Initialize the ModelLaboratory with chains to experiment with.
 
         Args:
-            chains (Sequence[Chain]): A sequence of chains to experiment with.
-            Each chain must have exactly one input and one output variable.
-        names (Optional[List[str]]): Optional list of names corresponding to each chain.
-            If provided, its length must match the number of chains.
+            chains: A sequence of chains to experiment with.
+                Each chain must have exactly one input and one output variable.
+            names (Optional[List[str]]): Optional list of names corresponding to each
+                chain. If provided, its length must match the number of chains.
 
 
         Raises:
@@ -34,7 +34,7 @@ class ModelLaboratory:
         """
         for chain in chains:
             if not isinstance(chain, Chain):
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     "ModelLaboratory should now be initialized with Chains. "
                     "If you want to initialize with LLMs, use the `from_llms` method "
                     "instead (`ModelLaboratory.from_llms(...)`)"

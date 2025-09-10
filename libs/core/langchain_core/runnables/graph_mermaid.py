@@ -1,5 +1,7 @@
 """Mermaid graph drawing utilities."""
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import random
@@ -7,17 +9,33 @@ import re
 import time
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional
 
 import yaml
 
 from langchain_core.runnables.graph import (
     CurveStyle,
-    Edge,
     MermaidDrawMethod,
-    Node,
     NodeStyles,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.graph import Edge, Node
+
+
+try:
+    import requests
+
+    _HAS_REQUESTS = True
+except ImportError:
+    _HAS_REQUESTS = False
+
+try:
+    from pyppeteer import launch  # type: ignore[import-not-found]
+
+    _HAS_PYPPETEER = True
+except ImportError:
+    _HAS_PYPPETEER = False
 
 MARKDOWN_SPECIAL_CHARS = "*_`"
 
@@ -70,6 +88,7 @@ def draw_mermaid(
 
     Returns:
         str: Mermaid graph syntax.
+
     """
     # Initialize Mermaid graph configuration
     original_frontmatter_config = frontmatter_config or {}
@@ -154,7 +173,7 @@ def draw_mermaid(
         nonlocal mermaid_graph
         self_loop = len(edges) == 1 and edges[0].source == edges[0].target
         if prefix and not self_loop:
-            subgraph = prefix.split(":")[-1]
+            subgraph = prefix.rsplit(":", maxsplit=1)[-1]
             if subgraph in seen_subgraphs:
                 msg = (
                     f"Found duplicate subgraph '{subgraph}' -- this likely means that "
@@ -213,7 +232,7 @@ def draw_mermaid(
 
     # Add remaining subgraphs with edges
     for prefix, edges_ in edge_groups.items():
-        if ":" in prefix or prefix == "":
+        if not prefix or ":" in prefix:
             continue
         add_subgraph(edges_, prefix)
         seen_subgraphs.add(prefix)
@@ -282,8 +301,6 @@ def draw_mermaid_png(
         ValueError: If an invalid draw method is provided.
     """
     if draw_method == MermaidDrawMethod.PYPPETEER:
-        import asyncio
-
         img_bytes = asyncio.run(
             _render_mermaid_using_pyppeteer(
                 mermaid_syntax, output_file_path, background_color, padding
@@ -316,11 +333,9 @@ async def _render_mermaid_using_pyppeteer(
     device_scale_factor: int = 3,
 ) -> bytes:
     """Renders Mermaid graph using Pyppeteer."""
-    try:
-        from pyppeteer import launch  # type: ignore[import-not-found]
-    except ImportError as e:
+    if not _HAS_PYPPETEER:
         msg = "Install Pyppeteer to use the Pyppeteer method: `pip install pyppeteer`."
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     browser = await launch()
     page = await browser.newPage()
@@ -391,14 +406,12 @@ def _render_mermaid_using_api(
     retry_delay: float = 1.0,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
-    try:
-        import requests
-    except ImportError as e:
+    if not _HAS_REQUESTS:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
             "`pip install requests`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     # Use Mermaid API to render the image
     mermaid_syntax_encoded = base64.b64encode(mermaid_syntax.encode("utf8")).decode(

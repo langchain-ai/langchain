@@ -1,4 +1,4 @@
-"""Test PandasDataframeParser"""
+"""Test PandasDataframeParser."""
 
 from typing import Any
 
@@ -104,5 +104,8 @@ def test_pandas_output_parser_invalid_special_op() -> None:
 
 
 def test_pandas_output_parser_output_type() -> None:
-    """Test the output type of the pandas dataframe output parser is a pandas dataframe."""  # noqa: E501
+    """Test pandas output parser output type.
+
+    Test the output type of the pandas dataframe output parser is a pandas dataframe.
+    """
     assert parser.OutputType == dict[str, Any]

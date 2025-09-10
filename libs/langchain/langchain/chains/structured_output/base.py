@@ -132,6 +132,7 @@ def create_openai_fn_runnable(
                 structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
                 structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
@@ -390,6 +391,7 @@ def create_structured_output_runnable(
                 )
                 chain = prompt | structured_llm
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+
     """  # noqa: E501
     # for backwards compatibility
     force_function_usage = kwargs.get(
@@ -437,7 +439,7 @@ def create_structured_output_runnable(
             output_parser=output_parser,
             **kwargs,
         )
-    msg = (
+    msg = (  # type: ignore[unreachable]
         f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
         f"'openai-json'."
     )
@@ -525,7 +527,6 @@ def _create_openai_json_runnable(
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
-    """"""
     if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
             pydantic_object=output_schema,
@@ -564,7 +565,10 @@ def _create_openai_functions_structured_output_runnable(
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter.
+
+            Should always be used to format your response to the user.
+            """
 
             output: output_schema  # type: ignore[valid-type]
 

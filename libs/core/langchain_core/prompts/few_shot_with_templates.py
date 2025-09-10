@@ -46,7 +46,11 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "few_shot_with_templates"]``
+        """
         return ["langchain", "prompts", "few_shot_with_templates"]
 
     @model_validator(mode="before")
@@ -122,6 +126,7 @@ class FewShotPromptWithTemplates(StringPromptTemplate):
         .. code-block:: python
 
             prompt.format(variable1="foo")
+
         """
         kwargs = self._merge_partial_and_user_variables(**kwargs)
         # Get the examples to use.

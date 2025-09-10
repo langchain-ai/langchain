@@ -8,7 +8,7 @@ body:
 
         If you are not a LangChain maintainer or were not asked directly by a maintainer to create an issue, then please start the conversation on the [LangChain Forum](https://forum.langchain.com/) instead.
 
-        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository 
+        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository
         or are a regular contributor to LangChain with previous merged pull requests.
   - type: checkboxes
     id: privileged

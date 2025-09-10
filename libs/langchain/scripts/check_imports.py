@@ -1,4 +1,5 @@
-"""
+"""Check Imports Script.
+
 Quickly verify that a list of Python files can be loaded by the Python interpreter
 without raising any errors. Ran before running more expensive tests. Useful in
 Makefiles.
@@ -23,7 +24,7 @@ if __name__ == "__main__":
                 for _ in range(20)
             )
             SourceFileLoader(module_name, file).load_module()
-        except Exception:
+        except Exception:  # noqa: BLE001
             has_failure = True
             print(file)  # noqa: T201
             traceback.print_exc()

@@ -1,4 +1,5 @@
-name: Integration Tests
+name: '🚀 Integration Tests'
+run-name: 'Test ${{ inputs.working-directory }} on Python ${{ inputs.python-version }}'
 
 on:
   workflow_dispatch:
@@ -11,6 +12,7 @@ on:
         required: true
         type: string
         description: "Python version to use"
+        default: "3.11"
 
 permissions:
   contents: read
@@ -24,20 +26,20 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: Python ${{ inputs.python-version }}
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: Run integration tests
+      - name: '🚀 Run Integration Tests'
         shell: bash
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}

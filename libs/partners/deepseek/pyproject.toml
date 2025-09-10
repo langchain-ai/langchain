@@ -85,6 +85,7 @@ select = [
     "YTT",    # flake8-2020
 ]
 ignore = [
+    "COM812",  # Conflicts with formatter
     "D100",    # Missing docstring in public module
     "D101",    # Missing docstring in public class
     "D102",    # Missing docstring in public method
@@ -92,6 +93,8 @@ ignore = [
     "D104",    # Missing docstring in public package
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
+    "D203",    # 1 blank line required before class docstring (incompatible with D211)
+    "D213",    # Multi-line docstring summary should start at the second line (incompatible with D212)
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
@@ -106,6 +109,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [

@@ -19,8 +19,10 @@ def _get_hours_passed(time: datetime.datetime, ref_time: datetime.datetime) -> f
 
 
 class TimeWeightedVectorStoreRetriever(BaseRetriever):
-    """Retriever that combines embedding similarity with
-    recency in retrieving values."""
+    """Time Weighted Vector Store Retriever.
+
+    Retriever that combines embedding similarity with recency in retrieving values.
+    """
 
     vectorstore: VectorStore
     """The vectorstore to store documents and determine salience."""

@@ -1,6 +1,6 @@
 from datetime import datetime as dt
 from datetime import timezone
-from typing import Any, Callable, Optional, TypeVar
+from typing import Any, TypeVar
 
 import pytest
 from langchain_core.exceptions import OutputParserException
@@ -220,15 +220,3 @@ async def test_output_fixing_parser_aparse_with_retry_chain(
         legacy=False,
     )
     assert (await parser.aparse(completion)) == expected
-
-
-def _extract_exception(
-    func: Callable[..., Any],
-    *args: Any,
-    **kwargs: Any,
-) -> Optional[Exception]:
-    try:
-        func(*args, **kwargs)
-    except Exception as e:
-        return e
-    return None

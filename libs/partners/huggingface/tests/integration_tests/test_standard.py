@@ -1,5 +1,7 @@
 """Standard LangChain interface tests."""
 
+from typing import Literal
+
 import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.tools import BaseTool
@@ -31,7 +33,11 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         reason=("Overrding, testing only typed dict and json schema structured output")
     )
     @pytest.mark.parametrize("schema_type", ["typeddict", "json_schema"])
-    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
+    def test_structured_output(
+        self,
+        model: BaseChatModel,
+        schema_type: Literal["pydantic", "typeddict", "json_schema"],
+    ) -> None:
         super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(
@@ -39,7 +45,9 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
     )
     @pytest.mark.parametrize("schema_type", ["typeddict", "json_schema"])
     async def test_structured_output_async(
-        self, model: BaseChatModel, schema_type: str
+        self,
+        model: BaseChatModel,
+        schema_type: Literal["pydantic", "typeddict", "json_schema"],
     ) -> None:  # type: ignore[override]
         super().test_structured_output(model, schema_type)
 

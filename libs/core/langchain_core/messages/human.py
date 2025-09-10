@@ -17,17 +17,14 @@ class HumanMessage(BaseMessage):
             from langchain_core.messages import HumanMessage, SystemMessage
 
             messages = [
-                SystemMessage(
-                    content="You are a helpful assistant! Your name is Bob."
-                ),
-                HumanMessage(
-                    content="What is your name?"
-                )
+                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                HumanMessage(content="What is your name?"),
             ]
 
             # Instantiate a chat model and invoke it with the messages
             model = ...
             print(model.invoke(messages))
+
     """
 
     example: bool = False

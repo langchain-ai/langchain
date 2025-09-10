@@ -38,6 +38,7 @@ from typing import (
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import Self, override
 
+from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings
 from langchain_core.retrievers import BaseRetriever, LangSmithRetrieverParams
 from langchain_core.runnables.config import run_in_executor
@@ -49,7 +50,6 @@ if TYPE_CHECKING:
         AsyncCallbackManagerForRetrieverRun,
         CallbackManagerForRetrieverRun,
     )
-    from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
@@ -85,9 +85,6 @@ class VectorStore(ABC):
             ValueError: If the number of ids does not match the number of texts.
         """
         if type(self).add_documents != VectorStore.add_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
@@ -234,9 +231,6 @@ class VectorStore(ABC):
             # For backward compatibility
             kwargs["ids"] = ids
         if type(self).aadd_documents != VectorStore.aadd_documents:
-            # Import document in local scope to avoid circular imports
-            from langchain_core.documents import Document
-
             # This condition is triggered if the subclass has provided
             # an implementation of the upsert method.
             # The existing add_texts
@@ -270,9 +264,6 @@ class VectorStore(ABC):
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of ids does not match the number of documents.
         """
         if type(self).add_texts != VectorStore.add_texts:
             if "ids" not in kwargs:
@@ -303,9 +294,6 @@ class VectorStore(ABC):
 
         Returns:
             List of IDs of the added texts.
-
-        Raises:
-            ValueError: If the number of IDs does not match the number of documents.
         """
         # If the async method has been overridden, we'll use that.
         if type(self).aadd_texts != VectorStore.aadd_texts:
@@ -435,6 +423,7 @@ class VectorStore(ABC):
         """The 'correct' relevance function.
 
         may differ depending on a few things, including:
+
         - the distance / similarity metric used by the VectorStore
         - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
         - embedding dimensionality
@@ -969,31 +958,30 @@ class VectorStore(ABC):
             # Retrieve more documents with higher diversity
             # Useful if your dataset has many similar documents
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 6, 'lambda_mult': 0.25}
+                search_type="mmr", search_kwargs={"k": 6, "lambda_mult": 0.25}
             )
 
             # Fetch more documents for the MMR algorithm to consider
             # But only return the top 5
             docsearch.as_retriever(
-                search_type="mmr",
-                search_kwargs={'k': 5, 'fetch_k': 50}
+                search_type="mmr", search_kwargs={"k": 5, "fetch_k": 50}
             )
 
             # Only retrieve documents that have a relevance score
             # Above a certain threshold
             docsearch.as_retriever(
                 search_type="similarity_score_threshold",
-                search_kwargs={'score_threshold': 0.8}
+                search_kwargs={"score_threshold": 0.8},
             )
 
             # Only get the single most similar document from the dataset
-            docsearch.as_retriever(search_kwargs={'k': 1})
+            docsearch.as_retriever(search_kwargs={"k": 1})
 
             # Use a filter to only retrieve documents from a specific paper
             docsearch.as_retriever(
-                search_kwargs={'filter': {'paper_title':'GPT-4 Technical Report'}}
+                search_kwargs={"filter": {"paper_title": "GPT-4 Technical Report"}}
             )
+
         """
         tags = kwargs.pop("tags", None) or [*self._get_retriever_tags()]
         return VectorStoreRetriever(vectorstore=self, tags=tags, **kwargs)

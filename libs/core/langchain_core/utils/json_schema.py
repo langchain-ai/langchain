@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
 
-def _retrieve_ref(path: str, schema: dict) -> dict:
+def _retrieve_ref(path: str, schema: dict) -> Union[list, dict]:
     components = path.split("/")
     if components[0] != "#":
         msg = (
@@ -17,9 +17,12 @@ def _retrieve_ref(path: str, schema: dict) -> dict:
             "with #."
         )
         raise ValueError(msg)
-    out = schema
+    out: Union[list, dict] = schema
     for component in components[1:]:
         if component in out:
+            if isinstance(out, list):
+                msg = f"Reference '{path}' not found."
+                raise KeyError(msg)
             out = out[component]
         elif component.isdigit():
             index = int(component)
@@ -46,10 +49,14 @@ def _dereference_refs_helper(
     """Inline every pure {'$ref':...}.
 
     But:
+
     - if shallow_refs=True: only break cycles, do not inline nested refs
     - if shallow_refs=False: deep-inline all nested refs
 
     Also skip recursion under any key in skip_keys.
+
+    Returns:
+        The object with refs dereferenced.
     """
     if processed_refs is None:
         processed_refs = set()
@@ -112,9 +119,12 @@ def dereference_refs(
       full_schema: The complete schema (defaults to schema_obj).
       skip_keys:
         - If None (the default), we skip recursion under '$defs' *and* only
-            shallow-inline refs.
+          shallow-inline refs.
         - If provided (even as an empty list), we will recurse under every key and
-            deep-inline all refs.
+          deep-inline all refs.
+
+    Returns:
+        The schema with refs dereferenced.
     """
     full = full_schema or schema_obj
     keys_to_skip = list(skip_keys) if skip_keys is not None else ["$defs"]

@@ -1,4 +1,4 @@
-name: CodSpeed
+name: '⚡ CodSpeed'
 
 on:
   push:
@@ -18,8 +18,9 @@ env:
 
 jobs:
   codspeed:
-    name: Run benchmarks
+    name: 'Benchmark'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
     strategy:
       matrix:
         include:
@@ -35,23 +36,23 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We have to use 3.12 as 3.13 is not yet supported
-      - name: Install uv
+      - name: '📦 Install UV Package Manager'
         uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: '📦 Install Test Dependencies'
         run: uv sync --group test
         working-directory: ${{ matrix.working-directory }}
 
-      - name: Run benchmarks ${{ matrix.working-directory }}
+      - name: '⚡ Run Benchmarks: ${{ matrix.working-directory }}'
         uses: CodSpeedHQ/action@v3
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}

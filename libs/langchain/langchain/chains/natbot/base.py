@@ -46,7 +46,9 @@ class NatBotChain(Chain):
         .. code-block:: python
 
             from langchain.chains import NatBotChain
+
             natbot = NatBotChain.from_default("Buy me a new hat.")
+
     """
 
     llm_chain: Runnable
@@ -151,6 +153,7 @@ class NatBotChain(Chain):
 
                 browser_content = "...."
                 llm_command = natbot.run("www.google.com", browser_content)
+
         """
         _inputs = {
             self.input_url_key: url,

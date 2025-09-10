@@ -4,10 +4,8 @@ from langchain_core.runnables.base import RunnableBindingBase
 from langchain_core.runnables.utils import Input, Output
 
 
-class HubRunnable(RunnableBindingBase[Input, Output]):
-    """
-    An instance of a runnable stored in the LangChain Hub.
-    """
+class HubRunnable(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
+    """An instance of a runnable stored in the LangChain Hub."""
 
     owner_repo_commit: str
 

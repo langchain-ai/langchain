@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Union
 
 import pytest
 from packaging import version
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -20,6 +20,11 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
+from langchain_core.tracers.root_listeners import (
+    AsyncListener,
+    AsyncRootListenersTracer,
+    RootListenersTracer,
+)
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -499,8 +504,6 @@ def test_get_output_schema() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    from pydantic import RootModel
-
     runnable_with_message_history_input = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
@@ -776,8 +779,6 @@ def test_ignore_session_id() -> None:
 
 
 class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
-    from langchain_core.tracers.root_listeners import AsyncListener
-
     def with_listeners(
         self,
         *,
@@ -791,8 +792,6 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import RootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = RootListenersTracer(
                 config=config,
@@ -817,8 +816,6 @@ class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = AsyncRootListenersTracer(
                 config=config,

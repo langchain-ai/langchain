@@ -14,7 +14,8 @@ class __ModuleName__Loader(BaseLoader):
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -61,7 +62,8 @@ class __ModuleName__Loader(BaseLoader):
         .. code-block:: python
 
             TODO: Example output
-    """  # noqa: E501
+
+    """
 
     # TODO: This method must be implemented to load documents.
     # Do not implement load(), a default implementation is already available.

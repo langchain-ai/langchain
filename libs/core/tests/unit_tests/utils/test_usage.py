@@ -30,7 +30,7 @@ def test_dict_int_op_max_depth_exceeded() -> None:
     left = {"a": {"b": {"c": 1}}}
     right = {"a": {"b": {"c": 2}}}
     with pytest.raises(
-        ValueError, match="max_depth=2 exceeded, unable to combine dicts."
+        ValueError, match="max_depth=2 exceeded, unable to combine dicts"
     ):
         _dict_int_op(left, right, operator.add, max_depth=2)
 
@@ -40,6 +40,6 @@ def test_dict_int_op_invalid_types() -> None:
     right = {"a": 2, "b": 3}
     with pytest.raises(
         ValueError,
-        match="Only dict and int values are supported.",
+        match="Only dict and int values are supported",
     ):
         _dict_int_op(left, right, operator.add)

@@ -84,7 +84,8 @@ class BaseMessage(Serializable):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "messages"].
+        Returns:
+            ``["langchain", "schema", "messages"]``
         """
         return ["langchain", "schema", "messages"]
 
@@ -109,8 +110,16 @@ class BaseMessage(Serializable):
         )
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
-        """Concatenate this message with another message."""
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        """Concatenate this message with another message.
+
+        Args:
+            other: Another message to concatenate with this one.
+
+        Returns:
+            A ChatPromptTemplate containing both messages.
+        """
+        # Import locally to prevent circular imports.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
@@ -171,9 +180,7 @@ def merge_content(
         elif merged and isinstance(merged[-1], str):
             merged[-1] += content
         # If second content is an empty string, treat as a no-op
-        elif content == "":
-            pass
-        else:
+        elif content:
             # Otherwise, add the second content as a new element of the list
             merged.append(content)
     return merged

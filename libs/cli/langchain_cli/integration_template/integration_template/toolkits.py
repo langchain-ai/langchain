@@ -12,7 +12,8 @@ class __ModuleName__Toolkit(BaseToolkit):
 
     # TODO: Replace with relevant packages, env vars, etc.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -65,7 +66,7 @@ class __ModuleName__Toolkit(BaseToolkit):
 
              # TODO: Example output.
 
-    """  # noqa: E501
+    """
 
     # TODO: This method must be implemented to list tools.
     def get_tools(self) -> List[BaseTool]:

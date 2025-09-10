@@ -4,7 +4,7 @@ from pathlib import Path
 
 import rich
 import typer
-from gritql import run  # type: ignore[import]
+from gritql import run  # type: ignore[import-untyped]
 from typer import Option
 
 
@@ -68,7 +68,7 @@ def migrate(
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
         args,
-        grit_dir=get_gritdir_path(),
+        grit_dir=str(get_gritdir_path()),
     )
 
     raise typer.Exit(code=final_code)

@@ -1,4 +1,4 @@
-name: Integration Docs Lint
+name: '📑 Integration Docs Lint'
 
 on:
   push:
@@ -22,8 +22,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - id: files
@@ -33,6 +33,6 @@ jobs:
             *.ipynb
             *.md
             *.mdx
-      - name: Check new docs
+      - name: '🔍 Check New Documentation Templates'
         run: |
           python docs/scripts/check_templates.py ${{ steps.files.outputs.added }}

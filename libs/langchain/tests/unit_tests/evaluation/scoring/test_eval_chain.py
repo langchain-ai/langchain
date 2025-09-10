@@ -12,7 +12,7 @@ from langchain.evaluation.scoring.eval_chain import (
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
 
-def test_PairwiseStringResultOutputParser_parse() -> None:
+def test_pairwise_string_result_output_parser_parse() -> None:
     output_parser = ScoreStringResultOutputParser()
     text = """This answer is really good.
 Rating: [[10]]"""
@@ -33,7 +33,7 @@ Rating: 10"""
 
     text = """This answer is really good.
 Rating: [[0]]"""
-    # Not in range [1, 10]
+    # Rating is not in range [1, 10]
     with pytest.raises(ValueError, match="with the verdict between 1 and 10"):
         output_parser.parse(text)
 

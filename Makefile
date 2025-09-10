@@ -41,6 +41,7 @@ docs_linkcheck:
 ## api_docs_build: Build the API Reference documentation.
 api_docs_build: clean
 	@echo "📖 Building API Reference documentation..."
+	uv pip install -e libs/cli
 	uv run --group docs python docs/api_reference/create_api_rst.py
 	cd docs/api_reference && uv run --group docs make html
 	uv run --group docs python docs/api_reference/scripts/custom_formatter.py docs/api_reference/_build/html/

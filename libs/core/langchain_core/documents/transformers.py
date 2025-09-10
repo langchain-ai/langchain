@@ -38,7 +38,9 @@ class BaseDocumentTransformer(ABC):
                         self.embeddings, stateful_documents
                     )
                     included_idxs = _filter_similar_embeddings(
-                        embedded_documents, self.similarity_fn, self.similarity_threshold
+                        embedded_documents,
+                        self.similarity_fn,
+                        self.similarity_threshold,
                     )
                     return [stateful_documents[i] for i in sorted(included_idxs)]
 
@@ -47,7 +49,7 @@ class BaseDocumentTransformer(ABC):
                 ) -> Sequence[Document]:
                     raise NotImplementedError
 
-    """  # noqa: E501
+    """
 
     @abstractmethod
     def transform_documents(

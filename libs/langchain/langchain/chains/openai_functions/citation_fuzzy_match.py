@@ -58,8 +58,11 @@ class FactWithEvidence(BaseModel):
 
 
 class QuestionAnswer(BaseModel):
-    """A question and its answer as a list of facts each one should have a source.
-    each sentence contains a body and a list of sources."""
+    """A question and its answer as a list of facts.
+
+    Each fact should have a source.
+    Each sentence contains a body and a list of sources.
+    """
 
     question: str = Field(..., description="Question that was asked")
     answer: list[FactWithEvidence] = Field(
@@ -94,6 +97,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
 
     Returns:
         Runnable that can be used to answer questions with citations.
+
     """
     if llm.bind_tools is BaseChatModel.bind_tools:
         msg = "Language model must implement bind_tools to use this function."

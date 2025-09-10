@@ -1,6 +1,7 @@
 """Evaluators for parsing strings."""
 
 import json
+import logging
 from operator import eq
 from typing import Any, Callable, Optional, Union, cast
 
@@ -8,6 +9,8 @@ from langchain_core.utils.json import parse_json_markdown
 from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
+
+_logger = logging.getLogger(__name__)
 
 
 class JsonValidityEvaluator(StringEvaluator):
@@ -58,16 +61,13 @@ class JsonValidityEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
-        reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
         Args:
-            prediction (str): The prediction string to evaluate.
-            input (str, optional): Not used in this evaluator. Defaults to None.
-            reference (str, optional): Not used in this evaluator. Defaults to None.
+            prediction: The prediction string to evaluate.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
             dict: A dictionary containing the evaluation score. The score is 1 if
@@ -78,14 +78,19 @@ class JsonValidityEvaluator(StringEvaluator):
         """
         try:
             parse_json_markdown(prediction, parser=json.loads)
+        except json.JSONDecodeError as e:
+            return {"score": 0, "reasoning": str(e)}
         except Exception as e:
+            _logger.exception("Passing JSON failed with unexpected error.")
             return {"score": 0, "reasoning": str(e)}
         return {"score": 1}
 
 
 class JsonEqualityEvaluator(StringEvaluator):
-    """Evaluate whether the prediction is equal to the reference after
-        parsing both as JSON.
+    """Json Equality Evaluator.
+
+    Evaluate whether the prediction is equal to the reference after
+    parsing both as JSON.
 
     This evaluator checks if the prediction, after parsing as JSON, is equal
         to the reference,
@@ -106,7 +111,7 @@ class JsonEqualityEvaluator(StringEvaluator):
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')
         {'score': False}
 
-        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x['a'] == y['a'])
+        >>> evaluator = JsonEqualityEvaluator(operator=lambda x, y: x["a"] == y["a"])
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 1}')
         {'score': True}
         >>> evaluator.evaluate_strings('{"a": 1}', reference='{"a": 2}')
@@ -151,19 +156,18 @@ class JsonEqualityEvaluator(StringEvaluator):
     def _evaluate_strings(
         self,
         prediction: str,
-        input: Optional[str] = None,
         reference: Optional[str] = None,
         **kwargs: Any,
     ) -> dict:
         """Evaluate the prediction string.
 
         Args:
-            prediction (str): The prediction string to evaluate.
-            input (str, optional): Not used in this evaluator.
-            reference (str): The reference string to compare against.
+            prediction: The prediction string to evaluate.
+            reference: The reference string to compare against.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: A dictionary containing the evaluation score.
+            A dictionary containing the evaluation score.
         """
         parsed = self._parse_json(prediction)
         label = self._parse_json(cast("str", reference))

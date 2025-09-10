@@ -73,7 +73,7 @@ class MyOtherRunnable(RunnableSerializable[str, str]):
 
 def test_doubly_set_configurable() -> None:
     """Test that setting a configurable field with a default value works."""
-    runnable = MyRunnable(my_property="a")  # type: ignore[call-arg]
+    runnable = MyRunnable(my_property="a")
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
             id="my_property",
@@ -86,7 +86,7 @@ def test_doubly_set_configurable() -> None:
 
 
 def test_alias_set_configurable() -> None:
-    runnable = MyRunnable(my_property="a")  # type: ignore[call-arg]
+    runnable = MyRunnable(my_property="a")
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
             id="my_property_alias",
@@ -104,7 +104,7 @@ def test_alias_set_configurable() -> None:
 
 
 def test_field_alias_set_configurable() -> None:
-    runnable = MyRunnable(my_property_alias="a")
+    runnable = MyRunnable(my_property_alias="a")  # type: ignore[call-arg]
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
             id="my_property",
@@ -122,7 +122,7 @@ def test_field_alias_set_configurable() -> None:
 
 
 def test_config_passthrough() -> None:
-    runnable = MyRunnable(my_property="a")  # type: ignore[call-arg]
+    runnable = MyRunnable(my_property="a")
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
             id="my_property",
@@ -158,7 +158,7 @@ def test_config_passthrough() -> None:
 
 
 def test_config_passthrough_nested() -> None:
-    runnable = MyRunnable(my_property="a")  # type: ignore[call-arg]
+    runnable = MyRunnable(my_property="a")
     configurable_runnable = runnable.configurable_fields(
         my_property=ConfigurableField(
             id="my_property",

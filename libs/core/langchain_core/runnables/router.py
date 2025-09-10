@@ -38,15 +38,12 @@ if TYPE_CHECKING:
 
 
 class RouterInput(TypedDict):
-    """Router input.
-
-    Attributes:
-        key: The key to route on.
-        input: The input to pass to the selected Runnable.
-    """
+    """Router input."""
 
     key: str
+    """The key to route on."""
     input: Any
+    """The input to pass to the selected Runnable."""
 
 
 class RouterRunnable(RunnableSerializable[RouterInput, Output]):
@@ -66,6 +63,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
             router = RouterRunnable(runnables={"add": add, "square": square})
             router.invoke({"key": "square", "input": 3})
+
     """
 
     runnables: Mapping[str, Runnable[Any, Output]]
@@ -86,7 +84,7 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
         Args:
             runnables: A mapping of keys to Runnables.
         """
-        super().__init__(  # type: ignore[call-arg]
+        super().__init__(
             runnables={key: coerce_to_runnable(r) for key, r in runnables.items()}
         )
 
@@ -97,13 +95,17 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @override

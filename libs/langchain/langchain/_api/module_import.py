@@ -85,10 +85,10 @@ def create_importer(
                     and deprecated_lookups
                     and name in deprecated_lookups
                     # Depth 3:
-                    # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
+                    # -> internal.py
+                    # |-> module_import.py
+                    #  |-> Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
                     and not internal.is_caller_internal(depth=3)
                 ):
                     warn_deprecated(
@@ -120,9 +120,9 @@ def create_importer(
                     not is_interactive_env()
                     # Depth 3:
                     # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
+                    # |-> module_import.py
+                    #  |->Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
                     and not internal.is_caller_internal(depth=3)
                 ):
                     warn_deprecated(

@@ -196,6 +196,7 @@ class BaseSingleActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -339,6 +340,7 @@ class BaseMultiActionAgent(BaseModel):
 
             # If working with agent executor
             agent.agent.save(file_path="path/agent.yaml")
+
         """
         # Convert file to Path object.
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
@@ -364,7 +366,6 @@ class BaseMultiActionAgent(BaseModel):
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
-
         return {}
 
 
@@ -1148,7 +1149,10 @@ class AgentExecutor(Chain):
         if agent and isinstance(agent, Runnable):
             try:
                 output_type = agent.OutputType
-            except Exception as _:
+            except TypeError:
+                multi_action = False
+            except Exception:
+                logger.exception("Unexpected error getting OutputType from agent")
                 multi_action = False
             else:
                 multi_action = output_type == Union[list[AgentAction], AgentFinish]
@@ -1373,7 +1377,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             if run_manager:
@@ -1512,7 +1516,7 @@ class AgentExecutor(Chain):
             elif callable(self.handle_parsing_errors):
                 observation = self.handle_parsing_errors(e)
             else:
-                msg = "Got unexpected type of `handle_parsing_errors`"
+                msg = "Got unexpected type of `handle_parsing_errors`"  # type: ignore[unreachable]
                 raise ValueError(msg) from e  # noqa: TRY004
             output = AgentAction("_Exception", observation, text)
             tool_run_kwargs = self._action_agent.tool_run_logging_kwargs()
@@ -1549,7 +1553,7 @@ class AgentExecutor(Chain):
             ],
         )
 
-        # TODO This could yield each result as it becomes available
+        # TODO: This could yield each result as it becomes available
         for chunk in result:
             yield chunk
 
@@ -1805,7 +1809,6 @@ class AgentExecutor(Chain):
         Yields:
             AddableDict: Addable dictionary.
         """
-
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,

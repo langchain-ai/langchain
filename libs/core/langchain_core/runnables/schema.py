@@ -51,8 +51,10 @@ class BaseStreamEvent(TypedDict):
 
             from langchain_core.runnables import RunnableLambda
 
+
             async def reverse(s: str) -> str:
                 return s[::-1]
+
 
             chain = RunnableLambda(func=reverse)
 
@@ -83,6 +85,7 @@ class BaseStreamEvent(TypedDict):
                     "tags": [],
                 },
             ]
+
     """
 
     event: str

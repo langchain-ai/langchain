@@ -13,7 +13,7 @@ import hashlib
 import json
 import uuid
 import warnings
-from typing import TYPE_CHECKING, Callable, Literal, Optional, Union, cast
+from typing import TYPE_CHECKING, Literal, cast
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils.iter import batch_iterate
@@ -21,7 +21,7 @@ from langchain_core.utils.iter import batch_iterate
 from langchain.storage.encoder_backed import EncoderBackedStore
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Callable, Sequence
 
     from langchain_core.stores import BaseStore, ByteStore
 
@@ -147,8 +147,8 @@ class CacheBackedEmbeddings(Embeddings):
         underlying_embeddings: Embeddings,
         document_embedding_store: BaseStore[str, list[float]],
         *,
-        batch_size: Optional[int] = None,
-        query_embedding_store: Optional[BaseStore[str, list[float]]] = None,
+        batch_size: int | None = None,
+        query_embedding_store: BaseStore[str, list[float]] | None = None,
     ) -> None:
         """Initialize the embedder.
 
@@ -178,20 +178,18 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: list[Union[list[float], None]] = self.document_embedding_store.mget(
+        vectors: list[list[float] | None] = self.document_embedding_store.mget(
             texts,
         )
-        all_missing_indices: list[int] = [
-            i for i, vector in enumerate(vectors) if vector is None
-        ]
+        all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
 
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
-                list(zip(missing_texts, missing_vectors)),
+                list(zip(missing_texts, missing_vectors, strict=False)),
             )
-            for index, updated_vector in zip(missing_indices, missing_vectors):
+            for index, updated_vector in zip(missing_indices, missing_vectors, strict=False):
                 vectors[index] = updated_vector
 
         return cast(
@@ -212,12 +210,8 @@ class CacheBackedEmbeddings(Embeddings):
         Returns:
             A list of embeddings for the given texts.
         """
-        vectors: list[
-            Union[list[float], None]
-        ] = await self.document_embedding_store.amget(texts)
-        all_missing_indices: list[int] = [
-            i for i, vector in enumerate(vectors) if vector is None
-        ]
+        vectors: list[list[float] | None] = await self.document_embedding_store.amget(texts)
+        all_missing_indices: list[int] = [i for i, vector in enumerate(vectors) if vector is None]
 
         # batch_iterate supports None batch_size which returns all elements at once
         # as a single batch.
@@ -227,9 +221,9 @@ class CacheBackedEmbeddings(Embeddings):
                 missing_texts,
             )
             await self.document_embedding_store.amset(
-                list(zip(missing_texts, missing_vectors)),
+                list(zip(missing_texts, missing_vectors, strict=False)),
             )
-            for index, updated_vector in zip(missing_indices, missing_vectors):
+            for index, updated_vector in zip(missing_indices, missing_vectors, strict=False):
                 vectors[index] = updated_vector
 
         return cast(
@@ -290,12 +284,9 @@ class CacheBackedEmbeddings(Embeddings):
         document_embedding_cache: ByteStore,
         *,
         namespace: str = "",
-        batch_size: Optional[int] = None,
-        query_embedding_cache: Union[bool, ByteStore] = False,
-        key_encoder: Union[
-            Callable[[str], str],
-            Literal["sha1", "blake2b", "sha256", "sha512"],
-        ] = "sha1",
+        batch_size: int | None = None,
+        query_embedding_cache: bool | ByteStore = False,
+        key_encoder: Callable[[str], str] | Literal["sha1", "blake2b", "sha256", "sha512"] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
 

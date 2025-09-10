@@ -122,7 +122,8 @@ def create_self_ask_with_search_agent(
             from langchain import hub
             from langchain_community.chat_models import ChatAnthropic
             from langchain.agents import (
-                AgentExecutor, create_self_ask_with_search_agent
+                AgentExecutor,
+                create_self_ask_with_search_agent,
             )
 
             prompt = hub.pull("hwchase17/self-ask-with-search")
@@ -185,6 +186,7 @@ def create_self_ask_with_search_agent(
             Are followup questions needed here:{agent_scratchpad}'''
 
             prompt = PromptTemplate.from_template(template)
+
     """  # noqa: E501
     missing_vars = {"agent_scratchpad"}.difference(
         prompt.input_variables + list(prompt.partial_variables),

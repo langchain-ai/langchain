@@ -214,6 +214,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 pydantic_schema={"cookie": Cookie, "dog": Dog}
             )
             result = parser.parse_result([chat_generation])
+
     """
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
@@ -259,6 +260,9 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
         Args:
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects. Default is False.
+
+        Raises:
+            ValueError: If the pydantic schema is not valid.
 
         Returns:
             The parsed JSON object.

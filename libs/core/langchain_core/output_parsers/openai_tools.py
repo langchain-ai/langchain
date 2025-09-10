@@ -231,6 +231,9 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                 If False, the output will be the full JSON object.
                 Default is False.
 
+        Raises:
+            OutputParserException: If the generation is not a chat generation.
+
         Returns:
             The parsed tool calls.
         """
@@ -246,6 +249,8 @@ class JsonOutputKeyToolsParser(JsonOutputToolsParser):
                     _ = tool_call.pop("id")
         else:
             try:
+                # This exists purely for backward compatibility / cached messages
+                # All new messages should use `message.tool_calls`
                 raw_tool_calls = copy.deepcopy(message.additional_kwargs["tool_calls"])
             except KeyError:
                 if self.first_tool_only:
@@ -314,7 +319,9 @@ class PydanticToolsParser(JsonOutputToolsParser):
             The parsed Pydantic objects.
 
         Raises:
-            OutputParserException: If the output is not valid JSON.
+            ValueError: If the tool call arguments are not a dict.
+            ValidationError: If the tool call arguments do not conform
+                to the Pydantic model.
         """
         json_results = super().parse_result(result, partial=partial)
         if not json_results:

@@ -31,7 +31,7 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[Vector stores](/docs/concepts/vectorstores)**: Storage of and efficient search over vectors and associated metadata.
 - **[Retriever](/docs/concepts/retrievers)**: A component that returns relevant documents from a knowledge base in response to a query.
 - **[Retrieval Augmented Generation (RAG)](/docs/concepts/rag)**: A technique that enhances language models by combining them with external knowledge bases.
-- **[Agents](/docs/concepts/agents)**: Use a [language model](/docs/concepts/chat_models) to choose a sequence of actions to take. Agents can interact with external resources via [tool](/docs/concepts/tools).
+- **[Agents](/docs/concepts/agents)**: Use a [language model](/docs/concepts/chat_models) to choose a sequence of actions to take. Agents can interact with external resources via [tools](/docs/concepts/tools).
 - **[Prompt templates](/docs/concepts/prompt_templates)**: Component for factoring out the static parts of a model "prompt" (usually a sequence of messages). Useful for serializing, versioning, and reusing these static parts.
 - **[Output parsers](/docs/concepts/output_parsers)**: Responsible for taking the output of a model and transforming it into a more suitable format for downstream tasks. Output parsers were primarily useful prior to the general availability of [tool calling](/docs/concepts/tool_calling) and [structured outputs](/docs/concepts/structured_outputs).
 - **[Few-shot prompting](/docs/concepts/few_shot_prompting)**: A technique for improving model performance by providing a few examples of the task to perform in the prompt.
@@ -48,7 +48,7 @@ The conceptual guide does not cover step-by-step instructions or specific implem
 - **[AIMessage](/docs/concepts/messages#aimessage)**: Represents a complete response from an AI model.
 - **[astream_events](/docs/concepts/chat_models#key-methods)**: Stream granular information from [LCEL](/docs/concepts/lcel) chains.
 - **[BaseTool](/docs/concepts/tools/#tool-interface)**: The base class for all tools in LangChain.
-- **[batch](/docs/concepts/runnables)**: Use to execute a runnable with batch inputs.
+- **[batch](/docs/concepts/runnables)**: Used to execute a runnable with batch inputs.
 - **[bind_tools](/docs/concepts/tool_calling/#tool-binding)**: Allows models to interact with tools.
 - **[Caching](/docs/concepts/chat_models#caching)**: Storing results to avoid redundant calls to a chat model.
 - **[Chat models](/docs/concepts/multimodality/#multimodality-in-chat-models)**: Chat models that handle multiple data modalities.

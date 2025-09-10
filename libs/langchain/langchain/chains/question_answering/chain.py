@@ -80,7 +80,7 @@ def _load_stuff_chain(
     llm_chain = LLMChain(
         llm=llm,
         prompt=_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -88,7 +88,7 @@ def _load_stuff_chain(
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
@@ -120,7 +120,7 @@ def _load_map_reduce_chain(
     map_chain = LLMChain(
         llm=llm,
         prompt=_question_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -128,7 +128,7 @@ def _load_map_reduce_chain(
     reduce_chain = LLMChain(
         llm=_reduce_llm,
         prompt=_combine_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -136,7 +136,7 @@ def _load_map_reduce_chain(
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -154,12 +154,12 @@ def _load_map_reduce_chain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,  # type: ignore[arg-type]
+                verbose=verbose,
                 callback_manager=callback_manager,
                 callbacks=callbacks,
             ),
             document_variable_name=combine_document_variable_name,
-            verbose=verbose,  # type: ignore[arg-type]
+            verbose=verbose,
             callback_manager=callback_manager,
         )
     reduce_documents_chain = ReduceDocumentsChain(
@@ -172,7 +172,7 @@ def _load_map_reduce_chain(
         llm_chain=map_chain,
         document_variable_name=map_reduce_document_variable_name,
         reduce_documents_chain=reduce_documents_chain,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
@@ -201,7 +201,7 @@ def _load_refine_chain(
     initial_chain = LLMChain(
         llm=llm,
         prompt=_question_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -209,7 +209,7 @@ def _load_refine_chain(
     refine_chain = LLMChain(
         llm=_refine_llm,
         prompt=_refine_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
     )
@@ -218,7 +218,7 @@ def _load_refine_chain(
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         callback_manager=callback_manager,
         callbacks=callbacks,
         **kwargs,
@@ -255,6 +255,7 @@ def load_qa_chain(
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
         callback_manager: Callback manager to use for the chain.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A chain to use for question answering.

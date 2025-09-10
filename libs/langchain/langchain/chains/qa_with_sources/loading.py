@@ -66,12 +66,12 @@ def _load_stuff_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)  # type: ignore[arg-type]
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
@@ -91,14 +91,14 @@ def _load_map_reduce_chain(
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
+    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)  # type: ignore[arg-type]
+    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
     )
     if collapse_prompt is None:
         collapse_chain = None
@@ -114,7 +114,7 @@ def _load_map_reduce_chain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,  # type: ignore[arg-type]
+                verbose=verbose,
             ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
@@ -123,13 +123,13 @@ def _load_map_reduce_chain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
         document_variable_name=map_reduce_document_variable_name,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
@@ -146,16 +146,16 @@ def _load_refine_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
+    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)  # type: ignore[arg-type]
+    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
@@ -189,6 +189,7 @@ def load_qa_with_sources_chain(
             "map_reduce", "refine" and "map_rerank".
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A chain to use for question answering with sources.

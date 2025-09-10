@@ -32,7 +32,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
 
             from langchain_core.messages import ToolMessage
 
-            ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+            ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
 
 
     Example: A ToolMessage where only part of the tool output is sent to the model
@@ -45,7 +45,8 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             from langchain_core.messages import ToolMessage
 
             tool_output = {
-                "stdout": "From the graph we can see that the correlation between x and y is ...",
+                "stdout": "From the graph we can see that the correlation between "
+                "x and y is ...",
                 "stderr": None,
                 "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
             }
@@ -53,13 +54,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
             ToolMessage(
                 content=tool_output["stdout"],
                 artifact=tool_output,
-                tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
             )
 
     The tool_call_id field is used to associate the tool call request with the
     tool call response. This is useful in situations where a chat model is able
     to request multiple tool calls in parallel.
-    """  # noqa: E501
+
+    """
 
     tool_call_id: str
     """Tool call that this message is responding to."""
@@ -183,14 +185,11 @@ class ToolCall(TypedDict):
 
         .. code-block:: python
 
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
+            {"name": "foo", "args": {"a": 1}, "id": "123"}
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
+
     """
 
     name: str
@@ -210,7 +209,7 @@ def tool_call(
     *,
     name: str,
     args: dict[str, Any],
-    id: Optional[str],  # noqa: A002
+    id: Optional[str],
 ) -> ToolCall:
     """Create a tool call.
 
@@ -218,6 +217,9 @@ def tool_call(
         name: The name of the tool to be called.
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
+
+    Returns:
+        The created tool call.
     """
     return ToolCall(name=name, args=args, id=id, type="tool_call")
 
@@ -234,12 +236,13 @@ class ToolCallChunk(TypedDict):
     .. code-block:: python
 
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
         (
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
+
     """
 
     name: Optional[str]
@@ -257,7 +260,7 @@ def tool_call_chunk(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     index: Optional[int] = None,
 ) -> ToolCallChunk:
     """Create a tool call chunk.
@@ -267,6 +270,9 @@ def tool_call_chunk(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         index: The index of the tool call in a sequence.
+
+    Returns:
+        The created tool call chunk.
     """
     return ToolCallChunk(
         name=name, args=args, id=id, index=index, type="tool_call_chunk"
@@ -295,7 +301,7 @@ def invalid_tool_call(
     *,
     name: Optional[str] = None,
     args: Optional[str] = None,
-    id: Optional[str] = None,  # noqa: A002
+    id: Optional[str] = None,
     error: Optional[str] = None,
 ) -> InvalidToolCall:
     """Create an invalid tool call.
@@ -305,6 +311,9 @@ def invalid_tool_call(
         args: The arguments to the tool call.
         id: An identifier associated with the tool call.
         error: An error message associated with the tool call.
+
+    Returns:
+        The created invalid tool call.
     """
     return InvalidToolCall(
         name=name, args=args, id=id, error=error, type="invalid_tool_call"
@@ -314,7 +323,14 @@ def invalid_tool_call(
 def default_tool_parser(
     raw_tool_calls: list[dict],
 ) -> tuple[list[ToolCall], list[InvalidToolCall]]:
-    """Best-effort parsing of tools."""
+    """Best-effort parsing of tools.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        A list of tool calls and invalid tool calls.
+    """
     tool_calls = []
     invalid_tool_calls = []
     for raw_tool_call in raw_tool_calls:
@@ -342,7 +358,14 @@ def default_tool_parser(
 
 
 def default_tool_chunk_parser(raw_tool_calls: list[dict]) -> list[ToolCallChunk]:
-    """Best-effort parsing of tool chunks."""
+    """Best-effort parsing of tool chunks.
+
+    Args:
+        raw_tool_calls: List of raw tool call dicts to parse.
+
+    Returns:
+        List of parsed ToolCallChunk objects.
+    """
     tool_call_chunks = []
     for tool_call in raw_tool_calls:
         if "function" not in tool_call:

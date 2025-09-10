@@ -21,17 +21,14 @@ from langchain_core.utils.pydantic import (
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive.".
+    """Validate specified keyword args are mutually exclusive.
 
     Args:
         *arg_groups (tuple[str, ...]): Groups of mutually exclusive keyword args.
 
     Returns:
         Callable: Decorator that validates the specified keyword args
-            are mutually exclusive
-
-    Raises:
-        ValueError: If more than one arg in a group is defined.
+            are mutually exclusive.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -137,7 +134,7 @@ def guard_import(
     try:
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
-        pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
+        pip_name = pip_name or module_name.split(".", maxsplit=1)[0].replace("_", "-")
         msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
@@ -381,10 +378,21 @@ def from_env(
         error_message: the error message which will be raised if the key is not found
             and no default value is provided.
             This will be raised as a ValueError.
+
+    Returns:
+        factory method that will look up the value from the environment.
     """
 
     def get_from_env_fn() -> Optional[str]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The value from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:
@@ -445,7 +453,15 @@ def secret_from_env(
     """
 
     def get_secret_from_env() -> Optional[SecretStr]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The secret from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:

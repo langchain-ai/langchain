@@ -1,4 +1,4 @@
-name: compile-integration-test
+name: '🔗 Compile Integration Tests'
 
 on:
   workflow_call:
@@ -25,24 +25,24 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    name: "uv run pytest -m compile tests/integration_tests #${{ inputs.python-version }}"
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install integration dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: Check integration tests compile
+      - name: '🔗 Check Integration Tests Compile'
         shell: bash
         run: uv run pytest -m compile tests/integration_tests
 
-      - name: Ensure the tests did not create any additional files
+      - name: '🧹 Verify Clean Working Directory'
         shell: bash
         run: |
           set -eu

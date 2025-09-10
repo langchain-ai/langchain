@@ -78,6 +78,7 @@ def create_openai_fn_chain(
             passed in and they are not pydantic.BaseModels, the chain output will
             include both the name of the function that was returned and the arguments
             to pass to the function.
+        **kwargs: Additional keyword arguments to pass to LLMChain.
 
     Returns:
         An LLMChain that will pass in the given functions to the model when run.
@@ -121,6 +122,7 @@ def create_openai_fn_chain(
                 chain = create_openai_fn_chain([RecordPerson, RecordDog], llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
         msg = "Need to pass in at least one function. Received zero."
@@ -170,6 +172,7 @@ def create_structured_output_chain(
             will be inferred from the function types. If pydantic.BaseModels are passed
             in, then the OutputParser will try to parse outputs using those. Otherwise
             model outputs will simply be parsed as JSON.
+        **kwargs: Additional keyword arguments to pass to LLMChain.
 
     Returns:
         An LLMChain that will pass the given function to the model.
@@ -203,6 +206,7 @@ def create_structured_output_chain(
                 chain = create_structured_output_chain(Dog, llm, prompt)
                 chain.run("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if isinstance(output_schema, dict):
         function: Any = {
@@ -216,7 +220,10 @@ def create_structured_output_chain(
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter.
+
+            Should always be used to format your response to the user.
+            """
 
             output: output_schema  # type: ignore[valid-type]
 

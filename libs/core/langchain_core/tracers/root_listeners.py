@@ -21,18 +21,10 @@ AsyncListener = Union[
 
 
 class RootListenersTracer(BaseTracer):
-    """Tracer that calls listeners on run start, end, and error.
-
-    Parameters:
-        log_missing_parent: Whether to log a warning if the parent is missing.
-            Default is False.
-        config: The runnable config.
-        on_start: The listener to call on run start.
-        on_end: The listener to call on run end.
-        on_error: The listener to call on run error.
-    """
+    """Tracer that calls listeners on run start, end, and error."""
 
     log_missing_parent = False
+    """Whether to log a warning if the parent is missing. Default is False."""
 
     def __init__(
         self,
@@ -84,18 +76,10 @@ class RootListenersTracer(BaseTracer):
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
-    """Async Tracer that calls listeners on run start, end, and error.
-
-    Parameters:
-        log_missing_parent: Whether to log a warning if the parent is missing.
-            Default is False.
-        config: The runnable config.
-        on_start: The listener to call on run start.
-        on_end: The listener to call on run end.
-        on_error: The listener to call on run error.
-    """
+    """Async Tracer that calls listeners on run start, end, and error."""
 
     log_missing_parent = False
+    """Whether to log a warning if the parent is missing. Default is False."""
 
     def __init__(
         self,

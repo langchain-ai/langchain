@@ -286,7 +286,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
     def output_keys(self) -> list[str]:
         """Keys expected to be in the chain output."""
 
-    def _validate_inputs(self, inputs: dict[str, Any]) -> None:
+    def _validate_inputs(self, inputs: Any) -> None:
         """Check that all inputs are present."""
         if not isinstance(inputs, dict):
             _input_keys = set(self.input_keys)
@@ -394,7 +394,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to None
+            metadata: Optional metadata associated with the chain. Defaults to None.
+            run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -445,7 +446,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to None
+            metadata: Optional metadata associated with the chain. Defaults to None.
+            run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -599,6 +601,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain.
             **kwargs: If the chain expects multiple inputs, they can be passed in
                 directly as keyword arguments.
 
@@ -618,6 +621,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 context = "Weather report for Boise, Idaho on 07/03/23..."
                 chain.run(question=question, context=context)
                 # -> "The temperature in Boise is..."
+
         """
         # Run at start to make sure this is possible/defined
         _output_key = self._run_output_key
@@ -673,6 +677,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain.
             **kwargs: If the chain expects multiple inputs, they can be passed in
                 directly as keyword arguments.
 
@@ -692,6 +697,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 context = "Weather report for Boise, Idaho on 07/03/23..."
                 await chain.arun(question=question, context=context)
                 # -> "The temperature in Boise is..."
+
         """
         if len(self.output_keys) != 1:
             msg = (
@@ -746,6 +752,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
 
                 chain.dict(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
+
         """
         _dict = super().dict(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -765,6 +772,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             .. code-block:: python
 
                 chain.save(file_path="path/chain.yaml")
+
         """
         if self.memory is not None:
             msg = "Saving of memory is not yet supported."

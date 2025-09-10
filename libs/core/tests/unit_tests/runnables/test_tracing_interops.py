@@ -57,15 +57,20 @@ def test_tracing_context() -> None:
     )
 
     @RunnableLambda
-    def my_function(a: int) -> int:
+    def my_lambda(a: int) -> int:
         return a + 1
+
+    @RunnableLambda
+    def my_function(a: int) -> int:
+        with tracing_context(enabled=False):
+            return my_lambda.invoke(a)
 
     name = uuid.uuid4().hex
     project_name = f"Some project {name}"
     with tracing_context(project_name=project_name, client=mock_client_, enabled=True):
         assert my_function.invoke(1) == 2
     posts = _get_posts(mock_client_)
-    assert posts
+    assert len(posts) == 1
     assert all(post["session_name"] == project_name for post in posts)
 
 
@@ -221,7 +226,7 @@ async def test_config_traceable_async_handoff() -> None:
 @pytest.mark.parametrize("enabled", [None, True, False])
 @pytest.mark.parametrize("env", ["", "true"])
 def test_tracing_enable_disable(
-    mock_get_client: MagicMock, *, enabled: bool, env: str
+    mock_get_client: MagicMock, *, enabled: Optional[bool], env: str
 ) -> None:
     mock_session = MagicMock()
     mock_client_ = Client(

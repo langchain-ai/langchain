@@ -35,6 +35,7 @@ def test_base_blob_parser() -> None:
 
 def test_default_lazy_load() -> None:
     class FakeLoader(BaseLoader):
+        @override
         def load(self) -> list[Document]:
             return [
                 Document(page_content="foo"),
@@ -57,6 +58,7 @@ def test_lazy_load_not_implemented() -> None:
 
 async def test_default_aload() -> None:
     class FakeLoader(BaseLoader):
+        @override
         def lazy_load(self) -> Iterator[Document]:
             yield from [
                 Document(page_content="foo"),
