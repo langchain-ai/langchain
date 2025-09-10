@@ -1715,6 +1715,24 @@ class Chroma(VectorStore):
         """
         self._collection.delete(ids=ids, **kwargs)
 
+    async def adelete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs asynchronously.
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot delete asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        collection = await self._aget_collection()
+        await collection.delete(ids=ids, **kwargs)
+
+
 
 
 
