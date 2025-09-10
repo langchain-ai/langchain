@@ -84,8 +84,7 @@ def pytest_collection_modifyitems(
     .. code-block:: python
 
         @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
+        def test_something(): ...
 
     """
     # Mapping from the name of a package to whether it is installed or not.

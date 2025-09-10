@@ -105,11 +105,15 @@ class ChatAgent(Agent):
         Returns:
             A prompt template.
         """
-
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = f"{system_message_prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{system_message_suffix}"  # noqa: E501
+        template = (
+            f"{system_message_prefix}\n\n"
+            f"{tool_strings}\n\n"
+            f"{format_instructions}\n\n"
+            f"{system_message_suffix}"
+        )
         messages = [
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template(human_message),

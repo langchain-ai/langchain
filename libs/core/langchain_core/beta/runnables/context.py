@@ -344,8 +344,7 @@ class Context:
             chain = (
                 Context.setter("input")
                 | {
-                    "context": RunnablePassthrough()
-                            | Context.setter("context"),
+                    "context": RunnablePassthrough() | Context.setter("context"),
                     "question": RunnablePassthrough(),
                 }
                 | PromptTemplate.from_template("{context} {question}")

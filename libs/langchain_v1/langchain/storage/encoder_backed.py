@@ -4,7 +4,6 @@ from collections.abc import AsyncIterator, Callable, Iterator, Sequence
 from typing import (
     Any,
     TypeVar,
-    Union,
 )
 
 from langchain_core.stores import BaseStore
@@ -22,14 +21,18 @@ class EncoderBackedStore(BaseStore[K, V]):
 
         import json
 
+
         def key_encoder(key: int) -> str:
             return json.dumps(key)
+
 
         def value_serializer(value: float) -> str:
             return json.dumps(value)
 
+
         def value_deserializer(serialized_value: str) -> float:
             return json.loads(serialized_value)
+
 
         # Create an instance of the abstract store
         abstract_store = MyCustomStore()
@@ -39,7 +42,7 @@ class EncoderBackedStore(BaseStore[K, V]):
             store=abstract_store,
             key_encoder=key_encoder,
             value_serializer=value_serializer,
-            value_deserializer=value_deserializer
+            value_deserializer=value_deserializer,
         )
 
         # Use the encoder-backed store methods
@@ -102,7 +105,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         self,
         *,
         prefix: str | None = None,
-    ) -> Union[Iterator[K], Iterator[str]]:
+    ) -> Iterator[K] | Iterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.
@@ -112,7 +115,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         self,
         *,
         prefix: str | None = None,
-    ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
+    ) -> AsyncIterator[K] | AsyncIterator[str]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
         # it's for debugging purposes. Should fix this.

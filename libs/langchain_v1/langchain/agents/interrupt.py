@@ -1,6 +1,6 @@
 """Interrupt types to use with agent inbox like setups."""
 
-from typing import Literal, Union
+from typing import Literal
 
 from typing_extensions import TypedDict
 
@@ -53,15 +53,15 @@ class HumanInterrupt(TypedDict):
         request = HumanInterrupt(
             action_request=ActionRequest(
                 action="run_command",  # The action being requested
-                args={"command": "ls", "args": ["-l"]}  # Arguments for the action
+                args={"command": "ls", "args": ["-l"]},  # Arguments for the action
             ),
             config=HumanInterruptConfig(
-                allow_ignore=True,    # Allow skipping this step
-                allow_respond=True,   # Allow text feedback
-                allow_edit=False,     # Don't allow editing
-                allow_accept=True     # Allow direct acceptance
+                allow_ignore=True,  # Allow skipping this step
+                allow_respond=True,  # Allow text feedback
+                allow_edit=False,  # Don't allow editing
+                allow_accept=True,  # Allow direct acceptance
             ),
-            description="Please review the command before execution"
+            description="Please review the command before execution",
         )
         # Send the interrupt request and get the response
         response = interrupt([request])[0]
@@ -74,19 +74,24 @@ class HumanInterrupt(TypedDict):
 
 
 class HumanResponse(TypedDict):
-    """The response provided by a human to an interrupt, which is returned when graph execution resumes.
+    """Human response.
+
+    The response provided by a human to an interrupt,
+    which is returned when graph execution resumes.
 
     Attributes:
         type: The type of response:
+
             - "accept": Approves the current state without changes
             - "ignore": Skips/ignores the current step
             - "response": Provides text feedback or instructions
             - "edit": Modifies the current state/content
         args: The response payload:
+
             - None: For ignore/accept actions
             - str: For text responses
             - ActionRequest: For edit actions with updated content
     """
 
     type: Literal["accept", "ignore", "response", "edit"]
-    args: Union[None, str, ActionRequest]
+    args: None | str | ActionRequest
