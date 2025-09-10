@@ -44,9 +44,6 @@ langchain-core = { path = "../../core", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
