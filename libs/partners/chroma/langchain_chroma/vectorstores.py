@@ -374,7 +374,7 @@ class Chroma(VectorStore):
             self._client = client
         elif async_client is not None:
             # If only async_client is provided, we don't create a sync client
-            self._client = None
+            self._client = None  # type: ignore[assignment]
         # PersistentClient
         elif persist_directory is not None:
             self._client = chromadb.PersistentClient(
@@ -1758,3 +1758,4 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
