@@ -82,7 +82,7 @@ class MockAsyncCollection:
 class MockAsyncClient:
     """Mock async client for testing."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.collections: dict[str, MockAsyncCollection] = {}
 
     async def get_or_create_collection(
@@ -440,3 +440,4 @@ async def test_concurrent_async_operations() -> None:
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
