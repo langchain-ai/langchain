@@ -207,7 +207,8 @@ class ConfigContext:
             RuntimeError: If the context manager was not entered.
         """
         if not self._entered:
-            raise RuntimeError("Cannot exit context manager that was not entered")
+            msg = "Cannot exit context manager that was not entered"
+            raise RuntimeError(msg)
 
         if self._ctx is not None and self._config_token is not None:
             self._ctx.run(var_child_runnable_config.reset, self._config_token)
@@ -670,4 +671,5 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
