@@ -326,7 +326,7 @@ async def test_error_without_async_client() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sync_methods_error_with_only_async_client():
+async def test_sync_methods_error_with_only_async_client() -> None:
     """Test that sync methods raise errors when only async_client is provided."""
     async_client = MockAsyncClient()
 
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
