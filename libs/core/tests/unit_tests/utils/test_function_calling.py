@@ -12,7 +12,6 @@ from typing import (
 from typing import TypedDict as TypingTypedDict
 
 import pytest
-from aiofiles import stderr
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
 from typing_extensions import TypeAlias
