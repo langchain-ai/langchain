@@ -24,7 +24,7 @@ def test_sanitize_for_postgres() -> None:
     assert sanitize_for_postgres(clean_text) == clean_text
 
     # Test empty string
-    assert sanitize_for_postgres("") == ""
+    assert not sanitize_for_postgres("")
 
     # Test with multiple consecutive NUL bytes
     text_with_multiple_nuls = "Hello\x00\x00\x00world"

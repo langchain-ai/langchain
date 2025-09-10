@@ -69,6 +69,7 @@ class LLMChain(Chain):
             from langchain.chains import LLMChain
             from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
+
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template
@@ -79,7 +80,7 @@ class LLMChain(Chain):
 
     @classmethod
     @override
-    def is_lc_serializable(self) -> bool:
+    def is_lc_serializable(cls) -> bool:
         return True
 
     prompt: BasePromptTemplate

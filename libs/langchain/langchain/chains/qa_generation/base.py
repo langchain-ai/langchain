@@ -39,6 +39,7 @@ class QAGenerationChain(Chain):
         .. code-block:: python
 
             from langchain.chains.qa_generation.prompt import CHAT_PROMPT as prompt
+
             # Note: import PROMPT if using a legacy non-chat model.
             from langchain_core.output_parsers import JsonOutputParser
             from langchain_core.runnables import (
@@ -52,15 +53,13 @@ class QAGenerationChain(Chain):
 
             llm = ChatOpenAI()
             text_splitter = RecursiveCharacterTextSplitter(chunk_overlap=500)
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
 
             chain = RunnableParallel(
                 text=RunnablePassthrough(),
                 questions=(
                     split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
-                )
+                ),
             )
 
     """
@@ -85,8 +84,7 @@ class QAGenerationChain(Chain):
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> QAGenerationChain:
-        """
-        Create a QAGenerationChain from a language model.
+        """Create a QAGenerationChain from a language model.
 
         Args:
             llm: a language model

@@ -87,7 +87,7 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
+        """Top Level call."""
         message = next(self.messages)
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
@@ -107,7 +107,7 @@ class GenericFakeChatModel(BaseChatModel):
             **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
