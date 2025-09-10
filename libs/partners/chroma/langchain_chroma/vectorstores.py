@@ -740,6 +740,102 @@ class Chroma(VectorStore):
             )
         return ids
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Run more texts through the embeddings and add to the vectorstore asynchronously.
+
+        Args:
+            texts: Texts to add to the vectorstore.
+            metadatas: Optional list of metadatas.
+                    When querying, you can filter on this metadata.
+            ids: Optional list of IDs. (Items without IDs will be assigned UUIDs)
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            List of IDs of the added texts.
+
+        Raises:
+            ValueError: When metadata is incorrect or async_client is not available.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot add texts asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+        
+        collection = await self._aget_collection()
+        
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
+
+        embeddings = None
+        texts = list(texts)
+        if self._embedding_function is not None:
+            embeddings = await self._embedding_function.aembed_documents(texts)
+        if metadatas:
+            # fill metadatas with empty dicts if somebody
+            # did not specify metadata for all texts
+            length_diff = len(texts) - len(metadatas)
+            if length_diff:
+                metadatas = metadatas + [{}] * length_diff
+            empty_ids = []
+            non_empty_ids = []
+            for idx, m in enumerate(metadatas):
+                if m:
+                    non_empty_ids.append(idx)
+                else:
+                    empty_ids.append(idx)
+            if non_empty_ids:
+                metadatas = [metadatas[idx] for idx in non_empty_ids]
+                texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
+                embeddings_with_metadatas = (
+                    [embeddings[idx] for idx in non_empty_ids]
+                    if embeddings is not None and len(embeddings) > 0
+                    else None
+                )
+                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
+                try:
+                    await collection.upsert(
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
+                        documents=texts_with_metadatas,
+                        ids=ids_with_metadata,
+                    )
+                except ValueError as e:
+                    if "Expected metadata value to be" in str(e):
+                        msg = (
+                            "Try filtering complex metadata from the document using "
+                            "langchain_community.vectorstores.utils.filter_complex_metadata."
+                        )
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
+                    raise e
+            if empty_ids:
+                texts_without_metadatas = [texts[j] for j in empty_ids]
+                embeddings_without_metadatas = (
+                    [embeddings[j] for j in empty_ids] if embeddings else None
+                )
+                ids_without_metadatas = [ids[j] for j in empty_ids]
+                await collection.upsert(
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
+                    documents=texts_without_metadatas,
+                    ids=ids_without_metadatas,
+                )
+        else:
+            await collection.upsert(
+                embeddings=embeddings,  # type: ignore[arg-type]
+                documents=texts,
+                ids=ids,
+            )
+        return ids
+
     def similarity_search(
         self,
         query: str,
@@ -1507,6 +1603,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
