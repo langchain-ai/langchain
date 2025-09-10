@@ -12,7 +12,7 @@ dependencies = [
     "langchain-core!=0.3.0,!=0.3.1,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,<0.4.0,>=0.2.43",
 ]
 name = "langchain-qdrant"
-version = "0.2.0"
+version = "0.2.1"
 description = "An integration package connecting Qdrant and LangChain"
 readme = "README.md"
 
@@ -46,9 +46,6 @@ typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.lint]
 select = [
@@ -108,6 +105,9 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -1,12 +1,16 @@
 """Module contains a few fake embedding models for testing purposes."""
 
 # Please do not add additional fake embedding model implementations here.
+import contextlib
 import hashlib
 
 from pydantic import BaseModel
 from typing_extensions import override
 
 from langchain_core.embeddings import Embeddings
+
+with contextlib.suppress(ImportError):
+    import numpy as np
 
 
 class FakeEmbeddings(Embeddings, BaseModel):
@@ -20,6 +24,7 @@ class FakeEmbeddings(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import FakeEmbeddings
+
             embed = FakeEmbeddings(size=100)
 
     Embed single text:
@@ -53,8 +58,6 @@ class FakeEmbeddings(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self) -> list[float]:
-        import numpy as np
-
         return list(np.random.default_rng().normal(size=self.size))
 
     @override
@@ -78,6 +81,7 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
         .. code-block:: python
 
             from langchain_core.embeddings import DeterministicFakeEmbedding
+
             embed = DeterministicFakeEmbedding(size=100)
 
     Embed single text:
@@ -111,13 +115,12 @@ class DeterministicFakeEmbedding(Embeddings, BaseModel):
     """The size of the embedding vector."""
 
     def _get_embedding(self, seed: int) -> list[float]:
-        import numpy as np
-
         # set the seed for the random generator
         rng = np.random.default_rng(seed)
         return list(rng.normal(size=self.size))
 
-    def _get_seed(self, text: str) -> int:
+    @staticmethod
+    def _get_seed(text: str) -> int:
         """Get a seed for the random generator, using the hash of the text."""
         return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % 10**8
 
