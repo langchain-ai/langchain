@@ -295,6 +295,7 @@ def _convert_any_typed_dicts_to_pydantic(
         )
         fields: dict = {}
         for arg, arg_type in annotations_.items():
+            field_kwargs: dict[str, Any]
             if get_origin(arg_type) is Annotated:  # type: ignore[comparison-overlap]
                 annotated_args = get_args(arg_type)
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
