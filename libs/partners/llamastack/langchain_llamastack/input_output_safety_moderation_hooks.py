@@ -185,15 +185,19 @@ def create_safety_hook(
     """
     fail_open = hook_type == "input"
 
+    # Use optimal shield defaults based on hook type
+    if shield_type is None:
+        shield_type = "prompt_guard" if hook_type == "input" else "llama_guard"
+
     def safety_hook(content: str) -> SafetyResult:
         try:
             # Create a temporary safety client with the specific shield type if different
-            if hook_type != "input":
+            if shield_type != getattr(safety_client, "shield_type", "llama_guard"):
                 from .safety import LlamaStackSafety
 
                 temp_client = LlamaStackSafety(
                     base_url=safety_client.base_url,
-                    shield_type="prompt_guard",
+                    shield_type=shield_type,
                     timeout=safety_client.timeout,
                     max_retries=safety_client.max_retries,
                 )
