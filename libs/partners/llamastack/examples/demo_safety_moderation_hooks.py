@@ -50,15 +50,17 @@ def demo_safety_client():
 
 def demo_factory_functions():
     """Demo the simplified factory functions."""
-    print("\n🏭 Simplified Factory Functions Demo")
+    print("\n Simplified Factory Functions Demo")
     print("=" * 50)
 
     # Initialize base components
     # ollama/llama3:70b-instruct model is used for demo purposes
     # You can replace it with your own model or use a different one
     # See https://github.com/llamastack/llamastack/blob/main/docs/models.md for more info
-    # if the model is not available locally, the list of available models will be printed
+    # if the model is not available locally, the list of available
+    # models will be printed
     llm = create_llamastack_llm(model="ollama/llama3:70b-instruct")
+    # You can set your shield by setting shield_type="ollama/llama-guard3:8b"
     safety = LlamaStackSafety()
 
     print("\n1. Complete Protection (Recommended)")

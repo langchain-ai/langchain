@@ -134,7 +134,7 @@ class SafeLLMWrapper(Runnable):
 
 
 def create_safety_hook(
-    safety_client: Any, hook_type: str = "input"
+    safety_client: Any, hook_type: str = "input", shield_type: Optional[str] = None
 ) -> Callable[[str], SafetyResult]:
     """
     Create a safety hook using LlamaStack's run_shield API.
@@ -142,27 +142,45 @@ def create_safety_hook(
     Args:
         safety_client: LlamaStackSafety client instance
         hook_type: Type of hook - "input" (fails open) or "output" (fails closed)
+        shield_type: Specific shield to use. If None, uses optimal defaults:
+                    - "prompt_guard" for input hooks (prompt injection detection)
+                    - "llama_guard" for output hooks (content moderation)
 
     Returns:
         Function that takes content and returns SafetyResult
     """
     fail_open = hook_type == "input"
 
+    # Use optimal shield defaults based on hook type
+    if shield_type is None:
+        shield_type = "prompt_guard" if hook_type == "input" else "llama_guard"
+    elif hook_type == "input":
+        shield_type = "prompt_guard"
+
     def safety_hook(content: str) -> SafetyResult:
         try:
-            return safety_client.check_content_safety(content)
+            # Create a temporary safety client with the specific shield type
+            temp_client = type(safety_client)(
+                base_url=safety_client.base_url,
+                shield_type=shield_type,
+                timeout=safety_client.timeout,
+                max_retries=safety_client.max_retries,
+            )
+            return temp_client.check_content_safety(content)
         except Exception as e:
             if fail_open:
                 # Input hooks fail open - allow content to proceed but log error
                 return SafetyResult(
-                    is_safe=True, violations=[], explanation=f"Safety check failed: {e}"
+                    is_safe=True,
+                    violations=[],
+                    explanation=f"Safety check failed with {shield_type}: {e}",
                 )
             else:
                 # Output hooks fail closed - block content on error
                 return SafetyResult(
                     is_safe=False,
                     violations=[{"category": "check_error", "reason": str(e)}],
-                    explanation=f"Safety check failed: {e}",
+                    explanation=f"Safety check failed with {shield_type}: {e}",
                 )
 
     return safety_hook
@@ -202,8 +220,7 @@ def create_safe_llm(
         safe_llm = create_safe_llm(llm, safety_client, input_check=False)
 
         # No protection (same as unwrapped LLM)
-        safe_llm = create_safe_llm(llm, safety_client,\
-         input_check=False, output_check=False)
+        safe_llm = create_safe_llm(llm, safety_client, input_check=False, output_check=False)
     """
     safe_llm = SafeLLMWrapper(llm, safety_client)
 
