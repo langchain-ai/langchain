@@ -792,7 +792,7 @@ class Chroma(VectorStore):
         ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Run more texts through the embeddings and add to the vectorstore asynchronously.
+        """Async version of add_texts - add texts to the vectorstore.
 
         Args:
             texts: Texts to add to the vectorstore.
@@ -1757,5 +1757,6 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
 
 
