@@ -175,7 +175,7 @@ def test_set_config_context_reuse_raises_error() -> None:
 
         # Second enter should raise RuntimeError
         with pytest.raises(RuntimeError) as exc_info:
-            with ctx_manager:
+            with ctx_manager:  # noqa: SIM117
                 pass  # Should not reach here
 
         assert "Cannot re-enter an already-entered context manager" in str(
@@ -233,6 +233,7 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
 
 
 
