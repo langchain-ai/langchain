@@ -127,7 +127,6 @@ async def test_chroma_async_with_ids() -> None:
 async def test_chroma_async_http_client() -> None:
     """Test async operations with AsyncHttpClient."""
     try:
-        import chromadb
         from chromadb import AsyncHttpClient
     except ImportError:
         pytest.skip("AsyncHttpClient not available in this ChromaDB version")
@@ -1053,3 +1052,4 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 1
     # Clean up
     vectorstore.delete_collection()
+
