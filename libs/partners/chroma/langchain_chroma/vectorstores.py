@@ -440,8 +440,8 @@ class Chroma(VectorStore):
         """Ensure that the collection exists or create it."""
         if self._client is None:
             msg = (
-                "Cannot ensure collection synchronously when only async_client is provided. "
-                "Use async methods or provide a sync client."
+                "Cannot ensure collection synchronously when only async_client "
+                "is provided. Use async methods or provide a sync client."
             )
             raise ValueError(msg)
         self._chroma_collection = self._client.get_or_create_collection(
@@ -1757,4 +1757,5 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
 
