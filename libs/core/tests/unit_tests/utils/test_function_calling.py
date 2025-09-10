@@ -1146,7 +1146,9 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
                 },
             },
             "required": ["arg1", "arg2"],
+            'additionalProperties': False,
         },
+        'strict': True,
     }
 
     actual = convert_to_openai_function(my_function, strict=True)
