@@ -111,7 +111,7 @@ async def test_async_client_initialization() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     assert chroma._async_client is not None
@@ -440,4 +440,5 @@ async def test_concurrent_async_operations() -> None:
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
