@@ -230,4 +230,3 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
-
