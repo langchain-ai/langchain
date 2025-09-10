@@ -69,6 +69,7 @@ docs = [
     "sphinx-copybutton",
     "beautifulsoup4",
     "sphinxcontrib-googleanalytics",
+    "langchain-tests",
 ]
 
 [tool.uv.sources]
