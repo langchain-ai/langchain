@@ -340,6 +340,10 @@ class ToolNode(RunnableCallable):
             This same key will be used for the output ToolMessages.
             Defaults to "messages".
             Allows custom state schemas with different message field names.
+        timeout: Optional timeout in seconds for tool execution. If specified,
+            tool execution will be cancelled if it exceeds this duration.
+            Useful for preventing hanging operations when tools interact with
+            external services. Defaults to None (no timeout).
 
     Examples:
         Basic usage:
@@ -1184,5 +1188,6 @@ def _get_store_arg(tool: BaseTool) -> str | None:
             return name
 
     return None
+
 
 
