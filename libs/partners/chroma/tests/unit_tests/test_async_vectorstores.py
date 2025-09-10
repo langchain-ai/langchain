@@ -338,7 +338,7 @@ async def test_sync_methods_error_with_only_async_client():
 
     # Sync methods that require collection should raise ValueError
     with pytest.raises(ValueError, match="async_client"):
-        chroma._collection  # Accessing sync collection property
+        _ = chroma._collection  # Accessing sync collection property
 
     with pytest.raises(ValueError, match="async_client"):
         chroma.add_texts(["test"])
@@ -440,4 +440,5 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
