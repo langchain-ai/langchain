@@ -73,8 +73,11 @@ def convert_to_openai_data_block(block: dict) -> dict:
             # Handle v1 format: {"file_id": "...", ...}
             file_id = block["id"] if "source_type" in block else block["file_id"]
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
+        elif "url" in block:
+            # Only supported by Responses API; return in that format
+            formatted_block = {"type": "input_file", "file_url": block["url"]}
         else:
-            error_msg = "Keys base64 or file_id required for file blocks."
+            error_msg = "Keys base64, url, or file_id required for file blocks."
             raise ValueError(error_msg)
 
     elif block["type"] == "audio":
