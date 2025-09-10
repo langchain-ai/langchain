@@ -673,6 +673,3 @@ async def run_in_executor(
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
 
-
-
-
