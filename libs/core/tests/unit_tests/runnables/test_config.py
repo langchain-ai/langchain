@@ -185,8 +185,6 @@ def test_set_config_context_reuse_raises_error() -> None:
 
 def test_set_config_context_exit_without_enter() -> None:
     """Test that exiting without entering raises RuntimeError."""
-    from langchain_core.runnables.config import set_config_context
-
     config = RunnableConfig(tags=["test"])
     ctx_manager = set_config_context(config)
 
@@ -243,5 +241,6 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
 
 
