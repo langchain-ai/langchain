@@ -1757,6 +1757,3 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
-
-
-
