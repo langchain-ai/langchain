@@ -176,7 +176,9 @@ def create_safety_hook(
     Args:
         safety_client: LlamaStackSafety client instance
         hook_type: Type of hook - "input" (fails open) or "output" (fails closed)
-        shield_type: Specific shield to use. If None, uses the client's default shield_type
+        shield_type: Specific shield to use. If None, uses optimal defaults:
+                    - "prompt_guard" for input hooks (prompt injection detection)
+                    - "llama_guard" for output hooks (content moderation)
 
     Returns:
         Function that takes content and returns SafetyResult
@@ -185,20 +187,34 @@ def create_safety_hook(
 
     def safety_hook(content: str) -> SafetyResult:
         try:
-            # Use the provided safety client directly for simpler testing
-            return safety_client.check_content_safety(content)
+            # Create a temporary safety client with the specific shield type if different
+            if hook_type != "input":
+                from .safety import LlamaStackSafety
+
+                temp_client = LlamaStackSafety(
+                    base_url=safety_client.base_url,
+                    shield_type="prompt_guard",
+                    timeout=safety_client.timeout,
+                    max_retries=safety_client.max_retries,
+                )
+                return temp_client.check_content_safety(content)
+            else:
+                # Use the provided safety client if shield type matches
+                return safety_client.check_content_safety(content)
         except Exception as e:
             if fail_open:
                 # Input hooks fail open - allow content to proceed but log error
                 return SafetyResult(
-                    is_safe=True, violations=[], explanation=f"Safety check failed: {e}"
+                    is_safe=True,
+                    violations=[],
+                    explanation=f"Safety check failed with {shield_type}: {e}",
                 )
             else:
                 # Output hooks fail closed - block content on error
                 return SafetyResult(
                     is_safe=False,
                     violations=[{"category": "check_error", "reason": str(e)}],
-                    explanation=f"Safety check failed: {e}",
+                    explanation=f"Safety check failed with {shield_type}: {e}",
                 )
 
     return safety_hook
@@ -247,7 +263,11 @@ def create_safe_llm(
         safe_llm.set_input_hook(create_safety_hook(safety_client, "input"))
 
     if output_check:
-        safe_llm.set_output_hook(create_safety_hook(safety_client, "output"))
+        safe_llm.set_output_hook(
+            create_safety_hook(
+                safety_client, "output", shield_type=safety_client.shield_type
+            )
+        )
 
     return safe_llm
 

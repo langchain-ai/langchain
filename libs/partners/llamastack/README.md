@@ -327,8 +327,8 @@ from langchain_llamastack.input_output_safety_moderation_hooks import (
 safe_llm = SafeLLMWrapper(your_llm, safety)
 
 # Set hooks as needed (each uses LlamaStack's run_shield once)
-safe_llm.set_input_hook(create_safety_hook(safety, "input"))   # Check user input
-safe_llm.set_output_hook(create_safety_hook(safety, "output"))  # Check model output
+safe_llm.set_input_hook(create_safety_hook(safety, "input"))   # Uses prompt_guard by default
+safe_llm.set_output_hook(create_safety_hook(safety, "output"))  # Uses llama_guard by default
 
 # Use the safe LLM
 response = safe_llm.invoke("Your input here")

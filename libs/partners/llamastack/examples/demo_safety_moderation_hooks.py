@@ -316,10 +316,12 @@ def demo_agent_safety():
         )
 
         print("🔧 Creating Safe Agent...")
+        print("   ✨ Optimal Shield Selection:")
         print(
-            "   - Uses prompt_guard for input protection (prompt injection detection)"
+            "   - Input Hook: Uses prompt_guard (specialized for prompt injection detection)"
         )
-        print("   - Uses llama_guard for output protection (content moderation)")
+        print("   - Output Hook: Uses llama_guard (specialized for content moderation)")
+        print("   - This provides the best protection for each type of content")
 
         # Wrap the agent with safety
         safe_agent = SafeLLMWrapper(agent, safety)
