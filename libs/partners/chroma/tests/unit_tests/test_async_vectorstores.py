@@ -127,7 +127,7 @@ async def test_async_collection_initialization() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Collection should be initialized on first async operation
@@ -145,7 +145,7 @@ async def test_aadd_texts() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     texts = ["foo", "bar", "baz"]
@@ -166,7 +166,7 @@ async def test_aadd_documents() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     documents = [
@@ -190,7 +190,7 @@ async def test_asimilarity_search() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add some texts first
@@ -213,7 +213,7 @@ async def test_asimilarity_search_with_score() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add some texts first
@@ -238,7 +238,7 @@ async def test_adelete() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add some texts first
@@ -260,7 +260,7 @@ async def test_adelete_collection() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Initialize collection
@@ -282,7 +282,7 @@ async def test_areset_collection() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add some texts
@@ -333,7 +333,7 @@ async def test_sync_methods_error_with_only_async_client() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=FakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Sync methods that require collection should raise ValueError
@@ -356,7 +356,7 @@ def test_both_sync_and_async_clients() -> None:
         collection_name="test_collection",
         embedding_function=FakeEmbeddings(size=10),
         client=sync_client,
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     assert chroma._client is not None
@@ -374,7 +374,7 @@ async def test_async_with_metadata_filtering() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add texts with metadata
@@ -401,7 +401,7 @@ async def test_async_empty_metadata_handling() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add texts with mixed empty and non-empty metadata
@@ -421,7 +421,7 @@ async def test_concurrent_async_operations() -> None:
     chroma = Chroma(
         collection_name="test_collection",
         embedding_function=AsyncFakeEmbeddings(size=10),
-        async_client=async_client,
+        async_client=async_client,  # type: ignore[arg-type]
     )
 
     # Add initial data
@@ -437,8 +437,8 @@ async def test_concurrent_async_operations() -> None:
     results = await asyncio.gather(*tasks)
 
     assert len(results) == 3
-    assert all(results[0])  # First add_texts returned IDs
-    assert all(results[1])  # Second add_texts returned IDs
+    assert all(results[0])  # type: ignore[arg-type]  # First add_texts returned IDs
+    assert all(results[1])  # type: ignore[arg-type]  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
 
 
