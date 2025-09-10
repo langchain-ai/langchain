@@ -1135,13 +1135,16 @@ class ChatAnthropic(BaseChatModel):
                     "How do I update a web app to TypeScript 5.5?"
                 )
 
-        .. dropdown::  Web fetch
+        .. dropdown::  Web fetch (beta)
 
             .. code-block:: python
 
                 from langchain_anthropic import ChatAnthropic
 
-                llm = ChatAnthropic(model="claude-3-5-haiku-latest")
+                llm = ChatAnthropic(
+                    model="claude-3-5-haiku-latest",
+                    betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
+                )
 
                 tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 3}
                 llm_with_tools = llm.bind_tools([tool])
