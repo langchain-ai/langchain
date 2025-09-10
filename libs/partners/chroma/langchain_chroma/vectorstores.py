@@ -419,7 +419,7 @@ class Chroma(VectorStore):
         self._collection_name = collection_name
         self._collection_metadata = collection_metadata
         self._collection_configuration = collection_configuration
-        
+
         # Only initialize collection synchronously if we have a sync client and not using async
         if create_collection_if_not_exists:
             if self._async_client is None and self._client is not None:
@@ -429,8 +429,10 @@ class Chroma(VectorStore):
                 self.__ensure_collection()
         else:
             if self._client is not None:
-                self._chroma_collection = self._client.get_collection(name=collection_name)
-        
+                self._chroma_collection = self._client.get_collection(
+                    name=collection_name
+                )
+
         self.override_relevance_score_fn = relevance_score_fn
 
     def __ensure_collection(self) -> None:
@@ -456,13 +458,15 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         # Get or create the collection asynchronously
-        self._async_chroma_collection = await self._async_client.get_or_create_collection(
-            name=self._collection_name,
-            embedding_function=None,
-            metadata=self._collection_metadata,
-            configuration=self._collection_configuration,
+        self._async_chroma_collection = (
+            await self._async_client.get_or_create_collection(
+                name=self._collection_name,
+                embedding_function=None,
+                metadata=self._collection_metadata,
+                configuration=self._collection_configuration,
+            )
         )
         self._async_initialized = True
 
@@ -474,17 +478,20 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         if not self._async_initialized:
             await self._aensure_collection()
-        
-        if not hasattr(self, '_async_chroma_collection') or self._async_chroma_collection is None:
+
+        if (
+            not hasattr(self, "_async_chroma_collection")
+            or self._async_chroma_collection is None
+        ):
             msg = (
                 "Async Chroma collection not initialized. "
                 "Call _aensure_collection() first."
             )
             raise ValueError(msg)
-        
+
         return self._async_chroma_collection
 
     @property
@@ -805,9 +812,9 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         collection = await self._aget_collection()
-        
+
         if ids is None:
             ids = [str(uuid.uuid4()) for _ in texts]
         else:
@@ -1056,7 +1063,7 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         if self._embedding_function is None:
             results = await self.__aquery_collection(
                 query_texts=[query],
@@ -1362,7 +1369,7 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         if self._async_initialized:
             collection = await self._aget_collection()
             await self._async_client.delete_collection(collection.name)
@@ -1388,7 +1395,7 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         await self.adelete_collection()
         await self._aensure_collection()
 
@@ -1728,7 +1735,7 @@ class Chroma(VectorStore):
                 "Provide an async_client when initializing the Chroma instance."
             )
             raise ValueError(msg)
-        
+
         collection = await self._aget_collection()
         await collection.delete(ids=ids, **kwargs)
 
@@ -1749,17 +1756,3 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
