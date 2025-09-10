@@ -297,7 +297,7 @@ async def test_areset_collection() -> None:
 
 
 @pytest.mark.asyncio
-async def test_error_without_async_client():
+async def test_error_without_async_client() -> None:
     """Test that async methods raise errors when async_client is not provided."""
     # Initialize without async client
     chroma = Chroma(
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
