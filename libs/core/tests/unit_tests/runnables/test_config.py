@@ -166,8 +166,6 @@ async def test_run_in_executor() -> None:
 
 def test_set_config_context_reuse_raises_error() -> None:
     """Test that reusing the same context manager raises RuntimeError."""
-    from langchain_core.runnables.config import set_config_context
-
     config = RunnableConfig(tags=["test"])
     ctx_manager = set_config_context(config)
 
@@ -177,7 +175,7 @@ def test_set_config_context_reuse_raises_error() -> None:
 
         # Second enter should raise RuntimeError
         with pytest.raises(RuntimeError) as exc_info:
-            with ctx_manager as ctx2:
+            with ctx_manager:
                 pass  # Should not reach here
 
         assert "Cannot re-enter an already-entered context manager" in str(
@@ -245,4 +243,5 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
 
