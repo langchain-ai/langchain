@@ -420,7 +420,8 @@ class Chroma(VectorStore):
         self._collection_metadata = collection_metadata
         self._collection_configuration = collection_configuration
 
-        # Only initialize collection synchronously if we have a sync client and not using async
+        # Only initialize collection synchronously if we have a sync client
+        # and not using async
         if create_collection_if_not_exists:
             if self._async_client is None and self._client is not None:
                 self.__ensure_collection()
@@ -1756,3 +1757,4 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
