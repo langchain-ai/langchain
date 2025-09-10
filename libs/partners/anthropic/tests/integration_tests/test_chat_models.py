@@ -940,7 +940,7 @@ def test_web_search() -> None:
     )
 
 
-# @pytest.mark.vcr  # Temporarily disabled for full testing
+@pytest.mark.vcr
 def test_web_fetch() -> None:
     """Note: this is a beta feature.
 
@@ -1007,24 +1007,18 @@ def test_web_fetch() -> None:
     assert citation_result["content"]["content"]["citations"]["enabled"]
 
     # Check that the response contains actual citations in the content
+    # Note: Web fetch currently uses inline <cite index="..."> tags in text content
+    # This differs from document citations which use separate citations fields...
     has_citations = False
     for block in citation_response.content:
-        # Check if this text block has citations
-        if (
-            isinstance(block, dict)
-            and block.get("type") == "text"
-            and "citations" in block
-        ):
-            citations = block["citations"]
-            if isinstance(citations, list) and len(citations) > 0:
-                # Verify citation structure matches Anthropic's format
-                citation = citations[0]
-                expected_fields = {"type", "cited_text", "document_index"}
-                if all(field in citation for field in expected_fields):
-                    has_citations = True
-                    break
+        if isinstance(block, dict) and block.get("type") == "text":
+            text_content = block.get("text", "")
+            if "<cite index=" in text_content and "</cite>" in text_content:
+                has_citations = True
+                break
     assert has_citations, (
-        "Expected citation blocks in response when citations are enabled for web fetch"
+        "Expected inline citation tags in response when citations are enabled for "
+        "web fetch"
     )
 
     # Max content tokens param
@@ -1040,7 +1034,7 @@ def test_web_fetch() -> None:
         if isinstance(block, dict)
     )
 
-    # Domains filtering
+    # Domains filtering (note: only one can be set at a time)
     tool_with_allowed_domains = tool.copy()
     tool_with_allowed_domains["allowed_domains"] = ["docs.langchain.com"]
     llm_with_allowed = llm.bind_tools([tool_with_allowed_domains])
