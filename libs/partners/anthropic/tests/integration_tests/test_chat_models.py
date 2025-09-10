@@ -941,6 +941,51 @@ def test_web_search() -> None:
 
 
 @pytest.mark.vcr
+def test_web_fetch() -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once it's generally available.
+    """
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest", betas=["web-fetch-2025-09-10"])  # type: ignore[call-arg]
+
+    tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 1}
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "Fetch the content at docs.langchain.com and analyze",
+            },
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
+    assert block_types == {"text", "server_tool_use", "web_fetch_tool_result"}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", "server_tool_use", "web_fetch_tool_result"}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "What does the models page say?",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
+@pytest.mark.vcr
 def test_code_execution() -> None:
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
