@@ -7,12 +7,12 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.74",
+    "langchain-core<1.0.0,>=0.3.76",
     "openai<2.0.0,>=1.104.2",
     "tiktoken<1,>=0.7",
 ]
 name = "langchain-openai"
-version = "0.3.32"
+version = "0.3.33"
 description = "An integration package connecting OpenAI and LangChain"
 readme = "README.md"
 
@@ -59,9 +59,6 @@ disallow_untyped_defs = "True"
 [[tool.mypy.overrides]]
 module = "transformers"
 ignore_missing_imports = true
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]

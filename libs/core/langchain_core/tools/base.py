@@ -1362,8 +1362,8 @@ def get_all_basemodel_annotations(
                 continue
 
             # if class = FooBar inherits from Baz[str]:
-            # parent = Baz[str],
-            # parent_origin = Baz,
+            # parent = class Baz[str],
+            # parent_origin = class Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
             generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())
