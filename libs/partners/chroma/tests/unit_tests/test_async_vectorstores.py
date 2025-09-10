@@ -440,5 +440,3 @@ async def test_concurrent_async_operations() -> None:
     assert all(results[0])  # type: ignore[arg-type]  # First add_texts returned IDs
     assert all(results[1])  # type: ignore[arg-type]  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
-
-
