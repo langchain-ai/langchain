@@ -469,10 +469,11 @@ class ToolNode(RunnableCallable):
             except asyncio.TimeoutError:
                 # Provide helpful error message about which tools were being executed
                 tool_names = [call.get("name", "unknown") for call in tool_calls]
-                raise asyncio.TimeoutError(
+                timeout_msg = (
                     f"Tool execution timed out after {self._timeout} seconds. "
                     f"Tools being executed: {', '.join(tool_names)}"
                 )
+                raise asyncio.TimeoutError(timeout_msg)
         else:
             outputs = await asyncio.gather(
                 *(self._arun_one(call, input_type, config) for call in tool_calls)
@@ -1205,3 +1206,4 @@ def _get_store_arg(tool: BaseTool) -> str | None:
             return name
 
     return None
+
