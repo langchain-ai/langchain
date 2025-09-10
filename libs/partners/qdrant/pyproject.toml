@@ -47,9 +47,6 @@ typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins

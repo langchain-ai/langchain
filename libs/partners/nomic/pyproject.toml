@@ -40,9 +40,6 @@ dev = ["langchain-core"]
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins

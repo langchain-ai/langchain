@@ -58,9 +58,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = true
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
