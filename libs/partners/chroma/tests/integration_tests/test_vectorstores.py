@@ -1052,4 +1052,3 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 1
     # Clean up
     vectorstore.delete_collection()
-
