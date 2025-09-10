@@ -1,6 +1,6 @@
 import json
 import uuid
-from contextvars import copy_context
+from contextvars import Context, copy_context
 from typing import Any, cast
 
 import pytest
@@ -20,6 +20,7 @@ from langchain_core.runnables.config import (
     ensure_config,
     merge_configs,
     run_in_executor,
+    set_config_context,
 )
 from langchain_core.tracers.stdout import ConsoleCallbackHandler
 
@@ -244,3 +245,4 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
