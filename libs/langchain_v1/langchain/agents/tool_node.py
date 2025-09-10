@@ -457,9 +457,25 @@ class ToolNode(RunnableCallable):
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         tool_calls, input_type = self._parse_input(input, store)
-        outputs = await asyncio.gather(
-            *(self._arun_one(call, input_type, config) for call in tool_calls)
-        )
+        
+        # Apply timeout if specified
+        if self._timeout is not None:
+            try:
+                async with asyncio_timeout(self._timeout):
+                    outputs = await asyncio.gather(
+                        *(self._arun_one(call, input_type, config) for call in tool_calls)
+                    )
+            except asyncio.TimeoutError:
+                # Provide helpful error message about which tools were being executed
+                tool_names = [call.get("name", "unknown") for call in tool_calls]
+                raise asyncio.TimeoutError(
+                    f"Tool execution timed out after {self._timeout} seconds. "
+                    f"Tools being executed: {', '.join(tool_names)}"
+                )
+        else:
+            outputs = await asyncio.gather(
+                *(self._arun_one(call, input_type, config) for call in tool_calls)
+            )
 
         return self._combine_tool_outputs(outputs, input_type)
 
@@ -1188,6 +1204,7 @@ def _get_store_arg(tool: BaseTool) -> str | None:
             return name
 
     return None
+
 
 
 
