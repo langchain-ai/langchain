@@ -156,14 +156,14 @@ def _set_config_context(
 
 class ConfigContext:
     """Context manager for setting child Runnable config + tracing context.
-    
+
     This class implements proper context manager protocol with state tracking
     to prevent reuse and provide clear error messages.
     """
-    
+
     def __init__(self, config: RunnableConfig) -> None:
         """Initialize the context manager with a config.
-        
+
         Args:
             config: The config to set.
         """
@@ -171,24 +171,24 @@ class ConfigContext:
         self._entered = False
         self._ctx: Optional[Context] = None
         self._config_token: Optional[Token[Optional[RunnableConfig]]] = None
-    
+
     def __enter__(self) -> Context:
         """Enter the context manager.
-        
+
         Returns:
             The config context.
-            
+
         Raises:
             RuntimeError: If the context manager has already been entered.
         """
         if self._entered:
             raise RuntimeError("Cannot re-enter an already-entered context manager")
-        
+
         self._entered = True
         self._ctx = copy_context()
         self._config_token, _ = self._ctx.run(_set_config_context, self.config)
         return self._ctx
-    
+
     def __exit__(
         self,
         exc_type: Optional[type[BaseException]],
@@ -196,18 +196,18 @@ class ConfigContext:
         exc_tb: Optional[object],
     ) -> None:
         """Exit the context manager and reset the config.
-        
+
         Args:
             exc_type: The exception type if an exception occurred.
             exc_val: The exception value if an exception occurred.
             exc_tb: The exception traceback if an exception occurred.
-            
+
         Raises:
             RuntimeError: If the context manager was not entered.
         """
         if not self._entered:
             raise RuntimeError("Cannot exit context manager that was not entered")
-        
+
         if self._ctx is not None and self._config_token is not None:
             self._ctx.run(var_child_runnable_config.reset, self._config_token)
             self._ctx.run(
@@ -221,7 +221,7 @@ class ConfigContext:
                     "client": None,
                 },
             )
-        
+
         # Mark as exited to prevent reuse
         self._entered = False
 
@@ -669,6 +669,3 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
-
-
-

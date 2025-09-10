@@ -166,53 +166,54 @@ async def test_run_in_executor() -> None:
 def test_set_config_context_reuse_raises_error() -> None:
     """Test that reusing the same context manager raises RuntimeError."""
     from langchain_core.runnables.config import set_config_context
-    
+
     config = RunnableConfig(tags=["test"])
     ctx_manager = set_config_context(config)
-    
+
     # First enter should work
     with ctx_manager as ctx1:
         assert ctx1 is not None
-        
+
         # Second enter should raise RuntimeError
         with pytest.raises(RuntimeError) as exc_info:
             with ctx_manager as ctx2:
                 pass  # Should not reach here
-        
-        assert "Cannot re-enter an already-entered context manager" in str(exc_info.value)
+
+        assert "Cannot re-enter an already-entered context manager" in str(
+            exc_info.value
+        )
 
 
 def test_set_config_context_exit_without_enter() -> None:
     """Test that exiting without entering raises RuntimeError."""
     from langchain_core.runnables.config import set_config_context
-    
+
     config = RunnableConfig(tags=["test"])
     ctx_manager = set_config_context(config)
-    
+
     # Attempting to exit without entering should raise RuntimeError
     with pytest.raises(RuntimeError) as exc_info:
         ctx_manager.__exit__(None, None, None)
-    
+
     assert "Cannot exit context manager that was not entered" in str(exc_info.value)
 
 
 def test_set_config_context_normal_usage() -> None:
     """Test that normal usage still works correctly."""
     from langchain_core.runnables.config import set_config_context
-    
+
     config = RunnableConfig(
-        tags=["test"],
-        metadata={"key": "value"},
-        configurable={"param": "value"}
+        tags=["test"], metadata={"key": "value"}, configurable={"param": "value"}
     )
-    
+
     # Normal usage should work without issues
     with set_config_context(config) as ctx:
         assert ctx is not None
         # Context should be a contextvars.Context object
         from contextvars import Context
+
         assert isinstance(ctx, Context)
-    
+
     # After exiting, we should be able to create a new context manager
     # with the same config
     with set_config_context(config) as ctx2:
@@ -223,29 +224,23 @@ def test_set_config_context_normal_usage() -> None:
 def test_set_config_context_nested_different_instances() -> None:
     """Test that using different instances in nested contexts works properly."""
     from langchain_core.runnables.config import set_config_context
-    
-    config1 = RunnableConfig(
-        tags=["outer"],
-        metadata={"level": "outer"}
-    )
-    config2 = RunnableConfig(
-        tags=["inner"],
-        metadata={"level": "inner"}
-    )
-    
+
+    config1 = RunnableConfig(tags=["outer"], metadata={"level": "outer"})
+    config2 = RunnableConfig(tags=["inner"], metadata={"level": "inner"})
+
     # Nested contexts with different instances should work
     with set_config_context(config1) as ctx1:
         assert ctx1 is not None
-        
+
         with set_config_context(config2) as ctx2:
             assert ctx2 is not None
             # Both contexts should be valid
             from contextvars import Context
+
             assert isinstance(ctx1, Context)
             assert isinstance(ctx2, Context)
             # They should be different contexts
             assert ctx1 is not ctx2
-        
+
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
-
