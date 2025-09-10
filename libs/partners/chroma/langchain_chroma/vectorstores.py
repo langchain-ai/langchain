@@ -1732,6 +1732,25 @@ class Chroma(VectorStore):
         collection = await self._aget_collection()
         await collection.delete(ids=ids, **kwargs)
 
+    async def aadd_documents(
+        self,
+        documents: list[Document],
+        **kwargs: Any,
+    ) -> list[str]:
+        """Add documents to the vectorstore asynchronously.
+
+        Args:
+            documents: List of documents to add to the vectorstore.
+            kwargs: Additional keyword arguments to pass to aadd_texts.
+
+        Returns:
+            List of IDs of the added documents.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
+
 
 
 
