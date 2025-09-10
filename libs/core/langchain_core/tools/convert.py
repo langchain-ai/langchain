@@ -315,7 +315,7 @@ def tool(
 
     if runnable is not None:
         # tool is used as a function
-        # tool_from_runnable = tool("name", runnable)
+        # for instance tool_from_runnable = tool("name", runnable)
         if not name_or_callable:
             msg = "Runnable without name for tool constructor"
             raise ValueError(msg)
