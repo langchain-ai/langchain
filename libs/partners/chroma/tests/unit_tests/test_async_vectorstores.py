@@ -231,7 +231,7 @@ async def test_asimilarity_search_with_score() -> None:
 
 
 @pytest.mark.asyncio
-async def test_adelete():
+async def test_adelete() -> None:
     """Test async delete functionality."""
     async_client = MockAsyncClient()
 
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
