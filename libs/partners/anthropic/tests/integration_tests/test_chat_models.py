@@ -895,13 +895,13 @@ def test_image_tool_calling() -> None:
             ],
         ),
     ]
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
     llm.bind_tools([color_picker]).invoke(messages)
 
 
 @pytest.mark.vcr
 def test_web_search() -> None:
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
 
     tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 1}
     llm_with_tools = llm.bind_tools([tool])
@@ -987,6 +987,10 @@ def test_web_fetch() -> None:
 
 @pytest.mark.vcr
 def test_code_execution() -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
         betas=["code-execution-2025-05-22"],
@@ -1035,6 +1039,10 @@ def test_code_execution() -> None:
 
 @pytest.mark.vcr
 def test_remote_mcp() -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     mcp_servers = [
         {
             "type": "url",
@@ -1092,6 +1100,10 @@ def test_remote_mcp() -> None:
 
 @pytest.mark.parametrize("block_format", ["anthropic", "standard"])
 def test_files_api_image(block_format: str) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     image_file_id = os.getenv("ANTHROPIC_FILES_API_IMAGE_ID")
     if not image_file_id:
         pytest.skip()
@@ -1126,6 +1138,10 @@ def test_files_api_image(block_format: str) -> None:
 
 @pytest.mark.parametrize("block_format", ["anthropic", "standard"])
 def test_files_api_pdf(block_format: str) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     pdf_file_id = os.getenv("ANTHROPIC_FILES_API_PDF_ID")
     if not pdf_file_id:
         pytest.skip()
@@ -1156,7 +1172,6 @@ def test_search_result_tool_message() -> None:
     """Test that we can pass a search result tool message to the model."""
     llm = ChatAnthropic(
         model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
-        betas=["search-results-2025-06-09"],
     )
 
     @tool
@@ -1209,7 +1224,6 @@ def test_search_result_tool_message() -> None:
 def test_search_result_top_level() -> None:
     llm = ChatAnthropic(
         model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
-        betas=["search-results-2025-06-09"],
     )
     input_message = HumanMessage(
         [

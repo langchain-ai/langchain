@@ -277,6 +277,7 @@ def draw_mermaid_png(
     padding: int = 10,
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    base_url: Optional[str] = None,
 ) -> bytes:
     """Draws a Mermaid graph as PNG using provided syntax.
 
@@ -293,6 +294,8 @@ def draw_mermaid_png(
             Defaults to 1.
         retry_delay (float, optional): Delay between retries (MermaidDrawMethod.API).
             Defaults to 1.0.
+        base_url (str, optional): Base URL for the Mermaid.ink API.
+            Defaults to None.
 
     Returns:
         bytes: PNG image bytes.
@@ -313,6 +316,7 @@ def draw_mermaid_png(
             background_color=background_color,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            base_url=base_url,
         )
     else:
         supported_methods = ", ".join([m.value for m in MermaidDrawMethod])
@@ -404,8 +408,12 @@ def _render_mermaid_using_api(
     file_type: Optional[Literal["jpeg", "png", "webp"]] = "png",
     max_retries: int = 1,
     retry_delay: float = 1.0,
+    base_url: Optional[str] = None,
 ) -> bytes:
     """Renders Mermaid graph using the Mermaid.INK API."""
+    # Defaults to using the public mermaid.ink server.
+    base_url = base_url if base_url is not None else "https://mermaid.ink"
+
     if not _HAS_REQUESTS:
         msg = (
             "Install the `requests` module to use the Mermaid.INK API: "
@@ -425,7 +433,7 @@ def _render_mermaid_using_api(
             background_color = f"!{background_color}"
 
     image_url = (
-        f"https://mermaid.ink/img/{mermaid_syntax_encoded}"
+        f"{base_url}/img/{mermaid_syntax_encoded}"
         f"?type={file_type}&bgColor={background_color}"
     )
 
@@ -457,7 +465,7 @@ def _render_mermaid_using_api(
 
             # For other status codes, fail immediately
             msg = (
-                "Failed to reach https://mermaid.ink/ API while trying to render "
+                f"Failed to reach {base_url} API while trying to render "
                 f"your graph. Status code: {response.status_code}.\n\n"
             ) + error_msg_suffix
             raise ValueError(msg)
@@ -469,14 +477,14 @@ def _render_mermaid_using_api(
                 time.sleep(sleep_time)
             else:
                 msg = (
-                    "Failed to reach https://mermaid.ink/ API while trying to render "
+                    f"Failed to reach {base_url} API while trying to render "
                     f"your graph after {max_retries} retries. "
                 ) + error_msg_suffix
                 raise ValueError(msg) from e
 
     # This should not be reached, but just in case
     msg = (
-        "Failed to reach https://mermaid.ink/ API while trying to render "
+        f"Failed to reach {base_url} API while trying to render "
         f"your graph after {max_retries} retries. "
     ) + error_msg_suffix
     raise ValueError(msg)

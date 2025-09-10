@@ -375,6 +375,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run_manager.on_chain_error(e)
             raise
         try:
+            # Use sync response handler in sync invoke
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
@@ -511,7 +512,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run_manager.on_chain_error(e)
             raise
         try:
-            response = self._get_response(run)
+            # Use async response handler in async ainvoke
+            response = await self._aget_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
             raise
