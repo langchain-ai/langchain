@@ -1,4 +1,3 @@
-import contextlib
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
@@ -577,12 +576,10 @@ def test_mermaid_base_url_default() -> None:
 
     with patch("requests.get", return_value=mock_response) as mock_get:
         # Call the function with base_url=None (default)
-        # Supress exceptions because we're not interested in the response for this test.
-        with contextlib.suppress(Exception):
-            _render_mermaid_using_api(
-                "graph TD;\n    A --> B;",
-                base_url=None,
-            )
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=None,
+        )
 
         # Verify that the URL was constructed with the default base URL
         assert mock_get.called
@@ -600,12 +597,10 @@ def test_mermaid_base_url_custom() -> None:
 
     with patch("requests.get", return_value=mock_response) as mock_get:
         # Call the function with custom base_url.
-        # Supress exceptions because we're not interested in the response for this test.
-        with contextlib.suppress(Exception):
-            _render_mermaid_using_api(
-                "graph TD;\n    A --> B;",
-                base_url=custom_url,
-            )
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=custom_url,
+        )
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
@@ -623,12 +618,11 @@ def test_draw_mermaid_png_function_base_url() -> None:
 
     with patch("requests.get", return_value=mock_response) as mock_get:
         # Call draw_mermaid_png with custom base_url
-        with contextlib.suppress(Exception):
-            draw_mermaid_png(
-                "graph TD;\n    A --> B;",
-                draw_method=MermaidDrawMethod.API,
-                base_url=custom_url,
-            )
+        draw_mermaid_png(
+            "graph TD;\n    A --> B;",
+            draw_method=MermaidDrawMethod.API,
+            base_url=custom_url,
+        )
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
@@ -652,10 +646,7 @@ def test_graph_draw_mermaid_png_base_url() -> None:
         graph.add_edge(start_node, end_node)
 
         # Call draw_mermaid_png with custom base_url
-        with contextlib.suppress(Exception):
-            graph.draw_mermaid_png(
-                draw_method=MermaidDrawMethod.API, base_url=custom_url
-            )
+        graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API, base_url=custom_url)
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called

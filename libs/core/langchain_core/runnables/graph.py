@@ -614,7 +614,6 @@ class Graph:
 
         Returns:
             The Mermaid syntax string.
-
         """
         # Import locally to prevent circular import
         from langchain_core.runnables.graph_mermaid import draw_mermaid  # noqa: PLC0415
