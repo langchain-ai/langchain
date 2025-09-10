@@ -1060,8 +1060,9 @@ class Chroma(VectorStore):
         """
         if self._async_client is None:
             msg = (
-                "Cannot perform similarity search asynchronously without an async_client. "
-                "Provide an async_client when initializing the Chroma instance."
+                "Cannot perform similarity search asynchronously without an "
+                "async_client. Provide an async_client when initializing the "
+                "Chroma instance."
             )
             raise ValueError(msg)
 
@@ -1757,3 +1758,4 @@ class Chroma(VectorStore):
         texts = [doc.page_content for doc in documents]
         metadatas = [doc.metadata for doc in documents]
         return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
+
