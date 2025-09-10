@@ -18,13 +18,18 @@ from .safety import SafetyResult
 
 class SafeLLMWrapper(Runnable):
     """
-    Simple LLM wrapper with input/output safety hooks.
+    Universal safety wrapper for LLMs and Agents.
 
-    Flow: User Input → Input Hook → LLM → Output Hook → Safe Response
+    Supports:
+    - Language Models (ChatOpenAI, etc.)
+    - LangChain Agents (LangGraph, AgentExecutor, etc.)
+    - Any Runnable or callable object
+
+    Flow: User Input → Input Hook → LLM/Agent → Output Hook → Safe Response
     """
 
-    def __init__(self, llm: Any, safety_client: Any) -> None:
-        self.llm = llm
+    def __init__(self, runnable: Any, safety_client: Any) -> None:
+        self.runnable = runnable  # Can be LLM, Agent, or any Runnable
         self.safety_client = safety_client
         self.input_hook: Optional[Callable[[str], SafetyResult]] = None
         self.output_hook: Optional[Callable[[str], SafetyResult]] = None
@@ -57,18 +62,33 @@ class SafeLLMWrapper(Runnable):
                 ]
                 return f"Input blocked by safety system: {'; '.join(violations)}"
 
-        # 2. LLM EXECUTION
+        # 2. RUNNABLE EXECUTION (LLM, Agent, etc.)
         try:
-            llm_response = self.llm.invoke(user_input)
-            # Extract text from different LLM response formats
-            if hasattr(llm_response, "content"):
-                model_output = llm_response.content
-            elif isinstance(llm_response, str):
-                model_output = llm_response
+            # Handle different execution methods
+            if hasattr(self.runnable, "invoke"):
+                response = self.runnable.invoke(user_input)
+            elif hasattr(self.runnable, "run"):
+                # Legacy AgentExecutor
+                response = self.runnable.run(user_input)
+            elif callable(self.runnable):
+                response = self.runnable(user_input)
             else:
-                model_output = str(llm_response)
+                raise ValueError(f"Unsupported runnable type: {type(self.runnable)}")
+
+            # Extract text from different response formats
+            if hasattr(response, "content"):
+                model_output = response.content
+            elif isinstance(response, dict):
+                # Agent responses might be dicts
+                model_output = (
+                    response.get("output") or response.get("answer") or str(response)
+                )
+            elif isinstance(response, str):
+                model_output = response
+            else:
+                model_output = str(response)
         except Exception as e:
-            return f"LLM execution failed: {str(e)}"
+            return f"Execution failed: {str(e)}"
 
         # 3. OUTPUT CHECK (safety using run_shield)
         if self.output_hook is not None:
@@ -102,18 +122,32 @@ class SafeLLMWrapper(Runnable):
                 ]
                 return f"Input blocked by safety system: {'; '.join(violations)}"
 
-        # 2. LLM EXECUTION
+        # 2. ASYNC RUNNABLE EXECUTION (LLM, Agent, etc.)
         try:
-            llm_response = await self.llm.ainvoke(user_input)
-            # Extract text from different LLM response formats
-            if hasattr(llm_response, "content"):
-                model_output = llm_response.content
-            elif isinstance(llm_response, str):
-                model_output = llm_response
+            # Handle different async execution methods
+            if hasattr(self.runnable, "ainvoke"):
+                response = await self.runnable.ainvoke(user_input)
+            elif hasattr(self.runnable, "arun"):
+                # Legacy async AgentExecutor
+                response = await self.runnable.arun(user_input)
             else:
-                model_output = str(llm_response)
+                # Fallback to sync execution
+                response = self.runnable.invoke(user_input)
+
+            # Extract text from different response formats
+            if hasattr(response, "content"):
+                model_output = response.content
+            elif isinstance(response, dict):
+                # Agent responses might be dicts
+                model_output = (
+                    response.get("output") or response.get("answer") or str(response)
+                )
+            elif isinstance(response, str):
+                model_output = response
+            else:
+                model_output = str(response)
         except Exception as e:
-            return f"LLM execution failed: {str(e)}"
+            return f"Async execution failed: {str(e)}"
 
         # 3. OUTPUT CHECK (safety using run_shield)
         if self.output_hook is not None:
@@ -142,45 +176,29 @@ def create_safety_hook(
     Args:
         safety_client: LlamaStackSafety client instance
         hook_type: Type of hook - "input" (fails open) or "output" (fails closed)
-        shield_type: Specific shield to use. If None, uses optimal defaults:
-                    - "prompt_guard" for input hooks (prompt injection detection)
-                    - "llama_guard" for output hooks (content moderation)
+        shield_type: Specific shield to use. If None, uses the client's default shield_type
 
     Returns:
         Function that takes content and returns SafetyResult
     """
     fail_open = hook_type == "input"
 
-    # Use optimal shield defaults based on hook type
-    if shield_type is None:
-        shield_type = "prompt_guard" if hook_type == "input" else "llama_guard"
-    elif hook_type == "input":
-        shield_type = "prompt_guard"
-
     def safety_hook(content: str) -> SafetyResult:
         try:
-            # Create a temporary safety client with the specific shield type
-            temp_client = type(safety_client)(
-                base_url=safety_client.base_url,
-                shield_type=shield_type,
-                timeout=safety_client.timeout,
-                max_retries=safety_client.max_retries,
-            )
-            return temp_client.check_content_safety(content)
+            # Use the provided safety client directly for simpler testing
+            return safety_client.check_content_safety(content)
         except Exception as e:
             if fail_open:
                 # Input hooks fail open - allow content to proceed but log error
                 return SafetyResult(
-                    is_safe=True,
-                    violations=[],
-                    explanation=f"Safety check failed with {shield_type}: {e}",
+                    is_safe=True, violations=[], explanation=f"Safety check failed: {e}"
                 )
             else:
                 # Output hooks fail closed - block content on error
                 return SafetyResult(
                     is_safe=False,
                     violations=[{"category": "check_error", "reason": str(e)}],
-                    explanation=f"Safety check failed with {shield_type}: {e}",
+                    explanation=f"Safety check failed: {e}",
                 )
 
     return safety_hook

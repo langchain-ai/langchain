@@ -5,12 +5,12 @@ from unittest.mock import Mock
 
 # fmt: off
 from langchain_llamastack.input_output_safety_moderation_hooks import (
-    SafeLLMWrapper,
     create_input_only_safe_llm,
     create_output_only_safe_llm,
     create_safe_llm,
     create_safe_llm_with_all_hooks,
     create_safety_hook,
+    SafeLLMWrapper,
 )
 
 # fmt: on
@@ -28,7 +28,7 @@ class TestSafeLLMWrapper:
 
     def test_init(self) -> None:
         """Test SafeLLMWrapper initialization."""
-        assert self.safe_llm.llm == self.mock_llm
+        assert self.safe_llm.runnable == self.mock_llm
         assert self.safe_llm.safety_client == self.mock_safety_client
         assert self.safe_llm.input_hook is None
         assert self.safe_llm.output_hook is None
@@ -114,7 +114,7 @@ class TestSafeLLMWrapper:
 
         result = self.safe_llm.invoke("Test input")
 
-        assert "LLM execution failed: LLM failed" in result
+        assert "Execution failed: LLM failed" in result
 
     def test_invoke_all_hooks_pass(self) -> None:
         """Test invoke with all hooks passing."""
@@ -252,7 +252,7 @@ class TestFactoryFunctions:
         safe_llm = create_safe_llm(self.mock_llm, self.mock_safety_client)
 
         assert isinstance(safe_llm, SafeLLMWrapper)
-        assert safe_llm.llm == self.mock_llm
+        assert safe_llm.runnable == self.mock_llm
         assert safe_llm.safety_client == self.mock_safety_client
         assert safe_llm.input_hook is not None  # Should be set
         assert safe_llm.output_hook is not None  # Should be set
