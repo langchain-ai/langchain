@@ -197,8 +197,6 @@ def test_set_config_context_exit_without_enter() -> None:
 
 def test_set_config_context_normal_usage() -> None:
     """Test that normal usage still works correctly."""
-    from langchain_core.runnables.config import set_config_context
-
     config = RunnableConfig(
         tags=["test"], metadata={"key": "value"}, configurable={"param": "value"}
     )
@@ -207,8 +205,6 @@ def test_set_config_context_normal_usage() -> None:
     with set_config_context(config) as ctx:
         assert ctx is not None
         # Context should be a contextvars.Context object
-        from contextvars import Context
-
         assert isinstance(ctx, Context)
 
     # After exiting, we should be able to create a new context manager
@@ -241,6 +237,7 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
 
 
 
