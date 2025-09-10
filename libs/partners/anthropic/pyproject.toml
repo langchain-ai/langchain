@@ -7,8 +7,8 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "anthropic<1,>=0.64.0",
-    "langchain-core<1.0.0,>=0.3.74",
+    "anthropic<1,>=0.67.0",
+    "langchain-core<1.0.0,>=0.3.76",
     "pydantic<3.0.0,>=2.7.4",
 ]
 name = "langchain-anthropic"
