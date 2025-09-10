@@ -1206,4 +1206,3 @@ def _get_store_arg(tool: BaseTool) -> str | None:
             return name
 
     return None
-
