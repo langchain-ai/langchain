@@ -25,6 +25,7 @@ except ImportError:
 
 from importlib.metadata import version
 
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -1155,7 +1156,7 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
     }
 
     # there will be no extra `"additionalProperties": False` when Pydantic < 2.11
-    if version("pydantic") < "2.11":
+    if parse(version("pydantic")) < parse("2.11"):
         del expected["parameters"]["properties"]["arg1"]["additionalProperties"]
         del expected["parameters"]["properties"]["arg2"]["anyOf"][0][
             "additionalProperties"
