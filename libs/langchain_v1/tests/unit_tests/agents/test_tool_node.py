@@ -1480,3 +1480,341 @@ def test_tool_node_stream_writer() -> None:
             },
         ),
     ]
+
+
+# Timeout functionality tests
+async def test_tool_node_timeout_single_tool():
+    """Test that ToolNode correctly times out when a tool takes longer than the specified timeout."""
+    import asyncio
+    
+    @dec_tool
+    async def slow_tool(duration: float) -> str:
+        """A tool that simulates a slow operation."""
+        await asyncio.sleep(duration)
+        return f"Completed after {duration} seconds"
+    
+    # Create ToolNode with 0.5 second timeout
+    tool_node = ToolNode([slow_tool], timeout=0.5)
+    
+    # Test that a tool that takes 1 second times out
+    with pytest.raises(asyncio.TimeoutError) as exc_info:
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "Testing timeout",
+                        tool_calls=[
+                            {
+                                "name": "slow_tool",
+                                "args": {"duration": 1.0},
+                                "id": "test_timeout",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+    
+    # Verify the error message includes helpful information
+    assert "Tool execution timed out after 0.5 seconds" in str(exc_info.value)
+    assert "slow_tool" in str(exc_info.value)
+
+
+async def test_tool_node_timeout_propagation():
+    """Test that timeout exceptions are properly propagated and not silently caught."""
+    import asyncio
+    
+    @dec_tool
+    async def hanging_tool() -> str:
+        """A tool that hangs indefinitely."""
+        await asyncio.sleep(10)  # Simulate a hanging operation
+        return "Should never reach here"
+    
+    tool_node = ToolNode([hanging_tool], timeout=0.1)
+    
+    # Ensure the timeout exception is raised, not caught silently
+    with pytest.raises(asyncio.TimeoutError):
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "Test",
+                        tool_calls=[
+                            {
+                                "name": "hanging_tool",
+                                "args": {},
+                                "id": "1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+async def test_tool_node_no_timeout_backward_compatibility():
+    """Test that ToolNode works normally when no timeout is specified (backward compatibility)."""
+    import asyncio
+    
+    @dec_tool
+    async def normal_tool(message: str) -> str:
+        """A normal tool that completes quickly."""
+        await asyncio.sleep(0.1)
+        return f"Processed: {message}"
+    
+    # Create ToolNode without timeout (default behavior)
+    tool_node = ToolNode([normal_tool])
+    
+    result = await tool_node.ainvoke(
+        {
+            "messages": [
+                AIMessage(
+                    "Test",
+                    tool_calls=[
+                        {
+                            "name": "normal_tool",
+                            "args": {"message": "Hello"},
+                            "id": "1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+    
+    # Verify the tool executes successfully without timeout
+    assert result["messages"][0].content == "Processed: Hello"
+    assert result["messages"][0].name == "normal_tool"
+
+
+async def test_tool_node_timeout_multiple_tools_parallel():
+    """Test timeout behavior with multiple tools running in parallel."""
+    import asyncio
+    
+    @dec_tool
+    async def fast_tool(id: str) -> str:
+        """A tool that completes quickly."""
+        await asyncio.sleep(0.1)
+        return f"Fast tool {id} completed"
+    
+    @dec_tool
+    async def slow_tool(id: str) -> str:
+        """A tool that takes longer."""
+        await asyncio.sleep(1.0)
+        return f"Slow tool {id} completed"
+    
+    # Create ToolNode with 0.5 second timeout
+    tool_node = ToolNode([fast_tool, slow_tool], timeout=0.5)
+    
+    # Test with multiple tools where one is slow
+    with pytest.raises(asyncio.TimeoutError) as exc_info:
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "Test parallel",
+                        tool_calls=[
+                            {
+                                "name": "fast_tool",
+                                "args": {"id": "1"},
+                                "id": "fast_1",
+                            },
+                            {
+                                "name": "slow_tool",
+                                "args": {"id": "2"},
+                                "id": "slow_1",
+                            },
+                            {
+                                "name": "fast_tool",
+                                "args": {"id": "3"},
+                                "id": "fast_2",
+                            },
+                        ],
+                    )
+                ]
+            }
+        )
+    
+    # Verify error message mentions the tools being executed
+    error_msg = str(exc_info.value)
+    assert "Tool execution timed out after 0.5 seconds" in error_msg
+    assert "fast_tool" in error_msg
+    assert "slow_tool" in error_msg
+
+
+async def test_tool_node_timeout_with_successful_completion():
+    """Test that tools complete successfully when they finish before timeout."""
+    import asyncio
+    
+    @dec_tool
+    async def timed_tool(duration: float, message: str) -> str:
+        """A tool with configurable duration."""
+        await asyncio.sleep(duration)
+        return f"Completed: {message} after {duration}s"
+    
+    # Create ToolNode with 1 second timeout
+    tool_node = ToolNode([timed_tool], timeout=1.0)
+    
+    # Test that tools completing within timeout work correctly
+    result = await tool_node.ainvoke(
+        {
+            "messages": [
+                AIMessage(
+                    "Test",
+                    tool_calls=[
+                        {
+                            "name": "timed_tool",
+                            "args": {"duration": 0.3, "message": "Quick task"},
+                            "id": "1",
+                        },
+                        {
+                            "name": "timed_tool",
+                            "args": {"duration": 0.2, "message": "Another quick task"},
+                            "id": "2",
+                        },
+                    ],
+                )
+            ]
+        }
+    )
+    
+    # Verify both tools completed successfully
+    assert len(result["messages"]) == 2
+    assert "Completed: Quick task after 0.3s" in result["messages"][0].content
+    assert "Completed: Another quick task after 0.2s" in result["messages"][1].content
+
+
+async def test_tool_node_timeout_with_error_handling():
+    """Test that timeout works correctly with error handling enabled."""
+    import asyncio
+    
+    @dec_tool
+    async def slow_failing_tool() -> str:
+        """A tool that would fail after a delay."""
+        await asyncio.sleep(1.0)
+        raise ValueError("This error should not be reached due to timeout")
+    
+    # Create ToolNode with timeout and error handling
+    tool_node = ToolNode([slow_failing_tool], timeout=0.2, handle_tool_errors=True)
+    
+    # The timeout should occur before the tool error
+    with pytest.raises(asyncio.TimeoutError) as exc_info:
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "Test",
+                        tool_calls=[
+                            {
+                                "name": "slow_failing_tool",
+                                "args": {},
+                                "id": "1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+    
+    # Verify it's a timeout error, not the ValueError
+    assert "Tool execution timed out" in str(exc_info.value)
+
+
+async def test_tool_node_timeout_with_sync_tools():
+    """Test that timeout works with synchronous tools (they get run in executor)."""
+    import time
+    
+    @dec_tool
+    def sync_slow_tool(duration: float) -> str:
+        """A synchronous tool that blocks."""
+        time.sleep(duration)
+        return f"Sync completed after {duration}s"
+    
+    # Note: Sync tools run in thread executor, so timeout behavior may differ
+    # This test verifies the implementation handles sync tools appropriately
+    tool_node = ToolNode([sync_slow_tool], timeout=0.5)
+    
+    # Sync tools are executed via the sync _func method, not _afunc
+    # So this tests the sync path
+    result = tool_node.invoke(
+        {
+            "messages": [
+                AIMessage(
+                    "Test sync",
+                    tool_calls=[
+                        {
+                            "name": "sync_slow_tool",
+                            "args": {"duration": 0.1},
+                            "id": "1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+    
+    # Verify sync tool completes successfully when under timeout
+    assert "Sync completed after 0.1s" in result["messages"][0].content
+
+
+async def test_tool_node_timeout_zero():
+    """Test edge case with zero timeout."""
+    import asyncio
+    
+    @dec_tool
+    async def instant_tool() -> str:
+        """A tool that should complete instantly."""
+        return "Instant response"
+    
+    # Create ToolNode with zero timeout (should timeout immediately)
+    tool_node = ToolNode([instant_tool], timeout=0.0)
+    
+    # Even instant operations should timeout with zero timeout
+    with pytest.raises(asyncio.TimeoutError):
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "Test",
+                        tool_calls=[
+                            {
+                                "name": "instant_tool",
+                                "args": {},
+                                "id": "1",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+
+
+async def test_tool_node_timeout_with_list_input():
+    """Test timeout functionality with list input format."""
+    import asyncio
+    
+    @dec_tool
+    async def list_input_tool(value: str) -> str:
+        """Tool for testing list input."""
+        await asyncio.sleep(0.5)
+        return f"Processed: {value}"
+    
+    tool_node = ToolNode([list_input_tool], timeout=0.2)
+    
+    # Test with list input format (not dict with messages key)
+    with pytest.raises(asyncio.TimeoutError):
+        await tool_node.ainvoke(
+            [
+                AIMessage(
+                    "Test",
+                    tool_calls=[
+                        {
+                            "name": "list_input_tool",
+                            "args": {"value": "test"},
+                            "id": "1",
+                        }
+                    ],
+                )
+            ]
+        )
+
