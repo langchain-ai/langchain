@@ -12,6 +12,7 @@ from typing import (
 from typing import TypedDict as TypingTypedDict
 
 import pytest
+from aiofiles import stderr
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
 from typing_extensions import TypeAlias
@@ -1122,3 +1123,36 @@ def test_convert_to_json_schema(
     ):
         actual = convert_to_json_schema(fn)
         assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict_2() -> None:
+    def my_function(arg1: dict, arg2: Union[dict, None]) -> None:
+        """Dummy function."""
+
+    expected = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                'arg1': {
+                    'additionalProperties': False,
+                    'type': 'object',
+                },
+                "arg2": {
+                    'anyOf': [
+                        {
+                            'additionalProperties': False,
+                            'type': 'object'
+                        }, {
+                            'type': 'null'
+                        }
+                    ],
+                },
+            },
+            "required": ["arg1", "arg2"],
+        },
+    }
+
+    actual = convert_to_openai_function(my_function)
+    assert actual == expected

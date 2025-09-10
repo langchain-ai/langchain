@@ -838,6 +838,10 @@ def _recursive_set_additional_properties_false(
         ):
             schema["additionalProperties"] = False
 
+        # if additionalProperties already be set to True, we override it to False
+        if "additionalProperties" in schema:
+            schema["additionalProperties"] = False
+
         # Recursively check 'properties' and 'items' if they exist
         if "anyOf" in schema:
             for sub_schema in schema["anyOf"]:
