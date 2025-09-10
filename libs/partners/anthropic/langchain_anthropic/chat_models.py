@@ -71,6 +71,10 @@ class AnthropicTool(TypedDict):
 
 
 def _is_builtin_tool(tool: Any) -> bool:
+    """Check if a tool is a built-in Anthropic tool.
+
+    https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    """
     if not isinstance(tool, dict):
         return False
 
