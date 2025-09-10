@@ -17,10 +17,10 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: langchain
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html
@@ -72,7 +72,7 @@ jobs:
           done
 
       - name: '🐍 Setup Python ${{ env.PYTHON_VERSION }}'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         id: setup-python
         with:
           python-version: ${{ env.PYTHON_VERSION }}
