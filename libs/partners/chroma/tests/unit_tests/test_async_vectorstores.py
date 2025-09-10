@@ -159,7 +159,7 @@ async def test_aadd_texts() -> None:
 
 
 @pytest.mark.asyncio
-async def test_aadd_documents():
+async def test_aadd_documents() -> None:
     """Test async add_documents functionality."""
     async_client = MockAsyncClient()
 
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
