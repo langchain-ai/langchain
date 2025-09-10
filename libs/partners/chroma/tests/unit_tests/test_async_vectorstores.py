@@ -344,7 +344,7 @@ async def test_sync_methods_error_with_only_async_client() -> None:
         chroma.add_texts(["test"])
 
 
-def test_both_sync_and_async_clients():
+def test_both_sync_and_async_clients() -> None:
     """Test that both sync and async clients can be provided."""
     sync_client = MagicMock()
     sync_client.get_or_create_collection.return_value = MagicMock()
@@ -440,6 +440,7 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
 
 
 
