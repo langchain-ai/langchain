@@ -1,7 +1,7 @@
 # 🦜✂️ LangChain Text Splitters
 
-[![Downloads](https://static.pepy.tech/badge/langchain_text_splitters/month)](https://pepy.tech/project/langchain_text_splitters)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI - License](https://img.shields.io/pypi/l/langchain-text-splitters?style=flat-square)](https://opensource.org/licenses/MIT)
+[![PyPI - Downloads](https://img.shields.io/pepy/dt/langchain-text-splitters)](https://pypistats.org/packages/langchain-text-splitters)
 
 ## Quick Install
 

@@ -41,10 +41,12 @@ class ConversationChain(LLMChain):
 
             store = {}  # memory is maintained outside the chain
 
+
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
                     store[session_id] = InMemoryChatMessageHistory()
                 return store[session_id]
+
 
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
@@ -66,6 +68,7 @@ class ConversationChain(LLMChain):
 
             store = {}  # memory is maintained outside the chain
 
+
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
                     store[session_id] = InMemoryChatMessageHistory()
@@ -81,6 +84,7 @@ class ConversationChain(LLMChain):
                 messages = memory.load_memory_variables({})[key]
                 store[session_id] = InMemoryChatMessageHistory(messages=messages)
                 return store[session_id]
+
 
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 

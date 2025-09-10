@@ -922,7 +922,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     def copy(self) -> Self:
-        """Copy the callback manager."""
+        """Return a copy of the callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
             inheritable_handlers=self.inheritable_handlers.copy(),
@@ -947,11 +947,18 @@ class BaseCallbackManager(CallbackManagerMixin):
 
             .. code-block:: python
 
-                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.manager import (
+                    CallbackManager,
+                    trace_as_chain_group,
+                )
                 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
-                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                manager = CallbackManager(
+                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
+                )
+                with trace_as_chain_group(
+                    "My Group Name", tags=["tag1"]
+                ) as group_manager:
                     merged_manager = group_manager.merge(manager)
                     print(merged_manager.handlers)
                     # [

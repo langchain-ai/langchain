@@ -48,9 +48,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
@@ -107,6 +104,9 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 omit = ["tests/*"]

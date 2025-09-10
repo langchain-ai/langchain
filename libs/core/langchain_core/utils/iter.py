@@ -31,7 +31,7 @@ class NoLock:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
-        """Exception not handled."""
+        """Return False (exception not suppressed)."""
         return False
 
 
@@ -173,7 +173,11 @@ class Tee(Generic[T]):
         return self._children[item]
 
     def __iter__(self) -> Iterator[Iterator[T]]:
-        """Return an iterator over the child iterators."""
+        """Return an iterator over the child iterators.
+
+        Yields:
+            The child iterators.
+        """
         yield from self._children
 
     def __enter__(self) -> "Tee[T]":
@@ -186,7 +190,11 @@ class Tee(Generic[T]):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> Literal[False]:
-        """Close all child iterators."""
+        """Close all child iterators.
+
+        Returns:
+            False (exception not suppressed).
+        """
         self.close()
         return False
 

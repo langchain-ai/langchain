@@ -47,9 +47,6 @@ typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
@@ -108,6 +105,9 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.mypy]
 disallow_untyped_defs = true
