@@ -216,8 +216,6 @@ def test_set_config_context_normal_usage() -> None:
 
 def test_set_config_context_nested_different_instances() -> None:
     """Test that using different instances in nested contexts works properly."""
-    from langchain_core.runnables.config import set_config_context
-
     config1 = RunnableConfig(tags=["outer"], metadata={"level": "outer"})
     config2 = RunnableConfig(tags=["inner"], metadata={"level": "inner"})
 
@@ -228,8 +226,6 @@ def test_set_config_context_nested_different_instances() -> None:
         with set_config_context(config2) as ctx2:
             assert ctx2 is not None
             # Both contexts should be valid
-            from contextvars import Context
-
             assert isinstance(ctx1, Context)
             assert isinstance(ctx2, Context)
             # They should be different contexts
@@ -237,6 +233,7 @@ def test_set_config_context_nested_different_instances() -> None:
 
         # After inner context exits, outer should still be valid
         assert ctx1 is not None
+
 
 
 
