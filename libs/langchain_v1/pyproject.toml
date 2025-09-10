@@ -126,7 +126,6 @@ unfixable = [
 ]
 
 pydocstyle.convention = "google"
-pyupgrade.keep-runtime-typing = true
 flake8-annotations.allow-star-arg-any = true
 
 [tool.ruff.lint.extend-per-file-ignores]
