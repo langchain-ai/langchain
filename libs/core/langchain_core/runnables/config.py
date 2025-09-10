@@ -194,7 +194,7 @@ class ConfigContext:
         self,
         exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
-        exc_tb: Optional[object],
+        exc_tb: Optional[TracebackType],
     ) -> None:
         """Exit the context manager and reset the config.
 
@@ -671,5 +671,6 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
 
 
