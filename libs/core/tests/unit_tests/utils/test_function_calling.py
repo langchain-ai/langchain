@@ -1149,5 +1149,5 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
         },
     }
 
-    actual = convert_to_openai_function(my_function)
+    actual = convert_to_openai_function(my_function, strict=True)
     assert actual == expected
