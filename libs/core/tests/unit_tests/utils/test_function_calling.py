@@ -35,7 +35,7 @@ from langchain_core.utils.function_calling import (
 )
 
 
-def remove_titles(obj: dict) -> None:
+def remove_titles(obj: Any) -> None:
     if isinstance(obj, dict):
         obj.pop("title", None)
         for v in obj.values():
@@ -43,7 +43,6 @@ def remove_titles(obj: dict) -> None:
     elif isinstance(obj, list):
         for v in obj:
             remove_titles(v)
-    return obj
 
 
 @pytest.fixture
