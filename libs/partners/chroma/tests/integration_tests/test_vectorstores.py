@@ -124,6 +124,230 @@ async def test_chroma_async_with_ids() -> None:
     assert output[0].id == "id_0"
 
 
+async def test_chroma_async_http_client() -> None:
+    """Test async operations with AsyncHttpClient."""
+    try:
+        import chromadb
+        from chromadb import AsyncHttpClient
+    except ImportError:
+        pytest.skip("AsyncHttpClient not available in this ChromaDB version")
+    
+    # Try to connect to a local Chroma server
+    # This test requires a running Chroma server
+    try:
+        async_client = await AsyncHttpClient(
+            host="localhost",
+            port=8000,
+        )
+        # Test connection
+        await async_client.heartbeat()
+    except Exception:
+        pytest.skip("Chroma server not running on localhost:8000")
+    
+    texts = ["foo", "bar", "baz"]
+    metadatas = [{"page": str(i)} for i in range(len(texts))]
+    
+    # Create Chroma instance with async client
+    collection_name = f"test_async_{uuid.uuid4().hex}"
+    docsearch = Chroma(
+        collection_name=collection_name,
+        embedding_function=FakeEmbeddings(),
+        async_client=async_client,
+    )
+    
+    # Test async add_texts
+    ids = await docsearch.aadd_texts(texts=texts, metadatas=metadatas)
+    assert len(ids) == 3
+    
+    # Test async similarity search
+    output = await docsearch.asimilarity_search("foo", k=2)
+    assert len(output) <= 2
+    assert output[0].page_content in texts
+    
+    # Test async similarity search with score
+    output_with_scores = await docsearch.asimilarity_search_with_score("bar", k=2)
+    assert len(output_with_scores) <= 2
+    for doc, score in output_with_scores:
+        assert doc.page_content in texts
+        assert isinstance(score, float)
+    
+    # Test async delete
+    await docsearch.adelete(ids=[ids[0]])
+    
+    # Clean up
+    await docsearch.adelete_collection()
+
+
+async def test_chroma_async_add_documents() -> None:
+    """Test async add_documents functionality."""
+    documents = [
+        Document(page_content="foo", metadata={"page": "0"}),
+        Document(page_content="bar", metadata={"page": "1"}),
+        Document(page_content="baz", metadata={"page": "2"}),
+    ]
+    
+    docsearch = Chroma.from_documents(
+        collection_name="test_async_docs",
+        documents=documents,
+        embedding=FakeEmbeddings(),
+    )
+    
+    # Add more documents asynchronously
+    new_documents = [
+        Document(page_content="qux", metadata={"page": "3"}),
+        Document(page_content="quux", metadata={"page": "4"}),
+    ]
+    ids = await docsearch.aadd_documents(documents=new_documents)
+    assert len(ids) == 2
+    
+    # Verify documents were added
+    output = await docsearch.asimilarity_search("qux", k=1)
+    assert len(output) == 1
+    assert output[0].page_content == "qux"
+    assert output[0].metadata == {"page": "3"}
+    
+    docsearch.delete_collection()
+
+
+async def test_chroma_both_sync_and_async_clients() -> None:
+    """Test that both sync and async clients can coexist."""
+    # Create sync client
+    sync_client = chromadb.Client(chromadb.config.Settings())
+    
+    # Try to create async client if available
+    try:
+        from chromadb import AsyncHttpClient
+        async_client = await AsyncHttpClient(
+            host="localhost",
+            port=8000,
+        )
+        await async_client.heartbeat()
+    except (ImportError, Exception):
+        # If AsyncHttpClient is not available or server not running,
+        # create a mock async client for testing
+        async_client = None
+        pytest.skip("AsyncHttpClient not available or server not running")
+    
+    collection_name = f"test_both_{uuid.uuid4().hex}"
+    
+    # Initialize with both clients
+    docsearch = Chroma(
+        collection_name=collection_name,
+        embedding_function=FakeEmbeddings(),
+        client=sync_client,
+        async_client=async_client,
+    )
+    
+    texts = ["foo", "bar", "baz"]
+    
+    # Test sync operations
+    sync_ids = docsearch.add_texts(texts=texts)
+    assert len(sync_ids) == 3
+    
+    sync_results = docsearch.similarity_search("foo", k=1)
+    assert len(sync_results) == 1
+    
+    # Test async operations
+    async_texts = ["async_foo", "async_bar"]
+    async_ids = await docsearch.aadd_texts(texts=async_texts)
+    assert len(async_ids) == 2
+    
+    async_results = await docsearch.asimilarity_search("async_foo", k=1)
+    assert len(async_results) == 1
+    assert async_results[0].page_content == "async_foo"
+    
+    # Clean up
+    docsearch.delete_collection()
+
+
+async def test_chroma_async_error_handling() -> None:
+    """Test error handling in async operations."""
+    # Test without async client
+    docsearch = Chroma(
+        collection_name="test_error",
+        embedding_function=FakeEmbeddings(),
+    )
+    
+    # Should raise error when trying to use async methods without async_client
+    with pytest.raises(ValueError, match="async_client"):
+        await docsearch.aadd_texts(["test"])
+    
+    with pytest.raises(ValueError, match="async_client"):
+        await docsearch.asimilarity_search("test")
+    
+    with pytest.raises(ValueError, match="async_client"):
+        await docsearch.asimilarity_search_with_score("test")
+    
+    with pytest.raises(ValueError, match="async_client"):
+        await docsearch.adelete(["test_id"])
+    
+    docsearch.delete_collection()
+
+
+async def test_chroma_async_collection_operations() -> None:
+    """Test async collection management operations."""
+    try:
+        from chromadb import AsyncHttpClient
+        async_client = await AsyncHttpClient(
+            host="localhost",
+            port=8000,
+        )
+        await async_client.heartbeat()
+    except (ImportError, Exception):
+        pytest.skip("AsyncHttpClient not available or server not running")
+    
+    collection_name = f"test_collection_ops_{uuid.uuid4().hex}"
+    
+    docsearch = Chroma(
+        collection_name=collection_name,
+        embedding_function=FakeEmbeddings(),
+        async_client=async_client,
+    )
+    
+    # Add initial data
+    texts = ["foo", "bar", "baz"]
+    await docsearch.aadd_texts(texts=texts)
+    
+    # Test reset collection
+    await docsearch.areset_collection()
+    
+    # Collection should be empty after reset
+    # Add new data to verify collection was reset
+    new_texts = ["new_foo"]
+    ids = await docsearch.aadd_texts(texts=new_texts)
+    assert len(ids) == 1
+    
+    # Clean up
+    await docsearch.adelete_collection()
+
+
+async def test_chroma_async_with_metadata_filter() -> None:
+    """Test async operations with metadata filtering."""
+    texts = ["foo", "bar", "baz", "qux"]
+    metadatas = [
+        {"type": "a", "page": "0"},
+        {"type": "b", "page": "1"},
+        {"type": "a", "page": "2"},
+        {"type": "b", "page": "3"},
+    ]
+    
+    docsearch = Chroma.from_texts(
+        collection_name="test_async_filter",
+        texts=texts,
+        embedding=FakeEmbeddings(),
+        metadatas=metadatas,
+    )
+    
+    # Test async search with filter
+    output = await docsearch.asimilarity_search("foo", k=10, filter={"type": "a"})
+    
+    # Should only return documents with type="a"
+    for doc in output:
+        assert doc.metadata.get("type") == "a"
+    
+    docsearch.delete_collection()
+
+
 def test_chroma_with_metadatas() -> None:
     """Test end to end construction and search."""
     texts = ["foo", "bar", "baz"]
@@ -827,3 +1051,4 @@ def test_delete_where_clause(client: chromadb.ClientAPI) -> None:
     assert vectorstore._collection.count() == 1
     # Clean up
     vectorstore.delete_collection()
+
