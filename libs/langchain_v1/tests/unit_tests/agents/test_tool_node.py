@@ -1486,16 +1486,16 @@ def test_tool_node_stream_writer() -> None:
 async def test_tool_node_timeout_single_tool():
     """Test that ToolNode correctly times out when a tool takes longer than the specified timeout."""
     import asyncio
-    
+
     @dec_tool
     async def slow_tool(duration: float) -> str:
         """A tool that simulates a slow operation."""
         await asyncio.sleep(duration)
         return f"Completed after {duration} seconds"
-    
+
     # Create ToolNode with 0.5 second timeout
     tool_node = ToolNode([slow_tool], timeout=0.5)
-    
+
     # Test that a tool that takes 1 second times out
     with pytest.raises(asyncio.TimeoutError) as exc_info:
         await tool_node.ainvoke(
@@ -1514,7 +1514,7 @@ async def test_tool_node_timeout_single_tool():
                 ]
             }
         )
-    
+
     # Verify the error message includes helpful information
     assert "Tool execution timed out after 0.5 seconds" in str(exc_info.value)
     assert "slow_tool" in str(exc_info.value)
@@ -1523,15 +1523,15 @@ async def test_tool_node_timeout_single_tool():
 async def test_tool_node_timeout_propagation():
     """Test that timeout exceptions are properly propagated and not silently caught."""
     import asyncio
-    
+
     @dec_tool
     async def hanging_tool() -> str:
         """A tool that hangs indefinitely."""
         await asyncio.sleep(10)  # Simulate a hanging operation
         return "Should never reach here"
-    
+
     tool_node = ToolNode([hanging_tool], timeout=0.1)
-    
+
     # Ensure the timeout exception is raised, not caught silently
     with pytest.raises(asyncio.TimeoutError):
         await tool_node.ainvoke(
@@ -1555,16 +1555,16 @@ async def test_tool_node_timeout_propagation():
 async def test_tool_node_no_timeout_backward_compatibility():
     """Test that ToolNode works normally when no timeout is specified (backward compatibility)."""
     import asyncio
-    
+
     @dec_tool
     async def normal_tool(message: str) -> str:
         """A normal tool that completes quickly."""
         await asyncio.sleep(0.1)
         return f"Processed: {message}"
-    
+
     # Create ToolNode without timeout (default behavior)
     tool_node = ToolNode([normal_tool])
-    
+
     result = await tool_node.ainvoke(
         {
             "messages": [
@@ -1581,7 +1581,7 @@ async def test_tool_node_no_timeout_backward_compatibility():
             ]
         }
     )
-    
+
     # Verify the tool executes successfully without timeout
     assert result["messages"][0].content == "Processed: Hello"
     assert result["messages"][0].name == "normal_tool"
@@ -1590,22 +1590,22 @@ async def test_tool_node_no_timeout_backward_compatibility():
 async def test_tool_node_timeout_multiple_tools_parallel():
     """Test timeout behavior with multiple tools running in parallel."""
     import asyncio
-    
+
     @dec_tool
     async def fast_tool(id: str) -> str:
         """A tool that completes quickly."""
         await asyncio.sleep(0.1)
         return f"Fast tool {id} completed"
-    
+
     @dec_tool
     async def slow_tool(id: str) -> str:
         """A tool that takes longer."""
         await asyncio.sleep(1.0)
         return f"Slow tool {id} completed"
-    
+
     # Create ToolNode with 0.5 second timeout
     tool_node = ToolNode([fast_tool, slow_tool], timeout=0.5)
-    
+
     # Test with multiple tools where one is slow
     with pytest.raises(asyncio.TimeoutError) as exc_info:
         await tool_node.ainvoke(
@@ -1634,7 +1634,7 @@ async def test_tool_node_timeout_multiple_tools_parallel():
                 ]
             }
         )
-    
+
     # Verify error message mentions the tools being executed
     error_msg = str(exc_info.value)
     assert "Tool execution timed out after 0.5 seconds" in error_msg
@@ -1645,16 +1645,16 @@ async def test_tool_node_timeout_multiple_tools_parallel():
 async def test_tool_node_timeout_with_successful_completion():
     """Test that tools complete successfully when they finish before timeout."""
     import asyncio
-    
+
     @dec_tool
     async def timed_tool(duration: float, message: str) -> str:
         """A tool with configurable duration."""
         await asyncio.sleep(duration)
         return f"Completed: {message} after {duration}s"
-    
+
     # Create ToolNode with 1 second timeout
     tool_node = ToolNode([timed_tool], timeout=1.0)
-    
+
     # Test that tools completing within timeout work correctly
     result = await tool_node.ainvoke(
         {
@@ -1677,7 +1677,7 @@ async def test_tool_node_timeout_with_successful_completion():
             ]
         }
     )
-    
+
     # Verify both tools completed successfully
     assert len(result["messages"]) == 2
     assert "Completed: Quick task after 0.3s" in result["messages"][0].content
@@ -1687,16 +1687,16 @@ async def test_tool_node_timeout_with_successful_completion():
 async def test_tool_node_timeout_with_error_handling():
     """Test that timeout works correctly with error handling enabled."""
     import asyncio
-    
+
     @dec_tool
     async def slow_failing_tool() -> str:
         """A tool that would fail after a delay."""
         await asyncio.sleep(1.0)
         raise ValueError("This error should not be reached due to timeout")
-    
+
     # Create ToolNode with timeout and error handling
     tool_node = ToolNode([slow_failing_tool], timeout=0.2, handle_tool_errors=True)
-    
+
     # The timeout should occur before the tool error
     with pytest.raises(asyncio.TimeoutError) as exc_info:
         await tool_node.ainvoke(
@@ -1715,7 +1715,7 @@ async def test_tool_node_timeout_with_error_handling():
                 ]
             }
         )
-    
+
     # Verify it's a timeout error, not the ValueError
     assert "Tool execution timed out" in str(exc_info.value)
 
@@ -1723,17 +1723,17 @@ async def test_tool_node_timeout_with_error_handling():
 async def test_tool_node_timeout_with_sync_tools():
     """Test that timeout works with synchronous tools (they get run in executor)."""
     import time
-    
+
     @dec_tool
     def sync_slow_tool(duration: float) -> str:
         """A synchronous tool that blocks."""
         time.sleep(duration)
         return f"Sync completed after {duration}s"
-    
+
     # Note: Sync tools run in thread executor, so timeout behavior may differ
     # This test verifies the implementation handles sync tools appropriately
     tool_node = ToolNode([sync_slow_tool], timeout=0.5)
-    
+
     # Sync tools are executed via the sync _func method, not _afunc
     # So this tests the sync path
     result = tool_node.invoke(
@@ -1752,7 +1752,7 @@ async def test_tool_node_timeout_with_sync_tools():
             ]
         }
     )
-    
+
     # Verify sync tool completes successfully when under timeout
     assert "Sync completed after 0.1s" in result["messages"][0].content
 
@@ -1760,15 +1760,15 @@ async def test_tool_node_timeout_with_sync_tools():
 async def test_tool_node_timeout_zero():
     """Test edge case with zero timeout."""
     import asyncio
-    
+
     @dec_tool
     async def instant_tool() -> str:
         """A tool that should complete instantly."""
         return "Instant response"
-    
+
     # Create ToolNode with zero timeout (should timeout immediately)
     tool_node = ToolNode([instant_tool], timeout=0.0)
-    
+
     # Even instant operations should timeout with zero timeout
     with pytest.raises(asyncio.TimeoutError):
         await tool_node.ainvoke(
@@ -1792,15 +1792,15 @@ async def test_tool_node_timeout_zero():
 async def test_tool_node_timeout_with_list_input():
     """Test timeout functionality with list input format."""
     import asyncio
-    
+
     @dec_tool
     async def list_input_tool(value: str) -> str:
         """Tool for testing list input."""
         await asyncio.sleep(0.5)
         return f"Processed: {value}"
-    
+
     tool_node = ToolNode([list_input_tool], timeout=0.2)
-    
+
     # Test with list input format (not dict with messages key)
     with pytest.raises(asyncio.TimeoutError):
         await tool_node.ainvoke(
@@ -1817,4 +1817,3 @@ async def test_tool_node_timeout_with_list_input():
                 )
             ]
         )
-
