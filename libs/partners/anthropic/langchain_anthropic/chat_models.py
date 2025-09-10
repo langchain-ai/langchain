@@ -281,16 +281,7 @@ def _format_data_content_block(block: dict) -> dict:
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[Union[str, list[dict], None], list[dict]]:
-    """Format messages for anthropic."""
-    """
-    [
-                {
-                    "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).model_dump()],
-                }
-                for m in messages
-            ]
-    """
+    """Format messages for Anthropic's API."""
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
