@@ -542,6 +542,43 @@ class Chroma(VectorStore):
             **kwargs,
         )
 
+    async def __aquery_collection(
+        self,
+        query_texts: Optional[list[str]] = None,
+        query_embeddings: Optional[list[list[float]]] = None,
+        n_results: int = 4,
+        where: Optional[dict[str, str]] = None,
+        where_document: Optional[dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> Union[list[Document], Any]:
+        """Query the chroma collection asynchronously.
+
+        Args:
+            query_texts: List of query texts.
+            query_embeddings: List of query embeddings.
+            n_results: Number of results to return. Defaults to 4.
+            where: dict used to filter results by metadata.
+                    E.g. {"color" : "red"}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of `n_results` nearest neighbor embeddings for provided
+            query_embeddings or query_texts.
+
+        See more: https://docs.trychroma.com/reference/py-collection#query
+        """
+        collection = await self._aget_collection()
+        return await collection.query(
+            query_texts=query_texts,
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
+            n_results=n_results,
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
+            **kwargs,
+        )
+
     @staticmethod
     def encode_image(uri: str) -> str:
         """Get base64 string from image URI."""
@@ -1603,6 +1640,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
