@@ -1,5 +1,7 @@
 """Unit tests for async functionality in Chroma vector store."""
 
+from __future__ import annotations
+
 import asyncio
 from typing import Any, Optional
 from unittest.mock import MagicMock
@@ -438,3 +440,4 @@ async def test_concurrent_async_operations():
     assert all(results[0])  # First add_texts returned IDs
     assert all(results[1])  # Second add_texts returned IDs
     assert isinstance(results[2], list)  # Search returned documents
+
