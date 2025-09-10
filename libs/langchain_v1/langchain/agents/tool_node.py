@@ -395,6 +395,7 @@ class ToolNode(RunnableCallable):
         | type[Exception]
         | tuple[type[Exception], ...] = _default_handle_tool_errors,
         messages_key: str = "messages",
+        timeout: float | None = None,
     ) -> None:
         """Initialize the ToolNode with the provided tools and configuration.
 
@@ -404,6 +405,9 @@ class ToolNode(RunnableCallable):
             tags: Optional metadata tags.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
+            timeout: Optional timeout in seconds for tool execution. If specified,
+                tool execution will be cancelled if it exceeds this duration.
+                Defaults to None (no timeout).
         """
         super().__init__(self._func, self._afunc, name=name, tags=tags, trace=False)
         self._tools_by_name: dict[str, BaseTool] = {}
@@ -411,6 +415,7 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
+        self._timeout = timeout
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -1179,4 +1184,5 @@ def _get_store_arg(tool: BaseTool) -> str | None:
             return name
 
     return None
+
 
