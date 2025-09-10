@@ -1134,18 +1134,14 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
         "parameters": {
             "type": "object",
             "properties": {
-                'arg1': {
-                    'additionalProperties': False,
-                    'type': 'object',
+                "arg1": {
+                    "additionalProperties": False,
+                    "type": "object",
                 },
                 "arg2": {
-                    'anyOf': [
-                        {
-                            'additionalProperties': False,
-                            'type': 'object'
-                        }, {
-                            'type': 'null'
-                        }
+                    "anyOf": [
+                        {"additionalProperties": False, "type": "object"},
+                        {"type": "null"},
                     ],
                 },
             },

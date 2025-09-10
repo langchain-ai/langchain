@@ -834,9 +834,11 @@ def _recursive_set_additional_properties_false(
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
         # If additionalProperties already be set to True, we need override it to False
-        if "required" in schema or (
-            "properties" in schema and not schema["properties"]
-        ) or "additionalProperties" in schema:
+        if (
+            "required" in schema
+            or ("properties" in schema and not schema["properties"])
+            or "additionalProperties" in schema
+        ):
             schema["additionalProperties"] = False
 
         # Recursively check 'properties' and 'items' if they exist
