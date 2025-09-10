@@ -87,6 +87,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "computer_",
         "bash_",
         "web_search_",
+        "web_fetch_",
         "code_execution_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
@@ -435,6 +436,7 @@ def _format_messages(
                         "code_execution_tool_result",
                         "mcp_tool_result",
                         "web_search_tool_result",
+                        "web_fetch_tool_result",
                     ):
                         content.append(
                             {
@@ -447,6 +449,7 @@ def _format_messages(
                                     "tool_use_id",
                                     "is_error",  # for mcp_tool_result
                                     "cache_control",
+                                    "retrieved_at",  # for web_fetch_tool_result
                                 )
                             },
                         )
@@ -2227,6 +2230,7 @@ def _make_message_chunk_from_anthropic_event(
             "mcp_tool_result",
             "server_tool_use",  # Server-side tool usage
             "web_search_tool_result",  # Built-in web search results
+            "web_fetch_tool_result",  # Built-in web fetch results,
         )
     ):
         if coerce_content_to_string:
