@@ -480,7 +480,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.75"
+version = "0.3.76"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -538,7 +538,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.32"
+version = "0.3.33"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -627,7 +627,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -666,7 +666,8 @@ test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1.17.1,<2" },
+    { name = "mypy", specifier = ">=1.17.1,<1.18" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
 [[package]]
