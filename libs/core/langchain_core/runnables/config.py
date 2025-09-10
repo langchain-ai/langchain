@@ -182,7 +182,8 @@ class ConfigContext:
             RuntimeError: If the context manager has already been entered.
         """
         if self._entered:
-            raise RuntimeError("Cannot re-enter an already-entered context manager")
+            msg = "Cannot re-enter an already-entered context manager"
+            raise RuntimeError(msg)
 
         self._entered = True
         self._ctx = copy_context()
@@ -669,3 +670,4 @@ async def run_in_executor(
         )
 
     return await asyncio.get_running_loop().run_in_executor(executor_or_config, wrapper)
+
