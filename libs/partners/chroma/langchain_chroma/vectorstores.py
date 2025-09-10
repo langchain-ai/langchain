@@ -899,6 +899,32 @@ class Chroma(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Run similarity search with Chroma asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
+            query,
+            k,
+            filter=filter,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
     def similarity_search_by_vector(
         self,
         embedding: list[float],
@@ -1640,6 +1666,7 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
 
 
 
