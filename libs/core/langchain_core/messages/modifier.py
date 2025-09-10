@@ -13,7 +13,7 @@ class RemoveMessage(BaseMessage):
 
     def __init__(
         self,
-        id: str,  # noqa: A002
+        id: str,
         **kwargs: Any,
     ) -> None:
         """Create a RemoveMessage.

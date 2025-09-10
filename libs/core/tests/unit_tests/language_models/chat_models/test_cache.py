@@ -12,6 +12,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
+from langchain_core.load import dumps
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
@@ -318,8 +319,6 @@ def test_cache_with_generation_objects() -> None:
     cache = InMemoryCache()
 
     # Create a simple fake chat model that we can control
-    from langchain_core.messages import AIMessage
-
     class SimpleFakeChat:
         """Simple fake chat model for testing."""
 
@@ -332,8 +331,6 @@ def test_cache_with_generation_objects() -> None:
 
         def generate_response(self, prompt: str) -> ChatResult:
             """Simulate the cache lookup and generation logic."""
-            from langchain_core.load import dumps
-
             llm_string = self._get_llm_string()
             prompt_str = dumps([prompt])
 

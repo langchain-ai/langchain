@@ -12,17 +12,11 @@ from langchain_core.load import dumpd, load
 from langchain_core.runnables import RunnableBinding
 from langchain_core.tools import BaseTool, tool
 from pydantic import BaseModel, Field, SecretStr
-from pydantic.v1 import (
-    BaseModel as BaseModelV1,
-)
-from pydantic.v1 import (
-    Field as FieldV1,
-)
-from pydantic.v1 import (
-    ValidationError as ValidationErrorV1,
-)
+from pydantic.v1 import BaseModel as BaseModelV1
+from pydantic.v1 import Field as FieldV1
+from pydantic.v1 import ValidationError as ValidationErrorV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from syrupy import SnapshotAssertion
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_tests.base import BaseStandardTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
@@ -32,6 +26,7 @@ def generate_schema_pydantic_v1_from_2() -> Any:
     """Use to generate a schema from v1 namespace in pydantic 2.
 
     :private:
+
     """
     if PYDANTIC_MAJOR_VERSION != 2:
         msg = "This function is only compatible with Pydantic v2."
@@ -50,6 +45,7 @@ def generate_schema_pydantic() -> Any:
     """Works with either pydantic 1 or 2.
 
     :private:
+
     """
 
     class PersonA(BaseModel):
@@ -71,6 +67,7 @@ class ChatModelTests(BaseStandardTests):
     """Base class for chat model tests.
 
     :private:
+
     """
 
     @property
@@ -86,7 +83,10 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:private:"""
+        """Standard chat model parameters.
+
+        :private:
+        """
         return {
             "temperature": 0,
             "max_tokens": 100,
@@ -97,7 +97,10 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def model(self) -> BaseChatModel:
-        """:private:"""
+        """Model fixture.
+
+        :private:
+        """
         return self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
@@ -107,11 +110,17 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def my_adder_tool(self) -> BaseTool:
-        """:private:"""
+        """Adder tool fixture.
+
+        :private:
+        """
 
         @tool
         def my_adder_tool(a: int, b: int) -> int:
-            """Takes two integers, a and b, and returns their sum."""
+            """Tool that adds two integers.
+
+            Takes two integers, a and b, and returns their sum.
+            """
             return a + b
 
         return my_adder_tool
@@ -154,15 +163,21 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_inputs(self) -> bool:
-        """(bool) whether the chat model supports image inputs, defaults to
+        """Supports image inputs.
+
+        (bool) whether the chat model supports image inputs, defaults to
         ``False``.
+
         """
         return False
 
     @property
     def supports_image_urls(self) -> bool:
-        """(bool) whether the chat model supports image inputs from URLs, defaults to
+        """Supports image inputs from URLs.
+
+        (bool) whether the chat model supports image inputs from URLs, defaults to
         ``False``.
+
         """
         return False
 
@@ -173,22 +188,31 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_audio_inputs(self) -> bool:
-        """(bool) whether the chat model supports audio inputs, defaults to
-        ``False``.
+        """Supports audio inputs.
+
+        (bool) whether the chat model supports audio inputs, defaults to ``False``.
+
         """
         return False
 
     @property
     def supports_video_inputs(self) -> bool:
-        """(bool) whether the chat model supports video inputs, defaults to ``False``.
+        """Supports video inputs.
+
+        (bool) whether the chat model supports video inputs, defaults to ``False``.
+
         No current tests are written for this feature.
+
         """
         return False
 
     @property
     def returns_usage_metadata(self) -> bool:
-        """(bool) whether the chat model returns usage metadata on invoke and streaming
+        """Returns usage metadata.
+
+        (bool) whether the chat model returns usage metadata on invoke and streaming
         responses.
+
         """
         return True
 
@@ -199,8 +223,11 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def supports_image_tool_message(self) -> bool:
-        """(bool) whether the chat model supports ToolMessages that include image
+        """Supports image ToolMessages.
+
+        (bool) whether the chat model supports ToolMessages that include image
         content.
+
         """
         return False
 
@@ -211,6 +238,7 @@ class ChatModelTests(BaseStandardTests):
         .. important::
             See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
             information.
+
         """
         return False
 
@@ -229,14 +257,16 @@ class ChatModelTests(BaseStandardTests):
             ]
         ],
     ]:
-        """(dict) what usage metadata details are emitted in invoke and stream. Only
+        """Supported usage metadata details.
+
+        (dict) what usage metadata details are emitted in invoke and stream. Only
         needs to be overridden if these details are returned by the model.
         """
         return {"invoke": [], "stream": []}
 
 
 class ChatModelUnitTests(ChatModelTests):
-    """Base class for chat model unit tests.
+    '''Base class for chat model unit tests.
 
     Test subclasses must implement the ``chat_model_class`` and
     ``chat_model_params`` properties to specify what model to test and its
@@ -267,7 +297,7 @@ class ChatModelUnitTests(ChatModelTests):
           API references for individual test methods include troubleshooting tips.
 
 
-    Test subclasses must implement the following two properties:
+    Test subclasses **must** implement the following two properties:
 
     chat_model_class
         The chat model class to test, e.g., ``ChatParrotLink``.
@@ -299,7 +329,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         Boolean property indicating whether the chat model supports tool calling.
 
-        By default, this is determined by whether the chat model's `bind_tools` method
+        By default, this is determined by whether the chat model's ``bind_tools`` method
         is overridden. It typically does not need to be overridden on the test class.
 
         Example override:
@@ -401,7 +431,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -437,7 +467,7 @@ class ChatModelUnitTests(ChatModelTests):
         URLs. Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -463,7 +493,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -490,7 +520,7 @@ class ChatModelUnitTests(ChatModelTests):
         Defaults to ``False``.
 
         If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        form.
 
         .. code-block:: python
 
@@ -519,10 +549,11 @@ class ChatModelUnitTests(ChatModelTests):
     .. dropdown:: returns_usage_metadata
 
         Boolean property indicating whether the chat model returns usage metadata
-        on invoke and streaming responses.
+        on invoke and streaming responses. Defaults to ``True``.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track
+        input and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -533,7 +564,7 @@ class ChatModelUnitTests(ChatModelTests):
                 return False
 
         Models supporting ``usage_metadata`` should also return the name of the
-        underlying model in the ``response_metadata`` of the AIMessage.
+        underlying model in the ``response_metadata`` of the ``AIMessage``.
 
     .. dropdown:: supports_anthropic_inputs
 
@@ -567,7 +598,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     .. dropdown:: supports_image_tool_message
 
-        Boolean property indicating whether the chat model supports ToolMessages
+        Boolean property indicating whether the chat model supports ``ToolMessage``s
         that include image content, e.g.,
 
         .. code-block:: python
@@ -615,11 +646,12 @@ class ChatModelUnitTests(ChatModelTests):
 
     .. dropdown:: supported_usage_metadata_details
 
-        Property controlling what usage metadata details are emitted in both invoke
-        and stream.
+        Property controlling what usage metadata details are emitted in both ``invoke``
+        and ``stream``.
 
-        ``usage_metadata`` is an optional dict attribute on AIMessages that track input
-        and output tokens: https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track
+        input and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -643,7 +675,8 @@ class ChatModelUnitTests(ChatModelTests):
                 def enable_vcr_tests(self) -> bool:
                     return True
 
-        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+        2. Configure VCR to exclude sensitive headers and other information from
+           cassettes.
 
             .. important::
                 VCR will by default record authentication headers and other sensitive
@@ -663,7 +696,9 @@ class ChatModelUnitTests(ChatModelTests):
                 :caption: tests/conftest.py
 
                 import pytest
-                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                from langchain_tests.conftest import (
+                    _base_vcr_config as _base_vcr_config,
+                )
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -679,7 +714,7 @@ class ChatModelUnitTests(ChatModelTests):
 
                 @pytest.fixture(scope="session")
                 def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
-                    \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                    """Extend the default configuration from langchain_tests."""
                     config = _base_vcr_config.copy()
                     config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                     config["before_record_response"] = remove_response_headers
@@ -697,8 +732,13 @@ class ChatModelUnitTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
-                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
+                    from langchain_tests.conftest import (
+                        _base_vcr_config as _base_vcr_config,
+                    )
                     from vcr import VCR
 
                     _EXTRA_HEADERS = [
@@ -715,7 +755,7 @@ class ChatModelUnitTests(ChatModelTests):
 
                     @pytest.fixture(scope="session")
                     def vcr_config(_base_vcr_config: dict) -> dict:  # noqa: F811
-                        \"\"\"Extend the default configuration from langchain_tests.\"\"\"
+                        """Extend the default configuration from langchain_tests."""
                         config = _base_vcr_config.copy()
                         config.setdefault("filter_headers", []).extend(_EXTRA_HEADERS)
                         config["before_record_response"] = remove_response_headers
@@ -742,10 +782,15 @@ class ChatModelUnitTests(ChatModelTests):
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
 
                     cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
+                    requests, responses = CustomPersister().load_cassette(
+                        path, CustomSerializer()
+                    )
 
         3. Run tests to generate VCR cassettes.
 
@@ -799,19 +844,25 @@ class ChatModelUnitTests(ChatModelTests):
                         },
                     )
 
-    """  # noqa: E501
+    '''  # noqa: E501,D214
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """:private:"""
+        """Standard chat model parameters.
+
+        :private:
+        """
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params
 
     @property
     def init_from_env_params(self) -> tuple[dict, dict, dict]:
-        """(tuple) environment variables, additional initialization args, and expected
+        """Init from env params.
+
+        (tuple) environment variables, additional initialization args, and expected
         instance attributes for testing initialization from environment variables.
+
         """
         return {}, {}, {}
 
@@ -822,9 +873,12 @@ class ChatModelUnitTests(ChatModelTests):
 
             If this test fails, ensure that:
 
-            1. ``chat_model_params`` is specified and the model can be initialized from those params;
-            2. The model accommodates standard parameters: https://python.langchain.com/docs/concepts/chat_models/#standard-parameters
-        """  # noqa: E501
+            1. ``chat_model_params`` is specified and the model can be initialized
+               from those params;
+            2. The model accommodates
+               `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
+
+        """
         model = self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
@@ -834,15 +888,17 @@ class ChatModelUnitTests(ChatModelTests):
         assert model is not None
 
     def test_init_from_env(self) -> None:
-        """Test initialization from environment variables. Relies on the
-        ``init_from_env_params`` property. Test is skipped if that property is not
-        set.
+        """Test initialization from environment variables.
+
+        Relies on the ``init_from_env_params`` property. Test is skipped if that
+        property is not set.
 
         .. dropdown:: Troubleshooting
 
             If this test fails, ensure that ``init_from_env_params`` is specified
             correctly and that model parameters are properly set from environment
             variables during initialization.
+
         """
         env_params, model_params, expected_attrs = self.init_from_env_params
         if not env_params:
@@ -860,13 +916,15 @@ class ChatModelUnitTests(ChatModelTests):
     def test_init_streaming(
         self,
     ) -> None:
-        """Test that model can be initialized with ``streaming=True``. This is for
-        backward-compatibility purposes.
+        """Test that model can be initialized with ``streaming=True``.
+
+        This is for backward-compatibility purposes.
 
         .. dropdown:: Troubleshooting
 
             If this test fails, ensure that the model can be initialized with a
             boolean ``streaming`` parameter.
+
         """
         model = self.chat_model_class(
             **{
@@ -882,7 +940,9 @@ class ChatModelUnitTests(ChatModelTests):
         model: BaseChatModel,
         my_adder_tool: BaseTool,
     ) -> None:
-        """Test that chat model correctly handles Pydantic models that are passed
+        """Test bind tools with Pydantic models.
+
+        Test that chat model correctly handles Pydantic models that are passed
         into ``bind_tools``. Test is skipped if the ``has_tool_calling`` property
         on the test class is False.
 
@@ -893,12 +953,13 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``bind_tools`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.bind_tools
+
         """
         if not self.has_tool_calling:
             return
 
         def my_adder(a: int, b: int) -> int:
-            """Takes two integers, a and b, and returns their sum."""
+            """Return the sum of two integers."""
             return a + b
 
         tools = [my_adder_tool, my_adder]
@@ -923,8 +984,10 @@ class ChatModelUnitTests(ChatModelTests):
         model: BaseChatModel,
         schema: Any,
     ) -> None:
-        """Test ``with_structured_output`` method. Test is skipped if the
-        ``has_structured_output`` property on the test class is False.
+        """Test ``with_structured_output`` method.
+
+        Test is skipped if the ``has_structured_output`` property on the test class is
+        False.
 
         .. dropdown:: Troubleshooting
 
@@ -933,6 +996,7 @@ class ChatModelUnitTests(ChatModelTests):
             a utility function that will accommodate most formats: https://python.langchain.com/api_reference/core/utils/langchain_core.utils.function_calling.convert_to_openai_tool.html
 
             See example implementation of ``with_structured_output`` here: https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output
+
         """
         if not self.has_structured_output:
             return
@@ -946,8 +1010,9 @@ class ChatModelUnitTests(ChatModelTests):
                 )
 
     def test_standard_params(self, model: BaseChatModel) -> None:
-        """Test that model properly generates standard parameters. These are used
-        for tracing purposes.
+        """Test that model properly generates standard parameters.
+
+        These are used for tracing purposes.
 
         .. dropdown:: Troubleshooting
 
@@ -955,6 +1020,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             Check also that the model class is named according to convention
             (e.g., ``ChatProviderName``).
+
         """
 
         class ExpectedParams(BaseModelV1):
@@ -973,8 +1039,8 @@ class ChatModelUnitTests(ChatModelTests):
 
         # Test optional params
         model = self.chat_model_class(
-            max_tokens=10,  # type: ignore[call-arg]
-            stop=["test"],  # type: ignore[call-arg]
+            max_tokens=10,
+            stop=["test"],
             **self.chat_model_params,
         )
         ls_params = model._get_ls_params()
@@ -984,14 +1050,16 @@ class ChatModelUnitTests(ChatModelTests):
             pytest.fail(f"Validation error: {e}")
 
     def test_serdes(self, model: BaseChatModel, snapshot: SnapshotAssertion) -> None:
-        """Test serialization and deserialization of the model. Test is skipped if the
-        ``is_lc_serializable`` property on the chat model class is not overwritten
-        to return ``True``.
+        """Test serialization and deserialization of the model.
+
+        Test is skipped if the ``is_lc_serializable`` property on the chat model class
+        is not overwritten to return ``True``.
 
         .. dropdown:: Troubleshooting
 
             If this test fails, check that the ``init_from_env_params`` property is
             correctly set on the test class.
+
         """
         if not self.chat_model_class.is_lc_serializable():
             pytest.skip("Model is not serializable.")
@@ -1009,8 +1077,11 @@ class ChatModelUnitTests(ChatModelTests):
 
     @pytest.mark.benchmark
     def test_init_time(self, benchmark: BenchmarkFixture) -> None:
-        """Test initialization time of the chat model. If this test fails, check that
+        """Test initialization time of the chat model.
+
+        If this test fails, check that
         we are not introducing undue overhead in the model's initialization.
+
         """
 
         def _init_in_loop() -> None:
