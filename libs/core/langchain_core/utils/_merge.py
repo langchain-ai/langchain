@@ -20,6 +20,8 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
     Raises:
         TypeError: If the key exists in both dictionaries but has a different type.
         TypeError: If the value has an unsupported type.
+        ValueError: If the two dictionaries have different values for the special key
+            'type'.
 
     Example:
         If left = {"function_call": {"arguments": None}} and
@@ -44,19 +46,16 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 )
                 raise TypeError(msg)
             elif isinstance(merged[right_k], str):
-                # TODO: Add below special handling for 'type' key in 0.3 and remove
-                # merge_lists 'type' logic.
-                #
-                # if right_k == "type":
-                #     if merged[right_k] == right_v:
-                #         continue
-                #     else:
-                #         raise ValueError(
-                #             "Unable to merge. Two different values seen for special "
-                #             f"key 'type': {merged[right_k]} and {right_v}. 'type' "
-                #             "should either occur once or have the same value across "
-                #             "all dicts."
-                #         )
+                if right_k == "type":
+                    if merged[right_k] == right_v:
+                        continue
+                    msg = (
+                        "Unable to merge. Two different values seen for special "
+                        f"key 'type': {merged[right_k]} and {right_v}. 'type' "
+                        "should either occur once or have the same value across "
+                        "all dicts."
+                    )
+                    raise ValueError(msg)
                 if (right_k == "index" and merged[right_k].startswith("lc_")) or (
                     right_k in ("id", "output_version", "model_provider")
                     and merged[right_k] == right_v
@@ -114,8 +113,6 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         if "index" in e_left and e_left["index"] == e["index"]
                     ]
                     if to_merge:
-                        # TODO: Remove this once merge_dict is updated with special
-                        # handling for 'type'.
                         if (left_type := merged[to_merge[0]].get("type")) and (
                             e.get("type") == "non_standard" and "value" in e
                         ):
@@ -140,11 +137,7 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                                 if "index" in e:
                                     new_e["index"] = e["index"]
                         else:
-                            new_e = (
-                                {k: v for k, v in e.items() if k != "type"}
-                                if "type" in e
-                                else e
-                            )
+                            new_e = e
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)
