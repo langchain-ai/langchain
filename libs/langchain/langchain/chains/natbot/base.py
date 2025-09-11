@@ -46,6 +46,7 @@ class NatBotChain(Chain):
         .. code-block:: python
 
             from langchain.chains import NatBotChain
+
             natbot = NatBotChain.from_default("Buy me a new hat.")
 
     """

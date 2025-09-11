@@ -181,7 +181,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -479,10 +479,10 @@ class AzureChatOpenAI(BaseChatOpenAI):
         Example: ``https://example-resource.azure.openai.com/``
     """
     deployment_name: Union[str, None] = Field(default=None, alias="azure_deployment")
-    """A model deployment. 
-    
+    """A model deployment.
+
         If given sets the base client URL to include ``/deployments/{azure_deployment}``
-        
+
         .. note::
             This means you won't be able to use non-deployment endpoints.
     """
@@ -512,27 +512,27 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
-        
+
         Will be invoked on every sync request. For async requests,
         will be invoked if ``azure_ad_async_token_provider`` is not provided.
     """
 
     azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
     """A function that returns an Azure Active Directory token.
-        
+
         Will be invoked on every async request.
     """
 
     model_version: str = ""
     """The version of the model (e.g. ``'0125'`` for ``'gpt-3.5-0125'``).
 
-    Azure OpenAI doesn't return model version with the response by default so it must 
+    Azure OpenAI doesn't return model version with the response by default so it must
     be manually specified if you want to use this information downstream, e.g. when
     calculating costs.
 
-    When you specify the version, it will be appended to the model name in the 
-    response. Setting correct version will help you to calculate the cost properly. 
-    Model version is not validated, so make sure you set it correctly to get the 
+    When you specify the version, it will be appended to the model name in the
+    response. Setting correct version will help you to calculate the cost properly.
+    Model version is not validated, so make sure you set it correctly to get the
     correct cost.
     """
 
@@ -547,34 +547,34 @@ class AzureChatOpenAI(BaseChatOpenAI):
     """
 
     model_name: Optional[str] = Field(default=None, alias="model")  # type: ignore[assignment]
-    """Name of the deployed OpenAI model, e.g. ``'gpt-4o'``, ``'gpt-35-turbo'``, etc. 
-    
+    """Name of the deployed OpenAI model, e.g. ``'gpt-4o'``, ``'gpt-35-turbo'``, etc.
+
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
-    
+
     .. warning::
         Does NOT affect completion.
     """
 
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
-    """Parameters of the OpenAI client or chat.completions endpoint that should be 
+    """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
 
-    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the 
+    Should be specified as ``{"param": None | ['val1', 'val2']}`` where the key is the
     parameter and the value is either None, meaning that parameter should never be
     used, or it's a list of disabled values for the parameter.
 
     For example, older models may not support the ``'parallel_tool_calls'`` parameter at
-    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed 
+    all, in which case ``disabled_params={"parallel_tool_calls: None}`` can ben passed
     in.
-    
+
     If a parameter is disabled then it will not be used by default in any methods, e.g.
-    in 
+    in
     :meth:`~langchain_openai.chat_models.azure.AzureChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
-    invocation. 
-    
-    By default, unless ``model_name="gpt-4o"`` is specified, then 
+    invocation.
+
+    By default, unless ``model_name="gpt-4o"`` is specified, then
     ``'parallel_tools_calls'`` will be disabled.
     """
 
@@ -753,6 +753,26 @@ class AzureChatOpenAI(BaseChatOpenAI):
             )
 
         return chat_result
+
+    def _get_request_payload(
+        self,
+        input_: LanguageModelInput,
+        *,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> dict:
+        """Get the request payload, using deployment name for Azure Responses API."""
+        payload = super()._get_request_payload(input_, stop=stop, **kwargs)
+
+        # For Azure Responses API, use deployment name instead of model name
+        if (
+            self._use_responses_api(payload)
+            and not payload.get("model")
+            and self.deployment_name
+        ):
+            payload["model"] = self.deployment_name
+
+        return payload
 
     def _stream(self, *args: Any, **kwargs: Any) -> Iterator[ChatGenerationChunk]:
         """Route to Chat Completions or Responses API."""

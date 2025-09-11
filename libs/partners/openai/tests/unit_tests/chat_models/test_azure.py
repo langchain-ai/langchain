@@ -5,6 +5,7 @@ from unittest import mock
 
 import pytest
 from langchain_core.messages import HumanMessage
+from pydantic import SecretStr
 from typing_extensions import TypedDict
 
 from langchain_openai import AzureChatOpenAI
@@ -99,3 +100,42 @@ def test_max_completion_tokens_in_payload() -> None:
         "stream": False,
         "max_completion_tokens": 300,
     }
+
+
+def test_responses_api_uses_deployment_name() -> None:
+    """Test that Azure deployment name is used for Responses API."""
+    llm = AzureChatOpenAI(
+        azure_deployment="your_deployment",
+        api_version="2025-04-01-preview",
+        azure_endpoint="your_endpoint",
+        api_key=SecretStr("your_api_key"),
+        # Force Responses API usage by including a Responses-only parameter
+        use_responses_api=True,
+        output_version="responses/v1",
+    )
+    messages = [HumanMessage("Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # For Responses API, the model field should be the deployment name
+    assert payload["model"] == "your_deployment"
+    assert "input" in payload  # Responses API uses 'input' instead of 'messages'
+
+
+def test_chat_completions_api_uses_model_name() -> None:
+    """Test that regular Chat Completions API still uses model name."""
+    llm = AzureChatOpenAI(
+        azure_deployment="your_deployment",
+        model="gpt-5",  # This is the OpenAI model name
+        api_version="2025-04-01-preview",
+        azure_endpoint="your_endpoint",
+        api_key=SecretStr("your_api_key"),
+        # No Responses-only parameters, so Chat Completions API will be used
+    )
+    messages = [HumanMessage("Hello")]
+    payload = llm._get_request_payload(messages)
+
+    # For Chat Completions API, the model field should still be None/model_name
+    # Azure Chat Completions uses deployment in the URL, not in the model field
+    assert payload["model"] == "gpt-5"
+    assert "messages" in payload  # Chat Completions API uses 'messages'
+    assert "input" not in payload

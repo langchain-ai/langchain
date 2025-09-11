@@ -58,8 +58,11 @@ class FactWithEvidence(BaseModel):
 
 
 class QuestionAnswer(BaseModel):
-    """A question and its answer as a list of facts each one should have a source.
-    each sentence contains a body and a list of sources."""
+    """A question and its answer as a list of facts.
+
+    Each fact should have a source.
+    Each sentence contains a body and a list of sources.
+    """
 
     question: str = Field(..., description="Question that was asked")
     answer: list[FactWithEvidence] = Field(
@@ -132,10 +135,7 @@ def create_citation_fuzzy_match_chain(llm: BaseLanguageModel) -> LLMChain:
         Chain (LLMChain) that can be used to answer questions with citations.
     """
     output_parser = PydanticOutputFunctionsParser(pydantic_schema=QuestionAnswer)
-    if hasattr(QuestionAnswer, "model_json_schema"):
-        schema = QuestionAnswer.model_json_schema()
-    else:
-        schema = QuestionAnswer.schema()
+    schema = QuestionAnswer.model_json_schema()
     function = {
         "name": schema["title"],
         "description": schema["description"],

@@ -4,7 +4,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Annotated, Optional, cast
+from typing import Annotated, cast
 
 import typer
 from typing_extensions import TypedDict
@@ -65,14 +65,14 @@ def new(
         ),
     ],
     name_class: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help="The name of the integration in PascalCase. e.g. `MyIntegration`."
             " This is used to name classes like `MyIntegrationVectorStore`",
         ),
     ] = None,
     src: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             help="The name of the single template file to copy."
             " e.g. `--src integration_template/chat_models.py "
@@ -80,7 +80,7 @@ def new(
         ),
     ] = None,
     dst: Annotated[
-        Optional[list[str]],
+        list[str] | None,
         typer.Option(
             help="The relative path to the integration package to place the new file in"
             ". e.g. `my-integration/my_integration.py`",
@@ -166,7 +166,7 @@ def new(
                 typer.echo(f"File {dst_path} exists.")
                 raise typer.Exit(code=1)
 
-        for src_path, dst_path in zip(src_paths, dst_paths):
+        for src_path, dst_path in zip(src_paths, dst_paths, strict=False):
             shutil.copy(src_path, dst_path)
             replace_file(dst_path, cast("dict[str, str]", replacements))
 
@@ -203,7 +203,7 @@ def create_doc(
         ),
     ],
     name_class: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             help=(
                 "The PascalCase name of the integration (e.g. `OpenAI`, "

@@ -3,40 +3,34 @@
 import json
 import logging
 import operator
-from typing import Any, Literal, Optional, Union, cast
+from collections.abc import Sequence
+from typing import Any, Literal, Optional, Union, cast, overload
 
 from pydantic import model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
+from langchain_core.messages import content as types
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
     merge_content,
 )
+from langchain_core.messages.content import InvalidToolCall
 from langchain_core.messages.tool import (
-    InvalidToolCall,
     ToolCall,
     ToolCallChunk,
     default_tool_chunk_parser,
     default_tool_parser,
 )
-from langchain_core.messages.tool import (
-    invalid_tool_call as create_invalid_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call as create_tool_call,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
+from langchain_core.messages.tool import invalid_tool_call as create_invalid_tool_call
+from langchain_core.messages.tool import tool_call as create_tool_call
+from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.json import parse_partial_json
 from langchain_core.utils.usage import _dict_int_op
+from langchain_core.utils.utils import LC_AUTO_PREFIX, LC_ID_PREFIX
 
 logger = logging.getLogger(__name__)
-
-
-_LC_ID_PREFIX = "run-"
 
 
 class InputTokenDetails(TypedDict, total=False):
@@ -124,7 +118,7 @@ class UsageMetadata(TypedDict):
                 "output_token_details": {
                     "audio": 10,
                     "reasoning": 200,
-                }
+                },
             }
 
     .. versionchanged:: 0.3.9
@@ -174,16 +168,42 @@ class AIMessage(BaseMessage):
     type: Literal["ai"] = "ai"
     """The type of the message (used for deserialization). Defaults to "ai"."""
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-            content: The content of the message.
-            kwargs: Additional arguments to pass to the parent class.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        if content_blocks is not None:
+            # If there are tool calls in content_blocks, but not in tool_calls, add them
+            content_tool_calls = [
+                block for block in content_blocks if block.get("type") == "tool_call"
+            ]
+            if content_tool_calls and "tool_calls" not in kwargs:
+                kwargs["tool_calls"] = content_tool_calls
+
+            super().__init__(
+                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
     @property
     def lc_attributes(self) -> dict:
@@ -192,6 +212,51 @@ class AIMessage(BaseMessage):
             "tool_calls": self.tool_calls,
             "invalid_tool_calls": self.invalid_tool_calls,
         }
+
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider:
+            from langchain_core.messages.block_translators import (  # noqa: PLC0415
+                get_translator,
+            )
+
+            translator = get_translator(model_provider)
+            if translator:
+                try:
+                    return translator["translate_content"](self)
+                except NotImplementedError:
+                    pass
+
+        # Otherwise, use best-effort parsing
+        blocks = super().content_blocks
+
+        if self.tool_calls:
+            # Add from tool_calls if missing from content
+            content_tool_call_ids = {
+                block.get("id")
+                for block in self.content
+                if isinstance(block, dict) and block.get("type") == "tool_call"
+            }
+            for tool_call in self.tool_calls:
+                if (id_ := tool_call.get("id")) and id_ not in content_tool_call_ids:
+                    tool_call_block: types.ToolCall = {
+                        "type": "tool_call",
+                        "id": id_,
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                    }
+                    if "index" in tool_call:
+                        tool_call_block["index"] = tool_call["index"]  # type: ignore[typeddict-item]
+                    if "extras" in tool_call:
+                        tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
+                    blocks.append(tool_call_block)
+
+        return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
     @model_validator(mode="before")
@@ -221,7 +286,9 @@ class AIMessage(BaseMessage):
         # Ensure "type" is properly set on all tool call-like dicts.
         if tool_calls := values.get("tool_calls"):
             values["tool_calls"] = [
-                create_tool_call(**{k: v for k, v in tc.items() if k != "type"})
+                create_tool_call(
+                    **{k: v for k, v in tc.items() if k not in ("type", "extras")}
+                )
                 for tc in tool_calls
             ]
         if invalid_tool_calls := values.get("invalid_tool_calls"):
@@ -292,6 +359,13 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     tool_call_chunks: list[ToolCallChunk] = []
     """If provided, tool call chunks associated with the message."""
 
+    chunk_position: Optional[Literal["last"]] = None
+    """Optional span represented by an aggregated AIMessageChunk.
+
+    If a chunk with ``chunk_position="last"`` is aggregated into a stream,
+    ``tool_call_chunks`` in message content will be parsed into ``tool_calls``.
+    """
+
     @property
     def lc_attributes(self) -> dict:
         """Attrs to be serialized even if they are derived from other init args."""
@@ -300,18 +374,57 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
             "invalid_tool_calls": self.invalid_tool_calls,
         }
 
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        """Return content blocks of the message."""
+        if self.response_metadata.get("output_version") == "v1":
+            return cast("list[types.ContentBlock]", self.content)
+
+        model_provider = self.response_metadata.get("model_provider")
+        if model_provider:
+            from langchain_core.messages.block_translators import (  # noqa: PLC0415
+                get_translator,
+            )
+
+            translator = get_translator(model_provider)
+            if translator:
+                try:
+                    return translator["translate_content_chunk"](self)
+                except NotImplementedError:
+                    pass
+
+        # Otherwise, use best-effort parsing
+        blocks = super().content_blocks
+
+        if (
+            self.tool_call_chunks
+            and not self.content
+            and self.chunk_position != "last"  # keep tool_calls if aggregated
+        ):
+            blocks = [
+                block
+                for block in blocks
+                if block["type"] not in ("tool_call", "invalid_tool_call")
+            ]
+            for tool_call_chunk in self.tool_call_chunks:
+                tc: types.ToolCallChunk = {
+                    "type": "tool_call_chunk",
+                    "id": tool_call_chunk.get("id"),
+                    "name": tool_call_chunk.get("name"),
+                    "args": tool_call_chunk.get("args"),
+                }
+                if (idx := tool_call_chunk.get("index")) is not None:
+                    tc["index"] = idx
+                blocks.append(tc)
+
+        return blocks
+
     @model_validator(mode="after")
     def init_tool_calls(self) -> Self:
         """Initialize tool calls from tool call chunks.
 
-        Args:
-            values: The values to validate.
-
         Returns:
-            The values with tool calls initialized.
-
-        Raises:
-            ValueError: If the tool call chunks are malformed.
+            This ``AIMessageChunk``.
         """
         if not self.tool_call_chunks:
             if self.tool_calls:
@@ -352,10 +465,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                if chunk["args"] is not None and chunk["args"] != "":
-                    args_ = parse_partial_json(chunk["args"])
-                else:
-                    args_ = {}
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
@@ -370,10 +480,45 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 add_chunk_to_invalid_tool_calls(chunk)
         self.tool_calls = tool_calls
         self.invalid_tool_calls = invalid_tool_calls
+
+        if (
+            self.chunk_position == "last"
+            and self.tool_call_chunks
+            and self.response_metadata.get("output_version") == "v1"
+            and isinstance(self.content, list)
+        ):
+            id_to_tc: dict[str, types.ToolCall] = {
+                cast("str", tc.get("id")): {
+                    "type": "tool_call",
+                    "name": tc["name"],
+                    "args": tc["args"],
+                    "id": tc.get("id"),
+                }
+                for tc in self.tool_calls
+                if "id" in tc
+            }
+            for idx, block in enumerate(self.content):
+                if (
+                    isinstance(block, dict)
+                    and block.get("type") == "tool_call_chunk"
+                    and (call_id := block.get("id"))
+                    and call_id in id_to_tc
+                ):
+                    self.content[idx] = cast("dict[str, Any]", id_to_tc[call_id])
+
         return self
 
+    @overload  # type: ignore[override]  # summing BaseMessages gives ChatPromptTemplate
+    def __add__(self, other: "AIMessageChunk") -> "AIMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Sequence["AIMessageChunk"]) -> "AIMessageChunk": ...
+
+    @overload
+    def __add__(self, other: Any) -> BaseMessageChunk: ...
+
     @override
-    def __add__(self, other: Any) -> BaseMessageChunk:  # type: ignore[override]
+    def __add__(self, other: Any) -> BaseMessageChunk:
         if isinstance(other, AIMessageChunk):
             return add_ai_message_chunks(self, other)
         if isinstance(other, (list, tuple)) and all(
@@ -386,7 +531,16 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple AIMessageChunks together."""
+    """Add multiple ``AIMessageChunk``s together.
+
+    Args:
+        left: The first ``AIMessageChunk``.
+        *others: Other ``AIMessageChunk``s to add.
+
+    Returns:
+        The resulting ``AIMessageChunk``.
+
+    """
     content = merge_content(left.content, *(o.content for o in others))
     additional_kwargs = merge_dicts(
         left.additional_kwargs, *(o.additional_kwargs for o in others)
@@ -421,17 +575,31 @@ def add_ai_message_chunks(
 
     chunk_id = None
     candidates = [left.id] + [o.id for o in others]
-    # first pass: pick the first non-run-* id
+    # first pass: pick the first provider-assigned id (non-run-* and non-lc_*)
     for id_ in candidates:
-        if id_ and not id_.startswith(_LC_ID_PREFIX):
+        if (
+            id_
+            and not id_.startswith(LC_ID_PREFIX)
+            and not id_.startswith(LC_AUTO_PREFIX)
+        ):
             chunk_id = id_
             break
     else:
-        # second pass: no provider-assigned id found, just take the first non-null
+        # second pass: prefer lc_run-* ids over lc_* ids
         for id_ in candidates:
-            if id_:
+            if id_ and id_.startswith(LC_ID_PREFIX):
                 chunk_id = id_
                 break
+        else:
+            # third pass: take any remaining id (auto-generated lc_* ids)
+            for id_ in candidates:
+                if id_:
+                    chunk_id = id_
+                    break
+
+    chunk_position: Optional[Literal["last"]] = (
+        "last" if any(x.chunk_position == "last" for x in [left, *others]) else None
+    )
 
     return left.__class__(
         content=content,
@@ -440,6 +608,7 @@ def add_ai_message_chunks(
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
         id=chunk_id,
+        chunk_position=chunk_position,
     )
 
 
@@ -457,13 +626,13 @@ def add_usage(
                 input_tokens=5,
                 output_tokens=0,
                 total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3)
+                input_token_details=InputTokenDetails(cache_read=3),
             )
             right = UsageMetadata(
                 input_tokens=0,
                 output_tokens=10,
                 total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             add_usage(left, right)
@@ -477,8 +646,15 @@ def add_usage(
                 output_tokens=10,
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
+
+    Args:
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
+
+    Returns:
+        The sum of the two ``UsageMetadata`` objects.
 
     """
     if not (left or right):
@@ -514,13 +690,13 @@ def subtract_usage(
                 input_tokens=5,
                 output_tokens=10,
                 total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4)
+                input_token_details=InputTokenDetails(cache_read=4),
             )
             right = UsageMetadata(
                 input_tokens=3,
                 output_tokens=8,
                 total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             subtract_usage(left, right)
@@ -534,8 +710,15 @@ def subtract_usage(
                 output_tokens=2,
                 total_tokens=4,
                 input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0)
+                output_token_details=OutputTokenDetails(reasoning=0),
             )
+
+    Args:
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
+
+    Returns:
+        The resulting ``UsageMetadata`` after subtraction.
 
     """
     if not (left or right):

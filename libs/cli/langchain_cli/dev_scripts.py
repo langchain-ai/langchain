@@ -14,7 +14,19 @@ def create_demo_server(
     config_keys: Sequence[str] = (),
     playground_type: Literal["default", "chat"] = "default",
 ) -> FastAPI:
-    """Create a demo server for the current template."""
+    """Create a demo server for the current template.
+
+    Args:
+        config_keys: Optional sequence of config keys to expose in the playground.
+        playground_type: The type of playground to use. Can be `'default'` or `'chat'`.
+
+    Returns:
+        The demo server.
+
+    Raises:
+        KeyError: If the `pyproject.toml` file is missing required fields.
+        ImportError: If the module defined in `pyproject.toml` cannot be imported.
+    """
     app = FastAPI()
     package_root = get_package_root()
     pyproject = package_root / "pyproject.toml"
@@ -41,10 +53,18 @@ def create_demo_server(
 
 
 def create_demo_server_configurable() -> FastAPI:
-    """Create a configurable demo server."""
+    """Create a configurable demo server.
+
+    Returns:
+        The configurable demo server.
+    """
     return create_demo_server(config_keys=["configurable"])
 
 
 def create_demo_server_chat() -> FastAPI:
-    """Create a chat demo server."""
+    """Create a chat demo server.
+
+    Returns:
+        The chat demo server.
+    """
     return create_demo_server(playground_type="chat")

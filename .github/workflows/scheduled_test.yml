@@ -1,5 +1,5 @@
 name: '⏰ Scheduled Integration Tests'
-run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.9, 3.11' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
 
 on:
   workflow_dispatch:  # Allows maintainers to trigger the workflow manually in GitHub UI
@@ -9,7 +9,7 @@ on:
         description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
       python-version-force:
         type: string
-        description: "Python version to use - defaults to 3.9 and 3.11 in matrix - example value: 3.9"
+        description: "Python version to use - defaults to 3.10 and 3.13 in matrix - example value: 3.11"
   schedule:
     - cron:  '0 13 * * *'  # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -20,7 +20,7 @@ env:
   POETRY_VERSION: "1.8.4"
   UV_FROZEN: "true"
   DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
-  POETRY_LIBS: ("libs/partners/google-vertexai" "libs/partners/google-genai" "libs/partners/aws")
+  POETRY_LIBS: ("libs/partners/aws")
 
 jobs:
   # Generate dynamic test matrix based on input parameters or defaults
@@ -40,9 +40,9 @@ jobs:
           PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version should default to 3.9 and 3.11, but is overridden to [PYTHON_VERSION_FORCE] if set
+          # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
           # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
-          python_version='["3.9", "3.11"]'
+          python_version='["3.10", "3.13"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_FORCE" ]; then
             python_version="[\"$PYTHON_VERSION_FORCE\"]"
@@ -68,14 +68,14 @@ jobs:
         working-directory: ${{ fromJSON(needs.compute-matrix.outputs.matrix).working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: langchain
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain-google
           path: langchain-google
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain-aws
           path: langchain-aws
@@ -106,12 +106,12 @@ jobs:
 
       - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
 
       - name: '🔐 Configure AWS Credentials'
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

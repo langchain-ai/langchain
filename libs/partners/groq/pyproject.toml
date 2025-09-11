@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.72", "groq<1,>=0.30.0"]
+requires-python = ">=3.10"
+dependencies = ["langchain-core<2.0.0,>=0.3.75", "groq<1,>=0.30.0"]
 name = "langchain-groq"
-version = "0.3.7"
+version = "0.3.8"
 description = "An integration package connecting Groq and LangChain"
 readme = "README.md"
 
@@ -100,6 +100,9 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 omit = ["tests/*"]

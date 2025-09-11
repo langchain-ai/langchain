@@ -12,6 +12,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.tracers.context import register_configure_hook
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
@@ -101,6 +102,9 @@ def get_usage_metadata_callback(
         name (str): The name of the context variable. Defaults to
             ``'usage_metadata_callback'``.
 
+    Yields:
+        The usage metadata callback.
+
     Example:
         .. code-block:: python
 
@@ -130,8 +134,6 @@ def get_usage_metadata_callback(
     .. versionadded:: 0.3.49
 
     """
-    from langchain_core.tracers.context import register_configure_hook
-
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
         ContextVar(name, default=None)
     )

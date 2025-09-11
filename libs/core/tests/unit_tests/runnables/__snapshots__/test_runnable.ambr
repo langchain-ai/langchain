@@ -2072,6 +2072,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -2466,12 +2478,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -2654,7 +2662,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2680,6 +2688,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2690,6 +2702,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -2708,9 +2731,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -2761,12 +2785,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -2915,11 +2935,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -2970,12 +2986,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -3050,7 +3066,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -3063,7 +3079,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -3071,7 +3088,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -3259,7 +3276,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -3464,6 +3481,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -3922,12 +3951,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -4110,7 +4135,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -4136,6 +4161,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -4146,6 +4175,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -4164,9 +4204,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -4236,12 +4277,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -4390,11 +4427,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -4445,12 +4478,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -4525,7 +4558,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -4538,7 +4571,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -4546,7 +4580,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -4734,7 +4768,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -4951,6 +4985,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -5409,12 +5455,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -5597,7 +5639,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -5623,6 +5665,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -5633,6 +5679,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -5651,9 +5708,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -5723,12 +5781,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -5877,11 +5931,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -5932,12 +5982,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -6012,7 +6062,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -6025,7 +6075,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -6033,7 +6084,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -6221,7 +6272,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -6376,6 +6427,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -6771,12 +6834,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -6959,7 +7018,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -6985,6 +7044,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -6995,6 +7058,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -7013,9 +7087,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -7066,12 +7141,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -7220,11 +7291,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -7275,12 +7342,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -7355,7 +7422,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -7368,7 +7435,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -7376,7 +7444,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -7564,7 +7632,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -7812,6 +7880,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -8269,12 +8349,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -8457,7 +8533,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -8483,6 +8559,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -8493,6 +8573,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -8511,9 +8602,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -8583,12 +8675,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -8737,11 +8825,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -8792,12 +8876,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -8872,7 +8956,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -8885,7 +8969,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -8893,7 +8978,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -9081,7 +9166,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -9282,6 +9367,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -9676,12 +9773,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -9864,7 +9957,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -9890,6 +9983,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -9900,6 +9997,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -9918,9 +10026,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -9971,12 +10080,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -10125,11 +10230,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -10180,12 +10281,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -10260,7 +10361,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -10273,7 +10374,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -10281,7 +10383,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -10469,7 +10571,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -10624,6 +10726,18 @@
           'additional_kwargs': dict({
             'title': 'Additional Kwargs',
             'type': 'object',
+          }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
           }),
           'content': dict({
             'anyOf': list([
@@ -11082,12 +11196,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -11270,7 +11380,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -11296,6 +11406,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -11306,6 +11420,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -11324,9 +11449,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -11407,12 +11533,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -11561,11 +11683,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -11616,12 +11734,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -11696,7 +11814,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -11709,7 +11827,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -11717,7 +11836,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -11905,7 +12024,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9
@@ -12073,6 +12192,18 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -12530,12 +12661,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Instantiate a chat model and invoke it with the messages
@@ -12718,7 +12845,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -12744,6 +12871,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -12754,6 +12885,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -12772,9 +12914,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -12844,12 +12987,8 @@
                   from langchain_core.messages import HumanMessage, SystemMessage
           
                   messages = [
-                      SystemMessage(
-                          content="You are a helpful assistant! Your name is Bob."
-                      ),
-                      HumanMessage(
-                          content="What is your name?"
-                      )
+                      SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                      HumanMessage(content="What is your name?"),
                   ]
           
                   # Define a chat model and invoke it with the messages
@@ -12998,11 +13137,7 @@
           
               .. code-block:: python
           
-                  {
-                      "name": "foo",
-                      "args": {"a": 1},
-                      "id": "123"
-                  }
+                  {"name": "foo", "args": {"a": 1}, "id": "123"}
           
               This represents a request to call the tool named "foo" with arguments {"a": 1}
               and an identifier of "123".
@@ -13053,12 +13188,12 @@
           .. code-block:: python
           
               left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-              right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+              right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
           
               (
                   AIMessageChunk(content="", tool_call_chunks=left_chunks)
                   + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-              ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+              ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
         ''',
         'properties': dict({
           'args': dict({
@@ -13133,7 +13268,7 @@
           
                   from langchain_core.messages import ToolMessage
           
-                  ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                  ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
           
           
           Example: A ToolMessage where only part of the tool output is sent to the model
@@ -13146,7 +13281,8 @@
                   from langchain_core.messages import ToolMessage
           
                   tool_output = {
-                      "stdout": "From the graph we can see that the correlation between x and y is ...",
+                      "stdout": "From the graph we can see that the correlation between "
+                      "x and y is ...",
                       "stderr": None,
                       "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                   }
@@ -13154,7 +13290,7 @@
                   ToolMessage(
                       content=tool_output["stdout"],
                       artifact=tool_output,
-                      tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                      tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                   )
           
           The tool_call_id field is used to associate the tool call request with the
@@ -13342,7 +13478,7 @@
                       "output_token_details": {
                           "audio": 10,
                           "reasoning": 200,
-                      }
+                      },
                   }
           
           .. versionchanged:: 0.3.9

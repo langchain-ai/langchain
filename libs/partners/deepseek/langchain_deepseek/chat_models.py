@@ -11,7 +11,7 @@ import openai
 from langchain_core.callbacks import (
     CallbackManagerForLLMRun,
 )
-from langchain_core.language_models import LanguageModelInput
+from langchain_core.language_models import LangSmithParams, LanguageModelInput
 from langchain_core.messages import AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
@@ -84,7 +84,7 @@ class ChatDeepSeek(BaseChatOpenAI):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -185,6 +185,15 @@ class ChatDeepSeek(BaseChatOpenAI):
     def lc_secrets(self) -> dict[str, str]:
         """A map of constructor argument names to secret ids."""
         return {"api_key": "DEEPSEEK_API_KEY"}
+
+    def _get_ls_params(
+        self,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> LangSmithParams:
+        ls_params = super()._get_ls_params(stop=stop, **kwargs)
+        ls_params["ls_provider"] = "deepseek"
+        return ls_params
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
