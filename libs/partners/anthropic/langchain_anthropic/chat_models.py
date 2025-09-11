@@ -1376,7 +1376,7 @@ class ChatAnthropic(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
-            ls_model_name=self.model,
+            ls_model_name=params.get("model", self.model),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
