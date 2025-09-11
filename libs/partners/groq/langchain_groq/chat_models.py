@@ -161,7 +161,7 @@ class ChatGroq(BaseChatModel):
 
             # Streaming `text` for each content chunk received
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -811,7 +811,7 @@ class ChatGroq(BaseChatModel):
             Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Args:

@@ -130,10 +130,16 @@ class GenericFakeChatModel(BaseChatModel):
             assert isinstance(content, str)
             content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
-            for token in content_chunks:
+            for idx, token in enumerate(content_chunks):
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(id=message.id, content=token),
                 )
+                if (
+                    idx == len(content_chunks) - 1
+                    and isinstance(chunk.message, AIMessageChunk)
+                    and not message.additional_kwargs
+                ):
+                    chunk.message.chunk_position = "last"
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk

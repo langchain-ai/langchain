@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
@@ -37,18 +37,18 @@ class ChatParrotLink(BaseChatModel):
     """The name of the model"""
     parrot_buffer_length: int
     """The number of characters from the last message of the prompt to be echoed."""
-    temperature: Optional[float] = None
-    max_tokens: Optional[int] = None
-    timeout: Optional[int] = None
-    stop: Optional[list[str]] = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    timeout: int | None = None
+    stop: list[str] | None = None
     max_retries: int = 2
 
     @override
     def _generate(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> ChatResult:
         """Override the _generate method to implement the chat model logic.
@@ -99,8 +99,8 @@ class ChatParrotLink(BaseChatModel):
     def _stream(
         self,
         messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        stop: list[str] | None = None,
+        run_manager: CallbackManagerForLLMRun | None = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model.

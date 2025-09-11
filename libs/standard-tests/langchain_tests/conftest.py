@@ -3,7 +3,7 @@
 import gzip
 from os import PathLike
 from pathlib import Path
-from typing import Any, Union, cast
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -52,7 +52,9 @@ class CustomPersister:
 
     @classmethod
     def load_cassette(
-        cls, cassette_path: Union[str, PathLike[str]], serializer: CustomSerializer
+        cls,
+        cassette_path: str | PathLike[str],
+        serializer: CustomSerializer,
     ) -> tuple[dict, dict]:
         """Load a cassette from a file."""
         # If cassette path is already Path this is a no-op
@@ -67,7 +69,7 @@ class CustomPersister:
 
     @staticmethod
     def save_cassette(
-        cassette_path: Union[str, PathLike[str]],
+        cassette_path: str | PathLike[str],
         cassette_dict: dict,
         serializer: CustomSerializer,
     ) -> None:

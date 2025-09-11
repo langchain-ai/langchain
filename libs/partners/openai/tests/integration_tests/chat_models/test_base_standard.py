@@ -98,9 +98,8 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
                 {"type": "text", "text": "Summarize this document:"},
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                     "filename": "my-pdf",  # OpenAI requires a filename
                 },
             ]

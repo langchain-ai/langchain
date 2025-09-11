@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "langchain-core<2.0.0,>=0.3.75",
 ]
@@ -25,7 +25,7 @@ typing = [
     "mypy<1.18,>=1.17.1",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
-    "tiktoken<1.0.0,>=0.11.0",
+    "tiktoken<1.0.0,>=0.8.0",
     "beautifulsoup4<5.0.0,>=4.13.5",
 ]
 dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
@@ -69,13 +69,20 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
+    "ANN401",  # Dynamically typed expressions (typing.Any)
     "C90",     # McCabe complexity
+    "C901",    # Complexity
     "COM812",  # Messes with the formatter
     "FIX002",  # Line contains TODO
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "PLR09",   # Too many something (arg, statements, etc)
+    "PLR2004", # Magic value used in comparison
+    "PLR0915", # Too many statements
+    "PLR0911", # Too many return statements
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments in function definition
     "RUF012",  # Doesn't play well with Pydantic
+    "S112",    # Rarely useful
     "TC001",   # Doesn't play well with Pydantic
     "TC002",   # Doesn't play well with Pydantic
     "TC003",   # Doesn't play well with Pydantic

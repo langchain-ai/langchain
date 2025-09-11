@@ -36,10 +36,10 @@ class ToolsIntegrationTests(ToolsTests):
             assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
-        assert isinstance(tool_message.content, (str, list))
+        assert isinstance(tool_message.content, str | list)
         if isinstance(tool_message.content, list):
             # content blocks must be str or dict
-            assert all(isinstance(c, (str, dict)) for c in tool_message.content)
+            assert all(isinstance(c, str | dict) for c in tool_message.content)
 
     async def test_async_invoke_matches_output_schema(self, tool: BaseTool) -> None:
         """Test async invoke matches output schema.
@@ -62,10 +62,10 @@ class ToolsIntegrationTests(ToolsTests):
             assert tool_message.artifact is not None
 
         # check content is a valid ToolMessage content
-        assert isinstance(tool_message.content, (str, list))
+        assert isinstance(tool_message.content, str | list)
         if isinstance(tool_message.content, list):
             # content blocks must be str or dict
-            assert all(isinstance(c, (str, dict)) for c in tool_message.content)
+            assert all(isinstance(c, str | dict) for c in tool_message.content)
 
     def test_invoke_no_tool_call(self, tool: BaseTool) -> None:
         """Test invoke without ToolCall.

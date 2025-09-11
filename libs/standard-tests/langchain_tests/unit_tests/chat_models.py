@@ -3,7 +3,7 @@
 import inspect
 import os
 from abc import abstractmethod
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from unittest import mock
 
 import pytest
@@ -131,7 +131,7 @@ class ChatModelTests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
+    def tool_choice_value(self) -> str | None:
         """(None or str) to use for tool choice when used in tests."""
         return None
 
@@ -1027,9 +1027,9 @@ class ChatModelUnitTests(ChatModelTests):
             ls_provider: str
             ls_model_name: str
             ls_model_type: Literal["chat"]
-            ls_temperature: Optional[float]
-            ls_max_tokens: Optional[int]
-            ls_stop: Optional[list[str]]
+            ls_temperature: float | None
+            ls_max_tokens: int | None
+            ls_stop: list[str] | None
 
         ls_params = model._get_ls_params()
         try:

@@ -7,7 +7,7 @@ import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Callable, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated
@@ -33,6 +33,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import InputTokenDetails, UsageMetadata
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
 from langchain_core.output_parsers import JsonOutputKeyToolsParser, PydanticToolsParser
@@ -51,6 +52,7 @@ from langchain_anthropic._client_utils import (
     _get_default_async_httpx_client,
     _get_default_httpx_client,
 )
+from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from langchain_anthropic.output_parsers import extract_tool_calls
 
 _message_type_lookups = {
@@ -59,6 +61,32 @@ _message_type_lookups = {
     "AIMessageChunk": "assistant",
     "HumanMessageChunk": "user",
 }
+
+
+_MODEL_DEFAULT_MAX_OUTPUT_TOKENS: Final[dict[str, int]] = {
+    "claude-opus-4-1": 32000,
+    "claude-opus-4": 32000,
+    "claude-sonnet-4": 64000,
+    "claude-3-7-sonnet": 64000,
+    "claude-3-5-sonnet": 8192,
+    "claude-3-5-haiku": 8192,
+    "claude-3-haiku": 4096,
+}
+_FALLBACK_MAX_OUTPUT_TOKENS: Final[int] = 4096
+
+
+def _default_max_tokens_for(model: str | None) -> int:
+    """Return the default max output tokens for an Anthropic model (with fallback).
+
+    Can find the Max Tokens limits here: https://docs.anthropic.com/en/docs/about-claude/models/overview#model-comparison-table
+    """
+    if not model:
+        return _FALLBACK_MAX_OUTPUT_TOKENS
+
+    parts = model.split("-")
+    family = "-".join(parts[:-1]) if len(parts) > 1 else model
+
+    return _MODEL_DEFAULT_MAX_OUTPUT_TOKENS.get(family, _FALLBACK_MAX_OUTPUT_TOKENS)
 
 
 class AnthropicTool(TypedDict):
@@ -186,7 +214,7 @@ def _merge_messages(
 def _format_data_content_block(block: dict) -> dict:
     """Format standard data content block to format expected by Anthropic."""
     if block["type"] == "image":
-        if block["source_type"] == "url":
+        if "url" in block:
             if block["url"].startswith("data:"):
                 # Data URI
                 formatted_block = {
@@ -198,16 +226,24 @@ def _format_data_content_block(block: dict) -> dict:
                     "type": "image",
                     "source": {"type": "url", "url": block["url"]},
                 }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": block["mime_type"],
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "image",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "image",
                 "source": {
@@ -217,7 +253,7 @@ def _format_data_content_block(block: dict) -> dict:
             }
         else:
             msg = (
-                "Anthropic only supports 'url' and 'base64' source_type for image "
+                "Anthropic only supports 'url', 'base64', or 'id' keys for image "
                 "content blocks."
             )
             raise ValueError(
@@ -225,7 +261,7 @@ def _format_data_content_block(block: dict) -> dict:
             )
 
     elif block["type"] == "file":
-        if block["source_type"] == "url":
+        if "url" in block:
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -233,16 +269,16 @@ def _format_data_content_block(block: dict) -> dict:
                     "url": block["url"],
                 },
             }
-        elif block["source_type"] == "base64":
+        elif "base64" in block or block.get("source_type") == "base64":
             formatted_block = {
                 "type": "document",
                 "source": {
                     "type": "base64",
                     "media_type": block.get("mime_type") or "application/pdf",
-                    "data": block["data"],
+                    "data": block.get("base64") or block.get("data", ""),
                 },
             }
-        elif block["source_type"] == "text":
+        elif block.get("source_type") == "text":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -251,7 +287,15 @@ def _format_data_content_block(block: dict) -> dict:
                     "data": block["text"],
                 },
             }
-        elif block["source_type"] == "id":
+        elif "file_id" in block:
+            formatted_block = {
+                "type": "document",
+                "source": {
+                    "type": "file",
+                    "file_id": block["file_id"],
+                },
+            }
+        elif block.get("source_type") == "id":
             formatted_block = {
                 "type": "document",
                 "source": {
@@ -259,6 +303,22 @@ def _format_data_content_block(block: dict) -> dict:
                     "file_id": block["id"],
                 },
             }
+        else:
+            msg = (
+                "Anthropic only supports 'url', 'base64', or 'id' keys for file "
+                "content blocks."
+            )
+            raise ValueError(msg)
+
+    elif block["type"] == "text-plain":
+        formatted_block = {
+            "type": "document",
+            "source": {
+                "type": "text",
+                "media_type": block.get("mime_type") or "text/plain",
+                "data": block["text"],
+            },
+        }
 
     else:
         msg = f"Block of type {block['type']} is not supported."
@@ -268,7 +328,10 @@ def _format_data_content_block(block: dict) -> dict:
         for key in ["cache_control", "citations", "title", "context"]:
             if key in block:
                 formatted_block[key] = block[key]
+            elif (metadata := block.get("extras")) and key in metadata:
+                formatted_block[key] = metadata[key]
             elif (metadata := block.get("metadata")) and key in metadata:
+                # Backward compat
                 formatted_block[key] = metadata[key]
 
     return formatted_block
@@ -592,7 +655,7 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -715,13 +778,11 @@ class ChatAnthropic(BaseChatModel):
                     },
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -755,7 +816,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "image",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -784,9 +844,8 @@ class ChatAnthropic(BaseChatModel):
                             "Summarize this document.",
                             {
                                 "type": "file",
-                                "source_type": "base64",
                                 "mime_type": "application/pdf",
-                                "data": data,
+                                "base64": data,
                             },
                         ]
                     )
@@ -820,7 +879,6 @@ class ChatAnthropic(BaseChatModel):
                         },
                         {
                             "type": "file",
-                            "source_type": "id",
                             "id": "file_abc123...",
                         },
                     ],
@@ -1197,7 +1255,7 @@ class ChatAnthropic(BaseChatModel):
                 response = llm_with_tools.invoke(
                     "There's a syntax error in my primes.py file. Can you help me fix it?"
                 )
-                print(response.text())
+                print(response.text)
                 response.tool_calls
 
             .. code-block:: none
@@ -1232,7 +1290,7 @@ class ChatAnthropic(BaseChatModel):
     model: str = Field(alias="model_name")
     """Model name to use."""
 
-    max_tokens: int = Field(default=1024, alias="max_tokens_to_sample")
+    max_tokens: Optional[int] = Field(default=None, alias="max_tokens_to_sample")
     """Denotes the number of tokens to predict per generation."""
 
     temperature: Optional[float] = None
@@ -1372,6 +1430,15 @@ class ChatAnthropic(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
+    def set_default_max_tokens(cls, values: dict[str, Any]) -> Any:
+        """Set default max_tokens."""
+        if values.get("max_tokens") is None:
+            model = values.get("model") or values.get("model_name")
+            values["max_tokens"] = _default_max_tokens_for(model)
+        return values
+
+    @model_validator(mode="before")
+    @classmethod
     def build_extra(cls, values: dict) -> Any:
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
@@ -1429,7 +1496,34 @@ class ChatAnthropic(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: dict,
     ) -> dict:
+        """Get the request payload for the Anthropic API."""
         messages = self._convert_input(input_).to_messages()
+
+        for idx, message in enumerate(messages):
+            # Translate v1 content
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                tcs: list[types.ToolCall] = [
+                    {
+                        "type": "tool_call",
+                        "name": tool_call["name"],
+                        "args": tool_call["args"],
+                        "id": tool_call.get("id"),
+                    }
+                    for tool_call in message.tool_calls
+                ]
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_anthropic(
+                            cast(list[types.ContentBlock], message.content),
+                            tcs,
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         system, formatted_messages = _format_messages(messages)
 
         # If cache_control is provided in kwargs, add it to last message
@@ -1555,6 +1649,7 @@ class ChatAnthropic(BaseChatModel):
             _handle_anthropic_bad_request(e)
 
     def _format_output(self, data: Any, **kwargs: Any) -> ChatResult:
+        """Format the output from the Anthropic API to LC."""
         data_dict = data.model_dump()
         content = data_dict["content"]
 
@@ -1577,6 +1672,7 @@ class ChatAnthropic(BaseChatModel):
         llm_output = {
             k: v for k, v in data_dict.items() if k not in ("content", "role", "type")
         }
+        response_metadata = {"model_provider": "anthropic"}
         if "model" in llm_output and "model_name" not in llm_output:
             llm_output["model_name"] = llm_output["model"]
         if (
@@ -1584,15 +1680,18 @@ class ChatAnthropic(BaseChatModel):
             and content[0]["type"] == "text"
             and not content[0].get("citations")
         ):
-            msg = AIMessage(content=content[0]["text"])
+            msg = AIMessage(
+                content=content[0]["text"], response_metadata=response_metadata
+            )
         elif any(block["type"] == "tool_use" for block in content):
             tool_calls = extract_tool_calls(content)
             msg = AIMessage(
                 content=content,
                 tool_calls=tool_calls,
+                response_metadata=response_metadata,
             )
         else:
-            msg = AIMessage(content=content)
+            msg = AIMessage(content=content, response_metadata=response_metadata)
         msg.usage_metadata = _create_usage_metadata(data.usage)
         return ChatResult(
             generations=[ChatGeneration(message=msg)],
@@ -1680,7 +1779,7 @@ class ChatAnthropic(BaseChatModel):
         ] = None,
         parallel_tool_calls: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         r"""Bind tool-like objects to this chat model.
 
         Args:
@@ -2314,18 +2413,23 @@ def _make_message_chunk_from_anthropic_event(
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
         message_chunk = AIMessageChunk(
-            content="",
+            content="" if coerce_content_to_string else [],
             usage_metadata=usage_metadata,
             response_metadata={
                 "stop_reason": event.delta.stop_reason,
                 "stop_sequence": event.delta.stop_sequence,
             },
         )
+        if message_chunk.response_metadata.get("stop_reason"):
+            # Mark final Anthropic stream chunk
+            message_chunk.chunk_position = "last"
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
     else:
         pass
 
+    if message_chunk:
+        message_chunk.response_metadata["model_provider"] = "anthropic"
     return message_chunk, block_start_event
 
 

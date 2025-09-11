@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.70",
-    "langchain-openai<1.0.0,>=0.3.28",
+    "langchain-core<2.0.0,>=0.3.70",
+    "langchain-openai<2.0.0,>=0.3.28",
 ]
 name = "langchain-deepseek"
 version = "0.1.4"

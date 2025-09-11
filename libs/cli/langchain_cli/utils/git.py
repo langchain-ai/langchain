@@ -6,7 +6,7 @@ import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, TypedDict
+from typing import Any, TypedDict
 
 from git import Repo
 
@@ -23,18 +23,18 @@ class DependencySource(TypedDict):
     """Dependency source information."""
 
     git: str
-    ref: Optional[str]
-    subdirectory: Optional[str]
-    api_path: Optional[str]
+    ref: str | None
+    subdirectory: str | None
+    api_path: str | None
     event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format
 def parse_dependency_string(
-    dep: Optional[str],
-    repo: Optional[str],
-    branch: Optional[str],
-    api_path: Optional[str],
+    dep: str | None,
+    repo: str | None,
+    branch: str | None,
+    api_path: str | None,
 ) -> DependencySource:
     """Parse a dependency string into a DependencySource.
 
@@ -125,7 +125,7 @@ def parse_dependency_string(
     )
 
 
-def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional[str]]:
+def _list_arg_to_length(arg: list[str] | None, num: int) -> Sequence[str | None]:
     if not arg:
         return [None] * num
     if len(arg) == 1:
@@ -137,7 +137,7 @@ def _list_arg_to_length(arg: Optional[list[str]], num: int) -> Sequence[Optional
 
 
 def parse_dependencies(
-    dependencies: Optional[list[str]],
+    dependencies: list[str] | None,
     repo: list[str],
     branch: list[str],
     api_path: list[str],
@@ -180,17 +180,18 @@ def parse_dependencies(
     inner_branches = _list_arg_to_length(branch, num_deps)
 
     return list(
-        map(
+        map(  # type: ignore[call-overload]
             parse_dependency_string,
             inner_deps,
             inner_repos,
             inner_branches,
             inner_api_paths,
+            strict=False,
         )
     )
 
 
-def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+def _get_repo_path(gitstring: str, ref: str | None, repo_dir: Path) -> Path:
     # only based on git for now
     ref_str = ref if ref is not None else ""
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
@@ -204,7 +205,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     return repo_dir / directory_name
 
 
-def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+def update_repo(gitstring: str, ref: str | None, repo_dir: Path) -> Path:
     """Update a git repository to the specified ref.
 
     Tries to pull if the repo already exists, otherwise clones it.

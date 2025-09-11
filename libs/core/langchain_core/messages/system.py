@@ -1,7 +1,8 @@
 """System message."""
 
-from typing import Any, Literal, Union
+from typing import Any, Literal, Optional, Union, cast, overload
 
+from langchain_core.messages import content as types
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 
 
@@ -30,16 +31,35 @@ class SystemMessage(BaseMessage):
     type: Literal["system"] = "system"
     """The type of the message (used for serialization). Defaults to "system"."""
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-               content: The string contents of the message.
-               kwargs: Additional fields to pass to the message.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        if content_blocks is not None:
+            super().__init__(
+                content=cast("Union[str, list[Union[str, dict]]]", content_blocks),
+                **kwargs,
+            )
+        else:
+            super().__init__(content=content, **kwargs)
 
 
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
