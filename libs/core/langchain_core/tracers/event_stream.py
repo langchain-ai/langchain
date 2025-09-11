@@ -656,10 +656,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run.
 
-        Args:
-            output: The output of the tool.
-            run_id: The run ID. This is the ID of the current run.
-
         Raises:
             AssertionError: If the run ID is a tool call and does not have inputs
         """
