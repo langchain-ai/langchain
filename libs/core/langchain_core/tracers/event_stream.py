@@ -478,7 +478,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.
         """
         run_info = self.run_map.pop(run_id)
-        inputs_ = run_info["inputs"]
+        inputs_ = run_info.get("inputs")
 
         generations: Union[list[list[GenerationChunk]], list[list[ChatGenerationChunk]]]
         output: Union[dict, BaseMessage] = {}
@@ -744,7 +744,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "event": "on_retriever_end",
                 "data": {
                     "output": documents,
-                    "input": run_info["inputs"],
+                    "input": run_info.get("inputs"),
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -856,12 +856,12 @@ async def _astream_events_implementation_v1(
                 # Usually they will NOT be available for components that operate
                 # on streams, since those components stream the input and
                 # don't know its final value until the end of the stream.
-                inputs = log_entry["inputs"]
+                inputs = log_entry.get("inputs")
                 if inputs is not None:
                     data["input"] = inputs
 
             if event_type == "end":
-                inputs = log_entry["inputs"]
+                inputs = log_entry.get("inputs")
                 if inputs is not None:
                     data["input"] = inputs
 
