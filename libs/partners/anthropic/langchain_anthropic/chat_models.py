@@ -1128,7 +1128,7 @@ class ChatAnthropic(BaseChatModel):
 
                 from langchain_anthropic import ChatAnthropic
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+                llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 
                 tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
                 llm_with_tools = llm.bind_tools([tool])
