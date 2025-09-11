@@ -43,7 +43,7 @@ jobs:
       version: ${{ steps.check-version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -92,7 +92,7 @@ jobs:
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain
           path: langchain
@@ -199,7 +199,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -289,7 +289,8 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -362,7 +363,7 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
       AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
@@ -393,7 +394,7 @@ jobs:
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
-            | grep -Ev '==[^=]*(\.?dev[0-9]*|\.?rc[0-9]*)$' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
             | sort -Vr \
             | head -n 1
           )"
@@ -440,7 +441,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -479,7 +480,7 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"

@@ -67,7 +67,8 @@ class LLMRouterChain(RouterChain):
             chain_1 = prompt_1 | llm | StrOutputParser()
             chain_2 = prompt_2 | llm | StrOutputParser()
 
-            route_system = "Route the user's query to either the animal or vegetable expert."
+            route_system = "Route the user's query to either the animal "
+            "or vegetable expert."
             route_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", route_system),
@@ -97,7 +98,7 @@ class LLMRouterChain(RouterChain):
 
             chain.invoke({"query": "what color are carrots"})
 
-    """  # noqa: E501
+    """
 
     llm_chain: LLMChain
     """LLM chain used to perform routing"""

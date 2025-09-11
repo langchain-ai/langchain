@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
-from langsmith import Client
+from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
 from tenacity import (
@@ -53,7 +53,11 @@ def wait_for_all_tracers() -> None:
 
 
 def get_client() -> Client:
-    """Get the client."""
+    """Get the client.
+
+    Returns:
+        The LangSmith client.
+    """
     return rt.get_cached_client()
 
 
@@ -109,6 +113,8 @@ class LangChainTracer(BaseTracer):
         super()._start_trace(run)
         if run.ls_client is None:
             run.ls_client = self.client
+        if get_tracing_context().get("enabled") is False:
+            run.extra["__disabled"] = True
 
     def on_chat_model_start(
         self,
@@ -201,6 +207,8 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
             run.extra["runtime"] = get_runtime_environment()
             run.tags = self._get_tags(run)
@@ -214,6 +222,8 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
             run.patch(exclude_inputs=run.extra.get("inputs_is_truthy", False))
         except Exception as e:
@@ -235,7 +245,6 @@ class LangChainTracer(BaseTracer):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
-        """Append token event to LLM run and return the run."""
         run_id_str = str(run_id)
         if run_id_str not in self.run_has_token_event_map:
             self.run_has_token_event_map[run_id_str] = True

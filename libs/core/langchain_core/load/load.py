@@ -95,7 +95,21 @@ class Reviver:
         self.ignore_unserializable_fields = ignore_unserializable_fields
 
     def __call__(self, value: dict[str, Any]) -> Any:
-        """Revive the value."""
+        """Revive the value.
+
+        Args:
+            value: The value to revive.
+
+        Returns:
+            The revived value.
+
+        Raises:
+            ValueError: If the namespace is invalid.
+            ValueError: If trying to deserialize something that cannot
+                be deserialized in the current version of langchain-core.
+            NotImplementedError: If the object is not implemented and
+                ``ignore_unserializable_fields`` is False.
+        """
         if (
             value.get("lc") == 1
             and value.get("type") == "secret"

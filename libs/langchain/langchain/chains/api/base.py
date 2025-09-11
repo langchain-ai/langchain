@@ -89,7 +89,8 @@ try:
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
-        - Easier to modify or extend (e.g., with additional tools, structured responses, etc.)
+        - Easier to modify or extend
+          (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 

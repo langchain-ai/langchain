@@ -121,7 +121,7 @@ def create_xml_agent(
     *,
     stop_sequence: Union[bool, list[str]] = True,
 ) -> Runnable:
-    """Create an agent that uses XML to format its logic.
+    r"""Create an agent that uses XML to format its logic.
 
     Args:
         llm: LLM to use as the agent.
@@ -163,12 +163,13 @@ def create_xml_agent(
 
             # Use with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
                     # Notice that chat_history is a string
                     # since this prompt is aimed at LLMs, not chat models
-                    "chat_history": "Human: My name is Bob\\nAI: Hello Bob!",
+                    "chat_history": "Human: My name is Bob\nAI: Hello Bob!",
                 }
             )
 
@@ -176,7 +177,8 @@ def create_xml_agent(
 
         The prompt must have input keys:
             * `tools`: contains descriptions for each tool.
-            * `agent_scratchpad`: contains previous agent actions and tool outputs as an XML string.
+            * `agent_scratchpad`: contains previous agent actions and tool outputs as
+              an XML string.
 
         Here's an example:
 
