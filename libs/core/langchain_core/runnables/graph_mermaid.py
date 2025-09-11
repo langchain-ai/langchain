@@ -149,7 +149,7 @@ def draw_mermaid(
                 + "</em></small>"
             )
         node_label = format_dict.get(key, format_dict[default_class_label]).format(
-            _sanitize_node_label(key), label
+            _to_safe_id(key), label
         )
         return f"{indent}{node_label}\n"
 
@@ -212,8 +212,8 @@ def draw_mermaid(
                 edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
-                f"\t{_sanitize_node_label(source)}{edge_label}"
-                f"{_sanitize_node_label(target)};\n"
+                f"\t{_to_safe_id(source)}{edge_label}"
+                f"{_to_safe_id(target)};\n"
             )
 
         # Recursively add nested subgraphs
@@ -257,18 +257,19 @@ def draw_mermaid(
     return mermaid_graph
 
 
-def _sanitize_node_label(node_label: str) -> str:
-    """Convert a string into a Mermaid-compatible node label.
-
-    Any character outside [a-zA-Z0-9_-] is replaced with a 3-digit hash
-    fragment so that the output is safe to use as a Mermaid identifier.
+def _to_safe_id(label: str) -> str:
     """
-
-    def replacer(match: re.Match[str]) -> str:
-        non_allowed_ch = match.group(0)
-        return hashlib.md5(non_allowed_ch.encode("utf-8")).hexdigest()[:3]  # noqa: S324
-
-    return re.sub(r"[^a-zA-Z0-9_-]", replacer, node_label)
+    Keep [a-zA-Z0-9_-] characters unchanged.
+    Map every other character -> \ + lowercase hex codepoint.
+    Result is only [a-zA-Z0-9\\_-], which is Mermaid compatible.
+    """
+    out = []
+    for ch in label:
+        if re.match(r"[a-zA-Z0-9\\_-]", ch):
+            out.append(ch)
+        else:
+            out.append('\\' + format(ord(ch), 'x'))
+    return ''.join(out)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:
