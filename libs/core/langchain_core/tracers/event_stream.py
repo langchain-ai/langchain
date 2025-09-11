@@ -224,7 +224,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter.
+        """Tap the output iter.
 
         Args:
             run_id: The ID of the run.
