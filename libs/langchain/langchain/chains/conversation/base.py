@@ -4,7 +4,7 @@ from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
@@ -41,10 +41,12 @@ class ConversationChain(LLMChain):
 
             store = {}  # memory is maintained outside the chain
 
+
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
                     store[session_id] = InMemoryChatMessageHistory()
                 return store[session_id]
+
 
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
@@ -53,6 +55,7 @@ class ConversationChain(LLMChain):
                 "Hi I'm Bob.",
                 config={"configurable": {"session_id": "1"}},
             )  # session_id determines thread
+
     Memory objects can also be incorporated into the ``get_session_history`` callable:
 
         .. code-block:: python
@@ -64,6 +67,7 @@ class ConversationChain(LLMChain):
 
 
             store = {}  # memory is maintained outside the chain
+
 
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
@@ -81,6 +85,7 @@ class ConversationChain(LLMChain):
                 store[session_id] = InMemoryChatMessageHistory(messages=messages)
                 return store[session_id]
 
+
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
             chain = RunnableWithMessageHistory(llm, get_session_history)
@@ -96,6 +101,7 @@ class ConversationChain(LLMChain):
             from langchain_community.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
+
     """
 
     memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
@@ -112,6 +118,7 @@ class ConversationChain(LLMChain):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 

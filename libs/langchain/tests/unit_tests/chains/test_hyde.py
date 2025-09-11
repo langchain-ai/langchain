@@ -10,6 +10,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, LLMResult
+from typing_extensions import override
 
 from langchain.chains.hyde.base import HypotheticalDocumentEmbedder
 from langchain.chains.hyde.prompts import PROMPT_MAP
@@ -18,13 +19,15 @@ from langchain.chains.hyde.prompts import PROMPT_MAP
 class FakeEmbeddings(Embeddings):
     """Fake embedding class for tests."""
 
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Return random floats."""
-        return [list(np.random.uniform(0, 1, 10)) for _ in range(10)]
+        return [list(np.random.default_rng().uniform(0, 1, 10)) for _ in range(10)]
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         """Return random floats."""
-        return list(np.random.uniform(0, 1, 10))
+        return list(np.random.default_rng().uniform(0, 1, 10))
 
 
 class FakeLLM(BaseLLM):
@@ -32,6 +35,7 @@ class FakeLLM(BaseLLM):
 
     n: int = 1
 
+    @override
     def _generate(
         self,
         prompts: list[str],
@@ -41,6 +45,7 @@ class FakeLLM(BaseLLM):
     ) -> LLMResult:
         return LLMResult(generations=[[Generation(text="foo") for _ in range(self.n)]])
 
+    @override
     async def _agenerate(
         self,
         prompts: list[str],

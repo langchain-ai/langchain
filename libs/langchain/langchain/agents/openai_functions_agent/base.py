@@ -92,7 +92,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @property
     def functions(self) -> list[dict]:
         """Get functions."""
-
         return [dict(convert_to_openai_function(t)) for t in self.tools]
 
     def plan(
@@ -134,7 +133,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
                 messages,
                 callbacks=callbacks,
             )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     async def aplan(
         self,
@@ -167,7 +166,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             functions=self.functions,
             callbacks=callbacks,
         )
-        return self.output_parser._parse_ai_message(predicted_message)
+        return self.output_parser.parse_ai_message(predicted_message)
 
     def return_stopped_response(
         self,
@@ -277,7 +276,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message_,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             llm=llm,
             prompt=prompt,
             tools=tools,
@@ -309,7 +308,6 @@ def create_openai_functions_agent(
         ValueError: If `agent_scratchpad` is not in the prompt.
 
     Example:
-
         Creating an agent with no memory
 
         .. code-block:: python
@@ -329,6 +327,7 @@ def create_openai_functions_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -359,6 +358,7 @@ def create_openai_functions_agent(
                     MessagesPlaceholder("agent_scratchpad"),
                 ]
             )
+
     """
     if "agent_scratchpad" not in (
         prompt.input_variables + list(prompt.partial_variables)

@@ -5,6 +5,7 @@ from typing import Any
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.output_parsers.json import parse_and_check_json_markdown
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.output_parsers.format_instructions import (
     STRUCTURED_FORMAT_INSTRUCTIONS,
@@ -44,6 +45,14 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
         cls,
         response_schemas: list[ResponseSchema],
     ) -> StructuredOutputParser:
+        """Create a StructuredOutputParser from a list of ResponseSchema.
+
+        Args:
+            response_schemas: The schemas for the response.
+
+        Returns:
+            An instance of StructuredOutputParser.
+        """
         return cls(response_schemas=response_schemas)
 
     def get_format_instructions(
@@ -52,7 +61,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
     ) -> str:
         """Get format instructions for the output parser.
 
-        example:
+        Example:
         ```python
         from langchain.output_parsers.structured import (
             StructuredOutputParser, ResponseSchema
@@ -97,6 +106,7 @@ class StructuredOutputParser(BaseOutputParser[dict[str, Any]]):
             return STRUCTURED_FORMAT_SIMPLE_INSTRUCTIONS.format(format=schema_str)
         return STRUCTURED_FORMAT_INSTRUCTIONS.format(format=schema_str)
 
+    @override
     def parse(self, text: str) -> dict[str, Any]:
         expected_keys = [rs.name for rs in self.response_schemas]
         return parse_and_check_json_markdown(text, expected_keys)

@@ -10,6 +10,7 @@ from langchain_core.documents import Document
 from langchain_core.runnables.config import RunnableConfig
 from langchain_core.utils.pydantic import create_model
 from pydantic import BaseModel, ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain.chains.combine_documents.reduce import ReduceDocumentsChain
@@ -50,16 +51,13 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                 template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             # We now define how to combine these summaries
             reduce_prompt = PromptTemplate.from_template(
@@ -69,7 +67,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             combine_documents_chain = StuffDocumentsChain(
                 llm_chain=reduce_llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
             reduce_documents_chain = ReduceDocumentsChain(
                 combine_documents_chain=combine_documents_chain,
@@ -81,14 +79,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
             # If we wanted to, we could also pass in collapse_documents_chain
             # which is specifically aimed at collapsing documents BEFORE
             # the final call.
-            prompt = PromptTemplate.from_template(
-                "Collapse this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Collapse this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             collapse_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
             reduce_documents_chain = ReduceDocumentsChain(
                 combine_documents_chain=combine_documents_chain,
@@ -98,6 +94,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                 llm_chain=llm_chain,
                 reduce_documents_chain=reduce_documents_chain,
             )
+
     """
 
     llm_chain: LLMChain
@@ -111,6 +108,7 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
     return_intermediate_steps: bool = False
     """Return the results of the map steps in the output."""
 
+    @override
     def get_output_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -193,13 +191,12 @@ class MapReduceDocumentsChain(BaseCombineDocumentsChain):
                     "multiple llm_chain input_variables"
                 )
                 raise ValueError(msg)
-        else:
-            if values["document_variable_name"] not in llm_chain_variables:
-                msg = (
-                    f"document_variable_name {values['document_variable_name']} was "
-                    f"not found in llm_chain input_variables: {llm_chain_variables}"
-                )
-                raise ValueError(msg)
+        elif values["document_variable_name"] not in llm_chain_variables:
+            msg = (
+                f"document_variable_name {values['document_variable_name']} was "
+                f"not found in llm_chain input_variables: {llm_chain_variables}"
+            )
+            raise ValueError(msg)
         return values
 
     @property

@@ -85,10 +85,10 @@ def create_importer(
                     and deprecated_lookups
                     and name in deprecated_lookups
                     # Depth 3:
-                    # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
+                    # -> internal.py
+                    # |-> module_import.py
+                    #  |-> Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
                     and not internal.is_caller_internal(depth=3)
                 ):
                     warn_deprecated(
@@ -106,10 +106,11 @@ def create_importer(
                             "<https://python.langchain.com/docs/versions/v0_2/>"
                         ),
                     )
-                return result
             except Exception as e:
                 msg = f"module {new_module} has no attribute {name}"
                 raise AttributeError(msg) from e
+
+            return result
 
         if fallback_module:
             try:
@@ -119,9 +120,9 @@ def create_importer(
                     not is_interactive_env()
                     # Depth 3:
                     # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
+                    # |-> module_import.py
+                    #  |->Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
                     and not internal.is_caller_internal(depth=3)
                 ):
                     warn_deprecated(
@@ -139,11 +140,12 @@ def create_importer(
                             "<https://python.langchain.com/docs/versions/v0_2/>"
                         ),
                     )
-                return result
 
             except Exception as e:
                 msg = f"module {fallback_module} has no attribute {name}"
                 raise AttributeError(msg) from e
+
+            return result
 
         msg = f"module {package} has no attribute {name}"
         raise AttributeError(msg)

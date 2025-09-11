@@ -80,7 +80,7 @@ def _value_serializer(value: Sequence[float]) -> bytes:
 
 def _value_deserializer(serialized_value: bytes) -> list[float]:
     """Deserialize a value."""
-    return cast(list[float], json.loads(serialized_value.decode()))
+    return cast("list[float]", json.loads(serialized_value.decode()))
 
 
 # The warning is global; track emission, so it appears only once.
@@ -89,7 +89,7 @@ _warned_about_sha1: bool = False
 
 def _warn_about_sha1_encoder() -> None:
     """Emit a one-time warning about SHA-1 collision weaknesses."""
-    global _warned_about_sha1
+    global _warned_about_sha1  # noqa: PLW0603
     if not _warned_about_sha1:
         warnings.warn(
             "Using default key encoder: SHA-1 is *not* collision-resistant. "
@@ -192,7 +192,7 @@ class CacheBackedEmbeddings(Embeddings):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]],
+            "list[list[float]]",
             vectors,
         )  # Nones should have been resolved by now
 
@@ -230,7 +230,7 @@ class CacheBackedEmbeddings(Embeddings):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]],
+            "list[list[float]]",
             vectors,
         )  # Nones should have been resolved by now
 
@@ -336,11 +336,11 @@ class CacheBackedEmbeddings(Embeddings):
                 )
                 raise ValueError(msg)
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

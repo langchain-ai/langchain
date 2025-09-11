@@ -7,6 +7,7 @@ import contextlib
 import copy
 import threading
 from collections import defaultdict
+from pprint import pformat
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,10 +21,11 @@ from typing import (
 import jsonpatch  # type: ignore[import-untyped]
 from typing_extensions import NotRequired, TypedDict, override
 
+from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.load import dumps
 from langchain_core.load.load import load
 from langchain_core.outputs import ChatGenerationChunk, GenerationChunk
-from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
+from langchain_core.runnables import RunnableConfig, ensure_config
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.memory_stream import _MemoryStream
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from collections.abc import AsyncIterator, Iterator, Sequence
     from uuid import UUID
 
+    from langchain_core.runnables import Runnable
     from langchain_core.runnables.utils import Input, Output
     from langchain_core.tracers.schemas import Run
 
@@ -110,7 +113,17 @@ class RunLogPatch:
         self.ops = list(ops)
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogPatch instances."""
+        """Combine two ``RunLogPatch`` instances.
+
+        Args:
+            other: The other ``RunLogPatch`` to combine with.
+
+        Raises:
+            TypeError: If the other object is not a ``RunLogPatch``.
+
+        Returns:
+            A new ``RunLog`` representing the combination of the two.
+        """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(None, copy.deepcopy(ops))
@@ -121,8 +134,6 @@ class RunLogPatch:
 
     @override
     def __repr__(self) -> str:
-        from pprint import pformat
-
         # 1:-1 to get rid of the [] around the list
         return f"RunLogPatch({pformat(self.ops)[1:-1]})"
 
@@ -150,7 +161,17 @@ class RunLog(RunLogPatch):
         self.state = state
 
     def __add__(self, other: Union[RunLogPatch, Any]) -> RunLog:
-        """Combine two RunLogs."""
+        """Combine two ``RunLog``s.
+
+        Args:
+            other: The other ``RunLog`` or ``RunLogPatch`` to combine with.
+
+        Raises:
+            TypeError: If the other object is not a ``RunLog`` or ``RunLogPatch``.
+
+        Returns:
+            A new ``RunLog`` representing the combination of the two.
+        """
         if type(other) is RunLogPatch:
             ops = self.ops + other.ops
             state = jsonpatch.apply_patch(self.state, other.ops)
@@ -161,13 +182,18 @@ class RunLog(RunLogPatch):
 
     @override
     def __repr__(self) -> str:
-        from pprint import pformat
-
         return f"RunLog({pformat(self.state)})"
 
     @override
     def __eq__(self, other: object) -> bool:
-        """Check if two RunLogs are equal."""
+        """Check if two ``RunLog``s are equal.
+
+        Args:
+            other: The other ``RunLog`` to compare to.
+
+        Returns:
+            True if the ``RunLog``s are equal, False otherwise.
+        """
         # First compare that the state is the same
         if not isinstance(other, RunLog):
             return False
@@ -176,7 +202,7 @@ class RunLog(RunLogPatch):
         # Then compare that the ops are the same
         return super().__eq__(other)
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 T = TypeVar("T")
@@ -210,7 +236,9 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
             exclude_tags: Exclude runs from Runnables with matching tags.
             _schema_format: Primarily changes how the inputs and outputs are
                 handled.
+
                 **For internal use only. This API will change.**
+
                 - 'original' is the format used by all current tracers.
                   This format is slightly inconsistent with respect to inputs
                   and outputs.
@@ -248,7 +276,11 @@ class LogStreamCallbackHandler(BaseTracer, _StreamingCallbackHandler):
         self.root_id: Optional[UUID] = None
 
     def __aiter__(self) -> AsyncIterator[RunLogPatch]:
-        """Iterate over the stream of run logs."""
+        """Iterate over the stream of run logs.
+
+        Returns:
+            An async iterator over the run log patches.
+        """
         return self.receive_stream.__aiter__()
 
     def send(self, *ops: dict[str, Any]) -> bool:
@@ -621,15 +653,24 @@ async def _astream_log_implementation(
 
     The implementation has been factored out (at least temporarily) as both
     astream_log and astream_events relies on it.
+
+    Args:
+        runnable: The runnable to run in streaming mode.
+        value: The input to the runnable.
+        config: The config to pass to the runnable.
+        stream: The stream to send the run logs to.
+        diff: Whether to yield run log patches (True) or full run logs (False).
+        with_streamed_output_list: Whether to include a list of all streamed
+            outputs in each patch. If False, only the final output will be included
+            in the patches.
+        **kwargs: Additional keyword arguments to pass to the runnable.
+
+    Raises:
+        ValueError: If the callbacks in the config are of an unexpected type.
+
+    Yields:
+        The run log patches or states, depending on the value of ``diff``.
     """
-    import jsonpatch
-
-    from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.tracers.log_stream import (
-        RunLog,
-        RunLogPatch,
-    )
-
     # Assign the stream handler to the config
     config = ensure_config(config)
     callbacks = config.get("callbacks")

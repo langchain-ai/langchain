@@ -15,6 +15,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -97,7 +98,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone as CommunityPinecone,
     )
 
-    BUILTIN_TRANSLATORS: dict[type[VectorStore], type[Visitor]] = {
+    builtin_translators: dict[type[VectorStore], type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
@@ -128,8 +129,8 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
             field.name for field in (vectorstore.meta_fields or []) if field.index
         ]
         return TencentVectorDBTranslator(fields)
-    if vectorstore.__class__ in BUILTIN_TRANSLATORS:
-        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
+    if vectorstore.__class__ in builtin_translators:
+        return builtin_translators[vectorstore.__class__]()
     try:
         from langchain_astradb.vectorstores import AstraDBVectorStore
     except ImportError:
@@ -232,8 +233,10 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
 
 
 class SelfQueryRetriever(BaseRetriever):
-    """Retriever that uses a vector store and an LLM to generate
-    the vector store queries."""
+    """Self Query Retriever.
+
+    Retriever that uses a vector store and an LLM to generate the vector store queries.
+    """
 
     vectorstore: VectorStore
     """The underlying vector store from which documents will be retrieved."""
@@ -301,20 +304,13 @@ class SelfQueryRetriever(BaseRetriever):
     ) -> list[Document]:
         return await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = self.query_constructor.invoke(
             {"query": query},
             config={"callbacks": run_manager.get_child()},
@@ -324,20 +320,13 @@ class SelfQueryRetriever(BaseRetriever):
         new_query, search_kwargs = self._prepare_query(query, structured_query)
         return self._get_docs_with_query(new_query, search_kwargs)
 
+    @override
     async def _aget_relevant_documents(
         self,
         query: str,
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = await self.query_constructor.ainvoke(
             {"query": query},
             config={"callbacks": run_manager.get_child()},
@@ -360,6 +349,25 @@ class SelfQueryRetriever(BaseRetriever):
         use_original_query: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
+        """Create a SelfQueryRetriever from an LLM and a vector store.
+
+        Args:
+            llm: The language model to use for generating queries.
+            vectorstore: The vector store to use for retrieving documents.
+            document_contents: Description of the page contents of the document to be
+                queried.
+            metadata_field_info: Metadata field information for the documents.
+            structured_query_translator: Optional translator for turning internal query
+                language into vectorstore search params.
+            chain_kwargs: Additional keyword arguments for the query constructor.
+            enable_limit: Whether to enable the limit operator.
+            use_original_query: Whether to use the original query instead of the revised
+                query from the LLM.
+            **kwargs: Additional keyword arguments for the SelfQueryRetriever.
+
+        Returns:
+            An instance of SelfQueryRetriever.
+        """
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore)
         chain_kwargs = chain_kwargs or {}
@@ -388,7 +396,7 @@ class SelfQueryRetriever(BaseRetriever):
         query_constructor = query_constructor.with_config(
             run_name=QUERY_CONSTRUCTOR_RUN_NAME,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,

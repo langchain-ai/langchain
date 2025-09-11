@@ -159,9 +159,9 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         >>> llm = ChatOpenAI(temperature=0, model_name="gpt-4")
         >>> chain = ScoreStringEvalChain.from_llm(llm=llm)
         >>> result = chain.evaluate_strings(
-        ...     input = "What is the chemical formula for water?",
-        ...     prediction = "H2O",
-        ...     reference = "The chemical formula for water is H2O.",
+        ...     input="What is the chemical formula for water?",
+        ...     prediction="H2O",
+        ...     reference="The chemical formula for water is H2O.",
         ... )
         >>> print(result)
         # {
@@ -187,6 +187,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -214,7 +215,7 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     def evaluation_name(self) -> str:
         """Get the name of the evaluation.
 
-        Returns
+        Returns:
         -------
         str
             The name of the evaluation.
@@ -248,12 +249,14 @@ class ScoreStringEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
         """Initialize the ScoreStringEvalChain from an LLM.
 
         Args:
-            llm (BaseChatModel): The LLM to use (GPT-4 recommended).
-            prompt (PromptTemplate, optional): The prompt to use.
-            **kwargs (Any): Additional keyword arguments.
+            llm: The LLM to use (GPT-4 recommended).
+            prompt: The prompt to use.
+            criteria: The criteria to use.
+            normalize_by: The value to normalize the score by.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            ScoreStringEvalChain: The initialized ScoreStringEvalChain.
+            The initialized ScoreStringEvalChain.
 
         Raises:
             ValueError: If the input variables are not as expected.
@@ -341,14 +344,17 @@ Performance may be significantly worse with other models.",
         """Score the output string.
 
         Args:
-            prediction (str): The output string from the first model.
-            input (str, optional): The input or task string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            input: The input or task string.
+            callbacks: The callbacks to use.
+            tags: Optional tags to use.
+            metadata: Optional metadata to use.
+            include_run_info: Whether to include run information in the output.
+            reference: The reference string, if any.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
+            A dictionary containing:
                 - reasoning: The reasoning for the preference.
                 - score: A score between 1 and 10.
 
@@ -379,14 +385,17 @@ Performance may be significantly worse with other models.",
         """Asynchronously score the output string.
 
         Args:
-            prediction (str): The output string from the first model.
-            input (str, optional): The input or task string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            reference (str, optional): The reference string, if any.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            input: The input or task string.
+            callbacks: The callbacks to use.
+            tags: Optional tags to use.
+            metadata: Optional metadata to use.
+            include_run_info: Whether to include run information in the output.
+            reference: The reference string, if any.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
+            A dictionary containing:
                 - reasoning: The reasoning for the preference.
                 - score: A score between 1 and 10.
 

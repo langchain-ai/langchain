@@ -3,6 +3,7 @@ from typing import Optional
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from typing_extensions import override
 
 from langchain.retrievers.ensemble import EnsembleRetriever
 
@@ -10,13 +11,14 @@ from langchain.retrievers.ensemble import EnsembleRetriever
 class MockRetriever(BaseRetriever):
     docs: list[Document]
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
     ) -> list[Document]:
-        """Return the documents"""
+        """Return the documents."""
         return self.docs
 
 

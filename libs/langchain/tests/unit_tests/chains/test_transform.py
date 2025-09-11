@@ -16,7 +16,7 @@ def dummy_transform(inputs: dict[str, str]) -> dict[str, str]:
 
 def test_transform_chain() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(  # type: ignore[call-arg]
+    transform_chain = TransformChain(
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
         transform=dummy_transform,
@@ -29,11 +29,11 @@ def test_transform_chain() -> None:
 
 def test_transform_chain_bad_inputs() -> None:
     """Test basic transform chain."""
-    transform_chain = TransformChain(  # type: ignore[call-arg]
+    transform_chain = TransformChain(
         input_variables=["first_name", "last_name"],
         output_variables=["greeting"],
         transform=dummy_transform,
     )
     input_dict = {"name": "Leroy", "last_name": "Jenkins"}
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Missing some input keys: {'first_name'}"):
         _ = transform_chain(input_dict)

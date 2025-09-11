@@ -1,6 +1,7 @@
-"""
+"""Ensemble Retriever.
+
 Ensemble retriever that ensemble the results of
-multiple retrievers by using weighted  Reciprocal Rank Fusion
+multiple retrievers by using weighted  Reciprocal Rank Fusion.
 """
 
 import asyncio
@@ -81,7 +82,7 @@ class EnsembleRetriever(BaseRetriever):
 
     @model_validator(mode="before")
     @classmethod
-    def set_weights(cls, values: dict[str, Any]) -> Any:
+    def _set_weights(cls, values: dict[str, Any]) -> Any:
         if not values.get("weights"):
             n_retrievers = len(values["retrievers"])
             values["weights"] = [1 / n_retrievers] * n_retrievers
@@ -116,7 +117,7 @@ class EnsembleRetriever(BaseRetriever):
             result = self.rank_fusion(input, run_manager=run_manager, config=config)
         except Exception as e:
             run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             run_manager.on_retriever_end(
                 result,
@@ -157,7 +158,7 @@ class EnsembleRetriever(BaseRetriever):
             )
         except Exception as e:
             await run_manager.on_retriever_error(e)
-            raise e
+            raise
         else:
             await run_manager.on_retriever_end(
                 result,
@@ -171,16 +172,15 @@ class EnsembleRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Get the relevant documents for a given query.
+        """Get the relevant documents for a given query.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of reranked documents.
         """
-
         # Get fused result of the retrievers.
         return self.rank_fusion(query, run_manager)
 
@@ -190,16 +190,15 @@ class EnsembleRetriever(BaseRetriever):
         *,
         run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """
-        Asynchronously get the relevant documents for a given query.
+        """Asynchronously get the relevant documents for a given query.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
 
         Returns:
             A list of reranked documents.
         """
-
         # Get fused result of the retrievers.
         return await self.arank_fusion(query, run_manager)
 
@@ -210,17 +209,19 @@ class EnsembleRetriever(BaseRetriever):
         *,
         config: Optional[RunnableConfig] = None,
     ) -> list[Document]:
-        """
+        """Rank fusion.
+
         Retrieve the results of the retrievers and use rank_fusion_func to get
         the final result.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
+            config: Optional configuration for the retrievers.
 
         Returns:
             A list of reranked documents.
         """
-
         # Get the results of all retrievers.
         retriever_docs = [
             retriever.invoke(
@@ -236,7 +237,7 @@ class EnsembleRetriever(BaseRetriever):
         # Enforce that retrieved docs are Documents for each list in retriever_docs
         for i in range(len(retriever_docs)):
             retriever_docs[i] = [
-                Document(page_content=cast(str, doc)) if isinstance(doc, str) else doc
+                Document(page_content=cast("str", doc)) if isinstance(doc, str) else doc  # type: ignore[unreachable]
                 for doc in retriever_docs[i]
             ]
 
@@ -250,17 +251,19 @@ class EnsembleRetriever(BaseRetriever):
         *,
         config: Optional[RunnableConfig] = None,
     ) -> list[Document]:
-        """
+        """Rank fusion.
+
         Asynchronously retrieve the results of the retrievers
         and use rank_fusion_func to get the final result.
 
         Args:
             query: The query to search for.
+            run_manager: The callback handler to use.
+            config: Optional configuration for the retrievers.
 
         Returns:
             A list of reranked documents.
         """
-
         # Get the results of all retrievers.
         retriever_docs = await asyncio.gather(
             *[
@@ -289,10 +292,10 @@ class EnsembleRetriever(BaseRetriever):
         self,
         doc_lists: list[list[Document]],
     ) -> list[Document]:
-        """
-        Perform weighted Reciprocal Rank Fusion on multiple rank lists.
+        """Perform weighted Reciprocal Rank Fusion on multiple rank lists.
+
         You can find more details about RRF here:
-        https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
+        https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf.
 
         Args:
             doc_lists: A list of rank lists, where each rank list contains unique items.

@@ -49,7 +49,120 @@ def _stream_response_to_generation_chunk(
 
 
 class BaseOpenAI(BaseLLM):
-    """Base OpenAI large language model class."""
+    """Base OpenAI large language model class.
+
+    Setup:
+        Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
+
+        .. code-block:: bash
+
+            pip install -U langchain-openai
+            export OPENAI_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model_name: str
+            Name of OpenAI model to use.
+        temperature: float
+            Sampling temperature.
+        max_tokens: int
+            Max number of tokens to generate.
+        top_p: float
+            Total probability mass of tokens to consider at each step.
+        frequency_penalty: float
+            Penalizes repeated tokens according to frequency.
+        presence_penalty: float
+            Penalizes repeated tokens.
+        n: int
+            How many completions to generate for each prompt.
+        best_of: int
+            Generates best_of completions server-side and returns the "best".
+        logit_bias: Optional[dict[str, float]]
+            Adjust the probability of specific tokens being generated.
+        seed: Optional[int]
+            Seed for generation.
+        logprobs: Optional[int]
+            Include the log probabilities on the logprobs most likely output tokens.
+        streaming: bool
+            Whether to stream the results or not.
+
+    Key init args — client params:
+        openai_api_key: Optional[SecretStr]
+            OpenAI API key. If not passed in will be read from env var
+            ``OPENAI_API_KEY``.
+        openai_api_base: Optional[str]
+            Base URL path for API requests, leave blank if not using a proxy or
+            service emulator.
+        openai_organization: Optional[str]
+            OpenAI organization ID. If not passed in will be read from env
+            var ``OPENAI_ORG_ID``.
+        request_timeout: Union[float, tuple[float, float], Any, None]
+            Timeout for requests to OpenAI completion API.
+        max_retries: int
+            Maximum number of retries to make when generating.
+        batch_size: int
+            Batch size to use when passing multiple documents to generate.
+
+    See full list of supported init args and their descriptions in the params section.
+
+    Instantiate:
+        .. code-block:: python
+
+            from langchain_openai.llms.base import BaseOpenAI
+
+            llm = BaseOpenAI(
+                model_name="gpt-3.5-turbo-instruct",
+                temperature=0.7,
+                max_tokens=256,
+                top_p=1,
+                frequency_penalty=0,
+                presence_penalty=0,
+                # openai_api_key="...",
+                # openai_api_base="...",
+                # openai_organization="...",
+                # other params...
+            )
+
+    Invoke:
+        .. code-block:: python
+
+            input_text = "The meaning of life is "
+            response = llm.invoke(input_text)
+            print(response)
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and
+            scholars for centuries."
+
+    Stream:
+        .. code-block:: python
+
+            for chunk in llm.stream(input_text):
+                print(chunk, end="")
+
+        .. code-block:: none
+
+            a philosophical question that has been debated by thinkers and
+            scholars for centuries.
+
+    Async:
+        .. code-block:: python
+
+            response = await llm.ainvoke(input_text)
+
+            # stream:
+            # async for chunk in llm.astream(input_text):
+            #     print(chunk, end="")
+
+            # batch:
+            # await llm.abatch([input_text])
+
+        .. code-block:: none
+
+            "a philosophical question that has been debated by thinkers and
+            scholars for centuries."
+
+    """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -80,7 +193,7 @@ class BaseOpenAI(BaseLLM):
     openai_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("OPENAI_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
     openai_organization: Optional[str] = Field(
         alias="organization",
@@ -98,7 +211,7 @@ class BaseOpenAI(BaseLLM):
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or 
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     logit_bias: Optional[dict[str, float]] = None
     """Adjust the probability of specific tokens being generated."""
@@ -116,26 +229,26 @@ class BaseOpenAI(BaseLLM):
     disallowed_special: Union[Literal["all"], Collection[str]] = "all"
     """Set of special tokens that are not allowed。"""
     tiktoken_model_name: Optional[str] = None
-    """The model name to pass to tiktoken when using this class. 
-    Tiktoken is used to count the number of tokens in documents to constrain 
-    them to be under a certain limit. By default, when set to None, this will 
-    be the same as the embedding model name. However, there are some cases 
-    where you may want to use this Embedding class with a model name not 
-    supported by tiktoken. This can include when using Azure embeddings or 
-    when using one of the many model providers that expose an OpenAI-like 
-    API but with different models. In those cases, in order to avoid erroring 
+    """The model name to pass to tiktoken when using this class.
+    Tiktoken is used to count the number of tokens in documents to constrain
+    them to be under a certain limit. By default, when set to None, this will
+    be the same as the embedding model name. However, there are some cases
+    where you may want to use this Embedding class with a model name not
+    supported by tiktoken. This can include when using Azure embeddings or
+    when using one of the many model providers that expose an OpenAI-like
+    API but with different models. In those cases, in order to avoid erroring
     when tiktoken is called, you can specify a model name to use here."""
     default_headers: Union[Mapping[str, str], None] = None
     default_query: Union[Mapping[str, object], None] = None
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = None
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify 
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify 
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
         ``http_client`` as well if you'd like a custom client for sync invocations."""
     extra_body: Optional[Mapping[str, Any]] = None
     """Optional additional JSON properties to include in the request parameters when
@@ -289,6 +402,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 response = openai.generate(["Tell me a joke."])
+
         """
         # TODO: write a unit test for this
         params = self._invocation_params
@@ -508,6 +622,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.modelname_to_contextsize("gpt-3.5-turbo-instruct")
+
         """
         model_token_mapping = {
             "gpt-4o-mini": 128_000,
@@ -572,6 +687,7 @@ class BaseOpenAI(BaseLLM):
             .. code-block:: python
 
                 max_tokens = openai.max_tokens_for_prompt("Tell me a joke.")
+
         """
         num_tokens = self.get_num_tokens(prompt)
         return self.max_context_size - num_tokens
@@ -685,7 +801,7 @@ class OpenAI(BaseOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @property

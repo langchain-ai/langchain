@@ -22,7 +22,7 @@ def test_create_lc_store(file_store: LocalFileStore) -> None:
     """Test that a docstore is created from a base store."""
     docstore = create_lc_store(file_store)
     docstore.mset([("key1", Document(page_content="hello", metadata={"key": "value"}))])
-    fetched_doc = cast(Document, docstore.mget(["key1"])[0])
+    fetched_doc = cast("Document", docstore.mget(["key1"])[0])
     assert fetched_doc.page_content == "hello"
     assert fetched_doc.metadata == {"key": "value"}
 

@@ -32,6 +32,7 @@ from langchain_core.runnables import (
 from langchain_core.runnables.configurable import DynamicRunnable
 from langchain_core.utils.input import get_colored_text
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -68,15 +69,18 @@ class LLMChain(Chain):
             from langchain.chains import LLMChain
             from langchain_community.llms import OpenAI
             from langchain_core.prompts import PromptTemplate
+
             prompt_template = "Tell me a {adjective} joke"
             prompt = PromptTemplate(
                 input_variables=["adjective"], template=prompt_template
             )
             llm = LLMChain(llm=OpenAI(), prompt=prompt)
+
     """
 
     @classmethod
-    def is_lc_serializable(self) -> bool:
+    @override
+    def is_lc_serializable(cls) -> bool:
         return True
 
     prompt: BasePromptTemplate
@@ -143,7 +147,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = self.llm.bind(stop=stop, **self.llm_kwargs).batch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -170,7 +174,7 @@ class LLMChain(Chain):
                 **self.llm_kwargs,
             )
         results = await self.llm.bind(stop=stop, **self.llm_kwargs).abatch(
-            cast(list, prompts),
+            cast("list", prompts),
             {"callbacks": callbacks},
         )
         generations: list[list[Generation]] = []
@@ -251,7 +255,7 @@ class LLMChain(Chain):
             response = self.generate(input_list, run_manager=run_manager)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         run_manager.on_chain_end({"outputs": outputs})
         return outputs
@@ -276,7 +280,7 @@ class LLMChain(Chain):
             response = await self.agenerate(input_list, run_manager=run_manager)
         except BaseException as e:
             await run_manager.on_chain_error(e)
-            raise e
+            raise
         outputs = self.create_outputs(response)
         await run_manager.on_chain_end({"outputs": outputs})
         return outputs
@@ -321,6 +325,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return self(kwargs, callbacks=callbacks)[self.output_key]
 
@@ -338,6 +343,7 @@ class LLMChain(Chain):
             .. code-block:: python
 
                 completion = llm.predict(adjective="funny")
+
         """
         return (await self.acall(kwargs, callbacks=callbacks))[self.output_key]
 

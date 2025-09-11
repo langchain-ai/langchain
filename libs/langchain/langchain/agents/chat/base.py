@@ -13,6 +13,7 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.tools import BaseTool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain.agents.agent import Agent, AgentOutputParser
@@ -55,7 +56,7 @@ class ChatAgent(Agent):
         agent_scratchpad = super()._construct_scratchpad(intermediate_steps)
         if not isinstance(agent_scratchpad, str):
             msg = "agent_scratchpad should be of type string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         if agent_scratchpad:
             return (
                 f"This was your previous work "
@@ -65,6 +66,7 @@ class ChatAgent(Agent):
         return agent_scratchpad
 
     @classmethod
+    @override
     def _get_default_output_parser(cls, **kwargs: Any) -> AgentOutputParser:
         return ChatOutputParser()
 
@@ -103,11 +105,15 @@ class ChatAgent(Agent):
         Returns:
             A prompt template.
         """
-
         tool_strings = "\n".join([f"{tool.name}: {tool.description}" for tool in tools])
         tool_names = ", ".join([tool.name for tool in tools])
         format_instructions = format_instructions.format(tool_names=tool_names)
-        template = f"{system_message_prefix}\n\n{tool_strings}\n\n{format_instructions}\n\n{system_message_suffix}"  # noqa: E501
+        template = (
+            f"{system_message_prefix}\n\n"
+            f"{tool_strings}\n\n"
+            f"{format_instructions}\n\n"
+            f"{system_message_suffix}"
+        )
         messages = [
             SystemMessagePromptTemplate.from_template(template),
             HumanMessagePromptTemplate.from_template(human_message),

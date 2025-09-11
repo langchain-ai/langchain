@@ -3,15 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import AsyncIterator, Iterator, Sequence
 from importlib import util
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    Union,
-    cast,
-    overload,
-)
+from typing import Any, Callable, Literal, Optional, Union, cast, overload
 
 from langchain_core.language_models import (
     BaseChatModel,
@@ -86,59 +78,60 @@ def init_chat_model(
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> Union[BaseChatModel, _ConfigurableModel]:
-    """Initialize a ChatModel from the model name and provider.
+    """Initialize a ChatModel in a single line using the model's name and provider.
 
-    **Note:** Must have the integration package corresponding to the model provider
-    installed.
+    .. note::
+        Must have the integration package corresponding to the model provider installed.
+        You should look at the `provider integration's API reference <https://python.langchain.com/api_reference/reference.html#integrations>`__
+        to see what parameters are supported by the model.
 
     Args:
-        model: The name of the model, e.g. "o3-mini", "claude-3-5-sonnet-latest". You can
+        model: The name of the model, e.g. ``'o3-mini'``, ``'claude-3-5-sonnet-latest'``. You can
             also specify model and model provider in a single argument using
-            '{model_provider}:{model}' format, e.g. "openai:o1".
+            ``'{model_provider}:{model}'`` format, e.g. ``'openai:o1'``.
         model_provider: The model provider if not specified as part of model arg (see
             above). Supported model_provider values and the corresponding integration
             package are:
 
-            - 'openai'              -> langchain-openai
-            - 'anthropic'           -> langchain-anthropic
-            - 'azure_openai'        -> langchain-openai
-            - 'azure_ai'            -> langchain-azure-ai
-            - 'google_vertexai'     -> langchain-google-vertexai
-            - 'google_genai'        -> langchain-google-genai
-            - 'bedrock'             -> langchain-aws
-            - 'bedrock_converse'    -> langchain-aws
-            - 'cohere'              -> langchain-cohere
-            - 'fireworks'           -> langchain-fireworks
-            - 'together'            -> langchain-together
-            - 'mistralai'           -> langchain-mistralai
-            - 'huggingface'         -> langchain-huggingface
-            - 'groq'                -> langchain-groq
-            - 'ollama'              -> langchain-ollama
-            - 'google_anthropic_vertex'    -> langchain-google-vertexai
-            - 'deepseek'            -> langchain-deepseek
-            - 'ibm'                 -> langchain-ibm
-            - 'nvidia'              -> langchain-nvidia-ai-endpoints
-            - 'xai'                 -> langchain-xai
-            - 'perplexity'          -> langchain-perplexity
+            - ``openai``              -> ``langchain-openai``
+            - ``anthropic``           -> ``langchain-anthropic``
+            - ``azure_openai``        -> ``langchain-openai``
+            - ``azure_ai``            -> ``langchain-azure-ai``
+            - ``google_vertexai``     -> ``langchain-google-vertexai``
+            - ``google_genai``        -> ``langchain-google-genai``
+            - ``bedrock``             -> ``langchain-aws``
+            - ``bedrock_converse``    -> ``langchain-aws``
+            - ``cohere``              -> ``langchain-cohere``
+            - ``fireworks``           -> ``langchain-fireworks``
+            - ``together``            -> ``langchain-together``
+            - ``mistralai``           -> ``langchain-mistralai``
+            - ``huggingface``         -> ``langchain-huggingface``
+            - ``groq``                -> ``langchain-groq``
+            - ``ollama``              -> ``langchain-ollama``
+            - ``google_anthropic_vertex``    -> ``langchain-google-vertexai``
+            - ``deepseek``            -> ``langchain-deepseek``
+            - ``ibm``                 -> ``langchain-ibm``
+            - ``nvidia``              -> ``langchain-nvidia-ai-endpoints``
+            - ``xai``                 -> ``langchain-xai``
+            - ``perplexity``          -> ``langchain-perplexity``
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - 'gpt-3...' | 'gpt-4...' | 'o1...' -> 'openai'
-            - 'claude...'                       -> 'anthropic'
-            - 'amazon....'                      -> 'bedrock'
-            - 'gemini...'                       -> 'google_vertexai'
-            - 'command...'                      -> 'cohere'
-            - 'accounts/fireworks...'           -> 'fireworks'
-            - 'mistral...'                      -> 'mistralai'
-            - 'deepseek...'                     -> 'deepseek'
-            - 'grok...'                         -> 'xai'
-            - 'sonar...'                        -> 'perplexity'
-        configurable_fields: Which model parameters are
-            configurable:
+            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
+            - ``claude...``                       -> ``anthropic``
+            - ``amazon...``                       -> ``bedrock``
+            - ``gemini...``                       -> ``google_vertexai``
+            - ``command...``                      -> ``cohere``
+            - ``accounts/fireworks...``           -> ``fireworks``
+            - ``mistral...``                      -> ``mistralai``
+            - ``deepseek...``                     -> ``deepseek``
+            - ``grok...``                         -> ``xai``
+            - ``sonar...``                        -> ``perplexity``
+        configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
-            - "any": All fields are configurable. *See Security Note below.*
+            - ``'any'``: All fields are configurable. **See Security Note below.**
             - Union[List[str], Tuple[str, ...]]: Specified fields are configurable.
 
             Fields are assumed to have config_prefix stripped if there is a
@@ -146,15 +139,15 @@ def init_chat_model(
             not specified, then defaults to ``("model", "model_provider")``.
 
             ***Security Note***: Setting ``configurable_fields="any"`` means fields like
-            api_key, base_url, etc. can be altered at runtime, potentially redirecting
+            ``api_key``, ``base_url``, etc. can be altered at runtime, potentially redirecting
             model requests to a different service/user. Make sure that if you're
             accepting untrusted configurations that you enumerate the
             ``configurable_fields=(...)`` explicitly.
 
-        config_prefix: If config_prefix is a non-empty string then model will be
+        config_prefix: If ``'config_prefix'`` is a non-empty string then model will be
             configurable at runtime via the
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
-            config_prefix is an empty string then model will be configurable via
+            ``'config_prefix'`` is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
         temperature: Model temperature.
         max_tokens: Max output tokens.
@@ -186,8 +179,12 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
 
             o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-            claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
-            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.0-flash", temperature=0)
+            claude_sonnet = init_chat_model(
+                "anthropic:claude-3-5-sonnet-latest", temperature=0
+            )
+            gemini_2_flash = init_chat_model(
+                "google_vertexai:gemini-2.5-flash", temperature=0
+            )
 
             o3_mini.invoke("what's your name")
             claude_sonnet.invoke("what's your name")
@@ -205,14 +202,13 @@ def init_chat_model(
             configurable_model = init_chat_model(temperature=0)
 
             configurable_model.invoke(
-                "what's your name",
-                config={"configurable": {"model": "gpt-4o"}}
+                "what's your name", config={"configurable": {"model": "gpt-4o"}}
             )
             # GPT-4o response
 
             configurable_model.invoke(
                 "what's your name",
-                config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
             )
             # claude-3.5 sonnet response
 
@@ -227,7 +223,7 @@ def init_chat_model(
                 "openai:gpt-4o",
                 configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 config_prefix="foo",
-                temperature=0
+                temperature=0,
             )
 
             configurable_model_with_default.invoke("what's your name")
@@ -237,10 +233,10 @@ def init_chat_model(
                 "what's your name",
                 config={
                     "configurable": {
-                        "foo_model": "anthropic:claude-3-5-sonnet-20240620",
-                        "foo_temperature": 0.6
+                        "foo_model": "anthropic:claude-3-5-sonnet-latest",
+                        "foo_temperature": 0.6,
                     }
-                }
+                },
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
@@ -255,23 +251,30 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
             from pydantic import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             configurable_model = init_chat_model(
-                "gpt-4o",
-                configurable_fields=("model", "model_provider"),
-                temperature=0
+                "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
             )
 
-            configurable_model_with_tools = configurable_model.bind_tools([GetWeather, GetPopulation])
+            configurable_model_with_tools = configurable_model.bind_tools(
+                [GetWeather, GetPopulation]
+            )
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
             )
@@ -279,7 +282,7 @@ def init_chat_model(
 
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?",
-                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
             )
             # Claude-3.5 sonnet response with tools
 
@@ -321,7 +324,7 @@ def init_chat_model(
 
     if not configurable_fields:
         return _init_chat_model_helper(
-            cast(str, model),
+            cast("str", model),
             model_provider=model_provider,
             **kwargs,
         )
@@ -542,12 +545,6 @@ def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
         raise ImportError(msg)
 
 
-def _remove_prefix(s: str, prefix: str) -> str:
-    if s.startswith(prefix):
-        s = s[len(prefix) :]
-    return s
-
-
 _DECLARATIVE_METHODS = ("bind_tools", "with_structured_output")
 
 
@@ -615,7 +612,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
         config = ensure_config(config)
         model_params = {
-            _remove_prefix(k, self._config_prefix): v
+            k.removeprefix(self._config_prefix): v
             for k, v in config.get("configurable", {}).items()
             if k.startswith(self._config_prefix)
         }
@@ -631,13 +628,13 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> _ConfigurableModel:
         """Bind config to a Runnable, returning a new Runnable."""
-        config = RunnableConfig(**(config or {}), **cast(RunnableConfig, kwargs))
+        config = RunnableConfig(**(config or {}), **cast("RunnableConfig", kwargs))
         model_params = self._model_params(config)
         remaining_config = {k: v for k, v in config.items() if k != "configurable"}
         remaining_config["configurable"] = {
             k: v
             for k, v in config.get("configurable", {}).items()
-            if _remove_prefix(k, self._config_prefix) not in model_params
+            if k.removeprefix(self._config_prefix) not in model_params
         }
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
@@ -658,6 +655,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (
@@ -780,7 +778,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         if config is None or isinstance(config, dict) or len(config) <= 1:
             if isinstance(config, list):
                 config = config[0]
-            yield from self._model(cast(RunnableConfig, config)).batch_as_completed(  # type: ignore[call-overload]
+            yield from self._model(cast("RunnableConfig", config)).batch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,
                 return_exceptions=return_exceptions,
@@ -810,7 +808,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(config, list):
                 config = config[0]
             async for x in self._model(
-                cast(RunnableConfig, config),
+                cast("RunnableConfig", config),
             ).abatch_as_completed(  # type: ignore[call-overload]
                 inputs,
                 config=config,

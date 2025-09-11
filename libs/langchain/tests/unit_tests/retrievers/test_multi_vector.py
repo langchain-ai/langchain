@@ -1,6 +1,7 @@
 from typing import Any, Callable
 
 from langchain_core.documents import Document
+from typing_extensions import override
 
 from langchain.retrievers.multi_vector import MultiVectorRetriever, SearchType
 from langchain.storage import InMemoryStore
@@ -15,6 +16,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         return self._identity_fn
 
+    @override
     def similarity_search(
         self,
         query: str,
@@ -26,6 +28,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
             return []
         return [res]
 
+    @override
     def similarity_search_with_score(
         self,
         query: str,
@@ -40,7 +43,7 @@ class InMemoryVectorstoreWithSearch(InMemoryVectorStore):
 
 def test_multi_vector_retriever_initialization() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",
@@ -55,7 +58,7 @@ def test_multi_vector_retriever_initialization() -> None:
 
 async def test_multi_vector_retriever_initialization_async() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",
@@ -73,8 +76,8 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
     vectorstore = InMemoryVectorstoreWithSearch()
     vectorstore.add_documents(documents, ids=["1"])
 
-    # score_threshold = 0.5
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    # test with score_threshold = 0.5
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",
@@ -86,8 +89,8 @@ def test_multi_vector_retriever_similarity_search_with_score() -> None:
     assert len(results) == 1
     assert results[0].page_content == "test document"
 
-    # score_threshold = 0.9
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    # test with score_threshold = 0.9
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",
@@ -104,8 +107,8 @@ async def test_multi_vector_retriever_similarity_search_with_score_async() -> No
     vectorstore = InMemoryVectorstoreWithSearch()
     await vectorstore.aadd_documents(documents, ids=["1"])
 
-    # score_threshold = 0.5
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    # test with score_threshold = 0.5
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",
@@ -117,8 +120,8 @@ async def test_multi_vector_retriever_similarity_search_with_score_async() -> No
     assert len(results) == 1
     assert results[0].page_content == "test document"
 
-    # score_threshold = 0.9
-    retriever = MultiVectorRetriever(  # type: ignore[call-arg]
+    # test with score_threshold = 0.9
+    retriever = MultiVectorRetriever(
         vectorstore=vectorstore,
         docstore=InMemoryStore(),
         doc_id="doc_id",

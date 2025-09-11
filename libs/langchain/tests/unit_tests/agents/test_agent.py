@@ -25,6 +25,7 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables.utils import add
 from langchain_core.tools import Tool, tool
 from langchain_core.tracers import RunLog, RunLogPatch
+from typing_extensions import override
 
 from langchain.agents import (
     AgentExecutor,
@@ -48,6 +49,7 @@ class FakeListLLM(LLM):
     responses: list[str]
     i: int = -1
 
+    @override
     def _call(
         self,
         prompt: str,
@@ -449,7 +451,6 @@ def test_agent_invalid_tool() -> None:
 
 async def test_runnable_agent() -> None:
     """Simple test to verify that an agent built with LCEL works."""
-
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
@@ -462,7 +463,7 @@ async def test_runnable_agent() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
         return AgentFinish(return_values={"foo": "meow"}, log="hard-coded-message")
 
@@ -512,20 +513,20 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results: list[RunLogPatch] = [  # type: ignore[no-redef]
+    log_results: list[RunLogPatch] = [
         r async for r in executor.astream_log({"question": "hello"})
     ]
     # # Let's stream just the llm tokens.
     messages = []
-    for log_record in results:
-        for op in log_record.ops:  # type: ignore[attr-defined]
+    for log_record in log_results:
+        for op in log_record.ops:
             if op["op"] == "add" and isinstance(op["value"], AIMessageChunk):
                 messages.append(op["value"])  # noqa: PERF401
 
     assert messages != []
 
     # Aggregate state
-    run_log = reduce(operator.add, results)
+    run_log = reduce(operator.add, log_results)
 
     assert isinstance(run_log, RunLog)
 
@@ -569,9 +570,9 @@ async def test_runnable_agent_with_function_calls() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
-        return cast(Union[AgentFinish, AgentAction], next(parser_responses))
+        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -681,9 +682,9 @@ async def test_runnable_with_multi_action_per_step() -> None:
         ],
     )
 
-    def fake_parse(inputs: dict) -> Union[AgentFinish, AgentAction]:
+    def fake_parse(_: dict) -> Union[AgentFinish, AgentAction]:
         """A parser."""
-        return cast(Union[AgentFinish, AgentAction], next(parser_responses))
+        return cast("Union[AgentFinish, AgentAction]", next(parser_responses))
 
     @tool
     def find_pet(pet: str) -> str:
@@ -1006,7 +1007,7 @@ def _make_tools_invocation(name_to_arguments: dict[str, dict[str, Any]]) -> AIMe
         for idx, (name, arguments) in enumerate(name_to_arguments.items())
     ]
     tool_calls = [
-        ToolCall(name=name, args=args, id=str(idx))
+        ToolCall(name=name, args=args, id=str(idx), type="tool_call")
         for idx, (name, args) in enumerate(name_to_arguments.items())
     ]
     return AIMessage(
@@ -1032,7 +1033,7 @@ async def test_openai_agent_tools_agent() -> None:
         ],
     )
 
-    GenericFakeChatModel.bind_tools = lambda self, x: self  # type: ignore[assignment,misc]
+    GenericFakeChatModel.bind_tools = lambda self, _: self  # type: ignore[assignment,misc]
     model = GenericFakeChatModel(messages=infinite_cycle)
 
     @tool
@@ -1240,7 +1241,8 @@ async def test_openai_agent_tools_agent() -> None:
             {
                 "messages": [
                     FunctionMessage(
-                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        content="check_time is not a valid tool, "
+                        "try one of [find_pet].",
                         name="check_time",
                     ),
                 ],

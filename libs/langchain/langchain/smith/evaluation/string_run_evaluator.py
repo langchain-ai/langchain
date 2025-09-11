@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any, Optional, Union, cast
 
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
@@ -16,10 +17,13 @@ from langchain_core.load.serializable import Serializable
 from langchain_core.messages import BaseMessage, get_buffer_string, messages_from_dict
 from langsmith import EvaluationResult, RunEvaluator
 from langsmith.schemas import DataType, Example, Run
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import RUN_KEY
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
@@ -54,22 +58,37 @@ class StringRunMapper(Serializable):
 class LLMStringRunMapper(StringRunMapper):
     """Extract items to evaluate from the run object."""
 
-    def serialize_chat_messages(self, messages: list[dict]) -> str:
+    def serialize_chat_messages(
+        self, messages: Union[list[dict], list[list[dict]]]
+    ) -> str:
         """Extract the input messages from the run."""
         if isinstance(messages, list) and messages:
             if isinstance(messages[0], dict):
-                chat_messages = _get_messages_from_run_dict(messages)
+                chat_messages = _get_messages_from_run_dict(
+                    cast("list[dict]", messages)
+                )
             elif isinstance(messages[0], list):
                 # Runs from Tracer have messages as a list of lists of dicts
                 chat_messages = _get_messages_from_run_dict(messages[0])
             else:
-                msg = f"Could not extract messages to evaluate {messages}"
+                msg = f"Could not extract messages to evaluate {messages}"  # type: ignore[unreachable]
                 raise ValueError(msg)
             return get_buffer_string(chat_messages)
         msg = f"Could not extract messages to evaluate {messages}"
         raise ValueError(msg)
 
     def serialize_inputs(self, inputs: dict) -> str:
+        """Serialize inputs.
+
+        Args:
+            inputs: The inputs from the run, expected to contain prompts or messages.
+
+        Returns:
+            The serialized input text from the prompts or messages.
+
+        Raises:
+            ValueError: If neither prompts nor messages are found in the inputs.
+        """
         if "prompts" in inputs:  # Should we even accept this?
             input_ = "\n\n".join(inputs["prompts"])
         elif "prompt" in inputs:
@@ -82,14 +101,26 @@ class LLMStringRunMapper(StringRunMapper):
         return input_
 
     def serialize_outputs(self, outputs: dict) -> str:
+        """Serialize outputs.
+
+        Args:
+            outputs: The outputs from the run, expected to contain generations.
+
+        Returns:
+            The serialized output text from the first generation.
+
+        Raises:
+            ValueError: If no generations are found in the outputs,
+            or if the generations are empty.
+        """
         if not outputs.get("generations"):
             msg = "Cannot evaluate LLM Run without generations."
             raise ValueError(msg)
-        generations: list[dict] = outputs["generations"]
+        generations: Union[list[dict], list[list[dict]]] = outputs["generations"]
         if not generations:
             msg = "Cannot evaluate LLM run with empty generations."
             raise ValueError(msg)
-        first_generation: dict = generations[0]
+        first_generation: Union[dict, list[dict]] = generations[0]
         if isinstance(first_generation, list):
             # Runs from Tracer have generations as a list of lists of dicts
             # Whereas Runs from the API have a list of dicts
@@ -185,6 +216,7 @@ class ChainStringRunMapper(StringRunMapper):
 class ToolStringRunMapper(StringRunMapper):
     """Map an input to the tool."""
 
+    @override
     def map(self, run: Run) -> dict[str, str]:
         if not run.outputs:
             msg = f"Run {run.id} has no outputs to evaluate."
@@ -256,10 +288,12 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
     """The evaluation chain."""
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return ["run", "example"]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["feedback"]
 
@@ -330,6 +364,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             feedback.evaluator_info[RUN_KEY] = output[RUN_KEY]
         return feedback
 
+    @override
     def evaluate_run(
         self,
         run: Run,
@@ -341,12 +376,14 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             result = self({"run": run, "example": example}, include_run_info=True)
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
                 # TODO: Add run ID once we can declare it via callbacks
             )
 
+    @override
     async def aevaluate_run(
         self,
         run: Run,
@@ -361,6 +398,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
@@ -377,32 +415,33 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         reference_key: Optional[str] = None,
         tags: Optional[list[str]] = None,
     ) -> StringRunEvaluatorChain:
-        """
-        Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
+        """Create a StringRunEvaluatorChain.
+
+        Create a StringRunEvaluatorChain from an evaluator and the run and dataset
+        types.
 
         This method provides an easy way to instantiate a StringRunEvaluatorChain, by
         taking an evaluator and information about the type of run and the data.
         The method supports LLM and chain runs.
 
         Args:
-            evaluator (StringEvaluator): The string evaluator to use.
-            run_type (str): The type of run being evaluated.
+            evaluator: The string evaluator to use.
+            run_type: The type of run being evaluated.
                 Supported types are LLM and Chain.
-            data_type (DataType): The type of dataset used in the run.
-            input_key (str, optional): The key used to map the input from the run.
-            prediction_key (str, optional): The key used to map the prediction from the run.
-            reference_key (str, optional): The key used to map the reference from the dataset.
-            tags (List[str], optional): List of tags to attach to the evaluation chain.
+            data_type: The type of dataset used in the run.
+            input_key: The key used to map the input from the run.
+            prediction_key: The key used to map the prediction from the run.
+            reference_key: The key used to map the reference from the dataset.
+            tags: List of tags to attach to the evaluation chain.
 
         Returns:
-            StringRunEvaluatorChain: The instantiated evaluation chain.
+            The instantiated evaluation chain.
 
         Raises:
-            ValueError: If the run type is not supported, or if the evaluator requires a
-                reference from the dataset but the reference key is not provided.
+            If the run type is not supported, or if the evaluator requires a
+            reference from the dataset but the reference key is not provided.
 
-        """  # noqa: E501
-
+        """
         # Configure how run inputs/predictions are passed to the evaluator
         if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()
@@ -423,7 +462,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         ):
             example_mapper = StringExampleMapper(reference_key=reference_key)
         elif evaluator.requires_reference:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Evaluator {evaluator.evaluation_name} requires a reference"
                 " example from the dataset. Please specify the reference key from"
                 " amongst the dataset outputs keys."

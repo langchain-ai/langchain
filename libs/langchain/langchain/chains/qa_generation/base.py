@@ -9,6 +9,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.llm import LLMChain
@@ -38,6 +39,7 @@ class QAGenerationChain(Chain):
         .. code-block:: python
 
             from langchain.chains.qa_generation.prompt import CHAT_PROMPT as prompt
+
             # Note: import PROMPT if using a legacy non-chat model.
             from langchain_core.output_parsers import JsonOutputParser
             from langchain_core.runnables import (
@@ -51,16 +53,15 @@ class QAGenerationChain(Chain):
 
             llm = ChatOpenAI()
             text_splitter = RecursiveCharacterTextSplitter(chunk_overlap=500)
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
 
             chain = RunnableParallel(
                 text=RunnablePassthrough(),
                 questions=(
                     split_text | RunnableEach(bound=prompt | llm | JsonOutputParser())
-                )
+                ),
             )
+
     """
 
     llm_chain: LLMChain
@@ -83,8 +84,7 @@ class QAGenerationChain(Chain):
         prompt: Optional[BasePromptTemplate] = None,
         **kwargs: Any,
     ) -> QAGenerationChain:
-        """
-        Create a QAGenerationChain from a language model.
+        """Create a QAGenerationChain from a language model.
 
         Args:
             llm: a language model
@@ -103,10 +103,12 @@ class QAGenerationChain(Chain):
         raise NotImplementedError
 
     @property
+    @override
     def input_keys(self) -> list[str]:
         return [self.input_key]
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return [self.output_key]
 

@@ -22,6 +22,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import RunnableConfig
 from langchain_core.vectorstores import VectorStore
 from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.combine_documents.base import BaseCombineDocumentsChain
@@ -53,11 +54,11 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
             ai = "Assistant: " + dialogue_turn[1]
             buffer += f"\n{human}\n{ai}"
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
     return buffer
 
 
@@ -109,6 +110,7 @@ class BaseConversationalRetrievalChain(Chain):
         """Input keys."""
         return ["question", "chat_history"]
 
+    @override
     def get_input_schema(
         self,
         config: Optional[RunnableConfig] = None,
@@ -242,6 +244,7 @@ class BaseConversationalRetrievalChain(Chain):
             output["generated_question"] = new_question
         return output
 
+    @override
     def save(self, file_path: Union[Path, str]) -> None:
         if self.get_chat_history:
             msg = "Chain not saveable when `get_chat_history` is not None."
@@ -258,74 +261,73 @@ class BaseConversationalRetrievalChain(Chain):
     removal="1.0",
 )
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
-    """Chain for having a conversation based on retrieved documents.
+    r"""Chain for having a conversation based on retrieved documents.
 
     This class is deprecated. See below for an example implementation using
     `create_retrieval_chain`. Additional walkthroughs can be found at
     https://python.langchain.com/docs/use_cases/question_answering/chat_history
 
-        .. code-block:: python
+    .. code-block:: python
 
-            from langchain.chains import (
-                create_history_aware_retriever,
-                create_retrieval_chain,
-            )
-            from langchain.chains.combine_documents import create_stuff_documents_chain
-            from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-            from langchain_openai import ChatOpenAI
+        from langchain.chains import (
+            create_history_aware_retriever,
+            create_retrieval_chain,
+        )
+        from langchain.chains.combine_documents import create_stuff_documents_chain
+        from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+        from langchain_openai import ChatOpenAI
 
+        retriever = ...  # Your retriever
 
-            retriever = ...  # Your retriever
+        llm = ChatOpenAI()
 
-            llm = ChatOpenAI()
+        # Contextualize question
+        contextualize_q_system_prompt = (
+            "Given a chat history and the latest user question "
+            "which might reference context in the chat history, "
+            "formulate a standalone question which can be understood "
+            "without the chat history. Do NOT answer the question, just "
+            "reformulate it if needed and otherwise return it as is."
+        )
+        contextualize_q_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", contextualize_q_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        history_aware_retriever = create_history_aware_retriever(
+            llm, retriever, contextualize_q_prompt
+        )
 
-            # Contextualize question
-            contextualize_q_system_prompt = (
-                "Given a chat history and the latest user question "
-                "which might reference context in the chat history, "
-                "formulate a standalone question which can be understood "
-                "without the chat history. Do NOT answer the question, just "
-                "reformulate it if needed and otherwise return it as is."
-            )
-            contextualize_q_prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", contextualize_q_system_prompt),
-                    MessagesPlaceholder("chat_history"),
-                    ("human", "{input}"),
-                ]
-            )
-            history_aware_retriever = create_history_aware_retriever(
-                llm, retriever, contextualize_q_prompt
-            )
+        # Answer question
+        qa_system_prompt = (
+            "You are an assistant for question-answering tasks. Use "
+            "the following pieces of retrieved context to answer the "
+            "question. If you don't know the answer, just say that you "
+            "don't know. Use three sentences maximum and keep the answer "
+            "concise."
+            "\n\n"
+            "{context}"
+        )
+        qa_prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", qa_system_prompt),
+                MessagesPlaceholder("chat_history"),
+                ("human", "{input}"),
+            ]
+        )
+        # Below we use create_stuff_documents_chain to feed all retrieved context
+        # into the LLM. Note that we can also use StuffDocumentsChain and other
+        # instances of BaseCombineDocumentsChain.
+        question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
+        rag_chain = create_retrieval_chain(
+            history_aware_retriever, question_answer_chain
+        )
 
-            # Answer question
-            qa_system_prompt = (
-                "You are an assistant for question-answering tasks. Use "
-                "the following pieces of retrieved context to answer the "
-                "question. If you don't know the answer, just say that you "
-                "don't know. Use three sentences maximum and keep the answer "
-                "concise."
-                "\n\n"
-                "{context}"
-            )
-            qa_prompt = ChatPromptTemplate.from_messages(
-                [
-                    ("system", qa_system_prompt),
-                    MessagesPlaceholder("chat_history"),
-                    ("human", "{input}"),
-                ]
-            )
-            # Below we use create_stuff_documents_chain to feed all retrieved context
-            # into the LLM. Note that we can also use StuffDocumentsChain and other
-            # instances of BaseCombineDocumentsChain.
-            question_answer_chain = create_stuff_documents_chain(llm, qa_prompt)
-            rag_chain = create_retrieval_chain(
-                history_aware_retriever, question_answer_chain
-            )
-
-            # Usage:
-            chat_history = []  # Collect chat history here (a sequence of messages)
-            rag_chain.invoke({"input": query, "chat_history": chat_history})
+        # Usage:
+        chat_history = []  # Collect chat history here (a sequence of messages)
+        rag_chain.invoke({"input": query, "chat_history": chat_history})
 
     This chain takes in chat history (a list of messages) and new questions,
     and then returns an answer to that question.
@@ -348,7 +350,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         .. code-block:: python
 
             from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+                StuffDocumentsChain,
+                LLMChain,
+                ConversationalRetrievalChain,
             )
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
@@ -372,13 +376,16 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
                 retriever=retriever,
                 question_generator=question_generator_chain,
             )
+
     """
 
     retriever: BaseRetriever
     """Retriever to use to fetch documents."""
     max_tokens_limit: Optional[int] = None
     """If set, enforces that the documents returned are less than this limit.
-    This is only enforced if `combine_docs_chain` is of type StuffDocumentsChain."""
+
+    This is only enforced if ``combine_docs_chain`` is of type StuffDocumentsChain.
+    """
 
     def _reduce_tokens_below_limit(self, docs: list[Document]) -> list[Document]:
         num_docs = len(docs)
@@ -388,7 +395,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             StuffDocumentsChain,
         ):
             tokens = [
-                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)
+                self.combine_docs_chain.llm_chain._get_num_tokens(doc.page_content)  # noqa: SLF001
                 for doc in docs
             ]
             token_count = sum(tokens[:num_docs])
@@ -398,6 +405,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
 
         return docs[:num_docs]
 
+    @override
     def _get_docs(
         self,
         question: str,
@@ -412,6 +420,7 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         )
         return self._reduce_tokens_below_limit(docs)
 
+    @override
     async def _aget_docs(
         self,
         question: str,
@@ -500,7 +509,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
             "please use `from langchain.chains import ConversationalRetrievalChain`",
@@ -508,6 +517,7 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
         )
         return values
 
+    @override
     def _get_docs(
         self,
         question: str,

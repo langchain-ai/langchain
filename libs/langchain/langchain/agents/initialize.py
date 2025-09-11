@@ -90,7 +90,7 @@ def initialize_agent(
         )
         with contextlib.suppress(NotImplementedError):
             # TODO: Add tags from the serialized object directly.
-            tags_.append(agent_obj._agent_type)
+            tags_.append(agent_obj._agent_type)  # noqa: SLF001
     else:
         msg = (
             "Somehow both `agent` and `agent_path` are None, this should never happen."

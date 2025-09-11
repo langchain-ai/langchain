@@ -15,6 +15,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -44,6 +45,7 @@ class QuestionGeneratorChain(LLMChain):
     """Prompt template for the chain."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
@@ -93,7 +95,9 @@ def _low_confidence_spans(
 
 
 class FlareChain(Chain):
-    """Chain that combines a retriever, a question generator,
+    """Flare chain.
+
+    Chain that combines a retriever, a question generator,
     and a response generator.
 
     See [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983) paper.
@@ -245,7 +249,7 @@ class FlareChain(Chain):
     @classmethod
     def from_llm(
         cls,
-        llm: BaseLanguageModel,
+        llm: Optional[BaseLanguageModel],
         max_generation_len: int = 32,
         **kwargs: Any,
     ) -> FlareChain:
@@ -268,11 +272,36 @@ class FlareChain(Chain):
                 "pip install langchain-openai"
             )
             raise ImportError(msg) from e
-        llm = ChatOpenAI(
-            max_completion_tokens=max_generation_len,
-            logprobs=True,
-            temperature=0,
-        )
+        # Preserve supplied llm instead of always creating a new ChatOpenAI.
+        # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
+        if llm is None:
+            llm = ChatOpenAI(
+                max_completion_tokens=max_generation_len,
+                logprobs=True,
+                temperature=0,
+            )
+        else:
+            if not isinstance(llm, ChatOpenAI):
+                msg = (
+                    f"FlareChain.from_llm requires ChatOpenAI; got "
+                    f"{type(llm).__name__}."
+                )
+                raise TypeError(msg)
+            if not getattr(llm, "logprobs", False):  # attribute presence may vary
+                msg = (
+                    "Provided ChatOpenAI instance must be constructed with "
+                    "logprobs=True for FlareChain."
+                )
+                raise ValueError(msg)
+            current_max = getattr(llm, "max_completion_tokens", None)
+            if current_max is not None and current_max != max_generation_len:
+                logger.debug(
+                    "FlareChain.from_llm: supplied llm max_completion_tokens=%s "
+                    "differs from requested max_generation_len=%s; "
+                    "leaving model unchanged.",
+                    current_max,
+                    max_generation_len,
+                )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(

@@ -142,9 +142,8 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content:
-          '<strong>Our <a href="https://academy.langchain.com/courses/ambient-agents/?utm_medium=internal&utm_source=docs&utm_campaign=q2-2025_ambient-agents_co" target="_blank">Building Ambient Agents with LangGraph</a> course is now available on LangChain Academy!</strong>',
-        backgroundColor: "#d0c9fe",
+        content: "These docs will be deprecated and no longer maintained with the release of LangChain v1.0 in October 2025. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the v1.0 alpha docs</a>",
+        backgroundColor: "#FFAE42",
       },
       prism: {
         theme: {
@@ -268,6 +267,10 @@ const config = {
               {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
+              },
+              {
+                label: "Slack",
+                href: "https://www.langchain.com/join-community",
               },
             ],
           },

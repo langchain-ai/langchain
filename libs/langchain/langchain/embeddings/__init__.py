@@ -1,7 +1,9 @@
-"""**Embedding models**  are wrappers around embedding models
+"""**Embedding models**.
+
+**Embedding models**  are wrappers around embedding models
 from different APIs and services.
 
-**Embedding models** can be LLMs or not.
+Embedding models can be LLMs or not.
 
 **Class hierarchy:**
 
@@ -87,7 +89,7 @@ class HypotheticalDocumentEmbedder:
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
-        return H(*args, **kwargs)  # type: ignore[return-value]
+        return H(*args, **kwargs)  # type: ignore[return-value] # noqa: PLE0101
 
     @classmethod
     def from_llm(cls, *args: Any, **kwargs: Any) -> Any:

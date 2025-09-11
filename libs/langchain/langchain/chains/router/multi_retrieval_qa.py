@@ -8,6 +8,7 @@ from typing import Any, Optional
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
 from langchain_core.retrievers import BaseRetriever
+from typing_extensions import override
 
 from langchain.chains import ConversationChain
 from langchain.chains.base import Chain
@@ -21,8 +22,11 @@ from langchain.chains.router.multi_retrieval_prompt import (
 
 
 class MultiRetrievalQAChain(MultiRouteChain):
-    """A multi-route chain that uses an LLM router chain to choose amongst retrieval
-    qa chains."""
+    """Multi Retrieval QA Chain.
+
+    A multi-route chain that uses an LLM router chain to choose amongst retrieval
+    qa chains.
+    """
 
     router_chain: LLMRouterChain
     """Chain for deciding a destination chain and the input to it."""
@@ -32,6 +36,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
     """Default chain to use when router doesn't map input to one of the destinations."""
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["result"]
 
@@ -47,6 +52,23 @@ class MultiRetrievalQAChain(MultiRouteChain):
         default_chain_llm: Optional[BaseLanguageModel] = None,
         **kwargs: Any,
     ) -> MultiRetrievalQAChain:
+        """Create a multi retrieval qa chain from an LLM and a default chain.
+
+        Args:
+            llm: The language model to use.
+            retriever_infos: Dictionaries containing retriever information.
+            default_retriever: Optional default retriever to use if no default chain
+                is provided.
+            default_prompt: Optional prompt template to use for the default retriever.
+            default_chain: Optional default chain to use when router doesn't map input
+                to one of the destinations.
+            default_chain_llm: Optional language model to use if no default chain and
+                no default retriever are provided.
+            **kwargs: Additional keyword arguments to pass to the chain.
+
+        Returns:
+            An instance of the multi retrieval qa chain.
+        """
         if default_prompt and not default_retriever:
             msg = (
                 "`default_retriever` must be specified if `default_prompt` is "

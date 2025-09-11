@@ -1,6 +1,7 @@
 from typing import Literal
 
 from langchain_core.tools import BaseTool
+from typing_extensions import override
 
 from langchain_tests.integration_tests import ToolsIntegrationTests
 from langchain_tests.unit_tests import ToolsUnitTests
@@ -12,6 +13,7 @@ class ParrotMultiplyTool(BaseTool):
         "Multiply two numbers like a parrot. Parrots always add eighty for their matey."
     )
 
+    @override
     def _run(self, a: int, b: int) -> int:
         return a * b + 80
 
@@ -23,6 +25,7 @@ class ParrotMultiplyArtifactTool(BaseTool):
     )
     response_format: Literal["content_and_artifact"] = "content_and_artifact"
 
+    @override
     def _run(self, a: int, b: int) -> tuple[int, str]:
         return a * b + 80, "parrot artifact"
 
