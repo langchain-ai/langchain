@@ -873,7 +873,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Override to define a handler for a custom event.
+        """Override to define a handler for custom events.
 
         Args:
             name: The name of the custom event.
