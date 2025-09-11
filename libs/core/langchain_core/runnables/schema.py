@@ -27,6 +27,8 @@ class EventData(TypedDict, total=False):
     """The error that occurred during the execution of the Runnable.
 
     This field is only available if the Runnable raised an exception.
+
+    ..versionadded:: 1.0.0
     """
     output: Any
     """The output of the Runnable that generated the event.
