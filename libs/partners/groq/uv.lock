@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.9"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -331,7 +331,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "0.3.74"
+version = "0.3.75"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -389,7 +389,7 @@ typing = [
 
 [[package]]
 name = "langchain-groq"
-version = "0.3.7"
+version = "0.3.8"
 source = { editable = "." }
 dependencies = [
     { name = "groq" },
@@ -450,7 +450,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.20"
+version = "0.3.21"
 source = { editable = "../../standard-tests" }
 dependencies = [
     { name = "httpx" },
@@ -469,28 +469,28 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "httpx", specifier = ">=0.25.0,<1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "langchain-core", editable = "../../core" },
     { name = "numpy", marker = "python_full_version < '3.13'", specifier = ">=1.26.2" },
     { name = "numpy", marker = "python_full_version >= '3.13'", specifier = ">=2.1.0" },
     { name = "pytest", specifier = ">=7,<9" },
-    { name = "pytest-asyncio", specifier = ">=0.20,<1" },
+    { name = "pytest-asyncio", specifier = ">=0.20,<2" },
     { name = "pytest-benchmark" },
     { name = "pytest-codspeed" },
     { name = "pytest-recording" },
-    { name = "pytest-socket", specifier = ">=0.6.0,<1" },
+    { name = "pytest-socket", specifier = ">=0.7.0,<1" },
     { name = "syrupy", specifier = ">=4,<5" },
     { name = "vcrpy", specifier = ">=7.0" },
 ]
 
 [package.metadata.requires-dev]
-codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
-lint = [{ name = "ruff", specifier = ">=0.12.8,<0.13" }]
+lint = [{ name = "ruff", specifier = ">=0.12.10,<0.13" }]
 test = [{ name = "langchain-core", editable = "../../core" }]
 test-integration = []
 typing = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "mypy", specifier = ">=1,<2" },
+    { name = "mypy", specifier = ">=1.17.1,<1.18" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.2,<7.0.0.0" },
 ]
 
 [[package]]

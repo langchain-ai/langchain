@@ -26,7 +26,9 @@ DEFAULT_QUERY_PROMPT = PromptTemplate.from_template(DEFAULT_TEMPLATE)
 
 class RePhraseQueryRetriever(BaseRetriever):
     """Given a query, use an LLM to re-phrase it.
-    Then, retrieve docs for the re-phrased query."""
+
+    Then, retrieve docs for the re-phrased query.
+    """
 
     retriever: BaseRetriever
     llm_chain: Runnable
@@ -66,6 +68,7 @@ class RePhraseQueryRetriever(BaseRetriever):
 
         Args:
             query: user question
+            run_manager: callback handler to use
 
         Returns:
             Relevant documents for re-phrased question

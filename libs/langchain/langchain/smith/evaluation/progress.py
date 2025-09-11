@@ -26,6 +26,7 @@ class ProgressBarCallback(base_callbacks.BaseCallbackHandler):
             total: int, the total number of items to be processed.
             ncols: int, the character width of the progress bar.
             end_with: str, last string to print after progress bar reaches end.
+            **kwargs: additional keyword arguments.
         """
         self.total = total
         self.ncols = ncols

@@ -10,7 +10,7 @@ if __name__ == "__main__":
         try:
             module_name = f"test_module_{uuid.uuid4().hex[:20]}"
             SourceFileLoader(module_name, file).load_module()
-        except Exception:
+        except Exception:  # noqa: BLE001
             has_failure = True
             print(file)  # noqa: T201
             traceback.print_exc()

@@ -116,6 +116,9 @@ ignore = [
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
