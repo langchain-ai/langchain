@@ -803,7 +803,7 @@ def test_incremental_indexing_with_batch_size(
     record_manager: SQLRecordManager,
     vector_store: InMemoryVectorStore,
 ) -> None:
-    """Test indexing with incremental indexing"""
+    """Test indexing with incremental indexing."""
     loader = ToyLoader(
         documents=[
             Document(

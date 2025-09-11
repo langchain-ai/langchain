@@ -1,9 +1,12 @@
+"""Git utilities."""
+
 import hashlib
+import logging
 import re
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, TypedDict
+from typing import Any, Optional, TypedDict
 
 from git import Repo
 
@@ -13,13 +16,17 @@ from langchain_cli.constants import (
     DEFAULT_GIT_SUBDIRECTORY,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class DependencySource(TypedDict):
+    """Dependency source information."""
+
     git: str
     ref: Optional[str]
     subdirectory: Optional[str]
     api_path: Optional[str]
-    event_metadata: dict
+    event_metadata: dict[str, Any]
 
 
 # use poetry dependency string format
@@ -29,6 +36,20 @@ def parse_dependency_string(
     branch: Optional[str],
     api_path: Optional[str],
 ) -> DependencySource:
+    """Parse a dependency string into a DependencySource.
+
+    Args:
+        dep: the dependency string.
+        repo: optional repository.
+        branch: optional branch.
+        api_path: optional API path.
+
+    Returns:
+        The parsed dependency source information.
+
+    Raises:
+        ValueError: if the dependency string is invalid.
+    """
     if dep is not None and dep.startswith("git+"):
         if repo is not None or branch is not None:
             msg = (
@@ -121,6 +142,22 @@ def parse_dependencies(
     branch: list[str],
     api_path: list[str],
 ) -> list[DependencySource]:
+    """Parse dependencies.
+
+    Args:
+        dependencies: the dependencies to parse
+        repo: the repositories to use
+        branch: the branches to use
+        api_path: the api paths to use
+
+    Returns:
+        A list of DependencySource objects.
+
+    Raises:
+        ValueError: if the number of `dependencies`, `repos`, `branches`, or `api_paths`
+            do not match.
+
+    """
     num_deps = max(
         len(dependencies) if dependencies is not None else 0,
         len(repo),
@@ -129,8 +166,8 @@ def parse_dependencies(
     if (
         (dependencies and len(dependencies) != num_deps)
         or (api_path and len(api_path) != num_deps)
-        or (repo and len(repo) not in [1, num_deps])
-        or (branch and len(branch) not in [1, num_deps])
+        or (repo and len(repo) not in {1, num_deps})
+        or (branch and len(branch) not in {1, num_deps})
     ):
         msg = (
             "Number of defined repos/branches/api_paths did not match the "
@@ -142,15 +179,15 @@ def parse_dependencies(
     inner_repos = _list_arg_to_length(repo, num_deps)
     inner_branches = _list_arg_to_length(branch, num_deps)
 
-    return [
-        parse_dependency_string(iter_dep, iter_repo, iter_branch, iter_api_path)
-        for iter_dep, iter_repo, iter_branch, iter_api_path in zip(
+    return list(
+        map(
+            parse_dependency_string,
             inner_deps,
             inner_repos,
             inner_branches,
             inner_api_paths,
         )
-    ]
+    )
 
 
 def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
@@ -158,7 +195,7 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
     ref_str = ref if ref is not None else ""
     hashed = hashlib.sha256((f"{gitstring}:{ref_str}").encode()).hexdigest()[:8]
 
-    removed_protocol = gitstring.split("://")[-1]
+    removed_protocol = gitstring.split("://", maxsplit=1)[-1]
     removed_basename = re.split(r"[/:]", removed_protocol, maxsplit=1)[-1]
     removed_extras = removed_basename.split("#")[0]
     foldername = re.sub(r"\W", "_", removed_extras)
@@ -168,22 +205,33 @@ def _get_repo_path(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
 
 
 def update_repo(gitstring: str, ref: Optional[str], repo_dir: Path) -> Path:
+    """Update a git repository to the specified ref.
+
+    Tries to pull if the repo already exists, otherwise clones it.
+
+    Args:
+        gitstring: The git repository URL.
+        ref: The git reference.
+        repo_dir: The directory to clone the repository into.
+
+    Returns:
+        The path to the cloned repository.
+    """
     # see if path already saved
     repo_path = _get_repo_path(gitstring, ref, repo_dir)
     if repo_path.exists():
         # try pulling
         try:
             repo = Repo(repo_path)
-            if repo.active_branch.name != ref:
-                raise ValueError
-            repo.remotes.origin.pull()
+            if repo.active_branch.name == ref:
+                repo.remotes.origin.pull()
+                return repo_path
         except Exception:
-            # if it fails, delete and clone again
-            shutil.rmtree(repo_path)
-            Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
-    else:
-        Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
+            logger.exception("Failed to pull existing repo")
+        # if it fails, delete and clone again
+        shutil.rmtree(repo_path)
 
+    Repo.clone_from(gitstring, repo_path, branch=ref, depth=1)
     return repo_path
 
 
@@ -196,7 +244,7 @@ def copy_repo(
     Raises FileNotFound error if it can't find source
     """
 
-    def ignore_func(_, files):
+    def ignore_func(_: str, files: list[str]) -> list[str]:
         return [f for f in files if f == ".git"]
 
     shutil.copytree(source, destination, ignore=ignore_func)

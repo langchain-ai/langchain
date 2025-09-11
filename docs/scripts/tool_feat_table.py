@@ -167,6 +167,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
         "interactions": False,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
+    "Anchor Browser": {
+        "link": "/docs/integrations/tools/anchor_browser",
+        "interactions": True,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
 }
 
 DATABASE_TOOL_FEAT_TABLE = {
@@ -181,6 +186,10 @@ DATABASE_TOOL_FEAT_TABLE = {
     "Cassandra Database Toolkit": {
         "link": "/docs/integrations/tools/cassandra_database",
         "operations": "SELECT and schema introspection",
+    },
+    "MCP Toolbox": {
+        "link": "/docs/integrations/tools/toolbox",
+        "operations": "Any SQL operation",
     },
 }
 

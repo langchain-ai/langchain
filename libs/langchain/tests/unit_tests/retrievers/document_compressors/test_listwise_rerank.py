@@ -8,6 +8,6 @@ def test__list_rerank_init() -> None:
     from langchain_openai import ChatOpenAI
 
     LLMListwiseRerank.from_llm(
-        llm=ChatOpenAI(api_key="foo"),  # type: ignore[arg-type]
+        llm=ChatOpenAI(api_key="foo"),
         top_n=10,
     )

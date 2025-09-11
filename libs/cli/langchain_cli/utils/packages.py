@@ -1,3 +1,5 @@
+"""Packages utilities."""
+
 from pathlib import Path
 from typing import Any, Optional, TypedDict
 
@@ -5,6 +7,19 @@ from tomlkit import load
 
 
 def get_package_root(cwd: Optional[Path] = None) -> Path:
+    """Get package root directory.
+
+    Args:
+        cwd: The current working directory to start the search from.
+            If None, uses the current working directory of the process.
+
+    Returns:
+        The path to the package root directory.
+
+    Raises:
+        FileNotFoundError: If no `pyproject.toml` file is found in the directory
+            hierarchy.
+    """
     # traverse path for routes to host (any directory holding a pyproject.toml file)
     package_root = Path.cwd() if cwd is None else cwd
     visited: set[Path] = set()
@@ -35,7 +50,18 @@ class LangServeExport(TypedDict):
 
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
-    with open(filepath) as f:
+    """Get LangServe export information from a `pyproject.toml` file.
+
+    Args:
+        filepath: Path to the `pyproject.toml` file.
+
+    Returns:
+        The LangServeExport information.
+
+    Raises:
+        KeyError: If the `pyproject.toml` file is missing required fields.
+    """
+    with filepath.open() as f:
         data: dict[str, Any] = load(f)
     try:
         module = data["tool"]["langserve"]["export_module"]
