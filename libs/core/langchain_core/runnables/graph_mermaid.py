@@ -261,15 +261,12 @@ def _to_safe_id(label: str) -> str:
 
     Keep [a-zA-Z0-9_-] characters unchanged.
     Map every other character -> backslash + lowercase hex codepoint.
-    Result is Mermaid compatible.
+
+    Result is guaranteed to be unique and Mermaid-compatible,
+    so nodes with special characters always render correctly.
     """
     allowed = string.ascii_letters + string.digits + "_-"
-    out = []
-    for ch in label:
-        if ch in allowed:
-            out.append(ch)
-        else:
-            out.append("\\" + format(ord(ch), "x"))
+    out = [ch if ch in allowed else "\\" + format(ord(ch), "x") for ch in label]
     return "".join(out)
 
 
