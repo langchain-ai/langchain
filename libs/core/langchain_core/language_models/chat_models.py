@@ -428,9 +428,35 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[list[str]] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AIMessage:
+        """Invoke the model.
+
+        Args:
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
+            output_version: Override the model's ``output_version`` for this invocation.
+                If None, uses the called model's configured ``output_version``.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The model's response message.
+
+        """
         config = ensure_config(config)
+
+        effective_output_version = (
+            output_version if output_version is not None else self.output_version
+        )
+        kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
+        kwargs["_output_version_explicit"] = (
+            output_version is not None or self.output_version is not None
+        )
+
         return cast(
             "AIMessage",
             cast(
@@ -455,9 +481,35 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[list[str]] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AIMessage:
+        """Asynchronously invoke the model.
+
+        Args:
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
+            output_version: Override the model's ``output_version`` for this invocation.
+                If None, uses the called model's configured ``output_version``.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            The model's response message.
+
+        """
         config = ensure_config(config)
+
+        effective_output_version = (
+            output_version if output_version is not None else self.output_version
+        )
+        kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
+        kwargs["_output_version_explicit"] = (
+            output_version is not None or self.output_version is not None
+        )
+
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -514,13 +566,44 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[list[str]] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> Iterator[AIMessageChunk]:
+        """Stream responses from the chat model.
+
+        Args:
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
+            output_version: Override the model's ``output_version`` for this invocation.
+                If None, uses the called model's configured ``output_version``.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Iterator of message chunks.
+
+        """
+        effective_output_version = (
+            output_version if output_version is not None else self.output_version
+        )
+        kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
+        kwargs["_output_version_explicit"] = (
+            output_version is not None or self.output_version is not None
+        )
+
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # model doesn't implement streaming, so use default implementation
             yield cast(
                 "AIMessageChunk",
-                self.invoke(input, config=config, stop=stop, **kwargs),
+                self.invoke(
+                    input,
+                    config=config,
+                    stop=stop,
+                    output_version=effective_output_version,
+                    **kwargs,
+                ),
             )
         else:
             config = ensure_config(config)
@@ -566,11 +649,27 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 input_messages = _normalize_messages(messages)
                 run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
                 yielded = False
-                for chunk in self._stream(input_messages, stop=stop, **kwargs):
+
+                filtered_kwargs = {
+                    k: v
+                    for k, v in kwargs.items()
+                    if k not in ("_output_version", "_output_version_explicit")
+                }
+                for chunk in self._stream(
+                    input_messages,
+                    stop=stop,
+                    output_version=kwargs["_output_version"],
+                    **filtered_kwargs,
+                ):
                     if chunk.message.id is None:
                         chunk.message.id = run_id
-                    chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                    if self.output_version == "v1":
+                    response_metadata = _gen_info_and_msg_metadata(chunk)
+                    output_version = kwargs["_output_version"]
+                    # Add output_version to response_metadata only if was explicitly set
+                    if kwargs.get("_output_version_explicit", False):
+                        response_metadata["output_version"] = output_version
+                    chunk.message.response_metadata = response_metadata
+                    if output_version == "v1":
                         # Overwrite .content with .content_blocks
                         chunk.message = _update_message_content_to_blocks(
                             chunk.message, "v1"
@@ -630,13 +729,44 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         config: Optional[RunnableConfig] = None,
         *,
         stop: Optional[list[str]] = None,
+        output_version: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator[AIMessageChunk]:
+        """Asynchronously stream responses from the model.
+
+        Args:
+            input: The model input. See ``LanguageModelInput`` for valid options.
+            config: The ``RunnableConfig`` to use for this model run.
+            stop: Stop word(s) to use during generation.
+            output_version: Override the model's ``output_version`` for this invocation.
+                If None, uses the called model's configured ``output_version``.
+            **kwargs: Additional keyword arguments.
+
+        Returns:
+            Async Iterator of message chunks.
+
+        """
+        effective_output_version = (
+            output_version if output_version is not None else self.output_version
+        )
+        kwargs["_output_version"] = effective_output_version or "v0"
+
+        # Whether the user explicitly set an output_version for either model or call
+        kwargs["_output_version_explicit"] = (
+            output_version is not None or self.output_version is not None
+        )
+
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
                 "AIMessageChunk",
-                await self.ainvoke(input, config=config, stop=stop, **kwargs),
+                await self.ainvoke(
+                    input,
+                    config=config,
+                    stop=stop,
+                    output_version=effective_output_version,
+                    **kwargs,
+                ),
             )
             return
 
@@ -684,15 +814,27 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             input_messages = _normalize_messages(messages)
             run_id = "-".join((LC_ID_PREFIX, str(run_manager.run_id)))
             yielded = False
+
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
             async for chunk in self._astream(
                 input_messages,
                 stop=stop,
-                **kwargs,
+                output_version=kwargs["_output_version"],
+                **filtered_kwargs,
             ):
                 if chunk.message.id is None:
                     chunk.message.id = run_id
-                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
+                response_metadata = _gen_info_and_msg_metadata(chunk)
+                output_version = kwargs["_output_version"]
+                # Add output_version to response_metadata only if was explicitly set
+                if kwargs.get("_output_version_explicit", False):
+                    response_metadata["output_version"] = output_version
+                chunk.message.response_metadata = response_metadata
+                if output_version == "v1":
                     # Overwrite .content with .content_blocks
                     chunk.message = _update_message_content_to_blocks(
                         chunk.message, "v1"
@@ -724,7 +866,10 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             generations_with_error_metadata = _generate_response_from_error(e)
             chat_generation_chunk = merge_chat_generation_chunks(chunks)
             if chat_generation_chunk:
-                generations = [[chat_generation_chunk], generations_with_error_metadata]
+                generations = [
+                    [chat_generation_chunk],
+                    generations_with_error_metadata,
+                ]
             else:
                 generations = [generations_with_error_metadata]
             await run_manager.on_llm_error(
@@ -1162,6 +1307,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.rate_limiter:
             self.rate_limiter.acquire(blocking=True)
 
+        output_version = kwargs.pop("_output_version", self.output_version)
+        output_version_explicit = kwargs.pop("_output_version_explicit", False)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _stream not implemented
         if self._should_stream(
@@ -1174,16 +1322,28 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
-            for chunk in self._stream(messages, stop=stop, **kwargs):
-                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
-                    # Overwrite .content with .content_blocks
-                    chunk.message = _update_message_content_to_blocks(
-                        chunk.message, "v1"
-                    )
+
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
+            for chunk in self._stream(
+                messages, stop=stop, output_version=output_version, **filtered_kwargs
+            ):
+                response_metadata = _gen_info_and_msg_metadata(chunk)
+                # Add output_version to response_metadata only if it was explicitly set
+                if output_version_explicit:
+                    response_metadata["output_version"] = output_version
+                chunk.message.response_metadata = response_metadata
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
+                    if output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1208,12 +1368,32 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                     run_manager.on_llm_new_token("", chunk=chunk)
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
-        elif inspect.signature(self._generate).parameters.get("run_manager"):
-            result = self._generate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
-            )
         else:
-            result = self._generate(messages, stop=stop, **kwargs)
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
+            if inspect.signature(self._generate).parameters.get("run_manager"):
+                result = self._generate(
+                    messages,
+                    stop=stop,
+                    run_manager=run_manager,
+                    **filtered_kwargs,
+                )
+            else:
+                result = self._generate(
+                    messages,
+                    stop=stop,
+                    **filtered_kwargs,
+                )
+
+        if output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
 
         if self.output_version == "v1":
             # Overwrite .content with .content_blocks
@@ -1226,9 +1406,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
-            generation.message.response_metadata = _gen_info_and_msg_metadata(
-                generation
-            )
+            response_metadata = _gen_info_and_msg_metadata(generation)
+            # Add output_version to response_metadata only if it was explicitly set
+            if output_version_explicit:
+                response_metadata["output_version"] = output_version
+            generation.message.response_metadata = response_metadata
         if len(result.generations) == 1 and result.llm_output is not None:
             result.generations[0].message.response_metadata = {
                 **result.llm_output,
@@ -1270,6 +1452,9 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         if self.rate_limiter:
             await self.rate_limiter.aacquire(blocking=True)
 
+        output_version = kwargs.pop("_output_version", self.output_version)
+        output_version_explicit = kwargs.pop("_output_version_explicit", False)
+
         # If stream is not explicitly set, check if implicitly requested by
         # astream_events() or astream_log(). Bail out if _astream not implemented
         if self._should_stream(
@@ -1282,16 +1467,28 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 f"{LC_ID_PREFIX}-{run_manager.run_id}" if run_manager else None
             )
             yielded = False
-            async for chunk in self._astream(messages, stop=stop, **kwargs):
-                chunk.message.response_metadata = _gen_info_and_msg_metadata(chunk)
-                if self.output_version == "v1":
-                    # Overwrite .content with .content_blocks
-                    chunk.message = _update_message_content_to_blocks(
-                        chunk.message, "v1"
-                    )
+
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
+            async for chunk in self._astream(
+                messages, stop=stop, output_version=output_version, **filtered_kwargs
+            ):
+                response_metadata = _gen_info_and_msg_metadata(chunk)
+                # Add output_version to response_metadata only if it was explicitly set
+                if output_version_explicit:
+                    response_metadata["output_version"] = output_version
+                chunk.message.response_metadata = response_metadata
                 if run_manager:
                     if chunk.message.id is None:
                         chunk.message.id = run_id
+                    if output_version == "v1":
+                        # Overwrite .content with .content_blocks
+                        chunk.message = _update_message_content_to_blocks(
+                            chunk.message, "v1"
+                        )
                     await run_manager.on_llm_new_token(
                         cast("str", chunk.message.content), chunk=chunk
                     )
@@ -1317,11 +1514,32 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 chunks.append(chunk)
             result = generate_from_stream(iter(chunks))
         elif inspect.signature(self._agenerate).parameters.get("run_manager"):
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
             result = await self._agenerate(
-                messages, stop=stop, run_manager=run_manager, **kwargs
+                messages,
+                stop=stop,
+                run_manager=run_manager,
+                **filtered_kwargs,
             )
         else:
-            result = await self._agenerate(messages, stop=stop, **kwargs)
+            # Filter out internal parameters before passing to implementation
+            filtered_kwargs = {
+                k: v
+                for k, v in kwargs.items()
+                if k not in ("_output_version", "_output_version_explicit")
+            }
+            result = await self._agenerate(messages, stop=stop, **filtered_kwargs)
+
+        if output_version == "v1":
+            # Overwrite .content with .content_blocks
+            for generation in result.generations:
+                generation.message = _update_message_content_to_blocks(
+                    generation.message, "v1"
+                )
 
         if self.output_version == "v1":
             # Overwrite .content with .content_blocks
@@ -1334,9 +1552,11 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         for idx, generation in enumerate(result.generations):
             if run_manager and generation.message.id is None:
                 generation.message.id = f"{LC_ID_PREFIX}-{run_manager.run_id}-{idx}"
-            generation.message.response_metadata = _gen_info_and_msg_metadata(
-                generation
-            )
+            response_metadata = _gen_info_and_msg_metadata(generation)
+            # Add output_version to response_metadata only if it was explicitly set
+            if output_version_explicit:
+                response_metadata["output_version"] = output_version
+            generation.message.response_metadata = response_metadata
         if len(result.generations) == 1 and result.llm_output is not None:
             result.generations[0].message.response_metadata = {
                 **result.llm_output,
@@ -1352,6 +1572,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         """Generate the result.
@@ -1365,12 +1587,15 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         Returns:
             The chat result.
         """
+        # Concrete implementations should override this method and use the same params
 
     async def _agenerate(
         self,
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         """Generate the result.
@@ -1390,6 +1615,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             messages,
             stop,
             run_manager.get_sync() if run_manager else None,
+            output_version=output_version,
             **kwargs,
         )
 
@@ -1398,6 +1624,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the output of the model.
@@ -1418,6 +1646,8 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Stream the output of the model.
@@ -1437,6 +1667,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             messages,
             stop,
             run_manager.get_sync() if run_manager else None,
+            output_version=output_version,
             **kwargs,
         )
         done = object()
@@ -1806,6 +2037,9 @@ class SimpleChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        # For backward compatibility
+        output_version: str = "v0",  # noqa: ARG002
         **kwargs: Any,
     ) -> ChatResult:
         output_str = self._call(messages, stop=stop, run_manager=run_manager, **kwargs)
@@ -1828,6 +2062,8 @@ class SimpleChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         return await run_in_executor(
@@ -1836,6 +2072,7 @@ class SimpleChatModel(BaseChatModel):
             messages,
             stop=stop,
             run_manager=run_manager.get_sync() if run_manager else None,
+            output_version=output_version,
             **kwargs,
         )
 
