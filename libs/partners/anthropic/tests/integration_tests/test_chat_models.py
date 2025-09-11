@@ -998,22 +998,23 @@ def test_web_fetch() -> None:
     citation_response = llm_with_citations.invoke([citation_message])
 
     citation_results = [
-        block
-        for block in citation_response.content
-        if isinstance(block, dict) and block.get("type") == "web_fetch_tool_result"
+        block for block in citation_response.content if isinstance(block, dict)
     ]
     assert len(citation_results) == 1  # Since max_uses=1
     citation_result = citation_results[0]
     assert citation_result["content"]["content"]["citations"]["enabled"]
+    text_blocks = [
+        block
+        for block in citation_response.content
+        if isinstance(block, dict) and block.get("type") == "text"
+    ]
 
     # Check that the response contains actual citations in the content
-    # Note: Web fetch currently uses inline <cite index="..."> tags in text content
-    # This differs from document citations which use separate citations fields...
     has_citations = False
-    for block in citation_response.content:
-        if isinstance(block, dict) and block.get("type") == "text":
-            text_content = block.get("text", "")
-            if "<cite index=" in text_content and "</cite>" in text_content:
+    for block in text_blocks:
+        citations = block.get("citations", [])
+        for citation in citations:
+            if citation.get("type") and citation.get("start_char_index"):
                 has_citations = True
                 break
     assert has_citations, (
