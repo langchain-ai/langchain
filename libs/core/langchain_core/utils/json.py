@@ -193,7 +193,6 @@ def parse_and_check_json_markdown(text: str, expected_keys: list[str]) -> dict:
     if not isinstance(json_obj, dict):
         error_message = (
             f"Expected JSON object (dict), but got: {type(json_obj).__name__}. "
-            f"Raw content: {json_obj}"
         )
         raise OutputParserException(error_message, llm_output=text)
 
