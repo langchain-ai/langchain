@@ -6,15 +6,7 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Literal,
-    Optional,
-    TypedDict,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Literal, Optional, TypedDict, Union, cast
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -46,10 +38,7 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.output_parsers import (
-    JsonOutputParser,
-    PydanticOutputParser,
-)
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
@@ -60,23 +49,14 @@ from langchain_core.output_parsers.openai_tools import (
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
 from langchain_core.tools import BaseTool
-from langchain_core.utils import (
-    from_env,
-    get_pydantic_field_names,
-    secret_from_env,
-)
+from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
     convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SecretStr,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
 from langchain_groq.version import __version__
@@ -122,7 +102,7 @@ class ChatGroq(BaseChatModel):
 
             See the `Groq documentation
             <https://console.groq.com/docs/reasoning#reasoning>`__ for more
-            details and a list of supported reasoning models.
+            details and a list of supported models.
         model_kwargs: Dict[str, Any]
             Holds any model parameters valid for create call not
             explicitly specified.
@@ -328,20 +308,15 @@ class ChatGroq(BaseChatModel):
       overridden in ``reasoning_effort``.
 
     See the `Groq documentation <https://console.groq.com/docs/reasoning#reasoning>`__
-    for more details and a list of supported reasoning models.
+    for more details and a list of supported models.
     """
-    reasoning_effort: Optional[Literal["none", "default"]] = Field(default=None)
+    reasoning_effort: Optional[str] = Field(default=None)
     """The level of effort the model will put into reasoning. Groq will default to
-    enabling reasoning if left undefined. If set to ``none``, ``reasoning_format`` will
-    not apply and ``reasoning_content`` will not be returned.
-
-    - ``'none'``: Disable reasoning. The model will not use any reasoning tokens when
-      generating a response.
-    - ``'default'``: Enable reasoning.
+    enabling reasoning if left undefined.
 
     See the `Groq documentation
     <https://console.groq.com/docs/reasoning#options-for-reasoning-effort>`__ for more
-    details and a list of models that support setting a reasoning effort.
+    details and a list of options and models that support setting a reasoning effort.
     """
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
@@ -529,8 +504,13 @@ class ChatGroq(BaseChatModel):
             async_api=async_api, run_manager=run_manager, **kwargs
         )
         if base_should_stream and ("response_format" in kwargs):
-            # Streaming not supported in JSON mode.
-            return kwargs["response_format"] != {"type": "json_object"}
+            # Streaming not supported in JSON mode or structured outputs.
+            response_format = kwargs["response_format"]
+            if isinstance(response_format, dict) and response_format.get("type") in {
+                "json_schema",
+                "json_object",
+            }:
+                return False
         return base_should_stream
 
     def _generate(
@@ -603,6 +583,11 @@ class ChatGroq(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
+                reasoning_effort = (
+                    params.get("reasoning_effort") or self.reasoning_effort
+                )
+                if reasoning_effort:
+                    generation_info["reasoning_effort"] = reasoning_effort
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -683,6 +668,11 @@ class ChatGroq(BaseChatModel):
                     generation_info["system_fingerprint"] = system_fingerprint
                 service_tier = params.get("service_tier") or self.service_tier
                 generation_info["service_tier"] = service_tier
+                reasoning_effort = (
+                    params.get("reasoning_effort") or self.reasoning_effort
+                )
+                if reasoning_effort:
+                    generation_info["reasoning_effort"] = reasoning_effort
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -788,6 +778,9 @@ class ChatGroq(BaseChatModel):
             "system_fingerprint": response.get("system_fingerprint", ""),
         }
         llm_output["service_tier"] = params.get("service_tier") or self.service_tier
+        reasoning_effort = params.get("reasoning_effort") or self.reasoning_effort
+        if reasoning_effort:
+            llm_output["reasoning_effort"] = reasoning_effort
         return ChatResult(generations=generations, llm_output=llm_output)
 
     def _create_message_dicts(
@@ -937,7 +930,9 @@ class ChatGroq(BaseChatModel):
         self,
         schema: Optional[Union[dict, type[BaseModel]]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, dict | BaseModel]:
@@ -962,12 +957,34 @@ class ChatGroq(BaseChatModel):
 
                     Added support for TypedDict class.
 
+                .. versionchanged:: 0.3.8
+
+                    Added support for Groq's dedicated structured output feature via
+                    ``method="json_schema"``.
+
+            method: The method for steering model generation, one of:
+
+                - ``'function_calling'``:
+                    Uses Groq's tool-calling `API <https://console.groq.com/docs/tool-use>`__
+                - ``'json_schema'``:
+                    Uses Groq's `Structured Output API <https://console.groq.com/docs/structured-outputs>`__.
+                    Supported for a subset of models, including ``openai/gpt-oss``,
+                    ``moonshotai/kimi-k2-instruct``, and some ``meta-llama/llama-4``
+                    models. See `docs <https://console.groq.com/docs/structured-outputs>`__
+                    for details.
+                - ``'json_mode'``:
+                    Uses Groq's `JSON mode <https://console.groq.com/docs/structured-outputs#json-object-mode>`__.
+                    Note that if using JSON mode then you must include instructions for
+                    formatting the output into the desired schema into the model call
+
+                Learn more about the differences between the methods and which models
+                support which methods `here <https://console.groq.com/docs/structured-outputs>`__.
+
             method:
                 The method for steering model generation, either ``'function_calling'``
                 or ``'json_mode'``. If ``'function_calling'`` then the schema will be converted
                 to an OpenAI function and the returned model will make use of the
-                function-calling API. If ``'json_mode'`` then OpenAI's JSON mode will be
-                used.
+                function-calling API. If ``'json_mode'`` then JSON mode will be used.
 
                 .. note::
                     If using ``'json_mode'`` then you must include instructions for formatting
@@ -1025,7 +1042,7 @@ class ChatGroq(BaseChatModel):
                     )
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1051,7 +1068,7 @@ class ChatGroq(BaseChatModel):
                     justification: str
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -1084,7 +1101,7 @@ class ChatGroq(BaseChatModel):
                     ]
 
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -1113,7 +1130,7 @@ class ChatGroq(BaseChatModel):
                    }
                }
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(
@@ -1123,6 +1140,41 @@ class ChatGroq(BaseChatModel):
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
+
+        Example: schema=Pydantic class, method="json_schema", include_raw=False:
+            .. code-block:: python
+
+                from typing import Optional
+
+                from langchain_groq import ChatGroq
+                from pydantic import BaseModel, Field
+
+
+                class AnswerWithJustification(BaseModel):
+                    '''An answer to the user question along with justification for the answer.'''
+
+                    answer: str
+                    # If we provide default values and/or descriptions for fields, these will be passed
+                    # to the model. This is an important part of improving a model's ability to
+                    # correctly return structured outputs.
+                    justification: Optional[str] = Field(
+                        default=None, description="A justification for the answer."
+                    )
+
+
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
+                structured_llm = llm.with_structured_output(
+                    AnswerWithJustification, method="json_schema"
+                )
+
+                structured_llm.invoke(
+                    "What weighs more a pound of bricks or a pound of feathers"
+                )
+
+                # -> AnswerWithJustification(
+                #     answer='They weigh the same',
+                #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
+                # )
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
             .. code-block::
@@ -1134,7 +1186,7 @@ class ChatGroq(BaseChatModel):
                     answer: str
                     justification: str
 
-                llm = ChatGroq(model="llama-3.1-405b-reasoning", temperature=0)
+                llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification,
                     method="json_mode",
@@ -1152,35 +1204,12 @@ class ChatGroq(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        Example: schema=None, method="json_mode", include_raw=True:
-            .. code-block::
-
-                structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
-
-                structured_llm.invoke(
-                    "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
-                    "What's heavier a pound of bricks or a pound of feathers?"
-                )
-                # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
-                #     'parsed': {
-                #         'answer': 'They are both the same weight.',
-                #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
-                #     },
-                #     'parsing_error': None
-                # }
-
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
-        if method == "json_schema":
-            # Some applications require that incompatible parameters (e.g., unsupported
-            # methods) be handled.
-            method = "function_calling"
         if method == "function_calling":
             if schema is None:
                 msg = (
@@ -1207,6 +1236,35 @@ class ChatGroq(BaseChatModel):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
                 )
+        elif method == "json_schema":
+            # Use structured outputs (json_schema) for models that support it
+            # Convert schema to JSON Schema format for structured outputs
+            if schema is None:
+                msg = (
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+                raise ValueError(msg)
+            json_schema = convert_to_json_schema(schema)
+            schema_name = json_schema.get("title", "")
+            response_format = {
+                "type": "json_schema",
+                "json_schema": {"name": schema_name, "schema": json_schema},
+            }
+            ls_format_info = {
+                "kwargs": {"method": "json_schema"},
+                "schema": json_schema,
+            }
+            llm = self.bind(
+                response_format=response_format,
+                ls_structured_output_format=ls_format_info,
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
+
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},

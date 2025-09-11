@@ -170,7 +170,7 @@ class ZeroShotAgent(Agent):
             raise ValueError(msg)
         for tool in tools:
             if tool.description is None:
-                msg = (
+                msg = (  # type: ignore[unreachable]
                     f"Got a tool {tool.name} without a description. For this agent, "
                     f"a description must always be provided."
                 )
