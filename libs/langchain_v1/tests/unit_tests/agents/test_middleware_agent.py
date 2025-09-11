@@ -714,7 +714,6 @@ def test_summarization_middleware_full_workflow() -> None:
 
 
 def test_modify_model_request() -> None:
-
     class ModifyMiddleware(AgentMiddleware):
         def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
             request.messages.append(HumanMessage("remember to be nice!"))
