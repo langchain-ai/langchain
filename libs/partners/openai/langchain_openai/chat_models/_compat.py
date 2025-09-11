@@ -1,10 +1,10 @@
 """
 This module converts between AIMessage output formats, which are governed by the
-``output_version`` attribute on ChatOpenAI. Supported values are ``"v0"`` and
-``"responses/v1"``.
+``output_version`` attribute on ChatOpenAI. Supported values are ``None``, ``'v0'``, and
+``'responses/v1'``.
 
-``"v0"`` corresponds to the format as of ChatOpenAI v0.3. For the Responses API, it
-stores reasoning and tool outputs in AIMessage.additional_kwargs:
+``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
+stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
 
 .. code-block:: python
 
@@ -31,7 +31,7 @@ stores reasoning and tool outputs in AIMessage.additional_kwargs:
         id="msg_123",
     )
 
-``"responses/v1"`` is only applicable to the Responses API. It retains information
+``'responses/v1'`` is only applicable to the Responses API. It retains information
 about response item sequencing and accommodates multiple reasoning items by
 representing these items in the content sequence:
 
@@ -78,7 +78,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 def _convert_to_v03_ai_message(
     message: AIMessage, has_reasoning: bool = False
 ) -> AIMessage:
-    """Mutate an AIMessage to the old-style v0.3 format."""
+    """Mutate an `AIMessage` to the old-style v0.3 format."""
     if isinstance(message.content, list):
         new_content: list[Union[dict, str]] = []
         for block in message.content:
@@ -171,6 +171,7 @@ def _convert_from_v1_to_chat_completions(message: AIMessage) -> AIMessage:
 
 # v1 / Responses
 def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
+    """Convert a v1 `Annotation` to the v0.3 format (for Responses API)."""
     if annotation["type"] == "citation":
         new_ann: dict[str, Any] = {}
         for field in ("end_index", "start_index"):
@@ -258,8 +259,7 @@ def _consolidate_calls(
     call_name: Literal["web_search_call", "code_interpreter_call"],
     result_name: Literal["web_search_result", "code_interpreter_result"],
 ) -> Iterator[dict[str, Any]]:
-    """
-    Generator that walks through *items* and, whenever it meets the pair
+    """Generator that walks through *items* and, whenever it meets the pair
 
         {"type": "web_search_call",    "id": X, ...}
         {"type": "web_search_result",  "id": X}
@@ -267,8 +267,8 @@ def _consolidate_calls(
     merges them into
 
         {"id": X,
-         "action": …,
-         "status": …,
+         "action": ...,
+         "status": ...,
          "type": "web_search_call"}
 
     keeping every other element untouched.

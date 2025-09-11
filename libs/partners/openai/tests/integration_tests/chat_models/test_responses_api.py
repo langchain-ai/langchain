@@ -114,7 +114,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
 
 @pytest.mark.flaky(retries=3, delay=1)
 async def test_web_search_async() -> None:
-    llm = ChatOpenAI(model=MODEL_NAME)
+    llm = ChatOpenAI(model=MODEL_NAME, output_version="v0")
     response = await llm.ainvoke(
         "What was a positive news story from today?",
         tools=[{"type": "web_search_preview"}],
@@ -357,7 +357,9 @@ def test_route_from_model_kwargs() -> None:
 
 @pytest.mark.flaky(retries=3, delay=1)
 def test_computer_calls() -> None:
-    llm = ChatOpenAI(model="computer-use-preview", truncation="auto")
+    llm = ChatOpenAI(
+        model="computer-use-preview", truncation="auto", output_version="v0"
+    )
     tool = {
         "type": "computer_use_preview",
         "display_width": 1024,
@@ -557,7 +559,7 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
 
 @pytest.mark.vcr
 def test_mcp_builtin() -> None:
-    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True, output_version="v0")
 
     llm_with_tools = llm.bind_tools(
         [
@@ -599,7 +601,7 @@ def test_mcp_builtin() -> None:
 def test_mcp_builtin_zdr() -> None:
     llm = ChatOpenAI(
         model="o4-mini",
-        output_version="responses/v1",
+        use_responses_api=True,
         store=False,
         include=["reasoning.encrypted_content"],
     )

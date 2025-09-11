@@ -60,7 +60,6 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
     ToolMessageChunk,
-    convert_to_openai_data_block,
     is_data_content_block,
 )
 from langchain_core.messages import content as types
@@ -71,6 +70,7 @@ from langchain_core.messages.ai import (
 )
 from langchain_core.messages.block_translators.openai import (
     _convert_from_v03_ai_message,
+    convert_to_openai_data_block,
 )
 from langchain_core.messages.tool import tool_call_chunk
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
@@ -127,6 +127,7 @@ global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 WellKnownTools = (
     "file_search",
     "web_search_preview",
+    "web_search",
     "computer_use_preview",
     "code_interpreter",
     "mcp",
@@ -259,14 +260,7 @@ def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any
 def _convert_message_to_dict(
     message: BaseMessage, responses_ai_msg: bool = False
 ) -> dict:
-    """Convert a LangChain message to a dictionary.
-
-    Args:
-        message: The LangChain message.
-
-    Returns:
-        The dictionary.
-    """
+    """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
         "content": _format_message_content(
             message.content, responses_ai_msg=responses_ai_msg
@@ -686,11 +680,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     .. code-block:: python
 
-        llm = ChatOpenAI(
-            model="o4-mini",
-            use_responses_api=True,
-            output_version="responses/v1",
-        )
+        llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
     .. versionadded:: 0.3.26
@@ -721,6 +711,10 @@ class BaseChatOpenAI(BaseChatModel):
     - ``"v1"``: v1 of LangChain cross-provider standard.
 
     .. versionadded:: 0.3.25
+
+    .. versionchanged:: 1.0.0
+
+        Default updated to ``"responses/v1"``.
 
     """
 
@@ -2417,7 +2411,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", output_version="responses/v1")
 
-            tool = {"type": "web_search_preview"}
+            tool = {"type": "web_search"}
             llm_with_tools = llm.bind_tools([tool])
 
             response = llm_with_tools.invoke(
@@ -3580,8 +3574,7 @@ def _get_last_messages(
             response_id = msg.response_metadata.get("id")
             if response_id and response_id.startswith("resp_"):
                 return messages[i + 1 :], response_id
-            else:
-                return messages, None
+            # Continue searching for an AIMessage with a valid response_id
 
     return messages, None
 
@@ -3597,7 +3590,7 @@ def _construct_responses_api_payload(
         payload["reasoning"] = {"effort": payload.pop("reasoning_effort")}
 
     # Remove temperature parameter for models that don't support it in responses API
-    model = payload.get("model", "")
+    model = payload.get("model") or ""
     if model.startswith("gpt-5") and "chat" not in model:  # gpt-5-chat supports
         payload.pop("temperature", None)
 
@@ -3643,13 +3636,6 @@ def _construct_responses_api_payload(
 
     # Structured output
     if schema := payload.pop("response_format", None):
-        if payload.get("text"):
-            text = payload["text"]
-            raise ValueError(
-                "Can specify at most one of 'response_format' or 'text', received both:"
-                f"\n{schema=}\n{text=}"
-            )
-
         # For pydantic + non-streaming case, we use responses.parse.
         # Otherwise, we use responses.create.
         strict = payload.pop("strict", None)
@@ -3662,7 +3648,10 @@ def _construct_responses_api_payload(
             else:
                 schema_dict = schema
             if schema_dict == {"type": "json_object"}:  # JSON mode
-                payload["text"] = {"format": {"type": "json_object"}}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = {"type": "json_object"}
+                else:
+                    payload["text"] = {"format": {"type": "json_object"}}
             elif (
                 (
                     response_format := _convert_to_openai_response_format(
@@ -3672,17 +3661,20 @@ def _construct_responses_api_payload(
                 and (isinstance(response_format, dict))
                 and (response_format["type"] == "json_schema")
             ):
-                payload["text"] = {
-                    "format": {"type": "json_schema", **response_format["json_schema"]}
-                }
+                format_value = {"type": "json_schema", **response_format["json_schema"]}
+                if "text" in payload and isinstance(payload["text"], dict):
+                    payload["text"]["format"] = format_value
+                else:
+                    payload["text"] = {"format": format_value}
             else:
                 pass
 
     verbosity = payload.pop("verbosity", None)
     if verbosity is not None:
-        if "text" not in payload:
-            payload["text"] = {"format": {"type": "text"}}
-        payload["text"]["verbosity"] = verbosity
+        if "text" in payload and isinstance(payload["text"], dict):
+            payload["text"]["verbosity"] = verbosity
+        else:
+            payload["text"] = {"verbosity": verbosity}
 
     return payload
 
@@ -3973,7 +3965,7 @@ def _construct_lc_result_from_responses_api(
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
         # Responses API.
-        output_version = "v0"
+        output_version = "responses/v1"
 
     response_metadata = {
         k: v
@@ -4188,7 +4180,7 @@ def _convert_responses_chunk_to_generation_chunk(
         # Sentinel value of None lets us know if output_version is set explicitly.
         # Explicitly setting `output_version="responses/v1"` separately enables the
         # Responses API.
-        output_version = "v0"
+        output_version = "responses/v1"
 
     content = []
     tool_call_chunks: list = []

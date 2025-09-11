@@ -83,7 +83,7 @@ The module defines several types of content blocks, including:
 
 - ``TextContentBlock``: Standard text output.
 - ``Citation``: For annotations that link text output to a source document.
-- ``ToolCallContentBlock``: For function calling.
+- ``ToolCall``: For function calling.
 - ``ReasoningContentBlock``: To capture a model's thought process.
 - Multimodal data:
     - ``ImageContentBlock``
@@ -99,8 +99,8 @@ The module defines several types of content blocks, including:
     # Direct construction:
     from langchain_core.messages.content import TextContentBlock, ImageContentBlock
 
-    multimodal_message: AIMessage(content_blocks=
-        [
+    multimodal_message: AIMessage(
+        content_blocks=[
             TextContentBlock(type="text", text="What is shown in this image?"),
             ImageContentBlock(
                 type="image",
@@ -113,8 +113,8 @@ The module defines several types of content blocks, including:
     # Using factories:
     from langchain_core.messages.content import create_text_block, create_image_block
 
-    multimodal_message: AIMessage(content=
-        [
+    multimodal_message: AIMessage(
+        content=[
             create_text_block("What is shown in this image?"),
             create_image_block(
                 url="https://www.langchain.com/images/brand/langchain_logo_text_w_white.png",
@@ -129,10 +129,9 @@ Factory functions offer benefits such as:
 
 """
 
-import warnings
 from typing import Any, Literal, Optional, Union, get_args, get_type_hints
 
-from typing_extensions import NotRequired, TypedDict, TypeGuard
+from typing_extensions import NotRequired, TypedDict
 
 from langchain_core.utils.utils import ensure_id
 
@@ -262,11 +261,7 @@ class ToolCall(TypedDict):
 
         .. code-block:: python
 
-            {
-                "name": "foo",
-                "args": {"a": 1},
-                "id": "123"
-            }
+            {"name": "foo", "args": {"a": 1}, "id": "123"}
 
         This represents a request to call the tool named "foo" with arguments {"a": 1}
         and an identifier of "123".
@@ -317,12 +312,12 @@ class ToolCallChunk(TypedDict):
     .. code-block:: python
 
         left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-        right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+        right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
 
         (
             AIMessageChunk(content="", tool_call_chunks=left_chunks)
             + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-        ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+        ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
 
     """
 
@@ -834,7 +829,7 @@ class NonStandardContentBlock(TypedDict):
     The purpose of this block should be to simply hold a provider-specific payload.
     If a provider's non-standard output includes reasoning and tool calls, it should be
     the adapter's job to parse that payload and emit the corresponding standard
-    ``ReasoningContentBlock`` and ``ToolCallContentBlocks``.
+    ``ReasoningContentBlock`` and ``ToolCalls``.
 
     Has no ``extras`` field, as provider-specific data should be included in the
     ``value`` field.
@@ -964,113 +959,6 @@ def is_data_content_block(block: dict) -> bool:
             return True
 
     return False
-
-
-def is_tool_call_block(block: ContentBlock) -> TypeGuard[ToolCall]:
-    """Type guard to check if a content block is a ``ToolCall``."""
-    return block.get("type") == "tool_call"
-
-
-def is_tool_call_chunk(block: ContentBlock) -> TypeGuard[ToolCallChunk]:
-    """Type guard to check if a content block is a ``ToolCallChunk``."""
-    return block.get("type") == "tool_call_chunk"
-
-
-def is_text_block(block: ContentBlock) -> TypeGuard[TextContentBlock]:
-    """Type guard to check if a content block is a ``TextContentBlock``."""
-    return block.get("type") == "text"
-
-
-def is_reasoning_block(block: ContentBlock) -> TypeGuard[ReasoningContentBlock]:
-    """Type guard to check if a content block is a ``ReasoningContentBlock``."""
-    return block.get("type") == "reasoning"
-
-
-def is_invalid_tool_call_block(
-    block: ContentBlock,
-) -> TypeGuard[InvalidToolCall]:
-    """Type guard to check if a content block is an ``InvalidToolCall``."""
-    return block.get("type") == "invalid_tool_call"
-
-
-def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
-    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
-    if "url" in block:
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": block["url"],
-            },
-        }
-    if "base64" in block or block.get("source_type") == "base64":
-        if "mime_type" not in block:
-            error_message = "mime_type key is required for base64 data."
-            raise ValueError(error_message)
-        mime_type = block["mime_type"]
-        base64_data = block["data"] if "data" in block else block["base64"]
-        return {
-            "type": "image_url",
-            "image_url": {
-                "url": f"data:{mime_type};base64,{base64_data}",
-            },
-        }
-    error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
-    raise ValueError(error_message)
-
-
-def convert_to_openai_data_block(block: dict) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
-    if block["type"] == "image":
-        formatted_block = convert_to_openai_image_block(block)
-
-    elif block["type"] == "file":
-        if "base64" in block or block.get("source_type") == "base64":
-            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format: {"base64": "...", ...}
-            base64_data = block["data"] if "source_type" in block else block["base64"]
-            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
-            if filename := block.get("filename"):
-                file["filename"] = filename
-            elif (extras := block.get("extras")) and ("filename" in extras):
-                file["filename"] = extras["filename"]
-            elif (extras := block.get("metadata")) and ("filename" in extras):
-                # Backward compat
-                file["filename"] = extras["filename"]
-            else:
-                warnings.warn(
-                    "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the content block: {'type': 'file', 'mime_type': "
-                    "'application/pdf', 'base64': '...', 'filename': 'my-pdf'}",
-                    stacklevel=1,
-                )
-            formatted_block = {"type": "file", "file": file}
-        elif "file_id" in block or block.get("source_type") == "id":
-            # Handle v0 format: {"source_type": "id", "id": "...", ...}
-            # Handle v1 format: {"file_id": "...", ...}
-            file_id = block["id"] if "source_type" in block else block["file_id"]
-            formatted_block = {"type": "file", "file": {"file_id": file_id}}
-        else:
-            error_msg = "Keys base64 or file_id required for file blocks."
-            raise ValueError(error_msg)
-
-    elif block["type"] == "audio":
-        if "base64" in block or block.get("source_type") == "base64":
-            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format: {"base64": "...", ...}
-            base64_data = block["data"] if "source_type" in block else block["base64"]
-            audio_format = block["mime_type"].split("/")[-1]
-            formatted_block = {
-                "type": "input_audio",
-                "input_audio": {"data": base64_data, "format": audio_format},
-            }
-        else:
-            error_msg = "Key base64 is required for audio blocks."
-            raise ValueError(error_msg)
-    else:
-        error_msg = f"Block of type {block['type']} is not supported."
-        raise ValueError(error_msg)
-
-    return formatted_block
 
 
 def create_text_block(

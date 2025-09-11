@@ -27,6 +27,7 @@ from langchain_core.messages.block_translators.openai import (
 )
 from langchain_core.outputs import ChatGeneration, ChatResult
 from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables.base import RunnableBinding, RunnableSequence
 from langchain_core.tracers.base import BaseTracer
 from langchain_core.tracers.schemas import Run
 from openai.types.responses import ResponseOutputMessage, ResponseReasoningItem
@@ -1181,9 +1182,6 @@ def test_minimal_reasoning_effort_payload(
         **kwargs,
     }
 
-    if use_responses_api:
-        init_kwargs["output_version"] = "responses/v1"
-
     llm = ChatOpenAI(**init_kwargs)
 
     messages = [
@@ -1209,20 +1207,19 @@ def test_minimal_reasoning_effort_payload(
             assert payload["max_completion_tokens"] == 100
 
 
+def test_output_version_compat() -> None:
+    llm = ChatOpenAI(model="gpt-5", output_version="responses/v1")
+    assert llm._use_responses_api({}) is True
+
+
 def test_verbosity_parameter_payload() -> None:
     """Test verbosity parameter is included in request payload for Responses API."""
-    llm = ChatOpenAI(
-        model="gpt-5",
-        verbosity="high",
-        use_responses_api=True,
-        output_version="responses/v1",
-    )
+    llm = ChatOpenAI(model="gpt-5", verbosity="high", use_responses_api=True)
 
     messages = [{"role": "user", "content": "hello"}]
     payload = llm._get_request_payload(messages, stop=None)
 
     assert payload["text"]["verbosity"] == "high"
-    assert payload["text"]["format"]["type"] == "text"
 
 
 def test_structured_output_old_model() -> None:
@@ -1309,7 +1306,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert isinstance(result, ChatResult)
     assert len(result.generations) == 1
@@ -1327,9 +1324,7 @@ def test__construct_lc_result_from_responses_api_basic_text_response() -> None:
     assert result.generations[0].message.response_metadata["model_name"] == "gpt-4o"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {"type": "text", "text": "Hello, world!", "annotations": [], "id": "msg_123"}
     ]
@@ -1365,7 +1360,7 @@ def test__construct_lc_result_from_responses_api_multiple_text_blocks() -> None:
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert len(result.generations[0].message.content) == 2
     assert result.generations[0].message.content == [
@@ -1412,7 +1407,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": []},
@@ -1428,9 +1423,7 @@ def test__construct_lc_result_from_responses_api_multiple_messages() -> None:
     assert result.generations[0].message.id == "msg_234"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
 
     assert result.generations[0].message.content == [
         {"type": "text", "text": "foo", "annotations": [], "id": "msg_123"},
@@ -1470,16 +1463,14 @@ def test__construct_lc_result_from_responses_api_refusal_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert result.generations[0].message.additional_kwargs["refusal"] == (
         "I cannot assist with that request."
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "refusal",
@@ -1511,7 +1502,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.tool_calls) == 1
@@ -1528,9 +1519,7 @@ def test__construct_lc_result_from_responses_api_function_call_valid_json() -> N
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.tool_calls
     assert msg.content == [
@@ -1566,7 +1555,7 @@ def test__construct_lc_result_from_responses_api_function_call_invalid_json() ->
         ],
     )
 
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     msg: AIMessage = cast(AIMessage, result.generations[0].message)
     assert len(msg.invalid_tool_calls) == 1
@@ -1620,7 +1609,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1649,9 +1638,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
     assert result.generations[0].message.response_metadata["user"] == "user_123"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     msg = cast(AIMessage, result.generations[0].message)
     assert msg.response_metadata["metadata"] == {"key1": "value1", "key2": "value2"}
     assert msg.content == [
@@ -1727,7 +1714,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1745,9 +1732,7 @@ def test__construct_lc_result_from_responses_api_web_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "web_search_call",
@@ -1788,7 +1773,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     assert "tool_outputs" in result.generations[0].message.additional_kwargs
     assert len(result.generations[0].message.additional_kwargs["tool_outputs"]) == 1
@@ -1829,9 +1814,7 @@ def test__construct_lc_result_from_responses_api_file_search_response() -> None:
     )
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "file_search_call",
@@ -1898,7 +1881,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     )
 
     # v0
-    result = _construct_lc_result_from_responses_api(response)
+    result = _construct_lc_result_from_responses_api(response, output_version="v0")
 
     # Check message content
     assert result.generations[0].message.content == [
@@ -1929,9 +1912,7 @@ def test__construct_lc_result_from_responses_api_mixed_search_responses() -> Non
     assert file_search["results"][0]["filename"] == "example.py"
 
     # responses/v1
-    result = _construct_lc_result_from_responses_api(
-        response, output_version="responses/v1"
-    )
+    result = _construct_lc_result_from_responses_api(response)
     assert result.generations[0].message.content == [
         {
             "type": "text",
@@ -2297,9 +2278,7 @@ def test__construct_responses_api_input_multiple_message_types() -> None:
     assert messages_copy == messages
 
     # Test dict messages
-    llm = ChatOpenAI(
-        model="o4-mini", use_responses_api=True, output_version="responses/v1"
-    )
+    llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
     message_dicts: list = [
         {"role": "developer", "content": "This is a developer message."},
         {
@@ -2686,6 +2665,42 @@ def test_get_last_messages() -> None:
     assert response_id == "resp_123"
 
 
+def test_get_last_messages_with_mixed_response_metadata() -> None:
+    """Test that _get_last_messages correctly skips AIMessages without response_id."""
+    # Test case where the most recent AIMessage has no response_id,
+    # but an earlier AIMessage does have one
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!", response_metadata={"id": "resp_123"}),
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return messages after the AIMessage
+    # with response_id (not the most recent one)
+
+    assert last_messages == [
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),
+        HumanMessage("What's up?"),
+    ]
+    assert previous_response_id == "resp_123"
+
+    # Test case where no AIMessage has response_id
+    messages = [
+        HumanMessage("Hello"),
+        AIMessage("Hi there!"),  # No response_metadata
+        HumanMessage("How are you?"),
+        AIMessage("I'm good"),  # No response_metadata
+        HumanMessage("What's up?"),
+    ]
+    last_messages, previous_response_id = _get_last_messages(messages)
+    # Should return all messages when no AIMessage has response_id
+    assert last_messages == messages
+    assert previous_response_id is None
+
+
 def test_get_request_payload_use_previous_response_id() -> None:
     # Default - don't use previous_response ID
     llm = ChatOpenAI(
@@ -2854,6 +2869,52 @@ def test_extra_body_with_model_kwargs() -> None:
     assert payload["extra_body"]["ttl"] == 600
     assert payload["custom_non_openai_param"] == "test_value"
     assert payload["temperature"] == 0.5
+
+
+@pytest.mark.parametrize("verbosity_format", ["model_kwargs", "top_level"])
+@pytest.mark.parametrize("streaming", [False, True])
+@pytest.mark.parametrize("schema_format", ["pydantic", "dict"])
+def test_structured_output_verbosity(
+    verbosity_format: str, streaming: bool, schema_format: str
+) -> None:
+    class MySchema(BaseModel):
+        foo: str
+
+    if verbosity_format == "model_kwargs":
+        init_params: dict[str, Any] = {"model_kwargs": {"text": {"verbosity": "high"}}}
+    else:
+        init_params = {"verbosity": "high"}
+
+    if streaming:
+        init_params["streaming"] = True
+
+    llm = ChatOpenAI(model="gpt-5", use_responses_api=True, **init_params)
+
+    if schema_format == "pydantic":
+        schema: Any = MySchema
+    else:
+        schema = MySchema.model_json_schema()
+
+    structured_llm = llm.with_structured_output(schema)
+    sequence = cast(RunnableSequence, structured_llm)
+    binding = cast(RunnableBinding, sequence.first)
+    bound_llm = cast(ChatOpenAI, binding.bound)
+    bound_kwargs = binding.kwargs
+
+    messages = [HumanMessage(content="Hello")]
+    payload = bound_llm._get_request_payload(messages, **bound_kwargs)
+
+    # Verify that verbosity is present in `text` param
+    assert "text" in payload
+    assert "verbosity" in payload["text"]
+    assert payload["text"]["verbosity"] == "high"
+
+    # Verify that schema is passed correctly
+    if schema_format == "pydantic" and not streaming:
+        assert payload["text_format"] == schema
+    else:
+        assert "format" in payload["text"]
+        assert payload["text"]["format"]["type"] == "json_schema"
 
 
 @pytest.mark.parametrize("use_responses_api", [False, True])

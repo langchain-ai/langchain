@@ -16,7 +16,7 @@ from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 class ToolAgentAction(AgentActionMessageLog):
-    """ "Tool agent action."""
+    """Tool agent action."""
 
     tool_call_id: str
     """Tool call that this message is responding to."""

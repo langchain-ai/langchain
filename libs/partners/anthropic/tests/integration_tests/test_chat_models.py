@@ -956,6 +956,7 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
             and block["value"]["type"] == "redacted_thinking"
         ):
             value = block["value"]
+            assert isinstance(value, dict)
             assert set(value.keys()) == {"type", "data"}
             assert "index" in block
         else:
@@ -1062,7 +1063,7 @@ def test_image_tool_calling() -> None:
             ],
         ),
     ]
-    llm = ChatAnthropic(model="claude-3-5-sonnet-latest")  # type: ignore[call-arg]
+    llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
     llm.bind_tools([color_picker]).invoke(messages)
 
 
@@ -1071,7 +1072,7 @@ def test_image_tool_calling() -> None:
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     llm = ChatAnthropic(
-        model="claude-3-5-sonnet-latest",  # type: ignore[call-arg]
+        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
         max_tokens=1024,
         output_version=output_version,
     )
@@ -1123,6 +1124,10 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     llm = ChatAnthropic(
         model="claude-sonnet-4-20250514",  # type: ignore[call-arg]
         betas=["code-execution-2025-05-22"],
@@ -1188,6 +1193,10 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
 @pytest.mark.vcr
 @pytest.mark.parametrize("output_version", ["v0", "v1"])
 def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     mcp_servers = [
         {
             "type": "url",
@@ -1252,6 +1261,10 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
 
 @pytest.mark.parametrize("block_format", ["anthropic", "standard"])
 def test_files_api_image(block_format: str) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     image_file_id = os.getenv("ANTHROPIC_FILES_API_IMAGE_ID")
     if not image_file_id:
         pytest.skip()
@@ -1285,6 +1298,10 @@ def test_files_api_image(block_format: str) -> None:
 
 @pytest.mark.parametrize("block_format", ["anthropic", "standard"])
 def test_files_api_pdf(block_format: str) -> None:
+    """Note: this is a beta feature.
+
+    TODO: Update to remove beta once generally available.
+    """
     pdf_file_id = os.getenv("ANTHROPIC_FILES_API_PDF_ID")
     if not pdf_file_id:
         pytest.skip()
@@ -1314,7 +1331,6 @@ def test_search_result_tool_message() -> None:
     """Test that we can pass a search result tool message to the model."""
     llm = ChatAnthropic(
         model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
-        betas=["search-results-2025-06-09"],
     )
 
     @tool
@@ -1372,7 +1388,6 @@ def test_search_result_tool_message() -> None:
 def test_search_result_top_level() -> None:
     llm = ChatAnthropic(
         model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
-        betas=["search-results-2025-06-09"],
     )
     input_message = HumanMessage(
         [

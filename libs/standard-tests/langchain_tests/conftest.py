@@ -3,7 +3,7 @@
 import gzip
 from os import PathLike
 from pathlib import Path
-from typing import Union
+from typing import Any, cast
 
 import pytest
 import yaml
@@ -27,7 +27,13 @@ class CustomSerializer:
     def serialize(cassette_dict: dict) -> bytes:
         """Convert cassette to YAML and compress it."""
         cassette_dict["requests"] = [
-            request._to_dict() for request in cassette_dict["requests"]
+            {
+                "method": request.method,
+                "uri": request.uri,
+                "body": request.body,
+                "headers": {k: [v] for k, v in request.headers.items()},
+            }
+            for request in cassette_dict["requests"]
         ]
         yml = yaml.safe_dump(cassette_dict)
         return gzip.compress(yml.encode("utf-8"))
@@ -35,11 +41,9 @@ class CustomSerializer:
     @staticmethod
     def deserialize(data: bytes) -> dict:
         """Decompress data and convert it from YAML."""
-        text = gzip.decompress(data).decode("utf-8")
-        cassette = yaml.safe_load(text)
-        cassette["requests"] = [
-            Request._from_dict(request) for request in cassette["requests"]
-        ]
+        decoded_yaml = gzip.decompress(data).decode("utf-8")
+        cassette = cast("dict[str, Any]", yaml.safe_load(decoded_yaml))
+        cassette["requests"] = [Request(**request) for request in cassette["requests"]]
         return cassette
 
 
@@ -48,7 +52,9 @@ class CustomPersister:
 
     @classmethod
     def load_cassette(
-        cls, cassette_path: Union[str, PathLike[str]], serializer: CustomSerializer
+        cls,
+        cassette_path: str | PathLike[str],
+        serializer: CustomSerializer,
     ) -> tuple[dict, dict]:
         """Load a cassette from a file."""
         # If cassette path is already Path this is a no-op
@@ -63,7 +69,7 @@ class CustomPersister:
 
     @staticmethod
     def save_cassette(
-        cassette_path: Union[str, PathLike[str]],
+        cassette_path: str | PathLike[str],
         cassette_dict: dict,
         serializer: CustomSerializer,
     ) -> None:

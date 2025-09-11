@@ -5,6 +5,7 @@ from blockbuster import BlockBuster
 
 from langchain_core.caches import InMemoryCache
 from langchain_core.language_models import GenericFakeChatModel
+from langchain_core.load import dumps
 from langchain_core.rate_limiters import InMemoryRateLimiter
 
 
@@ -230,8 +231,6 @@ class SerializableModel(GenericFakeChatModel):
 
 def test_serialization_with_rate_limiter() -> None:
     """Test model serialization with rate limiter."""
-    from langchain_core.load import dumps
-
     model = SerializableModel(
         messages=iter(["hello", "world", "!"]),
         rate_limiter=InMemoryRateLimiter(

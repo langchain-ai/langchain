@@ -1,6 +1,7 @@
 import asyncio
 import re
 import sys
+import time
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
@@ -17,6 +18,7 @@ from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -29,6 +31,7 @@ from langchain_core.language_models import (
     FakeListLLM,
     FakeStreamingListLLM,
 )
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
 from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
@@ -314,14 +317,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "\n"
                 "    .. code-block:: python\n"
                 "\n"
-                "        from langchain_core.documents "
-                "import Document\n"
+                "        from langchain_core.documents import Document\n"
                 "\n"
                 "        document = Document(\n"
-                '            page_content="Hello, '
-                'world!",\n'
-                '            metadata={"source": '
-                '"https://example.com"}\n'
+                '            page_content="Hello, world!", '
+                'metadata={"source": "https://example.com"}\n'
                 "        )",
                 "properties": {
                     "id": {
@@ -435,13 +435,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "$ref": "#/definitions/RouterInput",
         "definitions": {
             "RouterInput": {
-                "description": "Router input.\n"
-                "\n"
-                "Attributes:\n"
-                "    key: The key to route "
-                "on.\n"
-                "    input: The input to pass "
-                "to the selected Runnable.",
+                "description": "Router input.",
                 "properties": {
                     "input": {"title": "Input"},
                     "key": {"title": "Key", "type": "string"},
@@ -537,9 +531,6 @@ def test_passthrough_assign_schema() -> None:
     }
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_lambda_schemas(snapshot: SnapshotAssertion) -> None:
     first_lambda = lambda x: x["hello"]  # noqa: E731
     assert RunnableLambda(first_lambda).get_input_jsonschema() == {
@@ -3802,12 +3793,14 @@ class FakeSplitIntoListParser(BaseOutputParser[list[str]]):
         """Return whether or not the class is serializable."""
         return True
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "
             "eg: `foo, bar, baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call."""
         return text.strip().split(", ")
@@ -4742,9 +4735,6 @@ async def test_runnable_branch_astream_with_callbacks() -> None:
     assert tracer.runs[2].outputs == {"output": "bye"}
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 9), reason="Requires python version >= 3.9 to run."
-)
 def test_representation_of_runnables() -> None:
     """Test representation of runnables."""
     runnable = RunnableLambda(lambda x: x * 2)
@@ -5523,9 +5513,6 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
 
 def test_listeners() -> None:
-    from langchain_core.runnables import RunnableLambda
-    from langchain_core.tracers.schemas import Run
-
     def fake_chain(inputs: dict) -> dict:
         return {**inputs, "key": "extra"}
 
@@ -5553,9 +5540,6 @@ def test_listeners() -> None:
 
 
 async def test_listeners_async() -> None:
-    from langchain_core.runnables import RunnableLambda
-    from langchain_core.tracers.schemas import Run
-
     def fake_chain(inputs: dict) -> dict:
         return {**inputs, "key": "extra"}
 
@@ -5585,12 +5569,6 @@ async def test_listeners_async() -> None:
 
 def test_closing_iterator_doesnt_raise_error() -> None:
     """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
-    import time
-
-    from langchain_core.callbacks import BaseCallbackHandler
-    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-    from langchain_core.output_parsers import StrOutputParser
-
     on_chain_error_triggered = False
     on_chain_end_triggered = False
 

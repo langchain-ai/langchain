@@ -212,8 +212,10 @@ def _normalize_messages(
     }
 
     """
-    from langchain_core.messages.block_translators.langchain_v0 import (
+    from langchain_core.messages.block_translators.langchain_v0 import (  # noqa: PLC0415
         _convert_legacy_v0_content_block_to_v1,
+    )
+    from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
         _convert_openai_format_to_data_block,
     )
 

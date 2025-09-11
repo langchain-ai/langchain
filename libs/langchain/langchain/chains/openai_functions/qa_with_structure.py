@@ -43,8 +43,10 @@ def create_qa_with_structure_chain(
     prompt: Optional[Union[PromptTemplate, ChatPromptTemplate]] = None,
     verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> LLMChain:
-    """Create a question answering chain that returns an answer with sources
-     based on schema.
+    """Create a question answering chain with structure.
+
+    Create a question answering chain that returns an answer with sources
+    based on schema.
 
     Args:
         llm: Language model to use for the chain.
@@ -52,8 +54,10 @@ def create_qa_with_structure_chain(
         output_parser: Output parser to use. Should be one of `pydantic` or `base`.
             Default to `base`.
         prompt: Optional prompt to use for the chain.
+        verbose: Whether to run the chain in verbose mode.
 
     Returns:
+        The question answering chain.
 
     """
     if output_parser == "pydantic":
@@ -75,10 +79,7 @@ def create_qa_with_structure_chain(
         )
         raise ValueError(msg)
     if isinstance(schema, type) and is_basemodel_subclass(schema):
-        if hasattr(schema, "model_json_schema"):
-            schema_dict = cast("dict", schema.model_json_schema())
-        else:
-            schema_dict = cast("dict", schema.schema())
+        schema_dict = cast("dict", schema.model_json_schema())
     else:
         schema_dict = cast("dict", schema)
     function = {

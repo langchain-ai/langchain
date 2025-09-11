@@ -28,7 +28,8 @@ def test_agent_iterator_bad_action() -> None:
 
 
 def test_agent_iterator_stopped_early() -> None:
-    """
+    """Test react chain iterator when stopped early.
+
     Test react chain iterator when max iterations or
     max execution time is exceeded.
     """
@@ -58,7 +59,8 @@ def test_agent_iterator_stopped_early() -> None:
 
 
 async def test_agent_async_iterator_stopped_early() -> None:
-    """
+    """Test when async react chain iterator is stopped early.
+
     Test react chain async iterator when max iterations or
     max execution time is exceeded.
     """
@@ -352,7 +354,6 @@ def test_agent_iterator_custom_stopping_condition() -> None:
 
 def test_agent_iterator_failing_tool() -> None:
     """Test AgentExecutorIterator with a tool that raises an exception."""
-
     # Get agent for testing.
     bad_action_name = "FailingTool"
     responses = [

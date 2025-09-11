@@ -150,7 +150,8 @@ class BaseMessage(Serializable):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "messages"].
+        Returns:
+            ``["langchain", "schema", "messages"]``
         """
         return ["langchain", "schema", "messages"]
 
@@ -179,14 +180,14 @@ class BaseMessage(Serializable):
         .. versionadded:: 1.0.0
 
         """  # noqa: E501
-        from langchain_core.messages import content as types
-        from langchain_core.messages.block_translators.anthropic import (
+        from langchain_core.messages import content as types  # noqa: PLC0415
+        from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
         )
-        from langchain_core.messages.block_translators.langchain_v0 import (
+        from langchain_core.messages.block_translators.langchain_v0 import (  # noqa: PLC0415
             _convert_v0_multimodal_input_to_v1,
         )
-        from langchain_core.messages.block_translators.openai import (
+        from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
             _convert_to_v1_from_chat_completions_input,
         )
 
@@ -246,8 +247,16 @@ class BaseMessage(Serializable):
         return TextAccessor(text_value)
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
-        """Concatenate this message with another message."""
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        """Concatenate this message with another message.
+
+        Args:
+            other: Another message to concatenate with this one.
+
+        Returns:
+            A ChatPromptTemplate containing both messages.
+        """
+        # Import locally to prevent circular imports.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other

@@ -1,6 +1,8 @@
+"""Factory functions for embeddings."""
+
 import functools
 from importlib import util
-from typing import Any, Union
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import Runnable
@@ -124,7 +126,7 @@ def init_embeddings(
     *,
     provider: str | None = None,
     **kwargs: Any,
-) -> Union[Embeddings, Runnable[Any, list[float]]]:
+) -> Embeddings | Runnable[Any, list[float]]:
     """Initialize an embeddings model from a model name and optional provider.
 
     **Note:** Must have the integration package corresponding to the model provider
@@ -160,17 +162,11 @@ def init_embeddings(
             model.embed_query("Hello, world!")
 
             # Using explicit provider
-            model = init_embeddings(
-                model="text-embedding-3-small",
-                provider="openai"
-            )
+            model = init_embeddings(model="text-embedding-3-small", provider="openai")
             model.embed_documents(["Hello, world!", "Goodbye, world!"])
 
             # With additional parameters
-            model = init_embeddings(
-                "openai:text-embedding-3-small",
-                api_key="sk-..."
-            )
+            model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
 
     .. versionadded:: 0.3.9
 

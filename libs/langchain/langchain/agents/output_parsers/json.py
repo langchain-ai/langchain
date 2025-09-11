@@ -23,10 +23,7 @@ class JSONAgentOutputParser(AgentOutputParser):
     being returned.
 
     ```
-    {
-      "action": "search",
-      "action_input": "2+2"
-    }
+    {"action": "search", "action_input": "2+2"}
     ```
 
     If the output signals that a final answer should be given,
@@ -34,10 +31,7 @@ class JSONAgentOutputParser(AgentOutputParser):
     being returned.
 
     ```
-    {
-      "action": "Final Answer",
-      "action_input": "4"
-    }
+    {"action": "Final Answer", "action_input": "4"}
     ```
     """
 

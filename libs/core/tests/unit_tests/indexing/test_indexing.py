@@ -501,15 +501,14 @@ def test_incremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode is "
-        "incremental or scoped_full.",
+        "incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode "
-        "is incremental or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -545,7 +544,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode "
-        "is incremental or scoped_full.",
+        "is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -557,8 +556,7 @@ async def test_aincremental_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode "
-        "is incremental or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -838,15 +836,14 @@ def test_scoped_full_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode "
-        "is incremental or scoped_full.",
+        "is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="scoped_full")
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode "
-        "is incremental or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -882,15 +879,14 @@ async def test_ascoped_full_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode "
-        "is incremental or scoped_full.",
+        "is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(loader, arecord_manager, vector_store, cleanup="scoped_full")
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode "
-        "is incremental or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -2425,14 +2421,12 @@ def test_index_into_document_index(record_manager: InMemoryRecordManager) -> Non
         "num_updated": 2,
     }
 
-    # TODO: This test is failing due to an existing bug with DocumentIndex deletion
-    # when indexing an empty list. Skipping this assertion for now.
-    # assert index([], record_manager, document_index, cleanup="full") == {
-    #     "num_added": 0,
-    #     "num_deleted": 2,
-    #     "num_skipped": 0,
-    #     "num_updated": 0,
-    # }
+    assert index([], record_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
 
 
 async def test_aindex_into_document_index(
@@ -2464,6 +2458,7 @@ async def test_aindex_into_document_index(
         "num_skipped": 2,
         "num_updated": 0,
     }
+
     assert await aindex(
         docs, arecord_manager, document_index, cleanup="full", force_update=True
     ) == {
@@ -2473,14 +2468,12 @@ async def test_aindex_into_document_index(
         "num_updated": 2,
     }
 
-    # TODO: This test is failing due to an existing bug with DocumentIndex deletion
-    # when indexing an empty list. Skipping this assertion for now.
-    # assert await aindex([], arecord_manager, document_index, cleanup="full") == {
-    #     "num_added": 0,
-    #     "num_deleted": 2,
-    #     "num_skipped": 0,
-    #     "num_updated": 0,
-    # }
+    assert await aindex([], arecord_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
 
 
 def test_index_with_upsert_kwargs(

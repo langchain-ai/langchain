@@ -1,3 +1,5 @@
+"""Text splitter base interface."""
+
 from __future__ import annotations
 
 import copy
@@ -8,19 +10,31 @@ from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
-    Optional,
     TypeVar,
-    Union,
 )
 
 from langchain_core.documents import BaseDocumentTransformer, Document
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
-    from collections.abc import Collection, Iterable, Sequence
+    from collections.abc import Callable, Collection, Iterable, Sequence
     from collections.abc import Set as AbstractSet
+
+
+try:
+    import tiktoken
+
+    _HAS_TIKTOKEN = True
+except ImportError:
+    _HAS_TIKTOKEN = False
+
+try:
+    from transformers.tokenization_utils_base import PreTrainedTokenizerBase
+
+    _HAS_TRANSFORMERS = True
+except ImportError:
+    _HAS_TRANSFORMERS = False
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +49,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         chunk_size: int = 4000,
         chunk_overlap: int = 200,
         length_function: Callable[[str], int] = len,
-        keep_separator: Union[bool, Literal["start", "end"]] = False,  # noqa: FBT001,FBT002
+        keep_separator: bool | Literal["start", "end"] = False,  # noqa: FBT001,FBT002
         add_start_index: bool = False,  # noqa: FBT001,FBT002
         strip_whitespace: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
@@ -75,16 +89,16 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         """Split text into multiple components."""
 
     def create_documents(
-        self, texts: list[str], metadatas: Optional[list[dict[Any, Any]]] = None
+        self, texts: list[str], metadatas: list[dict[Any, Any]] | None = None
     ) -> list[Document]:
         """Create documents from a list of texts."""
-        _metadatas = metadatas or [{}] * len(texts)
+        metadatas_ = metadatas or [{}] * len(texts)
         documents = []
         for i, text in enumerate(texts):
             index = 0
             previous_chunk_len = 0
             for chunk in self.split_text(text):
-                metadata = copy.deepcopy(_metadatas[i])
+                metadata = copy.deepcopy(metadatas_[i])
                 if self._add_start_index:
                     offset = index + previous_chunk_len - self._chunk_overlap
                     index = text.find(chunk, max(0, offset))
@@ -102,13 +116,11 @@ class TextSplitter(BaseDocumentTransformer, ABC):
             metadatas.append(doc.metadata)
         return self.create_documents(texts, metadatas=metadatas)
 
-    def _join_docs(self, docs: list[str], separator: str) -> Optional[str]:
+    def _join_docs(self, docs: list[str], separator: str) -> str | None:
         text = separator.join(docs)
         if self._strip_whitespace:
             text = text.strip()
-        if text == "":
-            return None
-        return text
+        return text or None
 
     def _merge_splits(self, splits: Iterable[str], separator: str) -> list[str]:
         # We now want to combine these smaller pieces into medium size
@@ -119,15 +131,17 @@ class TextSplitter(BaseDocumentTransformer, ABC):
         current_doc: list[str] = []
         total = 0
         for d in splits:
-            _len = self._length_function(d)
+            len_ = self._length_function(d)
             if (
-                total + _len + (separator_len if len(current_doc) > 0 else 0)
+                total + len_ + (separator_len if len(current_doc) > 0 else 0)
                 > self._chunk_size
             ):
                 if total > self._chunk_size:
                     logger.warning(
-                        f"Created a chunk of size {total}, "
-                        f"which is longer than the specified {self._chunk_size}"
+                        "Created a chunk of size %d, which is longer than the "
+                        "specified %d",
+                        total,
+                        self._chunk_size,
                     )
                 if len(current_doc) > 0:
                     doc = self._join_docs(current_doc, separator)
@@ -137,7 +151,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                     # - we have a larger chunk than in the chunk overlap
                     # - or if we still have any chunks and the length is long
                     while total > self._chunk_overlap or (
-                        total + _len + (separator_len if len(current_doc) > 0 else 0)
+                        total + len_ + (separator_len if len(current_doc) > 0 else 0)
                         > self._chunk_size
                         and total > 0
                     ):
@@ -146,54 +160,50 @@ class TextSplitter(BaseDocumentTransformer, ABC):
                         )
                         current_doc = current_doc[1:]
             current_doc.append(d)
-            total += _len + (separator_len if len(current_doc) > 1 else 0)
+            total += len_ + (separator_len if len(current_doc) > 1 else 0)
         doc = self._join_docs(current_doc, separator)
         if doc is not None:
             docs.append(doc)
         return docs
 
     @classmethod
-    def from_huggingface_tokenizer(cls, tokenizer: Any, **kwargs: Any) -> TextSplitter:
+    def from_huggingface_tokenizer(
+        cls, tokenizer: PreTrainedTokenizerBase, **kwargs: Any
+    ) -> TextSplitter:
         """Text splitter that uses HuggingFace tokenizer to count length."""
-        try:
-            from transformers.tokenization_utils_base import PreTrainedTokenizerBase
-
-            if not isinstance(tokenizer, PreTrainedTokenizerBase):
-                msg = (
-                    "Tokenizer received was not an instance of PreTrainedTokenizerBase"
-                )
-                raise ValueError(msg)
-
-            def _huggingface_tokenizer_length(text: str) -> int:
-                return len(tokenizer.tokenize(text))
-
-        except ImportError as err:
+        if not _HAS_TRANSFORMERS:
             msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
-            raise ValueError(msg) from err
+            raise ValueError(msg)
+
+        if not isinstance(tokenizer, PreTrainedTokenizerBase):
+            msg = "Tokenizer received was not an instance of PreTrainedTokenizerBase"  # type: ignore[unreachable]
+            raise ValueError(msg)  # noqa: TRY004
+
+        def _huggingface_tokenizer_length(text: str) -> int:
+            return len(tokenizer.tokenize(text))
+
         return cls(length_function=_huggingface_tokenizer_length, **kwargs)
 
     @classmethod
     def from_tiktoken_encoder(
         cls,
         encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> Self:
         """Text splitter that uses tiktoken encoder to count length."""
-        try:
-            import tiktoken
-        except ImportError as err:
+        if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to calculate max_tokens_for_prompt. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)
@@ -220,6 +230,7 @@ class TextSplitter(BaseDocumentTransformer, ABC):
 
         return cls(length_function=_tiktoken_encoder, **kwargs)
 
+    @override
     def transform_documents(
         self, documents: Sequence[Document], **kwargs: Any
     ) -> Sequence[Document]:
@@ -233,22 +244,20 @@ class TokenTextSplitter(TextSplitter):
     def __init__(
         self,
         encoding_name: str = "gpt2",
-        model_name: Optional[str] = None,
-        allowed_special: Union[Literal["all"], AbstractSet[str]] = set(),
-        disallowed_special: Union[Literal["all"], Collection[str]] = "all",
+        model_name: str | None = None,
+        allowed_special: Literal["all"] | AbstractSet[str] = set(),
+        disallowed_special: Literal["all"] | Collection[str] = "all",
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs)
-        try:
-            import tiktoken
-        except ImportError as err:
+        if not _HAS_TIKTOKEN:
             msg = (
                 "Could not import tiktoken python package. "
                 "This is needed in order to for TokenTextSplitter. "
                 "Please install it with `pip install tiktoken`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         if model_name is not None:
             enc = tiktoken.encoding_for_model(model_name)

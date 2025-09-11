@@ -3,19 +3,98 @@
 from __future__ import annotations
 
 import json
+import warnings
 from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
 from langchain_core.language_models._utils import (
     _is_openai_data_block,
+    _parse_data_uri,
 )
 from langchain_core.messages import content as types
-from langchain_core.messages.block_translators.langchain_v0 import (
-    _convert_openai_format_to_data_block,
-)
 
 if TYPE_CHECKING:
     from langchain_core.messages import AIMessage, AIMessageChunk
+
+
+def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
+    """Convert ``ImageContentBlock`` to format expected by OpenAI Chat Completions."""
+    if "url" in block:
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": block["url"],
+            },
+        }
+    if "base64" in block or block.get("source_type") == "base64":
+        if "mime_type" not in block:
+            error_message = "mime_type key is required for base64 data."
+            raise ValueError(error_message)
+        mime_type = block["mime_type"]
+        base64_data = block["data"] if "data" in block else block["base64"]
+        return {
+            "type": "image_url",
+            "image_url": {
+                "url": f"data:{mime_type};base64,{base64_data}",
+            },
+        }
+    error_message = "Unsupported source type. Only 'url' and 'base64' are supported."
+    raise ValueError(error_message)
+
+
+def convert_to_openai_data_block(block: dict) -> dict:
+    """Format standard data content block to format expected by OpenAI."""
+    if block["type"] == "image":
+        formatted_block = convert_to_openai_image_block(block)
+
+    elif block["type"] == "file":
+        if "base64" in block or block.get("source_type") == "base64":
+            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format: {"base64": "...", ...}
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
+            if filename := block.get("filename"):
+                file["filename"] = filename
+            elif (extras := block.get("extras")) and ("filename" in extras):
+                file["filename"] = extras["filename"]
+            elif (extras := block.get("metadata")) and ("filename" in extras):
+                # Backward compat
+                file["filename"] = extras["filename"]
+            else:
+                warnings.warn(
+                    "OpenAI may require a filename for file inputs. Specify a filename "
+                    "in the content block: {'type': 'file', 'mime_type': "
+                    "'application/pdf', 'base64': '...', 'filename': 'my-pdf'}",
+                    stacklevel=1,
+                )
+            formatted_block = {"type": "file", "file": file}
+        elif "file_id" in block or block.get("source_type") == "id":
+            # Handle v0 format: {"source_type": "id", "id": "...", ...}
+            # Handle v1 format: {"file_id": "...", ...}
+            file_id = block["id"] if "source_type" in block else block["file_id"]
+            formatted_block = {"type": "file", "file": {"file_id": file_id}}
+        else:
+            error_msg = "Keys base64 or file_id required for file blocks."
+            raise ValueError(error_msg)
+
+    elif block["type"] == "audio":
+        if "base64" in block or block.get("source_type") == "base64":
+            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format: {"base64": "...", ...}
+            base64_data = block["data"] if "source_type" in block else block["base64"]
+            audio_format = block["mime_type"].split("/")[-1]
+            formatted_block = {
+                "type": "input_audio",
+                "input_audio": {"data": base64_data, "format": audio_format},
+            }
+        else:
+            error_msg = "Key base64 is required for audio blocks."
+            raise ValueError(error_msg)
+    else:
+        error_msg = f"Block of type {block['type']} is not supported."
+        raise ValueError(error_msg)
+
+    return formatted_block
 
 
 # v1 / Chat Completions
@@ -57,7 +136,7 @@ def _convert_to_v1_from_chat_completions_input(
     Returns:
         Updated list with OpenAI blocks converted to v1 format.
     """
-    from langchain_core.messages import content as types
+    from langchain_core.messages import content as types  # noqa: PLC0415
 
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
@@ -153,7 +232,7 @@ _FUNCTION_CALL_IDS_MAP_KEY = "__openai_function_call_ids__"
 
 def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
     """Convert v0 AIMessage into ``output_version="responses/v1"`` format."""
-    from langchain_core.messages import AIMessageChunk
+    from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
     # Only update ChatOpenAI v0.3 AIMessages
     is_chatopenai_v03 = (
@@ -286,6 +365,139 @@ def _convert_from_v03_ai_message(message: AIMessage) -> AIMessage:
         },
         deep=False,
     )
+
+
+def _convert_openai_format_to_data_block(
+    block: dict,
+) -> Union[types.ContentBlock, dict[Any, Any]]:
+    """Convert OpenAI image/audio/file content block to respective v1 multimodal block.
+
+    We expect that the incoming block is verified to be in OpenAI Chat Completions
+    format.
+
+    If parsing fails, passes block through unchanged.
+
+    Mappings (Chat Completions to LangChain v1):
+    - Image -> `ImageContentBlock`
+    - Audio -> `AudioContentBlock`
+    - File -> `FileContentBlock`
+
+    """
+
+    # Extract extra keys to put them in `extras`
+    def _extract_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
+        """Extract unknown keys from block to preserve as extras."""
+        return {k: v for k, v in block_dict.items() if k not in known_keys}
+
+    # base64-style image block
+    if (block["type"] == "image_url") and (
+        parsed := _parse_data_uri(block["image_url"]["url"])
+    ):
+        known_keys = {"type", "image_url"}
+        extras = _extract_extras(block, known_keys)
+
+        # Also extract extras from nested image_url dict
+        image_url_known_keys = {"url"}
+        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
+
+        # Merge extras
+        all_extras = {**extras}
+        for key, value in image_url_extras.items():
+            if key == "detail":  # Don't rename
+                all_extras["detail"] = value
+            else:
+                all_extras[f"image_url_{key}"] = value
+
+        return types.create_image_block(
+            # Even though this is labeled as `url`, it can be base64-encoded
+            base64=parsed["data"],
+            mime_type=parsed["mime_type"],
+            **all_extras,
+        )
+
+    # url-style image block
+    if (block["type"] == "image_url") and isinstance(
+        block["image_url"].get("url"), str
+    ):
+        known_keys = {"type", "image_url"}
+        extras = _extract_extras(block, known_keys)
+
+        image_url_known_keys = {"url"}
+        image_url_extras = _extract_extras(block["image_url"], image_url_known_keys)
+
+        all_extras = {**extras}
+        for key, value in image_url_extras.items():
+            if key == "detail":  # Don't rename
+                all_extras["detail"] = value
+            else:
+                all_extras[f"image_url_{key}"] = value
+
+        return types.create_image_block(
+            url=block["image_url"]["url"],
+            **all_extras,
+        )
+
+    # base64-style audio block
+    # audio is only represented via raw data, no url or ID option
+    if block["type"] == "input_audio":
+        known_keys = {"type", "input_audio"}
+        extras = _extract_extras(block, known_keys)
+
+        # Also extract extras from nested audio dict
+        audio_known_keys = {"data", "format"}
+        audio_extras = _extract_extras(block["input_audio"], audio_known_keys)
+
+        all_extras = {**extras}
+        for key, value in audio_extras.items():
+            all_extras[f"audio_{key}"] = value
+
+        return types.create_audio_block(
+            base64=block["input_audio"]["data"],
+            mime_type=f"audio/{block['input_audio']['format']}",
+            **all_extras,
+        )
+
+    # id-style file block
+    if block.get("type") == "file" and "file_id" in block.get("file", {}):
+        known_keys = {"type", "file"}
+        extras = _extract_extras(block, known_keys)
+
+        file_known_keys = {"file_id"}
+        file_extras = _extract_extras(block["file"], file_known_keys)
+
+        all_extras = {**extras}
+        for key, value in file_extras.items():
+            all_extras[f"file_{key}"] = value
+
+        return types.create_file_block(
+            file_id=block["file"]["file_id"],
+            **all_extras,
+        )
+
+    # base64-style file block
+    if (block["type"] == "file") and (
+        parsed := _parse_data_uri(block["file"]["file_data"])
+    ):
+        known_keys = {"type", "file"}
+        extras = _extract_extras(block, known_keys)
+
+        file_known_keys = {"file_data", "filename"}
+        file_extras = _extract_extras(block["file"], file_known_keys)
+
+        all_extras = {**extras}
+        for key, value in file_extras.items():
+            all_extras[f"file_{key}"] = value
+
+        filename = block["file"].get("filename")
+        return types.create_file_block(
+            base64=parsed["data"],
+            mime_type="application/pdf",
+            filename=filename,
+            **all_extras,
+        )
+
+    # Escape hatch
+    return block
 
 
 # v1 / Responses
@@ -438,7 +650,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 ] = None
                 call_id = block.get("call_id", "")
 
-                from langchain_core.messages import AIMessageChunk
+                from langchain_core.messages import AIMessageChunk  # noqa: PLC0415
 
                 if (
                     isinstance(message, AIMessageChunk)
@@ -578,7 +790,9 @@ def _register_openai_translator() -> None:
 
     Run automatically when the module is imported.
     """
-    from langchain_core.messages.block_translators import register_translator
+    from langchain_core.messages.block_translators import (  # noqa: PLC0415
+        register_translator,
+    )
 
     register_translator("openai", translate_content, translate_content_chunk)
 

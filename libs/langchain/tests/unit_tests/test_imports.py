@@ -108,7 +108,7 @@ def test_no_more_changes_to_proxy_community() -> None:
 
 
 def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
-    """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP
+    """Detect and extracts the value of a dictionary named DEPRECATED_LOOKUP.
 
     This variable is located in the global namespace of a Python file.
 
@@ -118,7 +118,7 @@ def extract_deprecated_lookup(file_path: str) -> Optional[dict[str, Any]]:
     Returns:
         dict or None: The value of DEPRECATED_LOOKUP if it exists, None otherwise.
     """
-    tree = ast.parse(Path(file_path).read_text(), filename=file_path)
+    tree = ast.parse(Path(file_path).read_text(encoding="utf-8"), filename=file_path)
 
     for node in ast.walk(tree):
         if isinstance(node, ast.Assign):
