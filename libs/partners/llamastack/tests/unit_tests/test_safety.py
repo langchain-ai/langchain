@@ -4,7 +4,7 @@ import os
 from typing import Any
 from unittest.mock import Mock, patch
 
-from langchain_llamastack.safety import LlamaStackSafety, SafetyResult
+from langchain_llama_stack.safety import LlamaStackSafety, SafetyResult
 
 
 class TestSafetyResult:
@@ -46,22 +46,22 @@ class TestLlamaStackSafety:
         self.base_url = "http://test-server:8321"
         self.shield_type = "llama_guard"
 
-    @patch("langchain_llamastack.safety.LlamaStackClient", None)
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
+    @patch("langchain_llama_stack.safety.LlamaStackClient", None)
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient", None)
     def test_init_default_params(self) -> None:
         """Test initialization with default parameters."""
         with patch.dict(os.environ, {}, clear=True):
             safety = LlamaStackSafety()
 
             assert safety.base_url == "http://localhost:8321"
-            assert safety.shield_type == "llama_guard"
+            assert safety.shield_type == "llama-guard"
             assert safety.timeout == 30.0
             assert safety.max_retries == 2
             assert safety.client is None
             assert safety.async_client is None
 
-    @patch("langchain_llamastack.safety.LlamaStackClient", None)
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient", None)
+    @patch("langchain_llama_stack.safety.LlamaStackClient", None)
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient", None)
     def test_init_custom_params(self) -> None:
         """Test initialization with custom parameters."""
         safety = LlamaStackSafety(
@@ -87,7 +87,7 @@ class TestLlamaStackSafety:
 
             assert safety.base_url == "http://env-server:8321"
 
-    @patch("langchain_llamastack.safety.LlamaStackClient")
+    @patch("langchain_llama_stack.safety.LlamaStackClient")
     def test_get_client_kwargs(self, mock_client_class: Any) -> None:
         """Test getting client kwargs."""
         mock_client = Mock()
@@ -100,7 +100,7 @@ class TestLlamaStackSafety:
         expected = {"base_url": self.base_url, "timeout": 60.0, "max_retries": 5}
         assert kwargs == expected
 
-    @patch("langchain_llamastack.safety.LlamaStackClient")
+    @patch("langchain_llama_stack.safety.LlamaStackClient")
     def test_initialize_client(self, mock_client_class: Any) -> None:
         """Test initializing client."""
         mock_client = Mock()
@@ -114,7 +114,7 @@ class TestLlamaStackSafety:
             base_url=self.base_url, timeout=30.0, max_retries=2
         )
 
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient")
     def test_initialize_async_client(self, mock_async_client_class: Any) -> None:
         """Test initializing async client."""
         mock_async_client = Mock()
@@ -128,15 +128,15 @@ class TestLlamaStackSafety:
             base_url=self.base_url, timeout=30.0, max_retries=2
         )
 
-    @patch("langchain_llamastack.safety.LlamaStackClient")
+    @patch("langchain_llama_stack.safety.LlamaStackClient")
     def test_check_content_safety_success(self, mock_client_class: Any) -> None:
         """Test successful content safety check."""
         # Setup mock client and response
         mock_client = Mock()
         mock_response = Mock()
 
-        # Configure mock response to NOT be a violation
-        mock_response.is_violation = False
+        # Configure mock response to NOT have a violation
+        mock_response.violation = None
         mock_response.confidence_score = 0.95
         mock_response.explanation = "Content is safe"
 
@@ -152,37 +152,25 @@ class TestLlamaStackSafety:
         assert result.confidence_score == 0.95
         assert result.explanation == "Content is safe"
 
-        # Verify API call
+        # Verify API call - shield_id should be "llama-guard" (with hyphen)
         mock_client.safety.run_shield.assert_called_once_with(
-            shield_type="llama_guard",
+            shield_id="llama-guard",
             messages=[{"content": "Hello world", "role": "user"}],
+            params={},
         )
 
-    @patch("langchain_llamastack.safety.LlamaStackClient")
+    @patch("langchain_llama_stack.safety.LlamaStackClient")
     def test_check_content_safety_violation(self, mock_client_class: Any) -> None:
         """Test content safety check with violation."""
         mock_client = Mock()
         mock_response = Mock()
 
-        # Configure mock response to BE a violation
-        mock_response.is_violation = True
-        mock_response.violation_level = "high"
-        mock_response.metadata = {"category": "hate"}
+        # Configure mock response to HAVE a violation
+        mock_violation = Mock()
+        mock_violation.metadata = {"violation_type": "hate", "violation_level": "high"}
+        mock_response.violation = mock_violation
         mock_response.confidence_score = 0.92
-
-        # Ensure hasattr returns True for these attributes
-        def mock_hasattr(obj: Any, attr: str) -> bool:
-            return attr in [
-                "is_violation",
-                "violation_level",
-                "confidence_score",
-                "metadata",
-            ]
-
-        import builtins
-
-        original_hasattr = builtins.hasattr
-        builtins.hasattr = mock_hasattr
+        mock_response.explanation = "Contains hate speech"
 
         mock_client.safety.run_shield.return_value = mock_response
         mock_client_class.return_value = mock_client
@@ -190,17 +178,14 @@ class TestLlamaStackSafety:
         safety = LlamaStackSafety(base_url=self.base_url)
         result = safety.check_content_safety("Bad content")
 
-        # Restore original hasattr
-        builtins.hasattr = original_hasattr
-
         assert result.is_safe is False
         assert len(result.violations) == 1
-        assert result.violations[0]["category"] == "safety_violation"
+        assert result.violations[0]["category"] == "hate"
         assert result.violations[0]["level"] == "high"
-        assert result.violations[0]["metadata"] == {"category": "hate"}
         assert result.confidence_score == 0.92
+        assert result.explanation == "Contains hate speech"
 
-    @patch("langchain_llamastack.safety.LlamaStackClient")
+    @patch("langchain_llama_stack.safety.LlamaStackClient")
     def test_check_content_safety_error(self, mock_client_class: Any) -> None:
         """Test content safety check with error."""
         mock_client = Mock()
@@ -212,9 +197,9 @@ class TestLlamaStackSafety:
 
         assert result.is_safe is True  # Fails open
         assert result.violations == []
-        assert "Safety check failed: API error" in result.explanation
+        assert result.explanation == "Safety check failed: API error"
 
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient")
     def test_acheck_content_safety_success(self, mock_async_client_class: Any) -> None:
         """Test successful async content safety check."""
         import asyncio
@@ -224,7 +209,7 @@ class TestLlamaStackSafety:
         mock_response = Mock()
 
         # Configure the mock response to simulate a safe result
-        mock_response.is_violation = False
+        mock_response.violation = None
         mock_response.confidence_score = 0.98
         mock_response.explanation = "Safe content"
 
@@ -247,7 +232,7 @@ class TestLlamaStackSafety:
         assert result.confidence_score == 0.98
         assert result.explanation == "Safe content"
 
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient")
     def test_acheck_content_safety_violation(
         self, mock_async_client_class: Any
     ) -> None:
@@ -256,26 +241,17 @@ class TestLlamaStackSafety:
 
         # Create properly configured mocks
         mock_async_client = Mock()
-
-        # Create mock response with explicit attribute configuration
         mock_response = Mock()
-        mock_response.configure_mock(
-            **{
-                "is_violation": True,
-                "violation_level": "medium",
-                "metadata": {"reason": "inappropriate"},
-                "confidence_score": 0.85,
-            }
-        )
 
-        # Ensure hasattr works correctly
-        def custom_hasattr(obj: Any, name: str) -> bool:
-            return name in [
-                "is_violation",
-                "violation_level",
-                "metadata",
-                "confidence_score",
-            ]
+        # Configure mock response to HAVE a violation
+        mock_violation = Mock()
+        mock_violation.metadata = {
+            "violation_type": "inappropriate",
+            "violation_level": "medium",
+        }
+        mock_response.violation = mock_violation
+        mock_response.confidence_score = 0.85
+        mock_response.explanation = "Inappropriate content detected"
 
         # Make the async call return a coroutine that resolves to the mock response
         async def mock_run_shield(*args, **kwargs):
@@ -286,35 +262,19 @@ class TestLlamaStackSafety:
 
         safety = LlamaStackSafety(base_url=self.base_url)
 
-        # Patch hasattr to work with our mock
-        import builtins
+        async def test_async_check():
+            return await safety.acheck_content_safety("Bad async content")
 
-        original_hasattr = builtins.hasattr
+        result = asyncio.run(test_async_check())
 
-        def patched_hasattr(obj: Any, name: str) -> bool:
-            if obj is mock_response:
-                return custom_hasattr(obj, name)
-            return original_hasattr(obj, name)
+        assert result.is_safe is False
+        assert len(result.violations) == 1
+        assert result.violations[0]["category"] == "inappropriate"
+        assert result.violations[0]["level"] == "medium"
+        assert result.confidence_score == 0.85
+        assert result.explanation == "Inappropriate content detected"
 
-        builtins.hasattr = patched_hasattr
-
-        try:
-
-            async def test_async_check():
-                return await safety.acheck_content_safety("Bad async content")
-
-            result = asyncio.run(test_async_check())
-
-            assert result.is_safe is False
-            assert len(result.violations) == 1
-            assert result.violations[0]["category"] == "safety_violation"
-            assert result.violations[0]["level"] == "medium"
-            assert result.confidence_score == 0.85
-        finally:
-            # Restore original hasattr
-            builtins.hasattr = original_hasattr
-
-    @patch("langchain_llamastack.safety.AsyncLlamaStackClient")
+    @patch("langchain_llama_stack.safety.AsyncLlamaStackClient")
     def test_acheck_content_safety_error(self, mock_async_client_class: Any) -> None:
         """Test async content safety check with error."""
         mock_async_client = Mock()
@@ -336,7 +296,7 @@ class TestLlamaStackSafety:
             loop.close()
 
         assert result.is_safe is True  # Fails open
-        assert "Async safety check failed: Async API error" in result.explanation
+        assert result.explanation == "Async safety check failed: Async API error"
 
     @patch("langchain_llamastack.safety.LlamaStackClient")
     def test_client_initialization_lazy(self, mock_client_class: Any) -> None:
@@ -356,10 +316,12 @@ class TestLlamaStackSafety:
 
     def test_content_safety_custom_shield_type(self) -> None:
         """Test content safety check with custom shield type."""
-        with patch("langchain_llamastack.safety.LlamaStackClient") as mock_client_class:
+        with patch(
+            "langchain_llama_stack.safety.LlamaStackClient"
+        ) as mock_client_class:
             mock_client = Mock()
             mock_response = Mock()
-            mock_response.is_violation = False
+            mock_response.violation = None
 
             mock_client.safety.run_shield.return_value = mock_response
             mock_client_class.return_value = mock_client
@@ -370,18 +332,64 @@ class TestLlamaStackSafety:
             safety.check_content_safety("test content")
 
             mock_client.safety.run_shield.assert_called_with(
-                shield_type="custom_shield",
+                shield_id="custom_shield",
                 messages=[{"content": "test content", "role": "user"}],
+                params={},
             )
 
+    def test_list_shields_success(self) -> None:
+        """Test successful listing of shields."""
+        with patch(
+            "langchain_llama_stack.safety.LlamaStackClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+            mock_shield = Mock()
+            mock_shield.identifier = "test-shield"
+            mock_client.shields.list.return_value = [mock_shield]
+            mock_client_class.return_value = mock_client
+
+            safety = LlamaStackSafety(base_url=self.base_url)
+            shields = safety.list_shields()
+
+            assert shields == ["test-shield"]
+
+    def test_list_shields_with_data_attribute(self) -> None:
+        """Test listing shields when response has data attribute."""
+        with patch(
+            "langchain_llama_stack.safety.LlamaStackClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+            mock_shield = Mock()
+            mock_shield.identifier = "test-shield"
+            mock_response = Mock()
+            mock_response.data = [mock_shield]
+            mock_client.shields.list.return_value = mock_response
+            mock_client_class.return_value = mock_client
+
+            safety = LlamaStackSafety(base_url=self.base_url)
+            shields = safety.list_shields()
+
+            assert shields == ["test-shield"]
+
+    def test_list_shields_error(self) -> None:
+        """Test listing shields with error."""
+        with patch(
+            "langchain_llama_stack.safety.LlamaStackClient"
+        ) as mock_client_class:
+            mock_client = Mock()
+            mock_client.shields.list.side_effect = Exception("API error")
+            mock_client_class.return_value = mock_client
+
+            safety = LlamaStackSafety(base_url=self.base_url)
+            shields = safety.list_shields()
+
+            assert shields == []
+
     def test_check_missing_methods(self) -> None:
-        """Test that removed methods do not exist."""
+        """Test that required methods exist."""
         safety = LlamaStackSafety()
 
-        # These methods should not exist anymore
-        assert not hasattr(safety, "moderate_content")
-        assert not hasattr(safety, "amoderate_content")
-
-        # Only these methods should exist
+        # These methods should exist
         assert hasattr(safety, "check_content_safety")
         assert hasattr(safety, "acheck_content_safety")
+        assert hasattr(safety, "list_shields")

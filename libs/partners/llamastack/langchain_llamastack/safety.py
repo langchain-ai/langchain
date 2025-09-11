@@ -1,10 +1,17 @@
 """LlamaStack Safety integration for LangChain."""
 
+import logging
 import os
 from typing import Any, Optional
 
+import requests
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 try:
-    from llamastack_client import (  # type: ignore
+    from llama_stack_client import (  # type: ignore
         AsyncLlamaStackClient,
         LlamaStackClient,
     )
@@ -82,7 +89,7 @@ class LlamaStackSafety:
     def __init__(
         self,
         base_url: Optional[str] = None,
-        shield_type: str = "llama_guard",
+        shield_type: str = "llama-guard",
         timeout: Optional[float] = 30.0,
         max_retries: int = 2,
     ):
@@ -117,6 +124,31 @@ class LlamaStackSafety:
         if self.async_client is None and AsyncLlamaStackClient is not None:
             self.async_client = AsyncLlamaStackClient(**self._get_client_kwargs())
 
+    def list_shields(self) -> list[str]:
+        """List all available shields from LlamaStack server."""
+        try:
+            if self.client is None:
+                self._initialize_client()
+
+            if self.client is None:
+                return []
+
+            # Get shields
+            shields_response = self.client.shields.list()
+            # Handle both list and object with .data attribute
+            if hasattr(shields_response, "data"):
+                shields_data = shields_response.data
+            else:
+                shields_data = shields_response
+
+            # Return just the identifiers for easy checking
+            shield_ids = [shield.identifier for shield in shields_data]
+            return shield_ids
+
+        except Exception as e:
+            logger.error(f"Error listing shields: {e}")
+            return []
+
     def check_content_safety(
         self, content: str, content_type: str = "text", **kwargs: Any
     ) -> SafetyResult:
@@ -131,30 +163,43 @@ class LlamaStackSafety:
         Returns:
             SafetyResult with safety assessment
         """
+        # logger.info(f"Starting safety check for content: '{content[:50]}...'")
+        # logger.info(f"Using shield_type: {self.shield_type}")
+        # logger.info(f"Base URL: {self.base_url}")
+
         # Check if LlamaStackClient is available
         if LlamaStackClient is None:
+            logger.error("LlamaStackClient is None - client not available")
             return SafetyResult(
                 is_safe=True,
                 violations=[],
                 explanation="LlamaStackClient not available - install llama-stack-client",
             )
 
+        logger.info("LlamaStackClient is available")
+
         if self.client is None:
+            logger.info("Client is None, initializing...")
             self._initialize_client()
 
         try:
             # Ensure client is not None after initialization
             if self.client is None:
+                logger.error("Client is still None after initialization")
                 return SafetyResult(
                     is_safe=True,
                     violations=[],
                     explanation="LlamaStack client not initialized",
                 )
 
+            logger.info("Client initialized successfully")
+            logger.info(f"Making API call with shield_id: {self.shield_type}")
+
             # Use the safety.run_shield method
             response = self.client.safety.run_shield(
-                shield_type=self.shield_type,
+                shield_id=self.shield_type,
                 messages=[{"content": content, "role": "user"}],
+                params={},  # Required empty params dict
                 **kwargs,
             )
 
@@ -164,17 +209,6 @@ class LlamaStackSafety:
             confidence_score = None
             explanation = None
 
-            # Check if response indicates a violation
-            if hasattr(response, "is_violation") and response.is_violation:
-                is_safe = False
-                violations.append(
-                    {
-                        "category": "safety_violation",
-                        "level": getattr(response, "violation_level", "unknown"),
-                        "metadata": getattr(response, "metadata", {}),
-                    }
-                )
-
             # Extract confidence score and explanation if available
             if hasattr(response, "confidence_score"):
                 confidence_score = response.confidence_score
@@ -182,14 +216,42 @@ class LlamaStackSafety:
             if hasattr(response, "explanation"):
                 explanation = response.explanation
 
+            # Check if response indicates a violation
+            if response.violation:
+                is_safe = False
+
+                # Handle violation metadata - it might be dict or object
+                violation_metadata = response.violation.metadata
+                if isinstance(violation_metadata, dict):
+                    violation_type = violation_metadata.get("violation_type", None)
+                    violation_level = violation_metadata.get(
+                        "violation_level", "unknown"
+                    )
+                else:
+                    violation_type = getattr(violation_metadata, "violation_type", None)
+                    violation_level = getattr(
+                        violation_metadata, "violation_level", "unknown"
+                    )
+
+                violations.append(
+                    {
+                        "category": violation_type,
+                        "level": violation_level,
+                        "metadata": violation_metadata,
+                    }
+                )
+
+            # logger.info(f"Final result - is_safe: {is_safe}, violations: {violations}")
+
             return SafetyResult(
                 is_safe=is_safe,
                 violations=violations,
                 confidence_score=confidence_score,
                 explanation=explanation,
             )
-
         except Exception as e:
+            logger.error(f"Exception occurred during safety check: {str(e)}")
+            logger.error(f"Exception type: {type(e)}")
             # Return safe by default on error, but log the issue
             return SafetyResult(
                 is_safe=True,
@@ -221,8 +283,9 @@ class LlamaStackSafety:
 
             # Use the AsyncLlamaStackClient.safety.run_shield method
             response = await self.async_client.safety.run_shield(
-                shield_type=self.shield_type,
+                shield_id=self.shield_type,
                 messages=[{"content": content, "role": "user"}],
+                params={},  # Required empty params dict
                 **kwargs,
             )
 
@@ -232,22 +295,37 @@ class LlamaStackSafety:
             confidence_score = None
             explanation = None
 
-            if hasattr(response, "is_violation") and response.is_violation:
-                is_safe = False
-                if hasattr(response, "violation_level"):
-                    violations.append(
-                        {
-                            "category": "safety_violation",
-                            "level": response.violation_level,
-                            "metadata": getattr(response, "metadata", {}),
-                        }
-                    )
-
+            # Extract confidence score and explanation if available
             if hasattr(response, "confidence_score"):
                 confidence_score = response.confidence_score
 
             if hasattr(response, "explanation"):
                 explanation = response.explanation
+
+            # Check if response indicates a violation
+            if response.violation:
+                is_safe = False
+
+                # Handle violation metadata - it might be dict or object
+                violation_metadata = response.violation.metadata
+                if isinstance(violation_metadata, dict):
+                    violation_type = violation_metadata.get("violation_type", None)
+                    violation_level = violation_metadata.get(
+                        "violation_level", "unknown"
+                    )
+                else:
+                    violation_type = getattr(violation_metadata, "violation_type", None)
+                    violation_level = getattr(
+                        violation_metadata, "violation_level", "unknown"
+                    )
+
+                violations.append(
+                    {
+                        "category": violation_type,
+                        "level": violation_level,
+                        "metadata": violation_metadata,
+                    }
+                )
 
             return SafetyResult(
                 is_safe=is_safe,

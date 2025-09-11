@@ -10,6 +10,8 @@ Each hook uses LlamaStack's run_shield API once to get comprehensive safety resu
 
 from typing import Any, Callable, Optional
 
+import requests
+
 from langchain_core.runnables import Runnable
 from langchain_core.runnables.config import RunnableConfig
 
@@ -168,7 +170,7 @@ class SafeLLMWrapper(Runnable):
 
 
 def create_safety_hook(
-    safety_client: Any, hook_type: str = "input", shield_type: Optional[str] = None
+    safety_client: Any, hook_type: str = "output", shield_type: Optional[str] = None
 ) -> Callable[[str], SafetyResult]:
     """
     Create a safety hook using LlamaStack's run_shield API.
@@ -177,8 +179,8 @@ def create_safety_hook(
         safety_client: LlamaStackSafety client instance
         hook_type: Type of hook - "input" (fails open) or "output" (fails closed)
         shield_type: Specific shield to use. If None, uses optimal defaults:
-                    - "prompt_guard" for input hooks (prompt injection detection)
-                    - "llama_guard" for output hooks (content moderation)
+                    - "prompt-guard" for input hooks (prompt injection detection)
+                    - "llama-guard" for output hooks (content moderation)
 
     Returns:
         Function that takes content and returns SafetyResult
@@ -186,25 +188,11 @@ def create_safety_hook(
     fail_open = hook_type == "input"
 
     # Use optimal shield defaults based on hook type
-    if shield_type is None:
-        shield_type = "prompt_guard" if hook_type == "input" else "llama_guard"
 
     def safety_hook(content: str) -> SafetyResult:
-        try:
-            # Create a temporary safety client with the specific shield type if different
-            if shield_type != getattr(safety_client, "shield_type", "llama_guard"):
-                from .safety import LlamaStackSafety
 
-                temp_client = LlamaStackSafety(
-                    base_url=safety_client.base_url,
-                    shield_type=shield_type,
-                    timeout=safety_client.timeout,
-                    max_retries=safety_client.max_retries,
-                )
-                return temp_client.check_content_safety(content)
-            else:
-                # Use the provided safety client if shield type matches
-                return safety_client.check_content_safety(content)
+        try:
+            return safety_client.check_content_safety(content)
         except Exception as e:
             if fail_open:
                 # Input hooks fail open - allow content to proceed but log error
@@ -226,11 +214,10 @@ def create_safety_hook(
 
 # =============================================================================
 # Convenient Factory Functions
-# ======================================================================
 
 
 def create_safe_llm(
-    llm: Any, safety_client: Any, input_check: bool = True, output_check: bool = True
+    llm: Any, safety_client: Any, input_check: bool = False, output_check: bool = True
 ) -> SafeLLMWrapper:
     """
     Create a safe LLM with configurable input/output checking.
@@ -263,66 +250,15 @@ def create_safe_llm(
     safe_llm = SafeLLMWrapper(llm, safety_client)
 
     # Set hooks based on configuration
-    if input_check:
-        safe_llm.set_input_hook(create_safety_hook(safety_client, "input"))
+    if input_check and "prompt-guard" in safety_client.list_shields():
+        safe_llm.set_input_hook(
+            create_safety_hook(safety_client, "input", "prompt-guard")
+        )
 
-    if output_check:
+    if output_check and safety_client.shield_type in safety_client.list_shields():
         safe_llm.set_output_hook(
             create_safety_hook(
                 safety_client, "output", shield_type=safety_client.shield_type
             )
         )
-
     return safe_llm
-
-
-def create_safe_llm_with_all_hooks(llm: Any, safety_client: Any) -> SafeLLMWrapper:
-    """
-    Create a safe LLM with complete protection (both input and output checking).
-
-    This provides maximum safety by checking both user input and model output.
-    Equivalent to: create_safe_llm(llm, safety_client, input_check=True,\
-     output_check=True)
-
-    Args:
-        llm: The language model to wrap
-        safety_client: LlamaStackSafety client instance
-
-    Returns:
-        SafeLLMWrapper with complete protection
-    """
-    return create_safe_llm(llm, safety_client, input_check=True, output_check=True)
-
-
-def create_input_only_safe_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
-    """
-    Create a safe LLM with only input checking.
-
-    Use this when you trust the model outputs but want to filter user inputs.
-    Equivalent to: create_safe_llm(llm, safety_client, output_check=False)
-
-    Args:
-        llm: The language model to wrap
-        safety_client: LlamaStackSafety client instance
-
-    Returns:
-        SafeLLMWrapper with input checking only
-    """
-    return create_safe_llm(llm, safety_client, input_check=True, output_check=False)
-
-
-def create_output_only_safe_llm(llm: Any, safety_client: Any) -> SafeLLMWrapper:
-    """
-    Create a safe LLM with only output checking.
-
-    Use this when you trust user inputs but want to filter model outputs.
-    Equivalent to: create_safe_llm(llm, safety_client, input_check=False)
-
-    Args:
-        llm: The language model to wrap
-        safety_client: LlamaStackSafety client instance
-
-    Returns:
-        SafeLLMWrapper with output checking only
-    """
-    return create_safe_llm(llm, safety_client, input_check=False, output_check=True)
