@@ -1,21 +1,19 @@
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as TypingAnnotated
+from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Callable,
     Literal,
     Optional,
-    TypeAlias,
     Union,
 )
 from typing import TypedDict as TypingTypedDict
 
 import pytest
-from pydantic import BaseModel, Field
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import Annotated as ExtensionsAnnotated  # noqa: UP035
+from typing_extensions import TypeAlias
 from typing_extensions import TypedDict as ExtensionsTypedDict
 
 try:
@@ -182,8 +180,8 @@ def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
 
-        arg1: TypingAnnotated[int, ..., "foo"]
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
+        arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
+        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
 
     return dummy_function
 
