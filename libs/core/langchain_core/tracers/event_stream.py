@@ -315,7 +315,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Start a trace for an LLM run."""
+        """Start a trace for a chat model run."""
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
 
@@ -357,7 +357,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Start a trace for an LLM run."""
+        """Start a trace for a (non-chat model) LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "llm"
 
@@ -421,6 +421,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
+        """
         run_info = self.run_map.get(run_id)
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
@@ -466,11 +470,9 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_llm_end(
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
     ) -> None:
-        """End a trace for an LLM run.
+        """End a trace for a model run.
 
-        Args:
-            response (LLMResult): The response which was generated.
-            run_id (UUID): The run ID. This is the ID of the current run.
+        For both chat models and non-chat models (legacy LLMs).
 
         Raises:
             ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.

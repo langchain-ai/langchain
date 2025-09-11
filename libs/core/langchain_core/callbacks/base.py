@@ -71,7 +71,9 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -490,7 +492,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running.
+        """Run when the model starts running.
 
         .. warning::
             This method is called for non-chat models (regular LLMs). If you're
@@ -548,7 +550,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -569,7 +573,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM ends running.
+        """Run when the model ends running.
 
         Args:
             response (LLMResult): The response which was generated.
