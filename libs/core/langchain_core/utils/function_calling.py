@@ -836,8 +836,14 @@ def _recursive_set_additional_properties_false(
     if isinstance(schema, dict):
         # Check if 'required' is a key at the current level or if the schema is empty,
         # in which case additionalProperties still needs to be specified.
-        if "required" in schema or (
-            "properties" in schema and not schema["properties"]
+        if (
+            "required" in schema
+            or ("properties" in schema and not schema["properties"])
+            # Since Pydantic 2.11, it will always add `additionalProperties: True`
+            # for arbitrary dictionary schemas
+            # See: https://pydantic.dev/articles/pydantic-v2-11-release#changes
+            # If it is already set to True, we need override it to False
+            or "additionalProperties" in schema
         ):
             schema["additionalProperties"] = False
 

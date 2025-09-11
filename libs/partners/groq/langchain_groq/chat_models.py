@@ -480,7 +480,7 @@ class ChatGroq(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="groq",
-            ls_model_name=self.model_name,
+            ls_model_name=params.get("model", self.model_name),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -895,7 +895,7 @@ class ChatGroq(BaseChatModel):
                 - ``'json_schema'``:
                     Uses Groq's `Structured Output API <https://console.groq.com/docs/structured-outputs>`__.
                     Supported for a subset of models, including ``openai/gpt-oss``,
-                    ``moonshotai/kimi-k2-instruct``, and some ``meta-llama/llama-4``
+                    ``moonshotai/kimi-k2-instruct-0905``, and some ``meta-llama/llama-4``
                     models. See `docs <https://console.groq.com/docs/structured-outputs>`__
                     for details.
                 - ``'json_mode'``:
