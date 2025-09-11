@@ -4,10 +4,10 @@ import copy
 import json
 import re
 import warnings
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from functools import cached_property
 from operator import itemgetter
-from typing import Any, Callable, Final, Literal, Optional, Union, cast
+from typing import Any, Final, Literal, Optional, Union, cast
 
 import anthropic
 from langchain_core._api import beta, deprecated

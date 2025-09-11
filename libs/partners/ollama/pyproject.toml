@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "ollama>=0.5.3,<1.0.0",
     "langchain-core<1.0.0,>=0.3.74",
@@ -43,7 +43,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 disallow_untyped_defs = "True"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [

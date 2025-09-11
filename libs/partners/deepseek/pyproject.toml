@@ -46,7 +46,7 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 disallow_untyped_defs = "True"
 
 [tool.ruff]
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
 select = [
