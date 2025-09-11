@@ -2850,13 +2850,13 @@ def test_split_text_on_tokens() -> None:
 
 
 def test_decode_returns_no_chunks() -> None:
-    """Test that when decode returns only empty strings, output is empty, not [''].""" 
+    """Test that when decode returns only empty strings, output is empty, not ['']."""
     text = "foo bar baz 123"
 
     tokenizer = Tokenizer(
         chunk_overlap=3,
         tokens_per_chunk=7,
-        decode=(lambda it: ""),
+        decode=(lambda _: ""),
         encode=(lambda it: [ord(c) for c in it]),
     )
     output = split_text_on_tokens(text=text, tokenizer=tokenizer)

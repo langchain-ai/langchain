@@ -357,8 +357,7 @@ def split_text_on_tokens(*, text: str, tokenizer: Tokenizer) -> list[str]:
     if tokenizer.tokens_per_chunk <= tokenizer.chunk_overlap:
         msg = "tokens_per_chunk must be greater than chunk_overlap"
         raise ValueError(msg)
-    cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
-    chunk_ids = input_ids[start_idx:cur_idx]
+
     while start_idx < len(input_ids):
         cur_idx = min(start_idx + tokenizer.tokens_per_chunk, len(input_ids))
         chunk_ids = input_ids[start_idx:cur_idx]
