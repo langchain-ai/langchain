@@ -322,19 +322,11 @@ def test_function_message_chunks() -> None:
 
 
 def test_ai_message_chunks() -> None:
-    assert AIMessageChunk(example=True, content="I am") + AIMessageChunk(
-        example=True, content=" indeed."
-    ) == AIMessageChunk(example=True, content="I am indeed."), (
+    assert AIMessageChunk(content="I am") + AIMessageChunk(
+        content=" indeed."
+    ) == AIMessageChunk(content="I am indeed."), (
         "AIMessageChunk + AIMessageChunk should be a AIMessageChunk"
     )
-
-    with pytest.raises(
-        ValueError,
-        match="Cannot concatenate AIMessageChunks with different example values",
-    ):
-        AIMessageChunk(example=True, content="I am") + AIMessageChunk(
-            example=False, content=" indeed."
-        )
 
 
 class TestGetBufferString:
@@ -753,7 +745,6 @@ def test_convert_to_messages() -> None:
                 "type": "human",
                 "name": None,
                 "id": "1",
-                "example": False,
             },
         ]
     )
@@ -789,7 +780,6 @@ def test_convert_to_messages() -> None:
             additional_kwargs={"metadata": {"speaker_name": "Presenter"}},
             response_metadata={},
             id="1",
-            example=False,
         ),
     ]
     assert expected == actual

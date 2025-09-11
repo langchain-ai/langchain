@@ -909,7 +909,6 @@ async def test_openai_agent_with_streaming() -> None:
                     },
                     "chunk_position": "last",
                     "content": "",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
@@ -947,7 +946,6 @@ async def test_openai_agent_with_streaming() -> None:
                 {
                     "additional_kwargs": {},
                     "content": "The cat is spying from under the bed.",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
