@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import hashlib
 import random
 import re
+import string
 import time
 from dataclasses import asdict
 from pathlib import Path
@@ -212,8 +212,7 @@ def draw_mermaid(
                 edge_label = " -.-> " if edge.conditional else " --> "
 
             mermaid_graph += (
-                f"\t{_to_safe_id(source)}{edge_label}"
-                f"{_to_safe_id(target)};\n"
+                f"\t{_to_safe_id(source)}{edge_label}{_to_safe_id(target)};\n"
             )
 
         # Recursively add nested subgraphs
@@ -258,18 +257,20 @@ def draw_mermaid(
 
 
 def _to_safe_id(label: str) -> str:
-    """
+    """Convert a string into a Mermaid-compatible node id.
+
     Keep [a-zA-Z0-9_-] characters unchanged.
-    Map every other character -> \ + lowercase hex codepoint.
-    Result is only [a-zA-Z0-9\\_-], which is Mermaid compatible.
+    Map every other character -> backslash + lowercase hex codepoint.
+    Result is Mermaid compatible.
     """
+    allowed = string.ascii_letters + string.digits + "_-"
     out = []
     for ch in label:
-        if re.match(r"[a-zA-Z0-9\\_-]", ch):
+        if ch in allowed:
             out.append(ch)
         else:
-            out.append('\\' + format(ord(ch), 'x'))
-    return ''.join(out)
+            out.append("\\" + format(ord(ch), "x"))
+    return "".join(out)
 
 
 def _generate_mermaid_graph_styles(node_colors: NodeStyles) -> str:

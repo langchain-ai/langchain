@@ -528,6 +528,7 @@ def test_graph_mermaid_to_safe_id() -> None:
     assert _to_safe_id("foo_1") == "foo_1"
     assert _to_safe_id("#foo*&!") == "\\23foo\\2a\\26\\21"
 
+
 def test_graph_mermaid_duplicate_nodes(snapshot: SnapshotAssertion) -> None:
     fake_llm = FakeListLLM(responses=["foo", "bar"])
     sequence: Runnable = (
