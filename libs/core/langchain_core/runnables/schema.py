@@ -28,7 +28,7 @@ class EventData(TypedDict, total=False):
 
     This field is only available if the Runnable raised an exception.
 
-    ..versionadded:: 1.0.0
+    .. versionadded:: 1.0.0
     """
     output: Any
     """The output of the Runnable that generated the event.
