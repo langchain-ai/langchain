@@ -1441,7 +1441,7 @@ def test_anthropic_model_params() -> None:
         "ls_provider": "anthropic",
         "ls_model_type": "chat",
         "ls_model_name": "claude-3-5-haiku-latest",
-        "ls_max_tokens": 1024,
+        "ls_max_tokens": 8192,
         "ls_temperature": None,
     }
 
