@@ -714,10 +714,6 @@ def test_summarization_middleware_full_workflow() -> None:
 
 
 def test_modify_model_request() -> None:
-    @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
-        return input.upper()
 
     class ModifyMiddleware(AgentMiddleware):
         def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
