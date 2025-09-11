@@ -55,6 +55,9 @@ disallow_any_generics = false
 module = ["vcr.*",]
 ignore_missing_imports = true
 
+[tool.ruff]
+target-version = "py39"
+
 [tool.ruff.format]
 docstring-code-format = true
 

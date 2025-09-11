@@ -71,7 +71,9 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -243,7 +245,7 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running.
 
-        .. ATTENTION::
+        .. warning::
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -271,8 +273,9 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when a chat model starts running.
 
-        **ATTENTION**: This method is called for chat models. If you're implementing
-        a handler for a non-chat model, you should use ``on_llm_start`` instead.
+        .. warning::
+            This method is called for chat models. If you're implementing a handler for
+            a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -489,9 +492,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running.
+        """Run when the model starts running.
 
-        .. ATTENTION::
+        .. warning::
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -519,8 +522,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when a chat model starts running.
 
-        **ATTENTION**: This method is called for chat models. If you're implementing
-        a handler for a non-chat model, you should use ``on_llm_start`` instead.
+        .. warning::
+            This method is called for chat models. If you're implementing a handler for
+            a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -546,7 +550,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -567,7 +573,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM ends running.
+        """Run when the model ends running.
 
         Args:
             response (LLMResult): The response which was generated.
@@ -867,7 +873,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Override to define a handler for a custom event.
+        """Override to define a handler for custom events.
 
         Args:
             name: The name of the custom event.
