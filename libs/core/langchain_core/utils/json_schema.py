@@ -39,6 +39,27 @@ def _retrieve_ref(path: str, schema: dict) -> Union[list, dict]:
     return deepcopy(out)
 
 
+def _process_dict_properties(
+    properties: dict[str, Any],
+    full_schema: dict[str, Any],
+    processed_refs: set[str],
+    skip_keys: Sequence[str],
+    shallow_refs: bool,
+) -> dict[str, Any]:
+    """Process dictionary properties, recursing into nested structures."""
+    result: dict[str, Any] = {}
+    for k, v in properties.items():
+        if k in skip_keys:
+            result[k] = deepcopy(v)
+        elif isinstance(v, (dict, list)):
+            result[k] = _dereference_refs_helper(
+                v, full_schema, processed_refs, skip_keys, shallow_refs
+            )
+        else:
+            result[k] = v
+    return result
+
+
 def _dereference_refs_helper(
     obj: Any,
     full_schema: dict[str, Any],
@@ -46,17 +67,24 @@ def _dereference_refs_helper(
     skip_keys: Sequence[str],
     shallow_refs: bool,  # noqa: FBT001
 ) -> Any:
-    """Inline every pure {'$ref':...}.
+    """Dereference JSON Schema $ref objects, handling both pure and mixed references.
 
-    But:
+    This function processes JSON Schema objects containing $ref properties by resolving
+    the references and merging any additional properties. It handles:
 
-    - if shallow_refs=True: only break cycles, do not inline nested refs
-    - if shallow_refs=False: deep-inline all nested refs
+    - Pure $ref objects: {"$ref": "#/path/to/definition"}
+    - Mixed $ref objects: {"$ref": "#/path", "title": "Custom Title", ...}
+    - Circular references by breaking cycles and preserving non-ref properties
 
-    Also skip recursion under any key in skip_keys.
+    Args:
+        obj: The object to process (can be dict, list, or primitive)
+        full_schema: The complete schema containing all definitions
+        processed_refs: Set tracking currently processing refs (for cycle detection)
+        skip_keys: Keys under which to skip recursion
+        shallow_refs: If True, only break cycles; if False, deep-inline all refs
 
     Returns:
-        The object with refs dereferenced.
+        The object with $ref properties resolved and merged with other properties.
     """
     if processed_refs is None:
         processed_refs = set()
@@ -65,11 +93,10 @@ def _dereference_refs_helper(
     if isinstance(obj, dict) and "$ref" in obj:
         ref_path = obj["$ref"]
         other_props = {k: v for k, v in obj.items() if k != "$ref"}
-        
-        # Handle cycles
+
+        # Handle cycles: return only non-ref properties to avoid infinite recursion
         if ref_path in processed_refs:
-            # Return non-ref properties to avoid infinite recursion
-            return _dereference_refs_helper(
+            return _process_dict_properties(
                 other_props, full_schema, processed_refs, skip_keys, shallow_refs
             )
 
@@ -81,45 +108,32 @@ def _dereference_refs_helper(
             target, full_schema, processed_refs, skip_keys, shallow_refs
         )
 
-        # If there are no other properties, return the resolved reference directly
+        # Pure $ref case: return resolved reference directly
         if not other_props:
             processed_refs.remove(ref_path)
             return resolved_ref
 
-        # Merge resolved reference with other properties
+        # Mixed $ref case: merge resolved reference with other properties
         result_dict = {}
         if isinstance(resolved_ref, dict):
             result_dict.update(resolved_ref)
 
-        # Process and add other properties
-        for k, v in other_props.items():
-            if k in skip_keys:
-                result_dict[k] = deepcopy(v)
-            elif isinstance(v, (dict, list)):
-                result_dict[k] = _dereference_refs_helper(
-                    v, full_schema, processed_refs, skip_keys, shallow_refs
-                )
-            else:
-                result_dict[k] = v
+        # Process and merge other properties
+        processed_other_props = _process_dict_properties(
+            other_props, full_schema, processed_refs, skip_keys, shallow_refs
+        )
+        result_dict.update(processed_other_props)
 
         processed_refs.remove(ref_path)
         return result_dict
 
-    # No $ref: recurse, skipping any keys in skip_keys
+    # Handle regular dictionaries
     if isinstance(obj, dict):
-        out: dict[str, Any] = {}
-        for k, v in obj.items():
-            if k in skip_keys:
-                # do not recurse under this key
-                out[k] = deepcopy(v)
-            elif isinstance(v, (dict, list)):
-                out[k] = _dereference_refs_helper(
-                    v, full_schema, processed_refs, skip_keys, shallow_refs
-                )
-            else:
-                out[k] = v
-        return out
+        return _process_dict_properties(
+            obj, full_schema, processed_refs, skip_keys, shallow_refs
+        )
 
+    # Handle lists
     if isinstance(obj, list):
         return [
             _dereference_refs_helper(
@@ -128,6 +142,7 @@ def _dereference_refs_helper(
             for item in obj
         ]
 
+    # Return primitives as-is
     return obj
 
 
