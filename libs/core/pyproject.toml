@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.75"
+version = "0.3.76"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -72,9 +72,6 @@ enable_error_code = "deprecated"
 disallow_any_generics = false
 warn_return_any = false
 
-
-[tool.ruff]
-target-version = "py39"
 
 [tool.ruff.format]
 docstring-code-format = true

@@ -289,7 +289,8 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -393,7 +394,7 @@ jobs:
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
-            | grep -Ev '==[^=]*(\.?dev[0-9]*|\.?rc[0-9]*)$' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
             | sort -Vr \
             | head -n 1
           )"
