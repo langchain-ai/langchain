@@ -1,3 +1,4 @@
+import logging
 import time
 from sys import platform
 from typing import (
@@ -10,6 +11,8 @@ from typing import (
 
 if TYPE_CHECKING:
     from playwright.sync_api import Browser, CDPSession, Page
+
+logger = logging.getLogger(__name__)
 
 black_listed_elements: set[str] = {
     "html",
@@ -97,11 +100,15 @@ class Crawler:
         """
         if direction == "up":
             self.page.evaluate(
-                "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop - window.innerHeight;"  # noqa: E501
+                "(document.scrollingElement || document.body).scrollTop = "
+                "(document.scrollingElement || document.body).scrollTop - "
+                "window.innerHeight;"
             )
         elif direction == "down":
             self.page.evaluate(
-                "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop + window.innerHeight;"  # noqa: E501
+                "(document.scrollingElement || document.body).scrollTop = "
+                "(document.scrollingElement || document.body).scrollTop + "
+                "window.innerHeight;"
             )
 
     def click(self, id_: Union[str, int]) -> None:
@@ -176,7 +183,8 @@ class Crawler:
             {
                 "x": 0,
                 "y": 0,
-                "text": f"[scrollbar {percentage_progress_start:0.2f}-{percentage_progress_end:0.2f}%]",  # noqa: E501
+                "text": f"[scrollbar {percentage_progress_start:0.2f}-"
+                f"{percentage_progress_end:0.2f}%]",
             }
         )
 
@@ -298,7 +306,7 @@ class Crawler:
 
             try:
                 cursor = layout_node_index.index(index)
-                # TODO replace this with proper cursoring, ignoring the fact this is
+                # TODO: replace this with proper cursoring, ignoring the fact this is
                 # O(n^2) for the moment
             except ValueError:
                 continue
@@ -460,7 +468,8 @@ class Crawler:
 
             if inner_text != "":
                 elements_of_interest.append(
-                    f"""<{converted_node_name} id={id_counter}{meta}>{inner_text}</{converted_node_name}>"""  # noqa: E501
+                    f"<{converted_node_name} id={id_counter}{meta}>{inner_text}"
+                    f"</{converted_node_name}>"
                 )
             else:
                 elements_of_interest.append(

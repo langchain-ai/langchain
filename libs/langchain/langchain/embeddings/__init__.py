@@ -1,4 +1,6 @@
-"""**Embedding models**  are wrappers around embedding models
+"""**Embedding models**.
+
+**Embedding models**  are wrappers around embedding models
 from different APIs and services.
 
 Embedding models can be LLMs or not.

@@ -1,4 +1,5 @@
 from typing import Any, Optional
+from unittest.mock import MagicMock, patch
 
 from packaging import version
 from pydantic import BaseModel
@@ -12,11 +13,13 @@ from langchain_core.output_parsers.xml import XMLOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langchain_core.runnables.base import Runnable
-from langchain_core.runnables.graph import Edge, Graph, Node
-from langchain_core.runnables.graph_mermaid import _escape_node_label
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
+from langchain_core.runnables.graph import Edge, Graph, MermaidDrawMethod, Node
+from langchain_core.runnables.graph_mermaid import (
+    _escape_node_label,
+    _render_mermaid_using_api,
+    draw_mermaid_png,
 )
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
 
 
@@ -563,3 +566,90 @@ def test_graph_mermaid_frontmatter_config(snapshot: SnapshotAssertion) -> None:
             }
         }
     ) == snapshot(name="mermaid")
+
+
+def test_mermaid_base_url_default() -> None:
+    """Test that _render_mermaid_using_api defaults to mermaid.ink when None."""
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call the function with base_url=None (default)
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=None,
+        )
+
+        # Verify that the URL was constructed with the default base URL
+        assert mock_get.called
+        args, kwargs = mock_get.call_args
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith("https://mermaid.ink")
+
+
+def test_mermaid_base_url_custom() -> None:
+    """Test that _render_mermaid_using_api uses custom base_url when provided."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call the function with custom base_url.
+        _render_mermaid_using_api(
+            "graph TD;\n    A --> B;",
+            base_url=custom_url,
+        )
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args, kwargs = mock_get.call_args
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)
+
+
+def test_draw_mermaid_png_function_base_url() -> None:
+    """Test that draw_mermaid_png function passes base_url to API renderer."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Call draw_mermaid_png with custom base_url
+        draw_mermaid_png(
+            "graph TD;\n    A --> B;",
+            draw_method=MermaidDrawMethod.API,
+            base_url=custom_url,
+        )
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args, kwargs = mock_get.call_args
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)
+
+
+def test_graph_draw_mermaid_png_base_url() -> None:
+    """Test that Graph.draw_mermaid_png method passes base_url to renderer."""
+    custom_url = "https://custom.mermaid.com"
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.content = b"fake image data"
+
+    with patch("requests.get", return_value=mock_response) as mock_get:
+        # Create a simple graph
+        graph = Graph()
+        start_node = graph.add_node(BaseModel, id="start")
+        end_node = graph.add_node(BaseModel, id="end")
+        graph.add_edge(start_node, end_node)
+
+        # Call draw_mermaid_png with custom base_url
+        graph.draw_mermaid_png(draw_method=MermaidDrawMethod.API, base_url=custom_url)
+
+        # Verify that the URL was constructed with our custom base URL
+        assert mock_get.called
+        args, kwargs = mock_get.call_args
+        url = args[0]  # First argument to request.get is the URL
+        assert url.startswith(custom_url)

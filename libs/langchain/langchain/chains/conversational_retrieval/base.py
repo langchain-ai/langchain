@@ -54,7 +54,7 @@ def _get_chat_history(chat_history: list[CHAT_TURN_TYPE]) -> str:
             ai = "Assistant: " + dialogue_turn[1]
             buffer += f"\n{human}\n{ai}"
         else:
-            msg = (
+            msg = (  # type: ignore[unreachable]
                 f"Unsupported chat history format: {type(dialogue_turn)}."
                 f" Full chat history: {chat_history} "
             )
@@ -261,7 +261,7 @@ class BaseConversationalRetrievalChain(Chain):
     removal="1.0",
 )
 class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
-    """Chain for having a conversation based on retrieved documents.
+    r"""Chain for having a conversation based on retrieved documents.
 
     This class is deprecated. See below for an example implementation using
     `create_retrieval_chain`. Additional walkthroughs can be found at
@@ -350,7 +350,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         .. code-block:: python
 
             from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+                StuffDocumentsChain,
+                LLMChain,
+                ConversationalRetrievalChain,
             )
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI

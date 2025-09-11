@@ -118,7 +118,8 @@ export default function ChatModelTabs(props) {
     {
       value: "anthropic",
       label: "Anthropic",
-      model: "claude-3-5-sonnet-latest",
+      model: "claude-3-7-sonnet-20250219",
+      comment: "# Note: Model versions may become outdated. Check https://docs.anthropic.com/en/docs/models-overview for latest versions",
       apiKeyName: "ANTHROPIC_API_KEY",
       packageName: "langchain[anthropic]",
     },
@@ -231,6 +232,13 @@ ${llmVarName} = ChatWatsonx(
       model: "llama-3.1-sonar-small-128k-online",
       apiKeyName: "PPLX_API_KEY",
       packageName: "langchain-perplexity",
+    },
+    {
+      value: "deepseek",
+      label: "DeepSeek",
+      model: "deepseek-chat",
+      apiKeyName: "DEEPSEEK_API_KEY",
+      packageName: "langchain-deepseek",
     }
   ].map((item) => ({
     ...item,
@@ -262,6 +270,9 @@ if not os.environ.get("${selectedTabItem.apiKeyName}"):
 
 ${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${selectedTabItem.value}"${selectedTabItem?.kwargs ? `, ${selectedTabItem.kwargs}` : ""})`;
 
+  // Add comment if available
+  const commentText = selectedTabItem?.comment ? selectedTabItem.comment + "\n\n" : "";
+
   return (
     <div>
       <CustomDropdown
@@ -275,7 +286,7 @@ ${llmVarName} = init_chat_model("${selectedTabItem.model}", model_provider="${se
         {`pip install -qU "${selectedTabItem.packageName}"`}
       </CodeBlock>
       <CodeBlock language="python">
-        {apiKeyText ? apiKeyText + "\n\n" + initModelText : initModelText}
+        {apiKeyText ? apiKeyText + "\n\n" + commentText + initModelText : commentText + initModelText}
       </CodeBlock>
     </div>
   );

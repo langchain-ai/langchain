@@ -30,11 +30,12 @@ jobs:
   build:
     name: 'Detect Changes & Set Matrix'
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'ci-ignore') }}
     steps:
       - name: '📋 Checkout Code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: '🐍 Setup Python 3.11'
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
       - name: '📂 Get Changed Files'
@@ -137,7 +138,7 @@ jobs:
       run:
         working-directory: ${{ matrix.job-configs.working-directory }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: '🐍 Set up Python ${{ matrix.job-configs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"

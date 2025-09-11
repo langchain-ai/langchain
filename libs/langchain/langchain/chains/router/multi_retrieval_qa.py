@@ -22,8 +22,11 @@ from langchain.chains.router.multi_retrieval_prompt import (
 
 
 class MultiRetrievalQAChain(MultiRouteChain):
-    """A multi-route chain that uses an LLM router chain to choose amongst retrieval
-    qa chains."""
+    """Multi Retrieval QA Chain.
+
+    A multi-route chain that uses an LLM router chain to choose amongst retrieval
+    qa chains.
+    """
 
     router_chain: LLMRouterChain
     """Chain for deciding a destination chain and the input to it."""
@@ -62,6 +65,7 @@ class MultiRetrievalQAChain(MultiRouteChain):
             default_chain_llm: Optional language model to use if no default chain and
                 no default retriever are provided.
             **kwargs: Additional keyword arguments to pass to the chain.
+
         Returns:
             An instance of the multi retrieval qa chain.
         """
