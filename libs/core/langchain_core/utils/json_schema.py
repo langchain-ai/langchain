@@ -61,53 +61,37 @@ def _dereference_refs_helper(
     if processed_refs is None:
         processed_refs = set()
 
-    # 1) Pure $ref node (only contains $ref, no other properties)?
-    if isinstance(obj, dict) and set(obj.keys()) == {"$ref"}:
-        ref_path = obj["$ref"]
-        # cycle?
-        if ref_path in processed_refs:
-            return {}
-        processed_refs.add(ref_path)
-
-        # grab + copy the target
-        target = deepcopy(_retrieve_ref(ref_path, full_schema))
-
-        # deep inlining: recurse into everything
-        result = _dereference_refs_helper(
-            target, full_schema, processed_refs, skip_keys, shallow_refs
-        )
-
-        processed_refs.remove(ref_path)
-        return result
-
-    # 2) Mixed $ref node (contains $ref plus other properties)?
+    # Handle $ref nodes (both pure and mixed)
     if isinstance(obj, dict) and "$ref" in obj:
         ref_path = obj["$ref"]
-        # cycle?
+        other_props = {k: v for k, v in obj.items() if k != "$ref"}
+        
+        # Handle cycles
         if ref_path in processed_refs:
-            # For mixed refs, return the non-ref properties to avoid infinite recursion
-            other_props = {k: v for k, v in obj.items() if k != "$ref"}
+            # Return non-ref properties to avoid infinite recursion
             return _dereference_refs_helper(
                 other_props, full_schema, processed_refs, skip_keys, shallow_refs
             )
 
         processed_refs.add(ref_path)
 
-        # grab + copy the target
+        # Resolve the reference
         target = deepcopy(_retrieve_ref(ref_path, full_schema))
-
-        # Merge the resolved reference with other properties
-        result_dict = {}
-
-        # First, process the resolved reference
         resolved_ref = _dereference_refs_helper(
             target, full_schema, processed_refs, skip_keys, shallow_refs
         )
+
+        # If there are no other properties, return the resolved reference directly
+        if not other_props:
+            processed_refs.remove(ref_path)
+            return resolved_ref
+
+        # Merge resolved reference with other properties
+        result_dict = {}
         if isinstance(resolved_ref, dict):
             result_dict.update(resolved_ref)
 
-        # Then add/override with the other properties from the original object
-        other_props = {k: v for k, v in obj.items() if k != "$ref"}
+        # Process and add other properties
         for k, v in other_props.items():
             if k in skip_keys:
                 result_dict[k] = deepcopy(v)
@@ -121,7 +105,7 @@ def _dereference_refs_helper(
         processed_refs.remove(ref_path)
         return result_dict
 
-    # 3) Not a $ref: recurse, skipping any keys in skip_keys
+    # No $ref: recurse, skipping any keys in skip_keys
     if isinstance(obj, dict):
         out: dict[str, Any] = {}
         for k, v in obj.items():
