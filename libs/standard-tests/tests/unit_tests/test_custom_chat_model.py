@@ -1,5 +1,7 @@
 """Test the standard tests on the custom chat model in the docs."""
 
+from __future__ import annotations
+
 import pytest
 from langchain_core.language_models.chat_models import BaseChatModel
 

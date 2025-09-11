@@ -1,5 +1,7 @@
 """Script to generate migrations for the migration script."""
 
+from __future__ import annotations
+
 import json
 import pkgutil
 from pathlib import Path
