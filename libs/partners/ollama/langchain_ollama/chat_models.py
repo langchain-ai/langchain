@@ -660,8 +660,10 @@ class ChatOllama(BaseChatModel):
             if isinstance(message.content, str):
                 content = message.content
             else:
-                for content_part in cast(list[dict], message.content):
-                    if content_part.get("type") == "text":
+                for content_part in message.content:
+                    if isinstance(content_part, str):
+                        content += f"\n{content_part}"
+                    elif content_part.get("type") == "text":
                         content += f"\n{content_part['text']}"
                     elif content_part.get("type") == "tool_use":
                         continue

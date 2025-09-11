@@ -394,7 +394,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to None
+            metadata: Optional metadata associated with the chain. Defaults to None.
+            run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -445,7 +446,8 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
-            metadata: Optional metadata associated with the chain. Defaults to None
+            metadata: Optional metadata associated with the chain. Defaults to None.
+            run_name: Optional name for this run of the chain.
             include_run_info: Whether to include run info in the response. Defaults
                 to False.
 
@@ -599,6 +601,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain.
             **kwargs: If the chain expects multiple inputs, they can be passed in
                 directly as keyword arguments.
 
@@ -674,6 +677,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             tags: List of string tags to pass to all callbacks. These will be passed in
                 addition to tags passed to the chain during construction, but only
                 these runtime tags will propagate to calls to other objects.
+            metadata: Optional metadata associated with the chain.
             **kwargs: If the chain expects multiple inputs, they can be passed in
                 directly as keyword arguments.
 
@@ -750,7 +754,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
                 # -> {"_type": "foo", "verbose": False, ...}
 
         """
-        _dict = super().dict(**kwargs)
+        _dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             _dict["_type"] = self._chain_type
         return _dict

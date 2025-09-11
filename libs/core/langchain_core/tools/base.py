@@ -81,6 +81,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "json",
     "search_result",
     "custom_tool_call_output",
+    "document",
 )
 
 
@@ -658,10 +659,7 @@ class ChildTool(BaseTool):
                 return tool_input
             if issubclass(input_args, BaseModel):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -676,10 +674,7 @@ class ChildTool(BaseTool):
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -1367,8 +1362,8 @@ def get_all_basemodel_annotations(
                 continue
 
             # if class = FooBar inherits from Baz[str]:
-            # parent = Baz[str],
-            # parent_origin = Baz,
+            # parent = class Baz[str],
+            # parent_origin = class Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
             generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())

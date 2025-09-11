@@ -551,8 +551,9 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model returns usage metadata
         on invoke and streaming responses. Defaults to ``True``.
 
-        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track
+        input and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -648,8 +649,9 @@ class ChatModelUnitTests(ChatModelTests):
         Property controlling what usage metadata details are emitted in both ``invoke``
         and ``stream``.
 
-        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track
+        input and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -673,7 +675,8 @@ class ChatModelUnitTests(ChatModelTests):
                 def enable_vcr_tests(self) -> bool:
                     return True
 
-        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+        2. Configure VCR to exclude sensitive headers and other information from
+           cassettes.
 
             .. important::
                 VCR will by default record authentication headers and other sensitive
@@ -693,7 +696,9 @@ class ChatModelUnitTests(ChatModelTests):
                 :caption: tests/conftest.py
 
                 import pytest
-                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                from langchain_tests.conftest import (
+                    _base_vcr_config as _base_vcr_config,
+                )
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -727,8 +732,13 @@ class ChatModelUnitTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
-                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
+                    from langchain_tests.conftest import (
+                        _base_vcr_config as _base_vcr_config,
+                    )
                     from vcr import VCR
 
                     _EXTRA_HEADERS = [
@@ -772,10 +782,15 @@ class ChatModelUnitTests(ChatModelTests):
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
 
                     cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
+                    requests, responses = CustomPersister().load_cassette(
+                        path, CustomSerializer()
+                    )
 
         3. Run tests to generate VCR cassettes.
 
@@ -858,10 +873,12 @@ class ChatModelUnitTests(ChatModelTests):
 
             If this test fails, ensure that:
 
-            1. ``chat_model_params`` is specified and the model can be initialized from those params;
-            2. The model accommodates `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
+            1. ``chat_model_params`` is specified and the model can be initialized
+               from those params;
+            2. The model accommodates
+               `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__
 
-        """  # noqa: E501
+        """
         model = self.chat_model_class(
             **{
                 **self.standard_chat_model_params,

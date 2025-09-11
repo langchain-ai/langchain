@@ -87,13 +87,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     .. code-block:: python
 
        class TestParrotVectorStore(VectorStoreIntegrationTests):
-            @pytest.fixture()
-            def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
-                ...
+           @pytest.fixture()
+           def vectorstore(self) -> Generator[VectorStore, None, None]:  # type: ignore
+               ...
 
-            @property
-            def has_async(self) -> bool:
-                return False
+           @property
+           def has_async(self) -> bool:
+               return False
 
     .. note::
           API references for individual test methods include troubleshooting tips.
@@ -116,6 +116,11 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     @property
     def has_async(self) -> bool:
         """Configurable property to enable or disable async tests."""
+        return True
+
+    @property
+    def has_get_by_ids(self) -> bool:
+        """Whether the vector store supports get_by_ids."""
         return True
 
     @staticmethod
@@ -154,10 +159,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             If this test fails, check that:
 
-            1. We correctly initialize an empty vector store in the ``vectorestore`` fixture.
-            2. Calling ``.similarity_search`` for the top ``k`` similar documents does not threshold by score.
-            3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
-        """  # noqa: E501
+            1. We correctly initialize an empty vector store in the ``vectorestore``
+               fixture.
+            2. Calling ``.similarity_search`` for the top ``k`` similar documents does
+               not threshold by score.
+            3. We do not mutate the original document object when adding it to the
+               vector store (e.g., by adding an ID).
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
 
@@ -333,17 +341,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_get_by_ids(self, vectorstore: VectorStore) -> None:
-                        super().test_get_by_ids(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
@@ -369,17 +381,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
-                        super().test_get_by_ids_missing(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
         """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         # This should not raise an exception
         documents = vectorstore.get_by_ids(["1", "2", "3"])
@@ -399,17 +415,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
-                        super().test_add_documents_documents(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
-        """  # noqa: E501
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
@@ -433,23 +453,29 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             This test also verifies that:
 
-            1. IDs specified in the ``Document.id`` field are assigned when adding documents.
-            2. If some documents include IDs and others don't string IDs are generated for the latter.
+            1. IDs specified in the ``Document.id`` field are assigned when adding
+               documents.
+            2. If some documents include IDs and others don't string IDs are generated
+               for the latter.
 
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
-                        super().test_add_documents_with_existing_ids(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
-        """  # noqa: E501
+        """
         if not self.has_sync:
             pytest.skip("Sync tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),
@@ -485,10 +511,13 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             If this test fails, check that:
 
-            1. We correctly initialize an empty vector store in the ``vectorestore`` fixture.
-            2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does not threshold by score.
-            3. We do not mutate the original document object when adding it to the vector store (e.g., by adding an ID).
-        """  # noqa: E501
+            1. We correctly initialize an empty vector store in the ``vectorestore``
+               fixture.
+            2. Calling ``.asimilarity_search`` for the top ``k`` similar documents does
+               not threshold by score.
+            3. We do not mutate the original document object when adding it to the
+               vector store (e.g., by adding an ID).
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
 
@@ -671,17 +700,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_get_by_ids(self, vectorstore: VectorStore) -> None:
-                        await super().test_get_by_ids(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
         """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
@@ -707,17 +740,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
-                        await super().test_get_by_ids_missing(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         # This should not raise an exception
         assert await vectorstore.aget_by_ids(["1", "2", "3"]) == []
@@ -738,17 +775,21 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
-                        await super().test_add_documents_documents(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(page_content="foo", metadata={"id": 1}),
@@ -774,23 +815,29 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
             This test also verifies that:
 
-            1. IDs specified in the ``Document.id`` field are assigned when adding documents.
-            2. If some documents include IDs and others don't string IDs are generated for the latter.
+            1. IDs specified in the ``Document.id`` field are assigned when adding
+               documents.
+            2. If some documents include IDs and others don't string IDs are generated
+               for the latter.
 
             .. note::
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
-                test can be skipped using a pytest ``xfail`` on the test class:
+                test can be skipped by setting the ``has_get_by_ids`` property to
+                ``False``.
 
                 .. code-block:: python
 
-                    @pytest.mark.xfail(reason=("get_by_ids not implemented."))
-                    async def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
-                        await super().test_add_documents_with_existing_ids(vectorstore)
+                    @property
+                    def has_get_by_ids(self) -> bool:
+                        return False
 
-        """  # noqa: E501
+        """
         if not self.has_async:
             pytest.skip("Async tests not supported.")
+
+        if not self.has_get_by_ids:
+            pytest.skip("get_by_ids not implemented.")
 
         documents = [
             Document(id="foo", page_content="foo", metadata={"id": 1}),

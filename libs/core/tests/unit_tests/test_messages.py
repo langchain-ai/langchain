@@ -743,6 +743,7 @@ def test_convert_to_messages() -> None:
                 "tool_call_id": "tool_id2",
                 "content": "Bye!",
                 "artifact": {"foo": 123},
+                "status": "success",
             },
             {"role": "remove", "id": "message_to_remove", "content": ""},
             {
@@ -776,7 +777,12 @@ def test_convert_to_messages() -> None:
             ],
         ),
         ToolMessage(tool_call_id="tool_id", content="Hi!"),
-        ToolMessage(tool_call_id="tool_id2", content="Bye!", artifact={"foo": 123}),
+        ToolMessage(
+            tool_call_id="tool_id2",
+            content="Bye!",
+            artifact={"foo": 123},
+            status="success",
+        ),
         RemoveMessage(id="message_to_remove"),
         HumanMessage(
             content="Now the turn for Larry to ask a question about the book!",

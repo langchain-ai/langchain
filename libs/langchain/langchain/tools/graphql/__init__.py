@@ -1,1 +1,1 @@
-"""Tools for interacting with a GraphQL API"""
+"""Tools for interacting with a GraphQL API."""

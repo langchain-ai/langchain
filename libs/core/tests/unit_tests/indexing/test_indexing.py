@@ -2421,14 +2421,12 @@ def test_index_into_document_index(record_manager: InMemoryRecordManager) -> Non
         "num_updated": 2,
     }
 
-    # TODO: This test is failing due to an existing bug with DocumentIndex deletion
-    # when indexing an empty list. Skipping this assertion for now.
-    # assert index([], record_manager, document_index, cleanup="full") == {
-    #     "num_added": 0,
-    #     "num_deleted": 2,
-    #     "num_skipped": 0,
-    #     "num_updated": 0,
-    # }
+    assert index([], record_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
 
 
 async def test_aindex_into_document_index(
@@ -2460,6 +2458,7 @@ async def test_aindex_into_document_index(
         "num_skipped": 2,
         "num_updated": 0,
     }
+
     assert await aindex(
         docs, arecord_manager, document_index, cleanup="full", force_update=True
     ) == {
@@ -2469,14 +2468,12 @@ async def test_aindex_into_document_index(
         "num_updated": 2,
     }
 
-    # TODO: This test is failing due to an existing bug with DocumentIndex deletion
-    # when indexing an empty list. Skipping this assertion for now.
-    # assert await aindex([], arecord_manager, document_index, cleanup="full") == {
-    #     "num_added": 0,
-    #     "num_deleted": 2,
-    #     "num_skipped": 0,
-    #     "num_updated": 0,
-    # }
+    assert await aindex([], arecord_manager, document_index, cleanup="full") == {
+        "num_added": 0,
+        "num_deleted": 2,
+        "num_skipped": 0,
+        "num_updated": 0,
+    }
 
 
 def test_index_with_upsert_kwargs(
