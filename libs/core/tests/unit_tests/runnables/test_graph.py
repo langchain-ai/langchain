@@ -16,8 +16,8 @@ from langchain_core.runnables.base import Runnable
 from langchain_core.runnables.graph import Edge, Graph, MermaidDrawMethod, Node
 from langchain_core.runnables.graph_mermaid import (
     _render_mermaid_using_api,
-    draw_mermaid_png,
     _to_safe_id,
+    draw_mermaid_png,
 )
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema
@@ -653,6 +653,7 @@ def test_graph_draw_mermaid_png_base_url() -> None:
         args, kwargs = mock_get.call_args
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
+
 
 def test_graph_mermaid_special_chars(snapshot: SnapshotAssertion) -> None:
     graph = Graph(
