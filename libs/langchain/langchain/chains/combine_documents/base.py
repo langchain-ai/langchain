@@ -206,9 +206,7 @@ class AnalyzeDocumentChain(Chain):
             from operator import itemgetter
             from langchain_core.runnables import RunnableLambda, RunnableParallel
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnableParallel(
                 question=itemgetter("question"),
                 input_documents=itemgetter("input_document") | split_text,
@@ -226,14 +224,13 @@ class AnalyzeDocumentChain(Chain):
                 RunnablePassthrough,
             )
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnablePassthrough.assign(
                 output_text=RunnableParallel(
                     question=itemgetter("question"),
                     input_documents=itemgetter("input_document") | split_text,
-                ) | chain.pick("output_text")
+                )
+                | chain.pick("output_text")
             )
 
     """

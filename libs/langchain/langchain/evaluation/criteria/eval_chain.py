@@ -201,7 +201,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
     >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-    >>> evaluator.evaluate_strings(prediction="Imagine an ice cream flavor for the color aquamarine", input="Tell me an idea")
+    >>> evaluator.evaluate_strings(
+    ...     prediction="Imagine an ice cream flavor for the color aquamarine",
+    ...     input="Tell me an idea",
+    ... )
     {
         'reasoning': 'Here is my step-by-step reasoning for the given criteria:\n\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \n\nN',
         'value': 'N',
@@ -217,10 +220,10 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     ...     criteria=criteria,
     ... )
     >>> evaluator.evaluate_strings(
-    ...   prediction="The answer is 4",
-    ...   input="How many apples are there?",
-    ...   reference="There are 3 apples",
-    ...   )
+    ...     prediction="The answer is 4",
+    ...     input="How many apples are there?",
+    ...     reference="There are 3 apples",
+    ... )
     {
         'score': 0,
         'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\n\nN',

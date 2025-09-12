@@ -1904,6 +1904,11 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
+    assert tool.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "string"},
+    }
+
     input_schema = tool.get_input_schema()
     if issubclass(input_schema, BaseModel):
         input_json_schema = input_schema.model_json_schema()
@@ -2347,6 +2352,28 @@ def test_tool_injected_tool_call_id() -> None:
             "id": "bar",
         }
     ) == ToolMessage(0, tool_call_id="bar")  # type: ignore[arg-type]
+
+
+def test_tool_injected_tool_call_id_override_llm_generated() -> None:
+    """Test that InjectedToolCallId overrides LLM-generated values."""
+
+    @tool
+    def foo(x: int, tool_call_id: Annotated[str, InjectedToolCallId]) -> ToolMessage:
+        """Foo."""
+        return ToolMessage(x, tool_call_id=tool_call_id)  # type: ignore[arg-type]
+
+    # Test that when LLM generates the tool_call_id, it gets overridden
+    result = foo.invoke(
+        {
+            "type": "tool_call",
+            "args": {"x": 0, "tool_call_id": "fake_llm_id"},  # LLM generated this
+            "name": "foo",
+            "id": "real_tool_call_id",  # This should be used instead
+        }
+    )
+
+    # The tool should receive the real tool call ID, not the LLM-generated one
+    assert result == ToolMessage(0, tool_call_id="real_tool_call_id")  # type: ignore[arg-type]
 
 
 def test_tool_uninjected_tool_call_id() -> None:

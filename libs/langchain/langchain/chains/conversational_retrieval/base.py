@@ -350,7 +350,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
         .. code-block:: python
 
             from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ConversationalRetrievalChain
+                StuffDocumentsChain,
+                LLMChain,
+                ConversationalRetrievalChain,
             )
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI

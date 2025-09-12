@@ -76,8 +76,7 @@ def pytest_collection_modifyitems(
     .. code-block:: python
 
         @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
+        def test_something(): ...
 
     """
     # Mapping from the name of a package to whether it is installed or not.
@@ -110,11 +109,7 @@ def pytest_collection_modifyitems(
                 # If we haven't yet checked whether the pkg is installed
                 # let's check it and store the result.
                 if pkg not in required_pkgs_info:
-                    try:
-                        installed = util.find_spec(pkg) is not None
-                    except Exception:
-                        installed = False
-                    required_pkgs_info[pkg] = installed
+                    required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
                 if not required_pkgs_info[pkg]:
                     if only_extended:

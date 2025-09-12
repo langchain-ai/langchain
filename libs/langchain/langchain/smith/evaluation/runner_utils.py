@@ -851,7 +851,7 @@ async def _arun_llm_or_chain(
                 metadata=config.get("metadata"),
             )
         result = output
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.warning(
             "%s failed for example %s with inputs %s\n%s",
             chain_or_llm,
@@ -1014,7 +1014,7 @@ def _run_llm_or_chain(
                 metadata=config.get("metadata"),
             )
         result = output
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         error_type = type(e).__name__
         logger.warning(
             "%s failed for example %s with inputs %s\nError Type: %s, Message: %s",
@@ -1214,7 +1214,7 @@ class _DatasetRunContainer:
             try:
                 agg_feedback = results.get_aggregate_feedback()
                 _display_aggregate_results(agg_feedback)
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 logger.debug("Failed to print aggregate feedback: %s", e, exc_info=True)
         try:
             # Closing the project permits name changing and metric optimizations
@@ -1222,7 +1222,7 @@ class _DatasetRunContainer:
                 self.project.id,
                 end_time=datetime.now(timezone.utc),
             )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             logger.debug("Failed to close project: %s", e, exc_info=True)
         return results
 
@@ -1416,7 +1416,8 @@ async def arun_on_dataset(
                 "embedding_distance",
                 smith_eval.RunEvalConfig.Criteria("helpfulness"),
                 smith_eval.RunEvalConfig.Criteria({
-                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                    "fifth-grader-score": "Do you have to be smarter than a fifth "
+                    "grader to answer this question?"
                 }),
             ]
         )
@@ -1438,8 +1439,8 @@ async def arun_on_dataset(
         from typing import Optional
         from langchain.evaluation import StringEvaluator
 
-        class MyStringEvaluator(StringEvaluator):
 
+        class MyStringEvaluator(StringEvaluator):
             @property
             def requires_input(self) -> bool:
                 return False
@@ -1452,12 +1453,14 @@ async def arun_on_dataset(
             def evaluation_name(self) -> str:
                 return "exact_match"
 
-            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+            def _evaluate_strings(
+                self, prediction, reference=None, input=None, **kwargs
+            ) -> dict:
                 return {"score": prediction == reference}
 
 
         evaluation_config = smith_eval.RunEvalConfig(
-            custom_evaluators = [MyStringEvaluator()],
+            custom_evaluators=[MyStringEvaluator()],
         )
 
         await arun_on_dataset(
@@ -1467,7 +1470,7 @@ async def arun_on_dataset(
             evaluation=evaluation_config,
         )
 
-    """  # noqa: E501
+    """
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)
@@ -1591,7 +1594,8 @@ def run_on_dataset(
                 "embedding_distance",
                 smith_eval.RunEvalConfig.Criteria("helpfulness"),
                 smith_eval.RunEvalConfig.Criteria({
-                    "fifth-grader-score": "Do you have to be smarter than a fifth grader to answer this question?"
+                    "fifth-grader-score": "Do you have to be smarter than a fifth "
+                    "grader to answer this question?"
                 }),
             ]
         )
@@ -1613,8 +1617,8 @@ def run_on_dataset(
         from typing import Optional
         from langchain.evaluation import StringEvaluator
 
-        class MyStringEvaluator(StringEvaluator):
 
+        class MyStringEvaluator(StringEvaluator):
             @property
             def requires_input(self) -> bool:
                 return False
@@ -1627,12 +1631,14 @@ def run_on_dataset(
             def evaluation_name(self) -> str:
                 return "exact_match"
 
-            def _evaluate_strings(self, prediction, reference=None, input=None, **kwargs) -> dict:
+            def _evaluate_strings(
+                self, prediction, reference=None, input=None, **kwargs
+            ) -> dict:
                 return {"score": prediction == reference}
 
 
         evaluation_config = smith_eval.RunEvalConfig(
-            custom_evaluators = [MyStringEvaluator()],
+            custom_evaluators=[MyStringEvaluator()],
         )
 
         run_on_dataset(
@@ -1642,7 +1648,7 @@ def run_on_dataset(
             evaluation=evaluation_config,
         )
 
-    """  # noqa: E501
+    """
     input_mapper = kwargs.pop("input_mapper", None)
     if input_mapper:
         warn_deprecated("0.0.305", message=_INPUT_MAPPER_DEP_WARNING, pending=True)

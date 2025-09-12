@@ -144,6 +144,9 @@ skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
@@ -161,7 +164,6 @@ ignore = [
 
     # TODO rules
     "ANN401",  # No type Any
-    "BLE",     # Blind exceptions
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
     "PLC0415", # pylint: import-outside-top-level
