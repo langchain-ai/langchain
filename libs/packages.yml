@@ -729,4 +729,17 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-
+- name: langchain-google-bigtable
+  name_title: Bigtable
+  repo: googleapis/langchain-google-bigtable-python
+- name: langchain-timbr
+  provider_page: timbr
+  path: .
+  repo: WPSemantix/langchain-timbr
+- name: langchain-zenrows
+  path: .
+  repo: ZenRows-Hub/langchain-zenrows
+- name: langchain-oci
+  name_title: Oracle Cloud Infrastructure (OCI)
+  repo: oracle/langchain-oracle
+  path: .
