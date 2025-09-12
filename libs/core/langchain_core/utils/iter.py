@@ -8,13 +8,12 @@ from types import TracebackType
 from typing import (
     Any,
     Generic,
+    Literal,
     Optional,
     TypeVar,
     Union,
     overload,
 )
-
-from typing_extensions import Literal
 
 T = TypeVar("T")
 

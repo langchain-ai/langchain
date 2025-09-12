@@ -5,11 +5,11 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.70",
+    "langchain-core>=0.3.75",
     "tokenizers>=0.19.1",
-    "huggingface-hub>=0.33.4",
+    "huggingface-hub>=0.34",
 ]
 name = "langchain-huggingface"
 version = "0.3.1"

@@ -1,4 +1,6 @@
-from typing import Any, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import pytest
 
@@ -13,10 +15,10 @@ from langchain_cli.utils.git import DependencySource, parse_dependency_string
 def _assert_dependency_equals(
     dep: DependencySource,
     *,
-    git: Optional[str] = None,
-    ref: Optional[str] = None,
-    subdirectory: Optional[str] = None,
-    event_metadata: Optional[dict[str, Any]] = None,
+    git: str | None = None,
+    ref: str | None = None,
+    subdirectory: str | None = None,
+    event_metadata: dict[str, Any] | None = None,
 ) -> None:
     if dep["git"] != git:
         msg = f"Expected git to be {git} but got {dep['git']}"

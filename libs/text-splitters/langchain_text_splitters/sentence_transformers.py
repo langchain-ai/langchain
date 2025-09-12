@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
 
@@ -21,7 +21,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self,
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
-        tokens_per_chunk: Optional[int] = None,
+        tokens_per_chunk: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
@@ -40,9 +40,7 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
-    def _initialize_chunk_configuration(
-        self, *, tokens_per_chunk: Optional[int]
-    ) -> None:
+    def _initialize_chunk_configuration(self, *, tokens_per_chunk: int | None) -> None:
         self.maximum_tokens_per_chunk = self._model.max_seq_length
 
         if tokens_per_chunk is None:

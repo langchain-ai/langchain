@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pydantic import ConfigDict, Field
+from typing_extensions import Self
 
+from langchain_core._api.deprecation import warn_deprecated
 from langchain_core.load.serializable import Serializable
+from langchain_core.messages import content as types
 from langchain_core.utils import get_bolded_text
 from langchain_core.utils._merge import merge_dicts, merge_lists
 from langchain_core.utils.interactive_env import is_interactive_env
@@ -15,6 +18,52 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from langchain_core.prompts.chat import ChatPromptTemplate
+
+
+class TextAccessor(str):
+    """String-like object that supports both property and method access patterns.
+
+    Exists to maintain backward compatibility while transitioning from method-based to
+    property-based text access in message objects. In LangChain <v1.0, message text was
+    accessed via ``.text()`` method calls. In v1.0=<, the preferred pattern is property
+    access via ``.text``.
+
+    Rather than breaking existing code immediately, ``TextAccessor`` allows both
+    patterns:
+    - Modern property access: ``message.text`` (returns string directly)
+    - Legacy method access: ``message.text()`` (callable, emits deprecation warning)
+
+    """
+
+    __slots__ = ()
+
+    def __new__(cls, value: str) -> Self:
+        """Create new TextAccessor instance."""
+        return str.__new__(cls, value)
+
+    def __call__(self) -> str:
+        """Enable method-style text access for backward compatibility.
+
+        This method exists solely to support legacy code that calls ``.text()``
+        as a method. New code should use property access (``.text``) instead.
+
+        .. deprecated:: 1.0.0
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
+
+        Returns:
+            The string content, identical to property access.
+
+        """
+        warn_deprecated(
+            since="1.0.0",
+            message=(
+                "Calling .text() as a method is deprecated. "
+                "Use .text as a property instead (e.g., message.text)."
+            ),
+            removal="2.0.0",
+        )
+        return str(self)
 
 
 class BaseMessage(Serializable):
@@ -61,15 +110,32 @@ class BaseMessage(Serializable):
         extra="allow",
     )
 
+    @overload
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
-    ) -> None:
-        """Pass in content as positional arg.
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
+    ) -> None: ...
 
-        Args:
-            content: The string contents of the message.
-        """
-        super().__init__(content=content, **kwargs)
+    @overload
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        content: Optional[Union[str, list[Union[str, dict]]]] = None,
+        content_blocks: Optional[list[types.ContentBlock]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Specify ``content`` as positional arg or ``content_blocks`` for typing."""
+        if content_blocks is not None:
+            super().__init__(content=content_blocks, **kwargs)
+        else:
+            super().__init__(content=content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
@@ -89,25 +155,96 @@ class BaseMessage(Serializable):
         """
         return ["langchain", "schema", "messages"]
 
-    def text(self) -> str:
-        """Get the text content of the message.
+    @property
+    def content_blocks(self) -> list[types.ContentBlock]:
+        r"""Return ``content`` as a list of standardized :class:`~langchain_core.messages.content.ContentBlock`\s.
+
+        .. important::
+
+            To use this property correctly, the corresponding ``ChatModel`` must support
+            ``message_version='v1'`` or higher (and it must be set):
+
+            .. code-block:: python
+
+                from langchain.chat_models import init_chat_model
+                llm = init_chat_model("...", message_version="v1")
+
+                # or
+
+                from langchain-openai import ChatOpenAI
+                llm = ChatOpenAI(model="gpt-4o", message_version="v1")
+
+            Otherwise, the property will perform best-effort parsing to standard types,
+            though some content may be misinterpreted.
+
+        .. versionadded:: 1.0.0
+
+        """  # noqa: E501
+        from langchain_core.messages import content as types  # noqa: PLC0415
+        from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
+            _convert_to_v1_from_anthropic_input,
+        )
+        from langchain_core.messages.block_translators.langchain_v0 import (  # noqa: PLC0415
+            _convert_v0_multimodal_input_to_v1,
+        )
+        from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
+            _convert_to_v1_from_chat_completions_input,
+        )
+
+        blocks: list[types.ContentBlock] = []
+
+        # First pass: convert to standard blocks
+        content = (
+            [self.content]
+            if isinstance(self.content, str) and self.content
+            else self.content
+        )
+        for item in content:
+            if isinstance(item, str):
+                blocks.append({"type": "text", "text": item})
+            elif isinstance(item, dict):
+                item_type = item.get("type")
+                if item_type not in types.KNOWN_BLOCK_TYPES:
+                    blocks.append({"type": "non_standard", "value": item})
+                else:
+                    blocks.append(cast("types.ContentBlock", item))
+
+        # Subsequent passes: attempt to unpack non-standard blocks
+        for parsing_step in [
+            _convert_v0_multimodal_input_to_v1,
+            _convert_to_v1_from_chat_completions_input,
+            _convert_to_v1_from_anthropic_input,
+        ]:
+            blocks = parsing_step(blocks)
+        return blocks
+
+    @property
+    def text(self) -> TextAccessor:
+        """Get the text content of the message as a string.
+
+        Can be used as both property (``message.text``) and method (``message.text()``).
+
+        .. deprecated:: 1.0.0
+            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
+            instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
         """
         if isinstance(self.content, str):
-            return self.content
-
-        # must be a list
-        blocks = [
-            block
-            for block in self.content
-            if isinstance(block, str)
-            or (block.get("type") == "text" and isinstance(block.get("text"), str))
-        ]
-        return "".join(
-            block if isinstance(block, str) else block["text"] for block in blocks
-        )
+            text_value = self.content
+        else:
+            # must be a list
+            blocks = [
+                block
+                for block in self.content
+                if isinstance(block, str)
+                or (block.get("type") == "text" and isinstance(block.get("text"), str))
+            ]
+            text_value = "".join(
+                block if isinstance(block, str) else block["text"] for block in blocks
+            )
+        return TextAccessor(text_value)
 
     def __add__(self, other: Any) -> ChatPromptTemplate:
         """Concatenate this message with another message.
@@ -161,7 +298,9 @@ def merge_content(
     Returns:
         The merged content.
     """
-    merged = first_content
+    merged: Union[str, list[Union[str, dict]]]
+    merged = "" if first_content is None else first_content
+
     for content in contents:
         # If current is a string
         if isinstance(merged, str):
@@ -180,8 +319,10 @@ def merge_content(
         elif merged and isinstance(merged[-1], str):
             merged[-1] += content
         # If second content is an empty string, treat as a no-op
-        elif content:
-            # Otherwise, add the second content as a new element of the list
+        elif content == "":
+            pass
+        # Otherwise, add the second content as a new element of the list
+        elif merged:
             merged.append(content)
     return merged
 

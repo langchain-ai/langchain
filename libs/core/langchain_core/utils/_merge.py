@@ -57,6 +57,11 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
                 #             "should either occur once or have the same value across "
                 #             "all dicts."
                 #         )
+                if (right_k == "index" and merged[right_k].startswith("lc_")) or (
+                    right_k in ("id", "output_version", "model_provider")
+                    and merged[right_k] == right_v
+                ):
+                    continue
                 merged[right_k] += right_v
             elif isinstance(merged[right_k], dict):
                 merged[right_k] = merge_dicts(merged[right_k], right_v)
@@ -93,7 +98,16 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
             merged = other.copy()
         else:
             for e in other:
-                if isinstance(e, dict) and "index" in e and isinstance(e["index"], int):
+                if (
+                    isinstance(e, dict)
+                    and "index" in e
+                    and (
+                        isinstance(e["index"], int)
+                        or (
+                            isinstance(e["index"], str) and e["index"].startswith("lc_")
+                        )
+                    )
+                ):
                     to_merge = [
                         i
                         for i, e_left in enumerate(merged)
@@ -102,11 +116,35 @@ def merge_lists(left: Optional[list], *others: Optional[list]) -> Optional[list]
                     if to_merge:
                         # TODO: Remove this once merge_dict is updated with special
                         # handling for 'type'.
-                        new_e = (
-                            {k: v for k, v in e.items() if k != "type"}
-                            if "type" in e
-                            else e
-                        )
+                        if (left_type := merged[to_merge[0]].get("type")) and (
+                            e.get("type") == "non_standard" and "value" in e
+                        ):
+                            if left_type != "non_standard":
+                                # standard + non_standard
+                                new_e: dict[str, Any] = {
+                                    "extras": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                            else:
+                                # non_standard + non_standard
+                                new_e = {
+                                    "value": {
+                                        k: v
+                                        for k, v in e["value"].items()
+                                        if k != "type"
+                                    }
+                                }
+                                if "index" in e:
+                                    new_e["index"] = e["index"]
+                        else:
+                            new_e = (
+                                {k: v for k, v in e.items() if k != "type"}
+                                if "type" in e
+                                else e
+                            )
                         merged[to_merge[0]] = merge_dicts(merged[to_merge[0]], new_e)
                     else:
                         merged.append(e)

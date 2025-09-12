@@ -18,6 +18,7 @@ from collections.abc import Generator
 from typing import (
     Any,
     Callable,
+    ParamSpec,
     TypeVar,
     Union,
     cast,
@@ -25,7 +26,6 @@ from typing import (
 
 from pydantic.fields import FieldInfo
 from pydantic.v1.fields import FieldInfo as FieldInfoV1
-from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
