@@ -142,7 +142,7 @@ def pre_init(func: Callable) -> Any:
         # Ideally we would use @model_validator(mode="before") but this would change the
         # order of the validators. See https://github.com/pydantic/pydantic/discussions/7434.
         # So we keep root_validator for backward compatibility.
-        @root_validator(pre=True)
+        @root_validator(pre=True)  # type: ignore[deprecated]
         @wraps(func)
         def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
             """Decorator to run a function before model initialization.
@@ -328,12 +328,13 @@ def get_fields(
     Raises:
         TypeError: If the model is not a Pydantic model.
     """
-    if hasattr(model, "model_fields"):
+    if not isinstance(model, type):
+        model = type(model)
+    if issubclass(model, BaseModel):
         return model.model_fields
-
-    if hasattr(model, "__fields__"):
+    if issubclass(model, BaseModelV1):
         return model.__fields__
-    msg = f"Expected a Pydantic model. Got {type(model)}"
+    msg = f"Expected a Pydantic model. Got {model}"
     raise TypeError(msg)
 
 

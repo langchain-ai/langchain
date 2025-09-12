@@ -34,7 +34,7 @@ test = ["langchain-core"]
 test_integration = []
 lint = ["ruff<0.13,>=0.12.10"]
 typing = [
-    "mypy<1.18,>=1.17.1",
+    "mypy<1.19,>=1.18.1",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "langchain-core",
 ]
