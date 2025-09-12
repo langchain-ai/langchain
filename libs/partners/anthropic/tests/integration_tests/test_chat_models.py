@@ -1120,8 +1120,7 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     )
 
 
-# @pytest.mark.vcr
-@pytest.mark.xfail(reason="Citations broken in Anthropic API; all other features work")
+@pytest.mark.vcr
 def test_web_fetch() -> None:
     """Note: this is a beta feature.
 
@@ -1179,7 +1178,9 @@ def test_web_fetch() -> None:
     citation_response = llm_with_citations.invoke([citation_message])
 
     citation_results = [
-        block for block in citation_response.content if isinstance(block, dict)
+        block
+        for block in citation_response.content
+        if isinstance(block, dict) and block.get("type") == "web_fetch_tool_result"
     ]
     assert len(citation_results) == 1  # Since max_uses=1
     citation_result = citation_results[0]
