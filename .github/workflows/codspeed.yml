@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We have to use 3.12 as 3.13 is not yet supported
       - name: '📦 Install UV Package Manager'
@@ -44,7 +44,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
