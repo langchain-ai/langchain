@@ -779,3 +779,108 @@ def test_dereference_refs_non_dict_ref_target() -> None:
 
     actual = dereference_refs(schema)
     assert actual == expected
+
+
+def test_dereference_refs_preserves_default_values() -> None:
+    """Test that default values are preserved when dereferencing refs."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "status": {
+                "$ref": "#/$defs/Status",
+                "default": "completed"
+            },
+            "priority": {"$ref": "#/$defs/Priority"},
+        },
+        "$defs": {
+            "Status": {
+                "type": "string",
+                "enum": ["pending", "completed", "error"]
+            },
+            "Priority": {
+                "type": "string",
+                "enum": ["low", "medium", "high"],
+                "default": "medium"
+            },
+        },
+    }
+
+    expected = {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "enum": ["pending", "completed", "error"],
+                "default": "completed"
+            },
+            "priority": {
+                "type": "string",
+                "enum": ["low", "medium", "high"],
+                "default": "medium"
+            },
+        },
+        "$defs": {
+            "Status": {
+                "type": "string",
+                "enum": ["pending", "completed", "error"]
+            },
+            "Priority": {
+                "type": "string",
+                "enum": ["low", "medium", "high"],
+                "default": "medium"
+            },
+        },
+    }
+
+    actual = dereference_refs(schema)
+    assert actual == expected
+
+
+def test_dereference_refs_preserves_all_mixed_properties() -> None:
+    """Test that all additional properties are preserved in mixed $ref objects."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "field": {
+                "$ref": "#/$defs/BaseField",
+                "title": "Custom Title",
+                "description": "Custom Description", 
+                "default": "custom_default",
+                "nullable": True,
+                "example": "example_value"
+            }
+        },
+        "$defs": {
+            "BaseField": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z]+$"
+            }
+        },
+    }
+
+    expected = {
+        "type": "object", 
+        "properties": {
+            "field": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z]+$",
+                "title": "Custom Title",
+                "description": "Custom Description",
+                "default": "custom_default", 
+                "nullable": True,
+                "example": "example_value"
+            }
+        },
+        "$defs": {
+            "BaseField": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[a-z]+$"
+            }
+        },
+    }
+
+    actual = dereference_refs(schema)
+    assert actual == expected
