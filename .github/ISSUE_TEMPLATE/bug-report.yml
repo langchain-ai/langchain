@@ -24,7 +24,7 @@ body:
       label: Checked other resources
       description: Please confirm and check all the following options.
       options:
-        - label: This is a bug, not a usage question. For questions, please use the LangChain Forum (https://forum.langchain.com/).
+        - label: This is a bug, not a usage question.
           required: true
         - label: I added a clear and descriptive title that summarizes this issue.
           required: true
@@ -117,5 +117,6 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+
 
 
