@@ -67,16 +67,6 @@ class StructuredTool(BaseTool):
 
     # --- Tool ---
 
-    @property
-    def args(self) -> dict:
-        """The tool's input arguments."""
-        if isinstance(self.args_schema, dict):
-            json_schema = self.args_schema
-        else:
-            input_schema = self.get_input_schema()
-            json_schema = input_schema.model_json_schema()
-        return json_schema["properties"]
-
     def _run(
         self,
         *args: Any,
@@ -84,7 +74,17 @@ class StructuredTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -101,7 +101,17 @@ class StructuredTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -164,6 +174,9 @@ class StructuredTool(BaseTool):
 
         Raises:
             ValueError: If the function is not provided.
+            ValueError: If the function does not have a docstring and description
+                is not provided.
+            TypeError: If the ``args_schema`` is not a ``BaseModel`` or dict.
 
         Examples:
 

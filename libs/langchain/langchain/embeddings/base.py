@@ -165,17 +165,11 @@ def init_embeddings(
             model.embed_query("Hello, world!")
 
             # Using explicit provider
-            model = init_embeddings(
-                model="text-embedding-3-small",
-                provider="openai"
-            )
+            model = init_embeddings(model="text-embedding-3-small", provider="openai")
             model.embed_documents(["Hello, world!", "Goodbye, world!"])
 
             # With additional parameters
-            model = init_embeddings(
-                "openai:text-embedding-3-small",
-                api_key="sk-..."
-            )
+            model = init_embeddings("openai:text-embedding-3-small", api_key="sk-...")
 
     .. versionadded:: 0.3.9
 

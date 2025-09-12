@@ -6,9 +6,9 @@ build-backend = "pdm.backend"
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.15", "pyyaml<7.0.0,>=6.0.1"]
+dependencies = ["langchain-core<1.0.0,>=0.3.76", "pyyaml<7.0.0,>=6.0.1"]
 name = "langchain-prompty"
-version = "0.1.1"
+version = "0.1.2"
 description = "An integration package connecting Prompty and LangChain"
 readme = "README.md"
 
@@ -50,7 +50,7 @@ target-version = "py39"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "UP045" ]
 
 [tool.mypy]
 disallow_untyped_defs = "True"

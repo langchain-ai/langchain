@@ -366,7 +366,6 @@ class BaseMultiActionAgent(BaseModel):
 
     def tool_run_logging_kwargs(self) -> builtins.dict:
         """Return logging kwargs for tool run."""
-
         return {}
 
 
@@ -1150,7 +1149,10 @@ class AgentExecutor(Chain):
         if agent and isinstance(agent, Runnable):
             try:
                 output_type = agent.OutputType
-            except Exception as _:
+            except TypeError:
+                multi_action = False
+            except Exception:
+                logger.exception("Unexpected error getting OutputType from agent")
                 multi_action = False
             else:
                 multi_action = output_type == Union[list[AgentAction], AgentFinish]
@@ -1807,7 +1809,6 @@ class AgentExecutor(Chain):
         Yields:
             AddableDict: Addable dictionary.
         """
-
         config = ensure_config(config)
         iterator = AgentExecutorIterator(
             self,

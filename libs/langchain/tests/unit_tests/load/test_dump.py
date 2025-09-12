@@ -1,4 +1,4 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import json
 import os
@@ -64,8 +64,12 @@ def test_person(snapshot: Any) -> None:
 
 def test_typeerror() -> None:
     assert (
-        dumps({(1, 2): 3})
-        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+        dumps({(1, 2): 3}) == "{"
+        '"lc": 1, '
+        '"type": "not_implemented", '
+        '"id": ["builtins", "dict"], '
+        '"repr": "{(1, 2): 3}"'
+        "}"
     )
 
 

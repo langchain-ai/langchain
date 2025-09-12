@@ -2,9 +2,7 @@ from typing import Any
 
 
 def _resolve_schema_references(schema: Any, definitions: dict[str, Any]) -> Any:
-    """
-    Resolve the $ref keys in a JSON schema object using the provided definitions.
-    """
+    """Resolve the $ref keys in a JSON schema object using the provided definitions."""
     if isinstance(schema, list):
         for i, item in enumerate(schema):
             schema[i] = _resolve_schema_references(item, definitions)
