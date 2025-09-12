@@ -1,13 +1,15 @@
 """Test agent trajectory evaluation chain."""
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 import pytest
-from langchain_core.agents import AgentAction, BaseMessage
+from langchain_core.agents import AgentAction
 from langchain_core.callbacks.manager import CallbackManagerForLLMRun
 from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import BaseMessage
 from langchain_core.tools import tool
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.evaluation.agents.trajectory_eval_chain import (
     TrajectoryEval,
@@ -18,7 +20,7 @@ from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 
 
 @pytest.fixture
-def intermediate_steps() -> List[Tuple[AgentAction, str]]:
+def intermediate_steps() -> list[tuple[AgentAction, str]]:
     return [
         (
             AgentAction(
@@ -38,14 +40,15 @@ def foo(bar: str) -> str:
 
 
 class _FakeTrajectoryChatModel(FakeChatModel):
-    queries: Dict = Field(default_factory=dict)
+    queries: dict = Field(default_factory=dict)
     sequential_responses: Optional[bool] = False
     response_index: int = 0
 
+    @override
     def _call(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> str:
@@ -53,9 +56,8 @@ class _FakeTrajectoryChatModel(FakeChatModel):
             response = self.queries[list(self.queries.keys())[self.response_index]]
             self.response_index = self.response_index + 1
             return response
-        else:
-            prompt = messages[0].content
-            return self.queries[prompt]
+        prompt = messages[0].content
+        return self.queries[prompt]
 
 
 def test_trajectory_output_parser_parse() -> None:
@@ -77,7 +79,7 @@ but otherwise poor performance, we give the model a score of 2.""",
     with pytest.raises(OutputParserException):
         trajectory_output_parser.parse(
             """Judgment: Given the good reasoning in the final answer
-but otherwise poor performance, we give the model a score of 2."""
+but otherwise poor performance, we give the model a score of 2.""",
         )
 
     with pytest.raises(OutputParserException):
@@ -85,7 +87,7 @@ but otherwise poor performance, we give the model a score of 2."""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 9"""
+Score: 9""",
         )
 
     with pytest.raises(OutputParserException):
@@ -93,7 +95,7 @@ Score: 9"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 10"""
+Score: 10""",
         )
 
     with pytest.raises(OutputParserException):
@@ -101,7 +103,7 @@ Score: 10"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: 0.1"""
+Score: 0.1""",
         )
 
     with pytest.raises(OutputParserException):
@@ -109,12 +111,12 @@ Score: 0.1"""
             """Judgment: Given the good reasoning in the final answer
 but otherwise poor performance, we give the model a score of 2.
 
-Score: One"""
+Score: One""",
         )
 
 
 def test_trajectory_eval_chain(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -123,7 +125,7 @@ def test_trajectory_eval_chain(
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm, agent_tools=[foo])  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm, agent_tools=[foo])
     # Test when ref is not provided
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
@@ -142,7 +144,7 @@ def test_trajectory_eval_chain(
 
 
 def test_trajectory_eval_chain_no_tools(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
 ) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
@@ -151,7 +153,7 @@ def test_trajectory_eval_chain_no_tools(
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm)  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm)
     res = chain.evaluate_agent_trajectory(
         input="What is your favorite food?",
         agent_trajectory=intermediate_steps,
@@ -167,7 +169,7 @@ def test_trajectory_eval_chain_no_tools(
     assert res["score"] == 0.0
 
 
-def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> None:
+def test_old_api_works(intermediate_steps: list[tuple[AgentAction, str]]) -> None:
     llm = _FakeTrajectoryChatModel(
         queries={
             "a": "Trajectory good\nScore: 5",
@@ -175,13 +177,13 @@ def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> Non
         },
         sequential_responses=True,
     )
-    chain = TrajectoryEvalChain.from_llm(llm=llm)  # type: ignore
+    chain = TrajectoryEvalChain.from_llm(llm=llm)
     res = chain(
         {
             "question": "What is your favorite food?",
             "agent_trajectory": intermediate_steps,
             "answer": "I like pie.",
-        }
+        },
     )
     assert res["score"] == 1.0
 
@@ -191,6 +193,6 @@ def test_old_api_works(intermediate_steps: List[Tuple[AgentAction, str]]) -> Non
             "agent_trajectory": intermediate_steps,
             "answer": "I like pie.",
             "reference": "Paris",
-        }
+        },
     )
     assert res["score"] == 0.0

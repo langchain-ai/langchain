@@ -3,7 +3,7 @@
 This module contains memory abstractions from LangChain v0.0.x.
 
 These abstractions are now deprecated and will be removed in LangChain v1.0.0.
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -39,21 +39,26 @@ class BaseMemory(Serializable, ABC):
         .. code-block:: python
 
             class SimpleMemory(BaseMemory):
-                memories: Dict[str, Any] = dict()
+                memories: dict[str, Any] = dict()
 
                 @property
-                def memory_variables(self) -> List[str]:
+                def memory_variables(self) -> list[str]:
                     return list(self.memories.keys())
 
-                def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+                def load_memory_variables(
+                    self, inputs: dict[str, Any]
+                ) -> dict[str, str]:
                     return self.memories
 
-                def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+                def save_context(
+                    self, inputs: dict[str, Any], outputs: dict[str, str]
+                ) -> None:
                     pass
 
                 def clear(self) -> None:
                     pass
-    """  # noqa: E501
+
+    """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,

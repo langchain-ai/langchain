@@ -1,6 +1,5 @@
 """**Text Splitters** are classes for splitting text.
 
-
 **Class hierarchy:**
 
 .. code-block::
@@ -8,7 +7,9 @@
     BaseDocumentTransformer --> TextSplitter --> <name>TextSplitter  # Example: CharacterTextSplitter
                                                  RecursiveCharacterTextSplitter -->  <name>TextSplitter
 
-Note: **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
+
+.. note::
+    **MarkdownHeaderTextSplitter** and **HTMLHeaderTextSplitter do not derive from TextSplitter.
 
 
 **Main helpers:**
@@ -34,8 +35,10 @@ from langchain_text_splitters.html import (
     ElementType,
     HTMLHeaderTextSplitter,
     HTMLSectionSplitter,
+    HTMLSemanticPreservingSplitter,
 )
 from langchain_text_splitters.json import RecursiveJsonSplitter
+from langchain_text_splitters.jsx import JSFrameworkTextSplitter
 from langchain_text_splitters.konlpy import KonlpyTextSplitter
 from langchain_text_splitters.latex import LatexTextSplitter
 from langchain_text_splitters.markdown import (
@@ -53,26 +56,28 @@ from langchain_text_splitters.sentence_transformers import (
 from langchain_text_splitters.spacy import SpacyTextSplitter
 
 __all__ = [
-    "TokenTextSplitter",
-    "TextSplitter",
-    "Tokenizer",
-    "Language",
-    "RecursiveCharacterTextSplitter",
-    "RecursiveJsonSplitter",
-    "LatexTextSplitter",
-    "PythonCodeTextSplitter",
-    "KonlpyTextSplitter",
-    "SpacyTextSplitter",
-    "NLTKTextSplitter",
-    "split_text_on_tokens",
-    "SentenceTransformersTokenTextSplitter",
+    "CharacterTextSplitter",
     "ElementType",
-    "HeaderType",
-    "LineType",
+    "ExperimentalMarkdownSyntaxTextSplitter",
     "HTMLHeaderTextSplitter",
     "HTMLSectionSplitter",
+    "HTMLSemanticPreservingSplitter",
+    "HeaderType",
+    "JSFrameworkTextSplitter",
+    "KonlpyTextSplitter",
+    "Language",
+    "LatexTextSplitter",
+    "LineType",
     "MarkdownHeaderTextSplitter",
     "MarkdownTextSplitter",
-    "CharacterTextSplitter",
-    "ExperimentalMarkdownSyntaxTextSplitter",
+    "NLTKTextSplitter",
+    "PythonCodeTextSplitter",
+    "RecursiveCharacterTextSplitter",
+    "RecursiveJsonSplitter",
+    "SentenceTransformersTokenTextSplitter",
+    "SpacyTextSplitter",
+    "TextSplitter",
+    "TokenTextSplitter",
+    "Tokenizer",
+    "split_text_on_tokens",
 ]

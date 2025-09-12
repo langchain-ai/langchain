@@ -1,6 +1,6 @@
 """Test OpenAI llm."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from langchain_core.callbacks import CallbackManager

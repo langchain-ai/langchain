@@ -30,14 +30,17 @@ class PromptValue(Serializable, ABC):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable. Defaults to True."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
-        Defaults to ["langchain", "schema", "prompt"].
+
+        Returns:
+            ``["langchain", "schema", "prompt"]``
         """
         return ["langchain", "schema", "prompt"]
 
@@ -60,8 +63,11 @@ class StringPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
-        Defaults to ["langchain", "prompts", "base"].
+
+        Returns:
+            ``["langchain", "prompts", "base"]``
         """
         return ["langchain", "prompts", "base"]
 
@@ -94,8 +100,11 @@ class ChatPromptValue(PromptValue):
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
+
         This is used to determine the namespace of the object when serializing.
-        Defaults to ["langchain", "prompts", "chat"].
+
+        Returns:
+            ``["langchain", "prompts", "chat"]``
         """
         return ["langchain", "prompts", "chat"]
 
@@ -124,22 +133,16 @@ class ImagePromptValue(PromptValue):
 
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""
-        return [HumanMessage(content=[cast(dict, self.image_url)])]
+        return [HumanMessage(content=[cast("dict", self.image_url)])]
 
 
 class ChatPromptValueConcrete(ChatPromptValue):
     """Chat prompt value which explicitly lists out the message types it accepts.
-    For use in external schemas."""
+
+    For use in external schemas.
+    """
 
     messages: Sequence[AnyMessage]
     """Sequence of messages."""
 
     type: Literal["ChatPromptValueConcrete"] = "ChatPromptValueConcrete"
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        This is used to determine the namespace of the object when serializing.
-        Defaults to ["langchain", "prompts", "chat"].
-        """
-        return ["langchain", "prompts", "chat"]

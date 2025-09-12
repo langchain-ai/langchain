@@ -1,74 +1,74 @@
-from typing import List
-
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import secret_from_env
 from openai import OpenAI
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
 
-# type: ignore
-
 
 class FireworksEmbeddings(BaseModel, Embeddings):
     """Fireworks embedding model integration.
 
-     Setup:
-         Install ``langchain_fireworks`` and set environment variable
-         ``FIREWORKS_API_KEY``.
+    Setup:
 
-         .. code-block:: bash
+        Install ``langchain_fireworks`` and set environment variable
+        ``FIREWORKS_API_KEY``.
 
-             pip install -U langchain_fireworks
-             export FIREWORKS_API_KEY="your-api-key"
+        .. code-block:: bash
 
-     Key init args — completion params:
-         model: str
-             Name of Fireworks model to use.
+            pip install -U langchain_fireworks
+            export FIREWORKS_API_KEY="your-api-key"
+
+    Key init args — completion params:
+        model: str
+            Name of Fireworks model to use.
 
     Key init args — client params:
         fireworks_api_key: SecretStr
             Fireworks API key.
 
-     See full list of supported init args and their descriptions in the params section.
+    See full list of supported init args and their descriptions in the params section.
 
-     Instantiate:
-         .. code-block:: python
+    Instantiate:
 
-             from langchain_fireworks import FireworksEmbeddings
+        .. code-block:: python
 
-             model = FireworksEmbeddings(
-                 model='nomic-ai/nomic-embed-text-v1.5'
-                 # Use FIREWORKS_API_KEY env var or pass it in directly
-                 # fireworks_api_key="..."
-             )
+            from langchain_fireworks import FireworksEmbeddings
 
-     Embed multiple texts:
-         .. code-block:: python
+            model = FireworksEmbeddings(
+                model='nomic-ai/nomic-embed-text-v1.5'
+                # Use FIREWORKS_API_KEY env var or pass it in directly
+                # fireworks_api_key="..."
+            )
 
-             vectors = embeddings.embed_documents(['hello', 'goodbye'])
-             # Showing only the first 3 coordinates
-             print(len(vectors))
-             print(vectors[0][:3])
+    Embed multiple texts:
 
-         .. code-block:: python
+        .. code-block:: python
 
-             2
-             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+            vectors = embeddings.embed_documents(['hello', 'goodbye'])
+            # Showing only the first 3 coordinates
+            print(len(vectors))
+            print(vectors[0][:3])
 
+        .. code-block:: python
 
-     Embed single text:
-         .. code-block:: python
+            2
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
 
-             input_text = "The meaning of life is 42"
-             vector = embeddings.embed_query('hello')
-             print(vector[:3])
+    Embed single text:
 
-         .. code-block:: python
+        .. code-block:: python
 
-             [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+            input_text = "The meaning of life is 42"
+            vector = embeddings.embed_query('hello')
+            print(vector[:3])
+
+        .. code-block:: python
+
+            [-0.024603435769677162, -0.007543657906353474, 0.0039630369283258915]
+
     """
 
-    client: OpenAI = Field(default=None, exclude=True)  #: :meta private:
+    client: OpenAI = Field(default=None, exclude=True)  # type: ignore[assignment] # :meta private:
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
         default_factory=secret_from_env(
@@ -77,8 +77,8 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         ),
     )
     """Fireworks API key.
-    
-    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
     model: str = "nomic-ai/nomic-embed-text-v1.5"
 
@@ -96,13 +96,13 @@ class FireworksEmbeddings(BaseModel, Embeddings):
         )
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs."""
         return [
             i.embedding
             for i in self.client.embeddings.create(input=texts, model=self.model).data
         ]
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text."""
         return self.embed_documents([text])[0]

@@ -1,3 +1,5 @@
+"""Runnable that selects which branch to run based on a condition."""
+
 from collections.abc import AsyncIterator, Awaitable, Iterator, Mapping, Sequence
 from typing import (
     Any,
@@ -8,7 +10,12 @@ from typing import (
 )
 
 from pydantic import BaseModel, ConfigDict
+from typing_extensions import override
 
+from langchain_core.beta.runnables.context import (
+    CONTEXT_CONFIG_PREFIX,
+    CONTEXT_CONFIG_SUFFIX_SET,
+)
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -41,10 +48,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     If no condition evaluates to True, the default branch is run on the input.
 
-    Parameters:
-        branches: A list of (condition, Runnable) pairs.
-        default: A Runnable to run if no condition is met.
-
     Examples:
 
         .. code-block:: python
@@ -58,12 +61,15 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 lambda x: "goodbye",
             )
 
-            branch.invoke("hello") # "HELLO"
-            branch.invoke(None) # "goodbye"
+            branch.invoke("hello")  # "HELLO"
+            branch.invoke(None)  # "goodbye"
+
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    """A list of (condition, Runnable) pairs."""
     default: Runnable[Input, Output]
+    """A Runnable to run if no condition is met."""
 
     def __init__(
         self,
@@ -105,13 +111,13 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise TypeError(msg)
 
         default_ = cast(
-            Runnable[Input, Output], coerce_to_runnable(cast(RunnableLike, default))
+            "Runnable[Input, Output]", coerce_to_runnable(cast("RunnableLike", default))
         )
 
-        _branches = []
+        branches_ = []
 
         for branch in branches[:-1]:
-            if not isinstance(branch, (tuple, list)):  # type: ignore[arg-type]
+            if not isinstance(branch, (tuple, list)):
                 msg = (
                     f"RunnableBranch branches must be "
                     f"tuples or lists, not {type(branch)}"
@@ -125,14 +131,14 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 )
                 raise ValueError(msg)
             condition, runnable = branch
-            condition = cast(Runnable[Input, bool], coerce_to_runnable(condition))
+            condition = cast("Runnable[Input, bool]", coerce_to_runnable(condition))
             runnable = coerce_to_runnable(runnable)
-            _branches.append((condition, runnable))
+            branches_.append((condition, runnable))
 
         super().__init__(
-            branches=_branches,
+            branches=branches_,
             default=default_,
-        )  # type: ignore[call-arg]
+        )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -140,14 +146,20 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """RunnableBranch is serializable if all its branches are serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
+    @override
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -167,12 +179,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         return super().get_input_schema(config)
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            CONTEXT_CONFIG_SUFFIX_SET,
-        )
-
         specs = get_unique_config_specs(
             spec
             for step in (
@@ -191,6 +199,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise ValueError(msg)
         return specs
 
+    @override
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
@@ -203,9 +212,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Returns:
             The output of the branch that was run.
-
-        Raises:
-
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -252,10 +258,10 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         run_manager.on_chain_end(output)
         return output
 
+    @override
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """Async version of invoke."""
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -300,14 +306,14 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         await run_manager.on_chain_end(output)
         return output
 
+    @override
     def stream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Iterator[Output]:
-        """First evaluates the condition,
-        then delegate to true or false branch.
+        """First evaluates the condition, then delegate to true or false branch.
 
         Args:
             input: The input to the Runnable.
@@ -316,9 +322,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -358,7 +361,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -378,7 +381,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False
@@ -387,14 +390,14 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
             raise
         run_manager.on_chain_end(final_output)
 
+    @override
     async def astream(
         self,
         input: Input,
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> AsyncIterator[Output]:
-        """First evaluates the condition,
-        then delegate to true or false branch.
+        """First evaluates the condition, then delegate to true or false branch.
 
         Args:
             input: The input to the Runnable.
@@ -403,9 +406,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
@@ -445,7 +445,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                                 final_output = chunk
                             else:
                                 try:
-                                    final_output = final_output + chunk  # type: ignore
+                                    final_output = final_output + chunk  # type: ignore[operator]
                                 except TypeError:
                                     final_output = None
                                     final_output_supported = False
@@ -465,7 +465,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                             final_output = chunk
                         else:
                             try:
-                                final_output = final_output + chunk  # type: ignore
+                                final_output = final_output + chunk  # type: ignore[operator]
                             except TypeError:
                                 final_output = None
                                 final_output_supported = False

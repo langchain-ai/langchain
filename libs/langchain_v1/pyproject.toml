@@ -1,0 +1,193 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = []
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "langchain-core<2.0.0,>=0.3.75",
+    "langchain-text-splitters<1.0.0,>=0.3.11",
+    "langgraph>=0.6.7",
+    "pydantic>=2.7.4",
+]
+
+name = "langchain"
+version = "1.0.0a5"
+description = "Building applications with LLMs through composability"
+readme = "README.md"
+
+[project.optional-dependencies]
+# community = ["langchain-community"]
+anthropic = ["langchain-anthropic"]
+openai = ["langchain-openai"]
+azure-ai = ["langchain-azure-ai"]
+# cohere = ["langchain-cohere"]
+google-vertexai = ["langchain-google-vertexai"]
+google-genai = ["langchain-google-genai"]
+fireworks = ["langchain-fireworks"]
+ollama = ["langchain-ollama"]
+together = ["langchain-together"]
+mistralai = ["langchain-mistralai"]
+huggingface = ["langchain-huggingface"]
+groq = ["langchain-groq"]
+aws = ["langchain-aws"]
+deepseek = ["langchain-deepseek"]
+xai = ["langchain-xai"]
+perplexity = ["langchain-perplexity"]
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain%3D%3D0%22&expanded=true"
+repository = "https://github.com/langchain-ai/langchain"
+
+[dependency-groups]
+test = [
+    "pytest<9,>=8",
+    "pytest-cov>=4.0.0",
+    "pytest-watcher>=0.2.6",
+    "pytest-asyncio>=0.23.2",
+    "pytest-socket>=0.6.0",
+    "syrupy>=4.0.2",
+    "pytest-xdist>=3.6.1",
+    "langchain-tests",
+    "langchain-text-splitters",
+    "langchain-openai",
+    "toml>=0.10.2",
+    "pytest-mock"
+]
+codespell = ["codespell<3.0.0,>=2.2.0"]
+lint = [
+    "ruff>=0.12.2",
+]
+typing = [
+    "mypy<1.19,>=1.18.1",
+    "types-toml>=0.10.8.20240310",
+]
+
+test_integration = [
+    "vcrpy>=7.0",
+    "wrapt>=1.15.0",
+    "python-dotenv>=1.0.0",
+    "cassio>=0.1.0",
+    "langchainhub>=0.1.16",
+    "langchain-core",
+    "langchain-text-splitters",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+langchain-tests = { path = "../standard-tests", editable = true }
+langchain-text-splitters = { path = "../text-splitters", editable = true }
+langchain-openai = { path = "../partners/openai", editable = true }
+
+[tool.ruff]
+target-version = "py310"
+exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
+line-length = 100
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true
+enable_error_code = "deprecated"
+exclude = ["tests/unit_tests/agents/*", "tests/integration_tests/agents/*"]
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = false
+warn_return_any = false
+
+[tool.codespell]
+skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
+ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
+ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [
+  "ALL"
+]
+ignore = [
+  "COM812",  # Messes with the formatter
+  "ISC001",  # Messes with the formatter
+  "PERF203", # Rarely useful
+  "SLF001",  # Private member access
+  "PLC0415", # Imports should be at the top. Not always desirable
+  "PLR0913", # Too many arguments in function definition
+  "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
+flake8-annotations.allow-star-arg-any = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+  "D1", # Documentation rules
+  "PLC0415", # Imports should be at the top. Not always desirable for tests
+]
+"langchain/agents/*" = [
+    "ANN401", # we use Any right now, need to narrow
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+]
+"tests/unit_tests/agents/*" = ["ALL"]
+"tests/integration_tests/agents/*" = ["ALL"]
+
+[tool.ruff.lint.extend-per-file-ignores]
+"scripts/check_imports.py" = ["ALL"]
+
+"langchain/chat_models/base.py" = [
+    "ANN",
+    "C901",
+    "FIX002",
+    "N802",
+    "PLR0911",
+    "PLR0912",
+    "PLR0915",
+]
+
+"langchain/embeddings/base.py" = [
+    "PLR0911",
+    "PLR0913",
+]
+
+"tests/**/*.py" = [
+    "S101",   # Tests need assertions
+    "S311",   # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001", # Private member access in tests
+    "PLR2004", # Magic values are perfectly fine in unit tests (e.g. 0, 1, 2, etc.)
+    "C901", # Too complex
+    "ANN401", # Annotated type is not necessary
+    "N802", # Function name should be lowercase
+    "PLW1641", # Object does not implement __hash__ method
+    "ARG002", # Unused argument
+    "BLE001", # Do not catch blind exception
+    "N801", # class name should use CapWords convention
+]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5 --snapshot-warn-unused -vv"
+markers = [
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",
+    "ignore::langchain_core._api.deprecation.LangChainDeprecationWarning:tests",
+    "ignore::langchain_core._api.deprecation.LangChainPendingDeprecationWarning:tests",
+]

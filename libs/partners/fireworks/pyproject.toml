@@ -1,33 +1,115 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry]
-name = "langchain-fireworks"
-version = "0.2.1"
-description = "An integration package connecting Fireworks and LangChain"
+[project]
 authors = []
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "langchain-core<1.0.0,>=0.3.55",
+    "fireworks-ai>=0.13.0",
+    "openai<2.0.0,>=1.10.0",
+    "requests<3,>=2",
+    "aiohttp<4.0.0,>=3.9.1",
+]
+name = "langchain-fireworks"
+version = "0.3.0"
+description = "An integration package connecting Fireworks and LangChain"
 readme = "README.md"
+
+[project.urls]
+"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/fireworks"
+"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-fireworks%3D%3D0%22&expanded=true"
 repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
+
+[dependency-groups]
+test = [
+    "pytest<8.0.0,>=7.3.0",
+    "freezegun<2.0.0,>=1.2.2",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "syrupy<5.0.0,>=4.0.2",
+    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-socket<1.0.0,>=0.7.0",
+    "langchain-core",
+    "langchain-tests",
+]
+codespell = ["codespell<3.0.0,>=2.2.0"]
+test_integration = []
+lint = ["ruff<0.13,>=0.12.2"]
+dev = ["langchain-core"]
+typing = ["mypy<2.0,>=1.10", "types-requests<3,>=2", "langchain-core"]
+
+[tool.uv.sources]
+langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.poetry.urls]
-"Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/fireworks"
-"Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-fireworks%3D%3D0%22&expanded=true"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.9"
-fireworks-ai = ">=0.13.0"
-openai = "^1.10.0"
-requests = "^2"
-aiohttp = "^3.9.1"
+[tool.ruff]
+target-version = "py39"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [
+    "A",      # flake8-builtins
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
+]
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D107",    # Missing docstring in __init__
+    "D203",
+    "D213",
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -40,53 +122,8 @@ markers = [
 ]
 asyncio_mode = "auto"
 
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock = "^3.10.0"
-syrupy = "^4.0.2"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-types-requests = "^2"
-
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-standard-tests]
-path = "../../standard-tests"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../../core"
-develop = true
-
-[tool.poetry.group.typing.dependencies.langchain-core]
-path = "../../core"
-develop = true
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

@@ -1,4 +1,4 @@
-name: compile-integration-test
+name: '🔗 Compile Integration Tests'
 
 on:
   workflow_call:
@@ -12,8 +12,11 @@ on:
         type: string
         description: "Python version to use"
 
+permissions:
+  contents: read
+
 env:
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -21,27 +24,27 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: "poetry run pytest -m compile tests/integration_tests #${{ inputs.python-version }}"
+    timeout-minutes: 20
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
+          cache-suffix: compile-integration-tests-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: compile-integration
 
-      - name: Install integration dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
-        run: poetry install --with=test_integration,test
+        run: uv sync --group test --group test_integration
 
-      - name: Check integration tests compile
+      - name: '🔗 Check Integration Tests Compile'
         shell: bash
-        run: poetry run pytest -m compile tests/integration_tests
+        run: uv run pytest -m compile tests/integration_tests
 
-      - name: Ensure the tests did not create any additional files
+      - name: '🧹 Verify Clean Working Directory'
         shell: bash
         run: |
           set -eu

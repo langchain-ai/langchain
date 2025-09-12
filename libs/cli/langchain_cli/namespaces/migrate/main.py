@@ -4,7 +4,7 @@ from pathlib import Path
 
 import rich
 import typer
-from gritql import run
+from gritql import run  # type: ignore[import-untyped]
 from typer import Option
 
 
@@ -17,13 +17,13 @@ def get_gritdir_path() -> Path:
 def migrate(
     ctx: typer.Context,
     # Using diff instead of dry-run for backwards compatibility with the old CLI
-    diff: bool = Option(
-        False,
+    diff: bool = Option(  # noqa: FBT001
+        False,  # noqa: FBT003
         "--diff",
         help="Show the changes that would be made without applying them.",
     ),
-    interactive: bool = Option(
-        False,
+    interactive: bool = Option(  # noqa: FBT001
+        False,  # noqa: FBT003
         "--interactive",
         help="Prompt for confirmation before making each change",
     ),
@@ -50,11 +50,11 @@ def migrate(
         "reflect any imports from new packages. For example, if you see new "
         "imports from langchain_openai, langchain_anthropic or "
         "langchain_text_splitters you "
-        "should them to your dependencies! \n\n"
+        "should add them to your dependencies! \n\n"
         '⚠️ This script is a "best-effort", and is likely to make some '
         "mistakes.\n\n"
         "🛡️ Backup your code prior to running the migration script -- it will "
-        "modify your files!\n\n"
+        "modify your files!\n\n",
     )
     rich.print("-" * 10)
     rich.print()
@@ -68,7 +68,7 @@ def migrate(
     final_code = run.apply_pattern(
         "langchain_all_migrations()",
         args,
-        grit_dir=get_gritdir_path(),
+        grit_dir=str(get_gritdir_path()),
     )
 
     raise typer.Exit(code=final_code)

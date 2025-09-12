@@ -1,14 +1,12 @@
-from typing import Tuple, Type
-
 from langchain_core.embeddings import Embeddings
-from langchain_standard_tests.unit_tests.embeddings import EmbeddingsUnitTests
+from langchain_tests.unit_tests.embeddings import EmbeddingsUnitTests
 
 from langchain_openai import AzureOpenAIEmbeddings
 
 
 class TestAzureOpenAIStandard(EmbeddingsUnitTests):
     @property
-    def embeddings_class(self) -> Type[Embeddings]:
+    def embeddings_class(self) -> type[Embeddings]:
         return AzureOpenAIEmbeddings
 
     @property
@@ -16,7 +14,7 @@ class TestAzureOpenAIStandard(EmbeddingsUnitTests):
         return {"api_key": "api_key", "azure_endpoint": "https://endpoint.com"}
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {
                 "AZURE_OPENAI_API_KEY": "api_key",

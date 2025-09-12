@@ -1,4 +1,6 @@
-name: test
+name: '🧪 Unit Testing'
+# Runs unit tests with both current and minimum supported dependency versions
+# to ensure compatibility across the supported range
 
 on:
   workflow_call:
@@ -12,57 +14,64 @@ on:
         type: string
         description: "Python version to use"
 
+permissions:
+  contents: read
+
 env:
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
+  UV_NO_SYNC: "true"
 
 jobs:
+  # Main test job - runs unit tests with current deps, then retests with minimum versions
   build:
     defaults:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: "make test #${{ inputs.python-version }}"
+    timeout-minutes: 20
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - name: '📋 Checkout Code'
+        uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
+        uses: "./.github/actions/uv_setup"
         id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
+          cache-suffix: test-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: core
-      - name: Install dependencies
-        shell: bash
-        run: poetry install --with test
 
-      - name: Run core tests
+      - name: '📦 Install Test Dependencies'
+        shell: bash
+        run: uv sync --group test --dev
+
+      - name: '🧪 Run Core Unit Tests'
         shell: bash
         run: |
           make test
 
-      - name: Get minimum versions
+      - name: '🔍 Calculate Minimum Dependency Versions'
         working-directory: ${{ inputs.working-directory }}
         id: min-version
         shell: bash
         run: |
-          poetry run pip install packaging tomli
-          python_version="$(poetry run python --version | awk '{print $2}')"
-          min_versions="$(poetry run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
+          VIRTUAL_ENV=.venv uv pip install packaging tomli requests
+          python_version="$(uv run python --version | awk '{print $2}')"
+          min_versions="$(uv run python $GITHUB_WORKSPACE/.github/scripts/get_min_versions.py pyproject.toml pull_request $python_version)"
           echo "min-versions=$min_versions" >> "$GITHUB_OUTPUT"
           echo "min-versions=$min_versions"
 
-      - name: Run unit tests with minimum dependency versions
+      - name: '🧪 Run Tests with Minimum Dependencies'
         if: ${{ steps.min-version.outputs.min-versions != '' }}
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          poetry run pip install $MIN_VERSIONS
+          VIRTUAL_ENV=.venv uv pip install $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
-      - name: Ensure the tests did not create any additional files
+      - name: '🧹 Verify Clean Working Directory'
         shell: bash
         run: |
           set -eu
@@ -73,4 +82,4 @@ jobs:
           # grep will exit non-zero if the target message isn't found,
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
-          
+

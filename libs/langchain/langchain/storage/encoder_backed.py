@@ -1,12 +1,8 @@
+from collections.abc import AsyncIterator, Iterator, Sequence
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -26,14 +22,18 @@ class EncoderBackedStore(BaseStore[K, V]):
 
         import json
 
+
         def key_encoder(key: int) -> str:
             return json.dumps(key)
+
 
         def value_serializer(value: float) -> str:
             return json.dumps(value)
 
+
         def value_deserializer(serialized_value: str) -> float:
             return json.loads(serialized_value)
+
 
         # Create an instance of the abstract store
         abstract_store = MyCustomStore()
@@ -43,13 +43,14 @@ class EncoderBackedStore(BaseStore[K, V]):
             store=abstract_store,
             key_encoder=key_encoder,
             value_serializer=value_serializer,
-            value_deserializer=value_deserializer
+            value_deserializer=value_deserializer,
         )
 
         # Use the encoder-backed store methods
         store.mset([(1, 3.14), (2, 2.718)])
         values = store.mget([1, 2])  # Retrieves [3.14, 2.718]
         store.mdelete([1, 2])  # Deletes the keys 1 and 2
+
     """
 
     def __init__(
@@ -65,25 +66,25 @@ class EncoderBackedStore(BaseStore[K, V]):
         self.value_serializer = value_serializer
         self.value_deserializer = value_deserializer
 
-    def mget(self, keys: Sequence[K]) -> List[Optional[V]]:
+    def mget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Get the values associated with the given keys."""
-        encoded_keys: List[str] = [self.key_encoder(key) for key in keys]
+        encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = self.store.mget(encoded_keys)
         return [
             self.value_deserializer(value) if value is not None else value
             for value in values
         ]
 
-    async def amget(self, keys: Sequence[K]) -> List[Optional[V]]:
+    async def amget(self, keys: Sequence[K]) -> list[Optional[V]]:
         """Get the values associated with the given keys."""
-        encoded_keys: List[str] = [self.key_encoder(key) for key in keys]
+        encoded_keys: list[str] = [self.key_encoder(key) for key in keys]
         values = await self.store.amget(encoded_keys)
         return [
             self.value_deserializer(value) if value is not None else value
             for value in values
         ]
 
-    def mset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+    def mset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys."""
         encoded_pairs = [
             (self.key_encoder(key), self.value_serializer(value))
@@ -91,7 +92,7 @@ class EncoderBackedStore(BaseStore[K, V]):
         ]
         self.store.mset(encoded_pairs)
 
-    async def amset(self, key_value_pairs: Sequence[Tuple[K, V]]) -> None:
+    async def amset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Set the values for the given keys."""
         encoded_pairs = [
             (self.key_encoder(key), self.value_serializer(value))
@@ -110,7 +111,9 @@ class EncoderBackedStore(BaseStore[K, V]):
         await self.store.amdelete(encoded_keys)
 
     def yield_keys(
-        self, *, prefix: Optional[str] = None
+        self,
+        *,
+        prefix: Optional[str] = None,
     ) -> Union[Iterator[K], Iterator[str]]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str
@@ -118,7 +121,9 @@ class EncoderBackedStore(BaseStore[K, V]):
         yield from self.store.yield_keys(prefix=prefix)
 
     async def ayield_keys(
-        self, *, prefix: Optional[str] = None
+        self,
+        *,
+        prefix: Optional[str] = None,
     ) -> Union[AsyncIterator[K], AsyncIterator[str]]:
         """Get an iterator over keys that match the given prefix."""
         # For the time being this does not return K, but str

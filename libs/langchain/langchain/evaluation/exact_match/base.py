@@ -1,5 +1,7 @@
 import string
-from typing import Any, List
+from typing import Any
+
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -7,7 +9,7 @@ from langchain.evaluation.schema import StringEvaluator
 class ExactMatchStringEvaluator(StringEvaluator):
     """Compute an exact match between the prediction and the reference.
 
-    Examples
+    Examples:
     ----------
     >>> evaluator = ExactMatchChain()
     >>> evaluator.evaluate_strings(
@@ -27,8 +29,18 @@ class ExactMatchStringEvaluator(StringEvaluator):
         ignore_case: bool = False,
         ignore_punctuation: bool = False,
         ignore_numbers: bool = False,
-        **kwargs: Any,
+        **_: Any,
     ):
+        """Initialize the ExactMatchStringEvaluator.
+
+        Args:
+            ignore_case: Whether to ignore case when comparing strings.
+                Defaults to False.
+            ignore_punctuation: Whether to ignore punctuation when comparing strings.
+                Defaults to False.
+            ignore_numbers: Whether to ignore numbers when comparing strings.
+                Defaults to False.
+        """
         super().__init__()
         self.ignore_case = ignore_case
         self.ignore_punctuation = ignore_punctuation
@@ -36,22 +48,17 @@ class ExactMatchStringEvaluator(StringEvaluator):
 
     @property
     def requires_input(self) -> bool:
-        """
-        This evaluator does not require input.
-        """
+        """This evaluator does not require input."""
         return False
 
     @property
     def requires_reference(self) -> bool:
-        """
-        This evaluator requires a reference.
-        """
+        """This evaluator requires a reference."""
         return True
 
     @property
-    def input_keys(self) -> List[str]:
-        """
-        Get the input keys.
+    def input_keys(self) -> list[str]:
+        """Get the input keys.
 
         Returns:
             List[str]: The input keys.
@@ -60,30 +67,30 @@ class ExactMatchStringEvaluator(StringEvaluator):
 
     @property
     def evaluation_name(self) -> str:
-        """
-        Get the evaluation name.
+        """Get the evaluation name.
 
         Returns:
             str: The evaluation name.
         """
         return "exact_match"
 
-    def _evaluate_strings(  # type: ignore[arg-type,override]
+    @override
+    def _evaluate_strings(  # type: ignore[override]
         self,
         *,
         prediction: str,
         reference: str,
         **kwargs: Any,
     ) -> dict:
-        """
-        Evaluate the exact match between the prediction and the reference.
+        """Evaluate the exact match between the prediction and the reference.
 
         Args:
-            prediction (str): The prediction string.
-            reference (Optional[str], optional): The reference string.
+            prediction: The prediction string.
+            reference: The reference string.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         if self.ignore_case:
             prediction = prediction.lower()

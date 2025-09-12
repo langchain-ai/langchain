@@ -1,13 +1,45 @@
 """Configuration for unit tests."""
 
+from collections.abc import Iterator, Sequence
 from importlib import util
-from typing import Dict, Sequence
 
 import pytest
-from pytest import Config, Function, Parser
+from blockbuster import blockbuster_ctx
 
 
-def pytest_addoption(parser: Parser) -> None:
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[None]:
+    with blockbuster_ctx("langchain") as bb:
+        bb.functions["io.TextIOWrapper.read"].can_block_in(
+            "langchain/__init__.py",
+            "<module>",
+        )
+
+        for func in ["os.stat", "os.path.abspath"]:
+            (
+                bb.functions[func]
+                .can_block_in("langchain_core/runnables/base.py", "__repr__")
+                .can_block_in(
+                    "langchain_core/beta/runnables/context.py",
+                    "aconfig_with_context",
+                )
+            )
+
+        for func in ["os.stat", "io.TextIOWrapper.read"]:
+            bb.functions[func].can_block_in(
+                "langsmith/client.py",
+                "_default_retry_config",
+            )
+
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in(
+                "freezegun/api.py",
+                "_get_cached_module_attributes",
+            )
+        yield
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
@@ -29,7 +61,9 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
@@ -42,12 +76,12 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     .. code-block:: python
 
         @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
+        def test_something(): ...
+
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
-    required_pkgs_info: Dict[str, bool] = {}
+    required_pkgs_info: dict[str, bool] = {}
 
     only_extended = config.getoption("--only-extended") or False
     only_core = config.getoption("--only-core") or False
@@ -59,7 +93,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 item.add_marker(skip_community)
 
     if only_extended and only_core:
-        raise ValueError("Cannot specify both `--only-extended` and `--only-core`.")
+        msg = "Cannot specify both `--only-extended` and `--only-core`."
+        raise ValueError(msg)
 
     for item in items:
         requires_marker = item.get_closest_marker("requires")
@@ -74,11 +109,7 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                 # If we haven't yet checked whether the pkg is installed
                 # let's check it and store the result.
                 if pkg not in required_pkgs_info:
-                    try:
-                        installed = util.find_spec(pkg) is not None
-                    except Exception:
-                        installed = False
-                    required_pkgs_info[pkg] = installed
+                    required_pkgs_info[pkg] = util.find_spec(pkg) is not None
 
                 if not required_pkgs_info[pkg]:
                     if only_extended:
@@ -92,11 +123,10 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                         # If the package is not installed, we immediately break
                         # and mark the test as skipped.
                         item.add_marker(
-                            pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
+                            pytest.mark.skip(reason=f"Requires pkg: `{pkg}`"),
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test.")
-                )
+        elif only_extended:
+            item.add_marker(
+                pytest.mark.skip(reason="Skipping not an extended test."),
+            )

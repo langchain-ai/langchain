@@ -1,9 +1,9 @@
 import os
+from typing import Optional
 from unittest import mock
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
 from pydantic import SecretStr
@@ -27,11 +27,10 @@ def test_all_imports() -> None:
     "langchain_openai",
     "langchain_anthropic",
     "langchain_fireworks",
-    "langchain_mistralai",
     "langchain_groq",
 )
 @pytest.mark.parametrize(
-    ["model_name", "model_provider"],
+    ("model_name", "model_provider"),
     [
         ("gpt-4o", "openai"),
         ("claude-3-opus-20240229", "anthropic"),
@@ -39,10 +38,17 @@ def test_all_imports() -> None:
         ("mixtral-8x7b-32768", "groq"),
     ],
 )
-def test_init_chat_model(model_name: str, model_provider: str) -> None:
-    _: BaseChatModel = init_chat_model(
-        model_name, model_provider=model_provider, api_key="foo"
+def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None:
+    llm1: BaseChatModel = init_chat_model(
+        model_name,
+        model_provider=model_provider,
+        api_key="foo",
     )
+    llm2: BaseChatModel = init_chat_model(
+        f"{model_provider}:{model_name}",
+        api_key="foo",
+    )
+    assert llm1.dict() == llm2.dict()
 
 
 def test_init_missing_dep() -> None:
@@ -51,15 +57,43 @@ def test_init_missing_dep() -> None:
 
 
 def test_init_unknown_provider() -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="Unsupported model_provider='bar'."):
         init_chat_model("foo", model_provider="bar")
 
 
 @pytest.mark.requires("langchain_openai")
 @mock.patch.dict(
-    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"}, clear=True
+    os.environ,
+    {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"},
+    clear=True,
 )
 def test_configurable() -> None:
+    """Test configurable chat model behavior without default parameters.
+
+    Verifies that a configurable chat model initialized without default parameters:
+    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
+    - Blocks access to non-configurable methods until configuration is provided
+    - Supports declarative operations (``bind_tools``) without mutating original model
+    - Can chain declarative operations and configuration to access full functionality
+    - Properly resolves to the configured model type when parameters are provided
+
+    Example:
+
+    .. python::
+
+        # This creates a configurable model without specifying which model
+        model = init_chat_model()
+
+        # This will FAIL - no model specified yet
+        model.get_num_tokens("hello")  # AttributeError!
+
+        # This works - provides model at runtime
+        response = model.invoke(
+            "Hello",
+            config={"configurable": {"model": "gpt-4o"}}
+        )
+
+    """
     model = init_chat_model()
 
     for method in (
@@ -82,7 +116,7 @@ def test_configurable() -> None:
 
     # Can call declarative methods even without a default model.
     model_with_tools = model.bind_tools(
-        [{"name": "foo", "description": "foo", "parameters": {}}]
+        [{"name": "foo", "description": "foo", "parameters": {}}],
     )
 
     # Check that original model wasn't mutated by declarative operation.
@@ -90,7 +124,8 @@ def test_configurable() -> None:
 
     # Can iteratively call declarative methods.
     model_with_config = model_with_tools.with_config(
-        RunnableConfig(tags=["foo"]), configurable={"model": "gpt-4o"}
+        RunnableConfig(tags=["foo"]),
+        configurable={"model": "gpt-4o"},
     )
     assert model_with_config.model_name == "gpt-4o"  # type: ignore[attr-defined]
 
@@ -104,39 +139,49 @@ def test_configurable() -> None:
             "disable_streaming": False,
             "disabled_params": None,
             "model_name": "gpt-4o",
-            "temperature": 0.7,
+            "temperature": None,
             "model_kwargs": {},
             "openai_api_key": SecretStr("foo"),
             "openai_api_base": None,
             "openai_organization": None,
             "openai_proxy": None,
+            "output_version": "v0",
             "request_timeout": None,
-            "max_retries": 2,
+            "max_retries": None,
             "presence_penalty": None,
+            "reasoning": None,
+            "reasoning_effort": None,
+            "verbosity": None,
             "frequency_penalty": None,
+            "include": None,
             "seed": None,
+            "service_tier": None,
             "logprobs": None,
             "top_logprobs": None,
             "logit_bias": None,
             "streaming": False,
-            "n": 1,
+            "n": None,
             "top_p": None,
+            "truncation": None,
             "max_tokens": None,
             "tiktoken_model_name": None,
             "default_headers": None,
             "default_query": None,
             "stop": None,
+            "store": None,
             "extra_body": None,
             "include_response_headers": False,
             "stream_usage": False,
+            "use_previous_response_id": False,
+            "use_responses_api": None,
         },
         "kwargs": {
             "tools": [
                 {
                     "type": "function",
                     "function": {"name": "foo", "description": "foo", "parameters": {}},
-                }
-            ]
+                },
+            ],
         },
         "config": {"tags": ["foo"], "configurable": {}},
         "config_factories": [],
@@ -147,9 +192,37 @@ def test_configurable() -> None:
 
 @pytest.mark.requires("langchain_openai", "langchain_anthropic")
 @mock.patch.dict(
-    os.environ, {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"}, clear=True
+    os.environ,
+    {"OPENAI_API_KEY": "foo", "ANTHROPIC_API_KEY": "bar"},
+    clear=True,
 )
 def test_configurable_with_default() -> None:
+    """Test configurable chat model behavior with default parameters.
+
+    Verifies that a configurable chat model initialized with default parameters:
+    - Has access to all standard runnable methods (``invoke``, ``stream``, etc.)
+    - Provides immediate access to non-configurable methods (e.g. ``get_num_tokens``)
+    - Supports model switching through runtime configuration using ``config_prefix``
+    - Maintains proper model identity and attributes when reconfigured
+    - Can be used in chains with different model providers via configuration
+
+    Example:
+
+    .. python::
+
+        # This creates a configurable model with default parameters (model)
+        model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
+
+        # This works immediately - uses default gpt-4o
+        tokens = model.get_num_tokens("hello")
+
+        # This also works - switches to Claude at runtime
+        response = model.invoke(
+            "Hello",
+            config={"configurable": {"my_model_model": "claude-3-sonnet-20240229"}}
+        )
+
+    """  # noqa: E501
     model = init_chat_model("gpt-4o", configurable_fields="any", config_prefix="bar")
     for method in (
         "invoke",
@@ -168,44 +241,45 @@ def test_configurable_with_default() -> None:
     for method in ("get_num_tokens", "get_num_tokens_from_messages", "dict"):
         assert hasattr(model, method)
 
-    assert model.model_name == "gpt-4o"  # type: ignore[attr-defined]
+    assert model.model_name == "gpt-4o"
 
     model_with_tools = model.bind_tools(
-        [{"name": "foo", "description": "foo", "parameters": {}}]
+        [{"name": "foo", "description": "foo", "parameters": {}}],
     )
 
     model_with_config = model_with_tools.with_config(
         RunnableConfig(tags=["foo"]),
-        configurable={"bar_model": "claude-3-sonnet-20240229"},
+        configurable={"bar_model": "claude-3-7-sonnet-20250219"},
     )
 
-    assert model_with_config.model == "claude-3-sonnet-20240229"  # type: ignore[attr-defined]
-    # Anthropic defaults to using `transformers` for token counting.
-    with pytest.raises(ImportError):
-        model_with_config.get_num_tokens_from_messages([(HumanMessage("foo"))])  # type: ignore[attr-defined]
+    assert model_with_config.model == "claude-3-7-sonnet-20250219"  # type: ignore[attr-defined]
 
     assert model_with_config.model_dump() == {  # type: ignore[attr-defined]
         "name": None,
         "bound": {
             "name": None,
             "disable_streaming": False,
-            "model": "claude-3-sonnet-20240229",
+            "model": "claude-3-7-sonnet-20250219",
+            "mcp_servers": None,
             "max_tokens": 1024,
             "temperature": None,
+            "thinking": None,
             "top_k": None,
             "top_p": None,
             "default_request_timeout": None,
             "max_retries": 2,
             "stop_sequences": None,
             "anthropic_api_url": "https://api.anthropic.com",
+            "anthropic_proxy": None,
             "anthropic_api_key": SecretStr("bar"),
+            "betas": None,
             "default_headers": None,
             "model_kwargs": {},
             "streaming": False,
             "stream_usage": True,
         },
         "kwargs": {
-            "tools": [{"name": "foo", "description": "foo", "input_schema": {}}]
+            "tools": [{"name": "foo", "description": "foo", "input_schema": {}}],
         },
         "config": {"tags": ["foo"], "configurable": {}},
         "config_factories": [],

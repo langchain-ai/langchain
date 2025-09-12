@@ -9,9 +9,12 @@ import nbformat
 from nbconvert.exporters import MarkdownExporter
 from nbconvert.preprocessors import Preprocessor
 
+HIDE_IN_NB_MAGIC_OPEN = "<!-- HIDE_IN_NB"
+HIDE_IN_NB_MAGIC_CLOSE = "HIDE_IN_NB -->"
+
 
 class EscapePreprocessor(Preprocessor):
-    def preprocess_cell(self, cell, resources, cell_index):
+    def preprocess_cell(self, cell, resources, index):
         if cell.cell_type == "markdown":
             # rewrite .ipynb links to .md
             cell.source = re.sub(
@@ -24,6 +27,16 @@ class EscapePreprocessor(Preprocessor):
             # escape ``` in code
             cell.source = cell.source.replace("```", r"\`\`\`")
             # escape ``` in output
+
+            # allow overriding title based on comment at beginning of cell
+            if cell.source.startswith("# title="):
+                lines = cell.source.split("\n")
+                title = lines[0].split("# title=")[1]
+                if title.startswith('"') and title.endswith('"'):
+                    title = title[1:-1]
+                cell.metadata["title"] = title
+                cell.source = "\n".join(lines[1:])
+
             if "outputs" in cell:
                 filter_out = set()
                 for i, output in enumerate(cell["outputs"]):
@@ -51,7 +64,7 @@ class ExtractAttachmentsPreprocessor(Preprocessor):
     outputs are returned in the 'resources' dictionary.
     """
 
-    def preprocess_cell(self, cell, resources, cell_index):
+    def preprocess_cell(self, cell, resources, index):
         """
         Apply a transformation on each cell,
         Parameters
@@ -107,11 +120,19 @@ class CustomRegexRemovePreprocessor(Preprocessor):
         return nb, resources
 
 
+class UnHidePreprocessor(Preprocessor):
+    def preprocess_cell(self, cell, resources, index):
+        cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_OPEN, "")
+        cell.source = cell.source.replace(HIDE_IN_NB_MAGIC_CLOSE, "")
+        return cell, resources
+
+
 exporter = MarkdownExporter(
     preprocessors=[
         EscapePreprocessor,
         ExtractAttachmentsPreprocessor,
         CustomRegexRemovePreprocessor,
+        UnHidePreprocessor,
     ],
     template_name="mdoutput",
     extra_template_basedirs=["./scripts/notebook_convert_templates"],
@@ -133,23 +154,44 @@ def _modify_frontmatter(
     edit_url = (
         f"https://github.com/langchain-ai/langchain/edit/master/docs/docs/{rel_path}"
     )
+    frontmatter = {
+        "custom_edit_url": edit_url,
+    }
     if re.match(r"^[\s\n]*---\n", body):
-        # if custom_edit_url already exists, leave it
-        if re.match(r"custom_edit_url: ", body):
-            return body
-        else:
-            return re.sub(
-                r"^[\s\n]*---\n", f"---\ncustom_edit_url: {edit_url}\n", body, count=1
-            )
+        # frontmatter already present
+
+        for k, v in frontmatter.items():
+            # if key already exists, leave it
+            if re.match(f"{k}: ", body):
+                continue
+            else:
+                body = re.sub(r"^[\s\n]*---\n", f"---\n{k}: {v}\n", body, count=1)
+        return body
     else:
-        return f"---\ncustom_edit_url: {edit_url}\n---\n{body}"
+        insert = "\n".join([f"{k}: {v}" for k, v in frontmatter.items()])
+        return f"---\n{insert}\n---\n{body}"
 
 
 def _convert_notebook(
     notebook_path: Path, output_path: Path, intermediate_docs_dir: Path
 ) -> Path:
-    with open(notebook_path) as f:
-        nb = nbformat.read(f, as_version=4)
+    import json
+    import uuid
+
+    with open(notebook_path, "r", encoding="utf-8") as f:
+        nb_json = json.load(f)
+
+    # Fix missing and duplicate cell IDs before nbformat validation
+    seen_ids = set()
+    for cell in nb_json.get("cells", []):
+        if "id" not in cell or not cell.get("id") or cell.get("id") in seen_ids:
+            cell["id"] = str(uuid.uuid4())[:8]
+        seen_ids.add(cell["id"])
+
+    nb = nbformat.reads(json.dumps(nb_json), as_version=4)
+
+    # Upgrade notebook format
+    nb = nbformat.v4.upgrade(nb)
 
     body, resources = exporter.from_notebook_node(nb)
 
@@ -174,7 +216,18 @@ if __name__ == "__main__":
         source_paths_stripped = [p.strip() for p in source_path_strs]
         source_paths = [intermediate_docs_dir / p for p in source_paths_stripped if p]
     else:
-        source_paths = intermediate_docs_dir.glob("**/*.ipynb")
+        original_paths = list(intermediate_docs_dir.glob("**/*.ipynb"))
+        # exclude files that exist in output directory and are newer
+        relative_paths = [p.relative_to(intermediate_docs_dir) for p in original_paths]
+        out_paths = [
+            output_docs_dir / p.parent / (p.stem + ".md") for p in relative_paths
+        ]
+        source_paths = [
+            p
+            for p, o in zip(original_paths, out_paths)
+            if not o.exists() or o.stat().st_mtime < p.stat().st_mtime
+        ]
+        print(f"rebuilding {len(source_paths)}/{len(relative_paths)} notebooks")
 
     with multiprocessing.Pool() as pool:
         pool.map(

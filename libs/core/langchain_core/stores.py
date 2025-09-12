@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.exceptions import LangChainException
 from langchain_core.runnables import run_in_executor
 
@@ -23,7 +25,7 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
-class BaseStore(Generic[K, V], ABC):
+class BaseStore(ABC, Generic[K, V]):
     """Abstract interface for a key-value store.
 
     This is an interface that's meant to abstract away the details of
@@ -52,8 +54,8 @@ class BaseStore(Generic[K, V], ABC):
 
             from langchain.storage import BaseStore
 
-            class MyInMemoryStore(BaseStore[str, int]):
 
+            class MyInMemoryStore(BaseStore[str, int]):
                 def __init__(self):
                     self.store = {}
 
@@ -76,6 +78,7 @@ class BaseStore(Generic[K, V], ABC):
                         for key in self.store.keys():
                             if key.startswith(prefix):
                                 yield key
+
     """
 
     @abstractmethod
@@ -107,14 +110,14 @@ class BaseStore(Generic[K, V], ABC):
         """Set the values for the given keys.
 
         Args:
-            key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
+            key_value_pairs (Sequence[tuple[K, V]]): A sequence of key-value pairs.
         """
 
     async def amset(self, key_value_pairs: Sequence[tuple[K, V]]) -> None:
         """Async set the values for the given keys.
 
         Args:
-            key_value_pairs (Sequence[Tuple[K, V]]): A sequence of key-value pairs.
+            key_value_pairs (Sequence[tuple[K, V]]): A sequence of key-value pairs.
         """
         return await run_in_executor(None, self.mset, key_value_pairs)
 
@@ -205,27 +208,13 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return self.mget(keys)
 
+    @override
     def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         for key, value in key_value_pairs:
             self.store[key] = value
 
+    @override
     async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Async set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[Tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         return self.mset(key_value_pairs)
 
     def mdelete(self, keys: Sequence[str]) -> None:
@@ -284,7 +273,7 @@ class InMemoryStore(InMemoryBaseStore[Any]):
     """In-memory store for any type of data.
 
     Attributes:
-        store (Dict[str, Any]): The underlying dictionary that stores
+        store (dict[str, Any]): The underlying dictionary that stores
             the key-value pairs.
 
     Examples:
@@ -294,14 +283,15 @@ class InMemoryStore(InMemoryBaseStore[Any]):
             from langchain.storage import InMemoryStore
 
             store = InMemoryStore()
-            store.mset([('key1', 'value1'), ('key2', 'value2')])
-            store.mget(['key1', 'key2'])
+            store.mset([("key1", "value1"), ("key2", "value2")])
+            store.mget(["key1", "key2"])
             # ['value1', 'value2']
-            store.mdelete(['key1'])
+            store.mdelete(["key1"])
             list(store.yield_keys())
             # ['key2']
-            list(store.yield_keys(prefix='k'))
+            list(store.yield_keys(prefix="k"))
             # ['key2']
+
     """
 
 
@@ -309,7 +299,7 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
     """In-memory store for bytes.
 
     Attributes:
-        store (Dict[str, bytes]): The underlying dictionary that stores
+        store (dict[str, bytes]): The underlying dictionary that stores
             the key-value pairs.
 
     Examples:
@@ -319,14 +309,15 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
             from langchain.storage import InMemoryByteStore
 
             store = InMemoryByteStore()
-            store.mset([('key1', b'value1'), ('key2', b'value2')])
-            store.mget(['key1', 'key2'])
+            store.mset([("key1", b"value1"), ("key2", b"value2")])
+            store.mget(["key1", "key2"])
             # [b'value1', b'value2']
-            store.mdelete(['key1'])
+            store.mdelete(["key1"])
             list(store.yield_keys())
             # ['key2']
-            list(store.yield_keys(prefix='k'))
+            list(store.yield_keys(prefix="k"))
             # ['key2']
+
     """
 
 

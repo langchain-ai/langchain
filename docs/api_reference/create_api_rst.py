@@ -72,13 +72,20 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
     Returns:
         list: A list of loaded module objects.
     """
+
     classes_: List[ClassInfo] = []
     functions: List[FunctionInfo] = []
     module = importlib.import_module(module_path)
+
+    if ":private:" in (module.__doc__ or ""):
+        return ModuleMembers(classes_=[], functions=[])
+
     for name, type_ in inspect.getmembers(module):
         if not hasattr(type_, "__module__"):
             continue
         if type_.__module__ != module_path:
+            continue
+        if ":private:" in (type_.__doc__ or ""):
             continue
 
         if inspect.isclass(type_):
@@ -90,7 +97,7 @@ def _load_module_members(module_path: str, namespace: str) -> ModuleMembers:
             if type(type_) is typing_extensions._TypedDictMeta:  # type: ignore
                 kind: ClassKind = "TypedDict"
             elif type(type_) is typing._TypedDictMeta:  # type: ignore
-                kind: ClassKind = "TypedDict"
+                kind = "TypedDict"
             elif (
                 issubclass(type_, Runnable)
                 and issubclass(type_, BaseModel)
@@ -182,7 +189,7 @@ def _load_package_modules(
         if isinstance(package_directory, str)
         else package_directory
     )
-    modules_by_namespace = {}
+    modules_by_namespace: Dict[str, ModuleMembers] = {}
 
     # Get the high level package name
     package_name = package_path.name
@@ -193,6 +200,12 @@ def _load_package_modules(
 
     for file_path in package_path.rglob("*.py"):
         if file_path.name.startswith("_"):
+            continue
+
+        if "integration_template" in file_path.parts:
+            continue
+
+        if "project_template" in file_path.parts:
             continue
 
         relative_module_name = file_path.relative_to(package_path)
@@ -260,7 +273,7 @@ def _construct_doc(
 .. _{package_namespace}:
 
 ======================================
-{package_namespace.replace('_', '-')}: {package_version}
+{package_namespace.replace("_", "-")}: {package_version}
 ======================================
 
 .. automodule:: {package_namespace}
@@ -270,7 +283,7 @@ def _construct_doc(
 .. toctree::
     :hidden:
     :maxdepth: 2
-    
+
 """
     index_autosummary = """
 """
@@ -318,7 +331,7 @@ def _construct_doc(
 
         index_autosummary += f"""
 :ref:`{package_namespace}_{module}`
-{'^' * (len(package_namespace) + len(module) + 8)}
+{"^" * (len(package_namespace) + len(module) + 8)}
 """
 
         if classes:
@@ -352,12 +365,12 @@ def _construct_doc(
 
                 module_doc += f"""\
     :template: {template}
-    
+
     {class_["qualified_name"]}
-    
+
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if functions:
@@ -420,7 +433,7 @@ def _construct_doc(
 
 """
                 index_autosummary += f"""
-    {class_['qualified_name']}
+    {class_["qualified_name"]}
 """
 
         if deprecated_functions:
@@ -455,7 +468,7 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     """Create a rst file for building of documentation.
 
     Args:
-        package_name: Can be either "langchain" or "core" or "experimental".
+        package_name: Can be either "langchain" or "core"
     """
     package_dir = _package_dir(package_name)
     package_members = _load_package_modules(package_dir)
@@ -474,28 +487,21 @@ def _package_namespace(package_name: str) -> str:
     """Returns the package name used.
 
     Args:
-        package_name: Can be either "langchain" or "core" or "experimental".
+        package_name: Can be either "langchain" or "core"
 
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
     """
-    return (
-        package_name
-        if package_name == "langchain"
-        else f"langchain_{package_name.replace('-', '_')}"
-    )
+    if package_name == "langchain":
+        return "langchain"
+    if package_name == "standard-tests":
+        return "langchain_tests"
+    return f"langchain_{package_name.replace('-', '_')}"
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
     """Return the path to the directory containing the documentation."""
-    if package_name in (
-        "langchain",
-        "experimental",
-        "community",
-        "core",
-        "cli",
-        "text-splitters",
-    ):
+    if (ROOT_DIR / "libs" / package_name).exists():
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
         return (
@@ -520,7 +526,12 @@ def _get_package_version(package_dir: Path) -> str:
             "Aborting the build."
         )
         exit(1)
-    return pyproject["tool"]["poetry"]["version"]
+    try:
+        # uses uv
+        return pyproject["project"]["version"]
+    except KeyError:
+        # uses poetry
+        return pyproject["tool"]["poetry"]["version"]
 
 
 def _out_file_path(package_name: str) -> Path:
@@ -530,18 +541,23 @@ def _out_file_path(package_name: str) -> Path:
 
 def _build_index(dirs: List[str]) -> None:
     custom_names = {
-        "airbyte": "Airbyte",
         "aws": "AWS",
         "ai21": "AI21",
         "ibm": "IBM",
     }
-    ordered = ["core", "langchain", "text-splitters", "community", "experimental"]
+    ordered = [
+        "core",
+        "langchain",
+        "text-splitters",
+        "community",
+        "standard-tests",
+    ]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]
     integrations = sorted(dir_ for dir_ in dirs if dir_ not in main_)
     doc = """# LangChain Python API Reference
 
-Welcome to the LangChain Python API reference. This is a reference for all 
-`langchain-x` packages. 
+Welcome to the LangChain Python API reference. This is a reference for all
+`langchain-x` packages.
 
 For user guides see [https://python.langchain.com](https://python.langchain.com).
 
@@ -580,7 +596,12 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
     if integrations:
         integration_headers = [
             " ".join(
-                custom_names.get(x, x.title().replace("ai", "AI").replace("db", "DB"))
+                custom_names.get(
+                    x,
+                    x.title().replace("db", "DB")
+                    if dir_ == "langchain_v1"
+                    else x.title().replace("ai", "AI").replace("db", "DB"),
+                )
                 for x in dir_.split("-")
             )
             for dir_ in integrations
@@ -601,9 +622,11 @@ For the legacy API reference hosted on ReadTheDocs see [https://api.python.langc
         ]
         for header_name, dir_ in sorted(
             zip(integration_headers, integrations),
-            key=lambda h_d: integrations_to_show.index(h_d[1])
-            if h_d[1] in integrations_to_show
-            else len(integrations_to_show),
+            key=lambda h_d: (
+                integrations_to_show.index(h_d[1])
+                if h_d[1] in integrations_to_show
+                else len(integrations_to_show)
+            ),
         )[: len(integrations_to_show)]:
             integration_grid += f'\n- header: "**{header_name}**"\n  content: {_package_namespace(dir_).replace("_", "-")} {_get_package_version(_package_dir(dir_))}\n  link: {dir_.replace("-", "_")}/index.html'
         doc += f"""## Integrations
@@ -646,17 +669,12 @@ def main(dirs: Optional[list] = None) -> None:
     print("Starting to build API reference files.")
     if not dirs:
         dirs = [
-            dir_
-            for dir_ in os.listdir(ROOT_DIR / "libs")
-            if dir_ not in ("cli", "partners", "standard-tests")
+            p.parent.name
+            for p in (ROOT_DIR / "libs").rglob("pyproject.toml")
+            # Exclude packages that are not directly under libs/ or libs/partners/
+            if p.parent.parent.name in ("libs", "partners")
         ]
-        dirs += [
-            dir_
-            for dir_ in os.listdir(ROOT_DIR / "libs" / "partners")
-            if os.path.isdir(ROOT_DIR / "libs" / "partners" / dir_)
-            and "pyproject.toml" in os.listdir(ROOT_DIR / "libs" / "partners" / dir_)
-        ]
-    for dir_ in dirs:
+    for dir_ in sorted(dirs):
         # Skip any hidden directories
         # Some of these could be present by mistake in the code base
         # e.g., .pytest_cache from running tests from the wrong location.
@@ -667,7 +685,7 @@ def main(dirs: Optional[list] = None) -> None:
             print("Building package:", dir_)
             _build_rst_file(package_name=dir_)
 
-    _build_index(dirs)
+    _build_index(sorted(dirs))
     print("API reference files built.")
 
 

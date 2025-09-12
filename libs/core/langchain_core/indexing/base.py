@@ -1,15 +1,22 @@
+"""Base classes for indexing."""
+
 from __future__ import annotations
 
 import abc
 import time
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
-from typing import Any, Optional, TypedDict
+from typing import TYPE_CHECKING, Any, Optional, TypedDict
+
+from typing_extensions import override
 
 from langchain_core._api import beta
-from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import run_in_executor
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from langchain_core.documents import Document
 
 
 class RecordManager(ABC):
@@ -249,16 +256,14 @@ class InMemoryRecordManager(RecordManager):
         """In-memory schema creation is simply ensuring the structure is initialized."""
 
     async def acreate_schema(self) -> None:
-        """Async in-memory schema creation is simply ensuring
-        the structure is initialized.
-        """
+        """In-memory schema creation is simply ensuring the structure is initialized."""
 
+    @override
     def get_time(self) -> float:
-        """Get the current server time as a high resolution timestamp!"""
         return time.time()
 
+    @override
     async def aget_time(self) -> float:
-        """Async get the current server time as a high resolution timestamp!"""
         return self.get_time()
 
     def update(
@@ -288,7 +293,6 @@ class InMemoryRecordManager(RecordManager):
                 ids.
             ValueError: If time_at_least is in the future.
         """
-
         if group_ids and len(keys) != len(group_ids):
             msg = "Length of keys must match length of group_ids"
             raise ValueError(msg)
@@ -320,11 +324,6 @@ class InMemoryRecordManager(RecordManager):
                 raise an error.
                 This is meant to help prevent time-drift issues since
                 time may not be monotonically increasing!
-
-        Raises:
-            ValueError: If the length of keys doesn't match the length of group
-                ids.
-            ValueError: If time_at_least is in the future.
         """
         self.update(keys, group_ids=group_ids, time_at_least=time_at_least)
 
@@ -486,8 +485,8 @@ class DeleteResponse(TypedDict, total=False):
     failed: Sequence[str]
     """The IDs that failed to be deleted.
 
-    Please note that deleting an ID that
-    does not exist is **NOT** considered a failure.
+    .. warning::
+        Deleting an ID that does not exist is **NOT** considered a failure.
     """
 
     num_failed: int
@@ -628,7 +627,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
 
     async def aget(
@@ -654,7 +653,7 @@ class DocumentIndex(BaseRetriever):
             kwargs: Additional keyword arguments. These are up to the implementation.
 
         Returns:
-            List[Document]: List of documents that were found.
+            list[Document]: List of documents that were found.
         """
         return await run_in_executor(
             None,

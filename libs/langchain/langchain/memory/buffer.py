@@ -1,10 +1,12 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
+from langchain_core.memory import BaseMemory
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
-from langchain.memory.chat_memory import BaseChatMemory, BaseMemory
+from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.utils import get_prompt_input_key
 
 
@@ -43,7 +45,7 @@ class ConversationBufferMemory(BaseChatMemory):
             else await self.abuffer_as_str()
         )
 
-    def _buffer_as_str(self, messages: List[BaseMessage]) -> str:
+    def _buffer_as_str(self, messages: list[BaseMessage]) -> str:
         return get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -61,27 +63,29 @@ class ConversationBufferMemory(BaseChatMemory):
         return self._buffer_as_str(messages)
 
     @property
-    def buffer_as_messages(self) -> List[BaseMessage]:
+    def buffer_as_messages(self) -> list[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is False."""
         return self.chat_memory.messages
 
-    async def abuffer_as_messages(self) -> List[BaseMessage]:
+    async def abuffer_as_messages(self) -> list[BaseMessage]:
         """Exposes the buffer as a list of messages in case return_messages is False."""
         return await self.chat_memory.aget_messages()
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
-    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return key-value pairs given the text input to the chain."""
         buffer = await self.abuffer()
         return {self.memory_key: buffer}
@@ -117,30 +121,31 @@ class ConversationStringBufferMemory(BaseMemory):
     memory_key: str = "history"  #: :meta private:
 
     @pre_init
-    def validate_chains(cls, values: Dict) -> Dict:
+    def validate_chains(cls, values: dict) -> dict:
         """Validate that return messages is not True."""
         if values.get("return_messages", False):
-            raise ValueError(
-                "return_messages must be False for ConversationStringBufferMemory"
-            )
+            msg = "return_messages must be False for ConversationStringBufferMemory"
+            raise ValueError(msg)
         return values
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
+
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         """Return history buffer."""
         return {self.memory_key: self.buffer}
 
-    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, str]:
+    async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, str]:
         """Return history buffer."""
         return self.load_memory_variables(inputs)
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         if self.input_key is None:
             prompt_input_key = get_prompt_input_key(inputs, self.memory_variables)
@@ -148,16 +153,19 @@ class ConversationStringBufferMemory(BaseMemory):
             prompt_input_key = self.input_key
         if self.output_key is None:
             if len(outputs) != 1:
-                raise ValueError(f"One output key expected, got {outputs.keys()}")
-            output_key = list(outputs.keys())[0]
+                msg = f"One output key expected, got {outputs.keys()}"
+                raise ValueError(msg)
+            output_key = next(iter(outputs.keys()))
         else:
             output_key = self.output_key
         human = f"{self.human_prefix}: " + inputs[prompt_input_key]
         ai = f"{self.ai_prefix}: " + outputs[output_key]
-        self.buffer += "\n" + "\n".join([human, ai])
+        self.buffer += f"\n{human}\n{ai}"
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         return self.save_context(inputs, outputs)
@@ -166,5 +174,6 @@ class ConversationStringBufferMemory(BaseMemory):
         """Clear memory contents."""
         self.buffer = ""
 
+    @override
     async def aclear(self) -> None:
         self.clear()

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 # Used to consolidate logic for raising deprecation warnings and
 # handling optional imports.
 DEPRECATED_LOOKUP = {
-    "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback"
+    "WhyLabsCallbackHandler": "langchain_community.callbacks.whylabs_callback",
 }
 
 _import_attribute = create_importer(__file__, deprecated_lookups=DEPRECATED_LOOKUP)

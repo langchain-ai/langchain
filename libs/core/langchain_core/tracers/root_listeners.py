@@ -1,6 +1,7 @@
+"""Tracers that call listeners."""
+
 from collections.abc import Awaitable
-from typing import Callable, Optional, Union
-from uuid import UUID
+from typing import TYPE_CHECKING, Callable, Optional, Union
 
 from langchain_core.runnables.config import (
     RunnableConfig,
@@ -10,6 +11,9 @@ from langchain_core.runnables.config import (
 from langchain_core.tracers.base import AsyncBaseTracer, BaseTracer
 from langchain_core.tracers.schemas import Run
 
+if TYPE_CHECKING:
+    from uuid import UUID
+
 Listener = Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
 AsyncListener = Union[
     Callable[[Run], Awaitable[None]], Callable[[Run, RunnableConfig], Awaitable[None]]
@@ -17,18 +21,10 @@ AsyncListener = Union[
 
 
 class RootListenersTracer(BaseTracer):
-    """Tracer that calls listeners on run start, end, and error.
-
-    Parameters:
-        log_missing_parent: Whether to log a warning if the parent is missing.
-            Default is False.
-        config: The runnable config.
-        on_start: The listener to call on run start.
-        on_end: The listener to call on run end.
-        on_error: The listener to call on run error.
-    """
+    """Tracer that calls listeners on run start, end, and error."""
 
     log_missing_parent = False
+    """Whether to log a warning if the parent is missing. Default is False."""
 
     def __init__(
         self,
@@ -75,24 +71,15 @@ class RootListenersTracer(BaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 call_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                call_func_with_variable_args(self._arg_on_error, run, self.config)
+        elif self._arg_on_error is not None:
+            call_func_with_variable_args(self._arg_on_error, run, self.config)
 
 
 class AsyncRootListenersTracer(AsyncBaseTracer):
-    """Async Tracer that calls listeners on run start, end, and error.
-
-    Parameters:
-        log_missing_parent: Whether to log a warning if the parent is missing.
-            Default is False.
-        config: The runnable config.
-        on_start: The listener to call on run start.
-        on_end: The listener to call on run end.
-        on_error: The listener to call on run error.
-    """
+    """Async Tracer that calls listeners on run start, end, and error."""
 
     log_missing_parent = False
+    """Whether to log a warning if the parent is missing. Default is False."""
 
     def __init__(
         self,
@@ -139,8 +126,5 @@ class AsyncRootListenersTracer(AsyncBaseTracer):
         if run.error is None:
             if self._arg_on_end is not None:
                 await acall_func_with_variable_args(self._arg_on_end, run, self.config)
-        else:
-            if self._arg_on_error is not None:
-                await acall_func_with_variable_args(
-                    self._arg_on_error, run, self.config
-                )
+        elif self._arg_on_error is not None:
+            await acall_func_with_variable_args(self._arg_on_error, run, self.config)

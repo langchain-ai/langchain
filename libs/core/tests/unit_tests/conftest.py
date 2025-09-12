@@ -1,15 +1,41 @@
 """Configuration for unit tests."""
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib import util
 from uuid import UUID
 
 import pytest
-from pytest import Config, Function, Parser
+from blockbuster import BlockBuster, blockbuster_ctx
 from pytest_mock import MockerFixture
 
 
-def pytest_addoption(parser: Parser) -> None:
+@pytest.fixture(autouse=True)
+def blockbuster() -> Iterator[BlockBuster]:
+    with blockbuster_ctx("langchain_core") as bb:
+        for func in ["os.stat", "os.path.abspath"]:
+            (
+                bb.functions[func]
+                .can_block_in("langchain_core/_api/internal.py", "is_caller_internal")
+                .can_block_in("langchain_core/runnables/base.py", "__repr__")
+                .can_block_in(
+                    "langchain_core/beta/runnables/context.py", "aconfig_with_context"
+                )
+            )
+
+        for func in ["os.stat", "io.TextIOWrapper.read"]:
+            bb.functions[func].can_block_in(
+                "langsmith/client.py", "_default_retry_config"
+            )
+
+        for bb_function in bb.functions.values():
+            bb_function.can_block_in(
+                "freezegun/api.py", "_get_cached_module_attributes"
+            )
+
+        yield bb
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
     """Add custom command line options to pytest."""
     parser.addoption(
         "--only-extended",
@@ -23,7 +49,9 @@ def pytest_addoption(parser: Parser) -> None:
     )
 
 
-def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> None:
+def pytest_collection_modifyitems(
+    config: pytest.Config, items: Sequence[pytest.Function]
+) -> None:
     """Add implementations for handling custom markers.
 
     At the moment, this adds support for a custom `requires` marker.
@@ -36,8 +64,8 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
     .. code-block:: python
 
         @pytest.mark.requires("package1", "package2")
-        def test_something():
-            ...
+        def test_something(): ...
+
     """
     # Mapping from the name of a package to whether it is installed or not.
     # Used to avoid repeated calls to `util.find_spec`
@@ -84,14 +112,11 @@ def pytest_collection_modifyitems(config: Config, items: Sequence[Function]) -> 
                             pytest.mark.skip(reason=f"Requires pkg: `{pkg}`")
                         )
                         break
-        else:
-            if only_extended:
-                item.add_marker(
-                    pytest.mark.skip(reason="Skipping not an extended test.")
-                )
+        elif only_extended:
+            item.add_marker(pytest.mark.skip(reason="Skipping not an extended test."))
 
 
-@pytest.fixture()
+@pytest.fixture
 def deterministic_uuids(mocker: MockerFixture) -> MockerFixture:
     side_effect = (
         UUID(f"00000000-0000-4000-8000-{i:012}", version=4) for i in range(10000)

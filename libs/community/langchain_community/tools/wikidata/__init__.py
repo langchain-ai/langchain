@@ -1,1 +1,0 @@
-"""Wikidata API toolkit."""

@@ -1,4 +1,5 @@
-from typing import Callable, List, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Callable
 
 from langchain_core.agents import AgentAction
 from langchain_core.language_models import BaseLanguageModel
@@ -12,7 +13,7 @@ from langchain.agents.format_scratchpad.tools import (
 )
 from langchain.agents.output_parsers.tools import ToolsAgentOutputParser
 
-MessageFormatter = Callable[[Sequence[Tuple[AgentAction, str]]], List[BaseMessage]]
+MessageFormatter = Callable[[Sequence[tuple[AgentAction, str]]], list[BaseMessage]]
 
 
 def create_tool_calling_agent(
@@ -84,25 +85,27 @@ def create_tool_calling_agent(
         The agent prompt must have an `agent_scratchpad` key that is a
             ``MessagesPlaceholder``. Intermediate agent actions and tool output
             messages will be passed in here.
+
     """
     missing_vars = {"agent_scratchpad"}.difference(
-        prompt.input_variables + list(prompt.partial_variables)
+        prompt.input_variables + list(prompt.partial_variables),
     )
     if missing_vars:
-        raise ValueError(f"Prompt missing required variables: {missing_vars}")
+        msg = f"Prompt missing required variables: {missing_vars}"
+        raise ValueError(msg)
 
     if not hasattr(llm, "bind_tools"):
+        msg = "This function requires a bind_tools() method be implemented on the LLM."
         raise ValueError(
-            "This function requires a .bind_tools method be implemented on the LLM.",
+            msg,
         )
     llm_with_tools = llm.bind_tools(tools)
 
-    agent = (
+    return (
         RunnablePassthrough.assign(
-            agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"])
+            agent_scratchpad=lambda x: message_formatter(x["intermediate_steps"]),
         )
         | prompt
         | llm_with_tools
         | ToolsAgentOutputParser()
     )
-    return agent

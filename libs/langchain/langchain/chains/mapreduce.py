@@ -6,7 +6,8 @@ then combines the results with another one.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Mapping, Optional
+from collections.abc import Mapping
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun, Callbacks
@@ -28,10 +29,10 @@ from langchain.chains.llm import LLMChain
     since="0.2.13",
     removal="1.0",
     message=(
-        "Refer here for a recommended map-reduce implementation using langgraph: "
-        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/. See also "
-        "migration guide: "
-        "https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"  # noqa: E501
+        "Refer to migration guide here for a recommended implementation using "
+        "LangGraph: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain/"
+        ". See also LangGraph guides for map-reduce: "
+        "https://langchain-ai.github.io/langgraph/how-tos/map-reduce/."
     ),
 )
 class MapReduceChain(Chain):
@@ -63,7 +64,7 @@ class MapReduceChain(Chain):
             **(reduce_chain_kwargs if reduce_chain_kwargs else {}),
         )
         reduce_documents_chain = ReduceDocumentsChain(
-            combine_documents_chain=stuff_chain
+            combine_documents_chain=stuff_chain,
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_chain,
@@ -84,7 +85,7 @@ class MapReduceChain(Chain):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -92,7 +93,7 @@ class MapReduceChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
@@ -101,19 +102,20 @@ class MapReduceChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         # Split the larger text into smaller chunks.
         doc_text = inputs.pop(self.input_key)
         texts = self.text_splitter.split_text(doc_text)
         docs = [Document(page_content=text) for text in texts]
-        _inputs: Dict[str, Any] = {
+        _inputs: dict[str, Any] = {
             **inputs,
             self.combine_documents_chain.input_key: docs,
         }
         outputs = self.combine_documents_chain.run(
-            _inputs, callbacks=_run_manager.get_child()
+            _inputs,
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: outputs}

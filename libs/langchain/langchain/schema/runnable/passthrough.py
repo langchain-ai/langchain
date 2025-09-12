@@ -5,4 +5,4 @@ from langchain_core.runnables.passthrough import (
     identity,
 )
 
-__all__ = ["aidentity", "identity", "RunnablePassthrough", "RunnableAssign"]
+__all__ = ["RunnableAssign", "RunnablePassthrough", "aidentity", "identity"]

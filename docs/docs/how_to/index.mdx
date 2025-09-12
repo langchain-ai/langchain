@@ -5,7 +5,7 @@ sidebar_class_name: hidden
 
 # How-to guides
 
-Here you’ll find answers to “How do I….?” types of questions.
+Here you’ll find answers to "How do I….?" types of questions.
 These guides are *goal-oriented* and *concrete*; they're meant to help you complete a specific task.
 For conceptual explanations see the [Conceptual guide](/docs/concepts/).
 For end-to-end walkthroughs see [Tutorials](/docs/tutorials).
@@ -25,56 +25,17 @@ This highlights functionality that is core to using LangChain.
 - [How to: stream runnables](/docs/how_to/streaming)
 - [How to: debug your LLM apps](/docs/how_to/debugging/)
 
-## LangChain Expression Language (LCEL)
-
-[LangChain Expression Language](/docs/concepts/#langchain-expression-language-lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
-
-[**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
-
-[**Migration guide**](/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
-
-- [How to: chain runnables](/docs/how_to/sequence)
-- [How to: stream runnables](/docs/how_to/streaming)
-- [How to: invoke runnables in parallel](/docs/how_to/parallel/)
-- [How to: add default invocation args to runnables](/docs/how_to/binding/)
-- [How to: turn any function into a runnable](/docs/how_to/functions)
-- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
-- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
-- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
-- [How to: route between sub-chains](/docs/how_to/routing)
-- [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
-- [How to: inspect runnables](/docs/how_to/inspect)
-- [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
-- [How to: pass runtime secrets to a runnable](/docs/how_to/runnable_runtime_secrets)
-
 ## Components
 
 These are the core building blocks you can use when building applications.
 
-### Prompt templates
-
-[Prompt Templates](/docs/concepts/#prompt-templates) are responsible for formatting user input into a format that can be passed to a language model.
-
-- [How to: use few shot examples](/docs/how_to/few_shot_examples)
-- [How to: use few shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
-- [How to: partially format prompt templates](/docs/how_to/prompts_partial)
-- [How to: compose prompts together](/docs/how_to/prompts_composition)
-
-### Example selectors
-
-[Example Selectors](/docs/concepts/#example-selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
-
-- [How to: use example selectors](/docs/how_to/example_selectors)
-- [How to: select examples by length](/docs/how_to/example_selectors_length_based)
-- [How to: select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
-- [How to: select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
-- [How to: select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
-- [How to: select examples from LangSmith few-shot datasets](/docs/how_to/example_selectors_langsmith/)
-
 ### Chat models
 
-[Chat Models](/docs/concepts/#chat-models) are newer forms of language models that take messages in and output a message.
+[Chat Models](/docs/concepts/chat_models) are newer forms of language models that take messages in and output a message.
+See [supported integrations](/docs/integrations/chat/) for details on getting started with chat models from a specific provider.
 
+- [How to: initialize any model in one line](/docs/how_to/chat_models_universal_init/)
+- [How to: work with local models](/docs/how_to/local_llms)
 - [How to: do function/tool calling](/docs/how_to/tool_calling)
 - [How to: get models to return structured output](/docs/how_to/structured_output)
 - [How to: cache model responses](/docs/how_to/chat_model_caching)
@@ -86,23 +47,43 @@ These are the core building blocks you can use when building applications.
 - [How to: use chat model to call tools](/docs/how_to/tool_calling)
 - [How to: stream tool calls](/docs/how_to/tool_streaming)
 - [How to: handle rate limits](/docs/how_to/chat_model_rate_limiting)
-- [How to: few shot prompt tool behavior](/docs/how_to/tools_few_shot)
+- [How to: few-shot prompt tool behavior](/docs/how_to/tools_few_shot)
 - [How to: bind model-specific formatted tools](/docs/how_to/tools_model_specific)
 - [How to: force a specific tool call](/docs/how_to/tool_choice)
-- [How to: work with local models](/docs/how_to/local_llms)
-- [How to: init any model in one line](/docs/how_to/chat_models_universal_init/)
+- [How to: pass multimodal data directly to models](/docs/how_to/multimodal_inputs/)
 
 ### Messages
 
-[Messages](/docs/concepts/#messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
+[Messages](/docs/concepts/messages) are the input and output of chat models. They have some `content` and a `role`, which describes the source of the message.
 
 - [How to: trim messages](/docs/how_to/trim_messages/)
 - [How to: filter messages](/docs/how_to/filter_messages/)
 - [How to: merge consecutive messages of the same type](/docs/how_to/merge_message_runs/)
 
+### Prompt templates
+
+[Prompt Templates](/docs/concepts/prompt_templates) are responsible for formatting user input into a format that can be passed to a language model.
+
+- [How to: use few-shot examples](/docs/how_to/few_shot_examples)
+- [How to: use few-shot examples in chat models](/docs/how_to/few_shot_examples_chat/)
+- [How to: partially format prompt templates](/docs/how_to/prompts_partial)
+- [How to: compose prompts together](/docs/how_to/prompts_composition)
+- [How to: use multimodal prompts](/docs/how_to/multimodal_prompts/)
+
+### Example selectors
+
+[Example Selectors](/docs/concepts/example_selectors) are responsible for selecting the correct few shot examples to pass to the prompt.
+
+- [How to: use example selectors](/docs/how_to/example_selectors)
+- [How to: select examples by length](/docs/how_to/example_selectors_length_based)
+- [How to: select examples by semantic similarity](/docs/how_to/example_selectors_similarity)
+- [How to: select examples by semantic ngram overlap](/docs/how_to/example_selectors_ngram)
+- [How to: select examples by maximal marginal relevance](/docs/how_to/example_selectors_mmr)
+- [How to: select examples from LangSmith few-shot datasets](/docs/how_to/example_selectors_langsmith/)
+
 ### LLMs
 
-What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language models that take a string in and output a string.
+What LangChain calls [LLMs](/docs/concepts/text_llms) are older forms of language models that take a string in and output a string.
 
 - [How to: cache model responses](/docs/how_to/llm_caching)
 - [How to: create a custom LLM class](/docs/how_to/custom_llm)
@@ -112,8 +93,9 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Output parsers
 
-[Output Parsers](/docs/concepts/#output-parsers) are responsible for taking the output of an LLM and parsing into more structured format.
+[Output Parsers](/docs/concepts/output_parsers) are responsible for taking the output of an LLM and parsing into more structured format.
 
+- [How to: parse text from message objects](/docs/how_to/output_parser_string)
 - [How to: use output parsers to parse an LLM response into structured format](/docs/how_to/output_parser_structured)
 - [How to: parse JSON output](/docs/how_to/output_parser_json)
 - [How to: parse XML output](/docs/how_to/output_parser_xml)
@@ -124,7 +106,7 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Document loaders
 
-[Document Loaders](/docs/concepts/#document-loaders) are responsible for loading documents from a variety of sources.
+[Document Loaders](/docs/concepts/document_loaders) are responsible for loading documents from a variety of sources.
 
 - [How to: load PDF files](/docs/how_to/document_loader_pdf)
 - [How to: load web pages](/docs/how_to/document_loader_web)
@@ -138,11 +120,10 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Text splitters
 
-[Text Splitters](/docs/concepts/#text-splitters) take a document and split into chunks that can be used for retrieval.
+[Text Splitters](/docs/concepts/text_splitters) take a document and split into chunks that can be used for retrieval.
 
 - [How to: recursively split text](/docs/how_to/recursive_text_splitter)
-- [How to: split by HTML headers](/docs/how_to/HTML_header_metadata_splitter)
-- [How to: split by HTML sections](/docs/how_to/HTML_section_aware_splitter)
+- [How to: split HTML](/docs/how_to/split_html)
 - [How to: split by character](/docs/how_to/character_text_splitter)
 - [How to: split code](/docs/how_to/code_splitter)
 - [How to: split Markdown by headers](/docs/how_to/markdown_header_metadata_splitter)
@@ -152,20 +133,23 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 ### Embedding models
 
-[Embedding Models](/docs/concepts/#embedding-models) take a piece of text and create a numerical representation of it.
+[Embedding Models](/docs/concepts/embedding_models) take a piece of text and create a numerical representation of it.
+See [supported integrations](/docs/integrations/text_embedding/) for details on getting started with embedding models from a specific provider.
 
 - [How to: embed text data](/docs/how_to/embed_text)
 - [How to: cache embedding results](/docs/how_to/caching_embeddings)
+- [How to: create a custom embeddings class](/docs/how_to/custom_embeddings)
 
 ### Vector stores
 
-[Vector stores](/docs/concepts/#vector-stores) are databases that can efficiently store and retrieve embeddings.
+[Vector stores](/docs/concepts/vectorstores) are databases that can efficiently store and retrieve embeddings.
+See [supported integrations](/docs/integrations/vectorstores/) for details on getting started with vector stores from a specific provider.
 
 - [How to: use a vector store to retrieve data](/docs/how_to/vectorstores)
 
 ### Retrievers
 
-[Retrievers](/docs/concepts/#retrievers) are responsible for taking a query and returning relevant documents.
+[Retrievers](/docs/concepts/retrievers) are responsible for taking a query and returning relevant documents.
 
 - [How to: use a vector store to retrieve data](/docs/how_to/vectorstore_retriever)
 - [How to: generate multiple queries to retrieve data for](/docs/how_to/MultiQueryRetriever)
@@ -184,17 +168,17 @@ What LangChain calls [LLMs](/docs/concepts/#llms) are older forms of language mo
 
 Indexing is the process of keeping your vectorstore in-sync with the underlying data source.
 
-- [How to: reindex data to keep your vectorstore in-sync with the underlying data source](/docs/how_to/indexing)
+- [How to: reindex data to keep your vectorstore in sync with the underlying data source](/docs/how_to/indexing)
 
 ### Tools
 
-LangChain [Tools](/docs/concepts/#tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](/docs/integrations/tools/) for a list of pre-buit tools. 
+LangChain [Tools](/docs/concepts/tools) contain a description of the tool (to pass to the language model) as well as the implementation of the function to call. Refer [here](/docs/integrations/tools/) for a list of pre-built tools.
 
 - [How to: create tools](/docs/how_to/custom_tools)
 - [How to: use built-in tools and toolkits](/docs/how_to/tools_builtin)
 - [How to: use chat models to call tools](/docs/how_to/tool_calling)
 - [How to: pass tool outputs to chat models](/docs/how_to/tool_results_pass_to_model)
-- [How to: pass run time values to tools](/docs/how_to/tool_runtime)
+- [How to: pass runtime values to tools](/docs/how_to/tool_runtime)
 - [How to: add a human-in-the-loop for tools](/docs/how_to/tools_human)
 - [How to: handle tool errors](/docs/how_to/tools_error)
 - [How to: force models to call a tool](/docs/how_to/tool_choice)
@@ -225,7 +209,7 @@ For in depth how-to guides for agents, please check out [LangGraph](https://lang
 
 ### Callbacks
 
-[Callbacks](/docs/concepts/#callbacks) allow you to hook into the various stages of your LLM application's execution.
+[Callbacks](/docs/concepts/callbacks) allow you to hook into the various stages of your LLM application's execution.
 
 - [How to: pass in callbacks at runtime](/docs/how_to/callbacks_runtime)
 - [How to: attach callbacks to a module](/docs/how_to/callbacks_attach)
@@ -240,6 +224,7 @@ All of LangChain components can easily be extended to support your own versions.
 
 - [How to: create a custom chat model class](/docs/how_to/custom_chat_model)
 - [How to: create a custom LLM class](/docs/how_to/custom_llm)
+- [How to: create a custom embeddings class](/docs/how_to/custom_embeddings)
 - [How to: write a custom retriever class](/docs/how_to/custom_retriever)
 - [How to: write a custom document loader](/docs/how_to/document_loader_custom)
 - [How to: write a custom output parser class](/docs/how_to/output_parser_custom)
@@ -288,7 +273,7 @@ For a high-level tutorial on building chatbots, check out [this guide](/docs/tut
 ### Query analysis
 
 Query Analysis is the task of using an LLM to generate a query to send to a retriever.
-For a high-level tutorial on query analysis, check out [this guide](/docs/tutorials/query_analysis/).
+For a high-level tutorial on query analysis, check out [this guide](/docs/tutorials/rag/#query-analysis).
 
 - [How to: add examples to the prompt](/docs/how_to/query_few_shot)
 - [How to: handle cases where no queries are generated](/docs/how_to/query_no_queries)
@@ -312,9 +297,7 @@ For a high-level tutorial, check out [this guide](/docs/tutorials/sql_qa/).
 You can use an LLM to do question answering over graph databases.
 For a high-level tutorial, check out [this guide](/docs/tutorials/graph/).
 
-- [How to: map values to a database](/docs/how_to/graph_mapping)
-- [How to: add a semantic layer over the database](/docs/how_to/graph_semantic)
-- [How to: improve results with prompting](/docs/how_to/graph_prompting)
+- [How to: add a semantic layer over a database](/docs/how_to/graph_semantic)
 - [How to: construct knowledge graphs](/docs/how_to/graph_constructing)
 
 ### Summarization
@@ -326,13 +309,43 @@ large volumes of text. For a high-level tutorial, check out [this guide](/docs/t
 - [How to: summarize text through parallelization](/docs/how_to/summarize_map_reduce)
 - [How to: summarize text through iterative refinement](/docs/how_to/summarize_refine)
 
+## LangChain Expression Language (LCEL)
+
+:::note Should I use LCEL?
+
+LCEL is an orchestration solution. See our
+[concepts page](/docs/concepts/lcel/#should-i-use-lcel) for recommendations on when to
+use LCEL.
+
+:::
+
+[LangChain Expression Language](/docs/concepts/lcel) is a way to create arbitrary custom chains. It is built on the [Runnable](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html) protocol.
+
+[**LCEL cheatsheet**](/docs/how_to/lcel_cheatsheet/): For a quick overview of how to use the main LCEL primitives.
+
+[**Migration guide**](/docs/versions/migrating_chains): For migrating legacy chain abstractions to LCEL.
+
+- [How to: chain runnables](/docs/how_to/sequence)
+- [How to: stream runnables](/docs/how_to/streaming)
+- [How to: invoke runnables in parallel](/docs/how_to/parallel/)
+- [How to: add default invocation args to runnables](/docs/how_to/binding/)
+- [How to: turn any function into a runnable](/docs/how_to/functions)
+- [How to: pass through inputs from one chain step to the next](/docs/how_to/passthrough)
+- [How to: configure runnable behavior at runtime](/docs/how_to/configure)
+- [How to: add message history (memory) to a chain](/docs/how_to/message_history)
+- [How to: route between sub-chains](/docs/how_to/routing)
+- [How to: create a dynamic (self-constructing) chain](/docs/how_to/dynamic_chain/)
+- [How to: inspect runnables](/docs/how_to/inspect)
+- [How to: add fallbacks to a runnable](/docs/how_to/fallbacks)
+- [How to: pass runtime secrets to a runnable](/docs/how_to/runnable_runtime_secrets)
+
 ## [LangGraph](https://langchain-ai.github.io/langgraph)
 
 LangGraph is an extension of LangChain aimed at
 building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
 
 LangGraph documentation is currently hosted on a separate site.
-You can peruse [LangGraph how-to guides here](https://langchain-ai.github.io/langgraph/how-tos/).
+You can find the [LangGraph guides here](https://langchain-ai.github.io/langgraph/guides/).
 
 ## [LangSmith](https://docs.smith.langchain.com/)
 
@@ -340,7 +353,7 @@ LangSmith allows you to closely trace, monitor and evaluate your LLM application
 It seamlessly integrates with LangChain and LangGraph, and you can use it to inspect and debug individual steps of your chains and agents as you build.
 
 LangSmith documentation is hosted on a separate site.
-You can peruse [LangSmith how-to guides here](https://docs.smith.langchain.com/how_to_guides/), but we'll highlight a few sections that are particularly
+You can peruse [LangSmith how-to guides here](https://docs.smith.langchain.com/), but we'll highlight a few sections that are particularly
 relevant to LangChain below:
 
 ### Evaluation
@@ -349,14 +362,14 @@ relevant to LangChain below:
 Evaluating performance is a vital part of building LLM-powered applications.
 LangSmith helps with every step of the process from creating a dataset to defining metrics to running evaluators.
 
-To learn more, check out the [LangSmith evaluation how-to guides](https://docs.smith.langchain.com/how_to_guides#evaluation).
+To learn more, check out the [LangSmith evaluation how-to guides](https://docs.smith.langchain.com/evaluation/how_to_guides).
 
 ### Tracing
 <span data-heading-keywords="trace,tracing"></span>
 
 Tracing gives you observability inside your chains and agents, and is vital in diagnosing issues.
 
-- [How to: trace with LangChain](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain)
-- [How to: add metadata and tags to traces](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain#add-metadata-and-tags-to-traces)
+- [How to: trace with LangChain](https://docs.smith.langchain.com/observability/how_to_guides/trace_with_langchain)
+- [How to: add metadata and tags to traces](https://docs.smith.langchain.com/observability/how_to_guides/add_metadata_tags)
 
-You can see general tracing-related how-tos [in this section of the LangSmith docs](https://docs.smith.langchain.com/how_to_guides/tracing).
+You can see general tracing-related how-tos [in this section of the LangSmith docs](https://docs.smith.langchain.com/observability/how_to_guides#tracing-configuration).

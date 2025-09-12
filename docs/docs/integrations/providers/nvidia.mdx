@@ -1,15 +1,15 @@
 # NVIDIA
-The `langchain-nvidia-ai-endpoints` package contains LangChain integrations building applications with models on 
-NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models 
-from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA 
-accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single 
+The `langchain-nvidia-ai-endpoints` package contains LangChain integrations building applications with models on
+NVIDIA NIM inference microservice. NIM supports models across domains like chat, embedding, and re-ranking models
+from the community as well as NVIDIA. These models are optimized by NVIDIA to deliver the best performance on NVIDIA
+accelerated infrastructure and deployed as a NIM, an easy-to-use, prebuilt containers that deploy anywhere using a single
 command on NVIDIA accelerated infrastructure.
 
-NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing, 
-NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud, 
+NVIDIA hosted deployments of NIMs are available to test on the [NVIDIA API catalog](https://build.nvidia.com/). After testing,
+NIMs can be exported from NVIDIA’s API catalog using the NVIDIA AI Enterprise license and run on-premises or in the cloud,
 giving enterprises ownership and full control of their IP and AI application.
 
-NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog. 
+NIMs are packaged as container images on a per model basis and are distributed as NGC container images through the NVIDIA NGC Catalog.
 At their core, NIMs provide easy, consistent, and familiar APIs for running inference on an AI model.
 
 Below is an example on how to use some common functionality surrounding text-generative and embedding models.
@@ -51,7 +51,7 @@ result = llm.invoke("Write a ballad about LangChain.")
 print(result.content)
 ```
 
-Using the API, you can query live endpoints available on the NVIDIA API Catalog to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster using NVIDIA NIM which is part of NVIDIA AI Enterprise, shown in the next section [Working with NVIDIA NIMs](##working-with-nvidia-nims). 
+Using the API, you can query live endpoints available on the NVIDIA API Catalog to get quick results from a DGX-hosted cloud compute environment. All models are source-accessible and can be deployed on your own compute cluster using NVIDIA NIM which is part of NVIDIA AI Enterprise, shown in the next section [Working with NVIDIA NIMs](#working-with-nvidia-nims).
 
 ## Working with NVIDIA NIMs
 When ready to deploy, you can self-host models with NVIDIA NIM—which is included with the NVIDIA AI Enterprise software license—and run them anywhere, giving you ownership of your customizations and full control of your intellectual property (IP) and AI applications.

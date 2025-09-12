@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
-from typing import Callable, Optional, Union
+from collections.abc import Awaitable
+from typing import Callable, Optional, Union, cast
 
 import openai
 from langchain_core.utils import from_env, secret_from_env
 from pydantic import Field, SecretStr, model_validator
-from typing_extensions import Self, cast
+from typing_extensions import Self
 
 from langchain_openai.embeddings.base import OpenAIEmbeddings
 
 
-class AzureOpenAIEmbeddings(OpenAIEmbeddings):
+class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """AzureOpenAI embedding model integration.
 
     Setup:
@@ -98,6 +99,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """  # noqa: E501
 
     azure_endpoint: Optional[str] = Field(
@@ -105,7 +107,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     )
     """Your Azure endpoint, including the resource.
 
-        Automatically inferred from env var `AZURE_OPENAI_ENDPOINT` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_ENDPOINT`` if not provided.
 
         Example: `https://example-resource.azure.openai.com/`
     """
@@ -113,7 +115,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
     """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
-        Note: this means you won't be able to use non-deployment endpoints.
+
+        .. note::
+            This means you won't be able to use non-deployment endpoints.
+
     """
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
@@ -124,29 +129,35 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             ["AZURE_OPENAI_API_KEY", "OPENAI_API_KEY"], default=None
         ),
     )
-    """Automatically inferred from env var `AZURE_OPENAI_API_KEY` if not provided."""
+    """Automatically inferred from env var ``AZURE_OPENAI_API_KEY`` if not provided."""
     openai_api_version: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_VERSION", default="2023-05-15"),
         alias="api_version",
     )
-    """Automatically inferred from env var `OPENAI_API_VERSION` if not provided.
-    
-    Set to "2023-05-15" by default if env variable `OPENAI_API_VERSION` is not set.
+    """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided.
+
+    Set to ``'2023-05-15'`` by default if env variable ``OPENAI_API_VERSION`` is not
+    set.
     """
     azure_ad_token: Optional[SecretStr] = Field(
         default_factory=secret_from_env("AZURE_OPENAI_AD_TOKEN", default=None)
     )
     """Your Azure Active Directory token.
 
-        Automatically inferred from env var `AZURE_OPENAI_AD_TOKEN` if not provided.
+        Automatically inferred from env var ``AZURE_OPENAI_AD_TOKEN`` if not provided.
 
-        For more:
-        https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id.
+        `For more, see this page. <https://www.microsoft.com/en-us/security/business/identity-access/microsoft-entra-id>`__
     """
     azure_ad_token_provider: Union[Callable[[], str], None] = None
     """A function that returns an Azure Active Directory token.
 
-        Will be invoked on every request.
+        Will be invoked on every sync request. For async requests,
+        will be invoked if ``azure_ad_async_token_provider`` is not provided.
+    """
+    azure_ad_async_token_provider: Union[Callable[[], Awaitable[str]], None] = None
+    """A function that returns an Azure Active Directory token.
+
+        Will be invoked on every async request.
     """
     openai_api_type: Optional[str] = Field(
         default_factory=from_env("OPENAI_API_TYPE", default="azure")
@@ -162,13 +173,15 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = self.openai_api_base
         if openai_api_base and self.validate_base_url:
-            if "/openai" not in openai_api_base:
-                self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
-                raise ValueError(
-                    "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    "the `azure_endpoint` param not `openai_api_base` "
-                    "(or alias `base_url`). "
-                )
+            # Only validate openai_api_base if azure_endpoint is not provided
+            if not self.azure_endpoint:
+                if "/openai" not in openai_api_base:
+                    self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
+                    raise ValueError(
+                        "As of openai>=1.0.0, Azure endpoints should be specified via "
+                        "the `azure_endpoint` param not `openai_api_base` "
+                        "(or alias `base_url`). "
+                    )
             if self.deployment:
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment` (or alias "
@@ -192,7 +205,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
-            "default_headers": self.default_headers,
+            "default_headers": {
+                **(self.default_headers or {}),
+                "User-Agent": "langchain-partner-python-azure-openai",
+            },
             "default_query": self.default_query,
         }
         if not self.client:
@@ -203,6 +219,12 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):
             ).embeddings
         if not self.async_client:
             async_specific: dict = {"http_client": self.http_async_client}
+
+            if self.azure_ad_async_token_provider:
+                client_params["azure_ad_token_provider"] = (
+                    self.azure_ad_async_token_provider
+                )
+
             self.async_client = openai.AsyncAzureOpenAI(
                 **client_params,  # type: ignore[arg-type]
                 **async_specific,

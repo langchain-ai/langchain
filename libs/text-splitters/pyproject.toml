@@ -1,39 +1,115 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 
-[tool.poetry]
-name = "langchain-text-splitters"
-version = "0.3.0"
-description = "LangChain text splitting utilities"
+[project]
 authors = []
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-
-[tool.mypy]
-disallow_untyped_defs = "True"
-[[tool.mypy.overrides]]
-module = [
-    "transformers",
-    "sentence_transformers",
-    "nltk.tokenize",
-    "konlpy.tag",
-    "bs4",
-    "pytest",
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "langchain-core<2.0.0,>=0.3.75",
 ]
-ignore_missing_imports = "True"
+name = "langchain-text-splitters"
+version = "0.3.11"
+description = "LangChain text splitting utilities"
+readme = "README.md"
 
-[tool.poetry.urls]
+[project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/text-splitters"
 "Release Notes" = "https://github.com/langchain-ai/langchain/releases?q=tag%3A%22langchain-text-splitters%3D%3D0%22&expanded=true"
+repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.0"
+[dependency-groups]
+lint = ["ruff<0.13,>=0.12.8", "langchain-core"]
+typing = [
+    "mypy<1.19,>=1.18.1",
+    "lxml-stubs<1.0.0,>=0.5.1",
+    "types-requests<3.0.0.0,>=2.31.0.20240218",
+    "tiktoken<1.0.0,>=0.11.0",
+    "beautifulsoup4<5.0.0,>=4.13.5",
+]
+dev = ["jupyter<2.0.0,>=1.0.0", "langchain-core"]
+test = [
+    "pytest<9,>=8",
+    "freezegun<2.0.0,>=1.2.2",
+    "pytest-mock<4.0.0,>=3.10.0",
+    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "langchain-core",
+]
+test_integration = [
+    "spacy<4.0.0,>=3.8.7",
+    "thinc<9.0.0,>=8.3.6",
+    "nltk<4.0.0,>=3.9.1",
+    "transformers<5.0.0,>=4.51.3",
+    "sentence-transformers>=3.0.1",
+    "tiktoken<1.0.0,>=0.8.0",
+    "en-core-web-sm",
+]
+
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+en-core-web-sm = { url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" }
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["konlpy", "nltk",]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201"]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/**" = [
+    "D1",      # Docstrings not mandatory in scripts
+    "INP001",  # Not a package
+    "S311"     # Standard pseudo-random generators are not suitable for cryptographic purposes
+]
+"tests/**" = [
+    "D1",      # Docstrings not mandatory in tests
+    "PLR2004", # Magic value comparisons
+    "S101",    # Tests need assertions
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001"   # Private member access in tests
+]
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -45,50 +121,3 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.typing]
-optional = true
-
-[tool.poetry.group.dev]
-optional = true
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^1.10"
-lxml-stubs = "^0.5.1"
-types-requests = "^2.31.0.20240218"
-tiktoken = "^0.6.0"
-spacy = "^3.7.4"
-
-[tool.poetry.group.dev.dependencies]
-jupyter = "^1.0.0"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.3.0"
-freezegun = "^1.2.2"
-pytest-mock = "^3.10.0"
-pytest-watcher = "^0.3.4"
-pytest-asyncio = "^0.21.1"
-pytest-profiling = "^1.7.0"
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.lint.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.dev.dependencies.langchain-core]
-path = "../core"
-develop = true
-
-[tool.poetry.group.test.dependencies.langchain-core]
-path = "../core"
-develop = true

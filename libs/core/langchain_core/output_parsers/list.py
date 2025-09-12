@@ -1,19 +1,29 @@
+"""Parsers for list output."""
+
 from __future__ import annotations
 
+import csv
 import re
 from abc import abstractmethod
 from collections import deque
-from collections.abc import AsyncIterator, Iterator
-from typing import Optional as Optional
-from typing import TypeVar, Union
+from io import StringIO
+from typing import TYPE_CHECKING, TypeVar, Union
+
+from typing_extensions import override
 
 from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator
+
 T = TypeVar("T")
 
 
-def droplastn(iter: Iterator[T], n: int) -> Iterator[T]:
+def droplastn(
+    iter: Iterator[T],  # noqa: A002
+    n: int,
+) -> Iterator[T]:
     """Drop the last n elements of an iterator.
 
     Args:
@@ -44,8 +54,8 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         Args:
             text: The output of an LLM call.
 
-            Returns:
-                A list of strings.
+        Returns:
+            A list of strings.
         """
 
     def parse_iter(self, text: str) -> Iterator[re.Match]:
@@ -59,6 +69,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         """
         raise NotImplementedError
 
+    @override
     def _transform(
         self, input: Iterator[Union[str, BaseMessage]]
     ) -> Iterator[list[str]]:
@@ -69,9 +80,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -91,6 +103,7 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
         for part in self.parse(buffer):
             yield [part]
 
+    @override
     async def _atransform(
         self, input: AsyncIterator[Union[str, BaseMessage]]
     ) -> AsyncIterator[list[str]]:
@@ -101,9 +114,10 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
                 chunk_content = chunk.content
                 if not isinstance(chunk_content, str):
                     continue
-                chunk = chunk_content
-            # add current chunk to buffer
-            buffer += chunk
+                buffer += chunk_content
+            else:
+                # add current chunk to buffer
+                buffer += chunk
             # parse buffer into a list of parts
             try:
                 done_idx = 0
@@ -124,16 +138,12 @@ class ListOutputParser(BaseTransformOutputParser[list[str]]):
             yield [part]
 
 
-ListOutputParser.model_rebuild()
-
-
 class CommaSeparatedListOutputParser(ListOutputParser):
     """Parse the output of an LLM call to a comma-separated list."""
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Check if the langchain object is serializable.
-        Returns True."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
@@ -141,11 +151,11 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         """Get the namespace of the langchain object.
 
         Returns:
-            A list of strings.
-            Default is ["langchain", "output_parsers", "list"].
+            ``["langchain", "output_parsers", "list"]``
         """
         return ["langchain", "output_parsers", "list"]
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the comma-separated list output."""
         return (
@@ -153,6 +163,7 @@ class CommaSeparatedListOutputParser(ListOutputParser):
             "eg: `foo, bar, baz` or `foo,bar,baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
 
@@ -162,7 +173,14 @@ class CommaSeparatedListOutputParser(ListOutputParser):
         Returns:
             A list of strings.
         """
-        return [part.strip() for part in text.split(",")]
+        try:
+            reader = csv.reader(
+                StringIO(text), quotechar='"', delimiter=",", skipinitialspace=True
+            )
+            return [item for sublist in reader for item in sublist]
+        except csv.Error:
+            # keep old logic for backup
+            return [part.strip() for part in text.split(",")]
 
     @property
     def _type(self) -> str:
@@ -175,6 +193,7 @@ class NumberedListOutputParser(ListOutputParser):
     pattern: str = r"\d+\.\s([^\n]+)"
     """The pattern to match a numbered list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a numbered list with each item on a new line. "
@@ -192,15 +211,8 @@ class NumberedListOutputParser(ListOutputParser):
         """
         return re.findall(self.pattern, text)
 
+    @override
     def parse_iter(self, text: str) -> Iterator[re.Match]:
-        """Parse the output of an LLM call.
-
-        Args:
-            text: The output of an LLM call.
-
-        Yields:
-            A match object for each part of the output.
-        """
         return re.finditer(self.pattern, text)
 
     @property
@@ -214,9 +226,10 @@ class MarkdownListOutputParser(ListOutputParser):
     pattern: str = r"^\s*[-*]\s([^\n]+)$"
     """The pattern to match a Markdown list item."""
 
+    @override
     def get_format_instructions(self) -> str:
         """Return the format instructions for the Markdown list output."""
-        return "Your response should be a markdown list, " "eg: `- foo\n- bar\n- baz`"
+        return "Your response should be a markdown list, eg: `- foo\n- bar\n- baz`"
 
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call.
@@ -229,15 +242,8 @@ class MarkdownListOutputParser(ListOutputParser):
         """
         return re.findall(self.pattern, text, re.MULTILINE)
 
+    @override
     def parse_iter(self, text: str) -> Iterator[re.Match]:
-        """Parse the output of an LLM call.
-
-        Args:
-            text: The output of an LLM call.
-
-        Yields:
-            A match object for each part of the output.
-        """
         return re.finditer(self.pattern, text, re.MULTILINE)
 
     @property

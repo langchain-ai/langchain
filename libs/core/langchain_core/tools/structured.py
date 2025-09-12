@@ -1,9 +1,12 @@
+"""Structured tool."""
+
 from __future__ import annotations
 
 import textwrap
 from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Annotated,
     Any,
     Callable,
@@ -12,28 +15,32 @@ from typing import (
     Union,
 )
 
-from pydantic import BaseModel, Field, SkipValidation
+from pydantic import Field, SkipValidation
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
     FILTERED_ARGS,
+    ArgsSchema,
     BaseTool,
     _get_runnable_config_param,
     create_schema_from_function,
 )
-from langchain_core.utils.pydantic import TypeBaseModel
+from langchain_core.utils.pydantic import is_basemodel_subclass
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
     description: str = ""
-    args_schema: Annotated[TypeBaseModel, SkipValidation()] = Field(
+    args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
     """The input arguments' schema."""
@@ -45,6 +52,7 @@ class StructuredTool(BaseTool):
     # --- Runnable ---
 
     # TODO: Is this needed?
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -59,11 +67,6 @@ class StructuredTool(BaseTool):
 
     # --- Tool ---
 
-    @property
-    def args(self) -> dict:
-        """The tool's input arguments."""
-        return self.args_schema.model_json_schema()["properties"]
-
     def _run(
         self,
         *args: Any,
@@ -71,7 +74,17 @@ class StructuredTool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -88,7 +101,17 @@ class StructuredTool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -109,9 +132,9 @@ class StructuredTool(BaseTool):
         coroutine: Optional[Callable[..., Awaitable[Any]]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        return_direct: bool = False,
-        args_schema: Optional[type[BaseModel]] = None,
-        infer_schema: bool = True,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
+        args_schema: Optional[ArgsSchema] = None,
+        infer_schema: bool = True,  # noqa: FBT001,FBT002
         *,
         response_format: Literal["content", "content_and_artifact"] = "content",
         parse_docstring: bool = False,
@@ -151,6 +174,9 @@ class StructuredTool(BaseTool):
 
         Raises:
             ValueError: If the function is not provided.
+            ValueError: If the function does not have a docstring and description
+                is not provided.
+            TypeError: If the ``args_schema`` is not a ``BaseModel`` or dict.
 
         Examples:
 
@@ -161,8 +187,8 @@ class StructuredTool(BaseTool):
                     return a + b
                 tool = StructuredTool.from_function(add)
                 tool.run(1, 2) # 3
-        """
 
+        """
         if func is not None:
             source_function = func
         elif coroutine is not None:
@@ -184,7 +210,23 @@ class StructuredTool(BaseTool):
         if description is None and not parse_docstring:
             description_ = source_function.__doc__ or None
         if description_ is None and args_schema:
-            description_ = args_schema.__doc__ or None
+            if isinstance(args_schema, type) and is_basemodel_subclass(args_schema):
+                description_ = args_schema.__doc__
+                if (
+                    description_
+                    and "A base class for creating Pydantic models" in description_
+                ):
+                    description_ = ""
+                elif not description_:
+                    description_ = None
+            elif isinstance(args_schema, dict):
+                description_ = args_schema.get("description")
+            else:
+                msg = (
+                    "Invalid args_schema: expected BaseModel or dict, "
+                    f"got {args_schema}"
+                )
+                raise TypeError(msg)
         if description_ is None:
             msg = "Function must have a docstring if description not provided."
             raise ValueError(msg)
@@ -199,7 +241,7 @@ class StructuredTool(BaseTool):
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,  # type: ignore[arg-type]
+            args_schema=args_schema,
             description=description_,
             return_direct=return_direct,
             response_format=response_format,

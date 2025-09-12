@@ -1,8 +1,9 @@
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from langchain_core._api import deprecated
 from langchain_core.messages import BaseMessage, get_buffer_string
 from langchain_core.utils import pre_init
+from typing_extensions import override
 
 from langchain.memory.chat_memory import BaseChatMemory
 from langchain.memory.summary import SummarizerMixin
@@ -29,81 +30,90 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
     memory_key: str = "history"
 
     @property
-    def buffer(self) -> Union[str, List[BaseMessage]]:
+    def buffer(self) -> Union[str, list[BaseMessage]]:
         """String buffer of memory."""
         return self.load_memory_variables({})[self.memory_key]
 
-    async def abuffer(self) -> Union[str, List[BaseMessage]]:
+    async def abuffer(self) -> Union[str, list[BaseMessage]]:
         """Async memory buffer."""
         memory_variables = await self.aload_memory_variables({})
         return memory_variables[self.memory_key]
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         buffer = self.chat_memory.messages
         if self.moving_summary_buffer != "":
-            first_messages: List[BaseMessage] = [
-                self.summary_message_cls(content=self.moving_summary_buffer)
+            first_messages: list[BaseMessage] = [
+                self.summary_message_cls(content=self.moving_summary_buffer),
             ]
             buffer = first_messages + buffer
         if self.return_messages:
             final_buffer: Any = buffer
         else:
             final_buffer = get_buffer_string(
-                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+                buffer,
+                human_prefix=self.human_prefix,
+                ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: final_buffer}
 
-    async def aload_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    async def aload_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Asynchronously return key-value pairs given the text input to the chain."""
         buffer = await self.chat_memory.aget_messages()
         if self.moving_summary_buffer != "":
-            first_messages: List[BaseMessage] = [
-                self.summary_message_cls(content=self.moving_summary_buffer)
+            first_messages: list[BaseMessage] = [
+                self.summary_message_cls(content=self.moving_summary_buffer),
             ]
             buffer = first_messages + buffer
         if self.return_messages:
             final_buffer: Any = buffer
         else:
             final_buffer = get_buffer_string(
-                buffer, human_prefix=self.human_prefix, ai_prefix=self.ai_prefix
+                buffer,
+                human_prefix=self.human_prefix,
+                ai_prefix=self.ai_prefix,
             )
         return {self.memory_key: final_buffer}
 
     @pre_init
-    def validate_prompt_input_variables(cls, values: Dict) -> Dict:
+    def validate_prompt_input_variables(cls, values: dict) -> dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
         self.prune()
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Asynchronously save context from this conversation to buffer."""
         await super().asave_context(inputs, outputs)
         await self.aprune()
 
     def prune(self) -> None:
-        """Prune buffer if it exceeds max token limit"""
+        """Prune buffer if it exceeds max token limit."""
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:
@@ -112,11 +122,12 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
             self.moving_summary_buffer = self.predict_new_summary(
-                pruned_memory, self.moving_summary_buffer
+                pruned_memory,
+                self.moving_summary_buffer,
             )
 
     async def aprune(self) -> None:
-        """Asynchronously prune buffer if it exceeds max token limit"""
+        """Asynchronously prune buffer if it exceeds max token limit."""
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
         if curr_buffer_length > self.max_token_limit:
@@ -125,7 +136,8 @@ class ConversationSummaryBufferMemory(BaseChatMemory, SummarizerMixin):
                 pruned_memory.append(buffer.pop(0))
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
             self.moving_summary_buffer = await self.apredict_new_summary(
-                pruned_memory, self.moving_summary_buffer
+                pruned_memory,
+                self.moving_summary_buffer,
             )
 
     def clear(self) -> None:

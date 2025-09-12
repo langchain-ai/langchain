@@ -1,12 +1,9 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: 🤔 Question or Problem
-    about: Ask a question or ask about a problem in GitHub Discussions.
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/q-a
-  - name: Feature Request
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/ideas
-    about: Suggest a feature or an idea
-  - name: Show and tell
-    about: Show what you built with LangChain
-    url: https://www.github.com/langchain-ai/langchain/discussions/categories/show-and-tell
+  - name: 📚 Documentation
+    url: https://github.com/langchain-ai/docs/issues/new?template=langchain.yml
+    about: Report an issue related to the LangChain documentation
+  - name: 💬 LangChain Forum
+    url:  https://forum.langchain.com/
+    about: General community discussions and support

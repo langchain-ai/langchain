@@ -1,9 +1,10 @@
 """Test Base Schema of documents."""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from langchain_core.document_loaders import BaseBlobParser, Blob
 from langchain_core.documents import Document
+from typing_extensions import override
 
 
 def test_base_blob_parser() -> None:
@@ -12,6 +13,7 @@ def test_base_blob_parser() -> None:
     class MyParser(BaseBlobParser):
         """A simple parser that returns a single document."""
 
+        @override
         def lazy_parse(self, blob: Blob) -> Iterator[Document]:
             """Lazy parsing interface."""
             yield Document(

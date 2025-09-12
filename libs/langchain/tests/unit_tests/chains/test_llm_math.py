@@ -33,11 +33,11 @@ def test_complex_question(fake_llm_math_chain: LLMMathChain) -> None:
     """Test complex question that should need python."""
     question = "What is the square root of 2?"
     output = fake_llm_math_chain.run(question)
-    assert output == f"Answer: {2**.5}"
+    assert output == f"Answer: {2**0.5}"
 
 
 @pytest.mark.requires("numexpr")
 def test_error(fake_llm_math_chain: LLMMathChain) -> None:
     """Test question that raises error."""
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="unknown format from LLM: foo"):
         fake_llm_math_chain.run("foo")

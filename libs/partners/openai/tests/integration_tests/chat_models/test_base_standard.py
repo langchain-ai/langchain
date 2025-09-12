@@ -1,11 +1,14 @@
 """Standard LangChain interface tests"""
 
+import base64
 from pathlib import Path
-from typing import Dict, List, Literal, Type, cast
+from typing import Literal, cast
 
+import httpx
+import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage
-from langchain_standard_tests.integration_tests import ChatModelIntegrationTests
+from langchain_core.messages import AIMessage, HumanMessage
+from langchain_tests.integration_tests import ChatModelIntegrationTests
 
 from langchain_openai import ChatOpenAI
 
@@ -14,7 +17,7 @@ REPO_ROOT_DIR = Path(__file__).parents[6]
 
 class TestOpenAIStandard(ChatModelIntegrationTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatOpenAI
 
     @property
@@ -26,11 +29,23 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         return True
 
     @property
+    def supports_image_urls(self) -> bool:
+        return True
+
+    @property
+    def supports_json_mode(self) -> bool:
+        return True
+
+    @property
+    def supports_anthropic_inputs(self) -> bool:
+        return True
+
+    @property
     def supported_usage_metadata_details(
         self,
-    ) -> Dict[
+    ) -> dict[
         Literal["invoke", "stream"],
-        List[
+        list[
             Literal[
                 "audio_input",
                 "audio_output",
@@ -42,12 +57,16 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
     ]:
         return {"invoke": ["reasoning_output", "cache_read_input"], "stream": []}
 
+    @property
+    def enable_vcr_tests(self) -> bool:
+        return True
+
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        with open(REPO_ROOT_DIR / "README.md", "r") as f:
+        with open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
-        
+
         {readme}
         """
         llm = ChatOpenAI(model="gpt-4o-mini", stream_usage=True)
@@ -63,6 +82,46 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         )
         return _invoke(llm, input_, stream)
 
+    @property
+    def supports_pdf_inputs(self) -> bool:
+        # OpenAI requires a filename for PDF inputs
+        # For now, we test with filename in OpenAI-specific tests
+        return False
+
+    def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process PDF inputs."""
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "mime_type": "application/pdf",
+                    "data": pdf_data,
+                    "filename": "my-pdf",  # OpenAI requires a filename
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Chat Completions format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "Summarize this document:"},
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            ]
+        )
+        _ = model.invoke([message])
+
 
 def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
     if stream:
@@ -72,3 +131,30 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         return cast(AIMessage, full)
     else:
         return cast(AIMessage, llm.invoke(input_))
+
+
+@pytest.mark.skip()  # Test either finishes in 5 seconds or 5 minutes.
+def test_audio_model() -> None:
+    class AudioModelTests(ChatModelIntegrationTests):
+        @property
+        def chat_model_class(self) -> type[ChatOpenAI]:
+            return ChatOpenAI
+
+        @property
+        def chat_model_params(self) -> dict:
+            return {
+                "model": "gpt-4o-audio-preview",
+                "temperature": 0,
+                "model_kwargs": {
+                    "modalities": ["text", "audio"],
+                    "audio": {"voice": "alloy", "format": "wav"},
+                },
+            }
+
+        @property
+        def supports_audio_inputs(self) -> bool:
+            return True
+
+    test_instance = AudioModelTests()
+    model = test_instance.chat_model_class(**test_instance.chat_model_params)
+    AudioModelTests().test_audio_inputs(model)

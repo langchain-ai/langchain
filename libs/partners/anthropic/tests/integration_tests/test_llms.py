@@ -1,6 +1,6 @@
 """Test Anthropic API wrapper."""
 
-from typing import Generator
+from collections.abc import Generator
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -8,6 +8,8 @@ from langchain_core.outputs import LLMResult
 
 from langchain_anthropic import Anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
+
+MODEL = "claude-3-7-sonnet-latest"
 
 
 @pytest.mark.requires("anthropic")
@@ -24,14 +26,14 @@ def test_anthropic_model_param() -> None:
 
 def test_anthropic_call() -> None:
     """Test valid call to anthropic."""
-    llm = Anthropic(model="claude-instant-1")  # type: ignore[call-arg]
+    llm = Anthropic(model=MODEL)  # type: ignore[call-arg]
     output = llm.invoke("Say foo:")
     assert isinstance(output, str)
 
 
 def test_anthropic_streaming() -> None:
     """Test streaming tokens from anthropic."""
-    llm = Anthropic(model="claude-instant-1")  # type: ignore[call-arg]
+    llm = Anthropic(model=MODEL)  # type: ignore[call-arg]
     generator = llm.stream("I'm Pickle Rick")
 
     assert isinstance(generator, Generator)
@@ -45,6 +47,7 @@ def test_anthropic_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
+        model=MODEL,  # type: ignore[call-arg]
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,
@@ -55,7 +58,7 @@ def test_anthropic_streaming_callback() -> None:
 
 async def test_anthropic_async_generate() -> None:
     """Test async generate."""
-    llm = Anthropic()
+    llm = Anthropic(model=MODEL)  # type: ignore[call-arg]
     output = await llm.agenerate(["How many toes do dogs have?"])
     assert isinstance(output, LLMResult)
 
@@ -65,6 +68,7 @@ async def test_anthropic_async_streaming_callback() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
     llm = Anthropic(
+        model=MODEL,  # type: ignore[call-arg]
         streaming=True,
         callback_manager=callback_manager,
         verbose=True,

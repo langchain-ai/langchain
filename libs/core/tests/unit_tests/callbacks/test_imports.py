@@ -33,6 +33,8 @@ EXPECTED_ALL = [
     "FileCallbackHandler",
     "adispatch_custom_event",
     "dispatch_custom_event",
+    "UsageMetadataCallbackHandler",
+    "get_usage_metadata_callback",
 ]
 
 

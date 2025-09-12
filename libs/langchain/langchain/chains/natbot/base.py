@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -46,7 +46,9 @@ class NatBotChain(Chain):
         .. code-block:: python
 
             from langchain.chains import NatBotChain
+
             natbot = NatBotChain.from_default("Buy me a new hat.")
+
     """
 
     llm_chain: Runnable
@@ -66,12 +68,13 @@ class NatBotChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an NatBotChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
-                "class method."
+                "class method.",
+                stacklevel=5,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 values["llm_chain"] = PROMPT | values["llm"] | StrOutputParser()
@@ -80,22 +83,26 @@ class NatBotChain(Chain):
     @classmethod
     def from_default(cls, objective: str, **kwargs: Any) -> NatBotChain:
         """Load with default LLMChain."""
-        raise NotImplementedError(
+        msg = (
             "This method is no longer implemented. Please use from_llm."
             "llm = OpenAI(temperature=0.5, best_of=10, n=3, max_tokens=50)"
             "For example, NatBotChain.from_llm(llm, objective)"
         )
+        raise NotImplementedError(msg)
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, objective: str, **kwargs: Any
+        cls,
+        llm: BaseLanguageModel,
+        objective: str,
+        **kwargs: Any,
     ) -> NatBotChain:
         """Load from LLM."""
         llm_chain = PROMPT | llm | StrOutputParser()
         return cls(llm_chain=llm_chain, objective=objective, **kwargs)
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect url and browser content.
 
         :meta private:
@@ -103,7 +110,7 @@ class NatBotChain(Chain):
         return [self.input_url_key, self.input_browser_content_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return command.
 
         :meta private:
@@ -112,9 +119,9 @@ class NatBotChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         url = inputs[self.input_url_key]
         browser_content = inputs[self.input_browser_content_key]
@@ -146,6 +153,7 @@ class NatBotChain(Chain):
 
                 browser_content = "...."
                 llm_command = natbot.run("www.google.com", browser_content)
+
         """
         _inputs = {
             self.input_url_key: url,

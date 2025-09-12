@@ -1,15 +1,16 @@
 """String distance evaluators based on the RapidFuzz library."""
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Optional
 
+from langchain_core.callbacks import Callbacks
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForChainRun,
     CallbackManagerForChainRun,
-    Callbacks,
 )
 from langchain_core.utils import pre_init
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -17,8 +18,7 @@ from langchain.schema import RUN_KEY
 
 
 def _load_rapidfuzz() -> Any:
-    """
-    Load the RapidFuzz library.
+    """Load the RapidFuzz library.
 
     Raises:
         ImportError: If the rapidfuzz library is not installed.
@@ -28,11 +28,12 @@ def _load_rapidfuzz() -> Any:
     """
     try:
         import rapidfuzz
-    except ImportError:
-        raise ImportError(
+    except ImportError as e:
+        msg = (
             "Please install the rapidfuzz library to use the FuzzyMatchStringEvaluator."
             "Please install it with `pip install rapidfuzz`."
         )
+        raise ImportError(msg) from e
     return rapidfuzz.distance
 
 
@@ -65,9 +66,8 @@ class _RapidFuzzChainMixin(Chain):
     Applies only to the Levenshtein and Damerau-Levenshtein distances."""
 
     @pre_init
-    def validate_dependencies(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Validate that the rapidfuzz library is installed.
+    def validate_dependencies(cls, values: dict[str, Any]) -> dict[str, Any]:
+        """Validate that the rapidfuzz library is installed.
 
         Args:
             values (Dict[str, Any]): The input values.
@@ -79,18 +79,16 @@ class _RapidFuzzChainMixin(Chain):
         return values
 
     @property
-    def output_keys(self) -> List[str]:
-        """
-        Get the output keys.
+    def output_keys(self) -> list[str]:
+        """Get the output keys.
 
         Returns:
             List[str]: The output keys.
         """
         return ["score"]
 
-    def _prepare_output(self, result: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Prepare the output dictionary.
+    def _prepare_output(self, result: dict[str, Any]) -> dict[str, Any]:
+        """Prepare the output dictionary.
 
         Args:
             result (Dict[str, Any]): The evaluation results.
@@ -104,12 +102,12 @@ class _RapidFuzzChainMixin(Chain):
         return result
 
     @staticmethod
-    def _get_metric(distance: str, normalize_score: bool = False) -> Callable:
-        """
-        Get the distance metric function based on the distance type.
+    def _get_metric(distance: str, *, normalize_score: bool = False) -> Callable:
+        """Get the distance metric function based on the distance type.
 
         Args:
-            distance (str): The distance type.
+            distance: The distance type.
+            normalize_score: Whether to normalize the score.
 
         Returns:
             Callable: The distance metric function.
@@ -119,7 +117,7 @@ class _RapidFuzzChainMixin(Chain):
         """
         from rapidfuzz import distance as rf_distance
 
-        module_map: Dict[str, Any] = {
+        module_map: dict[str, Any] = {
             StringDistance.DAMERAU_LEVENSHTEIN: rf_distance.DamerauLevenshtein,
             StringDistance.LEVENSHTEIN: rf_distance.Levenshtein,
             StringDistance.JARO: rf_distance.Jaro,
@@ -128,31 +126,30 @@ class _RapidFuzzChainMixin(Chain):
             StringDistance.INDEL: rf_distance.Indel,
         }
         if distance not in module_map:
-            raise ValueError(
+            msg = (
                 f"Invalid distance metric: {distance}"
                 f"\nMust be one of: {list(StringDistance)}"
             )
+            raise ValueError(msg)
         module = module_map[distance]
         if normalize_score:
             return module.normalized_distance
-        else:
-            return module.distance
+        return module.distance
 
     @property
     def metric(self) -> Callable:
-        """
-        Get the distance metric function.
+        """Get the distance metric function.
 
         Returns:
             Callable: The distance metric function.
         """
         return _RapidFuzzChainMixin._get_metric(
-            self.distance, normalize_score=self.normalize_score
+            self.distance,
+            normalize_score=self.normalize_score,
         )
 
     def compute_metric(self, a: str, b: str) -> float:
-        """
-        Compute the distance between two strings.
+        """Compute the distance between two strings.
 
         Args:
             a (str): The first string.
@@ -167,9 +164,8 @@ class _RapidFuzzChainMixin(Chain):
 class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
     """Compute string distances between the prediction and the reference.
 
-    Examples
+    Examples:
     ----------
-
     >>> from langchain.evaluation import StringDistanceEvalChain
     >>> evaluator = StringDistanceEvalChain()
     >>> evaluator.evaluate_strings(
@@ -189,22 +185,17 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
     @property
     def requires_input(self) -> bool:
-        """
-        This evaluator does not require input.
-        """
+        """This evaluator does not require input."""
         return False
 
     @property
     def requires_reference(self) -> bool:
-        """
-        This evaluator does not require a reference.
-        """
+        """This evaluator does not require a reference."""
         return True
 
     @property
-    def input_keys(self) -> List[str]:
-        """
-        Get the input keys.
+    def input_keys(self) -> list[str]:
+        """Get the input keys.
 
         Returns:
             List[str]: The input keys.
@@ -213,21 +204,20 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
     @property
     def evaluation_name(self) -> str:
-        """
-        Get the evaluation name.
+        """Get the evaluation name.
 
         Returns:
             str: The evaluation name.
         """
         return f"{self.distance.value}_distance"
 
+    @override
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        """
-        Compute the string distance between the prediction and the reference.
+    ) -> dict[str, Any]:
+        """Compute the string distance between the prediction and the reference.
 
         Args:
             inputs (Dict[str, Any]): The input values.
@@ -239,18 +229,17 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        """
-        Asynchronously compute the string distance between the prediction
-            and the reference.
+    ) -> dict[str, Any]:
+        """Compute the string distance between the prediction and the reference.
 
         Args:
             inputs (Dict[str, Any]): The input values.
-            run_manager (Optional[AsyncCallbackManagerForChainRun]:
+            run_manager (Optional[CallbackManagerForChainRun]):
                 The callback manager.
 
         Returns:
@@ -258,6 +247,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         """
         return {"score": self.compute_metric(inputs["reference"], inputs["prediction"])}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -265,23 +255,25 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """
-        Evaluate the string distance between the prediction and the reference.
+        """Evaluate the string distance between the prediction and the reference.
 
         Args:
-            prediction (str): The prediction string.
-            reference (Optional[str], optional): The reference string.
-            input (Optional[str], optional): The input string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            kwargs: Additional keyword arguments.
+            prediction: The prediction string.
+            reference: The reference string.
+            input: The input string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         result = self(
             inputs={"prediction": prediction, "reference": reference},
@@ -293,6 +285,7 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
 
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -300,24 +293,25 @@ class StringDistanceEvalChain(StringEvaluator, _RapidFuzzChainMixin):
         reference: Optional[str] = None,
         input: Optional[str] = None,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """
-        Asynchronously evaluate the string distance between the
-            prediction and the reference.
+        """Evaluate the string distance between the prediction and the reference.
 
         Args:
-            prediction (str): The prediction string.
-            reference (Optional[str], optional): The reference string.
-            input (Optional[str], optional): The input string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            kwargs: Additional keyword arguments.
+            prediction: The prediction string.
+            reference: The reference string.
+            input: The input string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to apply.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "reference": reference},
@@ -333,9 +327,8 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
     """Compute string edit distances between two predictions."""
 
     @property
-    def input_keys(self) -> List[str]:
-        """
-        Get the input keys.
+    def input_keys(self) -> list[str]:
+        """Get the input keys.
 
         Returns:
             List[str]: The input keys.
@@ -344,21 +337,20 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
 
     @property
     def evaluation_name(self) -> str:
-        """
-        Get the evaluation name.
+        """Get the evaluation name.
 
         Returns:
             str: The evaluation name.
         """
         return f"pairwise_{self.distance.value}_distance"
 
+    @override
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        """
-        Compute the string distance between two predictions.
+    ) -> dict[str, Any]:
+        """Compute the string distance between two predictions.
 
         Args:
             inputs (Dict[str, Any]): The input values.
@@ -369,16 +361,16 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
+    @override
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
-        """
-        Asynchronously compute the string distance between two predictions.
+    ) -> dict[str, Any]:
+        """Asynchronously compute the string distance between two predictions.
 
         Args:
             inputs (Dict[str, Any]): The input values.
@@ -389,33 +381,34 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
             Dict[str, Any]: The evaluation results containing the score.
         """
         return {
-            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"])
+            "score": self.compute_metric(inputs["prediction"], inputs["prediction_b"]),
         }
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """
-        Evaluate the string distance between two predictions.
+        """Evaluate the string distance between two predictions.
 
         Args:
-            prediction (str): The first prediction string.
-            prediction_b (str): The second prediction string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces.
-            metadata (Dict[str, Any], optional): Metadata to apply to traces.
-            kwargs: Additional keyword arguments.
+            prediction: The first prediction string.
+            prediction_b: The second prediction string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         result = self(
             inputs={"prediction": prediction, "prediction_b": prediction_b},
@@ -426,30 +419,31 @@ class PairwiseStringDistanceEvalChain(PairwiseStringEvaluator, _RapidFuzzChainMi
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,
         prediction: str,
         prediction_b: str,
         callbacks: Callbacks = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: Optional[list[str]] = None,
+        metadata: Optional[dict[str, Any]] = None,
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """
-        Asynchronously evaluate the string distance between two predictions.
+        """Asynchronously evaluate the string distance between two predictions.
 
         Args:
-            prediction (str): The first prediction string.
-            prediction_b (str): The second prediction string.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces.
-            metadata (Dict[str, Any], optional): Metadata to apply to traces.
-            kwargs: Additional keyword arguments.
+            prediction: The first prediction string.
+            prediction_b: The second prediction string.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "prediction_b": prediction_b},

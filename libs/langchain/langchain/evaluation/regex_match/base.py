@@ -1,5 +1,7 @@
 import re
-from typing import Any, List
+from typing import Any
+
+from typing_extensions import override
 
 from langchain.evaluation.schema import StringEvaluator
 
@@ -7,7 +9,7 @@ from langchain.evaluation.schema import StringEvaluator
 class RegexMatchStringEvaluator(StringEvaluator):
     """Compute a regex match between the prediction and the reference.
 
-    Examples
+    Examples:
     ----------
     >>> evaluator = RegexMatchStringEvaluator(flags=re.IGNORECASE)
     >>> evaluator.evaluate_strings(
@@ -27,28 +29,28 @@ class RegexMatchStringEvaluator(StringEvaluator):
         )  # This will return {'score': 1.0} as the prediction matches the second pattern in the union
     """  # noqa: E501
 
-    def __init__(self, *, flags: int = 0, **kwargs: Any):  # Default is no flags
+    def __init__(self, *, flags: int = 0, **_: Any):  # Default is no flags
+        """Initialize the RegexMatchStringEvaluator.
+
+        Args:
+            flags: Flags to use for the regex match. Defaults to 0 (no flags).
+        """
         super().__init__()
         self.flags = flags
 
     @property
     def requires_input(self) -> bool:
-        """
-        This evaluator does not require input.
-        """
+        """This evaluator does not require input."""
         return False
 
     @property
     def requires_reference(self) -> bool:
-        """
-        This evaluator requires a reference.
-        """
+        """This evaluator requires a reference."""
         return True
 
     @property
-    def input_keys(self) -> List[str]:
-        """
-        Get the input keys.
+    def input_keys(self) -> list[str]:
+        """Get the input keys.
 
         Returns:
             List[str]: The input keys.
@@ -57,30 +59,30 @@ class RegexMatchStringEvaluator(StringEvaluator):
 
     @property
     def evaluation_name(self) -> str:
-        """
-        Get the evaluation name.
+        """Get the evaluation name.
 
         Returns:
             str: The evaluation name.
         """
         return "regex_match"
 
-    def _evaluate_strings(  # type: ignore[arg-type,override]
+    @override
+    def _evaluate_strings(  # type: ignore[override]
         self,
         *,
         prediction: str,
         reference: str,
         **kwargs: Any,
     ) -> dict:
-        """
-        Evaluate the regex match between the prediction and the reference.
+        """Evaluate the regex match between the prediction and the reference.
 
         Args:
-            prediction (str): The prediction string.
-            reference (Optional[str], optional): The reference regex pattern.
+            prediction: The prediction string.
+            reference: The reference regex pattern.
+            **kwargs: Additional keyword arguments (not used).
 
         Returns:
-            dict: The evaluation results containing the score.
+            The evaluation results containing the score.
         """
         match = re.match(reference, prediction, flags=self.flags)
         return {"score": int(bool(match))}

@@ -1,6 +1,8 @@
 """Tool for the Exa Search API."""
 
-from typing import Any, Dict, List, Optional, Union
+from __future__ import annotations
+
+from typing import Any, Literal, Optional, Union
 
 from exa_py import Exa  # type: ignore[untyped-import]
 from exa_py.api import (
@@ -16,8 +18,8 @@ from pydantic import Field, SecretStr, model_validator
 from langchain_exa._utilities import initialize_client
 
 
-class ExaSearchResults(BaseTool):
-    """Exa Search tool.
+class ExaSearchResults(BaseTool):  # type: ignore[override]
+    r"""Exa Search tool.
 
     Setup:
         Install ``langchain-exa`` and set environment variable ``EXA_API_KEY``.
@@ -66,33 +68,57 @@ class ExaSearchResults(BaseTool):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
-        values = initialize_client(values)
-        return values
+        return initialize_client(values)
 
     def _run(
         self,
         query: str,
-        num_results: int,
-        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
-        include_domains: Optional[List[str]] = None,
-        exclude_domains: Optional[List[str]] = None,
+        num_results: int = 10,
+        text_contents_options: Optional[  # noqa: FBT001
+            Union[TextContentsOptions, dict[str, Any], bool]
+        ] = None,
+        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
+        include_domains: Optional[list[str]] = None,
+        exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
-        use_autoprompt: Optional[bool] = None,
+        use_autoprompt: Optional[bool] = None,  # noqa: FBT001
+        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
+        type: Optional[Literal["neural", "keyword", "auto"]] = None,  # noqa: A002
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
-        """Use the tool."""
+    ) -> Union[list[dict], str]:
+        # TODO: rename `type` to something else, as it is a reserved keyword
+        """Use the tool.
+
+        Args:
+            query: The search query.
+            num_results: The number of search results to return (1 to 100). Default: 10
+            text_contents_options: How to set the page content of the results. Can be True or a dict with options like max_characters.
+            highlights: Whether to include highlights in the results.
+            include_domains: A list of domains to include in the search.
+            exclude_domains: A list of domains to exclude from the search.
+            start_crawl_date: The start date for the crawl (in YYYY-MM-DD format).
+            end_crawl_date: The end date for the crawl (in YYYY-MM-DD format).
+            start_published_date: The start date for when the document was published (in YYYY-MM-DD format).
+            end_published_date: The end date for when the document was published (in YYYY-MM-DD format).
+            use_autoprompt: Whether to use autoprompt for the search.
+            livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
+            summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
+            type: The type of search, 'keyword', 'neural', or 'auto'.
+            run_manager: The run manager for callbacks.
+
+        """  # noqa: E501
         try:
             return self.client.search_and_contents(
                 query,
                 num_results=num_results,
-                text=text_contents_options,  # type: ignore
-                highlights=highlights,  # type: ignore
+                text=text_contents_options,
+                highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -100,12 +126,15 @@ class ExaSearchResults(BaseTool):
                 start_published_date=start_published_date,
                 end_published_date=end_published_date,
                 use_autoprompt=use_autoprompt,
-            )  # type: ignore
+                livecrawl=livecrawl,
+                summary=summary,
+                type=type,
+            )  # type: ignore[call-overload, misc]
         except Exception as e:
             return repr(e)
 
 
-class ExaFindSimilarResults(BaseTool):
+class ExaFindSimilarResults(BaseTool):  # type: ignore[override]
     """Tool that queries the Metaphor Search API and gets back json."""
 
     name: str = "exa_find_similar_results_json"
@@ -120,34 +149,56 @@ class ExaFindSimilarResults(BaseTool):
 
     @model_validator(mode="before")
     @classmethod
-    def validate_environment(cls, values: Dict) -> Any:
+    def validate_environment(cls, values: dict) -> Any:
         """Validate the environment."""
-        values = initialize_client(values)
-        return values
+        return initialize_client(values)
 
     def _run(
         self,
         url: str,
-        num_results: int,
-        text_contents_options: Optional[Union[TextContentsOptions, bool]] = None,
-        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,
-        include_domains: Optional[List[str]] = None,
-        exclude_domains: Optional[List[str]] = None,
+        num_results: int = 10,
+        text_contents_options: Optional[  # noqa: FBT001
+            Union[TextContentsOptions, dict[str, Any], bool]
+        ] = None,
+        highlights: Optional[Union[HighlightsContentsOptions, bool]] = None,  # noqa: FBT001
+        include_domains: Optional[list[str]] = None,
+        exclude_domains: Optional[list[str]] = None,
         start_crawl_date: Optional[str] = None,
         end_crawl_date: Optional[str] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
-        exclude_source_domain: Optional[bool] = None,
+        exclude_source_domain: Optional[bool] = None,  # noqa: FBT001
         category: Optional[str] = None,
+        livecrawl: Optional[Literal["always", "fallback", "never"]] = None,
+        summary: Optional[Union[bool, dict[str, str]]] = None,  # noqa: FBT001
         run_manager: Optional[CallbackManagerForToolRun] = None,
-    ) -> Union[List[Dict], str]:
-        """Use the tool."""
+    ) -> Union[list[dict], str]:
+        """Use the tool.
+
+        Args:
+            url: The URL to find similar pages for.
+            num_results: The number of search results to return (1 to 100). Default: 10
+            text_contents_options: How to set the page content of the results. Can be True or a dict with options like max_characters.
+            highlights: Whether to include highlights in the results.
+            include_domains: A list of domains to include in the search.
+            exclude_domains: A list of domains to exclude from the search.
+            start_crawl_date: The start date for the crawl (in YYYY-MM-DD format).
+            end_crawl_date: The end date for the crawl (in YYYY-MM-DD format).
+            start_published_date: The start date for when the document was published (in YYYY-MM-DD format).
+            end_published_date: The end date for when the document was published (in YYYY-MM-DD format).
+            exclude_source_domain: If True, exclude pages from the same domain as the source URL.
+            category: Filter for similar pages by category.
+            livecrawl: Option to crawl live webpages if content is not in the index. Options: "always", "fallback", "never"
+            summary: Whether to include a summary of the content. Can be a boolean or a dict with a custom query.
+            run_manager: The run manager for callbacks.
+
+        """  # noqa: E501
         try:
             return self.client.find_similar_and_contents(
                 url,
                 num_results=num_results,
-                text=text_contents_options,  # type: ignore
-                highlights=highlights,  # type: ignore
+                text=text_contents_options,
+                highlights=highlights,
                 include_domains=include_domains,
                 exclude_domains=exclude_domains,
                 start_crawl_date=start_crawl_date,
@@ -156,6 +207,8 @@ class ExaFindSimilarResults(BaseTool):
                 end_published_date=end_published_date,
                 exclude_source_domain=exclude_source_domain,
                 category=category,
-            )  # type: ignore
+                livecrawl=livecrawl,
+                summary=summary,
+            )  # type: ignore[call-overload, misc]
         except Exception as e:
             return repr(e)

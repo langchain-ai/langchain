@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import re
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -16,6 +16,7 @@ from langchain_core.documents import Document
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, model_validator
+from typing_extensions import override
 
 from langchain.chains import ReduceDocumentsChain
 from langchain.chains.base import Chain
@@ -69,8 +70,8 @@ class BaseQAWithSourcesChain(Chain, ABC):
             document_prompt=document_prompt,
             document_variable_name="summaries",
         )
-        reduce_documents_chain = ReduceDocumentsChain(  # type: ignore[misc]
-            combine_documents_chain=combine_results_chain
+        reduce_documents_chain = ReduceDocumentsChain(
+            combine_documents_chain=combine_results_chain,
         )
         combine_documents_chain = MapReduceDocumentsChain(
             llm_chain=llm_question_chain,
@@ -93,7 +94,9 @@ class BaseQAWithSourcesChain(Chain, ABC):
         """Load chain from chain type."""
         _chain_kwargs = chain_type_kwargs or {}
         combine_documents_chain = load_qa_with_sources_chain(
-            llm, chain_type=chain_type, **_chain_kwargs
+            llm,
+            chain_type=chain_type,
+            **_chain_kwargs,
         )
         return cls(combine_documents_chain=combine_documents_chain, **kwargs)
 
@@ -103,7 +106,7 @@ class BaseQAWithSourcesChain(Chain, ABC):
     )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -111,29 +114,31 @@ class BaseQAWithSourcesChain(Chain, ABC):
         return [self.question_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return output key.
 
         :meta private:
         """
         _output_keys = [self.answer_key, self.sources_answer_key]
         if self.return_source_documents:
-            _output_keys = _output_keys + ["source_documents"]
+            _output_keys = [*_output_keys, "source_documents"]
         return _output_keys
 
     @model_validator(mode="before")
     @classmethod
-    def validate_naming(cls, values: Dict) -> Any:
+    def validate_naming(cls, values: dict) -> Any:
         """Fix backwards compatibility in naming."""
         if "combine_document_chain" in values:
             values["combine_documents_chain"] = values.pop("combine_document_chain")
         return values
 
-    def _split_sources(self, answer: str) -> Tuple[str, str]:
+    def _split_sources(self, answer: str) -> tuple[str, str]:
         """Split sources from answer."""
         if re.search(r"SOURCES?:", answer, re.IGNORECASE):
             answer, sources = re.split(
-                r"SOURCES?:|QUESTION:\s", answer, flags=re.IGNORECASE
+                r"SOURCES?:|QUESTION:\s",
+                answer,
+                flags=re.IGNORECASE,
             )[:2]
             sources = re.split(r"\n", sources)[0].strip()
         else:
@@ -143,17 +148,17 @@ class BaseQAWithSourcesChain(Chain, ABC):
     @abstractmethod
     def _get_docs(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs to run questioning over."""
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._get_docs).parameters
@@ -164,10 +169,12 @@ class BaseQAWithSourcesChain(Chain, ABC):
             docs = self._get_docs(inputs)  # type: ignore[call-arg]
 
         answer = self.combine_documents_chain.run(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
         }
@@ -178,17 +185,17 @@ class BaseQAWithSourcesChain(Chain, ABC):
     @abstractmethod
     async def _aget_docs(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs to run questioning over."""
 
     async def _acall(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         accepts_run_manager = (
             "run_manager" in inspect.signature(self._aget_docs).parameters
@@ -198,10 +205,12 @@ class BaseQAWithSourcesChain(Chain, ABC):
         else:
             docs = await self._aget_docs(inputs)  # type: ignore[call-arg]
         answer = await self.combine_documents_chain.arun(
-            input_documents=docs, callbacks=_run_manager.get_child(), **inputs
+            input_documents=docs,
+            callbacks=_run_manager.get_child(),
+            **inputs,
         )
         answer, sources = self._split_sources(answer)
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             self.answer_key: answer,
             self.sources_answer_key: sources,
         }
@@ -225,28 +234,30 @@ class QAWithSourcesChain(BaseQAWithSourcesChain):
     input_docs_key: str = "docs"  #: :meta private:
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
         """
         return [self.input_docs_key, self.question_key]
 
+    @override
     def _get_docs(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_manager: CallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs to run questioning over."""
         return inputs.pop(self.input_docs_key)
 
+    @override
     async def _aget_docs(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         *,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Get docs to run questioning over."""
         return inputs.pop(self.input_docs_key)
 

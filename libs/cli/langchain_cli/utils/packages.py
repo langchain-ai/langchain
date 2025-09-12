@@ -1,13 +1,28 @@
+"""Packages utilities."""
+
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, TypedDict
+from typing import Any, Optional, TypedDict
 
 from tomlkit import load
 
 
 def get_package_root(cwd: Optional[Path] = None) -> Path:
+    """Get package root directory.
+
+    Args:
+        cwd: The current working directory to start the search from.
+            If None, uses the current working directory of the process.
+
+    Returns:
+        The path to the package root directory.
+
+    Raises:
+        FileNotFoundError: If no `pyproject.toml` file is found in the directory
+            hierarchy.
+    """
     # traverse path for routes to host (any directory holding a pyproject.toml file)
     package_root = Path.cwd() if cwd is None else cwd
-    visited: Set[Path] = set()
+    visited: set[Path] = set()
     while package_root not in visited:
         visited.add(package_root)
 
@@ -15,17 +30,18 @@ def get_package_root(cwd: Optional[Path] = None) -> Path:
         if pyproject_path.exists():
             return package_root
         package_root = package_root.parent
-    raise FileNotFoundError("No pyproject.toml found")
+    msg = "No pyproject.toml found"
+    raise FileNotFoundError(msg)
 
 
 class LangServeExport(TypedDict):
-    """
-    Fields from pyproject.toml that are relevant to LangServe
+    """Fields from pyproject.toml that are relevant to LangServe.
 
     Attributes:
         module: The module to import from, tool.langserve.export_module
         attr: The attribute to import from the module, tool.langserve.export_attr
         package_name: The name of the package, tool.poetry.name
+
     """
 
     module: str
@@ -34,12 +50,24 @@ class LangServeExport(TypedDict):
 
 
 def get_langserve_export(filepath: Path) -> LangServeExport:
-    with open(filepath) as f:
-        data: Dict[str, Any] = load(f)
+    """Get LangServe export information from a `pyproject.toml` file.
+
+    Args:
+        filepath: Path to the `pyproject.toml` file.
+
+    Returns:
+        The LangServeExport information.
+
+    Raises:
+        KeyError: If the `pyproject.toml` file is missing required fields.
+    """
+    with filepath.open() as f:
+        data: dict[str, Any] = load(f)
     try:
         module = data["tool"]["langserve"]["export_module"]
         attr = data["tool"]["langserve"]["export_attr"]
         package_name = data["tool"]["poetry"]["name"]
     except KeyError as e:
-        raise KeyError("Invalid LangServe PyProject.toml") from e
+        msg = "Invalid LangServe PyProject.toml"
+        raise KeyError(msg) from e
     return LangServeExport(module=module, attr=attr, package_name=package_name)

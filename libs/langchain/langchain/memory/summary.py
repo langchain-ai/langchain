@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Type
+from typing import Any
 
 from langchain_core._api import deprecated
 from langchain_core.chat_history import BaseChatMessageHistory
@@ -9,6 +9,7 @@ from langchain_core.messages import BaseMessage, SystemMessage, get_buffer_strin
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.utils import pre_init
 from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.memory.chat_memory import BaseChatMemory
@@ -20,7 +21,7 @@ from langchain.memory.prompt import SUMMARY_PROMPT
     removal="1.0",
     message=(
         "Refer here for how to incorporate summaries of conversation history: "
-        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"  # noqa: E501
+        "https://langchain-ai.github.io/langgraph/how-tos/memory/add-summary-conversation-history/"
     ),
 )
 class SummarizerMixin(BaseModel):
@@ -30,11 +31,22 @@ class SummarizerMixin(BaseModel):
     ai_prefix: str = "AI"
     llm: BaseLanguageModel
     prompt: BasePromptTemplate = SUMMARY_PROMPT
-    summary_message_cls: Type[BaseMessage] = SystemMessage
+    summary_message_cls: type[BaseMessage] = SystemMessage
 
     def predict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -45,8 +57,19 @@ class SummarizerMixin(BaseModel):
         return chain.predict(summary=existing_summary, new_lines=new_lines)
 
     async def apredict_new_summary(
-        self, messages: List[BaseMessage], existing_summary: str
+        self,
+        messages: list[BaseMessage],
+        existing_summary: str,
     ) -> str:
+        """Predict a new summary based on the messages and existing summary.
+
+        Args:
+            messages: List of messages to summarize.
+            existing_summary: Existing summary to build upon.
+
+        Returns:
+            A new summary string.
+        """
         new_lines = get_buffer_string(
             messages,
             human_prefix=self.human_prefix,
@@ -85,22 +108,35 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         summarize_step: int = 2,
         **kwargs: Any,
     ) -> ConversationSummaryMemory:
+        """Create a ConversationSummaryMemory from a list of messages.
+
+        Args:
+            llm: The language model to use for summarization.
+            chat_memory: The chat history to summarize.
+            summarize_step: Number of messages to summarize at a time.
+            **kwargs: Additional keyword arguments to pass to the class.
+
+        Returns:
+            An instance of ConversationSummaryMemory with the summarized history.
+        """
         obj = cls(llm=llm, chat_memory=chat_memory, **kwargs)
         for i in range(0, len(obj.chat_memory.messages), summarize_step):
             obj.buffer = obj.predict_new_summary(
-                obj.chat_memory.messages[i : i + summarize_step], obj.buffer
+                obj.chat_memory.messages[i : i + summarize_step],
+                obj.buffer,
             )
         return obj
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """Will always return list of memory variables.
 
         :meta private:
         """
         return [self.memory_key]
 
-    def load_memory_variables(self, inputs: Dict[str, Any]) -> Dict[str, Any]:
+    @override
+    def load_memory_variables(self, inputs: dict[str, Any]) -> dict[str, Any]:
         """Return history buffer."""
         if self.return_messages:
             buffer: Any = [self.summary_message_cls(content=self.buffer)]
@@ -109,22 +145,24 @@ class ConversationSummaryMemory(BaseChatMemory, SummarizerMixin):
         return {self.memory_key: buffer}
 
     @pre_init
-    def validate_prompt_input_variables(cls, values: Dict) -> Dict:
+    def validate_prompt_input_variables(cls, values: dict) -> dict:
         """Validate that prompt input variables are consistent."""
         prompt_variables = values["prompt"].input_variables
         expected_keys = {"summary", "new_lines"}
         if expected_keys != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but it should have {expected_keys}."
             )
+            raise ValueError(msg)
         return values
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         super().save_context(inputs, outputs)
         self.buffer = self.predict_new_summary(
-            self.chat_memory.messages[-2:], self.buffer
+            self.chat_memory.messages[-2:],
+            self.buffer,
         )
 
     def clear(self) -> None:

@@ -1,0 +1,91 @@
+# Prompt Templates
+
+Prompt templates help to translate user input and parameters into instructions for a language model.
+This can be used to guide a model's response, helping it understand the context and generate relevant and coherent language-based output.
+
+Prompt Templates take as input a dictionary, where each key represents a variable in the prompt template to fill in.
+
+Prompt Templates output a PromptValue. This PromptValue can be passed to an LLM or a ChatModel, and can also be cast to a string or a list of messages.
+The reason this PromptValue exists is to make it easy to switch between strings and messages.
+
+There are a few different types of prompt templates:
+
+## String PromptTemplates
+
+These prompt templates are used to format a single string, and generally are used for simpler inputs.
+For example, a common way to construct and use a PromptTemplate is as follows:
+
+```python
+from langchain_core.prompts import PromptTemplate
+
+prompt_template = PromptTemplate.from_template("Tell me a joke about {topic}")
+
+prompt_template.invoke({"topic": "cats"})
+```
+
+## ChatPromptTemplates
+
+These prompt templates are used to format a list of messages. These "templates" consist of a list of templates themselves.
+For example, a common way to construct and use a ChatPromptTemplate is as follows:
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt_template = ChatPromptTemplate([
+    ("system", "You are a helpful assistant"),
+    ("user", "Tell me a joke about {topic}")
+])
+
+prompt_template.invoke({"topic": "cats"})
+```
+
+In the above example, this ChatPromptTemplate will construct two messages when called.
+The first is a system message, that has no variables to format.
+The second is a HumanMessage, and will be formatted by the `topic` variable the user passes in.
+
+## MessagesPlaceholder
+<span data-heading-keywords="messagesplaceholder"></span>
+
+This prompt template is responsible for adding a list of messages in a particular place.
+In the above ChatPromptTemplate, we saw how we could format two messages, each one a string.
+But what if we wanted the user to pass in a list of messages that we would slot into a particular spot?
+This is how you use MessagesPlaceholder.
+
+```python
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+
+prompt_template = ChatPromptTemplate([
+    ("system", "You are a helpful assistant"),
+    MessagesPlaceholder("msgs")
+])
+
+# Simple example with one message
+prompt_template.invoke({"msgs": [HumanMessage(content="hi!")]})
+
+# More complex example with conversation history
+messages_to_pass = [
+    HumanMessage(content="What's the capital of France?"),
+    AIMessage(content="The capital of France is Paris."),
+    HumanMessage(content="And what about Germany?")
+]
+
+formatted_prompt = prompt_template.invoke({"msgs": messages_to_pass})
+print(formatted_prompt)
+```
+
+
+This will produce a list of four messages total: the system message plus the three messages we passed in (two HumanMessages and one AIMessage).
+If we had passed in 5 messages, then it would have produced 6 messages in total (the system message plus the 5 passed in).
+This is useful for letting a list of messages be slotted into a particular spot.
+
+An alternative way to accomplish the same thing without using the `MessagesPlaceholder` class explicitly is:
+
+```python
+prompt_template = ChatPromptTemplate([
+    ("system", "You are a helpful assistant"),
+    ("placeholder", "{msgs}") # <-- This is the changed part
+])
+```
+
+For specifics on how to use prompt templates, see the [relevant how-to guides here](/docs/how_to/#prompt-templates).

@@ -1,8 +1,9 @@
 """Module implements an agent that uses OpenAI's APIs function enabled API."""
 
 import json
+from collections.abc import Sequence
 from json import JSONDecodeError
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.agents import AgentAction, AgentActionMessageLog, AgentFinish
@@ -16,11 +17,11 @@ from langchain_core.messages import (
 )
 from langchain_core.prompts import BasePromptTemplate
 from langchain_core.prompts.chat import (
-    BaseMessagePromptTemplate,
     ChatPromptTemplate,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
 )
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.tools import BaseTool
 from pydantic import model_validator
 from typing_extensions import Self
@@ -34,31 +35,34 @@ from langchain.agents.format_scratchpad.openai_functions import (
 _FunctionsAgentAction = AgentActionMessageLog
 
 
-def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFinish]:
+def _parse_ai_message(message: BaseMessage) -> Union[list[AgentAction], AgentFinish]:
     """Parse an AI message."""
     if not isinstance(message, AIMessage):
-        raise TypeError(f"Expected an AI message got {type(message)}")
+        msg = f"Expected an AI message got {type(message)}"
+        raise TypeError(msg)
 
     function_call = message.additional_kwargs.get("function_call", {})
 
     if function_call:
         try:
             arguments = json.loads(function_call["arguments"], strict=False)
-        except JSONDecodeError:
-            raise OutputParserException(
+        except JSONDecodeError as e:
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` is not valid JSON."
             )
+            raise OutputParserException(msg) from e
 
         try:
             tools = arguments["actions"]
-        except (TypeError, KeyError):
-            raise OutputParserException(
+        except (TypeError, KeyError) as e:
+            msg = (
                 f"Could not parse tool input: {function_call} because "
                 f"the `arguments` JSON does not contain `actions` key."
             )
+            raise OutputParserException(msg) from e
 
-        final_tools: List[AgentAction] = []
+        final_tools: list[AgentAction] = []
         for tool_schema in tools:
             if "action" in tool_schema:
                 _tool_input = tool_schema["action"]
@@ -68,7 +72,7 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
                 del _tool_input["action_name"]
             function_name = tool_schema["action_name"]
 
-            # HACK HACK HACK:
+            # A hack here:
             # The code that encodes tool input into Open AI uses a special variable
             # name called `__arg1` to handle old style tools that do not expose a
             # schema and expect a single string argument as an input.
@@ -91,8 +95,12 @@ def _parse_ai_message(message: BaseMessage) -> Union[List[AgentAction], AgentFin
         return final_tools
 
     return AgentFinish(
-        return_values={"output": message.content}, log=str(message.content)
+        return_values={"output": message.content},
+        log=str(message.content),
     )
+
+
+_NOT_SET = object()
 
 
 @deprecated("0.1.0", alternative="create_openai_tools_agent", removal="1.0")
@@ -112,27 +120,28 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
     tools: Sequence[BaseTool]
     prompt: BasePromptTemplate
 
-    def get_allowed_tools(self) -> List[str]:
+    def get_allowed_tools(self) -> list[str]:
         """Get allowed tools."""
         return [t.name for t in self.tools]
 
     @model_validator(mode="after")
-    def validate_prompt(self) -> Self:
+    def _validate_prompt(self) -> Self:
         prompt: BasePromptTemplate = self.prompt
         if "agent_scratchpad" not in prompt.input_variables:
-            raise ValueError(
+            msg = (
                 "`agent_scratchpad` should be one of the variables in the prompt, "
                 f"got {prompt.input_variables}"
             )
+            raise ValueError(msg)
         return self
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Get input keys. Input refers to user input here."""
         return ["input"]
 
     @property
-    def functions(self) -> List[dict]:
+    def functions(self) -> list[dict]:
         """Get the functions for the agent."""
         enum_vals = [t.name for t in self.tools]
         tool_selection = {
@@ -185,7 +194,7 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                             },
                             "required": ["action_name", "action"],
                         },
-                    }
+                    },
                 },
                 "required": ["actions"],
             },
@@ -194,10 +203,10 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
 
     def plan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[List[AgentAction], AgentFinish]:
+    ) -> Union[list[AgentAction], AgentFinish]:
         """Given input, decided what to do.
 
         Args:
@@ -217,17 +226,18 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = self.llm.predict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     async def aplan(
         self,
-        intermediate_steps: List[Tuple[AgentAction, str]],
+        intermediate_steps: list[tuple[AgentAction, str]],
         callbacks: Callbacks = None,
         **kwargs: Any,
-    ) -> Union[List[AgentAction], AgentFinish]:
+    ) -> Union[list[AgentAction], AgentFinish]:
         """Async given input, decided what to do.
 
         Args:
@@ -247,18 +257,17 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         predicted_message = await self.llm.apredict_messages(
-            messages, functions=self.functions, callbacks=callbacks
+            messages,
+            functions=self.functions,
+            callbacks=callbacks,
         )
-        agent_decision = _parse_ai_message(predicted_message)
-        return agent_decision
+        return _parse_ai_message(predicted_message)
 
     @classmethod
     def create_prompt(
         cls,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
-        extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
+        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
     ) -> BasePromptTemplate:
         """Create prompt for this agent.
 
@@ -272,20 +281,22 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
             A prompt template to pass into this agent.
         """
         _prompts = extra_prompt_messages or []
-        messages: List[Union[BaseMessagePromptTemplate, BaseMessage]]
-        if system_message:
-            messages = [system_message]
-        else:
-            messages = []
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
+        messages: list[Union[BaseMessagePromptTemplate, BaseMessage]]
+        messages = [system_message_] if system_message_ else []
 
         messages.extend(
             [
                 *_prompts,
                 HumanMessagePromptTemplate.from_template("{input}"),
                 MessagesPlaceholder(variable_name="agent_scratchpad"),
-            ]
+            ],
         )
-        return ChatPromptTemplate(messages=messages)  # type: ignore[arg-type, call-arg]
+        return ChatPromptTemplate(messages=messages)
 
     @classmethod
     def from_llm_and_tools(
@@ -293,10 +304,8 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
         llm: BaseLanguageModel,
         tools: Sequence[BaseTool],
         callback_manager: Optional[BaseCallbackManager] = None,
-        extra_prompt_messages: Optional[List[BaseMessagePromptTemplate]] = None,
-        system_message: Optional[SystemMessage] = SystemMessage(
-            content="You are a helpful AI assistant."
-        ),
+        extra_prompt_messages: Optional[list[BaseMessagePromptTemplate]] = None,
+        system_message: Optional[SystemMessage] = _NOT_SET,  # type: ignore[assignment]
         **kwargs: Any,
     ) -> BaseMultiActionAgent:
         """Construct an agent from an LLM and tools.
@@ -310,11 +319,16 @@ class OpenAIMultiFunctionsAgent(BaseMultiActionAgent):
                 Default is a default system message.
             kwargs: Additional arguments.
         """
+        system_message_ = (
+            system_message
+            if system_message is not _NOT_SET
+            else SystemMessage(content="You are a helpful AI assistant.")
+        )
         prompt = cls.create_prompt(
             extra_prompt_messages=extra_prompt_messages,
-            system_message=system_message,
+            system_message=system_message_,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             llm=llm,
             prompt=prompt,
             tools=tools,

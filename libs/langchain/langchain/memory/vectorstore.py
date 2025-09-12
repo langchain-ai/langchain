@@ -1,13 +1,14 @@
 """Class for a VectorStore-backed memory object."""
 
-from typing import Any, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
+from langchain_core.memory import BaseMemory
 from langchain_core.vectorstores import VectorStoreRetriever
 from pydantic import Field
 
-from langchain.memory.chat_memory import BaseMemory
 from langchain.memory.utils import get_prompt_input_key
 
 
@@ -20,7 +21,9 @@ from langchain.memory.utils import get_prompt_input_key
     ),
 )
 class VectorStoreRetrieverMemory(BaseMemory):
-    """Store the conversation history in a vector store and retrieves the relevant
+    """Vector Store Retriever Memory.
+
+    Store the conversation history in a vector store and retrieves the relevant
     parts of past conversation based on the input.
     """
 
@@ -40,20 +43,21 @@ class VectorStoreRetrieverMemory(BaseMemory):
     """Input keys to exclude in addition to memory key when constructing the document"""
 
     @property
-    def memory_variables(self) -> List[str]:
+    def memory_variables(self) -> list[str]:
         """The list of keys emitted from the load_memory_variables method."""
         return [self.memory_key]
 
-    def _get_prompt_input_key(self, inputs: Dict[str, Any]) -> str:
+    def _get_prompt_input_key(self, inputs: dict[str, Any]) -> str:
         """Get the input key for the prompt."""
         if self.input_key is None:
             return get_prompt_input_key(inputs, self.memory_variables)
         return self.input_key
 
     def _documents_to_memory_variables(
-        self, docs: List[Document]
-    ) -> Dict[str, Union[List[Document], str]]:
-        result: Union[List[Document], str]
+        self,
+        docs: list[Document],
+    ) -> dict[str, Union[list[Document], str]]:
+        result: Union[list[Document], str]
         if not self.return_docs:
             result = "\n".join([doc.page_content for doc in docs])
         else:
@@ -61,8 +65,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return {self.memory_key: result}
 
     def load_memory_variables(
-        self, inputs: Dict[str, Any]
-    ) -> Dict[str, Union[List[Document], str]]:
+        self,
+        inputs: dict[str, Any],
+    ) -> dict[str, Union[list[Document], str]]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
@@ -70,8 +75,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self._documents_to_memory_variables(docs)
 
     async def aload_memory_variables(
-        self, inputs: Dict[str, Any]
-    ) -> Dict[str, Union[List[Document], str]]:
+        self,
+        inputs: dict[str, Any],
+    ) -> dict[str, Union[list[Document], str]]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
         query = inputs[input_key]
@@ -79,8 +85,10 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self._documents_to_memory_variables(docs)
 
     def _form_documents(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
-    ) -> List[Document]:
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
+    ) -> list[Document]:
         """Format context from this conversation to buffer."""
         # Each document should only include the current turn, not the chat history
         exclude = set(self.exclude_input_keys)
@@ -93,13 +101,15 @@ class VectorStoreRetrieverMemory(BaseMemory):
         page_content = "\n".join(texts)
         return [Document(page_content=page_content)]
 
-    def save_context(self, inputs: Dict[str, Any], outputs: Dict[str, str]) -> None:
+    def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
         """Save context from this conversation to buffer."""
         documents = self._form_documents(inputs, outputs)
         self.retriever.add_documents(documents)
 
     async def asave_context(
-        self, inputs: Dict[str, Any], outputs: Dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         documents = self._form_documents(inputs, outputs)

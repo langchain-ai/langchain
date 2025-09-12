@@ -1,5 +1,7 @@
 from collections.abc import Iterable
-from typing import Any, Optional, cast
+from typing import Any, Optional
+
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.embeddings import Embeddings, FakeEmbeddings
@@ -21,6 +23,7 @@ class DummyVectorStore(VectorStore):
     def embeddings(self) -> Optional[Embeddings]:
         return self._embeddings
 
+    @override
     def add_texts(
         self,
         texts: Iterable[str],
@@ -32,6 +35,7 @@ class DummyVectorStore(VectorStore):
             self.metadatas.extend(metadatas)
         return ["dummy_id"]
 
+    @override
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
@@ -41,6 +45,7 @@ class DummyVectorStore(VectorStore):
             )
         ] * k
 
+    @override
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -127,7 +132,7 @@ def test_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -153,7 +158,7 @@ async def test_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -207,7 +212,7 @@ def test_mmr_from_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]
@@ -235,7 +240,7 @@ async def test_mmr_afrom_examples() -> None:
     assert selector.vectorstore_kwargs == {"vs_foo": "vs_bar"}
 
     assert isinstance(selector.vectorstore, DummyVectorStore)
-    vector_store = cast(DummyVectorStore, selector.vectorstore)
+    vector_store = selector.vectorstore
     assert vector_store.embeddings is embeddings
     assert vector_store.init_arg == "some_init_arg"
     assert vector_store.texts == ["bar"]

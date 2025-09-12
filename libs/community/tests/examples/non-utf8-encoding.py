@@ -1,3 +1,0 @@
-# coding: iso-8859-5
-# ±¶ÿאבגדהוזחטיךכלםמן <- Cyrillic characters
-u = "®גנÄ"

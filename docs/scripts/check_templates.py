@@ -44,7 +44,7 @@ def _get_headers(doc_dir: str) -> Iterable[str]:
     for cell in nb["cells"]:
         if cell["cell_type"] == "markdown":
             for line in cell["source"]:
-                if not line.startswith("##") or "TODO" in line:
+                if not line.startswith("## ") or "TODO" in line:
                     continue
                 header = line.strip()
                 headers.append(header)
@@ -59,7 +59,10 @@ def check_header_order(path: Path) -> None:
     if doc_dir not in INFO_BY_DIR:
         # Skip if not a directory we care about
         return
-    headers = _get_headers(doc_dir)
+    if "toolkit" in path.name:
+        headers = _get_headers("toolkits")
+    else:
+        headers = _get_headers(doc_dir)
     issue_number = INFO_BY_DIR[doc_dir].get("issue_number", "nonexistent")
 
     print(f"Checking {doc_dir} page {path}")

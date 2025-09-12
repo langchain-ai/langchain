@@ -1,4 +1,5 @@
-name: Integration tests
+name: '🚀 Integration Tests'
+run-name: 'Test ${{ inputs.working-directory }} on Python ${{ inputs.python-version }}'
 
 on:
   workflow_dispatch:
@@ -6,13 +7,18 @@ on:
       working-directory:
         required: true
         type: string
+        description: "From which folder this pipeline executes"
       python-version:
         required: true
         type: string
         description: "Python version to use"
+        default: "3.11"
+
+permissions:
+  contents: read
 
 env:
-  POETRY_VERSION: "1.7.1"
+  UV_FROZEN: "true"
 
 jobs:
   build:
@@ -20,40 +26,30 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: Python ${{ inputs.python-version }}
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./.github/actions/poetry_setup"
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
+        uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          poetry-version: ${{ env.POETRY_VERSION }}
+          cache-suffix: integration-tests-${{ inputs.working-directory }}
           working-directory: ${{ inputs.working-directory }}
-          cache-key: core
 
-      - name: Install dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
-        run: poetry install --with test,test_integration
+        run: uv sync --group test --group test_integration
 
-      - name: Install deps outside pyproject
-        if: ${{ startsWith(inputs.working-directory, 'libs/community/') }}
-        shell: bash
-        run: poetry run pip install "boto3<2" "google-cloud-aiplatform<2"
-
-      - name: 'Authenticate to Google Cloud'
-        id: 'auth'
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GOOGLE_CREDENTIALS }}'
-
-      - name: Run integration tests
+      - name: '🚀 Run Integration Tests'
         shell: bash
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
           FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
           AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
           AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
           AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
@@ -73,19 +69,17 @@ jobs:
           NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
           WATSONX_APIKEY: ${{ secrets.WATSONX_APIKEY }}
           WATSONX_PROJECT_ID: ${{ secrets.WATSONX_PROJECT_ID }}
-          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
-          PINECONE_ENVIRONMENT: ${{ secrets.PINECONE_ENVIRONMENT }}
           ASTRA_DB_API_ENDPOINT: ${{ secrets.ASTRA_DB_API_ENDPOINT }}
           ASTRA_DB_APPLICATION_TOKEN: ${{ secrets.ASTRA_DB_APPLICATION_TOKEN }}
           ASTRA_DB_KEYSPACE: ${{ secrets.ASTRA_DB_KEYSPACE }}
           ES_URL: ${{ secrets.ES_URL }}
           ES_CLOUD_ID: ${{ secrets.ES_CLOUD_ID }}
           ES_API_KEY: ${{ secrets.ES_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # for airbyte
           MONGODB_ATLAS_URI: ${{ secrets.MONGODB_ATLAS_URI }}
-          VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
           COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
           UPSTAGE_API_KEY: ${{ secrets.UPSTAGE_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
         run: |
           make integration_tests
 

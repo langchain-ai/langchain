@@ -1,69 +1,50 @@
 """A unit test meant to catch accidental introduction of non-optional dependencies."""
 
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Dict, Mapping
+from typing import Any
 
 import pytest
 import toml
+from packaging.requirements import Requirement
 
 HERE = Path(__file__).parent
 
 PYPROJECT_TOML = HERE / "../../pyproject.toml"
 
 
-@pytest.fixture()
-def poetry_conf() -> Dict[str, Any]:
+@pytest.fixture
+def uv_conf() -> dict[str, Any]:
     """Load the pyproject.toml file."""
-    with open(PYPROJECT_TOML) as f:
-        return toml.load(f)["tool"]["poetry"]
+    with PYPROJECT_TOML.open() as f:
+        return toml.load(f)
 
 
-def test_required_dependencies(poetry_conf: Mapping[str, Any]) -> None:
+def test_required_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """A test that checks if a new non-optional dependency is being introduced.
 
     If this test is triggered, it means that a contributor is trying to introduce a new
     required dependency. This should be avoided in most situations.
     """
     # Get the dependencies from the [tool.poetry.dependencies] section
-    dependencies = poetry_conf["dependencies"]
-
-    is_required = {
-        package_name: isinstance(requirements, str)
-        or isinstance(requirements, list)
-        or not requirements.get("optional", False)
-        for package_name, requirements in dependencies.items()
-    }
-    required_dependencies = [
-        package_name for package_name, required in is_required.items() if required
-    ]
+    dependencies = uv_conf["project"]["dependencies"]
+    required_dependencies = {Requirement(dep).name for dep in dependencies}
 
     assert sorted(required_dependencies) == sorted(
         [
             "PyYAML",
             "SQLAlchemy",
-            "aiohttp",
             "async-timeout",
             "langchain-core",
             "langchain-text-splitters",
             "langsmith",
-            "numpy",
             "pydantic",
-            "python",
             "requests",
-            "tenacity",
-        ]
+        ],
     )
 
-    unrequired_dependencies = [
-        package_name for package_name, required in is_required.items() if not required
-    ]
-    in_extras = [
-        dep for group in poetry_conf.get("extras", {}).values() for dep in group
-    ]
-    assert set(unrequired_dependencies) == set(in_extras)
 
-
-def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
+def test_test_group_dependencies(uv_conf: Mapping[str, Any]) -> None:
     """Check if someone is attempting to add additional test dependencies.
 
     Only dependencies associated with test running infrastructure should be added
@@ -71,18 +52,19 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
 
     Examples of dependencies that should NOT be included: boto3, azure, postgres, etc.
     """
+    dependencies = uv_conf["dependency-groups"]["test"]
+    test_group_deps = {Requirement(dep).name for dep in dependencies}
 
-    test_group_deps = sorted(poetry_conf["group"]["test"]["dependencies"])
-
-    assert test_group_deps == sorted(
+    assert sorted(test_group_deps) == sorted(
         [
             "duckdb-engine",
             "freezegun",
             "langchain-core",
-            "langchain-standard-tests",
+            "langchain-tests",
             "langchain-text-splitters",
             "langchain-openai",
             "lark",
+            "packaging",
             "pandas",
             "pytest",
             "pytest-asyncio",
@@ -91,10 +73,14 @@ def test_test_group_dependencies(poetry_conf: Mapping[str, Any]) -> None:
             "pytest-mock",
             "pytest-socket",
             "pytest-watcher",
+            "pytest-xdist",
+            "blockbuster",
             "responses",
             "syrupy",
+            "toml",
             "requests-mock",
             # TODO: temporary hack since cffi 1.17.1 doesn't work with py 3.9.
             "cffi",
-        ]
+            "numpy",
+        ],
     )

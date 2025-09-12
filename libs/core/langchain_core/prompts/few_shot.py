@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from pydantic import (
     BaseModel,
@@ -11,14 +10,12 @@ from pydantic import (
     Field,
     model_validator,
 )
-from typing_extensions import Self
+from typing_extensions import override
 
 from langchain_core.example_selectors import BaseExampleSelector
 from langchain_core.messages import BaseMessage, get_buffer_string
-from langchain_core.prompts.chat import (
-    BaseChatPromptTemplate,
-    BaseMessagePromptTemplate,
-)
+from langchain_core.prompts.chat import BaseChatPromptTemplate
+from langchain_core.prompts.message import BaseMessagePromptTemplate
 from langchain_core.prompts.prompt import PromptTemplate
 from langchain_core.prompts.string import (
     DEFAULT_FORMATTER_MAPPING,
@@ -26,6 +23,11 @@ from langchain_core.prompts.string import (
     check_valid_template,
     get_template_variables,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from typing_extensions import Self
 
 
 class _FewShotPromptTemplateMixin(BaseModel):
@@ -85,11 +87,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
         """
         if self.examples is not None:
             return self.examples
-        elif self.example_selector is not None:
+        if self.example_selector is not None:
             return self.example_selector.select_examples(kwargs)
-        else:
-            msg = "One of 'examples' and 'example_selector' should be provided"
-            raise ValueError(msg)
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
     async def _aget_examples(self, **kwargs: Any) -> list[dict]:
         """Async get the examples to use for formatting the prompt.
@@ -105,11 +106,10 @@ class _FewShotPromptTemplateMixin(BaseModel):
         """
         if self.examples is not None:
             return self.examples
-        elif self.example_selector is not None:
+        if self.example_selector is not None:
             return await self.example_selector.aselect_examples(kwargs)
-        else:
-            msg = "One of 'examples' and 'example_selector' should be provided"
-            raise ValueError(msg)
+        msg = "One of 'examples' and 'example_selector' should be provided"
+        raise ValueError(msg)
 
 
 class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
@@ -117,7 +117,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     validate_template: bool = False
@@ -153,7 +153,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 self.template_format,
                 self.input_variables + list(self.partial_variables),
             )
-        elif self.template_format or None:
+        elif self.template_format:
             self.input_variables = [
                 var
                 for var in get_template_variables(
@@ -265,7 +265,6 @@ class FewShotChatMessagePromptTemplate(
     to dynamically select examples based on the input.
 
     Examples:
-
         Prompt template with a fixed list of examples (matching the sample
         conversation above):
 
@@ -273,7 +272,7 @@ class FewShotChatMessagePromptTemplate(
 
             from langchain_core.prompts import (
                 FewShotChatMessagePromptTemplate,
-                ChatPromptTemplate
+                ChatPromptTemplate,
             )
 
             examples = [
@@ -282,7 +281,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-                [('human', '{input}'), ('ai', '{output}')]
+                [("human", "What is {input}?"), ("ai", "{output}")]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
@@ -293,9 +292,9 @@ class FewShotChatMessagePromptTemplate(
 
             final_prompt = ChatPromptTemplate.from_messages(
                 [
-                    ('system', 'You are a helpful AI Assistant'),
+                    ("system", "You are a helpful AI Assistant"),
                     few_shot_prompt,
-                    ('human', '{input}'),
+                    ("human", "{input}"),
                 ]
             )
             final_prompt.format(input="What is 4+4?")
@@ -315,10 +314,7 @@ class FewShotChatMessagePromptTemplate(
                 # ...
             ]
 
-            to_vectorize = [
-                " ".join(example.values())
-                for example in examples
-            ]
+            to_vectorize = [" ".join(example.values()) for example in examples]
             embeddings = OpenAIEmbeddings()
             vectorstore = Chroma.from_texts(
                 to_vectorize, embeddings, metadatas=examples
@@ -356,8 +352,10 @@ class FewShotChatMessagePromptTemplate(
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic
+
             chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
             chain.invoke({"input": "What's 3+3?"})
+
     """
 
     input_variables: list[str] = Field(default_factory=list)
@@ -369,7 +367,7 @@ class FewShotChatMessagePromptTemplate(
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     model_config = ConfigDict(
@@ -392,12 +390,11 @@ class FewShotChatMessagePromptTemplate(
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
         # Format the examples.
-        messages = [
+        return [
             message
             for example in examples
             for message in self.example_prompt.format_messages(**example)
         ]
-        return messages
 
     async def aformat_messages(self, **kwargs: Any) -> list[BaseMessage]:
         """Async format kwargs into a list of messages.
@@ -414,12 +411,11 @@ class FewShotChatMessagePromptTemplate(
             {k: e[k] for k in self.example_prompt.input_variables} for e in examples
         ]
         # Format the examples.
-        messages = [
+        return [
             message
             for example in examples
             for message in await self.example_prompt.aformat_messages(**example)
         ]
-        return messages
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with inputs generating a string.
@@ -455,6 +451,7 @@ class FewShotChatMessagePromptTemplate(
         messages = await self.aformat_messages(**kwargs)
         return get_buffer_string(messages)
 
+    @override
     def pretty_repr(self, html: bool = False) -> str:
         """Return a pretty representation of the prompt template.
 

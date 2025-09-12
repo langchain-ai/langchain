@@ -1,20 +1,18 @@
 """Standard LangChain interface tests"""
 
-from typing import Tuple, Type
-
 from langchain_core.language_models import BaseChatModel
-from langchain_standard_tests.unit_tests import ChatModelUnitTests
+from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_openai import ChatOpenAI
 
 
 class TestOpenAIStandard(ChatModelUnitTests):
     @property
-    def chat_model_class(self) -> Type[BaseChatModel]:
+    def chat_model_class(self) -> type[BaseChatModel]:
         return ChatOpenAI
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
         return (
             {
                 "OPENAI_API_KEY": "api_key",

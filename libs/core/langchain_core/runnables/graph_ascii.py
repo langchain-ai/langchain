@@ -1,26 +1,44 @@
 """Draws DAG in ASCII.
-Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py"""
+
+Adapted from https://github.com/iterative/dvc/blob/main/dvc/dagascii.py.
+"""
+
+from __future__ import annotations
 
 import math
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from langchain_core.runnables.graph import Edge as LangEdge
+try:
+    from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import-untyped]
+    from grandalf.layouts import SugiyamaLayout  # type: ignore[import-untyped]
+    from grandalf.routing import route_with_lines  # type: ignore[import-untyped]
+
+    _HAS_GRANDALF = True
+except ImportError:
+    _HAS_GRANDALF = False
+
+if TYPE_CHECKING:
+    from langchain_core.runnables.graph import Edge as LangEdge
 
 
 class VertexViewer:
-    """Class to define vertex box boundaries that will be accounted for during
-    graph building by grandalf.
+    """VertexViewer class.
 
-    Args:
-        name (str): name of the vertex.
+    Class to define vertex box boundaries that will be accounted for during
+    graph building by grandalf.
     """
 
     HEIGHT = 3  # top and bottom box edges + text
     """Height of the box."""
 
     def __init__(self, name: str) -> None:
+        """Create a VertexViewer.
+
+        Args:
+            name: name of the vertex.
+        """
         self._h = self.HEIGHT  # top and bottom box edges + text
         self._w = len(name) + 2  # right and left bottom edges + text
 
@@ -36,18 +54,23 @@ class VertexViewer:
 
 
 class AsciiCanvas:
-    """Class for drawing in ASCII.
-
-    Args:
-        cols (int): number of columns in the canvas. Should be > 1.
-        lines (int): number of lines in the canvas. Should be > 1.
-    """
+    """Class for drawing in ASCII."""
 
     TIMEOUT = 10
 
     def __init__(self, cols: int, lines: int) -> None:
-        assert cols > 1
-        assert lines > 1
+        """Create an ASCII canvas.
+
+        Args:
+            cols: number of columns in the canvas. Should be ``> 1``.
+            lines: number of lines in the canvas. Should be ``> 1``.
+
+        Raises:
+            ValueError: if canvas dimensions are invalid.
+        """
+        if cols <= 1 or lines <= 1:
+            msg = "Canvas dimensions should be > 1"
+            raise ValueError(msg)
 
         self.cols = cols
         self.lines = lines
@@ -55,7 +78,11 @@ class AsciiCanvas:
         self.canvas = [[" "] * cols for line in range(lines)]
 
     def draw(self) -> str:
-        """Draws ASCII canvas on the screen."""
+        """Draws ASCII canvas on the screen.
+
+        Returns:
+            The ASCII canvas string.
+        """
         lines = map("".join, self.canvas)
         return os.linesep.join(lines)
 
@@ -63,18 +90,26 @@ class AsciiCanvas:
         """Create a point on ASCII canvas.
 
         Args:
-            x (int): x coordinate. Should be >= 0 and < number of columns in
+            x: x coordinate. Should be ``>= 0`` and ``<`` number of columns in
                 the canvas.
-            y (int): y coordinate. Should be >= 0 an < number of lines in the
+            y: y coordinate. Should be ``>= 0`` an ``<`` number of lines in the
                 canvas.
-            char (str): character to place in the specified point on the
+            char: character to place in the specified point on the
                 canvas.
+
+        Raises:
+            ValueError: if char is not a single character or if
+                coordinates are out of bounds.
         """
-        assert len(char) == 1
-        assert x >= 0
-        assert x < self.cols
-        assert y >= 0
-        assert y < self.lines
+        if len(char) != 1:
+            msg = "char should be a single character"
+            raise ValueError(msg)
+        if x >= self.cols or x < 0:
+            msg = "x should be >= 0 and < number of columns"
+            raise ValueError(msg)
+        if y >= self.lines or y < 0:
+            msg = "y should be >= 0 and < number of lines"
+            raise ValueError(msg)
 
         self.canvas[y][x] = char
 
@@ -99,15 +134,15 @@ class AsciiCanvas:
             self.point(x0, y0, char)
         elif abs(dx) >= abs(dy):
             for x in range(x0, x1 + 1):
-                y = y0 if dx == 0 else y0 + int(round((x - x0) * dy / float(dx)))
+                y = y0 if dx == 0 else y0 + round((x - x0) * dy / float(dx))
                 self.point(x, y, char)
         elif y0 < y1:
             for y in range(y0, y1 + 1):
-                x = x0 if dy == 0 else x0 + int(round((y - y0) * dx / float(dy)))
+                x = x0 if dy == 0 else x0 + round((y - y0) * dx / float(dy))
                 self.point(x, y, char)
         else:
             for y in range(y1, y0 + 1):
-                x = x0 if dy == 0 else x1 + int(round((y - y1) * dx / float(dy)))
+                x = x0 if dy == 0 else x1 + round((y - y1) * dx / float(dy))
                 self.point(x, y, char)
 
     def text(self, x: int, y: int, text: str) -> None:
@@ -130,8 +165,9 @@ class AsciiCanvas:
             width (int): box width.
             height (int): box height.
         """
-        assert width > 1
-        assert height > 1
+        if width <= 1 or height <= 1:
+            msg = "Box dimensions should be > 1"
+            raise ValueError(msg)
 
         width -= 1
         height -= 1
@@ -150,19 +186,20 @@ class AsciiCanvas:
         self.point(x0 + width, y0 + height, "+")
 
 
+class _EdgeViewer:
+    def __init__(self) -> None:
+        self.pts: list[tuple[float]] = []
+
+    def setpath(self, pts: list[tuple[float]]) -> None:
+        self.pts = pts
+
+
 def _build_sugiyama_layout(
     vertices: Mapping[str, str], edges: Sequence[LangEdge]
 ) -> Any:
-    try:
-        from grandalf.graphs import Edge, Graph, Vertex  # type: ignore[import]
-        from grandalf.layouts import SugiyamaLayout  # type: ignore[import]
-        from grandalf.routing import (  # type: ignore[import]
-            EdgeViewer,
-            route_with_lines,
-        )
-    except ImportError as exc:
+    if not _HAS_GRANDALF:
         msg = "Install grandalf to draw graphs: `pip install grandalf`."
-        raise ImportError(msg) from exc
+        raise ImportError(msg)
 
     #
     # Just a reminder about naming conventions:
@@ -174,7 +211,7 @@ def _build_sugiyama_layout(
     # Y
     #
 
-    vertices_ = {id: Vertex(f" {data} ") for id, data in vertices.items()}
+    vertices_ = {id_: Vertex(f" {data} ") for id_, data in vertices.items()}
     edges_ = [Edge(vertices_[s], vertices_[e], data=cond) for s, e, _, cond in edges]
     vertices_list = vertices_.values()
     graph = Graph(vertices_list, edges_)
@@ -186,7 +223,7 @@ def _build_sugiyama_layout(
     minw = min(v.view.w for v in vertices_list)
 
     for edge in edges_:
-        edge.view = EdgeViewer()
+        edge.view = _EdgeViewer()
 
     sug = SugiyamaLayout(graph.C[0])
     graph = graph.C[0]
@@ -207,49 +244,69 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     """Build a DAG and draw it in ASCII.
 
     Args:
-        vertices (list): list of graph vertices.
-        edges (list): list of graph edges.
+        vertices: list of graph vertices.
+        edges: list of graph edges.
+
+    Raises:
+        ValueError: if the canvas dimensions are invalid or if
+            edge coordinates are invalid.
 
     Returns:
-        str: ASCII representation
+        ASCII representation
 
     Example:
-        >>> vertices = [1, 2, 3, 4]
-        >>> edges = [(1, 2), (2, 3), (2, 4), (1, 4)]
-        >>> print(draw(vertices, edges))
-        +---+     +---+
-        | 3 |     | 4 |
-        +---+    *+---+
-          *    **   *
-          *  **     *
-          * *       *
-        +---+       *
-        | 2 |      *
-        +---+     *
-             *    *
-              *  *
-               **
-             +---+
-             | 1 |
-             +---+
-    """
 
+        .. code-block:: python
+
+            from langchain_core.runnables.graph_ascii import draw_ascii
+
+            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+            edges = [
+                (source, target, None, None)
+                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+            ]
+
+
+            print(draw_ascii(vertices, edges))
+
+        .. code-block:: none
+
+                 +---+
+                 | 1 |
+                 +---+
+                 *    *
+                *     *
+               *       *
+            +---+       *
+            | 2 |       *
+            +---+**     *
+              *    **   *
+              *      ** *
+              *        **
+            +---+     +---+
+            | 3 |     | 4 |
+            +---+     +---+
+
+    """
     # NOTE: coordinates might me negative, so we need to shift
     # everything to the positive plane before we actually draw it.
-    xlist = []
-    ylist = []
+    xlist: list[float] = []
+    ylist: list[float] = []
 
     sug = _build_sugiyama_layout(vertices, edges)
 
     for vertex in sug.g.sV:
         # NOTE: moving boxes w/2 to the left
-        xlist.append(vertex.view.xy[0] - vertex.view.w / 2.0)
-        xlist.append(vertex.view.xy[0] + vertex.view.w / 2.0)
-        ylist.append(vertex.view.xy[1])
-        ylist.append(vertex.view.xy[1] + vertex.view.h)
+        xlist.extend(
+            (
+                vertex.view.xy[0] - vertex.view.w / 2.0,
+                vertex.view.xy[0] + vertex.view.w / 2.0,
+            )
+        )
+        ylist.extend((vertex.view.xy[1], vertex.view.xy[1] + vertex.view.h))
 
     for edge in sug.g.sE:
-        for x, y in edge.view._pts:
+        for x, y in edge.view.pts:
             xlist.append(x)
             ylist.append(y)
 
@@ -258,27 +315,34 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
     maxx = max(xlist)
     maxy = max(ylist)
 
-    canvas_cols = int(math.ceil(math.ceil(maxx) - math.floor(minx))) + 1
-    canvas_lines = int(round(maxy - miny))
+    canvas_cols = math.ceil(math.ceil(maxx) - math.floor(minx)) + 1
+    canvas_lines = round(maxy - miny)
 
     canvas = AsciiCanvas(canvas_cols, canvas_lines)
 
     # NOTE: first draw edges so that node boxes could overwrite them
     for edge in sug.g.sE:
-        assert len(edge.view._pts) > 1
-        for index in range(1, len(edge.view._pts)):
-            start = edge.view._pts[index - 1]
-            end = edge.view._pts[index]
+        if len(edge.view.pts) <= 1:
+            msg = "Not enough points to draw an edge"
+            raise ValueError(msg)
+        for index in range(1, len(edge.view.pts)):
+            start = edge.view.pts[index - 1]
+            end = edge.view.pts[index]
 
-            start_x = int(round(start[0] - minx))
-            start_y = int(round(start[1] - miny))
-            end_x = int(round(end[0] - minx))
-            end_y = int(round(end[1] - miny))
+            start_x = round(start[0] - minx)
+            start_y = round(start[1] - miny)
+            end_x = round(end[0] - minx)
+            end_y = round(end[1] - miny)
 
-            assert start_x >= 0
-            assert start_y >= 0
-            assert end_x >= 0
-            assert end_y >= 0
+            if start_x < 0 or start_y < 0 or end_x < 0 or end_y < 0:
+                msg = (
+                    "Invalid edge coordinates: "
+                    f"start_x={start_x}, "
+                    f"start_y={start_y}, "
+                    f"end_x={end_x}, "
+                    f"end_y={end_y}"
+                )
+                raise ValueError(msg)
 
             canvas.line(start_x, start_y, end_x, end_y, "." if edge.data else "*")
 
@@ -288,12 +352,12 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         y = vertex.view.xy[1]
 
         canvas.box(
-            int(round(x - minx)),
-            int(round(y - miny)),
+            round(x - minx),
+            round(y - miny),
             vertex.view.w,
             vertex.view.h,
         )
 
-        canvas.text(int(round(x - minx)) + 1, int(round(y - miny)) + 1, vertex.data)
+        canvas.text(round(x - minx) + 1, round(y - miny) + 1, vertex.data)
 
     return canvas.draw()

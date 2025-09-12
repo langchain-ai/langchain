@@ -40,7 +40,9 @@ def test_summary_buffer_memory_summary() -> None:
     """Test ConversationSummaryBufferMemory when only buffer."""
     llm = FakeLLM(queries={0: "summary"}, sequential_responses=True)
     memory = ConversationSummaryBufferMemory(
-        llm=llm, memory_key="baz", max_token_limit=5
+        llm=llm,
+        memory_key="baz",
+        max_token_limit=5,
     )
     memory.save_context({"input": "bar"}, {"output": "foo"})
     memory.save_context({"input": "bar1"}, {"output": "foo1"})
@@ -53,7 +55,9 @@ async def test_summary_buffer_memory_summary_async() -> None:
     """Test ConversationSummaryBufferMemory when only buffer."""
     llm = FakeLLM(queries={0: "summary"}, sequential_responses=True)
     memory = ConversationSummaryBufferMemory(
-        llm=llm, memory_key="baz", max_token_limit=5
+        llm=llm,
+        memory_key="baz",
+        max_token_limit=5,
     )
     await memory.asave_context({"input": "bar"}, {"output": "foo"})
     await memory.asave_context({"input": "bar1"}, {"output": "foo1"})

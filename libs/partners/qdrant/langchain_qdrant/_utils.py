@@ -1,8 +1,8 @@
-from typing import List, Union
+from typing import Union
 
 import numpy as np
 
-Matrix = Union[List[List[float]], List[np.ndarray], np.ndarray]
+Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
 
 
 def maximal_marginal_relevance(
@@ -10,7 +10,7 @@ def maximal_marginal_relevance(
     embedding_list: list,
     lambda_mult: float = 0.5,
     k: int = 4,
-) -> List[int]:
+) -> list[int]:
     """Calculate maximal marginal relevance."""
     if min(k, len(embedding_list)) <= 0:
         return []
@@ -47,17 +47,17 @@ def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:
     X = np.array(X)
     Y = np.array(Y)
     if X.shape[1] != Y.shape[1]:
-        raise ValueError(
+        msg = (
             f"Number of columns in X and Y must be the same. X has shape {X.shape} "
             f"and Y has shape {Y.shape}."
         )
+        raise ValueError(msg)
     try:
         import simsimd as simd
 
         X = np.array(X, dtype=np.float32)
         Y = np.array(Y, dtype=np.float32)
-        Z = 1 - np.array(simd.cdist(X, Y, metric="cosine"))
-        return Z
+        return 1 - np.array(simd.cdist(X, Y, metric="cosine"))
     except ImportError:
         X_norm = np.linalg.norm(X, axis=1)
         Y_norm = np.linalg.norm(Y, axis=1)

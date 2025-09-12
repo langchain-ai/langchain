@@ -1,5 +1,20 @@
 {% extends 'markdown/index.md.j2' %}
 
+{% block input %}
+```
+{%- if 'magics_language' in cell.metadata  -%}
+    {{ cell.metadata.magics_language}} 
+{%- elif 'name' in nb.metadata.get('language_info', {}) -%}
+    {{ nb.metadata.language_info.name }}
+{%- endif %}
+{%- if 'title' in cell.metadata -%}
+    {{ ' ' }}title="{{ cell.metadata.title }}"
+
+{%- endif %}
+{{ cell.source}}
+```
+{% endblock input %}
+
 {%- block traceback_line -%}
 ```output
 {{ line.rstrip() | strip_ansi }}

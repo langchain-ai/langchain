@@ -26,7 +26,7 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "DDGInput",
-    "DuckDuckGoSearchRun",
     "DuckDuckGoSearchResults",
+    "DuckDuckGoSearchRun",
     "DuckDuckGoSearchTool",
 ]

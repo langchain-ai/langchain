@@ -406,7 +406,9 @@ def _format_api_ref_url(doc_path: str, compact: bool = False) -> str:
 
 
 def _format_template_url(template_name: str) -> str:
-    return f"https://{LANGCHAIN_PYTHON_URL}/docs/templates/{template_name}"
+    return (
+        f"https://github.com/langchain-ai/langchain/blob/v0.2/templates/{template_name}"
+    )
 
 
 def _format_cookbook_url(cookbook_name: str) -> str:
@@ -606,7 +608,7 @@ From the opposite direction, scientists use `LangChain` in research and referenc
                 f"""
 ## {paper.title}
 
-- **Authors:** {', '.join(paper.authors)}
+- **Authors:** {", ".join(paper.authors)}
 - **arXiv id:** [{paper.arxiv_id}]({paper.url})  **Published Date:** {paper.published_date}
 - **LangChain:**
 

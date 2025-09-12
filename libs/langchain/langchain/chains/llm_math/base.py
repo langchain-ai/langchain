@@ -5,7 +5,7 @@ from __future__ import annotations
 import math
 import re
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
@@ -26,20 +26,22 @@ from langchain.chains.llm_math.prompt import PROMPT
     message=(
         "This class is deprecated and will be removed in langchain 1.0. "
         "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.llm_math.base.LLMMathChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.llm_math.base.LLMMathChain.html"
     ),
     removal="1.0",
 )
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
-    Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+    .. note::
+        This class is deprecated. See below for a replacement implementation using
+        LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features;
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
-        - Easier to modify or extend (e.g., with additional tools, structured responses, etc.)
+        - Easier to modify or extend
+          (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 
@@ -69,7 +71,7 @@ class LLMMathChain(Chain):
                 Expression should be a single line mathematical expression
                 that solves the problem.
 
-                Examples:
+    Examples:
                     "37593 * 67" for "37593 times 67"
                     "37593**(1/5)" for "37593^(1/5)"
                 \"\"\"
@@ -145,7 +147,9 @@ class LLMMathChain(Chain):
 
             from langchain.chains import LLMMathChain
             from langchain_community.llms import OpenAI
+
             llm_math = LLMMathChain.from_llm(OpenAI())
+
     """  # noqa: E501
 
     llm_chain: LLMChain
@@ -163,19 +167,21 @@ class LLMMathChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         try:
             import numexpr  # noqa: F401
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "LLMMathChain requires the numexpr package. "
                 "Please install it with `pip install numexpr`."
             )
+            raise ImportError(msg) from e
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMMathChain with an llm is deprecated. "
                 "Please instantiate with llm_chain argument or using the from_llm "
-                "class method."
+                "class method.",
+                stacklevel=5,
             )
             if "llm_chain" not in values and values["llm"] is not None:
                 prompt = values.get("prompt", PROMPT)
@@ -183,7 +189,7 @@ class LLMMathChain(Chain):
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Expect input key.
 
         :meta private:
@@ -191,7 +197,7 @@ class LLMMathChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Expect output key.
 
         :meta private:
@@ -208,20 +214,23 @@ class LLMMathChain(Chain):
                     expression.strip(),
                     global_dict={},  # restrict access to globals
                     local_dict=local_dict,  # add common mathematical functions
-                )
+                ),
             )
         except Exception as e:
-            raise ValueError(
+            msg = (
                 f'LLMMathChain._evaluate("{expression}") raised error: {e}.'
                 " Please try again with a valid numerical expression"
             )
+            raise ValueError(msg) from e
 
         # Remove any leading and trailing brackets from the output
         return re.sub(r"^\[|\]$", "", output)
 
     def _process_llm_result(
-        self, llm_output: str, run_manager: CallbackManagerForChainRun
-    ) -> Dict[str, str]:
+        self,
+        llm_output: str,
+        run_manager: CallbackManagerForChainRun,
+    ) -> dict[str, str]:
         run_manager.on_text(llm_output, color="green", verbose=self.verbose)
         llm_output = llm_output.strip()
         text_match = re.search(r"^```text(.*?)```", llm_output, re.DOTALL)
@@ -236,14 +245,15 @@ class LLMMathChain(Chain):
         elif "Answer:" in llm_output:
             answer = "Answer: " + llm_output.split("Answer:")[-1]
         else:
-            raise ValueError(f"unknown format from LLM: {llm_output}")
+            msg = f"unknown format from LLM: {llm_output}"
+            raise ValueError(msg)
         return {self.output_key: answer}
 
     async def _aprocess_llm_result(
         self,
         llm_output: str,
         run_manager: AsyncCallbackManagerForChainRun,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         await run_manager.on_text(llm_output, color="green", verbose=self.verbose)
         llm_output = llm_output.strip()
         text_match = re.search(r"^```text(.*?)```", llm_output, re.DOTALL)
@@ -258,14 +268,15 @@ class LLMMathChain(Chain):
         elif "Answer:" in llm_output:
             answer = "Answer: " + llm_output.split("Answer:")[-1]
         else:
-            raise ValueError(f"unknown format from LLM: {llm_output}")
+            msg = f"unknown format from LLM: {llm_output}"
+            raise ValueError(msg)
         return {self.output_key: answer}
 
     def _call(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         _run_manager.on_text(inputs[self.input_key])
         llm_output = self.llm_chain.predict(
@@ -277,9 +288,9 @@ class LLMMathChain(Chain):
 
     async def _acall(
         self,
-        inputs: Dict[str, str],
+        inputs: dict[str, str],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         await _run_manager.on_text(inputs[self.input_key])
         llm_output = await self.llm_chain.apredict(
@@ -300,5 +311,12 @@ class LLMMathChain(Chain):
         prompt: BasePromptTemplate = PROMPT,
         **kwargs: Any,
     ) -> LLMMathChain:
+        """Create a LLMMathChain from a language model.
+
+        Args:
+            llm: a language model
+            prompt: a prompt template
+            **kwargs: additional arguments
+        """
         llm_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(llm_chain=llm_chain, **kwargs)

@@ -1,0 +1,42 @@
+# PullMd Loader
+
+>[PullMd](https://pull.md/) is a service that converts web pages into Markdown format. The `langchain-pull-md` package utilizes this service to convert URLs, especially those rendered with JavaScript frameworks like React, Angular, or Vue.js, into Markdown without the need for local rendering.
+
+## Installation and Setup
+
+To get started with `langchain-pull-md`, you need to install the package via pip:
+
+```bash
+pip install langchain-pull-md
+```
+
+See the [usage example](/docs/integrations/document_loaders/pull_md) for detailed integration and usage instructions.
+
+## Document Loader
+
+The `PullMdLoader` class in `langchain-pull-md` provides an easy way to convert URLs to Markdown. It's particularly useful for loading content from modern web applications for use within LangChain's processing capabilities.
+
+```python
+from langchain_pull_md import PullMdLoader
+
+# Initialize the loader with a URL of a JavaScript-rendered webpage
+loader = PullMdLoader(url='https://example.com')
+
+# Load the content as a Document
+documents = loader.load()
+
+# Access the Markdown content
+for document in documents:
+    print(document.page_content)
+```
+
+This loader supports any URL and is particularly adept at handling sites built with dynamic JavaScript, making it a versatile tool for markdown extraction in data processing workflows.
+
+## API Reference
+
+For a comprehensive guide to all available functions and their parameters, visit the [API reference](https://github.com/chigwell/langchain-pull-md).
+
+## Additional Resources
+
+- [GitHub Repository](https://github.com/chigwell/langchain-pull-md)
+- [PyPi Package](https://pypi.org/project/langchain-pull-md/)

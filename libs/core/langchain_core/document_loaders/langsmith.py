@@ -1,3 +1,5 @@
+"""LangSmith document loader."""
+
 import datetime
 import json
 import uuid
@@ -5,6 +7,7 @@ from collections.abc import Iterator, Sequence
 from typing import Any, Callable, Optional, Union
 
 from langsmith import Client as LangSmithClient
+from typing_extensions import override
 
 from langchain_core.document_loaders.base import BaseLoader
 from langchain_core.documents import Document
@@ -33,6 +36,7 @@ class LangSmithLoader(BaseLoader):
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 
     .. versionadded:: 0.2.34
+
     """  # noqa: E501
 
     def __init__(
@@ -47,17 +51,18 @@ class LangSmithLoader(BaseLoader):
         offset: int = 0,
         limit: Optional[int] = None,
         metadata: Optional[dict] = None,
-        filter: Optional[str] = None,
+        filter: Optional[str] = None,  # noqa: A002
         content_key: str = "",
         format_content: Optional[Callable[..., str]] = None,
         client: Optional[LangSmithClient] = None,
         **client_kwargs: Any,
     ) -> None:
-        """
+        """Create a LangSmith loader.
+
         Args:
             dataset_id: The ID of the dataset to filter by. Defaults to None.
             dataset_name: The name of the dataset to filter by. Defaults to None.
-            content_key: The inputs key to set as Document page content. ``"."`` characters
+            content_key: The inputs key to set as Document page content. ``'.'`` characters
                 are interpreted as nested keys. E.g. ``content_key="first.second"`` will
                 result in
                 ``Document(page_content=format_content(example.inputs["first"]["second"]))``
@@ -74,10 +79,14 @@ class LangSmithLoader(BaseLoader):
             inline_s3_urls: Whether to inline S3 URLs. Defaults to True.
             offset: The offset to start from. Defaults to 0.
             limit: The maximum number of examples to return.
+            metadata: Metadata to filter by. Defaults to None.
             filter: A structured filter string to apply to the examples.
             client: LangSmith Client. If not provided will be initialized from below args.
             client_kwargs: Keyword args to pass to LangSmith client init. Should only be
                 specified if ``client`` isn't.
+
+        Raises:
+            ValueError: If both ``client`` and ``client_kwargs`` are provided.
         """  # noqa: E501
         if client and client_kwargs:
             raise ValueError
@@ -95,6 +104,7 @@ class LangSmithLoader(BaseLoader):
         self.metadata = metadata
         self.filter = filter
 
+    @override
     def lazy_load(self) -> Iterator[Document]:
         for example in self._client.list_examples(
             dataset_id=self.dataset_id,
@@ -122,8 +132,7 @@ class LangSmithLoader(BaseLoader):
 def _stringify(x: Union[str, dict]) -> str:
     if isinstance(x, str):
         return x
-    else:
-        try:
-            return json.dumps(x, indent=2)
-        except Exception:
-            return str(x)
+    try:
+        return json.dumps(x, indent=2)
+    except Exception:
+        return str(x)

@@ -1,22 +1,24 @@
-from typing import List, Optional
+from typing import Optional
 
 from langchain_core.callbacks.manager import CallbackManagerForRetrieverRun
 from langchain_core.documents import Document
 from langchain_core.retrievers import BaseRetriever
+from typing_extensions import override
 
 from langchain.retrievers.ensemble import EnsembleRetriever
 
 
 class MockRetriever(BaseRetriever):
-    docs: List[Document]
+    docs: list[Document]
 
+    @override
     def _get_relevant_documents(
         self,
         query: str,
         *,
         run_manager: Optional[CallbackManagerForRetrieverRun] = None,
-    ) -> List[Document]:
-        """Return the documents"""
+    ) -> list[Document]:
+        """Return the documents."""
         return self.docs
 
 
@@ -32,7 +34,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key=None
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key=None,
     )
     ranked_documents = ensemble_retriever.invoke("_")
 
@@ -54,7 +58,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key=None
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key=None,
     )
     ranked_documents = ensemble_retriever.invoke("_")
 
@@ -77,7 +83,9 @@ def test_invoke() -> None:
     retriever2 = MockRetriever(docs=documents2)
 
     ensemble_retriever = EnsembleRetriever(
-        retrievers=[retriever1, retriever2], weights=[0.5, 0.5], id_key="id"
+        retrievers=[retriever1, retriever2],
+        weights=[0.5, 0.5],
+        id_key="id",
     )
     ranked_documents = ensemble_retriever.invoke("_")
 

@@ -22,6 +22,6 @@ def test_critique_parsing() -> None:
     for text in [TEXT_ONE, TEXT_TWO, TEXT_THREE]:
         critique = ConstitutionalChain._parse_critique(text)
 
-        assert (
-            critique.strip() == "This text is bad."
-        ), f"Failed on {text} with {critique}"
+        assert critique.strip() == "This text is bad.", (
+            f"Failed on {text} with {critique}"
+        )

@@ -1,5 +1,6 @@
 import json
-from typing import Any, Callable, Dict, Literal, Optional, Sequence, Type, Union
+from collections.abc import Sequence
+from typing import Any, Callable, Literal, Optional, Union
 
 from langchain_core._api import deprecated
 from langchain_core.output_parsers import (
@@ -46,24 +47,24 @@ from pydantic import BaseModel
         """
             from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
-    
+
             class Joke(BaseModel):
                 setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke") 
-    
+                punchline: str = Field(description="The punchline to the joke")
+
             # Or any other chat model that supports tools.
             # Please reference to to the documentation of structured_output
-            # to see an up to date list of which models support 
+            # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
             structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats. 
+            structured_llm.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
 )
 def create_openai_fn_runnable(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -131,18 +132,19 @@ def create_openai_fn_runnable(
                 structured_llm = create_openai_fn_runnable([RecordPerson, RecordDog], llm)
                 structured_llm.invoke("Harry was a chubby brown beagle who loved chicken)
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
+
     """  # noqa: E501
     if not functions:
-        raise ValueError("Need to pass in at least one function. Received zero.")
+        msg = "Need to pass in at least one function. Received zero."
+        raise ValueError(msg)
     openai_functions = [convert_to_openai_function(f) for f in functions]
-    llm_kwargs_: Dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
+    llm_kwargs_: dict[str, Any] = {"functions": openai_functions, **llm_kwargs}
     if len(openai_functions) == 1 and enforce_single_function_usage:
         llm_kwargs_["function_call"] = {"name": openai_functions[0]["name"]}
     output_parser = output_parser or get_openai_output_parser(functions)
     if prompt:
         return prompt | llm.bind(**llm_kwargs_) | output_parser
-    else:
-        return llm.bind(**llm_kwargs_) | output_parser
+    return llm.bind(**llm_kwargs_) | output_parser
 
 
 @deprecated(
@@ -167,21 +169,21 @@ def create_openai_fn_runnable(
 
             class Joke(BaseModel):
                 setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke") 
+                punchline: str = Field(description="The punchline to the joke")
 
             # Or any other chat model that supports tools.
             # Please reference to to the documentation of structured_output
-            # to see an up to date list of which models support 
+            # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
             structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats. 
+            structured_llm.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
 )
 def create_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -189,7 +191,9 @@ def create_structured_output_runnable(
     enforce_function_usage: bool = True,
     return_single: bool = True,
     mode: Literal[
-        "openai-functions", "openai-tools", "openai-json"
+        "openai-functions",
+        "openai-tools",
+        "openai-json",
     ] = "openai-functions",
     **kwargs: Any,
 ) -> Runnable:
@@ -200,39 +204,39 @@ def create_structured_output_runnable(
             is passed in, it's assumed to already be a valid JsonSchema.
             For best results, pydantic.BaseModels should have docstrings describing what
             the schema represents and descriptions for the parameters.
-        llm: Language model to use. Assumed to support the OpenAI function-calling API 
-            if mode is 'openai-function'. Assumed to support OpenAI response_format 
+        llm: Language model to use. Assumed to support the OpenAI function-calling API
+            if mode is 'openai-function'. Assumed to support OpenAI response_format
             parameter if mode is 'openai-json'.
-        prompt: BasePromptTemplate to pass to the model. If mode is 'openai-json' and 
-            prompt has input variable 'output_schema' then the given output_schema 
+        prompt: BasePromptTemplate to pass to the model. If mode is 'openai-json' and
+            prompt has input variable 'output_schema' then the given output_schema
             will be converted to a JsonSchema and inserted in the prompt.
         output_parser: Output parser to use for parsing model outputs. By default
             will be inferred from the function types. If pydantic.BaseModel is passed
-            in, then the OutputParser will try to parse outputs using the pydantic 
+            in, then the OutputParser will try to parse outputs using the pydantic
             class. Otherwise model outputs will be parsed as JSON.
-        mode: How structured outputs are extracted from the model. If 'openai-functions' 
-            then OpenAI function calling is used with the deprecated 'functions', 
-            'function_call' schema. If 'openai-tools' then OpenAI function 
-            calling with the latest 'tools', 'tool_choice' schema is used. This is 
-            recommended over 'openai-functions'. If 'openai-json' then OpenAI model 
+        mode: How structured outputs are extracted from the model. If 'openai-functions'
+            then OpenAI function calling is used with the deprecated 'functions',
+            'function_call' schema. If 'openai-tools' then OpenAI function
+            calling with the latest 'tools', 'tool_choice' schema is used. This is
+            recommended over 'openai-functions'. If 'openai-json' then OpenAI model
             with response_format set to JSON is used.
-        enforce_function_usage: Only applies when mode is 'openai-tools' or 
-            'openai-functions'. If True, then the model will be forced to use the given 
-            output schema. If False, then the model can elect whether to use the output 
+        enforce_function_usage: Only applies when mode is 'openai-tools' or
+            'openai-functions'. If True, then the model will be forced to use the given
+            output schema. If False, then the model can elect whether to use the output
             schema.
-        return_single: Only applies when mode is 'openai-tools'. Whether to a list of 
-            structured outputs or a single one. If True and model does not return any 
-            structured outputs then chain output is None. If False and model does not 
+        return_single: Only applies when mode is 'openai-tools'. Whether to a list of
+            structured outputs or a single one. If True and model does not return any
+            structured outputs then chain output is None. If False and model does not
             return any structured outputs then chain output is an empty list.
         kwargs: Additional named arguments.
 
     Returns:
-        A runnable sequence that will return a structured output(s) matching the given 
+        A runnable sequence that will return a structured output(s) matching the given
             output_schema.
-    
+
     OpenAI tools example with Pydantic schema (mode='openai-tools'):
         .. code-block:: python
-        
+
                 from typing import Optional
 
                 from langchain.chains import create_structured_output_runnable
@@ -250,23 +254,23 @@ def create_structured_output_runnable(
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 prompt = ChatPromptTemplate.from_messages(
                     [
-                        ("system", "You are an extraction algorithm. Please extract every possible instance"), 
+                        ("system", "You are an extraction algorithm. Please extract every possible instance"),
                         ('human', '{input}')
                     ]
                 )
                 structured_llm = create_structured_output_runnable(
-                    RecordDog, 
-                    llm, 
-                    mode="openai-tools", 
-                    enforce_function_usage=True, 
+                    RecordDog,
+                    llm,
+                    mode="openai-tools",
+                    enforce_function_usage=True,
                     return_single=True
                 )
                 structured_llm.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
                 # -> RecordDog(name="Harry", color="brown", fav_food="chicken")
-                
+
     OpenAI tools example with dict schema (mode="openai-tools"):
         .. code-block:: python
-        
+
                 from typing import Optional
 
                 from langchain.chains import create_structured_output_runnable
@@ -302,15 +306,15 @@ def create_structured_output_runnable(
 
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(
-                    dog_schema, 
-                    llm, 
-                    mode="openai-tools", 
-                    enforce_function_usage=True, 
+                    dog_schema,
+                    llm,
+                    mode="openai-tools",
+                    enforce_function_usage=True,
                     return_single=True
                 )
                 structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
                 # -> {'name': 'Harry', 'color': 'brown', 'fav_food': 'chicken'}
-    
+
     OpenAI functions example (mode="openai-functions"):
         .. code-block:: python
 
@@ -331,7 +335,7 @@ def create_structured_output_runnable(
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-functions")
                 structured_llm.invoke("Harry was a chubby brown beagle who loved chicken")
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
-                
+
     OpenAI functions with prompt example:
         .. code-block:: python
 
@@ -360,7 +364,7 @@ def create_structured_output_runnable(
                 # -> Dog(name="Harry", color="brown", fav_food="chicken")
     OpenAI json response format example (mode="openai-json"):
         .. code-block:: python
-        
+
                 from typing import Optional
 
                 from langchain.chains import create_structured_output_runnable
@@ -378,19 +382,21 @@ def create_structured_output_runnable(
                 llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
                 structured_llm = create_structured_output_runnable(Dog, llm, mode="openai-json")
                 system = '''You are a world class assistant for extracting information in structured JSON formats. \
-                
+
                 Extract a valid JSON blob from the user input that matches the following JSON Schema:
-                
+
                 {output_schema}'''
                 prompt = ChatPromptTemplate.from_messages(
                     [("system", system), ("human", "{input}"),]
                 )
                 chain = prompt | structured_llm
                 chain.invoke({"input": "Harry was a chubby brown beagle who loved chicken"})
+
     """  # noqa: E501
     # for backwards compatibility
     force_function_usage = kwargs.get(
-        "enforce_single_function_usage", enforce_function_usage
+        "enforce_single_function_usage",
+        enforce_function_usage,
     )
 
     if mode == "openai-tools":
@@ -399,9 +405,8 @@ def create_structured_output_runnable(
         # Backwards compatibility keys
         unrecognized_keys = keys_in_kwargs - {"enforce_single_function_usage"}
         if unrecognized_keys:
-            raise TypeError(
-                f"Got an unexpected keyword argument(s): {unrecognized_keys}."
-            )
+            msg = f"Got an unexpected keyword argument(s): {unrecognized_keys}."
+            raise TypeError(msg)
 
         return _create_openai_tools_runnable(
             output_schema,
@@ -412,7 +417,7 @@ def create_structured_output_runnable(
             first_tool_only=return_single,
         )
 
-    elif mode == "openai-functions":
+    if mode == "openai-functions":
         return _create_openai_functions_structured_output_runnable(
             output_schema,
             llm,
@@ -421,23 +426,28 @@ def create_structured_output_runnable(
             enforce_single_function_usage=force_function_usage,
             **kwargs,  # llm-specific kwargs
         )
-    elif mode == "openai-json":
+    if mode == "openai-json":
         if force_function_usage:
-            raise ValueError(
+            msg = (
                 "enforce_single_function_usage is not supported for mode='openai-json'."
             )
+            raise ValueError(msg)
         return _create_openai_json_runnable(
-            output_schema, llm, prompt=prompt, output_parser=output_parser, **kwargs
+            output_schema,
+            llm,
+            prompt=prompt,
+            output_parser=output_parser,
+            **kwargs,
         )
-    else:
-        raise ValueError(
-            f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
-            f"'openai-json'."
-        )
+    msg = (  # type: ignore[unreachable]
+        f"Invalid mode {mode}. Expected one of 'openai-tools', 'openai-functions', "
+        f"'openai-json'."
+    )
+    raise ValueError(msg)
 
 
 def _create_openai_tools_runnable(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable],
+    tool: Union[dict[str, Any], type[BaseModel], Callable],
     llm: Runnable,
     *,
     prompt: Optional[BasePromptTemplate],
@@ -446,23 +456,23 @@ def _create_openai_tools_runnable(
     first_tool_only: bool,
 ) -> Runnable:
     oai_tool = convert_to_openai_tool(tool)
-    llm_kwargs: Dict[str, Any] = {"tools": [oai_tool]}
+    llm_kwargs: dict[str, Any] = {"tools": [oai_tool]}
     if enforce_tool_usage:
         llm_kwargs["tool_choice"] = {
             "type": "function",
             "function": {"name": oai_tool["function"]["name"]},
         }
     output_parser = output_parser or _get_openai_tool_output_parser(
-        tool, first_tool_only=first_tool_only
+        tool,
+        first_tool_only=first_tool_only,
     )
     if prompt:
         return prompt | llm.bind(**llm_kwargs) | output_parser
-    else:
-        return llm.bind(**llm_kwargs) | output_parser
+    return llm.bind(**llm_kwargs) | output_parser
 
 
 def _get_openai_tool_output_parser(
-    tool: Union[Dict[str, Any], Type[BaseModel], Callable],
+    tool: Union[dict[str, Any], type[BaseModel], Callable],
     *,
     first_tool_only: bool = False,
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
@@ -473,13 +483,14 @@ def _get_openai_tool_output_parser(
     else:
         key_name = convert_to_openai_tool(tool)["function"]["name"]
         output_parser = JsonOutputKeyToolsParser(
-            first_tool_only=first_tool_only, key_name=key_name
+            first_tool_only=first_tool_only,
+            key_name=key_name,
         )
     return output_parser
 
 
 def get_openai_output_parser(
-    functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable]],
+    functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable]],
 ) -> Union[BaseOutputParser, BaseGenerationOutputParser]:
     """Get the appropriate function output parser given the user functions.
 
@@ -496,7 +507,7 @@ def get_openai_output_parser(
     """
     if isinstance(functions[0], type) and is_basemodel_subclass(functions[0]):
         if len(functions) > 1:
-            pydantic_schema: Union[Dict, Type[BaseModel]] = {
+            pydantic_schema: Union[dict, type[BaseModel]] = {
                 convert_to_openai_function(fn)["name"]: fn for fn in functions
             }
         else:
@@ -510,16 +521,15 @@ def get_openai_output_parser(
 
 
 def _create_openai_json_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
     output_parser: Optional[Union[BaseOutputParser, BaseGenerationOutputParser]] = None,
 ) -> Runnable:
-    """"""
     if isinstance(output_schema, type) and is_basemodel_subclass(output_schema):
         output_parser = output_parser or PydanticOutputParser(
-            pydantic_object=output_schema,  # type: ignore
+            pydantic_object=output_schema,
         )
         schema_as_dict = convert_to_openai_function(output_schema)["parameters"]
     else:
@@ -532,12 +542,11 @@ def _create_openai_json_runnable(
             prompt = prompt.partial(output_schema=json.dumps(schema_as_dict, indent=2))
 
         return prompt | llm | output_parser
-    else:
-        return llm | output_parser
+    return llm | output_parser
 
 
 def _create_openai_functions_structured_output_runnable(
-    output_schema: Union[Dict[str, Any], Type[BaseModel]],
+    output_schema: Union[dict[str, Any], type[BaseModel]],
     llm: Runnable,
     prompt: Optional[BasePromptTemplate] = None,
     *,
@@ -556,13 +565,17 @@ def _create_openai_functions_structured_output_runnable(
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter.
 
-            output: output_schema  # type: ignore
+            Should always be used to format your response to the user.
+            """
+
+            output: output_schema  # type: ignore[valid-type]
 
         function = _OutputFormatter
         output_parser = output_parser or PydanticAttrOutputFunctionsParser(
-            pydantic_schema=_OutputFormatter, attr_name="output"
+            pydantic_schema=_OutputFormatter,
+            attr_name="output",
         )
     return create_openai_fn_runnable(
         [function],

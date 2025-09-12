@@ -36,11 +36,11 @@
     },
     {
       "source": "/docs/expression_language(/?)",
-      "destination": "/docs/concepts/#langchain-expression-language-lcel"
+      "destination": "/docs/concepts/lcel"
     },
     {
       "source": "/docs/expression_language/interface(/?)",
-      "destination": "/docs/concepts/#runnable-interface"
+      "destination": "/docs/concepts/runnables"
     },
     {
       "source": "/docs/versions/overview(/?)",
@@ -49,6 +49,38 @@
     {
       "source": "/docs/how_to/tool_calls_multi_modal(/?)",
       "destination": "/docs/how_to/multimodal_inputs/"
+    },
+    {
+      "source": "/docs/tutorials/pdf_qa",
+      "destination": "/docs/tutorials/retrievers/"
+    },
+    {
+      "source": "/docs/tutorials/query_analysis",
+      "destination": "/docs/tutorials/rag#query-analysis"
+    },
+    {
+      "source": "/docs/tutorials/local_rag",
+      "destination": "/docs/tutorials/rag"
+    },
+    {
+      "source": "/docs/how_to/graph_mapping(/?)",
+      "destination": "/docs/tutorials/graph#query-validation"
+    },
+    {
+      "source": "/docs/how_to/graph_prompting(/?)",
+      "destination": "/docs/tutorials/graph#few-shot-prompting"
+    },
+    {
+      "source": "/docs/how_to/HTML_header_metadata_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlheadertextsplitter"
+    },
+    {
+      "source": "/docs/how_to/HTML_section_aware_splitter(/?)",
+      "destination": "/docs/how_to/split_html#using-htmlsectionsplitter"
+    },
+    {
+      "source": "/docs/tutorials/data_generation",
+      "destination": "https://python.langchain.com/v0.2/docs/tutorials/data_generation/"
     },
     {
       "source": "/docs/langsmith(/?)",
@@ -76,7 +108,7 @@
     },
     {
       "source": "/v0.2/docs/templates/:path(.*/?)*",
-      "destination": "https://github.com/langchain-ai/langchain/tree/master/templates/:path*"
+      "destination": "https://github.com/langchain-ai/langchain/tree/v0.2/templates/:path*"
     },
     {
       "source": "/docs/integrations/providers/mlflow_ai_gateway(/?)",
@@ -87,8 +119,48 @@
       "destination": "/docs/integrations/providers/:path*"
     },
     {
-      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS)/?)*",
+      "source": "/docs/troubleshooting/errors/:path((?:GRAPH_RECURSION_LIMIT|INVALID_CONCURRENT_GRAPH_UPDATE|INVALID_GRAPH_NODE_RETURN_VALUE|MULTIPLE_SUBGRAPHS|INVALID_CHAT_HISTORY)/?)*",
       "destination": "https://langchain-ai.github.io/langgraph/troubleshooting/errors/:path*"
+    },
+    {
+      "source": "/docs/contributing/:path((?:code|documentation|integrations|testing)(?:/|/.*/?)?)",
+      "destination": "/docs/contributing/how_to/:path"
+    },
+    {
+      "source": "/docs/contributing/:path((?:faq|repo_structure|review_process)/?)",
+      "destination": "/docs/contributing/reference/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/weaviate-hybrid(/?)",
+      "destination": "/docs/integrations/vectorstores/weaviate/#search-mechanism"
+    },
+    {
+      "source": "/docs/integrations/vectorstores/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/vectorstores/singlestoredb/"
+    },
+    {
+      "source": "/docs/integrations/providers/singlestoredb(/?)",
+      "destination": "/docs/integrations/providers/singlestore/"
+    },
+    {
+      "source": "/docs/integrations/retrievers/singlestoredb(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/singlestoredb/"
+    },
+    {
+      "source": "/docs/integrations/providers/dspy(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/providers/dspy/"
+    },
+    {
+      "source": "/api_reference/mongodb/:path(.*/?)*",
+      "destination": "https://langchain-mongodb.readthedocs.io/en/latest/langchain_mongodb/api_docs.html"
+    },
+    {
+      "source": "/api_reference/tests/:path(.*/?)*",
+      "destination": "/api_reference/standard_tests/:path"
+    },
+    {
+      "source": "/docs/integrations/retrievers/milvus_hybrid_search(/?)",
+      "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/"
     }
   ]
 }

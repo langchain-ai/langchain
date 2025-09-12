@@ -2,6 +2,7 @@ import json
 
 import pytest
 
+from langchain.chains import OpenAIModerationChain
 from langchain.chains.openai_functions.openapi import get_openapi_chain
 
 api_spec = {
@@ -21,8 +22,8 @@ api_spec = {
                         "description": "Limit the number of results",
                     },
                 ],
-            }
-        }
+            },
+        },
     },
 }
 
@@ -36,3 +37,13 @@ def test_openai_openapi_chain() -> None:
     chain = get_openapi_chain(json.dumps(api_spec), llm)
     output = chain.invoke({"query": "Fetch the top two posts."})
     assert len(output["response"]) == 2
+
+
+@pytest.mark.requires("openai")
+def test_openai_moderation_chain_instantiation() -> None:
+    """Test OpenAIModerationChain."""
+    api_key = "foo"
+
+    moderation = OpenAIModerationChain(openai_api_key=api_key)
+
+    assert isinstance(moderation, OpenAIModerationChain)

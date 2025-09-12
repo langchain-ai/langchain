@@ -3,18 +3,18 @@ import json
 import os
 import sys
 from collections import defaultdict
-from typing import Dict, List, Set
 from pathlib import Path
+from typing import Dict, List, Set
+
 import tomllib
-
 from get_min_versions import get_min_version_from_toml
-
+from packaging.requirements import Requirement
 
 LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
     "libs/langchain",
-    "libs/community",
+    "libs/langchain_v1",
 ]
 
 # when set to True, we are ignoring core dependents
@@ -30,6 +30,13 @@ IGNORED_PARTNERS = [
     # specifically in huggingface jobs
     # https://github.com/langchain-ai/langchain/issues/25558
     "huggingface",
+    # prompty exhibiting issues with numpy for Python 3.13
+    # https://github.com/langchain-ai/langchain/actions/runs/12651104685/job/35251034969?pr=29065
+    "prompty",
+]
+
+PY_312_MAX_PACKAGES = [
+    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
 ]
 
 
@@ -54,15 +61,17 @@ def dependents_graph() -> dict:
 
         # load regular and test deps from pyproject.toml
         with open(path, "rb") as f:
-            pyproject = tomllib.load(f)["tool"]["poetry"]
+            pyproject = tomllib.load(f)
 
         pkg_dir = "libs" + "/".join(path.split("libs")[1].split("/")[:-1])
         for dep in [
-            *pyproject["dependencies"].keys(),
-            *pyproject["group"]["test"]["dependencies"].keys(),
+            *pyproject["project"]["dependencies"],
+            *pyproject["dependency-groups"]["test"],
         ]:
+            requirement = Requirement(dep)
+            package_name = requirement.name
             if "langchain" in dep:
-                dependents[dep].add(pkg_dir)
+                dependents[package_name].add(pkg_dir)
                 continue
 
         # load extended deps from extended_testing_deps.txt
@@ -74,9 +83,9 @@ def dependents_graph() -> dict:
                 for depline in extended_deps:
                     if depline.startswith("-e "):
                         # editable dependency
-                        assert depline.startswith(
-                            "-e ../partners/"
-                        ), "Extended test deps should only editable install partner packages"
+                        assert depline.startswith("-e ../partners/"), (
+                            "Extended test deps should only editable install partner packages"
+                        )
                         partner = depline.split("partners/")[1]
                         dep = f"langchain-{partner}"
                     else:
@@ -109,24 +118,28 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "test-pydantic":
         return _get_pydantic_test_configs(dir_)
 
-    if dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12"]
+    if job == "codspeed":
+        py_versions = ["3.12"]  # 3.13 is not yet supported
+    elif dir_ == "libs/core":
+        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
     elif dir_ == "libs/partners/milvus":
-        # milvus poetry doesn't allow 3.12 because they
-        # declare deps in funny way
+        # milvus doesn't allow 3.12 because they declare deps in funny way
         py_versions = ["3.9", "3.11"]
 
-    elif dir_ in ["libs/community", "libs/langchain"] and job == "extended-tests":
-        # community extended test resolution in 3.12 is slow
-        # even in uv
-        py_versions = ["3.9", "3.11"]
-
-    elif dir_ == "libs/community" and job == "compile-integration-tests":
-        # community integration deps are slow in 3.12
-        py_versions = ["3.9", "3.11"]
-    else:
+    elif dir_ in PY_312_MAX_PACKAGES:
         py_versions = ["3.9", "3.12"]
+
+    elif dir_ == "libs/langchain" and job == "extended-tests":
+        py_versions = ["3.9", "3.13"]
+    elif dir_ == "libs/langchain_v1":
+        py_versions = ["3.10", "3.13"]
+
+    elif dir_ == ".":
+        # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
+        py_versions = ["3.9", "3.12"]
+    else:
+        py_versions = ["3.9", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -134,17 +147,17 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
 def _get_pydantic_test_configs(
     dir_: str, *, python_version: str = "3.11"
 ) -> List[Dict[str, str]]:
-    with open("./libs/core/poetry.lock", "rb") as f:
-        core_poetry_lock_data = tomllib.load(f)
-    for package in core_poetry_lock_data["package"]:
+    with open("./libs/core/uv.lock", "rb") as f:
+        core_uv_lock_data = tomllib.load(f)
+    for package in core_uv_lock_data["package"]:
         if package["name"] == "pydantic":
             core_max_pydantic_minor = package["version"].split(".")[1]
             break
 
-    with open(f"./{dir_}/poetry.lock", "rb") as f:
-        dir_poetry_lock_data = tomllib.load(f)
+    with open(f"./{dir_}/uv.lock", "rb") as f:
+        dir_uv_lock_data = tomllib.load(f)
 
-    for package in dir_poetry_lock_data["package"]:
+    for package in dir_uv_lock_data["package"]:
         if package["name"] == "pydantic":
             dir_max_pydantic_minor = package["version"].split(".")[1]
             break
@@ -166,11 +179,6 @@ def _get_pydantic_test_configs(
         else "0"
     )
 
-    custom_mins = {
-        # depends on pydantic-settings 2.4 which requires pydantic 2.7
-        "libs/community": 7,
-    }
-
     max_pydantic_minor = min(
         int(dir_max_pydantic_minor),
         int(core_max_pydantic_minor),
@@ -178,7 +186,6 @@ def _get_pydantic_test_configs(
     min_pydantic_minor = max(
         int(dir_min_pydantic_minor),
         int(core_min_pydantic_minor),
-        custom_mins.get(dir_, 0),
     )
 
     configs = [
@@ -206,6 +213,8 @@ def _get_configs_for_multi_dirs(
         )
     elif job == "extended-tests":
         dirs = list(dirs_to_run["extended-test"])
+    elif job == "codspeed":
+        dirs = list(dirs_to_run["codspeed"])
     else:
         raise ValueError(f"Unknown job: {job}")
 
@@ -221,6 +230,7 @@ if __name__ == "__main__":
         "lint": set(),
         "test": set(),
         "extended-test": set(),
+        "codspeed": set(),
     }
     docs_edited = False
 
@@ -244,6 +254,8 @@ if __name__ == "__main__":
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
             dirs_to_run["lint"].add(".")
 
+        if file.startswith("libs/core"):
+            dirs_to_run["codspeed"].add(f"libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -259,8 +271,11 @@ if __name__ == "__main__":
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
-            # note: won't run on external repo partners
+            # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
+            dirs_to_run["test"].add("libs/standard-tests")
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
             dirs_to_run["test"].add("libs/partners/mistralai")
             dirs_to_run["test"].add("libs/partners/openai")
             dirs_to_run["test"].add("libs/partners/anthropic")
@@ -268,8 +283,9 @@ if __name__ == "__main__":
             dirs_to_run["test"].add("libs/partners/groq")
 
         elif file.startswith("libs/cli"):
-            # todo: add cli makefile
-            pass
+            dirs_to_run["lint"].add("libs/cli")
+            dirs_to_run["test"].add("libs/cli")
+
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -278,15 +294,20 @@ if __name__ == "__main__":
                 if not filename.startswith(".")
             ] != ["README.md"]:
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
+                dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
+        elif file == "libs/packages.yml":
+            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif any(file.startswith(p) for p in ["docs/", "templates/", "cookbook/"]):
-            if file.startswith("docs/"):
-                docs_edited = True
+        elif file.startswith("docs/") or file in [
+            "pyproject.toml",
+            "uv.lock",
+        ]:  # docs or root uv files
+            docs_edited = True
             dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()
@@ -302,6 +323,7 @@ if __name__ == "__main__":
             "compile-integration-tests",
             "dependencies",
             "test-pydantic",
+            "codspeed",
         ]
     }
     map_job_to_configs["test-doc-imports"] = (

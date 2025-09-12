@@ -1,6 +1,6 @@
-"""
-Adapted from https://github.com/noahmorrison/chevron
-MIT License
+"""Adapted from https://github.com/noahmorrison/chevron.
+
+MIT License.
 """
 
 from __future__ import annotations
@@ -9,6 +9,7 @@ import logging
 from collections.abc import Iterator, Mapping, Sequence
 from types import MappingProxyType
 from typing import (
+    TYPE_CHECKING,
     Any,
     Literal,
     Optional,
@@ -16,7 +17,8 @@ from typing import (
     cast,
 )
 
-from typing_extensions import TypeAlias
+if TYPE_CHECKING:
+    from typing_extensions import TypeAlias
 
 logger = logging.getLogger(__name__)
 
@@ -46,24 +48,28 @@ def grab_literal(template: str, l_del: str) -> tuple[str, str]:
         l_del: The left delimiter.
 
     Returns:
-        Tuple[str, str]: The literal and the template.
+        tuple[str, str]: The literal and the template.
     """
-
     global _CURRENT_LINE
 
     try:
         # Look for the next tag and move the template to it
         literal, template = template.split(l_del, 1)
         _CURRENT_LINE += literal.count("\n")
-        return (literal, template)
 
     # There are no more tags in the template?
     except ValueError:
         # Then the rest of the template is a literal
         return (template, "")
 
+    return (literal, template)
 
-def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
+
+def l_sa_check(
+    template: str,  # noqa: ARG001
+    literal: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a preliminary check to see if a tag could be a standalone.
 
     Args:
@@ -74,20 +80,22 @@ def l_sa_check(template: str, literal: str, is_standalone: bool) -> bool:
     Returns:
         bool: Whether the tag could be a standalone.
     """
-
     # If there is a newline, or the previous tag was a standalone
     if literal.find("\n") != -1 or is_standalone:
-        padding = literal.split("\n")[-1]
+        padding = literal.rsplit("\n", maxsplit=1)[-1]
 
         # If all the characters since the last newline are spaces
         # Then the next tag could be a standalone
         # Otherwise it can't be
         return padding.isspace() or padding == ""
-    else:
-        return False
+    return False
 
 
-def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
+def r_sa_check(
+    template: str,
+    tag_type: str,
+    is_standalone: bool,  # noqa: FBT001
+) -> bool:
     """Do a final check to see if a tag could be a standalone.
 
     Args:
@@ -98,17 +106,15 @@ def r_sa_check(template: str, tag_type: str, is_standalone: bool) -> bool:
     Returns:
         bool: Whether the tag could be a standalone.
     """
-
     # Check right side if we might be a standalone
-    if is_standalone and tag_type not in ["variable", "no escape"]:
+    if is_standalone and tag_type not in {"variable", "no escape"}:
         on_newline = template.split("\n", 1)
 
         # If the stuff to the right of us are spaces we're a standalone
         return on_newline[0].isspace() or not on_newline[0]
 
     # If we're a tag can't be a standalone
-    else:
-        return False
+    return False
 
 
 def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], str]:
@@ -120,15 +126,12 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
         r_del: The right delimiter.
 
     Returns:
-        Tuple[Tuple[str, str], str]: The tag and the template.
+        tuple[tuple[str, str], str]: The tag and the template.
 
     Raises:
         ChevronError: If the tag is unclosed.
         ChevronError: If the set delimiter tag is unclosed.
     """
-    global _CURRENT_LINE
-    global _LAST_TAG_LINE
-
     tag_types = {
         "!": "comment",
         "#": "section",
@@ -144,8 +147,13 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
     try:
         tag, template = template.split(r_del, 1)
     except ValueError as e:
-        msg = "unclosed tag " f"at line {_CURRENT_LINE}"
+        msg = f"unclosed tag at line {_CURRENT_LINE}"
         raise ChevronError(msg) from e
+
+    # Check for empty tags
+    if not tag.strip():
+        msg = f"empty tag at line {_CURRENT_LINE}"
+        raise ChevronError(msg)
 
     # Find the type meaning of the first character
     tag_type = tag_types.get(tag[0], "variable")
@@ -165,7 +173,7 @@ def parse_tag(template: str, l_del: str, r_del: str) -> tuple[tuple[str, str], s
 
         # Otherwise we should complain
         else:
-            msg = "unclosed set delimiter tag\n" f"at line {_CURRENT_LINE}"
+            msg = f"unclosed set delimiter tag\nat line {_CURRENT_LINE}"
             raise ChevronError(msg)
 
     elif (
@@ -199,36 +207,30 @@ def tokenize(
     using file-like objects. It also accepts a string containing
     the template.
 
+    Args:
+        template: a file-like object, or a string of a mustache template
+        def_ldel: The default left delimiter
+            ("{{" by default, as in spec compliant mustache)
+        def_rdel: The default right delimiter
+            ("}}" by default, as in spec compliant mustache)
 
-    Arguments:
+    Yields:
+        Mustache tags in the form of a tuple (tag_type, tag_key)
+        where tag_type is one of:
 
-    template -- a file-like object, or a string of a mustache template
+        * literal
+        * section
+        * inverted section
+        * end
+        * partial
+        * no escape
 
-    def_ldel -- The default left delimiter
-                ("{{" by default, as in spec compliant mustache)
+        and tag_key is either the key or in the case of a literal tag,
+        the literal itself.
 
-    def_rdel -- The default right delimiter
-                ("}}" by default, as in spec compliant mustache)
-
-
-    Returns:
-
-    A generator of mustache tags in the form of a tuple
-
-    -- (tag_type, tag_key)
-
-    Where tag_type is one of:
-     * literal
-     * section
-     * inverted section
-     * end
-     * partial
-     * no escape
-
-    And tag_key is either the key or in the case of a literal tag,
-    the literal itself.
+    Raises:
+        ChevronError: If there is a syntax error in the template.
     """
-
     global _CURRENT_LINE, _LAST_TAG_LINE
     _CURRENT_LINE = 1
     _LAST_TAG_LINE = None
@@ -263,7 +265,7 @@ def tokenize(
             l_del, r_del = dels[0], dels[-1]
 
         # If we are a section tag
-        elif tag_type in ["section", "inverted section"]:
+        elif tag_type in {"section", "inverted section"}:
             # Then open a new section
             open_sections.append(tag_key)
             _LAST_TAG_LINE = _CURRENT_LINE
@@ -309,7 +311,7 @@ def tokenize(
             yield ("literal", literal)
 
         # Ignore comments and set delimiters
-        if tag_type not in ["comment", "set delimiter?"]:
+        if tag_type not in {"comment", "set delimiter?"}:
             yield (tag_type, tag_key)
 
     # If there are any open sections when we're done
@@ -329,8 +331,7 @@ def tokenize(
 
 
 def _html_escape(string: str) -> str:
-    """HTML escape all of these " & < >"""
-
+    """Return the HTML-escaped string with these characters escaped: ``" & < >``."""
     html_codes = {
         '"': "&quot;",
         "<": "&lt;",
@@ -339,21 +340,21 @@ def _html_escape(string: str) -> str:
 
     # & must be handled first
     string = string.replace("&", "&amp;")
-    for char in html_codes:
-        string = string.replace(char, html_codes[char])
+    for char, code in html_codes.items():
+        string = string.replace(char, code)
     return string
 
 
 def _get_key(
     key: str,
     scopes: Scopes,
+    *,
     warn: bool,
     keep: bool,
     def_ldel: str,
     def_rdel: str,
 ) -> Any:
-    """Get a key from the current scope"""
-
+    """Return a key from the current scope."""
     # If the key is a dot
     if key == ".":
         # Then just return the current scope
@@ -367,32 +368,33 @@ def _get_key(
             if scope in (0, False):
                 return scope
 
+            resolved_scope = scope
             # For every dot separated key
             for child in key.split("."):
                 # Return an empty string if falsy, with two exceptions
                 # 0 should return 0, and False should return False
-                if scope in (0, False):
-                    return scope
+                if resolved_scope in (0, False):
+                    return resolved_scope
                 # Move into the scope
                 try:
                     # Try subscripting (Normal dictionaries)
-                    scope = cast(dict[str, Any], scope)[child]
+                    resolved_scope = cast("dict[str, Any]", resolved_scope)[child]
                 except (TypeError, AttributeError):
                     try:
-                        scope = getattr(scope, child)
+                        resolved_scope = getattr(resolved_scope, child)
                     except (TypeError, AttributeError):
                         # Try as a list
-                        scope = scope[int(child)]  # type: ignore
+                        resolved_scope = resolved_scope[int(child)]  # type: ignore[index]
 
             try:
                 # This allows for custom falsy data types
                 # https://github.com/noahmorrison/chevron/issues/35
-                if scope._CHEVRON_return_scope_when_falsy:  # type: ignore
-                    return scope
+                if resolved_scope._CHEVRON_return_scope_when_falsy:  # type: ignore[union-attr] # noqa: SLF001
+                    return resolved_scope
             except AttributeError:
-                if scope in (0, False):
-                    return scope
-                return scope or ""
+                if resolved_scope in (0, False):
+                    return resolved_scope
+                return resolved_scope or ""
         except (AttributeError, KeyError, IndexError, ValueError):
             # We couldn't find the key in the current scope
             # We'll try again on the next pass
@@ -401,7 +403,7 @@ def _get_key(
     # We couldn't find the key in any of the scopes
 
     if warn:
-        logger.warn(f"Could not find key '{key}'")
+        logger.warning("Could not find key '%s'", key)
 
     if keep:
         return f"{def_ldel} {key} {def_rdel}"
@@ -410,7 +412,11 @@ def _get_key(
 
 
 def _get_partial(name: str, partials_dict: Mapping[str, str]) -> str:
-    """Load a partial"""
+    """Load a partial.
+
+    Returns:
+        The partial.
+    """
     try:
         # Maybe the partial is in the dictionary
         return partials_dict[name]
@@ -434,63 +440,48 @@ def render(
     def_ldel: str = "{{",
     def_rdel: str = "}}",
     scopes: Optional[Scopes] = None,
-    warn: bool = False,
-    keep: bool = False,
+    warn: bool = False,  # noqa: FBT001,FBT002
+    keep: bool = False,  # noqa: FBT001,FBT002
 ) -> str:
     """Render a mustache template.
 
     Renders a mustache template with a data scope and inline partial capability.
 
-    Arguments:
-
-    template      -- A file-like object or a string containing the template.
-
-    data          -- A python dictionary with your data scope.
-
-    partials_path -- The path to where your partials are stored.
-                     If set to None, then partials won't be loaded from the file system
-                     (defaults to '.').
-
-    partials_ext  -- The extension that you want the parser to look for
-                     (defaults to 'mustache').
-
-    partials_dict -- A python dictionary which will be search for partials
-                     before the filesystem is. {'include': 'foo'} is the same
-                     as a file called include.mustache
-                     (defaults to {}).
-
-    padding       -- This is for padding partials, and shouldn't be used
-                     (but can be if you really want to).
-
-    def_ldel      -- The default left delimiter
-                     ("{{" by default, as in spec compliant mustache).
-
-    def_rdel      -- The default right delimiter
-                     ("}}" by default, as in spec compliant mustache).
-
-    scopes        -- The list of scopes that get_key will look through.
-
-    warn          -- Log a warning when a template substitution isn't found in the data
-
-    keep          -- Keep unreplaced tags when a substitution isn't found in the data.
-
+    Args:
+        template: A file-like object or a string containing the template.
+        data: A python dictionary with your data scope.
+        partials_path: The path to where your partials are stored.
+             If set to None, then partials won't be loaded from the file system
+             (defaults to '.').
+        partials_ext: The extension that you want the parser to look for
+            (defaults to 'mustache').
+        partials_dict: A python dictionary which will be search for partials
+             before the filesystem is. {'include': 'foo'} is the same
+             as a file called include.mustache
+             (defaults to {}).
+        padding: This is for padding partials, and shouldn't be used
+            (but can be if you really want to).
+        def_ldel: The default left delimiter
+             ("{{" by default, as in spec compliant mustache).
+        def_rdel: The default right delimiter
+             ("}}" by default, as in spec compliant mustache).
+        scopes: The list of scopes that get_key will look through.
+        warn: Log a warning when a template substitution isn't found in the data
+        keep: Keep unreplaced tags when a substitution isn't found in the data.
 
     Returns:
-
-    A string containing the rendered template.
+        A string containing the rendered template.
     """
-
     # If the template is a sequence but not derived from a string
     if isinstance(template, Sequence) and not isinstance(template, str):
         # Then we don't need to tokenize it
         # But it does need to be a generator
         tokens: Iterator[tuple[str, str]] = (token for token in template)
+    elif template in g_token_cache:
+        tokens = (token for token in g_token_cache[template])
     else:
-        if template in g_token_cache:
-            tokens = (token for token in g_token_cache[template])
-        else:
-            # Otherwise make a generator
-            tokens = tokenize(template, def_ldel, def_rdel)
+        # Otherwise make a generator
+        tokens = tokenize(template, def_ldel, def_rdel)
 
     output = ""
 
@@ -509,7 +500,7 @@ def render(
 
         # If the current scope is falsy and not the only scope
         elif not current_scope and len(scopes) != 1:
-            if tag in ["section", "inverted section"]:
+            if tag in {"section", "inverted section"}:
                 # Set the most recent scope to a falsy value
                 scopes.insert(0, False)
 
@@ -594,7 +585,7 @@ def render(
                         padding=padding,
                         def_ldel=def_ldel,
                         def_rdel=def_rdel,
-                        scopes=data and [data] + scopes or scopes,
+                        scopes=(data and [data, *scopes]) or scopes,
                         warn=warn,
                         keep=keep,
                     ),
@@ -624,7 +615,7 @@ def render(
                 # For every item in the scope
                 for thing in scope:
                     # Append it as the most recent scope and render
-                    new_scope = [thing] + scopes
+                    new_scope = [thing, *scopes]
                     rend = render(
                         template=tags,
                         scopes=new_scope,
@@ -648,7 +639,7 @@ def render(
             scope = _get_key(
                 key, scopes, warn=warn, keep=keep, def_ldel=def_ldel, def_rdel=def_rdel
             )
-            scopes.insert(0, cast(Literal[False], not scope))
+            scopes.insert(0, cast("Literal[False]", not scope))
 
         # If we're a partial
         elif tag == "partial":

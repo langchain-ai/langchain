@@ -1,168 +1,109 @@
-name: API docs build
+name: '📚 API Docs'
+run-name: 'Build & Deploy API Reference'
+# Runs daily or can be triggered manually for immediate updates
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 13 * * *'
+    - cron:  '0 13 * * *'  # Daily at 1PM UTC
 env:
-  POETRY_VERSION: "1.8.1"
   PYTHON_VERSION: "3.11"
 
 jobs:
+  # Only runs on main repository to prevent unnecessary builds on forks
   build:
     if: github.repository == 'langchain-ai/langchain' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: langchain
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain-api-docs-html
           path: langchain-api-docs-html
           token: ${{ secrets.TOKEN_GITHUB_API_DOCS_HTML }}
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-google
-          path: langchain-google
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-datastax
-          path: langchain-datastax
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-nvidia
-          path: langchain-nvidia
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-cohere
-          path: langchain-cohere
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-elastic
-          path: langchain-elastic
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-postgres
-          path: langchain-postgres
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-aws
-          path: langchain-aws
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-weaviate
-          path: langchain-weaviate
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-ai21
-          path: langchain-ai21
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-together
-          path: langchain-together
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-experimental
-          path: langchain-experimental
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-milvus
-          path: langchain-milvus
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-unstructured
-          path: langchain-unstructured
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-databricks
-          path: langchain-databricks
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-ibm
-          path: langchain-ibm
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-azure
-          path: langchain-azure
-      - uses: actions/checkout@v4
-        with:
-          repository: langchain-ai/langchain-mongodb
-          path: langchain-mongodb
 
+      - name: '📋 Extract Repository List with yq'
+        id: get-unsorted-repos
+        uses: mikefarah/yq@master
+        with:
+          cmd: |
+            yq '
+              .packages[]
+              | select(
+                  (
+                    (.repo | test("^langchain-ai/"))
+                    and
+                    (.repo != "langchain-ai/langchain")
+                  )
+                  or
+                  (.include_in_api_ref // false)
+                )
+              | .repo
+            ' langchain/libs/packages.yml
 
+      - name: '📋 Parse YAML & Checkout Repositories'
+        env:
+          REPOS_UNSORTED: ${{ steps.get-unsorted-repos.outputs.result }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get unique repositories
+          REPOS=$(echo "$REPOS_UNSORTED" | sort -u)
+          # Checkout each unique repository
+          for repo in $REPOS; do
+            # Validate repository format (allow any org with proper format)
+            if [[ ! "$repo" =~ ^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository format: $repo"
+              exit 1
+            fi
 
-      - name: Set Git config
+            REPO_NAME=$(echo $repo | cut -d'/' -f2)
+
+            # Additional validation for repo name
+            if [[ ! "$REPO_NAME" =~ ^[a-zA-Z0-9_.-]+$ ]]; then
+              echo "Error: Invalid repository name: $REPO_NAME"
+              exit 1
+            fi
+            echo "Checking out $repo to $REPO_NAME"
+            git clone --depth 1 https://github.com/$repo.git $REPO_NAME
+          done
+
+      - name: '🐍 Setup Python ${{ env.PYTHON_VERSION }}'
+        uses: actions/setup-python@v6
+        id: setup-python
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: '📦 Install Initial Python Dependencies'
+        working-directory: langchain
+        run: |
+          python -m pip install -U uv
+          python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
+
+      - name: '📦 Organize Library Directories'
+        run: python langchain/.github/scripts/prep_api_docs_build.py
+
+      - name: '🧹 Remove Old HTML Files'
+        run:
+          rm -rf langchain-api-docs-html/api_reference_build/html
+
+      - name: '📦 Install Documentation Dependencies'
+        working-directory: langchain
+        run: |
+          python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+          python -m uv pip install -r docs/api_reference/requirements.txt
+
+      - name: '🔧 Configure Git Settings'
         working-directory: langchain
         run: |
           git config --local user.email "actions@github.com"
           git config --local user.name "Github Actions"
-          
-      - name: Move libs
-        run: |
-          rm -rf \
-            langchain/libs/partners/google-genai \
-            langchain/libs/partners/google-vertexai \
-            langchain/libs/partners/astradb \
-            langchain/libs/partners/nvidia-trt \
-            langchain/libs/partners/nvidia-ai-endpoints \
-            langchain/libs/partners/cohere \
-            langchain/libs/partners/elasticsearch \
-            langchain/libs/partners/upstage \
-            langchain/libs/partners/ai21 \
-            langchain/libs/partners/together \
-            langchain/libs/standard-tests \
-            langchain/libs/experimental \
-            langchain/libs/partners/milvus \
-            langchain/libs/partners/unstructured \
-            langchain/libs/partners/databricks \
-            langchain/libs/partners/ibm \
-            langchain/libs/partners/azure-dynamic-sessions \
-            langchain/libs/partners/mongodb
-          mv langchain-google/libs/genai langchain/libs/partners/google-genai
-          mv langchain-google/libs/vertexai langchain/libs/partners/google-vertexai
-          mv langchain-google/libs/community langchain/libs/partners/google-community
-          mv langchain-datastax/libs/astradb langchain/libs/partners/astradb
-          mv langchain-nvidia/libs/ai-endpoints langchain/libs/partners/nvidia-ai-endpoints
-          mv langchain-cohere/libs/cohere langchain/libs/partners/cohere
-          mv langchain-elastic/libs/elasticsearch langchain/libs/partners/elasticsearch
-          mv langchain-postgres langchain/libs/partners/postgres
-          mv langchain-aws/libs/aws langchain/libs/partners/aws
-          mv langchain-weaviate/libs/weaviate langchain/libs/partners/weaviate
-          mv langchain-ai21/libs/ai21 langchain/libs/partners/ai21
-          mv langchain-together/libs/together langchain/libs/partners/together
-          mv langchain-experimental/libs/experimental langchain/libs/experimental
-          mv langchain-milvus/libs/milvus langchain/libs/partners/milvus
-          mv langchain-unstructured/libs/unstructured langchain/libs/partners/unstructured
-          mv langchain-databricks/libs/databricks langchain/libs/partners/databricks
-          mv langchain-ibm/libs/ibm langchain/libs/partners/ibm
-          mv langchain-azure/libs/azure-dynamic-sessions langchain/libs/partners/azure-dynamic-sessions
-          mv langchain-mongodb/libs/mongodb langchain/libs/partners/mongodb
 
-      - name: Rm old html
-        run:
-          rm -rf langchain-api-docs-html/api_reference_build/html
-
-      - name: Set up Python ${{ env.PYTHON_VERSION }} + Poetry ${{ env.POETRY_VERSION }}
-        uses: "./langchain/.github/actions/poetry_setup"
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          poetry-version: ${{ env.POETRY_VERSION }}
-          cache-key: api-docs
-          working-directory: langchain
-
-      - name: Install dependencies
-        working-directory: langchain
-        run: |
-          python -m pip install -U uv
-          python -m uv pip install --upgrade --no-cache-dir pip setuptools
-          # skip airbyte due to pandas dependency issue
-          python -m uv pip install $(ls ./libs/partners | grep -vE "airbyte" | xargs -I {} echo "./libs/partners/{}")
-          python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental
-          python -m uv pip install -r docs/api_reference/requirements.txt
-
-      - name: Build docs
+      - name: '📚 Build API Documentation'
         working-directory: langchain
         run: |
           python docs/api_reference/create_api_rst.py

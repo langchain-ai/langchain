@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.memory import BaseMemory
@@ -20,17 +20,17 @@ def _get_default_system_message() -> SystemMessage:
             "Do your best to answer the questions. "
             "Feel free to use any tools available to look up "
             "relevant information, only if necessary"
-        )
+        ),
     )
 
 
 def create_conversational_retrieval_agent(
     llm: BaseLanguageModel,
-    tools: List[BaseTool],
-    remember_intermediate_steps: bool = True,
+    tools: list[BaseTool],
+    remember_intermediate_steps: bool = True,  # noqa: FBT001,FBT002
     memory_key: str = "chat_history",
     system_message: Optional[SystemMessage] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
     max_token_limit: int = 2000,
     **kwargs: Any,
 ) -> AgentExecutor:
@@ -51,14 +51,16 @@ def create_conversational_retrieval_agent(
             defaults to False.
         max_token_limit: The max number of tokens to keep around in memory.
             Defaults to 2000.
+        **kwargs: Additional keyword arguments to pass to the AgentExecutor.
 
     Returns:
         An agent executor initialized appropriately
     """
-
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(
-            memory_key=memory_key, llm=llm, max_token_limit=max_token_limit
+            memory_key=memory_key,
+            llm=llm,
+            max_token_limit=max_token_limit,
         )
     else:
         memory = ConversationTokenBufferMemory(

@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.outputs import LLMResult
+from typing_extensions import override
 
 from langchain.callbacks.streaming_aiter import AsyncIteratorCallbackHandler
 
@@ -11,10 +12,12 @@ DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
     """Callback handler that returns an async iterator.
+
     Only the final output of the agent will be iterated.
     """
 
     def append_to_last_tokens(self, token: str) -> None:
+        """Append token to the last tokens."""
         self.last_tokens.append(token)
         self.last_tokens_stripped.append(token.strip())
         if len(self.last_tokens) > len(self.answer_prefix_tokens):
@@ -22,15 +25,15 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
             self.last_tokens_stripped.pop(0)
 
     def check_if_answer_reached(self) -> bool:
+        """Check if the answer has been reached."""
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
-        else:
-            return self.last_tokens == self.answer_prefix_tokens
+        return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[List[str]] = None,
+        answer_prefix_tokens: Optional[list[str]] = None,
         strip_tokens: bool = True,
         stream_prefix: bool = False,
     ) -> None:
@@ -61,17 +64,23 @@ class AsyncFinalIteratorCallbackHandler(AsyncIteratorCallbackHandler):
         self.stream_prefix = stream_prefix
         self.answer_reached = False
 
+    @override
     async def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         # If two calls are made in a row, this resets the state
         self.done.clear()
         self.answer_reached = False
 
+    @override
     async def on_llm_end(self, response: LLMResult, **kwargs: Any) -> None:
         if self.answer_reached:
             self.done.set()
 
+    @override
     async def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)

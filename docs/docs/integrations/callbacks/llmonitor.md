@@ -83,21 +83,28 @@ agent_executor.run("how many letters in the word educa?", callbacks=[handler])
 Another example:
 
 ```python
-from langchain.agents import load_tools, initialize_agent, AgentType
-from langchain_openai import OpenAI
-from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+import os
 
+from langchain_community.agent_toolkits.load_tools import load_tools
+from langchain_community.callbacks.llmonitor_callback import LLMonitorCallbackHandler
+from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent
+
+os.environ["LLMONITOR_APP_ID"] = ""
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["SERPAPI_API_KEY"] = ""
 
 handler = LLMonitorCallbackHandler()
-
-llm = OpenAI(temperature=0)
+llm = ChatOpenAI(temperature=0, callbacks=[handler])
 tools = load_tools(["serpapi", "llm-math"], llm=llm)
-agent = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, metadata={ "agent_name": "GirlfriendAgeFinder" })  # <- recommended, assign a custom name
+agent = create_react_agent("openai:gpt-4.1-mini", tools)
 
-agent.run(
-    "Who is Leo DiCaprio's girlfriend? What is her current age raised to the 0.43 power?",
-    callbacks=[handler],
-)
+input_message = {
+    "role": "user",
+    "content": "What's the weather in SF?",
+}
+
+agent.invoke({"messages": [input_message]})
 ```
 
 ## User Tracking
@@ -110,7 +117,7 @@ with identify("user-123"):
     llm.invoke("Tell me a joke")
 
 with identify("user-456", user_props={"email": "user456@test.com"}):
-    agent.run("Who is Leo DiCaprio's girlfriend?")
+    agent.invoke(...)
 ```
 ## Support
 

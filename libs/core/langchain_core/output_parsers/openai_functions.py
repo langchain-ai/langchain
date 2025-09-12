@@ -1,10 +1,14 @@
+"""Parsers for OpenAI functions output."""
+
 import copy
 import json
 from types import GenericAlias
 from typing import Any, Optional, Union
 
-import jsonpatch  # type: ignore[import]
+import jsonpatch  # type: ignore[import-untyped]
 from pydantic import BaseModel, model_validator
+from pydantic.v1 import BaseModel as BaseModelV1
+from typing_extensions import override
 
 from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import (
@@ -21,6 +25,7 @@ class OutputFunctionsParser(BaseGenerationOutputParser[Any]):
     args_only: bool = True
     """Whether to only return the arguments to the function call."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -68,6 +73,7 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
     def _type(self) -> str:
         return "json_functions"
 
+    @override
     def _diff(self, prev: Optional[Any], next: Any) -> Any:
         return jsonpatch.make_patch(prev, next).patch
 
@@ -84,7 +90,6 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         Raises:
             OutputParserException: If the output is not valid JSON.
         """
-
         if len(result) != 1:
             msg = f"Expected exactly one result, but got {len(result)}"
             raise OutputParserException(msg)
@@ -98,9 +103,8 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
         except KeyError as exc:
             if partial:
                 return None
-            else:
-                msg = f"Could not parse function call: {exc}"
-                raise OutputParserException(msg) from exc
+            msg = f"Could not parse function call: {exc}"
+            raise OutputParserException(msg) from exc
         try:
             if partial:
                 try:
@@ -108,35 +112,31 @@ class JsonOutputFunctionsParser(BaseCumulativeTransformOutputParser[Any]):
                         return parse_partial_json(
                             function_call["arguments"], strict=self.strict
                         )
-                    else:
-                        return {
-                            **function_call,
-                            "arguments": parse_partial_json(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
+                    return {
+                        **function_call,
+                        "arguments": parse_partial_json(
+                            function_call["arguments"], strict=self.strict
+                        ),
+                    }
                 except json.JSONDecodeError:
                     return None
+            elif self.args_only:
+                try:
+                    return json.loads(function_call["arguments"], strict=self.strict)
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
             else:
-                if self.args_only:
-                    try:
-                        return json.loads(
+                try:
+                    return {
+                        **function_call,
+                        "arguments": json.loads(
                             function_call["arguments"], strict=self.strict
-                        )
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
-                else:
-                    try:
-                        return {
-                            **function_call,
-                            "arguments": json.loads(
-                                function_call["arguments"], strict=self.strict
-                            ),
-                        }
-                    except (json.JSONDecodeError, TypeError) as exc:
-                        msg = f"Could not parse function call data: {exc}"
-                        raise OutputParserException(msg) from exc
+                        ),
+                    }
+                except (json.JSONDecodeError, TypeError) as exc:
+                    msg = f"Could not parse function call data: {exc}"
+                    raise OutputParserException(msg) from exc
         except KeyError:
             return None
 
@@ -189,7 +189,6 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
     the provided schema.
 
     Example:
-
         ... code-block:: python
 
             message = AIMessage(
@@ -215,6 +214,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
                 pydantic_schema={"cookie": Cookie, "dog": Dog}
             )
             result = parser.parse_result([chat_generation])
+
     """
 
     pydantic_schema: Union[type[BaseModel], dict[str, type[BaseModel]]]
@@ -253,6 +253,7 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             raise ValueError(msg)
         return values
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 
@@ -260,26 +261,32 @@ class PydanticOutputFunctionsParser(OutputFunctionsParser):
             result: The result of the LLM call.
             partial: Whether to parse partial JSON objects. Default is False.
 
+        Raises:
+            ValueError: If the pydantic schema is not valid.
+
         Returns:
             The parsed JSON object.
         """
-        _result = super().parse_result(result)
+        result_ = super().parse_result(result)
         if self.args_only:
             if hasattr(self.pydantic_schema, "model_validate_json"):
-                pydantic_args = self.pydantic_schema.model_validate_json(_result)
+                pydantic_args = self.pydantic_schema.model_validate_json(result_)
             else:
-                pydantic_args = self.pydantic_schema.parse_raw(_result)  # type: ignore
+                pydantic_args = self.pydantic_schema.parse_raw(result_)  # type: ignore[attr-defined]
         else:
-            fn_name = _result["name"]
-            _args = _result["arguments"]
+            fn_name = result_["name"]
+            args = result_["arguments"]
             if isinstance(self.pydantic_schema, dict):
                 pydantic_schema = self.pydantic_schema[fn_name]
             else:
                 pydantic_schema = self.pydantic_schema
-            if hasattr(pydantic_schema, "model_validate_json"):
-                pydantic_args = pydantic_schema.model_validate_json(_args)  # type: ignore
+            if issubclass(pydantic_schema, BaseModel):
+                pydantic_args = pydantic_schema.model_validate_json(args)
+            elif issubclass(pydantic_schema, BaseModelV1):
+                pydantic_args = pydantic_schema.parse_raw(args)
             else:
-                pydantic_args = pydantic_schema.parse_raw(_args)  # type: ignore
+                msg = f"Unsupported pydantic schema: {pydantic_schema}"
+                raise ValueError(msg)
         return pydantic_args
 
 
@@ -289,6 +296,7 @@ class PydanticAttrOutputFunctionsParser(PydanticOutputFunctionsParser):
     attr_name: str
     """The name of the attribute to return."""
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> Any:
         """Parse the result of an LLM call to a JSON object.
 

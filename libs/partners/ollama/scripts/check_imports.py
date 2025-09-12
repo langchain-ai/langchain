@@ -1,3 +1,5 @@
+"""load multiple Python files specified as command line arguments."""
+
 import sys
 import traceback
 from importlib.machinery import SourceFileLoader

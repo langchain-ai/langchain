@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Union
 
 from pydantic import BaseModel
 
@@ -75,7 +75,6 @@ def _remove_enum(obj: Any) -> None:
 
 def _schema(obj: Any) -> dict:
     """Return the schema of the object."""
-
     if not is_basemodel_subclass(obj):
         msg = f"Object must be a Pydantic BaseModel subclass. Got {type(obj)}"
         raise TypeError(msg)
@@ -98,6 +97,41 @@ def _schema(obj: Any) -> dict:
     return schema_
 
 
+def _remove_additionalproperties_from_untyped_dicts(schema: dict) -> dict[str, Any]:
+    """Remove `"additionalProperties": True` from dicts in the schema.
+
+    Pydantic 2.11 and later versions include `"additionalProperties": True` when
+    generating JSON schemas for dict properties with `Any` or `object` values.
+    """
+
+    def _remove_dict_additional_props(
+        obj: Union[dict[str, Any], list[Any]], *, inside_properties: bool = False
+    ) -> None:
+        if isinstance(obj, dict):
+            if (
+                inside_properties
+                and obj.get("type") == "object"
+                and obj.get("additionalProperties") is True
+            ):
+                obj.pop("additionalProperties", None)
+
+            # Recursively scan children
+            for key, value in obj.items():
+                # We are "inside_properties" if the *current* key is "properties",
+                # or if we were already inside properties in the caller.
+                next_inside_properties = inside_properties or (key == "properties")
+                _remove_dict_additional_props(
+                    value, inside_properties=next_inside_properties
+                )
+
+        elif isinstance(obj, list):
+            for item in obj:
+                _remove_dict_additional_props(item, inside_properties=inside_properties)
+
+    _remove_dict_additional_props(schema, inside_properties=False)
+    return schema
+
+
 def _normalize_schema(obj: Any) -> dict[str, Any]:
     """Generate a schema and normalize it.
 
@@ -118,4 +152,5 @@ def _normalize_schema(obj: Any) -> dict[str, Any]:
     remove_all_none_default(data)
     replace_all_of_with_ref(data)
     _remove_enum(data)
+    _remove_additionalproperties_from_untyped_dicts(data)
     return data

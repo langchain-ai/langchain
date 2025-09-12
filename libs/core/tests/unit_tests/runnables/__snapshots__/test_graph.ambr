@@ -1,25 +1,85 @@
 # serializer version: 1
 # name: test_double_nested_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	parent_1(parent_1)
-  	child_child_1_grandchild_1(grandchild_1)
-  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
-  	child_child_2(child_2)
   	parent_2(parent_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> parent_1;
-  	child_child_2 --> parent_2;
-  	parent_1 --> child_child_1_grandchild_1;
+  	child\3achild_2 --> parent_2;
+  	parent_1 --> child\3achild_1\3agrandchild_1;
   	parent_2 --> __end__;
   	subgraph child
-  	child_child_1_grandchild_2 --> child_child_2;
+  	child\3achild_2(child_2)
+  	child\3achild_1\3agrandchild_2 --> child\3achild_2;
   	subgraph child_1
-  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
+  	child\3achild_1\3agrandchild_1(grandchild_1)
+  	child\3achild_1\3agrandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child\3achild_1\3agrandchild_1 --> child\3achild_1\3agrandchild_2;
   	end
   	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_graph_mermaid_duplicate_nodes[mermaid]
+  '''
+  graph TD;
+  	PromptInput --> PromptTemplate_1;
+  	Parallel\3cllm1\2cllm2\3eInput --> FakeListLLM_1;
+  	FakeListLLM_1 --> Parallel\3cllm1\2cllm2\3eOutput;
+  	Parallel\3cllm1\2cllm2\3eInput --> FakeListLLM_2;
+  	FakeListLLM_2 --> Parallel\3cllm1\2cllm2\3eOutput;
+  	PromptTemplate_1 --> Parallel\3cllm1\2cllm2\3eInput;
+  	PromptTemplate_2 --> PromptTemplateOutput;
+  	Parallel\3cllm1\2cllm2\3eOutput --> PromptTemplate_2;
+  
+  '''
+# ---
+# name: test_graph_mermaid_frontmatter_config[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+    look: handDrawn
+    theme: neutral
+    themeVariables:
+      primaryColor: '#e2e2e2'
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	my_node([my_node]):::last
+  	__start__ --> my_node;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_graph_mermaid_special_chars[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	\5f00\59cb(开始)
+  	\7ed3\675f(结束)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> \5f00\59cb;
+  	\5f00\59cb --> \7ed3\675f;
+  	\7ed3\675f --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -59,7 +119,11 @@
 # ---
 # name: test_graph_sequence[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
@@ -454,6 +518,7 @@
                   'const': 'ai',
                   'default': 'ai',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -566,6 +631,7 @@
                   'const': 'AIMessageChunk',
                   'default': 'AIMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
                 'usage_metadata': dict({
                   'anyOf': list([
@@ -650,6 +716,7 @@
                   'const': 'chat',
                   'default': 'chat',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -724,6 +791,7 @@
                   'const': 'ChatMessageChunk',
                   'default': 'ChatMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -795,6 +863,7 @@
                   'const': 'function',
                   'default': 'function',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -857,6 +926,7 @@
                   'const': 'FunctionMessageChunk',
                   'default': 'FunctionMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -880,12 +950,8 @@
                         from langchain_core.messages import HumanMessage, SystemMessage
                 
                         messages = [
-                            SystemMessage(
-                                content="You are a helpful assistant! Your name is Bob."
-                            ),
-                            HumanMessage(
-                                content="What is your name?"
-                            )
+                            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                            HumanMessage(content="What is your name?"),
                         ]
                 
                         # Instantiate a chat model and invoke it with the messages
@@ -955,6 +1021,7 @@
                   'const': 'human',
                   'default': 'human',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1029,6 +1096,7 @@
                   'const': 'HumanMessageChunk',
                   'default': 'HumanMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1054,6 +1122,8 @@
                         }
                 
                 .. versionadded:: 0.3.9
+                
+                May also hold extra provider-specific keys.
               ''',
               'properties': dict({
                 'audio': dict({
@@ -1127,6 +1197,7 @@
                 'type': dict({
                   'const': 'invalid_tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1183,12 +1254,8 @@
                         from langchain_core.messages import HumanMessage, SystemMessage
                 
                         messages = [
-                            SystemMessage(
-                                content="You are a helpful assistant! Your name is Bob."
-                            ),
-                            HumanMessage(
-                                content="What is your name?"
-                            )
+                            SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                            HumanMessage(content="What is your name?"),
                         ]
                 
                         # Define a chat model and invoke it with the messages
@@ -1252,6 +1319,7 @@
                   'const': 'system',
                   'default': 'system',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1321,6 +1389,7 @@
                   'const': 'SystemMessageChunk',
                   'default': 'SystemMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1337,11 +1406,7 @@
                 
                     .. code-block:: python
                 
-                        {
-                            "name": "foo",
-                            "args": {"a": 1},
-                            "id": "123"
-                        }
+                        {"name": "foo", "args": {"a": 1}, "id": "123"}
                 
                     This represents a request to call the tool named "foo" with arguments {"a": 1}
                     and an identifier of "123".
@@ -1369,6 +1434,7 @@
                 'type': dict({
                   'const': 'tool_call',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1392,12 +1458,12 @@
                 .. code-block:: python
                 
                     left_chunks = [ToolCallChunk(name="foo", args='{"a":', index=0)]
-                    right_chunks = [ToolCallChunk(name=None, args='1}', index=0)]
+                    right_chunks = [ToolCallChunk(name=None, args="1}", index=0)]
                 
                     (
                         AIMessageChunk(content="", tool_call_chunks=left_chunks)
                         + AIMessageChunk(content="", tool_call_chunks=right_chunks)
-                    ).tool_call_chunks == [ToolCallChunk(name='foo', args='{"a":1}', index=0)]
+                    ).tool_call_chunks == [ToolCallChunk(name="foo", args='{"a":1}', index=0)]
               ''',
               'properties': dict({
                 'args': dict({
@@ -1447,6 +1513,7 @@
                 'type': dict({
                   'const': 'tool_call_chunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1472,7 +1539,7 @@
                 
                         from langchain_core.messages import ToolMessage
                 
-                        ToolMessage(content='42', tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL')
+                        ToolMessage(content="42", tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL")
                 
                 
                 Example: A ToolMessage where only part of the tool output is sent to the model
@@ -1485,7 +1552,8 @@
                         from langchain_core.messages import ToolMessage
                 
                         tool_output = {
-                            "stdout": "From the graph we can see that the correlation between x and y is ...",
+                            "stdout": "From the graph we can see that the correlation between "
+                            "x and y is ...",
                             "stderr": None,
                             "artifacts": {"type": "image", "base64_data": "/9j/4gIcSU..."},
                         }
@@ -1493,7 +1561,7 @@
                         ToolMessage(
                             content=tool_output["stdout"],
                             artifact=tool_output,
-                            tool_call_id='call_Jja7J89XsjrOLA5r!MEOW!SL',
+                            tool_call_id="call_Jja7J89XsjrOLA5r!MEOW!SL",
                         )
                 
                 The tool_call_id field is used to associate the tool call request with the
@@ -1569,6 +1637,7 @@
                   'const': 'tool',
                   'default': 'tool',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1650,6 +1719,7 @@
                   'const': 'ToolMessageChunk',
                   'default': 'ToolMessageChunk',
                   'title': 'Type',
+                  'type': 'string',
                 }),
               }),
               'required': list([
@@ -1681,7 +1751,7 @@
                             "output_token_details": {
                                 "audio": 10,
                                 "reasoning": 200,
-                            }
+                            },
                         }
                 
                 .. versionchanged:: 0.3.9
@@ -1853,27 +1923,31 @@
   graph TD;
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
-  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
-  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	Parallel\3cas_list\2cas_str\3eInput --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel\3cas_list\2cas_str\3eOutput;
   	conditional_str_parser_input --> StrOutputParser;
   	StrOutputParser --> conditional_str_parser_output;
   	conditional_str_parser_input --> XMLOutputParser;
   	XMLOutputParser --> conditional_str_parser_output;
-  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
-  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
-  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	Parallel\3cas_list\2cas_str\3eInput --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel\3cas_list\2cas_str\3eOutput;
+  	FakeListLLM --> Parallel\3cas_list\2cas_str\3eInput;
   
   '''
 # ---
 # name: test_graph_sequence_map[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
   	FakeListLLM(FakeListLLM)
-  	Parallel_as_list_as_str_Input(Parallel<as_list,as_str>Input)
-  	Parallel_as_list_as_str_Output([Parallel<as_list,as_str>Output]):::last
+  	Parallel\3cas_list\2cas_str\3eInput(Parallel<as_list,as_str>Input)
+  	Parallel\3cas_list\2cas_str\3eOutput([Parallel<as_list,as_str>Output]):::last
   	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
   	conditional_str_parser_input(conditional_str_parser_input)
   	conditional_str_parser_output(conditional_str_parser_output)
@@ -1881,15 +1955,15 @@
   	XMLOutputParser(XMLOutputParser)
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
-  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
-  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	Parallel\3cas_list\2cas_str\3eInput --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel\3cas_list\2cas_str\3eOutput;
   	conditional_str_parser_input --> StrOutputParser;
   	StrOutputParser --> conditional_str_parser_output;
   	conditional_str_parser_input --> XMLOutputParser;
   	XMLOutputParser --> conditional_str_parser_output;
-  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
-  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
-  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	Parallel\3cas_list\2cas_str\3eInput --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel\3cas_list\2cas_str\3eOutput;
+  	FakeListLLM --> Parallel\3cas_list\2cas_str\3eInput;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -1917,7 +1991,11 @@
 # ---
 # name: test_graph_single_runnable[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	StrOutputParserInput([StrOutputParserInput]):::first
   	StrOutputParser(StrOutputParser)
@@ -1932,27 +2010,52 @@
 # ---
 # name: test_parallel_subgraph_mermaid[mermaid]
   '''
-  %%{init: {'flowchart': {'curve': 'linear'}}}%%
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	outer_1(outer_1)
-  	inner_1_inner_1(inner_1)
-  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
-  	inner_2_inner_1(inner_1)
-  	inner_2_inner_2(inner_2)
   	outer_2(outer_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> outer_1;
-  	inner_1_inner_2 --> outer_2;
-  	inner_2_inner_2 --> outer_2;
-  	outer_1 --> inner_1_inner_1;
-  	outer_1 --> inner_2_inner_1;
+  	inner_1\3ainner_2 --> outer_2;
+  	inner_2\3ainner_2 --> outer_2;
+  	outer_1 --> inner_1\3ainner_1;
+  	outer_1 --> inner_2\3ainner_1;
   	outer_2 --> __end__;
   	subgraph inner_1
-  	inner_1_inner_1 --> inner_1_inner_2;
+  	inner_1\3ainner_1(inner_1)
+  	inner_1\3ainner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
+  	inner_1\3ainner_1 --> inner_1\3ainner_2;
   	end
   	subgraph inner_2
-  	inner_2_inner_1 --> inner_2_inner_2;
+  	inner_2\3ainner_1(inner_1)
+  	inner_2\3ainner_2(inner_2)
+  	inner_2\3ainner_1 --> inner_2\3ainner_2;
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_single_node_subgraph_mermaid[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> sub\3ameow;
+  	sub\3ameow --> __end__;
+  	subgraph sub
+  	sub\3ameow(meow)
   	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
@@ -2021,4 +2124,39 @@
       }),
     ]),
   })
+# ---
+# name: test_triple_nested_subgraph_mermaid[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	parent_1(parent_1)
+  	parent_2(parent_2)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> parent_1;
+  	child\3achild_2 --> parent_2;
+  	parent_1 --> child\3achild_1\3agrandchild_1;
+  	parent_2 --> __end__;
+  	subgraph child
+  	child\3achild_2(child_2)
+  	child\3achild_1\3agrandchild_2 --> child\3achild_2;
+  	subgraph child_1
+  	child\3achild_1\3agrandchild_1(grandchild_1)
+  	child\3achild_1\3agrandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child\3achild_1\3agrandchild_1\3agreatgrandchild --> child\3achild_1\3agrandchild_2;
+  	subgraph grandchild_1
+  	child\3achild_1\3agrandchild_1\3agreatgrandchild(greatgrandchild)
+  	child\3achild_1\3agrandchild_1 --> child\3achild_1\3agrandchild_1\3agreatgrandchild;
+  	end
+  	end
+  	end
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
 # ---

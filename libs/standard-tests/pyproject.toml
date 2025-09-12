@@ -1,84 +1,115 @@
-[tool.poetry]
-name = "langchain-standard-tests"
-version = "0.1.1"
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
+license = { text = "MIT" }
+requires-python = ">=3.9"
+dependencies = [
+    "langchain-core<2.0.0,>=0.3.75",
+    "pytest<9,>=7",
+    "pytest-asyncio<2,>=0.20",
+    "httpx<1,>=0.28.1",
+    "syrupy<5,>=4",
+    "pytest-socket<1,>=0.7.0",
+    "pytest-benchmark",
+    "pytest-codspeed",
+    "pytest-recording",
+    "vcrpy>=7.0",
+    "numpy>=1.26.2; python_version<'3.13'",
+    "numpy>=2.1.0; python_version>='3.13'",
+]
+name = "langchain-tests"
+version = "0.3.21"
 description = "Standard tests for LangChain implementations"
-authors = ["Erick Friis <erick@langchain.dev>"]
 readme = "README.md"
-repository = "https://github.com/langchain-ai/langchain"
-license = "MIT"
 
-[tool.poetry.urls]
+[project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/standard-tests"
+repository = "https://github.com/langchain-ai/langchain"
 
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-langchain-core = "^0.3.0"
-pytest = ">=7,<9"
-httpx = "^0.27.0"
-syrupy = "^4"
-
-[tool.poetry.group.test]
-optional = true
-
-[tool.poetry.group.test.dependencies]
-langchain-core = { path = "../core", develop = true }
-pytest-asyncio = "^0.23.7"
-
-[tool.poetry.group.test_integration]
-optional = true
-
-[tool.poetry.group.test_integration.dependencies]
-
-[tool.poetry.group.codespell]
-optional = true
-
-[tool.poetry.group.codespell.dependencies]
-codespell = "^2.2.0"
-
-[tool.poetry.group.lint]
-optional = true
-
-[tool.poetry.group.lint.dependencies]
-ruff = "^0.1.5"
-
-[tool.poetry.group.typing.dependencies]
-mypy = "^0.991"
-langchain-core = { path = "../core", develop = true }
-
-[tool.ruff.lint]
-select = [
-  "E",    # pycodestyle
-  "F",    # pyflakes
-  "I",    # isort
-  "T201", # print
+[dependency-groups]
+test = ["langchain-core"]
+test_integration = []
+lint = ["ruff<0.13,>=0.12.10"]
+typing = [
+    "mypy<1.19,>=1.18.1",
+    "types-pyyaml<7.0.0.0,>=6.0.12.2",
+    "langchain-core",
 ]
 
+[tool.uv.sources]
+langchain-core = { path = "../core", editable = true }
+
 [tool.mypy]
-disallow_untyped_defs = "True"
+plugins = ["pydantic.mypy"]
+strict = true
+enable_error_code = "deprecated"
+warn_unreachable = true
+
+# TODO: activate for 'strict' checking
+disallow_any_generics = false
+
+[[tool.mypy.overrides]]
+module = ["vcr.*",]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.ruff.lint]
+select = [ "ALL",]
+ignore = [
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "PLR2004", # Magic numbers
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "S101",    # Asserts allowed in tests
+    "S311",    # No need for strong crypto in tests
+    "SLF001",  # Tests may call private methods
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
+
+    # TODO rules
+    "ANN401",
+    "BLE",
+]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
+
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pydocstyle.convention = "google"
+pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [ "D1",]
+"scripts/**" = [ "INP",]
 
 [tool.coverage.run]
 omit = ["tests/*"]
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 [tool.pytest.ini_options]
-# --strict-markers will raise errors on unknown marks.
-# https://docs.pytest.org/en/7.1.x/how-to/mark.html#raising-errors-on-unknown-marks
-#
-# https://docs.pytest.org/en/7.1.x/reference/reference.html
-# --strict-config       any warnings encountered while parsing the `pytest`
-#                       section of the configuration file raise errors.
-#
-# https://github.com/tophat/syrupy
-# --snapshot-warn-unused    Prints a warning on unused snapshots rather than fail the test suite.
 addopts = "--strict-markers --strict-config --durations=5 -vv"
-# Registering custom markers.
-# https://docs.pytest.org/en/7.1.x/example/markers.html#registering-markers
 markers = [
-  "requires: mark tests as requiring a specific library",
-  "scheduled: mark tests to run in scheduled testing",
-  "compile: mark placeholder test used to compile integration tests without running them",
+    "requires: mark tests as requiring a specific library",
+    "scheduled: mark tests to run in scheduled testing",
+    "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"

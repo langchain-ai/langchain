@@ -1,12 +1,12 @@
 # Wolfram Alpha
 
->[WolframAlpha](https://en.wikipedia.org/wiki/WolframAlpha) is an answer engine developed by `Wolfram Research`. 
+>[WolframAlpha](https://en.wikipedia.org/wiki/WolframAlpha) is an answer engine developed by `Wolfram Research`.
 > It answers factual queries by computing answers from externally sourced data.
 
 This page covers how to use the `Wolfram Alpha API` within LangChain.
 
 ## Installation and Setup
-- Install requirements with 
+- Install requirements with
 ```bash
 pip install wolframalpha
 ```
@@ -32,7 +32,7 @@ For a more detailed walkthrough of this wrapper, see [this notebook](/docs/integ
 You can also easily load this wrapper as a Tool (to use with an Agent).
 You can do this with:
 ```python
-from langchain.agents import load_tools
+from langchain_community.agent_toolkits.load_tools import load_tools
 tools = load_tools(["wolfram-alpha"])
 ```
 

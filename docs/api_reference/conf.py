@@ -11,6 +11,7 @@
 import json
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import toml
@@ -87,12 +88,24 @@ class Beta(BaseAdmonition):
 def setup(app):
     app.add_directive("example_links", ExampleLinksDirective)
     app.add_directive("beta", Beta)
+    app.connect("autodoc-skip-member", skip_private_members)
+
+
+def skip_private_members(app, what, name, obj, skip, options):
+    if skip:
+        return True
+    if hasattr(obj, "__doc__") and obj.__doc__ and ":private:" in obj.__doc__:
+        return True
+    if name == "__init__" and obj.__objclass__ is object:
+        # don't document default init
+        return True
+    return None
 
 
 # -- Project information -----------------------------------------------------
 
 project = "🦜🔗 LangChain"
-copyright = "2023, LangChain Inc"
+copyright = f"{datetime.now().year}, LangChain Inc"
 author = "LangChain, Inc"
 
 html_favicon = "_static/img/brand/favicon.png"
@@ -116,6 +129,7 @@ extensions = [
     "_extensions.gallery_directive",
     "sphinx_design",
     "sphinx_copybutton",
+    "sphinxcontrib.googleanalytics",
 ]
 source_suffix = [".rst", ".md"]
 
@@ -222,9 +236,7 @@ html_theme_options = {
         },
     ],
     "icon_links_label": "Quick Links",
-    "external_links": [
-        {"name": "Legacy reference", "url": "https://api.python.langchain.com/"},
-    ],
+    "external_links": [],
 }
 
 
@@ -250,6 +262,8 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+# Don't fail on autosummary import warnings
+autosummary_ignore_module_all = False
 
 html_copy_source = False
 html_show_sourcelink = False
@@ -257,8 +271,14 @@ html_show_sourcelink = False
 # Set canonical URL from the Read the Docs Domain
 html_baseurl = os.environ.get("READTHEDOCS_CANONICAL_URL", "")
 
+googleanalytics_id = "G-9B66JQQH2F"
+
 # Tell Jinja2 templates the build is running on Read the Docs
 if os.environ.get("READTHEDOCS", "") == "True":
     html_context["READTHEDOCS"] = True
 
 master_doc = "index"
+
+# If a signature’s length in characters exceeds 60,
+# each parameter within the signature will be displayed on an individual logical line
+maximum_signature_line_length = 60

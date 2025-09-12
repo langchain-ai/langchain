@@ -21,6 +21,9 @@ def test_create() -> None:
 
     expected_output = [Document(page_content="I know the answer!")]
     output = chain.invoke(
-        {"input": "What is the answer?", "chat_history": ["hi", "hi"]}
+        {
+            "input": "What is the answer?",
+            "chat_history": ["hi", "hi"],
+        },
     )
     assert output == expected_output

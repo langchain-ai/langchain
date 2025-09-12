@@ -1,6 +1,6 @@
 import traceback
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Union
 
 from .core import (
     Frontmatter,
@@ -19,7 +19,7 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
     Args:
         prompt_path: The path to the prompty file.
-        configuration: The configuration to use. Defaults to "default".
+        configuration: The configuration to use. Defaults to ``'default'``.
 
     Returns:
         The Prompty object.
@@ -120,13 +120,13 @@ def load(prompt_path: str, configuration: str = "default") -> Prompty:
 
 def prepare(
     prompt: Prompty,
-    inputs: Dict[str, Any] = {},
+    inputs: dict[str, Any] = {},
 ) -> Any:
     """Prepare the inputs for the prompty.
 
     Args:
         prompt: The Prompty object.
-        inputs: The inputs to the prompty. Defaults to {}.
+        inputs: The inputs to the prompty. Defaults to ``{}``.
 
     Returns:
         The prepared inputs.
@@ -166,9 +166,9 @@ def prepare(
 
 def run(
     prompt: Prompty,
-    content: Union[Dict, List, str],
-    configuration: Dict[str, Any] = {},
-    parameters: Dict[str, Any] = {},
+    content: Union[dict, list, str],
+    configuration: dict[str, Any] = {},
+    parameters: dict[str, Any] = {},
     raw: bool = False,
 ) -> Any:
     """Run the prompty.
@@ -176,8 +176,8 @@ def run(
     Args:
         prompt: The Prompty object.
         content: The content to run the prompty on.
-        configuration: The configuration to use. Defaults to {}.
-        parameters: The parameters to use. Defaults to {}.
+        configuration: The configuration to use. Defaults to ``{}``.
+        parameters: The parameters to use. Defaults to ``{}``.
         raw: Whether to return the raw output. Defaults to False.
 
     Returns:
@@ -219,9 +219,9 @@ def run(
 
 def execute(
     prompt: Union[str, Prompty],
-    configuration: Dict[str, Any] = {},
-    parameters: Dict[str, Any] = {},
-    inputs: Dict[str, Any] = {},
+    configuration: dict[str, Any] = {},
+    parameters: dict[str, Any] = {},
+    inputs: dict[str, Any] = {},
     raw: bool = False,
     connection: str = "default",
 ) -> Any:
@@ -230,11 +230,11 @@ def execute(
     Args:
         prompt: The prompt to execute.
             Can be a path to a prompty file or a Prompty object.
-        configuration: The configuration to use. Defaults to {}.
-        parameters: The parameters to use. Defaults to {}.
-        inputs: The inputs to the prompty. Defaults to {}.
+        configuration: The configuration to use. Defaults to ``{}``.
+        parameters: The parameters to use. Defaults to ``{}``.
+        inputs: The inputs to the prompty. Defaults to ``{}``.
         raw: Whether to return the raw output. Defaults to False.
-        connection: The connection to use. Defaults to "default".
+        connection: The connection to use. Defaults to ``'default'``.
 
     Returns:
         The result of executing the prompty.

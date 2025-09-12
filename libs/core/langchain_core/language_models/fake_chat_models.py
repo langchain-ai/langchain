@@ -6,6 +6,8 @@ import time
 from collections.abc import AsyncIterator, Iterator
 from typing import Any, Optional, Union, cast
 
+from typing_extensions import override
+
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -26,6 +28,7 @@ class FakeMessagesListChatModel(BaseChatModel):
     i: int = 0
     """Internally incremented after every model invocation."""
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -33,6 +36,8 @@ class FakeMessagesListChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -42,12 +47,13 @@ class FakeMessagesListChatModel(BaseChatModel):
         return ChatResult(generations=[generation])
 
     @property
+    @override
     def _llm_type(self) -> str:
         return "fake-messages-list-chat-model"
 
 
 class FakeListChatModelError(Exception):
-    pass
+    """Fake error for testing purposes."""
 
 
 class FakeListChatModel(SimpleChatModel):
@@ -57,22 +63,27 @@ class FakeListChatModel(SimpleChatModel):
     """List of responses to **cycle** through in order."""
     sleep: Optional[float] = None
     i: int = 0
-    """List of responses to **cycle** through in order."""
-    error_on_chunk_number: Optional[int] = None
     """Internally incremented after every model invocation."""
+    error_on_chunk_number: Optional[int] = None
+    """If set, raise an error on the specified chunk number during streaming."""
 
     @property
+    @override
     def _llm_type(self) -> str:
         return "fake-list-chat-model"
 
+    @override
     def _call(
         self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *args: Any,
         **kwargs: Any,
     ) -> str:
-        """First try to lookup in queries, else return 'foo' or 'bar'."""
+        """Return the next response in the list.
+
+        Cycle back to the start if at the end.
+        """
+        if self.sleep is not None:
+            time.sleep(self.sleep)
         response = self.responses[self.i]
         if self.i < len(self.responses) - 1:
             self.i += 1
@@ -80,6 +91,7 @@ class FakeListChatModel(SimpleChatModel):
             self.i = 0
         return response
 
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],
@@ -103,6 +115,7 @@ class FakeListChatModel(SimpleChatModel):
 
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
+    @override
     async def _astream(
         self,
         messages: list[BaseMessage],
@@ -126,9 +139,11 @@ class FakeListChatModel(SimpleChatModel):
             yield ChatGenerationChunk(message=AIMessageChunk(content=c))
 
     @property
+    @override
     def _identifying_params(self) -> dict[str, Any]:
         return {"responses": self.responses}
 
+    @override
     # manually override batch to preserve batch ordering with no concurrency
     def batch(
         self,
@@ -142,6 +157,7 @@ class FakeListChatModel(SimpleChatModel):
             return [self.invoke(m, c, **kwargs) for m, c in zip(inputs, config)]
         return [self.invoke(m, config, **kwargs) for m in inputs]
 
+    @override
     async def abatch(
         self,
         inputs: list[Any],
@@ -160,6 +176,7 @@ class FakeListChatModel(SimpleChatModel):
 class FakeChatModel(SimpleChatModel):
     """Fake Chat Model wrapper for testing purposes."""
 
+    @override
     def _call(
         self,
         messages: list[BaseMessage],
@@ -169,6 +186,7 @@ class FakeChatModel(SimpleChatModel):
     ) -> str:
         return "fake response"
 
+    @override
     async def _agenerate(
         self,
         messages: list[BaseMessage],
@@ -206,13 +224,15 @@ class GenericFakeChatModel(BaseChatModel):
     This can be expanded to accept other types like Callables / dicts / strings
     to make the interface more generic if needed.
 
-    Note: if you want to pass a list, you can use `iter` to convert it to an iterator.
+    .. note::
+        if you want to pass a list, you can use ``iter`` to convert it to an iterator.
 
-    Please note that streaming is not implemented yet. We should try to implement it
-    in the future by delegating to invoke and then breaking the resulting output
-    into message chunks.
+    .. warning::
+        Streaming is not implemented yet. We should try to implement it in the future by
+        delegating to invoke and then breaking the resulting output into message chunks.
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -220,7 +240,6 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
         generation = ChatGeneration(message=message_)
@@ -233,7 +252,6 @@ class GenericFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
-        """Stream the output of the model."""
         chat_result = self._generate(
             messages, stop=stop, run_manager=run_manager, **kwargs
         )
@@ -242,7 +260,7 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected generate to return a ChatResult, "
                 f"but got {type(chat_result)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         message = chat_result.generations[0].message
 
@@ -251,15 +269,18 @@ class GenericFakeChatModel(BaseChatModel):
                 f"Expected invoke to return an AIMessage, "
                 f"but got {type(message)} instead."
             )
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
 
         content = message.content
 
         if content:
             # Use a regular expression to split on whitespace with a capture group
             # so that we can preserve the whitespace in the output.
-            assert isinstance(content, str)
-            content_chunks = cast(list[str], re.split(r"(\s)", content))
+            if not isinstance(content, str):
+                msg = "Expected content to be a string."
+                raise ValueError(msg)
+
+            content_chunks = cast("list[str]", re.split(r"(\s)", content))
 
             for token in content_chunks:
                 chunk = ChatGenerationChunk(
@@ -277,7 +298,7 @@ class GenericFakeChatModel(BaseChatModel):
                     for fkey, fvalue in value.items():
                         if isinstance(fvalue, str):
                             # Break function call by `,`
-                            fvalue_chunks = cast(list[str], re.split(r"(,)", fvalue))
+                            fvalue_chunks = cast("list[str]", re.split(r"(,)", fvalue))
                             for fvalue_chunk in fvalue_chunks:
                                 chunk = ChatGenerationChunk(
                                     message=AIMessageChunk(
@@ -332,6 +353,7 @@ class ParrotFakeChatModel(BaseChatModel):
     * Chat model should be usable in both sync and async tests
     """
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -339,7 +361,6 @@ class ParrotFakeChatModel(BaseChatModel):
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
-        """Top Level call"""
         return ChatResult(generations=[ChatGeneration(message=messages[-1])])
 
     @property

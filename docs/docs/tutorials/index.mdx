@@ -4,36 +4,33 @@ sidebar_class_name: hidden
 ---
 # Tutorials
 
-New to LangChain or to LLM app development in general? Read this material to quickly get up and running.
+New to LangChain or LLM app development in general? Read this material to quickly get up and running building your first applications.
 
-## Basics
-- [Build a Simple LLM Application with LCEL](/docs/tutorials/llm_chain)
-- [Build a Chatbot](/docs/tutorials/chatbot)
-- [Build vector stores and retrievers](/docs/tutorials/retrievers)
-- [Build an Agent](/docs/tutorials/agents)
+## Get started
 
-## Working with external knowledge
-- [Build a Retrieval Augmented Generation (RAG) Application](/docs/tutorials/rag)
-- [Build a Conversational RAG Application](/docs/tutorials/qa_chat_history)
-- [Build a Question/Answering system over SQL data](/docs/tutorials/sql_qa)
-- [Build a Query Analysis System](/docs/tutorials/query_analysis)
-- [Build a local RAG application](/docs/tutorials/local_rag)
-- [Build a Question Answering application over a Graph Database](/docs/tutorials/graph)
-- [Build a PDF ingestion and Question/Answering system](/docs/tutorials/pdf_qa/)
+Familiarize yourself with LangChain's open-source components by building simple applications.
 
-## Specialized tasks
-- [Build an Extraction Chain](/docs/tutorials/extraction)
-- [Generate synthetic data](/docs/tutorials/data_generation)
-- [Classify text into labels](/docs/tutorials/classification)
-- [Summarize text](/docs/tutorials/summarization)
+If you're looking to get started with [chat models](/docs/integrations/chat/), [vector stores](/docs/integrations/vectorstores/),
+or other LangChain components from a specific provider, check out our supported [integrations](/docs/integrations/providers/).
 
-## LangGraph
+- [Chat models and prompts](/docs/tutorials/llm_chain): Build a simple LLM application with [prompt templates](/docs/concepts/prompt_templates) and [chat models](/docs/concepts/chat_models).
+- [Semantic search](/docs/tutorials/retrievers): Build a semantic search engine over a PDF with [document loaders](/docs/concepts/document_loaders), [embedding models](/docs/concepts/embedding_models/), and [vector stores](/docs/concepts/vectorstores/).
+- [Classification](/docs/tutorials/classification): Classify text into categories or labels using [chat models](/docs/concepts/chat_models) with [structured outputs](/docs/concepts/structured_outputs/).
+- [Extraction](/docs/tutorials/extraction): Extract structured data from text and other unstructured media using [chat models](/docs/concepts/chat_models) and [few-shot examples](/docs/concepts/few_shot_prompting/).
 
-LangGraph is an extension of LangChain aimed at
-building robust and stateful multi-actor applications with LLMs by modeling steps as edges and nodes in a graph.
+Refer to the [how-to guides](/docs/how_to) for more detail on using all LangChain components.
 
-LangGraph documentation is currently hosted on a separate site.
-You can peruse [LangGraph tutorials here](https://langchain-ai.github.io/langgraph/tutorials/).
+## Orchestration
+
+Get started using [LangGraph](https://langchain-ai.github.io/langgraph/) to assemble LangChain components into full-featured applications.
+
+- [Chatbots](/docs/tutorials/chatbot): Build a chatbot that incorporates memory.
+- [Agents](/docs/tutorials/agents): Build an agent that interacts with external tools.
+- [Retrieval Augmented Generation (RAG) Part 1](/docs/tutorials/rag): Build an application that uses your own documents to inform its responses.
+- [Retrieval Augmented Generation (RAG) Part 2](/docs/tutorials/qa_chat_history): Build a RAG application that incorporates a memory of its user interactions and multi-step retrieval.
+- [Question-Answering with SQL](/docs/tutorials/sql_qa): Build a question-answering system that executes SQL queries to inform its responses.
+- [Summarization](/docs/tutorials/summarization): Generate summaries of (potentially long) texts.
+- [Question-Answering with Graph Databases](/docs/tutorials/graph): Build a question-answering system that queries a graph database to inform its responses.
 
 ## LangSmith
 
@@ -41,14 +38,10 @@ LangSmith allows you to closely trace, monitor and evaluate your LLM application
 It seamlessly integrates with LangChain, and you can use it to inspect and debug individual steps of your chains as you build.
 
 LangSmith documentation is hosted on a separate site.
-You can peruse [LangSmith tutorials here](https://docs.smith.langchain.com/tutorials/).
+You can peruse [LangSmith tutorials here](https://docs.smith.langchain.com/).
 
 ### Evaluation
 
-LangSmith helps you evaluate the performance of your LLM applications. The below tutorial is a great way to get started:
+LangSmith helps you evaluate the performance of your LLM applications. The tutorial below is a great way to get started:
 
-- [Evaluate your LLM application](https://docs.smith.langchain.com/tutorials/Developers/evaluation)
-
-## More
-
-For more tutorials, see our [cookbook section](https://github.com/langchain-ai/langchain/tree/master/cookbook).
+- [Evaluate your LLM application](https://docs.langchain.com/langsmith/evaluate-llm-application)

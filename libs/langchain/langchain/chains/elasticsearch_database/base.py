@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_core.callbacks import CallbackManagerForChainRun
 from langchain_core.language_models import BaseLanguageModel
@@ -34,6 +34,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             database = Elasticsearch("http://localhost:9200")
             db_chain = ElasticsearchDatabaseChain.from_llm(OpenAI(), database)
+
     """
 
     query_chain: Runnable
@@ -44,8 +45,8 @@ class ElasticsearchDatabaseChain(Chain):
     """Elasticsearch database to connect to of type elasticsearch.Elasticsearch."""
     top_k: int = 10
     """Number of results to return from the query"""
-    ignore_indices: Optional[List[str]] = None
-    include_indices: Optional[List[str]] = None
+    ignore_indices: Optional[list[str]] = None
+    include_indices: Optional[list[str]] = None
     input_key: str = "question"  #: :meta private:
     output_key: str = "result"  #: :meta private:
     sample_documents_in_index_info: int = 3
@@ -58,15 +59,14 @@ class ElasticsearchDatabaseChain(Chain):
     )
 
     @model_validator(mode="after")
-    def validate_indices(self) -> Self:
+    def _validate_indices(self) -> Self:
         if self.include_indices and self.ignore_indices:
-            raise ValueError(
-                "Cannot specify both 'include_indices' and 'ignore_indices'."
-            )
+            msg = "Cannot specify both 'include_indices' and 'ignore_indices'."
+            raise ValueError(msg)
         return self
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return the singular input key.
 
         :meta private:
@@ -74,17 +74,16 @@ class ElasticsearchDatabaseChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return the singular output key.
 
         :meta private:
         """
         if not self.return_intermediate_steps:
             return [self.output_key]
-        else:
-            return [self.output_key, INTERMEDIATE_STEPS_KEY]
+        return [self.output_key, INTERMEDIATE_STEPS_KEY]
 
-    def _list_indices(self) -> List[str]:
+    def _list_indices(self) -> list[str]:
         all_indices = [
             index["index"] for index in self.database.cat.indices(format="json")
         ]
@@ -96,7 +95,7 @@ class ElasticsearchDatabaseChain(Chain):
 
         return all_indices
 
-    def _get_indices_infos(self, indices: List[str]) -> str:
+    def _get_indices_infos(self, indices: list[str]) -> str:
         mappings = self.database.indices.get_mapping(index=",".join(indices))
         if self.sample_documents_in_index_info > 0:
             for k, v in mappings.items():
@@ -111,18 +110,18 @@ class ElasticsearchDatabaseChain(Chain):
             [
                 "Mapping for index {}:\n{}".format(index, mappings[index]["mappings"])
                 for index in mappings
-            ]
+            ],
         )
 
-    def _search(self, indices: List[str], query: str) -> str:
+    def _search(self, indices: list[str], query: str) -> str:
         result = self.database.search(index=",".join(indices), body=query)
         return str(result)
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         input_text = f"{inputs[self.input_key]}\nESQuery:"
         _run_manager.on_text(input_text, verbose=self.verbose)
@@ -134,7 +133,7 @@ class ElasticsearchDatabaseChain(Chain):
             "indices_info": indices_info,
             "stop": ["\nESResult:"],
         }
-        intermediate_steps: List = []
+        intermediate_steps: list = []
         try:
             intermediate_steps.append(query_inputs)  # input: es generation
             es_cmd = self.query_chain.invoke(
@@ -144,7 +143,7 @@ class ElasticsearchDatabaseChain(Chain):
 
             _run_manager.on_text(es_cmd, color="green", verbose=self.verbose)
             intermediate_steps.append(
-                es_cmd
+                es_cmd,
             )  # output: elasticsearch dsl generation (no checker)
             intermediate_steps.append({"es_cmd": es_cmd})  # input: ES search
             result = self._search(indices=indices, query=es_cmd)
@@ -163,15 +162,16 @@ class ElasticsearchDatabaseChain(Chain):
 
             intermediate_steps.append(final_result)  # output: final answer
             _run_manager.on_text(final_result, color="green", verbose=self.verbose)
-            chain_result: Dict[str, Any] = {self.output_key: final_result}
+            chain_result: dict[str, Any] = {self.output_key: final_result}
             if self.return_intermediate_steps:
                 chain_result[INTERMEDIATE_STEPS_KEY] = intermediate_steps
-            return chain_result
         except Exception as exc:
             # Append intermediate steps to exception, to aid in logging and later
             # improvement of few shot prompt seeds
-            exc.intermediate_steps = intermediate_steps  # type: ignore
-            raise exc
+            exc.intermediate_steps = intermediate_steps  # type: ignore[attr-defined]
+            raise
+
+        return chain_result
 
     @property
     def _chain_type(self) -> str:

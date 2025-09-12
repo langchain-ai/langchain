@@ -1,3 +1,5 @@
+"""Runnable that manages chat message history for another Runnable."""
+
 from __future__ import annotations
 
 import inspect
@@ -16,6 +18,7 @@ from typing_extensions import override
 
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.load.load import load
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.runnables.base import Runnable, RunnableBindingBase, RunnableLambda
 from langchain_core.runnables.passthrough import RunnablePassthrough
 from langchain_core.runnables.utils import (
@@ -27,7 +30,6 @@ from langchain_core.utils.pydantic import create_model_v2
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import LanguageModelLike
-    from langchain_core.messages.base import BaseMessage
     from langchain_core.runnables.config import RunnableConfig
     from langchain_core.tracers.schemas import Run
 
@@ -36,7 +38,7 @@ MessagesOrDictWithMessages = Union[Sequence["BaseMessage"], dict[str, Any]]
 GetSessionHistoryCallable = Callable[..., BaseChatMessageHistory]
 
 
-class RunnableWithMessageHistory(RunnableBindingBase):
+class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
     """Runnable that manages chat message history for another Runnable.
 
     A chat message history is a sequence of messages that represent a conversation.
@@ -70,26 +72,11 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     For production use cases, you will want to use a persistent implementation
     of chat message history, such as ``RedisChatMessageHistory``.
 
-    Parameters:
-        get_session_history: Function that returns a new BaseChatMessageHistory.
-            This function should either take a single positional argument
-            `session_id` of type string and return a corresponding
-            chat message history instance.
-        input_messages_key: Must be specified if the base runnable accepts a dict
-            as input. The key in the input dict that contains the messages.
-        output_messages_key: Must be specified if the base Runnable returns a dict
-            as output. The key in the output dict that contains the messages.
-        history_messages_key: Must be specified if the base runnable accepts a dict
-            as input and expects a separate key for historical messages.
-        history_factory_config: Configure fields that should be passed to the
-            chat history factory. See ``ConfigurableFieldSpec`` for more details.
-
     Example: Chat message history with an in-memory implementation for testing.
 
     .. code-block:: python
 
         from operator import itemgetter
-        from typing import List
 
         from langchain_openai.chat_models import ChatOpenAI
 
@@ -109,9 +96,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         class InMemoryHistory(BaseChatMessageHistory, BaseModel):
             \"\"\"In memory implementation of chat message history.\"\"\"
 
-            messages: List[BaseMessage] = Field(default_factory=list)
+            messages: list[BaseMessage] = Field(default_factory=list)
 
-            def add_messages(self, messages: List[BaseMessage]) -> None:
+            def add_messages(self, messages: list[BaseMessage]) -> None:
                 \"\"\"Add a list of messages to the store\"\"\"
                 self.messages.extend(messages)
 
@@ -144,11 +131,13 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "You're an assistant who's good at {ability}"),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{question}"),
-            ])
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You're an assistant who's good at {ability}"),
+                    MessagesPlaceholder(variable_name="history"),
+                    ("human", "{question}"),
+                ]
+            )
 
             chain = prompt | ChatAnthropic(model="claude-2")
 
@@ -161,18 +150,22 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 history_messages_key="history",
             )
 
-            print(chain_with_history.invoke(  # noqa: T201
-                {"ability": "math", "question": "What does cosine mean?"},
-                config={"configurable": {"session_id": "foo"}}
-            ))
+            print(
+                chain_with_history.invoke(  # noqa: T201
+                    {"ability": "math", "question": "What does cosine mean?"},
+                    config={"configurable": {"session_id": "foo"}},
+                )
+            )
 
             # Uses the store defined in the example above.
             print(store)  # noqa: T201
 
-            print(chain_with_history.invoke(  # noqa: T201
-                {"ability": "math", "question": "What's its inverse"},
-                config={"configurable": {"session_id": "foo"}}
-            ))
+            print(
+                chain_with_history.invoke(  # noqa: T201
+                    {"ability": "math", "question": "What's its inverse"},
+                    config={"configurable": {"session_id": "foo"}},
+                )
+            )
 
             print(store)  # noqa: T201
 
@@ -183,6 +176,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             store = {}
 
+
             def get_session_history(
                 user_id: str, conversation_id: str
             ) -> BaseChatMessageHistory:
@@ -190,11 +184,14 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                     store[(user_id, conversation_id)] = InMemoryHistory()
                 return store[(user_id, conversation_id)]
 
-            prompt = ChatPromptTemplate.from_messages([
-                ("system", "You're an assistant who's good at {ability}"),
-                MessagesPlaceholder(variable_name="history"),
-                ("human", "{question}"),
-            ])
+
+            prompt = ChatPromptTemplate.from_messages(
+                [
+                    ("system", "You're an assistant who's good at {ability}"),
+                    MessagesPlaceholder(variable_name="history"),
+                    ("human", "{question}"),
+                ]
+            )
 
             chain = prompt | ChatAnthropic(model="claude-2")
 
@@ -225,27 +222,37 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
             with_message_history.invoke(
                 {"ability": "math", "question": "What does cosine mean?"},
-                config={"configurable": {"user_id": "123", "conversation_id": "1"}}
+                config={"configurable": {"user_id": "123", "conversation_id": "1"}},
             )
 
     """
 
     get_session_history: GetSessionHistoryCallable
+    """Function that returns a new BaseChatMessageHistory.
+    This function should either take a single positional argument ``session_id`` of type
+    string and return a corresponding chat message history instance"""
     input_messages_key: Optional[str] = None
+    """Must be specified if the base runnable accepts a dict as input.
+    The key in the input dict that contains the messages."""
     output_messages_key: Optional[str] = None
+    """Must be specified if the base Runnable returns a dict as output.
+    The key in the output dict that contains the messages."""
     history_messages_key: Optional[str] = None
+    """Must be specified if the base runnable accepts a dict as input and expects a
+    separate key for historical messages."""
     history_factory_config: Sequence[ConfigurableFieldSpec]
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
-        return ["langchain", "schema", "runnable"]
+    """Configure fields that should be passed to the chat history factory.
+    See ``ConfigurableFieldSpec`` for more details."""
 
     def __init__(
         self,
         runnable: Union[
             Runnable[
-                Union[MessagesOrDictWithMessages],
+                list[BaseMessage],
+                Union[str, BaseMessage, MessagesOrDictWithMessages],
+            ],
+            Runnable[
+                dict[str, Any],
                 Union[str, BaseMessage, MessagesOrDictWithMessages],
             ],
             LanguageModelLike,
@@ -261,17 +268,21 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         """Initialize RunnableWithMessageHistory.
 
         Args:
-            runnable: The base Runnable to be wrapped. Must take as input one of:
-                1. A sequence of BaseMessages
+            runnable: The base Runnable to be wrapped.
+                Must take as input one of:
+
+                1. A list of ``BaseMessage``
                 2. A dict with one key for all messages
                 3. A dict with one key for the current input string/message(s) and
-                    a separate key for historical messages. If the input key points
-                    to a string, it will be treated as a HumanMessage in history.
+                   a separate key for historical messages. If the input key points
+                   to a string, it will be treated as a ``HumanMessage`` in history.
 
                 Must return as output one of:
-                1. A string which can be treated as an AIMessage
-                2. A BaseMessage or sequence of BaseMessages
-                3. A dict with a key for a BaseMessage or sequence of BaseMessages
+
+                1. A string which can be treated as an ``AIMessage``
+                2. A ``BaseMessage`` or sequence of ``BaseMessage``
+                3. A dict with a key for a ``BaseMessage`` or sequence of
+                    ``BaseMessage``
 
             get_session_history: Function that returns a new BaseChatMessageHistory.
                 This function should either take a single positional argument
@@ -280,11 +291,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 .. code-block:: python
 
                     def get_session_history(
-                        session_id: str,
-                        *,
-                        user_id: Optional[str]=None
-                    ) -> BaseChatMessageHistory:
-                      ...
+                        session_id: str, *, user_id: Optional[str] = None
+                    ) -> BaseChatMessageHistory: ...
 
                 Or it should take keyword arguments that match the keys of
                 `session_history_config_specs` and return a corresponding
@@ -296,8 +304,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                         *,
                         user_id: str,
                         thread_id: str,
-                    ) -> BaseChatMessageHistory:
-                        ...
+                    ) -> BaseChatMessageHistory: ...
 
             input_messages_key: Must be specified if the base runnable accepts a dict
                 as input. Default is None.
@@ -311,6 +318,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 into the get_session_history factory.
             **kwargs: Arbitrary additional kwargs to pass to parent class
                 ``RunnableBindingBase`` init.
+
         """
         history_chain: Runnable = RunnableLambda(
             self._enter_history, self._aenter_history
@@ -339,10 +347,10 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         ).with_config(run_name="RunnableWithMessageHistory")
 
         if history_factory_config:
-            _config_specs = history_factory_config
+            config_specs = history_factory_config
         else:
             # If not provided, then we'll use the default session_id field
-            _config_specs = [
+            config_specs = [
                 ConfigurableFieldSpec(
                     id="session_id",
                     annotation=str,
@@ -359,23 +367,23 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             output_messages_key=output_messages_key,
             bound=bound,
             history_messages_key=history_messages_key,
-            history_factory_config=_config_specs,
+            history_factory_config=config_specs,
             **kwargs,
         )
         self._history_chain = history_chain
 
     @property
+    @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
         """Get the configuration specs for the RunnableWithMessageHistory."""
         return get_unique_config_specs(
             super().config_specs + list(self.history_factory_config)
         )
 
+    @override
     def get_input_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
-        from langchain_core.messages import BaseMessage
-
         fields: dict = {}
         if self.input_messages_key and self.history_messages_key:
             fields[self.input_messages_key] = (
@@ -390,7 +398,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 module_name=self.__class__.__module__,
                 root=(Sequence[BaseMessage], ...),
             )
-        return create_model_v2(  # type: ignore[call-overload]
+        return create_model_v2(
             "RunnableWithChatHistoryInput",
             field_definitions=fields,
             module_name=self.__class__.__module__,
@@ -399,9 +407,9 @@ class RunnableWithMessageHistory(RunnableBindingBase):
     @property
     @override
     def OutputType(self) -> type[Output]:
-        output_type = self._history_chain.OutputType
-        return output_type
+        return self._history_chain.OutputType
 
+    @override
     def get_output_schema(
         self, config: Optional[RunnableConfig] = None
     ) -> type[BaseModel]:
@@ -434,37 +442,27 @@ class RunnableWithMessageHistory(RunnableBindingBase):
             module_name=self.__class__.__module__,
         )
 
-    def _is_not_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return False
-
-    async def _is_async(self, *args: Sequence[Any], **kwargs: dict[str, Any]) -> bool:
-        return True
-
     def _get_input_messages(
         self, input_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> list[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(input_val, dict):
             if self.input_messages_key:
                 key = self.input_messages_key
             elif len(input_val) == 1:
-                key = list(input_val.keys())[0]
+                key = next(iter(input_val.keys()))
             else:
                 key = "input"
             input_val = input_val[key]
 
         # If value is a string, convert to a human message
         if isinstance(input_val, str):
-            from langchain_core.messages import HumanMessage
-
             return [HumanMessage(content=input_val)]
         # If value is a single message, convert to a list
-        elif isinstance(input_val, BaseMessage):
+        if isinstance(input_val, BaseMessage):
             return [input_val]
         # If value is a list or tuple...
-        elif isinstance(input_val, (list, tuple)):
+        if isinstance(input_val, (list, tuple)):
             # Handle empty case
             if len(input_val) == 0:
                 return list(input_val)
@@ -476,24 +474,21 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                     raise ValueError(msg)
                 return input_val[0]
             return list(input_val)
-        else:
-            msg = (
-                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
-                f"Got {input_val}."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
+            f"Got {input_val}."
+        )
+        raise ValueError(msg)
 
     def _get_output_messages(
         self, output_val: Union[str, BaseMessage, Sequence[BaseMessage], dict]
     ) -> list[BaseMessage]:
-        from langchain_core.messages import BaseMessage
-
         # If dictionary, try to pluck the single key representing messages
         if isinstance(output_val, dict):
             if self.output_messages_key:
                 key = self.output_messages_key
             elif len(output_val) == 1:
-                key = list(output_val.keys())[0]
+                key = next(iter(output_val.keys()))
             else:
                 key = "output"
             # If you are wrapping a chat model directly
@@ -504,35 +499,32 @@ class RunnableWithMessageHistory(RunnableBindingBase):
                 output_val = output_val[key]
 
         if isinstance(output_val, str):
-            from langchain_core.messages import AIMessage
-
             return [AIMessage(content=output_val)]
         # If value is a single message, convert to a list
-        elif isinstance(output_val, BaseMessage):
+        if isinstance(output_val, BaseMessage):
             return [output_val]
-        elif isinstance(output_val, (list, tuple)):
+        if isinstance(output_val, (list, tuple)):
             return list(output_val)
-        else:
-            msg = (
-                f"Expected str, BaseMessage, List[BaseMessage], or Tuple[BaseMessage]. "
-                f"Got {output_val}."
-            )
-            raise ValueError(msg)
+        msg = (
+            f"Expected str, BaseMessage, list[BaseMessage], or tuple[BaseMessage]. "
+            f"Got {output_val}."
+        )
+        raise ValueError(msg)
 
-    def _enter_history(self, input: Any, config: RunnableConfig) -> list[BaseMessage]:
+    def _enter_history(self, value: Any, config: RunnableConfig) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = hist.messages.copy()
 
         if not self.history_messages_key:
             # return all messages
             input_val = (
-                input if not self.input_messages_key else input[self.input_messages_key]
+                value if not self.input_messages_key else value[self.input_messages_key]
             )
             messages += self._get_input_messages(input_val)
         return messages
 
     async def _aenter_history(
-        self, input: dict[str, Any], config: RunnableConfig
+        self, value: dict[str, Any], config: RunnableConfig
     ) -> list[BaseMessage]:
         hist: BaseChatMessageHistory = config["configurable"]["message_history"]
         messages = (await hist.aget_messages()).copy()
@@ -540,7 +532,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
         if not self.history_messages_key:
             # return all messages
             input_val = (
-                input if not self.input_messages_key else input[self.input_messages_key]
+                value if not self.input_messages_key else value[self.input_messages_key]
             )
             messages += self._get_input_messages(input_val)
         return messages
@@ -590,9 +582,7 @@ class RunnableWithMessageHistory(RunnableBindingBase):
 
         if missing_keys and parameter_names:
             example_input = {self.input_messages_key: "foo"}
-            example_configurable = {
-                missing_key: "[your-value-here]" for missing_key in missing_keys
-            }
+            example_configurable = dict.fromkeys(missing_keys, "[your-value-here]")
             example_config = {"configurable": example_configurable}
             msg = (
                 f"Missing keys {sorted(missing_keys)} in config['configurable'] "

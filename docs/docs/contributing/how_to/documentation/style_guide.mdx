@@ -1,0 +1,162 @@
+---
+sidebar_class_name: "hidden"
+---
+
+# Documentation style guide
+
+As LangChain continues to grow, the amount of documentation required to cover the various concepts and integrations continues to grow too.
+This page provides guidelines for anyone writing documentation for LangChain and outlines some of our philosophies around
+organization and structure.
+
+## Philosophy
+
+LangChain's documentation follows the [Diataxis framework](https://diataxis.fr).
+Under this framework, all documentation falls under one of four categories: [Tutorials](#tutorials),
+[How-to guides](#how-to-guides),
+[References](#references), and [Explanations](#conceptual-guide).
+
+### Tutorials
+
+Tutorials are lessons that take the reader through a practical activity. Their purpose is to help the user
+gain an understanding of concepts and how they interact by showing one way to achieve a specific goal in a hands-on manner. They should **avoid** giving
+multiple permutations of ways to achieve that goal in-depth. Instead, it should guide a new user through a recommended path to accomplish the tutorial's goal. While the end result of a tutorial does not necessarily need to
+be completely production-ready, it should be useful and practically satisfy the goal that is clearly stated in the tutorial's introduction. Information on how to address additional scenarios
+belongs in how-to guides.
+
+To quote the Diataxis website:
+
+> A tutorial serves the user’s *acquisition* of skills and knowledge - their study. Its purpose is not to help the user get something done, but to help them learn.
+
+In LangChain, these are often higher level guides that show off end-to-end use cases.
+
+Some examples include:
+
+- [Build a Simple LLM Application with LCEL](/docs/tutorials/llm_chain/)
+- [Build a Retrieval Augmented Generation (RAG) App](/docs/tutorials/rag/)
+
+A good structural rule of thumb is to follow the structure of this [example from Numpy](https://numpy.org/numpy-tutorials/content/tutorial-svd.html).
+
+Here are some high-level tips on writing a good tutorial:
+
+- Focus on guiding the user to get something done, but keep in mind the end-goal is more to impart principles than to create a perfect production system.
+- Be specific, not abstract and follow one path.
+  - No need to go deeply into alternative approaches, but it’s ok to reference them, ideally with a link to an appropriate how-to guide.
+- Get "a point on the board" as soon as possible - something the user can run that outputs something.
+  - You can iterate and expand afterwards.
+  - Try to frequently checkpoint at given steps where the user can run code and see progress.
+- Focus on results, not technical explanation.
+  - Crosslink heavily to appropriate conceptual/reference pages.
+- The first time you mention a LangChain concept, use its full name (e.g. "LangChain Expression Language (LCEL)"), and link to its conceptual/other documentation page.
+  - It's also helpful to add a prerequisite callout that links to any pages with necessary background information.
+- End with a recap/next steps section summarizing what the tutorial covered and future reading, such as related how-to guides.
+
+### How-to guides
+
+A how-to guide, as the name implies, demonstrates how to do something discrete and specific.
+It should assume that the user is already familiar with underlying concepts, and is focused on solving an immediate problem. However,
+it should still provide some background or list certain scenarios where the information may be relevant.
+They can and should discuss alternatives if one approach may be better than another in certain cases.
+
+To quote the Diataxis website:
+
+> A how-to guide serves the work of the already-competent user, whom you can assume to know what they want to do, and to be able to follow your instructions correctly.
+
+Some examples include:
+
+- [How to: return structured data from a model](/docs/how_to/structured_output/)
+- [How to: write a custom chat model](/docs/how_to/custom_chat_model/)
+
+Here are some high-level tips on writing a good how-to guide:
+
+- Clearly explain what you are guiding the user through at the start.
+- Assume higher intent than a tutorial and show what the user needs to do to get that task done.
+- Assume familiarity of concepts, but explain why suggested actions are helpful.
+  - Crosslink heavily to conceptual/reference pages.
+- Discuss alternatives and responses to real-world tradeoffs that may arise when solving a problem.
+- Use lots of example code.
+  - Prefer full code blocks that the reader can copy and run.
+- End with a recap/next steps section summarizing what the tutorial covered and future reading, such as other related how-to guides.
+
+### Conceptual guide
+
+LangChain's conceptual guides fall under the **Explanation** quadrant of Diataxis. These guides should cover LangChain terms and concepts
+in a more abstract way than how-to guides or tutorials, targeting curious users interested in
+gaining a deeper understanding and insights of the framework. Try to avoid excessively large code examples as the primary goal is to
+provide perspective to the user rather than to finish a practical project. These guides should cover **why** things work the way they do.
+
+This guide on documentation style is meant to fall under this category.
+
+To quote the Diataxis website:
+
+> The perspective of explanation is higher and wider than that of the other types. It does not take the user’s eye-level view, as in a how-to guide, or a close-up view of the machinery, like reference material. Its scope in each case is a topic - “an area of knowledge”, that somehow has to be bounded in a reasonable, meaningful way.
+
+Some examples include:
+
+- [Retrieval conceptual docs](/docs/concepts/retrieval)
+- [Chat model conceptual docs](/docs/concepts/chat_models)
+
+Here are some high-level tips on writing a good conceptual guide:
+
+- Explain design decisions. Why does concept X exist and why was it designed this way?
+- Use analogies and reference other concepts and alternatives
+- Avoid blending in too much reference content
+- You can and should reference content covered in other guides, but make sure to link to them
+
+### References
+
+References contain detailed, low-level information that describes exactly what functionality exists and how to use it.
+In LangChain, these are mainly our API reference pages, which are populated from docstrings within code.
+References pages are generally not read end-to-end, but are consulted as necessary when a user needs to know
+how to use something specific.
+
+To quote the Diataxis website:
+
+> The only purpose of a reference guide is to describe, as succinctly as possible, and in an orderly way. Whereas the content of tutorials and how-to guides are led by needs of the user, reference material is led by the product it describes.
+
+Many of the reference pages in LangChain are automatically generated from code,
+but here are some high-level tips on writing a good docstring:
+
+- Be concise
+- Discuss special cases and deviations from a user's expectations
+- Go into detail on required inputs and outputs
+- Light details on when one might use the feature are fine, but in-depth details belong in other sections
+
+Each category serves a distinct purpose and requires a specific approach to writing and structuring the content.
+
+## General guidelines
+
+Here are some other guidelines you should think about when writing and organizing documentation.
+
+We generally do not merge new tutorials from outside contributors without an acute need.
+We welcome updates as well as new integration docs, how-tos, and references.
+
+### Avoid duplication
+
+Multiple pages that cover the same material in depth are difficult to maintain and cause confusion. There should
+be only one (very rarely two) canonical pages for a given concept or feature. Instead, you should link to other guides.
+
+### Link to other sections
+
+Because sections of the docs do not exist in a vacuum, it is important to link to other sections frequently
+to allow a developer to learn more about an unfamiliar topic within the flow of reading.
+
+This includes linking to the API references and conceptual sections!
+
+### Be concise
+
+In general, take a less-is-more approach. If another section with a good explanation of a concept exists, you should link to it rather than
+re-explain it, unless the concept you are documenting presents some new wrinkle.
+
+Be concise, including in code samples.
+
+### General style
+
+- Use active voice and present tense whenever possible
+- Use examples and code snippets to illustrate concepts and usage
+- Use appropriate header levels (`#`, `##`, `###`, etc.) to organize the content hierarchically
+- Use fewer cells with more code to make copy/paste easier
+- Use bullet points and numbered lists to break down information into easily digestible chunks
+- Use tables (especially for **Reference** sections) and diagrams often to present information visually
+- Include the table of contents for longer documentation pages to help readers navigate the content, but hide it for shorter pages
+
+Next, see the [documentation setup guide](setup.mdx) to get started with writing documentation for LangChain.

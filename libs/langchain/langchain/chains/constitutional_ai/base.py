@@ -1,6 +1,6 @@
 """Chain for applying constitutional principles to the outputs of another chain."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -19,15 +19,16 @@ from langchain.chains.llm import LLMChain
     message=(
         "This class is deprecated and will be removed in langchain 1.0. "
         "See API reference for replacement: "
-        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"  # noqa: E501
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.constitutional_ai.base.ConstitutionalChain.html"
     ),
     removal="1.0",
 )
 class ConstitutionalChain(Chain):
-    """Chain for applying constitutional principles.
+    r'''Chain for applying constitutional principles.
 
-    Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+    .. note::
+        This class is deprecated. See below for a replacement implementation using
+        LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features instead of parsing string responses;
         - Support for both token-by-token and step-by-step streaming;
@@ -58,28 +59,28 @@ class ConstitutionalChain(Chain):
             llm = ChatOpenAI(model="gpt-4o-mini")
 
             class Critique(TypedDict):
-                \"\"\"Generate a critique, if needed.\"\"\"
+                """Generate a critique, if needed."""
                 critique_needed: Annotated[bool, ..., "Whether or not a critique is needed."]
                 critique: Annotated[str, ..., "If needed, the critique."]
 
             critique_prompt = ChatPromptTemplate.from_template(
                 "Critique this response according to the critique request. "
-                "If no critique is needed, specify that.\\n\\n"
-                "Query: {query}\\n\\n"
-                "Response: {response}\\n\\n"
+                "If no critique is needed, specify that.\n\n"
+                "Query: {query}\n\n"
+                "Response: {response}\n\n"
                 "Critique request: {critique_request}"
             )
 
             revision_prompt = ChatPromptTemplate.from_template(
-                "Revise this response according to the critique and reivsion request.\\n\\n"
-                "Query: {query}\\n\\n"
-                "Response: {response}\\n\\n"
-                "Critique request: {critique_request}\\n\\n"
-                "Critique: {critique}\\n\\n"
+                "Revise this response according to the critique and reivsion request.\n\n"
+                "Query: {query}\n\n"
+                "Response: {response}\n\n"
+                "Critique request: {critique_request}\n\n"
+                "Critique: {critique}\n\n"
                 "If the critique does not identify anything worth changing, ignore the "
                 "revision request and return 'No revisions needed'. If the critique "
                 "does identify something worth changing, revise the response based on "
-                "the revision request.\\n\\n"
+                "the revision request.\n\n"
                 "Revision Request: {revision_request}"
             )
 
@@ -97,12 +98,12 @@ class ConstitutionalChain(Chain):
 
 
             async def generate_response(state: State):
-                \"\"\"Generate initial response.\"\"\"
+                """Generate initial response."""
                 response = await chain.ainvoke(state["query"])
                 return {"response": response, "initial_response": response}
 
             async def critique_and_revise(state: State):
-                \"\"\"Critique and revise response according to principles.\"\"\"
+                """Critique and revise response according to principles."""
                 critiques_and_revisions = []
                 response = state["initial_response"]
                 for principle in state["constitutional_principles"]:
@@ -187,22 +188,29 @@ class ConstitutionalChain(Chain):
             )
 
             constitutional_chain.run(question="What is the meaning of life?")
-    """  # noqa: E501
+
+    '''  # noqa: E501
 
     chain: LLMChain
-    constitutional_principles: List[ConstitutionalPrinciple]
+    constitutional_principles: list[ConstitutionalPrinciple]
     critique_chain: LLMChain
     revision_chain: LLMChain
     return_intermediate_steps: bool = False
 
     @classmethod
     def get_principles(
-        cls, names: Optional[List[str]] = None
-    ) -> List[ConstitutionalPrinciple]:
+        cls,
+        names: Optional[list[str]] = None,
+    ) -> list[ConstitutionalPrinciple]:
+        """Get constitutional principles by name.
+
+        Args:
+            names: List of names of constitutional principles to retrieve.
+                If None (default), all principles are returned.
+        """
         if names is None:
             return list(PRINCIPLES.values())
-        else:
-            return [PRINCIPLES[name] for name in names]
+        return [PRINCIPLES[name] for name in names]
 
     @classmethod
     def from_llm(
@@ -224,12 +232,12 @@ class ConstitutionalChain(Chain):
         )
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys."""
         return self.chain.input_keys
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys."""
         if self.return_intermediate_steps:
             return ["output", "critiques_and_revisions", "initial_output"]
@@ -237,9 +245,9 @@ class ConstitutionalChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         response = self.chain.run(
             **inputs,
@@ -305,7 +313,7 @@ class ConstitutionalChain(Chain):
                 color="yellow",
             )
 
-        final_output: Dict[str, Any] = {"output": response}
+        final_output: dict[str, Any] = {"output": response}
         if self.return_intermediate_steps:
             final_output["initial_output"] = initial_response
             final_output["critiques_and_revisions"] = critiques_and_revisions

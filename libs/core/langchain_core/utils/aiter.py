@@ -1,7 +1,8 @@
-"""
+"""Asynchronous iterator utilities.
+
 Adapted from
 https://github.com/maxfischer2781/asyncstdlib/blob/master/asyncstdlib/itertools.py
-MIT License
+MIT License.
 """
 
 from collections import deque
@@ -25,6 +26,8 @@ from typing import (
     overload,
 )
 
+from typing_extensions import override
+
 T = TypeVar("T")
 
 _no_default = object()
@@ -34,7 +37,7 @@ _no_default = object()
 # before 3.10, the builtin anext() was not available
 def py_anext(
     iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, None, Any]]:
+) -> Awaitable[Union[T, Any, None]]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.
@@ -54,10 +57,9 @@ def py_anext(
     Raises:
         TypeError: If the iterator is not an async iterator.
     """
-
     try:
         __anext__ = cast(
-            Callable[[AsyncIterator[T]], Awaitable[T]], type(iterator).__anext__
+            "Callable[[AsyncIterator[T]], Awaitable[T]]", type(iterator).__anext__
         )
     except AttributeError as e:
         msg = f"{iterator!r} is not an async iterator"
@@ -84,9 +86,15 @@ class NoLock:
     """Dummy lock that provides the proper interface but no protection."""
 
     async def __aenter__(self) -> None:
-        pass
+        """Do nothing."""
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
+        """Return False, exception not suppressed."""
         return False
 
 
@@ -136,7 +144,7 @@ async def tee_peer(
             yield buffer.popleft()
     finally:
         async with lock:
-            # this peer is done – remove its buffer
+            # this peer is done - remove its buffer
             for idx, peer_buffer in enumerate(peers):  # pragma: no branch
                 if peer_buffer is buffer:
                     peers.pop(idx)
@@ -147,8 +155,7 @@ async def tee_peer(
 
 
 class Tee(Generic[T]):
-    """
-    Create ``n`` separate asynchronous iterators over ``iterable``.
+    """Create ``n`` separate asynchronous iterators over ``iterable``.
 
     This splits a single ``iterable`` into multiple iterators, each providing
     the same items in the same order.
@@ -182,6 +189,7 @@ class Tee(Generic[T]):
     To enforce sequential use of ``anext``, provide a ``lock``
     - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
+
     """
 
     def __init__(
@@ -191,6 +199,14 @@ class Tee(Generic[T]):
         *,
         lock: Optional[AbstractAsyncContextManager[Any]] = None,
     ):
+        """Create a ``tee``.
+
+        Args:
+            iterable: The iterable to split.
+            n: The number of iterators to create. Defaults to 2.
+            lock: The lock to synchronise access to the shared buffers.
+                Defaults to None.
+        """
         self._iterator = iterable.__aiter__()  # before 3.10 aiter() doesn't exist
         self._buffers: list[deque[T]] = [deque() for _ in range(n)]
         self._children = tuple(
@@ -204,6 +220,7 @@ class Tee(Generic[T]):
         )
 
     def __len__(self) -> int:
+        """Return the number of child iterators."""
         return len(self._children)
 
     @overload
@@ -215,15 +232,32 @@ class Tee(Generic[T]):
     def __getitem__(
         self, item: Union[int, slice]
     ) -> Union[AsyncIterator[T], tuple[AsyncIterator[T], ...]]:
+        """Return the child iterator(s) for the given index or slice."""
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
+        """Iterate over the child iterators.
+
+        Yields:
+            The child iterators.
+        """
         yield from self._children
 
     async def __aenter__(self) -> "Tee[T]":
+        """Return the tee instance."""
         return self
 
-    async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[TracebackType],
+    ) -> bool:
+        """Close all child iterators.
+
+        Returns:
+            False, exceptions not suppressed.
+        """
         await self.aclose()
         return False
 
@@ -237,15 +271,18 @@ atee = Tee
 
 
 class aclosing(AbstractAsyncContextManager):  # noqa: N801
-    """Async context manager for safely finalizing an asynchronously cleaned-up
-    resource such as an async generator, calling its ``aclose()`` method.
+    """Async context manager to wrap an AsyncGenerator that has a ``aclose()`` method.
 
     Code like this:
+
+    .. code-block:: python
 
         async with aclosing(<module>.fetch(<arguments>)) as agen:
             <block>
 
     is equivalent to this:
+
+    .. code-block:: python
 
         agen = <module>.fetch(<arguments>)
         try:
@@ -258,11 +295,18 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
     def __init__(
         self, thing: Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]
     ) -> None:
+        """Create the context manager.
+
+        Args:
+            thing: The resource to wrap.
+        """
         self.thing = thing
 
+    @override
     async def __aenter__(self) -> Union[AsyncGenerator[Any, Any], AsyncIterator[Any]]:
         return self.thing
 
+    @override
     async def __aexit__(
         self,
         exc_type: Optional[type[BaseException]],
@@ -282,8 +326,8 @@ async def abatch_iterate(
         size: The size of the batch.
         iterable: The async iterable to batch.
 
-    Returns:
-        An async iterator over the batches.
+    Yields:
+        The batches.
     """
     batch: list[T] = []
     async for element in iterable:

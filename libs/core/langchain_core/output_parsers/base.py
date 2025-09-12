@@ -1,3 +1,5 @@
+"""Base parser for language model outputs."""
+
 from __future__ import annotations
 
 import contextlib
@@ -26,7 +28,7 @@ T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
-class BaseLLMOutputParser(Generic[T], ABC):
+class BaseLLMOutputParser(ABC, Generic[T]):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
@@ -57,7 +59,7 @@ class BaseLLMOutputParser(Generic[T], ABC):
         Returns:
             Structured output.
         """
-        return await run_in_executor(None, self.parse_result, result)
+        return await run_in_executor(None, self.parse_result, result, partial=partial)
 
 
 class BaseGenerationOutputParser(
@@ -79,6 +81,7 @@ class BaseGenerationOutputParser(
         # it is good enough for pydantic to build the schema from
         return T  # type: ignore[misc]
 
+    @override
     def invoke(
         self,
         input: Union[str, BaseMessage],
@@ -94,14 +97,14 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return self._call_with_config(
-                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return self._call_with_config(
+            lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, BaseMessage],
@@ -117,13 +120,12 @@ class BaseGenerationOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return await self._acall_with_config(
+            lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
 
 class BaseOutputParser(
@@ -142,7 +144,10 @@ class BaseOutputParser(
 
                 def parse(self, text: str) -> bool:
                     cleaned_text = text.strip().upper()
-                    if cleaned_text not in (self.true_val.upper(), self.false_val.upper()):
+                    if cleaned_text not in (
+                        self.true_val.upper(),
+                        self.false_val.upper(),
+                    ):
                         raise OutputParserException(
                             f"BooleanOutputParser expected output value to either be "
                             f"{self.true_val} or {self.false_val} (case-insensitive). "
@@ -153,7 +158,8 @@ class BaseOutputParser(
                 @property
                 def _type(self) -> str:
                     return "boolean_output_parser"
-    """  # noqa: E501
+
+    """
 
     @property
     @override
@@ -183,6 +189,7 @@ class BaseOutputParser(
         )
         raise TypeError(msg)
 
+    @override
     def invoke(
         self,
         input: Union[str, BaseMessage],
@@ -198,14 +205,14 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return self._call_with_config(
-                lambda inner_input: self.parse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return self._call_with_config(
+            lambda inner_input: self.parse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, BaseMessage],
@@ -221,14 +228,14 @@ class BaseOutputParser(
                 config,
                 run_type="parser",
             )
-        else:
-            return await self._acall_with_config(
-                lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
-                input,
-                config,
-                run_type="parser",
-            )
+        return await self._acall_with_config(
+            lambda inner_input: self.aparse_result([Generation(text=inner_input)]),
+            input,
+            config,
+            run_type="parser",
+        )
 
+    @override
     def parse_result(self, result: list[Generation], *, partial: bool = False) -> T:
         """Parse a list of candidate model Generations into a specific format.
 
@@ -288,7 +295,11 @@ class BaseOutputParser(
         return await run_in_executor(None, self.parse, text)
 
     # TODO: rename 'completion' -> 'text'.
-    def parse_with_prompt(self, completion: str, prompt: PromptValue) -> Any:
+    def parse_with_prompt(
+        self,
+        completion: str,
+        prompt: PromptValue,  # noqa: ARG002
+    ) -> Any:
         """Parse the output of an LLM call with the input prompt for context.
 
         The prompt is largely provided in the event the OutputParser wants
@@ -319,7 +330,7 @@ class BaseOutputParser(
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
-        output_parser_dict = super().dict(**kwargs)
+        output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
         return output_parser_dict

@@ -1,7 +1,7 @@
 """A fake callback handler for testing purposes."""
 
 from itertools import chain
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Optional, Union
 from uuid import UUID
 
 from langchain_core.callbacks import AsyncCallbackHandler, BaseCallbackHandler
@@ -41,7 +41,7 @@ class BaseFakeCallbackHandler(BaseModel):
     retriever_errors: int = 0
     retries: int = 0
 
-    input_prompts: List[str] = []
+    input_prompts: list[str] = []
 
 
 class BaseFakeCallbackHandlerMixin(BaseFakeCallbackHandler):
@@ -142,7 +142,7 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
         return self.ignore_retriever_
 
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> Any:
         self.input_prompts = prompts
         self.on_llm_start_common()
@@ -267,8 +267,8 @@ class FakeCallbackHandler(BaseCallbackHandler, BaseFakeCallbackHandlerMixin):
 class FakeCallbackHandlerWithChatStart(FakeCallbackHandler):
     def on_chat_model_start(
         self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
+        serialized: dict[str, Any],
+        messages: list[list[BaseMessage]],
         *,
         run_id: UUID,
         parent_run_id: Optional[UUID] = None,
@@ -304,7 +304,7 @@ class FakeAsyncCallbackHandler(AsyncCallbackHandler, BaseFakeCallbackHandlerMixi
         self.on_retry_common()
 
     async def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self, serialized: dict[str, Any], prompts: list[str], **kwargs: Any
     ) -> None:
         self.on_llm_start_common()
 

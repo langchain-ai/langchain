@@ -4,23 +4,10 @@ import functools
 import os
 import uuid
 import warnings
+from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 from itertools import islice
 from operator import itemgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    AsyncGenerator,
-    Callable,
-    Dict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -35,7 +22,7 @@ from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
-    DictFilter = Dict[str, Union[str, int, bool, dict, list]]
+    DictFilter = dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, models.Filter]
 
 
@@ -44,10 +31,11 @@ class QdrantException(Exception):
 
 
 def sync_call_fallback(method: Callable) -> Callable:
-    """
-    Decorator to call the synchronous method of the class if the async method is not
-    implemented. This decorator might be only used for the methods that are defined
-    as async in the class.
+    """Call the synchronous method if the async method is not implemented.
+
+    This decorator should only be used for methods that are defined as async in the
+    class.
+
     """
 
     @functools.wraps(method)
@@ -57,7 +45,7 @@ def sync_call_fallback(method: Callable) -> Callable:
         except NotImplementedError:
             # If the async method is not implemented, call the synchronous method
             # by removing the first letter from the method name. For example,
-            # if the async method is called ``aaad_texts``, the synchronous method
+            # if the async method is called ``aadd_texts``, the synchronous method
             # will be called ``aad_texts``.
             return await run_in_executor(
                 None, getattr(self, method.__name__[1:]), *args, **kwargs
@@ -79,6 +67,7 @@ class Qdrant(VectorStore):
             client = QdrantClient()
             collection_name = "MyCollection"
             qdrant = Qdrant(client, collection_name, embedding_function)
+
     """
 
     CONTENT_KEY: str = "page_content"
@@ -99,27 +88,29 @@ class Qdrant(VectorStore):
     ):
         """Initialize with necessary components."""
         if not isinstance(client, QdrantClient):
-            raise ValueError(
+            msg = (
                 f"client should be an instance of qdrant_client.QdrantClient, "
                 f"got {type(client)}"
             )
+            raise ValueError(msg)
 
         if async_client is not None and not isinstance(async_client, AsyncQdrantClient):
-            raise ValueError(
+            msg = (
                 f"async_client should be an instance of qdrant_client.AsyncQdrantClient"
                 f"got {type(async_client)}"
             )
+            raise ValueError(msg)
 
         if embeddings is None and embedding_function is None:
-            raise ValueError(
-                "`embeddings` value can't be None. Pass `Embeddings` instance."
-            )
+            msg = "`embeddings` value can't be None. Pass `embeddings` instance."
+            raise ValueError(msg)
 
         if embeddings is not None and embedding_function is not None:
-            raise ValueError(
+            msg = (
                 "Both `embeddings` and `embedding_function` are passed. "
                 "Use `embeddings` only."
             )
+            raise ValueError(msg)
 
         self._embeddings = embeddings
         self._embeddings_function = embedding_function
@@ -133,13 +124,15 @@ class Qdrant(VectorStore):
         if embedding_function is not None:
             warnings.warn(
                 "Using `embedding_function` is deprecated. "
-                "Pass `Embeddings` instance to `embeddings` instead."
+                "Pass `Embeddings` instance to `embeddings` instead.",
+                stacklevel=2,
             )
 
         if not isinstance(embeddings, Embeddings):
             warnings.warn(
                 "`embeddings` should be an instance of `Embeddings`."
-                "Using `embeddings` as `embedding_function` which is deprecated"
+                "Using `embeddings` as `embedding_function` which is deprecated",
+                stacklevel=2,
             )
             self._embeddings_function = embeddings
             self._embeddings = None
@@ -153,11 +146,11 @@ class Qdrant(VectorStore):
     def add_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -168,10 +161,12 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
+
         """
         added_ids = []
         for batch_ids, points in self._generate_rest_batches(
@@ -188,11 +183,11 @@ class Qdrant(VectorStore):
     async def aadd_texts(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
         **kwargs: Any,
-    ) -> List[str]:
+    ) -> list[str]:
         """Run more texts through the embeddings and add to the vectorstore.
 
         Args:
@@ -203,17 +198,18 @@ class Qdrant(VectorStore):
                 uuid-like strings.
             batch_size:
                 How many vectors upload per-request.
-                Default: 64
+                Default: ``64``
+            **kwargs: Additional keyword arguments.
 
         Returns:
             List of ids from adding the texts into the vectorstore.
+
         """
         if self.async_client is None or isinstance(
             self.async_client._client, AsyncQdrantLocal
         ):
-            raise NotImplementedError(
-                "QdrantLocal cannot interoperate with sync and async clients"
-            )
+            msg = "QdrantLocal cannot interoperate with sync and async clients"
+            raise NotImplementedError(msg)
 
         added_ids = []
         async for batch_ids, points in self._agenerate_rest_batches(
@@ -230,13 +226,13 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to query.
 
         Args:
@@ -270,6 +266,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of Documents most similar to the query.
+
         """
         results = self.similarity_search_with_score(
             query,
@@ -288,16 +285,20 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to query.
+
         Args:
             query: Text to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             filter: Filter by metadata. Defaults to None.
+            **kwargs: Additional keyword arguments.
+
         Returns:
             List of Documents most similar to the query.
+
         """
         results = await self.asimilarity_search_with_score(query, k, filter, **kwargs)
         return list(map(itemgetter(0), results))
@@ -306,13 +307,13 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
@@ -346,6 +347,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of documents most similar to the query text and distance for each.
+
         """
         return self.similarity_search_with_score_by_vector(
             self._embed_query(query),
@@ -363,13 +365,13 @@ class Qdrant(VectorStore):
         self,
         query: str,
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to query.
 
         Args:
@@ -404,6 +406,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of documents most similar to the query text and distance for each.
+
         """
         query_embedding = await self._aembed_query(query)
         return await self.asimilarity_search_with_score_by_vector(
@@ -419,15 +422,15 @@ class Qdrant(VectorStore):
 
     def similarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -461,6 +464,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of Documents most similar to the query.
+
         """
         results = self.similarity_search_with_score_by_vector(
             embedding,
@@ -477,15 +481,15 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def asimilarity_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -520,6 +524,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of Documents most similar to the query.
+
         """
         results = await self.asimilarity_search_with_score_by_vector(
             embedding,
@@ -535,15 +540,15 @@ class Qdrant(VectorStore):
 
     def similarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -577,6 +582,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of documents most similar to the query text and distance for each.
+
         """
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
@@ -584,6 +590,7 @@ class Qdrant(VectorStore):
                 "filters directly: "
                 "https://qdrant.tech/documentation/concepts/filtering/",
                 DeprecationWarning,
+                stacklevel=2,
             )
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
@@ -601,7 +608,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,
@@ -622,15 +629,15 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def asimilarity_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         offset: int = 0,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs most similar to embedding vector.
 
         Args:
@@ -665,20 +672,20 @@ class Qdrant(VectorStore):
 
         Returns:
             List of documents most similar to the query text and distance for each.
-        """
 
+        """
         if self.async_client is None or isinstance(
             self.async_client._client, AsyncQdrantLocal
         ):
-            raise NotImplementedError(
-                "QdrantLocal cannot interoperate with sync and async clients"
-            )
+            msg = "QdrantLocal cannot interoperate with sync and async clients"
+            raise NotImplementedError(msg)
         if filter is not None and isinstance(filter, dict):
             warnings.warn(
                 "Using dict as a `filter` is deprecated. Please use qdrant-client "
                 "filters directly: "
                 "https://qdrant.tech/documentation/concepts/filtering/",
                 DeprecationWarning,
+                stacklevel=2,
             )
             qdrant_filter = self._qdrant_filter_from_dict(filter)
         else:
@@ -696,7 +703,7 @@ class Qdrant(VectorStore):
             limit=k,
             offset=offset,
             with_payload=True,
-            with_vectors=False,  # Langchain does not expect vectors to be returned
+            with_vectors=False,  # LangChain does not expect vectors to be returned
             score_threshold=score_threshold,
             consistency=consistency,
             **kwargs,
@@ -720,12 +727,12 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -761,8 +768,10 @@ class Qdrant(VectorStore):
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
+
         Returns:
             List of Documents selected by maximal marginal relevance.
+
         """
         query_embedding = self._embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
@@ -784,12 +793,12 @@ class Qdrant(VectorStore):
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -826,8 +835,10 @@ class Qdrant(VectorStore):
             **kwargs:
                 Any other named arguments to pass through to
                 AsyncQdrantClient.Search().
+
         Returns:
             List of Documents selected by maximal marginal relevance.
+
         """
         query_embedding = await self._aembed_query(query)
         return await self.amax_marginal_relevance_search_by_vector(
@@ -844,16 +855,16 @@ class Qdrant(VectorStore):
 
     def max_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
 
         Maximal marginal relevance optimizes for similarity to query AND diversity
@@ -888,8 +899,10 @@ class Qdrant(VectorStore):
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
+
         Returns:
             List of Documents selected by maximal marginal relevance.
+
         """
         results = self.max_marginal_relevance_search_with_score_by_vector(
             embedding,
@@ -907,21 +920,23 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def amax_marginal_relevance_search_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Document]:
+    ) -> list[Document]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
@@ -951,9 +966,11 @@ class Qdrant(VectorStore):
             **kwargs:
                 Any other named arguments to pass through to
                 AsyncQdrantClient.Search().
+
         Returns:
             List of Documents selected by maximal marginal relevance and distance for
             each.
+
         """
         results = await self.amax_marginal_relevance_search_with_score_by_vector(
             embedding,
@@ -970,21 +987,23 @@ class Qdrant(VectorStore):
 
     def max_marginal_relevance_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
@@ -1013,9 +1032,11 @@ class Qdrant(VectorStore):
                 - 'all' - query all replicas, and return values present in all replicas
             **kwargs:
                 Any other named arguments to pass through to QdrantClient.search()
+
         Returns:
             List of Documents selected by maximal marginal relevance and distance for
             each.
+
         """
         query_vector = embedding
         if self.vector_name is not None:
@@ -1058,21 +1079,23 @@ class Qdrant(VectorStore):
     @sync_call_fallback
     async def amax_marginal_relevance_search_with_score_by_vector(
         self,
-        embedding: List[float],
+        embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
-        filter: Optional[MetadataFilter] = None,
+        filter: Optional[MetadataFilter] = None,  # noqa: A002
         search_params: Optional[models.SearchParams] = None,
         score_threshold: Optional[float] = None,
         consistency: Optional[models.ReadConsistency] = None,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs selected using the maximal marginal relevance.
+
         Maximal marginal relevance optimizes for similarity to query AND diversity
         among selected documents.
+
         Args:
-            query: Text to look up documents similar to.
+            embedding: Embedding vector to look up documents similar to.
             k: Number of Documents to return. Defaults to 4.
             fetch_k: Number of Documents to fetch to pass to MMR algorithm.
                      Defaults to 20.
@@ -1080,16 +1103,22 @@ class Qdrant(VectorStore):
                         of diversity among the results with 0 corresponding
                         to maximum diversity and 1 to minimum diversity.
                         Defaults to 0.5.
+            filter: Filter by metadata. Defaults to None.
+            search_params: Additional search params.
+            score_threshold: Define a minimal score threshold for the result.
+            consistency: Read consistency of the search.
+            **kwargs: Additional keyword arguments.
+
         Returns:
             List of Documents selected by maximal marginal relevance and distance for
             each.
+
         """
         if self.async_client is None or isinstance(
             self.async_client._client, AsyncQdrantLocal
         ):
-            raise NotImplementedError(
-                "QdrantLocal cannot interoperate with sync and async clients"
-            )
+            msg = "QdrantLocal cannot interoperate with sync and async clients"
+            raise NotImplementedError(msg)
         query_vector = embedding
         if self.vector_name is not None:
             query_vector = (self.vector_name, query_vector)  # type: ignore[assignment]
@@ -1128,7 +1157,7 @@ class Qdrant(VectorStore):
             for i in mmr_selected
         ]
 
-    def delete(self, ids: Optional[List[str]] = None, **kwargs: Any) -> Optional[bool]:
+    def delete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
         Args:
@@ -1137,8 +1166,8 @@ class Qdrant(VectorStore):
 
         Returns:
             True if deletion is successful, False otherwise.
-        """
 
+        """
         result = self.client.delete(
             collection_name=self.collection_name,
             points_selector=ids,
@@ -1147,7 +1176,7 @@ class Qdrant(VectorStore):
 
     @sync_call_fallback
     async def adelete(
-        self, ids: Optional[List[str]] = None, **kwargs: Any
+        self, ids: Optional[list[str]] = None, **kwargs: Any
     ) -> Optional[bool]:
         """Delete by vector ID or other criteria.
 
@@ -1157,13 +1186,13 @@ class Qdrant(VectorStore):
 
         Returns:
             True if deletion is successful, False otherwise.
+
         """
         if self.async_client is None or isinstance(
             self.async_client._client, AsyncQdrantLocal
         ):
-            raise NotImplementedError(
-                "QdrantLocal cannot interoperate with sync and async clients"
-            )
+            msg = "QdrantLocal cannot interoperate with sync and async clients"
+            raise NotImplementedError(msg)
 
         result = await self.async_client.delete(
             collection_name=self.collection_name,
@@ -1174,17 +1203,17 @@ class Qdrant(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -1199,14 +1228,14 @@ class Qdrant(VectorStore):
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,
+        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
         hnsw_config: Optional[models.HnswConfigDiff] = None,
         optimizers_config: Optional[models.OptimizersConfigDiff] = None,
         wal_config: Optional[models.WalConfigDiff] = None,
         quantization_config: Optional[models.QuantizationConfig] = None,
         init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,
-        force_recreate: bool = False,
+        on_disk: Optional[bool] = None,  # noqa: FBT001
+        force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -1293,6 +1322,8 @@ class Qdrant(VectorStore):
                 Params for quantization, if None - quantization will be disabled
             init_from:
                 Use data stored in another collection to initialize this collection
+            on_disk:
+                If true - vectors will be stored on disk, reducing memory usage.
             force_recreate:
                 Force recreating the collection
             **kwargs:
@@ -1313,6 +1344,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = Qdrant.from_texts(texts, embeddings, "localhost")
+
         """
         qdrant = cls.construct_instance(
             texts,
@@ -1351,7 +1383,7 @@ class Qdrant(VectorStore):
 
     @classmethod
     def from_existing_collection(
-        cls: Type[Qdrant],
+        cls: type[Qdrant],
         embedding: Embeddings,
         path: Optional[str] = None,
         collection_name: Optional[str] = None,
@@ -1359,8 +1391,8 @@ class Qdrant(VectorStore):
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -1371,14 +1403,14 @@ class Qdrant(VectorStore):
         vector_name: Optional[str] = VECTOR_NAME,
         **kwargs: Any,
     ) -> Qdrant:
-        """
-        Get instance of an existing Qdrant collection.
-        This method will return the instance of the store without inserting any new
-        embeddings
-        """
+        """Get instance of an existing Qdrant collection.
 
+        This method will return the instance of the store without inserting any new
+        embeddings.
+        """
         if collection_name is None:
-            raise ValueError("Must specify collection_name. Received None.")
+            msg = "Must specify collection_name. Received None."
+            raise ValueError(msg)
 
         client, async_client = cls._generate_clients(
             location=location,
@@ -1408,17 +1440,17 @@ class Qdrant(VectorStore):
     @classmethod
     @sync_call_fallback
     async def afrom_texts(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -1433,14 +1465,14 @@ class Qdrant(VectorStore):
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,
+        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
         hnsw_config: Optional[models.HnswConfigDiff] = None,
         optimizers_config: Optional[models.OptimizersConfigDiff] = None,
         wal_config: Optional[models.WalConfigDiff] = None,
         quantization_config: Optional[models.QuantizationConfig] = None,
         init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,
-        force_recreate: bool = False,
+        on_disk: Optional[bool] = None,  # noqa: FBT001
+        force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
         """Construct Qdrant wrapper from a list of texts.
@@ -1527,6 +1559,12 @@ class Qdrant(VectorStore):
                 Params for quantization, if None - quantization will be disabled
             init_from:
                 Use data stored in another collection to initialize this collection
+            on_disk:
+                If true - point`s payload will not be stored in memory.
+                It will be read from the disk every time it is requested.
+                This setting saves RAM by (slightly) increasing the response time.
+                Note: those payload values that are involved in filtering and are
+                indexed - remain in RAM.
             force_recreate:
                 Force recreating the collection
             **kwargs:
@@ -1547,6 +1585,7 @@ class Qdrant(VectorStore):
                 from langchain_openai import OpenAIEmbeddings
                 embeddings = OpenAIEmbeddings()
                 qdrant = await Qdrant.afrom_texts(texts, embeddings, "localhost")
+
         """
         qdrant = await cls.aconstruct_instance(
             texts,
@@ -1585,15 +1624,15 @@ class Qdrant(VectorStore):
 
     @classmethod
     def construct_instance(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -1607,14 +1646,14 @@ class Qdrant(VectorStore):
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,
+        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
         hnsw_config: Optional[models.HnswConfigDiff] = None,
         optimizers_config: Optional[models.OptimizersConfigDiff] = None,
         wal_config: Optional[models.WalConfigDiff] = None,
         quantization_config: Optional[models.QuantizationConfig] = None,
         init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,
-        force_recreate: bool = False,
+        on_disk: Optional[bool] = None,  # noqa: FBT001
+        force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
         # Just do a single quick embedding to get vector size
@@ -1650,16 +1689,17 @@ class Qdrant(VectorStore):
             current_vector_config = collection_info.config.params.vectors
             if isinstance(current_vector_config, dict) and vector_name is not None:
                 if vector_name not in current_vector_config:
-                    raise QdrantException(
+                    msg = (
                         f"Existing Qdrant collection {collection_name} does not "
                         f"contain vector named {vector_name}. Did you mean one of the "
                         f"existing vectors: {', '.join(current_vector_config.keys())}? "
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
+                    raise QdrantException(msg)
                 current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
@@ -1667,34 +1707,39 @@ class Qdrant(VectorStore):
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
+                raise QdrantException(msg)
             elif (
                 not isinstance(current_vector_config, dict) and vector_name is not None
             ):
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection {collection_name} doesn't use named "
                     f"vectors. If you want to reuse it, please set `vector_name` to "
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+                raise QdrantException(msg)
+            if not isinstance(current_vector_config, models.VectorParams):
+                msg = (
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
+                raise ValueError(msg)
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection is configured for vectors with "
                     f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
+                raise QdrantException(msg)
 
             current_distance_func = (
                 current_vector_config.distance.name.upper()  # type: ignore[union-attr]
             )
             if current_distance_func != distance_func:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection is configured for "
                     f"{current_distance_func} similarity, but requested "
                     f"{distance_func}. Please set `distance_func` parameter to "
@@ -1702,6 +1747,7 @@ class Qdrant(VectorStore):
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
+                raise QdrantException(msg)
         else:
             vectors_config = models.VectorParams(
                 size=vector_size,
@@ -1730,7 +1776,7 @@ class Qdrant(VectorStore):
                 init_from=init_from,
                 timeout=timeout,  # type: ignore[arg-type]
             )
-        qdrant = cls(
+        return cls(
             client=client,
             collection_name=collection_name,
             embeddings=embedding,
@@ -1740,19 +1786,18 @@ class Qdrant(VectorStore):
             vector_name=vector_name,
             async_client=async_client,
         )
-        return qdrant
 
     @classmethod
     async def aconstruct_instance(
-        cls: Type[Qdrant],
-        texts: List[str],
+        cls: type[Qdrant],
+        texts: list[str],
         embedding: Embeddings,
         location: Optional[str] = None,
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
@@ -1766,14 +1811,14 @@ class Qdrant(VectorStore):
         shard_number: Optional[int] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
-        on_disk_payload: Optional[bool] = None,
+        on_disk_payload: Optional[bool] = None,  # noqa: FBT001
         hnsw_config: Optional[models.HnswConfigDiff] = None,
         optimizers_config: Optional[models.OptimizersConfigDiff] = None,
         wal_config: Optional[models.WalConfigDiff] = None,
         quantization_config: Optional[models.QuantizationConfig] = None,
         init_from: Optional[models.InitFrom] = None,
-        on_disk: Optional[bool] = None,
-        force_recreate: bool = False,
+        on_disk: Optional[bool] = None,  # noqa: FBT001
+        force_recreate: bool = False,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> Qdrant:
         # Just do a single quick embedding to get vector size
@@ -1810,16 +1855,17 @@ class Qdrant(VectorStore):
             current_vector_config = collection_info.config.params.vectors
             if isinstance(current_vector_config, dict) and vector_name is not None:
                 if vector_name not in current_vector_config:
-                    raise QdrantException(
+                    msg = (
                         f"Existing Qdrant collection {collection_name} does not "
                         f"contain vector named {vector_name}. Did you mean one of the "
                         f"existing vectors: {', '.join(current_vector_config.keys())}? "
                         f"If you want to recreate the collection, set `force_recreate` "
                         f"parameter to `True`."
                     )
+                    raise QdrantException(msg)
                 current_vector_config = current_vector_config.get(vector_name)  # type: ignore[assignment]
             elif isinstance(current_vector_config, dict) and vector_name is None:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection {collection_name} uses named vectors. "
                     f"If you want to reuse it, please set `vector_name` to any of the "
                     f"existing named vectors: "
@@ -1827,36 +1873,40 @@ class Qdrant(VectorStore):
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
+                raise QdrantException(msg)
             elif (
                 not isinstance(current_vector_config, dict) and vector_name is not None
             ):
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection {collection_name} doesn't use named "
                     f"vectors. If you want to reuse it, please set `vector_name` to "
                     f"`None`. If you want to recreate the collection, set "
                     f"`force_recreate` parameter to `True`."
                 )
-
-            assert isinstance(current_vector_config, models.VectorParams), (
-                "Expected current_vector_config to be an instance of "
-                f"models.VectorParams, but got {type(current_vector_config)}"
-            )
+                raise QdrantException(msg)
+            if not isinstance(current_vector_config, models.VectorParams):
+                msg = (
+                    "Expected current_vector_config to be an instance of "
+                    f"models.VectorParams, but got {type(current_vector_config)}"
+                )
+                raise ValueError(msg)
 
             # Check if the vector configuration has the same dimensionality.
             if current_vector_config.size != vector_size:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection is configured for vectors with "
                     f"{current_vector_config.size} "
                     f"dimensions. Selected embeddings are {vector_size}-dimensional. "
                     f"If you want to recreate the collection, set `force_recreate` "
                     f"parameter to `True`."
                 )
+                raise QdrantException(msg)
 
             current_distance_func = (
                 current_vector_config.distance.name.upper()  # type: ignore[union-attr]
             )
             if current_distance_func != distance_func:
-                raise QdrantException(
+                msg = (
                     f"Existing Qdrant collection is configured for "
                     f"{current_vector_config.distance} "  # type: ignore[union-attr]
                     f"similarity. Please set `distance_func` parameter to "
@@ -1864,6 +1914,7 @@ class Qdrant(VectorStore):
                     f"recreate the collection, set `force_recreate` parameter to "
                     f"`True`."
                 )
+                raise QdrantException(msg)
         else:
             vectors_config = models.VectorParams(
                 size=vector_size,
@@ -1892,7 +1943,7 @@ class Qdrant(VectorStore):
                 init_from=init_from,
                 timeout=timeout,  # type: ignore[arg-type]
             )
-        qdrant = cls(
+        return cls(
             client=client,
             collection_name=collection_name,
             embeddings=embedding,
@@ -1902,7 +1953,6 @@ class Qdrant(VectorStore):
             vector_name=vector_name,
             async_client=async_client,
         )
-        return qdrant
 
     @staticmethod
     def _cosine_relevance_score_fn(distance: float) -> float:
@@ -1910,33 +1960,31 @@ class Qdrant(VectorStore):
         return (distance + 1.0) / 2.0
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
-        """
-        The 'correct' relevance function
-        may differ depending on a few things, including:
-        - the distance / similarity metric used by the VectorStore
-        - the scale of your embeddings (OpenAI's are unit normed. Many others are not!)
-        - embedding dimensionality
+        """Your 'correct' relevance function may differ depending on a few things.
+
+        For example:
+        - The distance / similarity metric used by the VectorStore
+        - The scale of your embeddings (OpenAI's are unit normed. Many others are not!)
+        - Embedding dimensionality
         - etc.
         """
-
         if self.distance_strategy == "COSINE":
             return self._cosine_relevance_score_fn
-        elif self.distance_strategy == "DOT":
+        if self.distance_strategy == "DOT":
             return self._max_inner_product_relevance_score_fn
-        elif self.distance_strategy == "EUCLID":
+        if self.distance_strategy == "EUCLID":
             return self._euclidean_relevance_score_fn
-        else:
-            raise ValueError(
-                "Unknown distance strategy, must be cosine, "
-                "max_inner_product, or euclidean"
-            )
+        msg = (
+            "Unknown distance strategy, must be cosine, max_inner_product, or euclidean"
+        )
+        raise ValueError(msg)
 
     def _similarity_search_with_relevance_scores(
         self,
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -1950,6 +1998,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of Tuples of (doc, similarity_score)
+
         """
         return self.similarity_search_with_score(query, k, **kwargs)
 
@@ -1959,7 +2008,7 @@ class Qdrant(VectorStore):
         query: str,
         k: int = 4,
         **kwargs: Any,
-    ) -> List[Tuple[Document, float]]:
+    ) -> list[tuple[Document, float]]:
         """Return docs and relevance scores in the range [0, 1].
 
         0 is dissimilar, 1 is most similar.
@@ -1973,6 +2022,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of Tuples of (doc, similarity_score)
+
         """
         return await self.asimilarity_search_with_score(query, k, **kwargs)
 
@@ -1980,17 +2030,18 @@ class Qdrant(VectorStore):
     def _build_payloads(
         cls,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]],
+        metadatas: Optional[list[dict]],
         content_payload_key: str,
         metadata_payload_key: str,
-    ) -> List[dict]:
+    ) -> list[dict]:
         payloads = []
         for i, text in enumerate(texts):
             if text is None:
-                raise ValueError(
+                msg = (
                     "At least one of the texts is None. Please remove it before "
                     "calling .from_texts or .add_texts on Qdrant instance."
                 )
+                raise ValueError(msg)
             metadata = metadatas[i] if metadatas is not None else None
             payloads.append(
                 {
@@ -2017,12 +2068,12 @@ class Qdrant(VectorStore):
             metadata=metadata,
         )
 
-    def _build_condition(self, key: str, value: Any) -> List[models.FieldCondition]:
+    def _build_condition(self, key: str, value: Any) -> list[models.FieldCondition]:
         out = []
 
         if isinstance(value, dict):
-            for _key, value in value.items():
-                out.extend(self._build_condition(f"{key}.{_key}", value))
+            for _key, _value in value.items():
+                out.extend(self._build_condition(f"{key}.{_key}", _value))
         elif isinstance(value, list):
             for _value in value:
                 if isinstance(_value, dict):
@@ -2040,20 +2091,20 @@ class Qdrant(VectorStore):
         return out
 
     def _qdrant_filter_from_dict(
-        self, filter: Optional[DictFilter]
+        self, filter_: Optional[DictFilter]
     ) -> Optional[models.Filter]:
-        if not filter:
+        if not filter_:
             return None
 
         return models.Filter(
             must=[
                 condition
-                for key, value in filter.items()
+                for key, value in filter_.items()  # type: ignore[union-attr]
                 for condition in self._build_condition(key, value)
             ]
         )
 
-    def _embed_query(self, query: str) -> List[float]:
+    def _embed_query(self, query: str) -> list[float]:
         """Embed query text.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2063,17 +2114,18 @@ class Qdrant(VectorStore):
 
         Returns:
             List of floats representing the query embedding.
+
         """
         if self.embeddings is not None:
             embedding = self.embeddings.embed_query(query)
+        elif self._embeddings_function is not None:
+            embedding = self._embeddings_function(query)
         else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                raise ValueError("Neither of embeddings or embedding_function is set")
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
-    async def _aembed_query(self, query: str) -> List[float]:
+    async def _aembed_query(self, query: str) -> list[float]:
         """Embed query text asynchronously.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2083,17 +2135,18 @@ class Qdrant(VectorStore):
 
         Returns:
             List of floats representing the query embedding.
+
         """
         if self.embeddings is not None:
             embedding = await self.embeddings.aembed_query(query)
+        elif self._embeddings_function is not None:
+            embedding = self._embeddings_function(query)
         else:
-            if self._embeddings_function is not None:
-                embedding = self._embeddings_function(query)
-            else:
-                raise ValueError("Neither of embeddings or embedding_function is set")
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
         return embedding.tolist() if hasattr(embedding, "tolist") else embedding
 
-    def _embed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+    def _embed_texts(self, texts: Iterable[str]) -> list[list[float]]:
         """Embed search texts.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2103,6 +2156,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of floats representing the texts embedding.
+
         """
         if self.embeddings is not None:
             embeddings = self.embeddings.embed_documents(list(texts))
@@ -2116,11 +2170,12 @@ class Qdrant(VectorStore):
                     embedding = embedding.tolist()
                 embeddings.append(embedding)
         else:
-            raise ValueError("Neither of embeddings or embedding_function is set")
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
 
         return embeddings
 
-    async def _aembed_texts(self, texts: Iterable[str]) -> List[List[float]]:
+    async def _aembed_texts(self, texts: Iterable[str]) -> list[list[float]]:
         """Embed search texts.
 
         Used to provide backward compatibility with `embedding_function` argument.
@@ -2130,6 +2185,7 @@ class Qdrant(VectorStore):
 
         Returns:
             List of floats representing the texts embedding.
+
         """
         if self.embeddings is not None:
             embeddings = await self.embeddings.aembed_documents(list(texts))
@@ -2143,17 +2199,18 @@ class Qdrant(VectorStore):
                     embedding = embedding.tolist()
                 embeddings.append(embedding)
         else:
-            raise ValueError("Neither of embeddings or embedding_function is set")
+            msg = "Neither of embeddings or embedding_function is set"
+            raise ValueError(msg)
 
         return embeddings
 
     def _generate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
-    ) -> Generator[Tuple[List[str], List[models.PointStruct]], None, None]:
+    ) -> Generator[tuple[list[str], list[models.PointStruct]], None, None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
         ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
@@ -2168,7 +2225,7 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
+                    vector=vector  # type: ignore[arg-type]
                     if self.vector_name is None
                     else {self.vector_name: vector},
                     payload=payload,
@@ -2190,10 +2247,10 @@ class Qdrant(VectorStore):
     async def _agenerate_rest_batches(
         self,
         texts: Iterable[str],
-        metadatas: Optional[List[dict]] = None,
+        metadatas: Optional[list[dict]] = None,
         ids: Optional[Sequence[str]] = None,
         batch_size: int = 64,
-    ) -> AsyncGenerator[Tuple[List[str], List[models.PointStruct]], None]:
+    ) -> AsyncGenerator[tuple[list[str], list[models.PointStruct]], None]:
         texts_iterator = iter(texts)
         metadatas_iterator = iter(metadatas or [])
         ids_iterator = iter(ids or [uuid.uuid4().hex for _ in iter(texts)])
@@ -2208,7 +2265,7 @@ class Qdrant(VectorStore):
             points = [
                 models.PointStruct(
                     id=point_id,
-                    vector=vector
+                    vector=vector  # type: ignore[arg-type]
                     if self.vector_name is None
                     else {self.vector_name: vector},
                     payload=payload,
@@ -2233,15 +2290,15 @@ class Qdrant(VectorStore):
         url: Optional[str] = None,
         port: Optional[int] = 6333,
         grpc_port: int = 6334,
-        prefer_grpc: bool = False,
-        https: Optional[bool] = None,
+        prefer_grpc: bool = False,  # noqa: FBT001, FBT002
+        https: Optional[bool] = None,  # noqa: FBT001
         api_key: Optional[str] = None,
         prefix: Optional[str] = None,
         timeout: Optional[int] = None,
         host: Optional[str] = None,
         path: Optional[str] = None,
         **kwargs: Any,
-    ) -> Tuple[QdrantClient, Optional[AsyncQdrantClient]]:
+    ) -> tuple[QdrantClient, Optional[AsyncQdrantClient]]:
         if api_key is None:
             api_key = os.getenv("QDRANT_API_KEY")
 

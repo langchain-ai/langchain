@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core._api import deprecated
 from langchain_core.callbacks import CallbackManagerForChainRun
@@ -55,13 +55,12 @@ def _load_question_to_checked_assertions_chain(
         check_assertions_chain,
         revised_answer_chain,
     ]
-    question_to_checked_assertions_chain = SequentialChain(
-        chains=chains,  # type: ignore[arg-type]
+    return SequentialChain(
+        chains=chains,
         input_variables=["question"],
         output_variables=["revised_statement"],
         verbose=True,
     )
-    return question_to_checked_assertions_chain
 
 
 @deprecated(
@@ -81,8 +80,10 @@ class LLMCheckerChain(Chain):
 
             from langchain_community.llms import OpenAI
             from langchain.chains import LLMCheckerChain
+
             llm = OpenAI(temperature=0.7)
             checker_chain = LLMCheckerChain.from_llm(llm)
+
     """
 
     question_to_checked_assertions_chain: SequentialChain
@@ -107,12 +108,13 @@ class LLMCheckerChain(Chain):
 
     @model_validator(mode="before")
     @classmethod
-    def raise_deprecation(cls, values: Dict) -> Any:
+    def _raise_deprecation(cls, values: dict) -> Any:
         if "llm" in values:
             warnings.warn(
                 "Directly instantiating an LLMCheckerChain with an llm is deprecated. "
                 "Please instantiate with question_to_checked_assertions_chain "
-                "or using the from_llm class method."
+                "or using the from_llm class method.",
+                stacklevel=5,
             )
             if (
                 "question_to_checked_assertions_chain" not in values
@@ -122,7 +124,8 @@ class LLMCheckerChain(Chain):
                     _load_question_to_checked_assertions_chain(
                         values["llm"],
                         values.get(
-                            "create_draft_answer_prompt", CREATE_DRAFT_ANSWER_PROMPT
+                            "create_draft_answer_prompt",
+                            CREATE_DRAFT_ANSWER_PROMPT,
                         ),
                         values.get("list_assertions_prompt", LIST_ASSERTIONS_PROMPT),
                         values.get("check_assertions_prompt", CHECK_ASSERTIONS_PROMPT),
@@ -135,7 +138,7 @@ class LLMCheckerChain(Chain):
         return values
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Return the singular input key.
 
         :meta private:
@@ -143,7 +146,7 @@ class LLMCheckerChain(Chain):
         return [self.input_key]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Return the singular output key.
 
         :meta private:
@@ -152,14 +155,15 @@ class LLMCheckerChain(Chain):
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         question = inputs[self.input_key]
 
         output = self.question_to_checked_assertions_chain(
-            {"question": question}, callbacks=_run_manager.get_child()
+            {"question": question},
+            callbacks=_run_manager.get_child(),
         )
         return {self.output_key: output["revised_statement"]}
 
@@ -177,6 +181,16 @@ class LLMCheckerChain(Chain):
         revised_answer_prompt: PromptTemplate = REVISED_ANSWER_PROMPT,
         **kwargs: Any,
     ) -> LLMCheckerChain:
+        """Create an LLMCheckerChain from a language model.
+
+        Args:
+            llm: a language model
+            create_draft_answer_prompt: prompt to create a draft answer
+            list_assertions_prompt: prompt to list assertions
+            check_assertions_prompt: prompt to check assertions
+            revised_answer_prompt: prompt to revise the answer
+            **kwargs: additional arguments
+        """
         question_to_checked_assertions_chain = (
             _load_question_to_checked_assertions_chain(
                 llm,

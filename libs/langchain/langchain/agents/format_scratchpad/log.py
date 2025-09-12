@@ -1,10 +1,8 @@
-from typing import List, Tuple
-
 from langchain_core.agents import AgentAction
 
 
 def format_log_to_str(
-    intermediate_steps: List[Tuple[AgentAction, str]],
+    intermediate_steps: list[tuple[AgentAction, str]],
     observation_prefix: str = "Observation: ",
     llm_prefix: str = "Thought: ",
 ) -> str:

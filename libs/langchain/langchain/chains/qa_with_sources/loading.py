@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping, Optional, Protocol
+from collections.abc import Mapping
+from typing import Any, Optional, Protocol
 
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
@@ -29,13 +30,16 @@ class LoadingCallable(Protocol):
     """Interface for loading the combine documents chain."""
 
     def __call__(
-        self, llm: BaseLanguageModel, **kwargs: Any
+        self,
+        llm: BaseLanguageModel,
+        **kwargs: Any,
     ) -> BaseCombineDocumentsChain:
         """Callable to load the combine documents chain."""
 
 
 def _load_map_rerank_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = MAP_RERANK_PROMPT,
     verbose: bool = False,
     document_variable_name: str = "context",
@@ -55,24 +59,26 @@ def _load_map_rerank_chain(
 
 def _load_stuff_chain(
     llm: BaseLanguageModel,
+    *,
     prompt: BasePromptTemplate = stuff_prompt.PROMPT,
     document_prompt: BasePromptTemplate = stuff_prompt.EXAMPLE_PROMPT,
     document_variable_name: str = "summaries",
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> StuffDocumentsChain:
-    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)  # type: ignore[arg-type]
+    llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
 
 def _load_map_reduce_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = map_reduce_prompt.QUESTION_PROMPT,
     combine_prompt: BasePromptTemplate = map_reduce_prompt.COMBINE_PROMPT,
     document_prompt: BasePromptTemplate = map_reduce_prompt.EXAMPLE_PROMPT,
@@ -85,29 +91,30 @@ def _load_map_reduce_chain(
     token_max: int = 3000,
     **kwargs: Any,
 ) -> MapReduceDocumentsChain:
-    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
+    map_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _reduce_llm = reduce_llm or llm
-    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)  # type: ignore[arg-type]
+    reduce_chain = LLMChain(llm=_reduce_llm, prompt=combine_prompt, verbose=verbose)
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
     )
     if collapse_prompt is None:
         collapse_chain = None
         if collapse_llm is not None:
-            raise ValueError(
+            msg = (
                 "collapse_llm provided, but collapse_prompt was not: please "
                 "provide one or stop providing collapse_llm."
             )
+            raise ValueError(msg)
     else:
         _collapse_llm = collapse_llm or llm
         collapse_chain = StuffDocumentsChain(
             llm_chain=LLMChain(
                 llm=_collapse_llm,
                 prompt=collapse_prompt,
-                verbose=verbose,  # type: ignore[arg-type]
+                verbose=verbose,
             ),
             document_variable_name=combine_document_variable_name,
             document_prompt=document_prompt,
@@ -116,19 +123,20 @@ def _load_map_reduce_chain(
         combine_documents_chain=combine_documents_chain,
         collapse_documents_chain=collapse_chain,
         token_max=token_max,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
     )
     return MapReduceDocumentsChain(
         llm_chain=map_chain,
         reduce_documents_chain=reduce_documents_chain,
         document_variable_name=map_reduce_document_variable_name,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
 
 def _load_refine_chain(
     llm: BaseLanguageModel,
+    *,
     question_prompt: BasePromptTemplate = refine_prompts.DEFAULT_TEXT_QA_PROMPT,
     refine_prompt: BasePromptTemplate = refine_prompts.DEFAULT_REFINE_PROMPT,
     document_prompt: BasePromptTemplate = refine_prompts.EXAMPLE_PROMPT,
@@ -138,16 +146,16 @@ def _load_refine_chain(
     verbose: Optional[bool] = None,
     **kwargs: Any,
 ) -> RefineDocumentsChain:
-    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)  # type: ignore[arg-type]
+    initial_chain = LLMChain(llm=llm, prompt=question_prompt, verbose=verbose)
     _refine_llm = refine_llm or llm
-    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)  # type: ignore[arg-type]
+    refine_chain = LLMChain(llm=_refine_llm, prompt=refine_prompt, verbose=verbose)
     return RefineDocumentsChain(
         initial_llm_chain=initial_chain,
         refine_llm_chain=refine_chain,
         document_variable_name=document_variable_name,
         initial_response_name=initial_response_name,
         document_prompt=document_prompt,
-        verbose=verbose,  # type: ignore[arg-type]
+        verbose=verbose,
         **kwargs,
     )
 
@@ -161,16 +169,16 @@ def _load_refine_chain(
         "https://python.langchain.com/docs/how_to/qa_sources/"
         "\nSee also the following migration guides for replacements "
         "based on `chain_type`:\n"
-        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"  # noqa: E501
-        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"  # noqa: E501
-        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"  # noqa: E501
-        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"  # noqa: E501
+        "stuff: https://python.langchain.com/docs/versions/migrating_chains/stuff_docs_chain\n"
+        "map_reduce: https://python.langchain.com/docs/versions/migrating_chains/map_reduce_chain\n"
+        "refine: https://python.langchain.com/docs/versions/migrating_chains/refine_chain\n"
+        "map_rerank: https://python.langchain.com/docs/versions/migrating_chains/map_rerank_docs_chain\n"
     ),
 )
 def load_qa_with_sources_chain(
     llm: BaseLanguageModel,
     chain_type: str = "stuff",
-    verbose: Optional[bool] = None,
+    verbose: Optional[bool] = None,  # noqa: FBT001
     **kwargs: Any,
 ) -> BaseCombineDocumentsChain:
     """Load a question answering with sources chain.
@@ -181,6 +189,7 @@ def load_qa_with_sources_chain(
             "map_reduce", "refine" and "map_rerank".
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A chain to use for question answering with sources.
@@ -192,9 +201,10 @@ def load_qa_with_sources_chain(
         "map_rerank": _load_map_rerank_chain,
     }
     if chain_type not in loader_mapping:
-        raise ValueError(
+        msg = (
             f"Got unsupported chain type: {chain_type}. "
             f"Should be one of {loader_mapping.keys()}"
         )
+        raise ValueError(msg)
     _func: LoadingCallable = loader_mapping[chain_type]
     return _func(llm, verbose=verbose, **kwargs)

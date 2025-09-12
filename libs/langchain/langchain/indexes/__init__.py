@@ -1,4 +1,6 @@
-"""**Index** is used to avoid writing duplicated content
+"""**Indexes**.
+
+**Index** is used to avoid writing duplicated content
 into the vectostore and to avoid over-writing content if it's unchanged.
 
 Indexes also :
@@ -40,11 +42,11 @@ def __getattr__(name: str) -> Any:
 
 
 __all__ = [
-    # Keep sorted
-    "aindex",
     "GraphIndexCreator",
-    "index",
     "IndexingResult",
     "SQLRecordManager",
     "VectorstoreIndexCreator",
+    # Keep sorted
+    "aindex",
+    "index",
 ]

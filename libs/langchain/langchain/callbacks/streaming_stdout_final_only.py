@@ -1,21 +1,24 @@
 """Callback Handler streams to stdout on new llm token."""
 
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from langchain_core.callbacks import StreamingStdOutCallbackHandler
+from typing_extensions import override
 
 DEFAULT_ANSWER_PREFIX_TOKENS = ["Final", "Answer", ":"]
 
 
 class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
     """Callback handler for streaming in agents.
+
     Only works with agents using LLMs that support streaming.
 
     Only the final output of the agent will be streamed.
     """
 
     def append_to_last_tokens(self, token: str) -> None:
+        """Append token to the last tokens."""
         self.last_tokens.append(token)
         self.last_tokens_stripped.append(token.strip())
         if len(self.last_tokens) > len(self.answer_prefix_tokens):
@@ -23,15 +26,15 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
             self.last_tokens_stripped.pop(0)
 
     def check_if_answer_reached(self) -> bool:
+        """Check if the answer has been reached."""
         if self.strip_tokens:
             return self.last_tokens_stripped == self.answer_prefix_tokens_stripped
-        else:
-            return self.last_tokens == self.answer_prefix_tokens
+        return self.last_tokens == self.answer_prefix_tokens
 
     def __init__(
         self,
         *,
-        answer_prefix_tokens: Optional[List[str]] = None,
+        answer_prefix_tokens: Optional[list[str]] = None,
         strip_tokens: bool = True,
         stream_prefix: bool = False,
     ) -> None:
@@ -62,15 +65,19 @@ class FinalStreamingStdOutCallbackHandler(StreamingStdOutCallbackHandler):
         self.stream_prefix = stream_prefix
         self.answer_reached = False
 
+    @override
     def on_llm_start(
-        self, serialized: Dict[str, Any], prompts: List[str], **kwargs: Any
+        self,
+        serialized: dict[str, Any],
+        prompts: list[str],
+        **kwargs: Any,
     ) -> None:
         """Run when LLM starts running."""
         self.answer_reached = False
 
+    @override
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         """Run on new LLM token. Only available when streaming is enabled."""
-
         # Remember the last n tokens, where n = len(answer_prefix_tokens)
         self.append_to_last_tokens(token)
 

@@ -1,6 +1,7 @@
 """Filter that uses an LLM to rerank documents listwise and select top-k."""
 
-from typing import Any, Dict, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_core.callbacks import Callbacks
 from langchain_core.documents import BaseDocumentCompressor, Document
@@ -17,17 +18,20 @@ _DEFAULT_PROMPT = ChatPromptTemplate.from_messages(
 )
 
 
-def _get_prompt_input(input_: dict) -> Dict[str, Any]:
+def _get_prompt_input(input_: dict) -> dict[str, Any]:
     """Return the compression chain input."""
     documents = input_["documents"]
     context = ""
     for index, doc in enumerate(documents):
         context += f"Document ID: {index}\n```{doc.page_content}```\n\n"
-    context += f"Documents = [Document ID: 0, ..., Document ID: {len(documents) - 1}]"
+    document_range = "empty list"
+    if len(documents) > 0:
+        document_range = f"Document ID: 0, ..., Document ID: {len(documents) - 1}"
+    context += f"Documents = [{document_range}]"
     return {"query": input_["query"], "context": context}
 
 
-def _parse_ranking(results: dict) -> List[Document]:
+def _parse_ranking(results: dict) -> list[Document]:
     ranking = results["ranking"]
     docs = results["documents"]
     return [docs[i] for i in ranking.ranked_document_ids]
@@ -66,11 +70,12 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             compressed_docs = reranker.compress_documents(documents, "Who is steve")
             assert len(compressed_docs) == 3
             assert "Steve" in compressed_docs[0].page_content
+
     """
 
-    reranker: Runnable[Dict, List[Document]]
-    """LLM-based reranker to use for filtering documents. Expected to take in a dict 
-        with 'documents: Sequence[Document]' and 'query: str' keys and output a 
+    reranker: Runnable[dict, list[Document]]
+    """LLM-based reranker to use for filtering documents. Expected to take in a dict
+        with 'documents: Sequence[Document]' and 'query: str' keys and output a
         List[Document]."""
 
     top_n: int = 3
@@ -88,7 +93,8 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         results = self.reranker.invoke(
-            {"documents": documents, "query": query}, config={"callbacks": callbacks}
+            {"documents": documents, "query": query},
+            config={"callbacks": callbacks},
         )
         return results[: self.top_n]
 
@@ -111,17 +117,19 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
         """
-
         if llm.with_structured_output == BaseLanguageModel.with_structured_output:
-            raise ValueError(
+            msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )
+            raise ValueError(msg)
 
         class RankDocuments(BaseModel):
             """Rank the documents by their relevance to the user question.
-            Rank from most to least relevant."""
 
-            ranked_document_ids: List[int] = Field(
+            Rank from most to least relevant.
+            """
+
+            ranked_document_ids: list[int] = Field(
                 ...,
                 description=(
                     "The integer IDs of the documents, sorted from most to least "
@@ -133,6 +141,6 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         reranker = RunnablePassthrough.assign(
             ranking=RunnableLambda(_get_prompt_input)
             | _prompt
-            | llm.with_structured_output(RankDocuments)
+            | llm.with_structured_output(RankDocuments),
         ) | RunnableLambda(_parse_ranking)
         return cls(reranker=reranker, **kwargs)

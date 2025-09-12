@@ -6,7 +6,7 @@ Disclaimer: `LangChain decorators` is not created by the LangChain team and is n
 
 >`LangChain decorators` is a layer on the top of LangChain that provides syntactic sugar 🍭 for writing custom langchain prompts and chains
 >
->For Feedback, Issues, Contributions - please raise an issue here: 
+>For Feedback, Issues, Contributions - please raise an issue here:
 >[ju-bezdek/langchain-decorators](https://github.com/ju-bezdek/langchain-decorators)
 
 
@@ -27,7 +27,7 @@ Here is a simple example of a code written with **LangChain Decorators ✨**
 @llm_prompt
 def write_me_short_post(topic:str, platform:str="twitter", audience:str = "developers")->str:
     """
-    Write me a short header for my post about {topic} for {platform} platform. 
+    Write me a short header for my post about {topic} for {platform} platform.
     It should be for {audience} audience.
     (Max 15 words)
     """
@@ -52,7 +52,7 @@ Good idea on how to start is to review the examples here:
  - [colab notebook](https://colab.research.google.com/drive/1no-8WfeP6JaLD9yUtkPgym6x0G9ZYZOG#scrollTo=N4cf__D0E2Yk)
 
 # Defining other parameters
-Here we are just marking a function as a prompt with `llm_prompt` decorator, turning it effectively into a LLMChain. Instead of running it 
+Here we are just marking a function as a prompt with `llm_prompt` decorator, turning it effectively into a LLMChain. Instead of running it
 
 
 Standard LLMchain takes much more init parameter than just inputs_variables and prompt... here is this implementation detail hidden in the decorator.
@@ -82,7 +82,7 @@ PromptTypes.AGENT_REASONING.llm = ChatOpenAI()
 class MyCustomPromptTypes(PromptTypes):
     GPT4=PromptTypeSettings(llm=ChatOpenAI(model="gpt-4"))
 
-@llm_prompt(prompt_type=MyCustomPromptTypes.GPT4) 
+@llm_prompt(prompt_type=MyCustomPromptTypes.GPT4)
 def write_a_complicated_code(app_idea:str)->str:
     ...
 
@@ -112,7 +112,7 @@ To pass any of these, just declare them in the function (or use kwargs to pass a
 async def write_me_short_post(topic:str, platform:str="twitter", memory:SimpleMemory = None):
     """
     {history_key}
-    Write me a short header for my post about {topic} for {platform} platform. 
+    Write me a short header for my post about {topic} for {platform} platform.
     It should be for {audience} audience.
     (Max 15 words)
     """
@@ -125,7 +125,7 @@ await write_me_short_post(topic="old movies")
 # Simplified streaming
 
 If we want to leverage streaming:
- - we need to define prompt as async function 
+ - we need to define prompt as async function
  - turn on the streaming on the decorator, or we can define PromptType with streaming on
  - capture the stream using StreamingContext
 
@@ -140,10 +140,10 @@ from langchain_decorators import StreamingContext, llm_prompt
 
 # this will mark the prompt for streaming (useful if we want stream just some prompts in our app... but don't want to pass distribute the callback handlers)
 # note that only async functions can be streamed (will get an error if it's not)
-@llm_prompt(capture_stream=True) 
+@llm_prompt(capture_stream=True)
 async def write_me_short_post(topic:str, platform:str="twitter", audience:str = "developers"):
     """
-    Write me a short header for my post about {topic} for {platform} platform. 
+    Write me a short header for my post about {topic} for {platform} platform.
     It should be for {audience} audience.
     (Max 15 words)
     """
@@ -156,7 +156,7 @@ tokens=[]
 def capture_stream_func(new_token:str):
     tokens.append(new_token)
 
-# if we want to capture the stream, we need to wrap the execution into StreamingContext... 
+# if we want to capture the stream, we need to wrap the execution into StreamingContext...
 # this will allow us to capture the stream even if the prompt call is hidden inside higher level method
 # only the prompts marked with capture_stream will be captured here
 with StreamingContext(stream_to_stdout=True, callback=capture_stream_func):
@@ -171,7 +171,7 @@ print(result)
 
 
 # Prompt declarations
-By default the prompt is is the whole function docs, unless you mark your prompt 
+By default the prompt is the whole function docs, unless you mark your prompt
 
 ## Documenting your prompt
 
@@ -185,7 +185,7 @@ def write_me_short_post(topic:str, platform:str="twitter", audience:str = "devel
 
     It needs to be a code block, marked as a `<prompt>` language
     ```<prompt>
-    Write me a short header for my post about {topic} for {platform} platform. 
+    Write me a short header for my post about {topic} for {platform} platform.
     It should be for {audience} audience.
     (Max 15 words)
     ```
@@ -193,7 +193,7 @@ def write_me_short_post(topic:str, platform:str="twitter", audience:str = "devel
     Now only to code block above will be used as a prompt, and the rest of the docstring will be used as a description for developers.
     (It has also a nice benefit that IDE (like VS code) will display the prompt properly (not trying to parse it as markdown, and thus not showing new lines properly))
     """
-    return 
+    return
 ```
 
 ## Chat messages prompt
@@ -206,23 +206,23 @@ def simulate_conversation(human_input:str, agent_role:str="a pirate"):
     """
     ## System message
      - note the `:system` suffix inside the <prompt:_role_> tag
-     
+
 
     ```<prompt:system>
     You are a {agent_role} hacker. You mus act like one.
     You reply always in code, using python or javascript code block...
     for example:
-    
+
     ... do not reply with anything else.. just with code - respecting your role.
     ```
 
-    # human message 
+    # human message
     (we are using the real role that are enforced by the LLM - GPT supports system, assistant, user)
     ``` <prompt:user>
     Helo, who are you
     ```
     a reply:
-    
+
 
     ``` <prompt:assistant>
     \``` python <<- escaping inner code block with \ that should be part of the prompt
@@ -230,7 +230,7 @@ def simulate_conversation(human_input:str, agent_role:str="a pirate"):
         print("Argh... hello you pesky pirate")
     \```
     ```
-    
+
     we can also add some history using placeholder
     ```<prompt:placeholder>
     {history}
@@ -293,7 +293,7 @@ write_name_suggestions(company_business="sells cookies", count=5)
 
 ## More complex structures
 
-for dict / pydantic you need to specify the formatting instructions... 
+for dict / pydantic you need to specify the formatting instructions...
 this can be tedious, that's why you can let the output parser gegnerate you the instructions based on the model (pydantic)
 
 ``` python
@@ -343,12 +343,12 @@ class AssistantPersonality(BaseModel):
         We can reference any {field} or {a_property} inside our prompt... and combine it with {function_kwarg} in the method
         """
 
-    
+
     @llm_prompt
     def introduce_your_self(self)->str:
         """
         ``` <prompt:system>
-        You are an assistant named {assistant_name}. 
+        You are an assistant named {assistant_name}.
         Your role is to act as {assistant_role}
         ```
         ```<prompt:user>
@@ -356,7 +356,7 @@ class AssistantPersonality(BaseModel):
         ```
         """
 
-    
+
 
 personality = AssistantPersonality(assistant_name="John", assistant_role="a pirate")
 

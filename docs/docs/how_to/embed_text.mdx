@@ -15,87 +15,9 @@ The base Embeddings class in LangChain provides two methods: one for embedding d
 
 ### Setup
 
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+import EmbeddingTabs from "@theme/EmbeddingTabs";
 
-<Tabs>
-  <TabItem value="openai" label="OpenAI" default>
-To start we'll need to install the OpenAI partner package:
-
-```bash
-pip install langchain-openai
-```
-
-Accessing the API requires an API key, which you can get by creating an account and heading [here](https://platform.openai.com/account/api-keys). Once we have a key we'll want to set it as an environment variable by running:
-
-```bash
-export OPENAI_API_KEY="..."
-```
-
-If you'd prefer not to set an environment variable you can pass the key in directly via the `api_key` named parameter when initiating the OpenAI LLM class:
-
-```python
-from langchain_openai import OpenAIEmbeddings
-
-embeddings_model = OpenAIEmbeddings(api_key="...")
-```
-
-Otherwise you can initialize without any params:
-```python
-from langchain_openai import OpenAIEmbeddings
-
-embeddings_model = OpenAIEmbeddings()
-```
-
-  </TabItem>
-  <TabItem value="cohere" label="Cohere">
-
-To start we'll need to install the Cohere SDK package:
-
-```bash
-pip install langchain-cohere
-```
-
-Accessing the API requires an API key, which you can get by creating an account and heading [here](https://dashboard.cohere.com/api-keys). Once we have a key we'll want to set it as an environment variable by running:
-
-```shell
-export COHERE_API_KEY="..."
-```
-
-If you'd prefer not to set an environment variable you can pass the key in directly via the `cohere_api_key` named parameter when initiating the Cohere LLM class:
-
-```python
-from langchain_cohere import CohereEmbeddings
-
-embeddings_model = CohereEmbeddings(cohere_api_key="...", model='embed-english-v3.0')
-```
-
-Otherwise you can initialize simply as shown below:
-```python
-from langchain_cohere import CohereEmbeddings
-
-embeddings_model = CohereEmbeddings(model='embed-english-v3.0')
-```
-Do note that it is mandatory to pass the model parameter while initializing the CohereEmbeddings class.
-
-  </TabItem>
-  <TabItem value="huggingface" label="Hugging Face">
-
-To start we'll need to install the Hugging Face partner package:
-
-```bash
-pip install langchain-huggingface
-```
-
-You can then load any [Sentence Transformers model](https://huggingface.co/models?library=sentence-transformers) from the Hugging Face Hub.
-
-```python
-from langchain_huggingface import HuggingFaceEmbeddings
-
-embeddings_model = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-```
-  </TabItem>
-</Tabs>
+<EmbeddingTabs customVarName="embeddings_model" />
 
 ### `embed_documents`
 #### Embed list of texts

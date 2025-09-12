@@ -1,27 +1,33 @@
+"""Tool that takes in function or coroutine directly."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable
 from inspect import signature
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
     Union,
 )
 
-from pydantic import BaseModel
+from typing_extensions import override
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForToolRun,
     CallbackManagerForToolRun,
 )
-from langchain_core.messages import ToolCall
 from langchain_core.runnables import RunnableConfig, run_in_executor
 from langchain_core.tools.base import (
+    ArgsSchema,
     BaseTool,
     ToolException,
     _get_runnable_config_param,
 )
+
+if TYPE_CHECKING:
+    from langchain_core.messages import ToolCall
 
 
 class Tool(BaseTool):
@@ -35,6 +41,7 @@ class Tool(BaseTool):
 
     # --- Runnable ---
 
+    @override
     async def ainvoke(
         self,
         input: Union[str, dict, ToolCall],
@@ -57,14 +64,28 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            return self.args_schema.model_json_schema()["properties"]
+            return super().args
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
 
-    def _to_args_and_kwargs(self, tool_input: Union[str, dict]) -> tuple[tuple, dict]:
-        """Convert tool input to pydantic model."""
-        args, kwargs = super()._to_args_and_kwargs(tool_input)
+    def _to_args_and_kwargs(
+        self, tool_input: Union[str, dict], tool_call_id: Optional[str]
+    ) -> tuple[tuple, dict]:
+        """Convert tool input to pydantic model.
+
+        Args:
+            tool_input: The input to the tool.
+            tool_call_id: The ID of the tool call.
+
+        Raises:
+            ToolException: If the tool input is invalid.
+
+        Returns:
+            the pydantic model args and kwargs.
+
+        """
+        args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
         if len(all_args) != 1:
@@ -83,7 +104,17 @@ class Tool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -100,7 +131,17 @@ class Tool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -119,9 +160,7 @@ class Tool(BaseTool):
         self, name: str, func: Optional[Callable], description: str, **kwargs: Any
     ) -> None:
         """Initialize tool."""
-        super().__init__(  # type: ignore[call-arg]
-            name=name, func=func, description=description, **kwargs
-        )
+        super().__init__(name=name, func=func, description=description, **kwargs)
 
     @classmethod
     def from_function(
@@ -129,8 +168,8 @@ class Tool(BaseTool):
         func: Optional[Callable],
         name: str,  # We keep these required to support backwards compatibility
         description: str,
-        return_direct: bool = False,
-        args_schema: Optional[type[BaseModel]] = None,
+        return_direct: bool = False,  # noqa: FBT001,FBT002
+        args_schema: Optional[ArgsSchema] = None,
         coroutine: Optional[
             Callable[..., Awaitable[Any]]
         ] = None,  # This is last for compatibility, but should be after func
@@ -165,6 +204,3 @@ class Tool(BaseTool):
             args_schema=args_schema,
             **kwargs,
         )
-
-
-Tool.model_rebuild()

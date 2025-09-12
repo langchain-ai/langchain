@@ -1,12 +1,10 @@
 """Chain that carries on a conversation and calls an LLM."""
 
-from typing import List
-
 from langchain_core._api import deprecated
 from langchain_core.memory import BaseMemory
 from langchain_core.prompts import BasePromptTemplate
 from pydantic import ConfigDict, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 from langchain.chains.conversation.prompt import PROMPT
 from langchain.chains.llm import LLMChain
@@ -15,10 +13,7 @@ from langchain.memory.buffer import ConversationBufferMemory
 
 @deprecated(
     since="0.2.7",
-    alternative=(
-        "RunnableWithMessageHistory: "
-        "https://python.langchain.com/v0.2/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html"  # noqa: E501
-    ),
+    alternative="langchain_core.runnables.history.RunnableWithMessageHistory",
     removal="1.0",
 )
 class ConversationChain(LLMChain):
@@ -46,10 +41,12 @@ class ConversationChain(LLMChain):
 
             store = {}  # memory is maintained outside the chain
 
+
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
                     store[session_id] = InMemoryChatMessageHistory()
                 return store[session_id]
+
 
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
@@ -58,6 +55,7 @@ class ConversationChain(LLMChain):
                 "Hi I'm Bob.",
                 config={"configurable": {"session_id": "1"}},
             )  # session_id determines thread
+
     Memory objects can also be incorporated into the ``get_session_history`` callable:
 
         .. code-block:: python
@@ -69,6 +67,7 @@ class ConversationChain(LLMChain):
 
 
             store = {}  # memory is maintained outside the chain
+
 
             def get_session_history(session_id: str) -> InMemoryChatMessageHistory:
                 if session_id not in store:
@@ -86,6 +85,7 @@ class ConversationChain(LLMChain):
                 store[session_id] = InMemoryChatMessageHistory(messages=messages)
                 return store[session_id]
 
+
             llm = ChatOpenAI(model="gpt-3.5-turbo-0125")
 
             chain = RunnableWithMessageHistory(llm, get_session_history)
@@ -101,6 +101,7 @@ class ConversationChain(LLMChain):
             from langchain_community.llms import OpenAI
 
             conversation = ConversationChain(llm=OpenAI())
+
     """
 
     memory: BaseMemory = Field(default_factory=ConversationBufferMemory)
@@ -117,11 +118,12 @@ class ConversationChain(LLMChain):
     )
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Use this since so some prompt vars come from history."""
         return [self.input_key]
 
@@ -131,16 +133,18 @@ class ConversationChain(LLMChain):
         memory_keys = self.memory.memory_variables
         input_key = self.input_key
         if input_key in memory_keys:
-            raise ValueError(
+            msg = (
                 f"The input key {input_key} was also found in the memory keys "
                 f"({memory_keys}) - please provide keys that don't overlap."
             )
+            raise ValueError(msg)
         prompt_variables = self.prompt.input_variables
-        expected_keys = memory_keys + [input_key]
+        expected_keys = [*memory_keys, input_key]
         if set(expected_keys) != set(prompt_variables):
-            raise ValueError(
+            msg = (
                 "Got unexpected prompt input variables. The prompt expects "
                 f"{prompt_variables}, but got {memory_keys} as inputs from "
                 f"memory, and {input_key} as the normal input key."
             )
+            raise ValueError(msg)
         return self

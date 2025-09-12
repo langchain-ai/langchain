@@ -5,6 +5,7 @@ import json
 import logging
 import os
 import re
+import warnings
 from pathlib import Path
 from typing import List, Literal, Optional
 
@@ -110,16 +111,36 @@ def find_files(path):
 
 def get_full_module_name(module_path, class_name) -> Optional[str]:
     """Get full module name using inspect"""
-    try:
-        module = importlib.import_module(module_path)
-        class_ = getattr(module, class_name)
-        return inspect.getmodule(class_).__name__
-    except AttributeError as e:
-        logger.warning(f"Could not find module for {class_name}, {e}")
-        return None
-    except ImportError as e:
-        logger.warning(f"Failed to load for class {class_name}, {e}")
-        return None
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        try:
+            module = importlib.import_module(module_path)
+        except ImportError:
+            # check if it's a submodule
+            try:
+                module = importlib.import_module(module_path + "." + class_name)
+            except ImportError:
+                raise ValueError(f"Failed to import module {module_path}")
+            return module.__name__
+
+        try:
+            class_ = getattr(module, class_name)
+        except AttributeError:
+            # check if it's a submodule
+            try:
+                module = importlib.import_module(module_path + "." + class_name)
+            except ImportError:
+                raise ValueError(
+                    f"Failed to import class {class_name} from module {module_path}"
+                )
+            return module.__name__
+
+        inspectmodule = inspect.getmodule(class_)
+        if inspectmodule is None:
+            # it wasn't a class, it's a primitive (e.g. END="__end__")
+            # so no documentation link is necessary
+            return None
+        return inspectmodule.__name__
 
 
 def get_args() -> argparse.Namespace:
@@ -228,7 +249,17 @@ def _get_imports(
             if imp.strip()
         ]
         for class_name in imported_classes:
-            module_path = get_full_module_name(module, class_name)
+            try:
+                module_path = get_full_module_name(module, class_name)
+            except ValueError as e:
+                logger.warning(e)
+                continue
+            except Exception as e:
+                logger.error(
+                    f"Failed to get full module name for {module}.{class_name}"
+                )
+                logger.error(e)
+                continue
             if not module_path:
                 continue
             if len(module_path.split(".")) < 2:

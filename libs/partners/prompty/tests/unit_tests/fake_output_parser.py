@@ -1,10 +1,10 @@
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 from langchain.agents import AgentOutputParser
 from langchain_core.agents import AgentAction, AgentFinish
 
 
-def extract_action_details(text: str) -> Tuple[Optional[str], Optional[str]]:
+def extract_action_details(text: str) -> tuple[Optional[str], Optional[str]]:
     # Split the text into lines and strip whitespace
     lines = [line.strip() for line in text.strip().split("\n")]
 
@@ -24,7 +24,6 @@ def extract_action_details(text: str) -> Tuple[Optional[str], Optional[str]]:
 
 class FakeOutputParser(AgentOutputParser):
     def parse(self, text: str) -> Union[AgentAction, AgentFinish]:
-        print("FakeOutputParser", text)
         action, input = extract_action_details(text)
 
         if action:

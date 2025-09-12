@@ -8,20 +8,39 @@ import click
 import nbformat
 
 logger = logging.getLogger(__name__)
-NOTEBOOK_DIRS = ("docs/docs/tutorials",)
+NOTEBOOK_DIRS = ("docs/docs/how_to", "docs/docs/tutorials")
 DOCS_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CASSETTES_PATH = os.path.join(DOCS_PATH, "cassettes")
 
-# TODO: populate if needed
 NOTEBOOKS_NO_CASSETTES = [
+    "docs/docs/tutorials/rag.ipynb",  # TODO: accommodate langsmith changes in cassettes
     "docs/docs/tutorials/retrievers.ipynb",  # TODO: fix non-determinism
+    "docs/docs/how_to/multi_vector.ipynb",  # Non-determinism due to batch
+    "docs/docs/how_to/qa_sources.ipynb",  # TODO: accommodate langsmith changes in cassettes
+    "docs/docs/how_to/qa_streaming.ipynb",  # TODO: accommodate langsmith changes in cassettes
 ]
 
 NOTEBOOKS_NO_EXECUTION = [
+    "docs/docs/how_to/add_scores_retriever.ipynb",  # Requires Pinecone instance
+    "docs/docs/how_to/chat_model_rate_limiting.ipynb",  # Slow (demonstrates rate limiting)
+    "docs/docs/how_to/document_loader_directory.ipynb",  # Deliberately raises error
+    "docs/docs/how_to/document_loader_pdf.ipynb",  # Local parsing section is slow
+    "docs/docs/how_to/example_selectors_langsmith.ipynb",  # TODO: add langchain-benchmarks; fix cassette issue
+    "docs/docs/how_to/extraction_long_text.ipynb",  # Non-determinism due to batch
+    "docs/docs/how_to/graph_constructing.ipynb",  # Requires local neo4j
+    "docs/docs/how_to/graph_semantic.ipynb",  # Requires local neo4j
+    "docs/docs/how_to/hybrid.ipynb",  # Requires AstraDB instance
+    "docs/docs/how_to/indexing.ipynb",  # Requires local Elasticsearch
+    "docs/docs/how_to/local_llms.ipynb",  # Local LLMs
+    "docs/docs/how_to/migrate_agent.ipynb",  # TODO: resolve issue with asyncio / exception handling
+    "docs/docs/how_to/qa_per_user.ipynb",  # Requires Pinecone instance
+    "docs/docs/how_to/query_high_cardinality.ipynb",  # Heavy
+    "docs/docs/how_to/response_metadata.ipynb",  # Auth is annoying
+    "docs/docs/how_to/split_by_token.ipynb",  # TODO: requires Korean document, also heavy deps
+    "docs/docs/how_to/tools_error.ipynb",  # Deliberately raises error
+    "docs/docs/how_to/tools_human.ipynb",  # Requires human input()
+    "docs/docs/how_to/tools_prompting.ipynb",  # Local LLMs
     "docs/docs/tutorials/graph.ipynb",  # Requires local graph db running
-    "docs/docs/tutorials/local_rag.ipynb",  # Local LLMs
-    "docs/docs/tutorials/query_analysis.ipynb",  # Requires youtube_transcript_api
-    "docs/docs/tutorials/sql_qa.ipynb",  # Requires Chinook db locally
     "docs/docs/tutorials/summarization.ipynb",  # TODO: source of non-determinism somewhere, fix or add to no cassettes
 ]
 

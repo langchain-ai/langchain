@@ -51,7 +51,12 @@ def test_get_from_dict_or_env() -> None:
 
     # Not the most obvious behavior, but
     # this is how it works right now
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match="Did not find not exists, "
+        "please add an environment variable `__SOME_KEY_IN_ENV` which contains it, "
+        "or pass `not exists` as a named parameter",
+    ):
         assert (
             get_from_dict_or_env(
                 {

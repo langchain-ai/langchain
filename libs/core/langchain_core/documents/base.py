@@ -1,15 +1,19 @@
+"""Base classes for media and documents."""
+
 from __future__ import annotations
 
 import contextlib
 import mimetypes
-from collections.abc import Generator
 from io import BufferedReader, BytesIO
-from pathlib import PurePath
-from typing import Any, Literal, Optional, Union, cast
+from pathlib import Path, PurePath
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
-from pydantic import ConfigDict, Field, field_validator, model_validator
+from pydantic import ConfigDict, Field, model_validator
 
 from langchain_core.load.serializable import Serializable
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 PathLike = Union[str, PurePath]
 
@@ -29,7 +33,7 @@ class BaseMedia(Serializable):
     # The ID field is optional at the moment.
     # It will likely become required in a future major release after
     # it has been adopted by enough vectorstore implementations.
-    id: Optional[str] = None
+    id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
     """An optional identifier for the document.
 
     Ideally this should be unique across the document collection and formatted
@@ -40,13 +44,6 @@ class BaseMedia(Serializable):
 
     metadata: dict = Field(default_factory=dict)
     """Arbitrary metadata associated with the content."""
-
-    @field_validator("id", mode="before")
-    def cast_id_to_str(cls, id_value: Any) -> Optional[str]:
-        if id_value is not None:
-            return str(id_value)
-        else:
-            return id_value
 
 
 class Blob(BaseMedia):
@@ -85,7 +82,7 @@ class Blob(BaseMedia):
             blob = Blob.from_data(
                 data="Hello, world!",
                 mime_type="text/plain",
-                metadata={"source": "https://example.com"}
+                metadata={"source": "https://example.com"},
             )
 
     Example: Load the blob from a file
@@ -105,6 +102,7 @@ class Blob(BaseMedia):
             # Read the blob as a byte stream
             with blob.as_bytes_io() as f:
                 print(f.read())
+
     """
 
     data: Union[bytes, str, None] = None
@@ -134,7 +132,7 @@ class Blob(BaseMedia):
         case that value will be used instead.
         """
         if self.metadata and "source" in self.metadata:
-            return cast(Optional[str], self.metadata["source"])
+            return cast("Optional[str]", self.metadata["source"])
         return str(self.path) if self.path else None
 
     @model_validator(mode="before")
@@ -147,38 +145,55 @@ class Blob(BaseMedia):
         return values
 
     def as_string(self) -> str:
-        """Read data as a string."""
+        """Read data as a string.
+
+        Raises:
+            ValueError: If the blob cannot be represented as a string.
+
+        Returns:
+            The data as a string.
+        """
         if self.data is None and self.path:
-            with open(str(self.path), encoding=self.encoding) as f:
-                return f.read()
-        elif isinstance(self.data, bytes):
+            return Path(self.path).read_text(encoding=self.encoding)
+        if isinstance(self.data, bytes):
             return self.data.decode(self.encoding)
-        elif isinstance(self.data, str):
+        if isinstance(self.data, str):
             return self.data
-        else:
-            msg = f"Unable to get string for blob {self}"
-            raise ValueError(msg)
+        msg = f"Unable to get string for blob {self}"
+        raise ValueError(msg)
 
     def as_bytes(self) -> bytes:
-        """Read data as bytes."""
+        """Read data as bytes.
+
+        Raises:
+            ValueError: If the blob cannot be represented as bytes.
+
+        Returns:
+            The data as bytes.
+        """
         if isinstance(self.data, bytes):
             return self.data
-        elif isinstance(self.data, str):
+        if isinstance(self.data, str):
             return self.data.encode(self.encoding)
-        elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
-                return f.read()
-        else:
-            msg = f"Unable to get bytes for blob {self}"
-            raise ValueError(msg)
+        if self.data is None and self.path:
+            return Path(self.path).read_bytes()
+        msg = f"Unable to get bytes for blob {self}"
+        raise ValueError(msg)
 
     @contextlib.contextmanager
     def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
-        """Read data as a byte stream."""
+        """Read data as a byte stream.
+
+        Raises:
+            NotImplementedError: If the blob cannot be represented as a byte stream.
+
+        Yields:
+            The data as a byte stream.
+        """
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
-            with open(str(self.path), "rb") as f:
+            with Path(self.path).open("rb") as f:
                 yield f
         else:
             msg = f"Unable to convert blob {self}"
@@ -208,14 +223,14 @@ class Blob(BaseMedia):
             Blob instance
         """
         if mime_type is None and guess_type:
-            _mimetype = mimetypes.guess_type(path)[0] if guess_type else None
+            mimetype = mimetypes.guess_type(path)[0] if guess_type else None
         else:
-            _mimetype = mime_type
+            mimetype = mime_type
         # We do not load the data immediately, instead we treat the blob as a
         # reference to the underlying data.
         return cls(
             data=None,
-            mimetype=_mimetype,
+            mimetype=mimetype,
             encoding=encoding,
             path=path,
             metadata=metadata if metadata is not None else {},
@@ -252,7 +267,7 @@ class Blob(BaseMedia):
         )
 
     def __repr__(self) -> str:
-        """Define the blob representation."""
+        """Return the blob representation."""
         str_repr = f"Blob {id(self)}"
         if self.source:
             str_repr += f" {self.source}"
@@ -269,9 +284,9 @@ class Document(BaseMedia):
             from langchain_core.documents import Document
 
             document = Document(
-                page_content="Hello, world!",
-                metadata={"source": "https://example.com"}
+                page_content="Hello, world!", metadata={"source": "https://example.com"}
             )
+
     """
 
     page_content: str
@@ -282,20 +297,28 @@ class Document(BaseMedia):
         """Pass page_content in as positional or named arg."""
         # my-py is complaining that page_content is not defined on the base class.
         # Here, we're relying on pydantic base class to handle the validation.
-        super().__init__(page_content=page_content, **kwargs)  # type: ignore[call-arg]
+        super().__init__(page_content=page_content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ["langchain", "schema", "document"]
+        """
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
-        """Override __str__ to restrict it to page_content and metadata."""
+        """Override __str__ to restrict it to page_content and metadata.
+
+        Returns:
+            A string representation of the Document.
+        """
         # The format matches pydantic format for __str__.
         #
         # The purpose of this change is to make sure that user code that
@@ -306,5 +329,4 @@ class Document(BaseMedia):
         # a more general solution of formatting content directly inside the prompts.
         if self.metadata:
             return f"page_content='{self.page_content}' metadata={self.metadata}"
-        else:
-            return f"page_content='{self.page_content}'"
+        return f"page_content='{self.page_content}'"

@@ -12,6 +12,8 @@ from __future__ import annotations
 import base64
 import inspect
 import json
+import logging
+import math
 from collections.abc import Iterable, Sequence
 from functools import partial
 from typing import (
@@ -29,6 +31,7 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
+from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
@@ -39,25 +42,31 @@ from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 
 if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+
+try:
+    from langchain_text_splitters import TextSplitter
+
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = True
+except ImportError:
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = False
+
+logger = logging.getLogger(__name__)
 
 
 def _get_type(v: Any) -> str:
     """Get the type associated with the object for serialization purposes."""
     if isinstance(v, dict) and "type" in v:
         return v["type"]
-    elif hasattr(v, "type"):
+    if hasattr(v, "type"):
         return v.type
-    else:
-        msg = (
-            f"Expected either a dictionary with a 'type' key or an object "
-            f"with a 'type' attribute. Instead got type {type(v)}."
-        )
-        raise TypeError(msg)
+    msg = (
+        f"Expected either a dictionary with a 'type' key or an object "
+        f"with a 'type' attribute. Instead got type {type(v)}."
+    )
+    raise TypeError(msg)
 
 
 AnyMessage = Annotated[
@@ -82,7 +91,7 @@ AnyMessage = Annotated[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    """Convert a sequence of Messages to strings and concatenate them into one string.
+    r"""Convert a sequence of Messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
@@ -107,6 +116,7 @@ def get_buffer_string(
             ]
             get_buffer_string(messages)
             # -> "Human: Hi, how are you?\nAI: Good, how are you?"
+
     """
     string_messages = []
     for m in messages:
@@ -124,8 +134,8 @@ def get_buffer_string(
             role = m.role
         else:
             msg = f"Got unsupported message type: {m}"
-            raise ValueError(msg)
-        message = f"{role}: {m.content}"
+            raise ValueError(msg)  # noqa: TRY004
+        message = f"{role}: {m.text()}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
@@ -134,36 +144,35 @@ def get_buffer_string(
 
 
 def _message_from_dict(message: dict) -> BaseMessage:
-    _type = message["type"]
-    if _type == "human":
+    type_ = message["type"]
+    if type_ == "human":
         return HumanMessage(**message["data"])
-    elif _type == "ai":
+    if type_ == "ai":
         return AIMessage(**message["data"])
-    elif _type == "system":
+    if type_ == "system":
         return SystemMessage(**message["data"])
-    elif _type == "chat":
+    if type_ == "chat":
         return ChatMessage(**message["data"])
-    elif _type == "function":
+    if type_ == "function":
         return FunctionMessage(**message["data"])
-    elif _type == "tool":
+    if type_ == "tool":
         return ToolMessage(**message["data"])
-    elif _type == "remove":
+    if type_ == "remove":
         return RemoveMessage(**message["data"])
-    elif _type == "AIMessageChunk":
+    if type_ == "AIMessageChunk":
         return AIMessageChunk(**message["data"])
-    elif _type == "HumanMessageChunk":
+    if type_ == "HumanMessageChunk":
         return HumanMessageChunk(**message["data"])
-    elif _type == "FunctionMessageChunk":
+    if type_ == "FunctionMessageChunk":
         return FunctionMessageChunk(**message["data"])
-    elif _type == "ToolMessageChunk":
+    if type_ == "ToolMessageChunk":
         return ToolMessageChunk(**message["data"])
-    elif _type == "SystemMessageChunk":
+    if type_ == "SystemMessageChunk":
         return SystemMessageChunk(**message["data"])
-    elif _type == "ChatMessageChunk":
+    if type_ == "ChatMessageChunk":
         return ChatMessageChunk(**message["data"])
-    else:
-        msg = f"Got unexpected message type: {_type}"
-        raise ValueError(msg)
+    msg = f"Got unexpected message type: {type_}"
+    raise ValueError(msg)
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
@@ -178,7 +187,7 @@ def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
     return [_message_from_dict(m) for m in messages]
 
 
-def message_chunk_to_message(chunk: BaseMessageChunk) -> BaseMessage:
+def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     """Convert a message chunk to a message.
 
     Args:
@@ -221,14 +230,14 @@ def _create_message_from_message_type(
         tool_call_id: (str) the tool call id. Default is None.
         tool_calls: (list[dict[str, Any]]) the tool calls. Default is None.
         id: (str) the id of the message. Default is None.
-        **additional_kwargs: (dict[str, Any]) additional keyword arguments.
+        additional_kwargs: (dict[str, Any]) additional keyword arguments.
 
     Returns:
         a message of the appropriate type.
 
     Raises:
         ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "system", "function", or "tool".
+            "assistant", "function", "tool", "system", or "developer".
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
@@ -236,7 +245,10 @@ def _create_message_from_message_type(
     if tool_call_id is not None:
         kwargs["tool_call_id"] = tool_call_id
     if additional_kwargs:
-        kwargs["additional_kwargs"] = additional_kwargs  # type: ignore[assignment]
+        if response_metadata := additional_kwargs.pop("response_metadata", None):
+            kwargs["response_metadata"] = response_metadata
+        kwargs["additional_kwargs"] = additional_kwargs
+        additional_kwargs.update(additional_kwargs.pop("additional_kwargs", {}))
     if id is not None:
         kwargs["id"] = id
     if tool_calls is not None:
@@ -257,23 +269,33 @@ def _create_message_from_message_type(
                 )
             else:
                 kwargs["tool_calls"].append(tool_call)
-    if message_type in ("human", "user"):
+    if message_type in {"human", "user"}:
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message: BaseMessage = HumanMessage(content=content, **kwargs)
-    elif message_type in ("ai", "assistant"):
+    elif message_type in {"ai", "assistant"}:
+        if example := kwargs.get("additional_kwargs", {}).pop("example", False):
+            kwargs["example"] = example
         message = AIMessage(content=content, **kwargs)
-    elif message_type == "system":
+    elif message_type in {"system", "developer"}:
+        if message_type == "developer":
+            kwargs["additional_kwargs"] = kwargs.get("additional_kwargs") or {}
+            kwargs["additional_kwargs"]["__openai_role__"] = "developer"
         message = SystemMessage(content=content, **kwargs)
     elif message_type == "function":
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
         artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
+        status = kwargs.get("additional_kwargs", {}).pop("status", None)
+        if status is not None:
+            kwargs["status"] = status
         message = ToolMessage(content=content, artifact=artifact, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
     else:
         msg = (
             f"Unexpected message type: '{message_type}'. Use one of 'human',"
-            f" 'user', 'ai', 'assistant', 'function', 'tool', or 'system'."
+            f" 'user', 'ai', 'assistant', 'function', 'tool', 'system', or 'developer'."
         )
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise ValueError(msg)
@@ -302,13 +324,13 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         ValueError: if the message dict does not contain the required keys.
     """
     if isinstance(message, BaseMessage):
-        _message = message
+        message_ = message
     elif isinstance(message, str):
-        _message = _create_message_from_message_type("human", message)
+        message_ = _create_message_from_message_type("human", message)
     elif isinstance(message, Sequence) and len(message) == 2:
         # mypy doesn't realise this can't be a string given the previous branch
         message_type_str, template = message  # type: ignore[misc]
-        _message = _create_message_from_message_type(message_type_str, template)
+        message_ = _create_message_from_message_type(message_type_str, template)
     elif isinstance(message, dict):
         msg_kwargs = message.copy()
         try:
@@ -324,7 +346,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
                 message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE
             )
             raise ValueError(msg) from e
-        _message = _create_message_from_message_type(
+        message_ = _create_message_from_message_type(
             msg_type, msg_content, **msg_kwargs
         )
     else:
@@ -332,7 +354,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
         msg = create_message(message=msg, error_code=ErrorCode.MESSAGE_COERCION_FAILURE)
         raise NotImplementedError(msg)
 
-    return _message
+    return message_
 
 
 def convert_to_messages(
@@ -347,7 +369,7 @@ def convert_to_messages(
         list of messages (BaseMessages).
     """
     # Import here to avoid circular imports
-    from langchain_core.prompt_values import PromptValue
+    from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
@@ -357,7 +379,7 @@ def convert_to_messages(
 def _runnable_support(func: Callable) -> Callable:
     @overload
     def wrapped(
-        messages: Literal[None] = None, **kwargs: Any
+        messages: None = None, **kwargs: Any
     ) -> Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]]: ...
 
     @overload
@@ -372,12 +394,12 @@ def _runnable_support(func: Callable) -> Callable:
         list[BaseMessage],
         Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
-        from langchain_core.runnables.base import RunnableLambda
+        # Import locally to prevent circular import.
+        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
             return func(messages, **kwargs)
-        else:
-            return RunnableLambda(partial(func, **kwargs), name=func.__name__)
+        return RunnableLambda(partial(func, **kwargs), name=func.__name__)
 
     wrapped.__doc__ = func.__doc__
     return wrapped
@@ -393,6 +415,7 @@ def filter_messages(
     exclude_types: Optional[Sequence[Union[str, type[BaseMessage]]]] = None,
     include_ids: Optional[Sequence[str]] = None,
     exclude_ids: Optional[Sequence[str]] = None,
+    exclude_tool_calls: Optional[Sequence[str] | bool] = None,
 ) -> list[BaseMessage]:
     """Filter messages based on name, type or id.
 
@@ -408,6 +431,18 @@ def filter_messages(
             SystemMessage, HumanMessage, AIMessage, ...). Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
+        exclude_tool_calls: Tool call IDs to exclude. Default is None.
+            Can be one of the following:
+
+            - ``True``: Each ``AIMessages`` with tool calls and all ``ToolMessages``
+              will be excluded.
+            - a sequence of tool call IDs to exclude:
+
+              - ToolMessages with the corresponding tool call ID will be excluded.
+              - The ``tool_calls`` in the AIMessage will be updated to exclude matching
+                tool calls.
+                If all tool_calls are filtered from an AIMessage,
+                the whole message is excluded.
 
     Returns:
         A list of Messages that meets at least one of the incl_* conditions and none
@@ -420,14 +455,25 @@ def filter_messages(
     Example:
         .. code-block:: python
 
-            from langchain_core.messages import filter_messages, AIMessage, HumanMessage, SystemMessage
+            from langchain_core.messages import (
+                filter_messages,
+                AIMessage,
+                HumanMessage,
+                SystemMessage,
+            )
 
             messages = [
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
                 AIMessage("steve-o", id="bar", name="example_assistant"),
-                HumanMessage("what's your favorite color", id="baz",),
-                AIMessage("silicon blue", id="blah",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="baz",
+                ),
+                AIMessage(
+                    "silicon blue",
+                    id="blah",
+                ),
             ]
 
             filter_messages(
@@ -443,7 +489,8 @@ def filter_messages(
                 SystemMessage("you're a good assistant."),
                 HumanMessage("what's your name", id="foo", name="example_user"),
             ]
-    """  # noqa: E501
+
+    """
     messages = convert_to_messages(messages)
     filtered: list[BaseMessage] = []
     for msg in messages:
@@ -453,8 +500,43 @@ def filter_messages(
             or (exclude_ids and msg.id in exclude_ids)
         ):
             continue
-        else:
-            pass
+
+        if exclude_tool_calls is True and (
+            (isinstance(msg, AIMessage) and msg.tool_calls)
+            or isinstance(msg, ToolMessage)
+        ):
+            continue
+
+        if isinstance(exclude_tool_calls, (list, tuple, set)):
+            if isinstance(msg, AIMessage) and msg.tool_calls:
+                tool_calls = [
+                    tool_call
+                    for tool_call in msg.tool_calls
+                    if tool_call["id"] not in exclude_tool_calls
+                ]
+                if not tool_calls:
+                    continue
+
+                content = msg.content
+                # handle Anthropic content blocks
+                if isinstance(msg.content, list):
+                    content = [
+                        content_block
+                        for content_block in msg.content
+                        if (
+                            not isinstance(content_block, dict)
+                            or content_block.get("type") != "tool_use"
+                            or content_block.get("id") not in exclude_tool_calls
+                        )
+                    ]
+
+                msg = msg.model_copy(  # noqa: PLW2901
+                    update={"tool_calls": tool_calls, "content": content}
+                )
+            elif (
+                isinstance(msg, ToolMessage) and msg.tool_call_id in exclude_tool_calls
+            ):
+                continue
 
         # default to inclusion when no inclusion criteria given.
         if (
@@ -464,8 +546,6 @@ def filter_messages(
             or (include_ids and msg.id in include_ids)
         ):
             filtered.append(msg)
-        else:
-            pass
 
     return filtered
 
@@ -476,7 +556,7 @@ def merge_message_runs(
     *,
     chunk_separator: str = "\n",
 ) -> list[BaseMessage]:
-    """Merge consecutive Messages of the same type.
+    r"""Merge consecutive Messages of the same type.
 
     **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
     can't be merged.
@@ -489,12 +569,14 @@ def merge_message_runs(
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
         messages. By default, if two messages being merged both have string contents,
-        the merged content is a concatenation of the two strings with a new-line separator.
+        the merged content is a concatenation of the two strings with a new-line
+        separator.
         The separator inserted between message chunks can be controlled by specifying
-        any string with ``chunk_separator``. If at least one of the messages has a list of
-        content blocks, the merged content is a list of content blocks.
+        any string with ``chunk_separator``. If at least one of the messages has a list
+        of content blocks, the merged content is a list of content blocks.
 
     Example:
+
         .. code-block:: python
 
             from langchain_core.messages import (
@@ -507,16 +589,33 @@ def merge_message_runs(
 
             messages = [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color", id="foo",),
-                HumanMessage("wait your favorite food", id="bar",),
+                HumanMessage(
+                    "what's your favorite color",
+                    id="foo",
+                ),
+                HumanMessage(
+                    "wait your favorite food",
+                    id="bar",
+                ),
                 AIMessage(
                     "my favorite colo",
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": 2}, id="123", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool", args={"x": 2}, id="123", type="tool_call"
+                        )
+                    ],
                     id="baz",
                 ),
                 AIMessage(
                     [{"type": "text", "text": "my favorite dish is lasagna"}],
-                    tool_calls=[ToolCall(name="blah_tool", args={"x": -10}, id="456", type="tool_call")],
+                    tool_calls=[
+                        ToolCall(
+                            name="blah_tool",
+                            args={"x": -10},
+                            id="456",
+                            type="tool_call",
+                        )
+                    ],
                     id="blur",
                 ),
             ]
@@ -527,35 +626,49 @@ def merge_message_runs(
 
             [
                 SystemMessage("you're a good assistant."),
-                HumanMessage("what's your favorite color\\nwait your favorite food", id="foo",),
+                HumanMessage(
+                    "what's your favorite color\\n"
+                    "wait your favorite food", id="foo",
+                ),
                 AIMessage(
                     [
                         "my favorite colo",
                         {"type": "text", "text": "my favorite dish is lasagna"}
                     ],
                     tool_calls=[
-                        ToolCall({"name": "blah_tool", "args": {"x": 2}, "id": "123", "type": "tool_call"}),
-                        ToolCall({"name": "blah_tool", "args": {"x": -10}, "id": "456", "type": "tool_call"})
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": 2},
+                            "id": "123",
+                            "type": "tool_call"
+                        }),
+                        ToolCall({
+                            "name": "blah_tool",
+                            "args": {"x": -10},
+                            "id": "456",
+                            "type": "tool_call"
+                        })
                     ]
                     id="baz"
                 ),
             ]
 
-    """  # noqa: E501
+    """
     if not messages:
         return []
     messages = convert_to_messages(messages)
     merged: list[BaseMessage] = []
     for msg in messages:
-        curr = msg.model_copy(deep=True)
         last = merged.pop() if merged else None
         if not last:
-            merged.append(curr)
-        elif isinstance(curr, ToolMessage) or not isinstance(curr, last.__class__):
-            merged.extend([last, curr])
+            merged.append(msg)
+        elif isinstance(msg, ToolMessage) or not isinstance(msg, last.__class__):
+            merged.extend([last, msg])
         else:
             last_chunk = _msg_to_chunk(last)
-            curr_chunk = _msg_to_chunk(curr)
+            curr_chunk = _msg_to_chunk(msg)
+            if curr_chunk.response_metadata:
+                curr_chunk.response_metadata.clear()
             if (
                 isinstance(last_chunk.content, str)
                 and isinstance(curr_chunk.content, str)
@@ -590,7 +703,7 @@ def trim_messages(
     include_system: bool = False,
     text_splitter: Optional[Union[Callable[[str], list[str]], TextSplitter]] = None,
 ) -> list[BaseMessage]:
-    """Trim messages to be below a token count.
+    r"""Trim messages to be below a token count.
 
     trim_messages can be used to reduce the size of a chat history to a specified token
     count or specified message count.
@@ -600,22 +713,23 @@ def trim_messages(
     properties:
 
     1. The resulting chat history should be valid. Most chat models expect that chat
-       history starts with either (1) a `HumanMessage` or (2) a `SystemMessage` followed
-       by a `HumanMessage`. To achieve this, set `start_on="human"`.
-       In addition, generally a `ToolMessage` can only appear after an `AIMessage`
+       history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage``
+       followed by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
-       To achieve this set the `strategy="last"`.
-    3. Usually, the new chat history should include the `SystemMessage` if it
-       was present in the original chat history since the `SystemMessage` includes
-       special instructions to the chat model. The `SystemMessage` is almost always
+       To achieve this set the ``strategy="last"``.
+    3. Usually, the new chat history should include the ``SystemMessage`` if it
+       was present in the original chat history since the ``SystemMessage`` includes
+       special instructions to the chat model. The ``SystemMessage`` is almost always
        the first message in the history if present. To achieve this set the
-       `include_system=True`.
+       ``include_system=True``.
 
-    **Note** The examples below show how to configure `trim_messages` to achieve
-        a behavior consistent with the above properties.
+    .. note::
+        The examples below show how to configure ``trim_messages`` to achieve a behavior
+        consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
@@ -624,10 +738,18 @@ def trim_messages(
             BaseMessage. If a BaseLanguageModel is passed in then
             BaseLanguageModel.get_num_tokens_from_messages() will be used.
             Set to `len` to count the number of **messages** in the chat history.
+
+            .. note::
+                Use `count_tokens_approximately` to get fast, approximate token counts.
+                This is recommended for using `trim_messages` on the hot path, where
+                exact token counting is not necessary.
+
         strategy: Strategy for trimming.
+
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
-            Default is "last".
+
+            Default is ``'last'``.
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
             are included. If ``strategy="first"`` then the first partial contents of a
@@ -676,8 +798,6 @@ def trim_messages(
 
         .. code-block:: python
 
-            from typing import list
-
             from langchain_core.messages import (
                 AIMessage,
                 HumanMessage,
@@ -687,14 +807,18 @@ def trim_messages(
             )
 
             messages = [
-                SystemMessage("you're a good assistant, you always respond with a joke."),
+                SystemMessage(
+                    "you're a good assistant, you always respond with a joke."
+                ),
                 HumanMessage("i wonder why it's called langchain"),
                 AIMessage(
-                    'Well, I guess they thought "WordRope" and "SentenceString" just didn\'t have the same ring to it!'
+                    'Well, I guess they thought "WordRope" and "SentenceString" just '
+                    "didn't have the same ring to it!"
                 ),
                 HumanMessage("and who is harrison chasing anyways"),
                 AIMessage(
-                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"
+                    "Hmmm let me think.\n\nWhy, he's probably chasing after the last "
+                    "cup of coffee in the office!"
                 ),
                 HumanMessage("what do you call a speechless parrot"),
             ]
@@ -719,8 +843,10 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
         Trim chat history based on the message count, keeping the SystemMessage if
@@ -750,10 +876,15 @@ def trim_messages(
         .. code-block:: python
 
             [
-                SystemMessage(content="you're a good assistant, you always respond with a joke."),
-                HumanMessage(content='and who is harrison chasing anyways'),
-                AIMessage(content="Hmmm let me think.\n\nWhy, he's probably chasing after the last cup of coffee in the office!"),
-                HumanMessage(content='what do you call a speechless parrot'),
+                SystemMessage(
+                    content="you're a good assistant, you always respond with a joke."
+                ),
+                HumanMessage(content="and who is harrison chasing anyways"),
+                AIMessage(
+                    content="Hmmm let me think.\n\nWhy, he's probably chasing after "
+                    "the last cup of coffee in the office!"
+                ),
+                HumanMessage(content="what do you call a speechless parrot"),
             ]
 
 
@@ -764,7 +895,9 @@ def trim_messages(
 
             messages = [
                 SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="first"
+                ),
                 AIMessage(
                     [
                         {"type": "text", "text": "This is the FIRST 4 token block."},
@@ -772,9 +905,15 @@ def trim_messages(
                     ],
                     id="second",
                 ),
-                HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="third"),
-                AIMessage("This is a 4 token text. The full message is 10 tokens.", id="fourth"),
+                HumanMessage(
+                    "This is a 4 token text. The full message is 10 tokens.", id="third"
+                ),
+                AIMessage(
+                    "This is a 4 token text. The full message is 10 tokens.",
+                    id="fourth",
+                ),
             ]
+
 
             def dummy_token_counter(messages: list[BaseMessage]) -> int:
                 # treat each message like it adds 3 default tokens at the beginning
@@ -788,9 +927,17 @@ def trim_messages(
                 count = 0
                 for msg in messages:
                     if isinstance(msg.content, str):
-                        count += default_msg_prefix_len + default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + default_content_len
+                            + default_msg_suffix_len
+                        )
                     if isinstance(msg.content, list):
-                        count += default_msg_prefix_len + len(msg.content) *  default_content_len + default_msg_suffix_len
+                        count += (
+                            default_msg_prefix_len
+                            + len(msg.content) * default_content_len
+                            + default_msg_suffix_len
+                        )
                 return count
 
         First 30 tokens, allowing partial messages:
@@ -807,22 +954,34 @@ def trim_messages(
             .. code-block:: python
 
                 [
-                    SystemMessage("This is a 4 token text. The full message is 10 tokens."),
-                    HumanMessage("This is a 4 token text. The full message is 10 tokens.", id="first"),
-                    AIMessage( [{"type": "text", "text": "This is the FIRST 4 token block."}], id="second"),
+                    SystemMessage(
+                        "This is a 4 token text. The full message is 10 tokens."
+                    ),
+                    HumanMessage(
+                        "This is a 4 token text. The full message is 10 tokens.",
+                        id="first",
+                    ),
+                    AIMessage(
+                        [{"type": "text", "text": "This is the FIRST 4 token block."}],
+                        id="second",
+                    ),
                 ]
-    """  # noqa: E501
 
+    """
+    # Validate arguments
     if start_on and strategy == "first":
-        raise ValueError
+        msg = "start_on parameter is only valid with strategy='last'"
+        raise ValueError(msg)
     if include_system and strategy == "first":
-        raise ValueError
+        msg = "include_system parameter is only valid with strategy='last'"
+        raise ValueError(msg)
+
     messages = convert_to_messages(messages)
     if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
         if (
-            list(inspect.signature(token_counter).parameters.values())[0].annotation
+            next(iter(inspect.signature(token_counter).parameters.values())).annotation
             is BaseMessage
         ):
 
@@ -830,7 +989,7 @@ def trim_messages(
                 return sum(token_counter(msg) for msg in messages)  # type: ignore[arg-type, misc]
 
         else:
-            list_token_counter = token_counter  # type: ignore[assignment]
+            list_token_counter = token_counter
     else:
         msg = (
             f"'token_counter' expected to be a model that implements "
@@ -839,17 +998,12 @@ def trim_messages(
         )
         raise ValueError(msg)
 
-    try:
-        from langchain_text_splitters import TextSplitter
-    except ImportError:
-        text_splitter_fn: Optional[Callable] = cast(Optional[Callable], text_splitter)
+    if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
+        text_splitter_fn = text_splitter.split_text
+    elif text_splitter:
+        text_splitter_fn = cast("Callable", text_splitter)
     else:
-        if isinstance(text_splitter, TextSplitter):
-            text_splitter_fn = text_splitter.split_text
-        else:
-            text_splitter_fn = text_splitter
-
-    text_splitter_fn = text_splitter_fn or _default_text_splitter
+        text_splitter_fn = _default_text_splitter
 
     if strategy == "first":
         return _first_max_tokens(
@@ -860,7 +1014,7 @@ def trim_messages(
             partial_strategy="first" if allow_partial else None,
             end_on=end_on,
         )
-    elif strategy == "last":
+    if strategy == "last":
         return _last_max_tokens(
             messages,
             max_tokens=max_tokens,
@@ -871,9 +1025,8 @@ def trim_messages(
             end_on=end_on,
             text_splitter=text_splitter_fn,
         )
-    else:
-        msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
-        raise ValueError(msg)
+    msg = f"Unrecognized {strategy=}. Supported strategies are 'last' and 'first'."
+    raise ValueError(msg)
 
 
 def convert_to_openai_messages(
@@ -883,32 +1036,35 @@ def convert_to_openai_messages(
 ) -> Union[dict, list[dict]]:
     """Convert LangChain messages into OpenAI message dicts.
 
-    .. versionadded:: 0.3.11
-
     Args:
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
 
-                - "string":
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type 'text', these are
-                    joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type 'text', then
-                    all blocks are left as dicts.
-                - "block":
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type 'text'. If a message has content
-                    blocks these are left as is.
+            - ``'string'``:
+              If a message has a string content, this is left as a string. If
+              a message has content blocks that are all of type 'text', these are
+              joined with a newline to make a single string. If a message has
+              content blocks and at least one isn't of type 'text', then
+              all blocks are left as dicts.
+            - ``'block'``:
+              If a message has a string content, this is turned into a list
+              with a single content block of type 'text'. If a message has content
+              blocks these are left as is.
+
+    Raises:
+        ValueError: if an unrecognized ``text_format`` is specified, or if a message
+            content block is missing expected keys.
 
     Returns:
         The return type depends on the input type:
-            - dict:
-                If a single message-like object is passed in, a single OpenAI message
-                dict is returned.
-            - list[dict]:
-                If a sequence of message-like objects are passed in, a list of OpenAI
-                message dicts is returned.
+
+        - dict:
+          If a single message-like object is passed in, a single OpenAI message
+          dict is returned.
+        - list[dict]:
+          If a sequence of message-like objects are passed in, a list of OpenAI
+          message dicts is returned.
 
     Example:
 
@@ -923,8 +1079,27 @@ def convert_to_openai_messages(
 
             messages = [
                 SystemMessage([{"type": "text", "text": "foo"}]),
-                {"role": "user", "content": [{"type": "text", "text": "whats in this"}, {"type": "image_url", "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"}}]},
-                AIMessage("", tool_calls=[{"name": "analyze", "args": {"baz": "buz"}, "id": "1", "type": "tool_call"}]),
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "whats in this"},
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": "data:image/png;base64,'/9j/4AAQSk'"},
+                        },
+                    ],
+                },
+                AIMessage(
+                    "",
+                    tool_calls=[
+                        {
+                            "name": "analyze",
+                            "args": {"baz": "buz"},
+                            "id": "1",
+                            "type": "tool_call",
+                        }
+                    ],
+                ),
                 ToolMessage("foobar", tool_call_id="1", name="bar"),
                 {"role": "assistant", "content": "thats nice"},
             ]
@@ -937,15 +1112,18 @@ def convert_to_openai_messages(
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
 
+    .. versionadded:: 0.3.11
+
     """  # noqa: E501
-    if text_format not in ("string", "block"):
+    if text_format not in {"string", "block"}:
         err = f"Unrecognized {text_format=}, expected one of 'string' or 'block'."
         raise ValueError(err)
 
     oai_messages: list = []
 
-    if is_single := isinstance(messages, (BaseMessage, dict)):
+    if is_single := isinstance(messages, (BaseMessage, dict, str)):
         messages = [messages]
+
     messages = convert_to_messages(messages)
 
     for i, message in enumerate(messages):
@@ -969,207 +1147,100 @@ def convert_to_openai_messages(
                 content = message.content
             else:
                 content = [{"type": "text", "text": message.content}]
-        else:
-            if text_format == "string" and all(
-                isinstance(block, str) or block.get("type") == "text"
+        elif text_format == "string" and all(
+            isinstance(block, str) or block.get("type") == "text"
+            for block in message.content
+        ):
+            content = "\n".join(
+                block if isinstance(block, str) else block["text"]
                 for block in message.content
-            ):
-                content = "\n".join(
-                    block if isinstance(block, str) else block["text"]
-                    for block in message.content
-                )
-            else:
-                content = []
-                for j, block in enumerate(message.content):
-                    # OpenAI format
-                    if isinstance(block, str):
-                        content.append({"type": "text", "text": block})
-                    elif block.get("type") == "text":
-                        if missing := [k for k in ("text",) if k not in block]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'text' "
-                                f"but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        content.append({"type": block["type"], "text": block["text"]})
-                    elif block.get("type") == "image_url":
-                        if missing := [k for k in ("image_url",) if k not in block]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'image_url' "
-                                f"but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        content.append(
-                            {"type": "image_url", "image_url": block["image_url"]}
+            )
+        else:
+            content = []
+            for j, block in enumerate(message.content):
+                # OpenAI format
+                if isinstance(block, str):
+                    content.append({"type": "text", "text": block})
+                elif block.get("type") == "text":
+                    if missing := [k for k in ("text",) if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'text' "
+                            f"but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
                         )
-                    # Anthropic and Bedrock converse format
-                    elif (block.get("type") == "image") or "image" in block:
-                        # Anthropic
-                        if source := block.get("source"):
-                            if missing := [
-                                k
-                                for k in ("media_type", "type", "data")
-                                if k not in source
-                            ]:
-                                err = (
-                                    f"Unrecognized content block at "
-                                    f"messages[{i}].content[{j}] has 'type': 'image' "
-                                    f"but 'source' is missing expected key(s) "
-                                    f"{missing}. Full content block:\n\n{block}"
-                                )
-                                raise ValueError(err)
-                            content.append(
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": (
-                                            f"data:{source['media_type']};"
-                                            f"{source['type']},{source['data']}"
-                                        )
-                                    },
-                                }
-                            )
-                        # Bedrock converse
-                        elif image := block.get("image"):
-                            if missing := [
-                                k for k in ("source", "format") if k not in image
-                            ]:
-                                err = (
-                                    f"Unrecognized content block at "
-                                    f"messages[{i}].content[{j}] has key 'image', "
-                                    f"but 'image' is missing expected key(s) "
-                                    f"{missing}. Full content block:\n\n{block}"
-                                )
-                                raise ValueError(err)
-                            b64_image = _bytes_to_b64_str(image["source"]["bytes"])
-                            content.append(
-                                {
-                                    "type": "image_url",
-                                    "image_url": {
-                                        "url": (
-                                            f"data:image/{image['format']};"
-                                            f"base64,{b64_image}"
-                                        )
-                                    },
-                                }
-                            )
-                        else:
+                        raise ValueError(err)
+                    content.append({"type": block["type"], "text": block["text"]})
+                elif block.get("type") == "image_url":
+                    if missing := [k for k in ("image_url",) if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'image_url' "
+                            f"but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": block["image_url"],
+                        }
+                    )
+                # Standard multi-modal content block
+                elif is_data_content_block(block):
+                    formatted_block = convert_to_openai_data_block(block)
+                    if (
+                        formatted_block.get("type") == "file"
+                        and "file" in formatted_block
+                        and "filename" not in formatted_block["file"]
+                    ):
+                        logger.info("Generating a fallback filename.")
+                        formatted_block["file"]["filename"] = "LC_AUTOGENERATED"
+                    content.append(formatted_block)
+                # Anthropic and Bedrock converse format
+                elif (block.get("type") == "image") or "image" in block:
+                    # Anthropic
+                    if source := block.get("source"):
+                        if missing := [
+                            k for k in ("media_type", "type", "data") if k not in source
+                        ]:
                             err = (
                                 f"Unrecognized content block at "
                                 f"messages[{i}].content[{j}] has 'type': 'image' "
-                                f"but does not have a 'source' or 'image' key. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                    elif block.get("type") == "tool_use":
-                        if missing := [
-                            k for k in ("id", "name", "input") if k not in block
-                        ]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'tool_use', but is missing expected key(s) "
+                                f"but 'source' is missing expected key(s) "
                                 f"{missing}. Full content block:\n\n{block}"
                             )
                             raise ValueError(err)
-                        if not any(
-                            tool_call["id"] == block["id"]
-                            for tool_call in cast(AIMessage, message).tool_calls
-                        ):
-                            oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
-                            oai_msg["tool_calls"].append(
-                                {
-                                    "type": "function",
-                                    "id": block["id"],
-                                    "function": {
-                                        "name": block["name"],
-                                        "arguments": json.dumps(block["input"]),
-                                    },
-                                }
-                            )
-                    elif block.get("type") == "tool_result":
-                        if missing := [
-                            k for k in ("content", "tool_use_id") if k not in block
-                        ]:
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'tool_result', but is missing expected key(s) "
-                                f"{missing}. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        tool_message = ToolMessage(
-                            block["content"],
-                            tool_call_id=block["tool_use_id"],
-                            status="error" if block.get("is_error") else "success",
-                        )
-                        # Recurse to make sure tool message contents are OpenAI format.
-                        tool_messages.extend(
-                            convert_to_openai_messages(
-                                [tool_message], text_format=text_format
-                            )
-                        )
-                    elif (block.get("type") == "json") or "json" in block:
-                        if "json" not in block:
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': 'json' "
-                                f"but does not have a 'json' key. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        content.append(
-                            {"type": "text", "text": json.dumps(block["json"])}
-                        )
-                    elif (
-                        block.get("type") == "guard_content"
-                    ) or "guard_content" in block:
-                        if (
-                            "guard_content" not in block
-                            or "text" not in block["guard_content"]
-                        ):
-                            msg = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'guard_content' but does not have a "
-                                f"messages[{i}].content[{j}]['guard_content']['text'] "
-                                f"key. Full content block:\n\n{block}"
-                            )
-                            raise ValueError(msg)
-                        text = block["guard_content"]["text"]
-                        if isinstance(text, dict):
-                            text = text["text"]
-                        content.append({"type": "text", "text": text})
-                    # VertexAI format
-                    elif block.get("type") == "media":
-                        if missing := [
-                            k for k in ("mime_type", "data") if k not in block
-                        ]:
-                            err = (
-                                f"Unrecognized content block at "
-                                f"messages[{i}].content[{j}] has 'type': "
-                                f"'media' but does not have key(s) {missing}. Full "
-                                f"content block:\n\n{block}"
-                            )
-                            raise ValueError(err)
-                        if "image" not in block["mime_type"]:
-                            err = (
-                                f"OpenAI messages can only support text and image data."
-                                f" Received content block with media of type:"
-                                f" {block['mime_type']}"
-                            )
-                            raise ValueError(err)
-                        b64_image = _bytes_to_b64_str(block["data"])
                         content.append(
                             {
                                 "type": "image_url",
                                 "image_url": {
                                     "url": (
-                                        f"data:{block['mime_type']};base64,{b64_image}"
+                                        f"data:{source['media_type']};"
+                                        f"{source['type']},{source['data']}"
+                                    )
+                                },
+                            }
+                        )
+                    # Bedrock converse
+                    elif image := block.get("image"):
+                        if missing := [
+                            k for k in ("source", "format") if k not in image
+                        ]:
+                            err = (
+                                f"Unrecognized content block at "
+                                f"messages[{i}].content[{j}] has key 'image', "
+                                f"but 'image' is missing expected key(s) "
+                                f"{missing}. Full content block:\n\n{block}"
+                            )
+                            raise ValueError(err)
+                        b64_image = _bytes_to_b64_str(image["source"]["bytes"])
+                        content.append(
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": (
+                                        f"data:image/{image['format']};base64,{b64_image}"
                                     )
                                 },
                             }
@@ -1177,15 +1248,151 @@ def convert_to_openai_messages(
                     else:
                         err = (
                             f"Unrecognized content block at "
-                            f"messages[{i}].content[{j}] does not match OpenAI, "
-                            f"Anthropic, Bedrock Converse, or VertexAI format. Full "
+                            f"messages[{i}].content[{j}] has 'type': 'image' "
+                            f"but does not have a 'source' or 'image' key. Full "
                             f"content block:\n\n{block}"
                         )
                         raise ValueError(err)
-                if text_format == "string" and not any(
-                    block["type"] != "text" for block in content
+                # OpenAI file format
+                elif (
+                    block.get("type") == "file"
+                    and isinstance(block.get("file"), dict)
+                    and isinstance(block.get("file", {}).get("file_data"), str)
                 ):
-                    content = "\n".join(block["text"] for block in content)
+                    if block.get("file", {}).get("filename") is None:
+                        logger.info("Generating a fallback filename.")
+                        block["file"]["filename"] = "LC_AUTOGENERATED"
+                    content.append(block)
+                # OpenAI audio format
+                elif (
+                    block.get("type") == "input_audio"
+                    and isinstance(block.get("input_audio"), dict)
+                    and isinstance(block.get("input_audio", {}).get("data"), str)
+                    and isinstance(block.get("input_audio", {}).get("format"), str)
+                ):
+                    content.append(block)
+                elif block.get("type") == "tool_use":
+                    if missing := [
+                        k for k in ("id", "name", "input") if k not in block
+                    ]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'tool_use', but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    if not any(
+                        tool_call["id"] == block["id"]
+                        for tool_call in cast("AIMessage", message).tool_calls
+                    ):
+                        oai_msg["tool_calls"] = oai_msg.get("tool_calls", [])
+                        oai_msg["tool_calls"].append(
+                            {
+                                "type": "function",
+                                "id": block["id"],
+                                "function": {
+                                    "name": block["name"],
+                                    "arguments": json.dumps(
+                                        block["input"], ensure_ascii=False
+                                    ),
+                                },
+                            }
+                        )
+                elif block.get("type") == "tool_result":
+                    if missing := [
+                        k for k in ("content", "tool_use_id") if k not in block
+                    ]:
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'tool_result', but is missing expected key(s) "
+                            f"{missing}. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    tool_message = ToolMessage(
+                        block["content"],
+                        tool_call_id=block["tool_use_id"],
+                        status="error" if block.get("is_error") else "success",
+                    )
+                    # Recurse to make sure tool message contents are OpenAI format.
+                    tool_messages.extend(
+                        convert_to_openai_messages(
+                            [tool_message], text_format=text_format
+                        )
+                    )
+                elif (block.get("type") == "json") or "json" in block:
+                    if "json" not in block:
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': 'json' "
+                            f"but does not have a 'json' key. Full "
+                            f"content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    content.append(
+                        {
+                            "type": "text",
+                            "text": json.dumps(block["json"]),
+                        }
+                    )
+                elif (block.get("type") == "guard_content") or "guard_content" in block:
+                    if (
+                        "guard_content" not in block
+                        or "text" not in block["guard_content"]
+                    ):
+                        msg = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'guard_content' but does not have a "
+                            f"messages[{i}].content[{j}]['guard_content']['text'] "
+                            f"key. Full content block:\n\n{block}"
+                        )
+                        raise ValueError(msg)
+                    text = block["guard_content"]["text"]
+                    if isinstance(text, dict):
+                        text = text["text"]
+                    content.append({"type": "text", "text": text})
+                # VertexAI format
+                elif block.get("type") == "media":
+                    if missing := [k for k in ("mime_type", "data") if k not in block]:
+                        err = (
+                            f"Unrecognized content block at "
+                            f"messages[{i}].content[{j}] has 'type': "
+                            f"'media' but does not have key(s) {missing}. Full "
+                            f"content block:\n\n{block}"
+                        )
+                        raise ValueError(err)
+                    if "image" not in block["mime_type"]:
+                        err = (
+                            f"OpenAI messages can only support text and image data."
+                            f" Received content block with media of type:"
+                            f" {block['mime_type']}"
+                        )
+                        raise ValueError(err)
+                    b64_image = _bytes_to_b64_str(block["data"])
+                    content.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": (f"data:{block['mime_type']};base64,{b64_image}")
+                            },
+                        }
+                    )
+                elif block.get("type") == "thinking":
+                    content.append(block)
+                else:
+                    err = (
+                        f"Unrecognized content block at "
+                        f"messages[{i}].content[{j}] does not match OpenAI, "
+                        f"Anthropic, Bedrock Converse, or VertexAI format. Full "
+                        f"content block:\n\n{block}"
+                    )
+                    raise ValueError(err)
+            if text_format == "string" and not any(
+                block["type"] != "text" for block in content
+            ):
+                content = "\n".join(block["text"] for block in content)
         oai_msg["content"] = content
         if message.content and not oai_msg["content"] and tool_messages:
             oai_messages.extend(tool_messages)
@@ -1194,8 +1401,7 @@ def convert_to_openai_messages(
 
     if is_single:
         return oai_messages[0]
-    else:
-        return oai_messages
+    return oai_messages
 
 
 def _first_max_tokens(
@@ -1210,64 +1416,108 @@ def _first_max_tokens(
     ] = None,
 ) -> list[BaseMessage]:
     messages = list(messages)
-    idx = 0
-    for i in range(len(messages)):
-        if token_counter(messages[:-i] if i else messages) <= max_tokens:
-            idx = len(messages) - i
-            break
+    if not messages:
+        return messages
 
-    if idx < len(messages) - 1 and partial_strategy:
+    # Check if all messages already fit within token limit
+    if token_counter(messages) <= max_tokens:
+        # When all messages fit, only apply end_on filtering if needed
+        if end_on:
+            for _ in range(len(messages)):
+                if not _is_message_type(messages[-1], end_on):
+                    messages.pop()
+                else:
+                    break
+        return messages
+
+    # Use binary search to find the maximum number of messages within token limit
+    left, right = 0, len(messages)
+    max_iterations = len(messages).bit_length()
+    for _ in range(max_iterations):
+        if left >= right:
+            break
+        mid = (left + right + 1) // 2
+        if token_counter(messages[:mid]) <= max_tokens:
+            left = mid
+            idx = mid
+        else:
+            right = mid - 1
+
+    # idx now contains the maximum number of complete messages we can include
+    idx = left
+
+    if partial_strategy and idx < len(messages):
         included_partial = False
+        copied = False
         if isinstance(messages[idx].content, list):
             excluded = messages[idx].model_copy(deep=True)
+            copied = True
             num_block = len(excluded.content)
             if partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
             for _ in range(1, num_block):
                 excluded.content = excluded.content[:-1]
-                if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                    messages = messages[:idx] + [excluded]
+                if token_counter([*messages[:idx], excluded]) <= max_tokens:
+                    messages = [*messages[:idx], excluded]
                     idx += 1
                     included_partial = True
                     break
             if included_partial and partial_strategy == "last":
                 excluded.content = list(reversed(excluded.content))
         if not included_partial:
-            excluded = messages[idx].model_copy(deep=True)
-            if isinstance(excluded.content, list) and any(
-                isinstance(block, str) or block["type"] == "text"
-                for block in messages[idx].content
-            ):
-                text_block = next(
-                    block
-                    for block in messages[idx].content
-                    if isinstance(block, str) or block["type"] == "text"
-                )
-                text = (
-                    text_block["text"] if isinstance(text_block, dict) else text_block
-                )
-            elif isinstance(excluded.content, str):
+            if not copied:
+                excluded = messages[idx].model_copy(deep=True)
+                copied = True
+
+            # Extract text content efficiently
+            text = None
+            if isinstance(excluded.content, str):
                 text = excluded.content
-            else:
-                text = None
-            if text:
-                split_texts = text_splitter(text)
-                num_splits = len(split_texts)
-                if partial_strategy == "last":
-                    split_texts = list(reversed(split_texts))
-                for _ in range(num_splits - 1):
-                    split_texts.pop()
-                    excluded.content = "".join(split_texts)
-                    if token_counter(messages[:idx] + [excluded]) <= max_tokens:
-                        if partial_strategy == "last":
-                            excluded.content = "".join(reversed(split_texts))
-                        messages = messages[:idx] + [excluded]
-                        idx += 1
+            elif isinstance(excluded.content, list) and excluded.content:
+                for block in excluded.content:
+                    if isinstance(block, str):
+                        text = block
+                        break
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text = block.get("text")
                         break
 
+            if text:
+                if not copied:
+                    excluded = excluded.model_copy(deep=True)
+
+                split_texts = text_splitter(text)
+                base_message_count = token_counter(messages[:idx])
+                if partial_strategy == "last":
+                    split_texts = list(reversed(split_texts))
+
+                # Binary search for the maximum number of splits we can include
+                left, right = 0, len(split_texts)
+                max_iterations = len(split_texts).bit_length()
+                for _ in range(max_iterations):
+                    if left >= right:
+                        break
+                    mid = (left + right + 1) // 2
+                    excluded.content = "".join(split_texts[:mid])
+                    if base_message_count + token_counter([excluded]) <= max_tokens:
+                        left = mid
+                    else:
+                        right = mid - 1
+
+                if left > 0:
+                    content_splits = split_texts[:left]
+                    if partial_strategy == "last":
+                        content_splits = list(reversed(content_splits))
+                    excluded.content = "".join(content_splits)
+                    messages = [*messages[:idx], excluded]
+                    idx += 1
+
     if end_on:
-        while idx > 0 and not _is_message_type(messages[idx - 1], end_on):
-            idx -= 1
+        for _ in range(idx):
+            if idx > 0 and not _is_message_type(messages[idx - 1], end_on):
+                idx -= 1
+            else:
+                break
 
     return messages[:idx]
 
@@ -1290,24 +1540,45 @@ def _last_max_tokens(
     messages = list(messages)
     if len(messages) == 0:
         return []
-    if end_on:
-        while messages and not _is_message_type(messages[-1], end_on):
-            messages.pop()
-    swapped_system = include_system and isinstance(messages[0], SystemMessage)
-    reversed_ = messages[:1] + messages[1:][::-1] if swapped_system else messages[::-1]
 
-    reversed_ = _first_max_tokens(
-        reversed_,
-        max_tokens=max_tokens,
+    # Filter out messages after end_on type
+    if end_on:
+        for _ in range(len(messages)):
+            if not _is_message_type(messages[-1], end_on):
+                messages.pop()
+            else:
+                break
+
+    # Handle system message preservation
+    system_message = None
+    if include_system and len(messages) > 0 and isinstance(messages[0], SystemMessage):
+        system_message = messages[0]
+        messages = messages[1:]
+
+    # Reverse messages to use _first_max_tokens with reversed logic
+    reversed_messages = messages[::-1]
+
+    # Calculate remaining tokens after accounting for system message if present
+    remaining_tokens = max_tokens
+    if system_message:
+        system_tokens = token_counter([system_message])
+        remaining_tokens = max(0, max_tokens - system_tokens)
+
+    reversed_result = _first_max_tokens(
+        reversed_messages,
+        max_tokens=remaining_tokens,
         token_counter=token_counter,
         text_splitter=text_splitter,
         partial_strategy="last" if allow_partial else None,
         end_on=start_on,
     )
-    if swapped_system:
-        return reversed_[:1] + reversed_[1:][::-1]
-    else:
-        return reversed_[::-1]
+
+    # Re-reverse the messages and add back the system message if needed
+    result = reversed_result[::-1]
+    if system_message:
+        result = [system_message, *result]
+
+    return result
 
 
 _MSG_CHUNK_MAP: dict[type[BaseMessage], type[BaseMessageChunk]] = {
@@ -1377,19 +1648,18 @@ def _bytes_to_b64_str(bytes_: bytes) -> str:
 def _get_message_openai_role(message: BaseMessage) -> str:
     if isinstance(message, AIMessage):
         return "assistant"
-    elif isinstance(message, HumanMessage):
+    if isinstance(message, HumanMessage):
         return "user"
-    elif isinstance(message, ToolMessage):
+    if isinstance(message, ToolMessage):
         return "tool"
-    elif isinstance(message, SystemMessage):
-        return "system"
-    elif isinstance(message, FunctionMessage):
+    if isinstance(message, SystemMessage):
+        return message.additional_kwargs.get("__openai_role__", "system")
+    if isinstance(message, FunctionMessage):
         return "function"
-    elif isinstance(message, ChatMessage):
+    if isinstance(message, ChatMessage):
         return message.role
-    else:
-        msg = f"Unknown BaseMessage type {message.__class__}."
-        raise ValueError(msg)
+    msg = f"Unknown BaseMessage type {message.__class__}."
+    raise ValueError(msg)
 
 
 def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
@@ -1399,8 +1669,88 @@ def _convert_to_openai_tool_calls(tool_calls: list[ToolCall]) -> list[dict]:
             "id": tool_call["id"],
             "function": {
                 "name": tool_call["name"],
-                "arguments": json.dumps(tool_call["args"]),
+                "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
             },
         }
         for tool_call in tool_calls
     ]
+
+
+def count_tokens_approximately(
+    messages: Iterable[MessageLikeRepresentation],
+    *,
+    chars_per_token: float = 4.0,
+    extra_tokens_per_message: float = 3.0,
+    count_name: bool = True,
+) -> int:
+    """Approximate the total number of tokens in messages.
+
+    The token count includes stringified message content, role, and (optionally) name.
+    - For AI messages, the token count also includes stringified tool calls.
+    - For tool messages, the token count also includes the tool call ID.
+
+    Args:
+        messages: List of messages to count tokens for.
+        chars_per_token: Number of characters per token to use for the approximation.
+            Default is 4 (one token corresponds to ~4 chars for common English text).
+            You can also specify float values for more fine-grained control.
+            `See more here. <https://platform.openai.com/tokenizer>`__
+        extra_tokens_per_message: Number of extra tokens to add per message.
+            Default is 3 (special tokens, including beginning/end of message).
+            You can also specify float values for more fine-grained control.
+            `See more here. <https://github.com/openai/openai-cookbook/blob/main/examples/How_to_count_tokens_with_tiktoken.ipynb>`__
+        count_name: Whether to include message names in the count.
+            Enabled by default.
+
+    Returns:
+        Approximate number of tokens in the messages.
+
+    .. note::
+        This is a simple approximation that may not match the exact token count used by
+        specific models. For accurate counts, use model-specific tokenizers.
+
+    Warning:
+        This function does not currently support counting image tokens.
+
+    .. versionadded:: 0.3.46
+
+    """
+    token_count = 0.0
+    for message in convert_to_messages(messages):
+        message_chars = 0
+        if isinstance(message.content, str):
+            message_chars += len(message.content)
+
+        # TODO: add support for approximate counting for image blocks
+        else:
+            content = repr(message.content)
+            message_chars += len(content)
+
+        if (
+            isinstance(message, AIMessage)
+            # exclude Anthropic format as tool calls are already included in the content
+            and not isinstance(message.content, list)
+            and message.tool_calls
+        ):
+            tool_calls_content = repr(message.tool_calls)
+            message_chars += len(tool_calls_content)
+
+        if isinstance(message, ToolMessage):
+            message_chars += len(message.tool_call_id)
+
+        role = _get_message_openai_role(message)
+        message_chars += len(role)
+
+        if message.name and count_name:
+            message_chars += len(message.name)
+
+        # NOTE: we're rounding up per message to ensure that
+        # individual message token counts add up to the total count
+        # for a list of messages
+        token_count += math.ceil(message_chars / chars_per_token)
+
+        # add extra tokens per message
+        token_count += extra_tokens_per_message
+
+    # round up once more time in case extra_tokens_per_message is a float
+    return math.ceil(token_count)

@@ -1,8 +1,9 @@
+"""In-memory vector store."""
+
 from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Iterator, Sequence
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
@@ -11,16 +12,27 @@ from typing import (
     Optional,
 )
 
+from typing_extensions import override
+
 from langchain_core._api import deprecated
 from langchain_core.documents import Document
-from langchain_core.embeddings import Embeddings
 from langchain_core.load import dumpd, load
 from langchain_core.vectorstores import VectorStore
 from langchain_core.vectorstores.utils import _cosine_similarity as cosine_similarity
 from langchain_core.vectorstores.utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator, Sequence
+
+    from langchain_core.embeddings import Embeddings
     from langchain_core.indexing import UpsertResponse
+
+try:
+    import numpy as np
+
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
 
 
 class InMemoryVectorStore(VectorStore):
@@ -59,6 +71,17 @@ class InMemoryVectorStore(VectorStore):
             documents = [document_1, document_2, document_3]
             vector_store.add_documents(documents=documents)
 
+    Inspect documents:
+        .. code-block:: python
+
+            top_n = 10
+            for index, (id, doc) in enumerate(vector_store.store.items()):
+                if index < top_n:
+                    # docs have keys 'id', 'vector', 'text', 'metadata'
+                    print(f"{id}: {doc['text']}")
+                else:
+                    break
+
     Delete Documents:
         .. code-block:: python
 
@@ -67,7 +90,7 @@ class InMemoryVectorStore(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(query="thud", k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
@@ -80,6 +103,7 @@ class InMemoryVectorStore(VectorStore):
 
             def _filter_function(doc: Document) -> bool:
                 return doc.metadata.get("bar") == "baz"
+
 
             results = vector_store.similarity_search(
                 query="thud", k=1, filter=_filter_function
@@ -95,9 +119,7 @@ class InMemoryVectorStore(VectorStore):
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(
-                query="qux", k=1
-            )
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -119,7 +141,7 @@ class InMemoryVectorStore(VectorStore):
 
             # search with score
             results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
-            for doc,score in results:
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: none
@@ -139,7 +161,7 @@ class InMemoryVectorStore(VectorStore):
 
             [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
 
-    """  # noqa: E501
+    """
 
     def __init__(self, embedding: Embeddings) -> None:
         """Initialize with the given embedding function.
@@ -148,29 +170,32 @@ class InMemoryVectorStore(VectorStore):
             embedding: embedding function to use.
         """
         # TODO: would be nice to change to
-        # Dict[str, Document] at some point (will be a breaking change)
+        # dict[str, Document] at some point (will be a breaking change)
         self.store: dict[str, dict[str, Any]] = {}
         self.embedding = embedding
 
     @property
+    @override
     def embeddings(self) -> Embeddings:
         return self.embedding
 
+    @override
     def delete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         if ids:
             for _id in ids:
                 self.store.pop(_id, None)
 
+    @override
     async def adelete(self, ids: Optional[Sequence[str]] = None, **kwargs: Any) -> None:
         self.delete(ids)
 
+    @override
     def add_documents(
         self,
         documents: list[Document],
         ids: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = self.embedding.embed_documents(texts)
 
@@ -189,7 +214,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -200,10 +225,10 @@ class InMemoryVectorStore(VectorStore):
 
         return ids_
 
+    @override
     async def aadd_documents(
         self, documents: list[Document], ids: Optional[list[str]] = None, **kwargs: Any
     ) -> list[str]:
-        """Add documents to the store."""
         texts = [doc.page_content for doc in documents]
         vectors = await self.embedding.aembed_documents(texts)
 
@@ -221,7 +246,7 @@ class InMemoryVectorStore(VectorStore):
 
         for doc, vector in zip(documents, vectors):
             doc_id = next(id_iterator)
-            doc_id_ = doc_id if doc_id else str(uuid.uuid4())
+            doc_id_ = doc_id or str(uuid.uuid4())
             ids_.append(doc_id_)
             self.store[doc_id_] = {
                 "id": doc_id_,
@@ -232,6 +257,7 @@ class InMemoryVectorStore(VectorStore):
 
         return ids_
 
+    @override
     def get_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Get documents by their ids.
 
@@ -258,17 +284,24 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.add_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
     )
-    def upsert(self, items: Sequence[Document], /, **kwargs: Any) -> UpsertResponse:
+    def upsert(self, items: Sequence[Document], /, **_kwargs: Any) -> UpsertResponse:
+        """[DEPRECATED] Upsert documents into the store.
+
+        Args:
+            items: The documents to upsert.
+
+        Returns:
+            The upsert response.
+        """
         vectors = self.embedding.embed_documents([item.page_content for item in items])
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -284,21 +317,28 @@ class InMemoryVectorStore(VectorStore):
     @deprecated(
         alternative="VectorStore.aadd_documents",
         message=(
-            "This was a beta API that was added in 0.2.11. "
-            "It'll be removed in 0.3.0."
+            "This was a beta API that was added in 0.2.11. It'll be removed in 0.3.0."
         ),
         since="0.2.29",
         removal="1.0",
     )
     async def aupsert(
-        self, items: Sequence[Document], /, **kwargs: Any
+        self, items: Sequence[Document], /, **_kwargs: Any
     ) -> UpsertResponse:
+        """[DEPRECATED] Upsert documents into the store.
+
+        Args:
+            items: The documents to upsert.
+
+        Returns:
+            The upsert response.
+        """
         vectors = await self.embedding.aembed_documents(
             [item.page_content for item in items]
         )
         ids = []
         for item, vector in zip(items, vectors):
-            doc_id = item.id if item.id else str(uuid.uuid4())
+            doc_id = item.id or str(uuid.uuid4())
             ids.append(doc_id)
             self.store[doc_id] = {
                 "id": doc_id,
@@ -311,6 +351,7 @@ class InMemoryVectorStore(VectorStore):
             "failed": [],
         }
 
+    @override
     async def aget_by_ids(self, ids: Sequence[str], /) -> list[Document]:
         """Async get documents by their ids.
 
@@ -326,41 +367,70 @@ class InMemoryVectorStore(VectorStore):
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
     ) -> list[tuple[Document, float, list[float]]]:
-        result = []
-        for doc in self.store.values():
-            vector = doc["vector"]
-            similarity = float(cosine_similarity([embedding], [vector]).item(0))
-            result.append(
-                (
+        # get all docs with fixed order in list
+        docs = list(self.store.values())
+
+        if filter is not None:
+            docs = [
+                doc
+                for doc in docs
+                if filter(
                     Document(
                         id=doc["id"], page_content=doc["text"], metadata=doc["metadata"]
-                    ),
-                    similarity,
-                    vector,
+                    )
                 )
+            ]
+
+        if not docs:
+            return []
+
+        similarity = cosine_similarity([embedding], [doc["vector"] for doc in docs])[0]
+
+        # get the indices ordered by similarity score
+        top_k_idx = similarity.argsort()[::-1][:k]
+
+        return [
+            (
+                Document(
+                    id=doc_dict["id"],
+                    page_content=doc_dict["text"],
+                    metadata=doc_dict["metadata"],
+                ),
+                float(similarity[idx].item()),
+                doc_dict["vector"],
             )
-        result.sort(key=lambda x: x[1], reverse=True)
-        if filter is not None:
-            result = [r for r in result if filter(r[0])]
-        return result[:k]
+            for idx in top_k_idx
+            # Assign using walrus operator to avoid multiple lookups
+            if (doc_dict := docs[idx])
+        ]
 
     def similarity_search_with_score_by_vector(
         self,
         embedding: list[float],
         k: int = 4,
-        filter: Optional[Callable[[Document], bool]] = None,
-        **kwargs: Any,
+        filter: Optional[Callable[[Document], bool]] = None,  # noqa: A002
+        **_kwargs: Any,
     ) -> list[tuple[Document, float]]:
+        """Search for the most similar documents to the given embedding.
+
+        Args:
+            embedding: The embedding to search for.
+            k: The number of documents to return.
+            filter: A function to filter the documents.
+
+        Returns:
+            A list of tuples of Document objects and their similarity scores.
+        """
         return [
             (doc, similarity)
             for doc, similarity, _ in self._similarity_search_with_score_by_vector(
-                embedding=embedding, k=k, filter=filter, **kwargs
+                embedding=embedding, k=k, filter=filter
             )
         ]
 
+    @override
     def similarity_search_with_score(
         self,
         query: str,
@@ -368,24 +438,24 @@ class InMemoryVectorStore(VectorStore):
         **kwargs: Any,
     ) -> list[tuple[Document, float]]:
         embedding = self.embedding.embed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
+    @override
     async def asimilarity_search_with_score(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[tuple[Document, float]]:
         embedding = await self.embedding.aembed_query(query)
-        docs = self.similarity_search_with_score_by_vector(
+        return self.similarity_search_with_score_by_vector(
             embedding,
             k,
             **kwargs,
         )
-        return docs
 
+    @override
     def similarity_search_by_vector(
         self,
         embedding: list[float],
@@ -399,16 +469,19 @@ class InMemoryVectorStore(VectorStore):
         )
         return [doc for doc, _ in docs_and_scores]
 
+    @override
     async def asimilarity_search_by_vector(
         self, embedding: list[float], k: int = 4, **kwargs: Any
     ) -> list[Document]:
         return self.similarity_search_by_vector(embedding, k, **kwargs)
 
+    @override
     def similarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
         return [doc for doc, _ in self.similarity_search_with_score(query, k, **kwargs)]
 
+    @override
     async def asimilarity_search(
         self, query: str, k: int = 4, **kwargs: Any
     ) -> list[Document]:
@@ -417,28 +490,29 @@ class InMemoryVectorStore(VectorStore):
             for doc, _ in await self.asimilarity_search_with_score(query, k, **kwargs)
         ]
 
+    @override
     def max_marginal_relevance_search_by_vector(
         self,
         embedding: list[float],
         k: int = 4,
         fetch_k: int = 20,
         lambda_mult: float = 0.5,
+        *,
+        filter: Optional[Callable[[Document], bool]] = None,
         **kwargs: Any,
     ) -> list[Document]:
         prefetch_hits = self._similarity_search_with_score_by_vector(
             embedding=embedding,
             k=fetch_k,
-            **kwargs,
+            filter=filter,
         )
 
-        try:
-            import numpy as np
-        except ImportError as e:
+        if not _HAS_NUMPY:
             msg = (
                 "numpy must be installed to use max_marginal_relevance_search "
                 "pip install numpy"
             )
-            raise ImportError(msg) from e
+            raise ImportError(msg)
 
         mmr_chosen_indices = maximal_marginal_relevance(
             np.array(embedding, dtype=np.float32),
@@ -448,6 +522,7 @@ class InMemoryVectorStore(VectorStore):
         )
         return [prefetch_hits[idx][0] for idx in mmr_chosen_indices]
 
+    @override
     def max_marginal_relevance_search(
         self,
         query: str,
@@ -465,6 +540,7 @@ class InMemoryVectorStore(VectorStore):
             **kwargs,
         )
 
+    @override
     async def amax_marginal_relevance_search(
         self,
         query: str,
@@ -483,6 +559,7 @@ class InMemoryVectorStore(VectorStore):
         )
 
     @classmethod
+    @override
     def from_texts(
         cls,
         texts: list[str],
@@ -497,6 +574,7 @@ class InMemoryVectorStore(VectorStore):
         return store
 
     @classmethod
+    @override
     async def afrom_texts(
         cls,
         texts: list[str],
@@ -524,8 +602,8 @@ class InMemoryVectorStore(VectorStore):
         Returns:
             A VectorStore object.
         """
-        _path: Path = Path(path)
-        with _path.open("r") as f:
+        path_: Path = Path(path)
+        with path_.open("r") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
@@ -537,7 +615,7 @@ class InMemoryVectorStore(VectorStore):
         Args:
             path: The path to dump the vector store to.
         """
-        _path: Path = Path(path)
-        _path.parent.mkdir(exist_ok=True, parents=True)
-        with _path.open("w") as f:
+        path_: Path = Path(path)
+        path_.parent.mkdir(exist_ok=True, parents=True)
+        with path_.open("w") as f:
             json.dump(dumpd(self.store), f, indent=2)

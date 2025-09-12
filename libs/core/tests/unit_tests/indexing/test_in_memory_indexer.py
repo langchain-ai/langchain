@@ -1,12 +1,13 @@
-"""Test in memory indexer"""
+"""Test in memory indexer."""
 
 from collections.abc import AsyncGenerator, Generator
 
 import pytest
-from langchain_standard_tests.integration_tests.indexer import (
+from langchain_tests.integration_tests.indexer import (
     AsyncDocumentIndexTestSuite,
     DocumentIndexerTestSuite,
 )
+from typing_extensions import override
 
 from langchain_core.documents import Document
 from langchain_core.indexing.base import DocumentIndex
@@ -16,16 +17,18 @@ from langchain_core.indexing.in_memory import (
 
 
 class TestDocumentIndexerTestSuite(DocumentIndexerTestSuite):
-    @pytest.fixture()
+    @pytest.fixture
+    @override
     def index(self) -> Generator[DocumentIndex, None, None]:
-        yield InMemoryDocumentIndex()
+        yield InMemoryDocumentIndex()  # noqa: PT022
 
 
 class TestAsyncDocumentIndexerTestSuite(AsyncDocumentIndexTestSuite):
     # Something funky is going on with mypy and async pytest fixture
-    @pytest.fixture()
-    async def index(self) -> AsyncGenerator[DocumentIndex, None]:  # type: ignore
-        yield InMemoryDocumentIndex()
+    @pytest.fixture
+    @override
+    async def index(self) -> AsyncGenerator[DocumentIndex, None]:
+        yield InMemoryDocumentIndex()  # noqa: PT022
 
 
 def test_sync_retriever() -> None:

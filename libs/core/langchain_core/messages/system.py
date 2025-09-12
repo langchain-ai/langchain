@@ -1,3 +1,5 @@
+"""System message."""
+
 from typing import Any, Literal, Union
 
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
@@ -16,12 +18,8 @@ class SystemMessage(BaseMessage):
             from langchain_core.messages import HumanMessage, SystemMessage
 
             messages = [
-                SystemMessage(
-                    content="You are a helpful assistant! Your name is Bob."
-                ),
-                HumanMessage(
-                    content="What is your name?"
-                )
+                SystemMessage(content="You are a helpful assistant! Your name is Bob."),
+                HumanMessage(content="What is your name?"),
             ]
 
             # Define a chat model and invoke it with the messages
@@ -31,12 +29,6 @@ class SystemMessage(BaseMessage):
 
     type: Literal["system"] = "system"
     """The type of the message (used for serialization). Defaults to "system"."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]
 
     def __init__(
         self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
@@ -50,9 +42,6 @@ class SystemMessage(BaseMessage):
         super().__init__(content=content, **kwargs)
 
 
-SystemMessage.model_rebuild()
-
-
 class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     """System Message chunk."""
 
@@ -62,9 +51,3 @@ class SystemMessageChunk(SystemMessage, BaseMessageChunk):
     type: Literal["SystemMessageChunk"] = "SystemMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for serialization).
     Defaults to "SystemMessageChunk"."""
-
-    @classmethod
-    def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object.
-        Default is ["langchain", "schema", "messages"]."""
-        return ["langchain", "schema", "messages"]

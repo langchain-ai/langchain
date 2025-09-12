@@ -2,28 +2,22 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
+from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
     Any,
-    AsyncIterator,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
-    Tuple,
-    Type,
     TypedDict,
     Union,
     cast,
 )
 
-from fireworks.client import AsyncFireworks, Fireworks  # type: ignore
+from fireworks.client import AsyncFireworks, Fireworks  # type: ignore[import-untyped]
 from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -75,6 +69,7 @@ from langchain_core.utils import (
     get_pydantic_field_names,
 )
 from langchain_core.utils.function_calling import (
+    convert_to_json_schema,
     convert_to_openai_function,
     convert_to_openai_tool,
 )
@@ -100,15 +95,16 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
 
     Returns:
         The LangChain message.
+
     """
     role = _dict.get("role")
     if role == "user":
         return HumanMessage(content=_dict.get("content", ""))
-    elif role == "assistant":
+    if role == "assistant":
         # Fix for azure
         # Also Fireworks returns None for tool invocations
         content = _dict.get("content", "") or ""
-        additional_kwargs: Dict = {}
+        additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
         tool_calls = []
@@ -128,13 +124,13 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_calls=tool_calls,
             invalid_tool_calls=invalid_tool_calls,
         )
-    elif role == "system":
+    if role == "system":
         return SystemMessage(content=_dict.get("content", ""))
-    elif role == "function":
+    if role == "function":
         return FunctionMessage(
             content=_dict.get("content", ""), name=_dict.get("name", "")
         )
-    elif role == "tool":
+    if role == "tool":
         additional_kwargs = {}
         if "name" in _dict:
             additional_kwargs["name"] = _dict["name"]
@@ -143,8 +139,7 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
             tool_call_id=_dict.get("tool_call_id", ""),
             additional_kwargs=additional_kwargs,
         )
-    else:
-        return ChatMessage(content=_dict.get("content", ""), role=role or "")
+    return ChatMessage(content=_dict.get("content", ""), role=role or "")
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -155,8 +150,9 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
 
     Returns:
         The dictionary.
+
     """
-    message_dict: Dict[str, Any]
+    message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -197,21 +193,22 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
             "tool_call_id": message.tool_call_id,
         }
     else:
-        raise TypeError(f"Got unknown type {message}")
+        msg = f"Got unknown type {message}"
+        raise TypeError(msg)
     if "name" in message.additional_kwargs:
         message_dict["name"] = message.additional_kwargs["name"]
     return message_dict
 
 
 def _convert_chunk_to_message_chunk(
-    chunk: Mapping[str, Any], default_class: Type[BaseMessageChunk]
+    chunk: Mapping[str, Any], default_class: type[BaseMessageChunk]
 ) -> BaseMessageChunk:
     choice = chunk["choices"][0]
     _dict = choice["delta"]
     role = cast(str, _dict.get("role"))
     content = cast(str, _dict.get("content") or "")
-    additional_kwargs: Dict = {}
-    tool_call_chunks: List[ToolCallChunk] = []
+    additional_kwargs: dict = {}
+    tool_call_chunks: list[ToolCallChunk] = []
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])
         if "name" in function_call and function_call["name"] is None:
@@ -220,7 +217,7 @@ def _convert_chunk_to_message_chunk(
     if raw_tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = raw_tool_calls
         for rtc in raw_tool_calls:
-            try:
+            with contextlib.suppress(KeyError):
                 tool_call_chunks.append(
                     create_tool_call_chunk(
                         name=rtc["function"].get("name"),
@@ -229,11 +226,9 @@ def _convert_chunk_to_message_chunk(
                         index=rtc.get("index"),
                     )
                 )
-            except KeyError:
-                pass
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    if role == "assistant" or default_class == AIMessageChunk:
         if usage := chunk.get("usage"):
             input_tokens = usage.get("prompt_tokens", 0)
             output_tokens = usage.get("completion_tokens", 0)
@@ -250,16 +245,15 @@ def _convert_chunk_to_message_chunk(
             tool_call_chunks=tool_call_chunks,
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
         )
-    elif role == "system" or default_class == SystemMessageChunk:
+    if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
-    elif role == "function" or default_class == FunctionMessageChunk:
+    if role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict["name"])
-    elif role == "tool" or default_class == ToolMessageChunk:
+    if role == "tool" or default_class == ToolMessageChunk:
         return ToolMessageChunk(content=content, tool_call_id=_dict["tool_call_id"])
-    elif role or default_class == ChatMessageChunk:
+    if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
-    else:
-        return default_class(content=content)  # type: ignore
+    return default_class(content=content)  # type: ignore[call-arg]
 
 
 class _FunctionCall(TypedDict):
@@ -285,21 +279,22 @@ class ChatFireworks(BaseChatModel):
 
             from langchain_fireworks.chat_models import ChatFireworks
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/mixtral-8x7b-instruct")
+                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct")
+
     """
 
     @property
-    def lc_secrets(self) -> Dict[str, str]:
+    def lc_secrets(self) -> dict[str, str]:
         return {"fireworks_api_key": "FIREWORKS_API_KEY"}
 
     @classmethod
-    def get_lc_namespace(cls) -> List[str]:
-        """Get the namespace of the langchain object."""
+    def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the LangChain object."""
         return ["langchain", "chat_models", "fireworks"]
 
     @property
-    def lc_attributes(self) -> Dict[str, Any]:
-        attributes: Dict[str, Any] = {}
+    def lc_attributes(self) -> dict[str, Any]:
+        attributes: dict[str, Any] = {}
         if self.fireworks_api_base:
             attributes["fireworks_api_base"] = self.fireworks_api_base
 
@@ -307,20 +302,18 @@ class ChatFireworks(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
     async_client: Any = Field(default=None, exclude=True)  #: :meta private:
-    model_name: str = Field(
-        default="accounts/fireworks/models/mixtral-8x7b-instruct", alias="model"
-    )
+    model_name: str = Field(alias="model")
     """Model name to use."""
-    temperature: float = 0.0
+    temperature: Optional[float] = None
     """What sampling temperature to use."""
-    stop: Optional[Union[str, List[str]]] = Field(default=None, alias="stop_sequences")
+    stop: Optional[Union[str, list[str]]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     fireworks_api_key: SecretStr = Field(
         alias="api_key",
@@ -334,20 +327,20 @@ class ChatFireworks(BaseChatModel):
         ),
     )
     """Fireworks API key.
-    
-    Automatically read from env variable `FIREWORKS_API_KEY` if not provided.
+
+    Automatically read from env variable ``FIREWORKS_API_KEY`` if not provided.
     """
 
     fireworks_api_base: Optional[str] = Field(
         alias="base_url", default_factory=from_env("FIREWORKS_API_BASE", default=None)
     )
-    """Base URL path for API requests, leave blank if not using a proxy or service 
+    """Base URL path for API requests, leave blank if not using a proxy or service
         emulator."""
-    request_timeout: Union[float, Tuple[float, float], Any, None] = Field(
+    request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to Fireworks completion API. Can be float, httpx.Timeout or 
-        None."""
+    """Timeout for requests to Fireworks completion API. Can be ``float``,
+    ``httpx.Timeout`` or ``None``."""
     streaming: bool = False
     """Whether to stream the results or not."""
     n: int = 1
@@ -363,19 +356,20 @@ class ChatFireworks(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        values = _build_model_kwargs(values, all_required_field_names)
-        return values
+        return _build_model_kwargs(values, all_required_field_names)
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n < 1:
-            raise ValueError("n must be at least 1.")
+            msg = "n must be at least 1."
+            raise ValueError(msg)
         if self.n > 1 and self.streaming:
-            raise ValueError("n must be 1 when streaming.")
+            msg = "n must be 1 when streaming."
+            raise ValueError(msg)
 
         client_params = {
             "api_key": (
@@ -397,28 +391,29 @@ class ChatFireworks(BaseChatModel):
         return self
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Fireworks API."""
         params = {
             "model": self.model_name,
             "stream": self.streaming,
             "n": self.n,
-            "temperature": self.temperature,
             "stop": self.stop,
             **self.model_kwargs,
         }
+        if self.temperature is not None:
+            params["temperature"] = self.temperature
         if self.max_tokens is not None:
             params["max_tokens"] = self.max_tokens
         return params
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get standard params for tracing."""
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="fireworks",
-            ls_model_name=self.model_name,
+            ls_model_name=params.get("model", self.model_name),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -428,7 +423,7 @@ class ChatFireworks(BaseChatModel):
             ls_params["ls_stop"] = ls_stop
         return ls_params
 
-    def _combine_llm_outputs(self, llm_outputs: List[Optional[dict]]) -> dict:
+    def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
         system_fingerprint = None
         for output in llm_outputs:
@@ -451,15 +446,15 @@ class ChatFireworks(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -470,6 +465,7 @@ class ChatFireworks(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -485,10 +481,10 @@ class ChatFireworks(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -507,8 +503,8 @@ class ChatFireworks(BaseChatModel):
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        self, messages: list[BaseMessage], stop: Optional[list[str]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         params = self._default_params
         if stop is not None:
             params["stop"] = stop
@@ -528,7 +524,7 @@ class ChatFireworks(BaseChatModel):
                     "output_tokens": token_usage.get("completion_tokens", 0),
                     "total_tokens": token_usage.get("total_tokens", 0),
                 }
-            generation_info = dict(finish_reason=res.get("finish_reason"))
+            generation_info = {"finish_reason": res.get("finish_reason")}
             if "logprobs" in res:
                 generation_info["logprobs"] = res["logprobs"]
             gen = ChatGeneration(
@@ -545,15 +541,15 @@ class ChatFireworks(BaseChatModel):
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
-        default_chunk_class: Type[BaseMessageChunk] = AIMessageChunk
+        default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         async for chunk in self.async_client.acreate(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
                 chunk = chunk.model_dump()
@@ -564,6 +560,7 @@ class ChatFireworks(BaseChatModel):
             generation_info = {}
             if finish_reason := choice.get("finish_reason"):
                 generation_info["finish_reason"] = finish_reason
+                generation_info["model_name"] = self.model_name
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
@@ -581,10 +578,10 @@ class ChatFireworks(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -604,13 +601,13 @@ class ChatFireworks(BaseChatModel):
         return self._create_chat_result(response)
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {"model_name": self.model_name, **self._default_params}
 
     def _get_invocation_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, stop: Optional[list[str]] = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """Get the parameters used to invoke the model."""
         return {
             "model": self.model_name,
@@ -627,13 +624,13 @@ class ChatFireworks(BaseChatModel):
     @deprecated(
         since="0.2.1",
         alternative="langchain_fireworks.chat_models.ChatFireworks.bind_tools",
-        removal="0.3.0",
+        removal="1.0.0",
     )
     def bind_functions(
         self,
-        functions: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]
+            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -641,8 +638,8 @@ class ChatFireworks(BaseChatModel):
 
         Assumes model is compatible with Fireworks function-calling API.
 
-        NOTE: Using bind_tools is recommended instead, as the `functions` and
-            `function_call` request parameters are officially marked as deprecated by
+        NOTE: Using bind_tools is recommended instead, as the ``functions`` and
+            ``function_call`` request parameters are officially marked as deprecated by
             Fireworks.
 
         Args:
@@ -652,12 +649,12 @@ class ChatFireworks(BaseChatModel):
                 their schema dictionary representation.
             function_call: Which function to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any).
             **kwargs: Any additional parameters to pass to the
                 :class:`~langchain.runnable.Runnable` constructor.
-        """
 
+        """
         formatted_functions = [convert_to_openai_function(fn) for fn in functions]
         if function_call is not None:
             function_call = (
@@ -667,18 +664,20 @@ class ChatFireworks(BaseChatModel):
                 else function_call
             )
             if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                raise ValueError(
+                msg = (
                     "When specifying `function_call`, you must provide exactly one "
                     "function."
                 )
+                raise ValueError(msg)
             if (
                 isinstance(function_call, dict)
                 and formatted_functions[0]["name"] != function_call["name"]
             ):
-                raise ValueError(
+                msg = (
                     f"Function call {function_call} was specified, but the only "
                     f"provided function was {formatted_functions[0]['name']}."
                 )
+                raise ValueError(msg)
             kwargs = {**kwargs, "function_call": function_call}
         return super().bind(
             functions=formatted_functions,
@@ -687,10 +686,10 @@ class ChatFireworks(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: Sequence[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
+        tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[
-            Union[dict, str, Literal["auto", "any", "none"], bool]
+            Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
@@ -704,14 +703,14 @@ class ChatFireworks(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
-                "auto" to automatically determine which function to call
-                with the option to not call any function, "any" to enforce that some
+                ``'auto'`` to automatically determine which function to call
+                with the option to not call any function, ``'any'`` to enforce that some
                 function is called, or a dict of the form:
-                {"type": "function", "function": {"name": <<tool_name>>}}.
+                ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to
                 :meth:`~langchain_fireworks.chat_models.ChatFireworks.bind`
-        """
 
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice is not None and tool_choice:
             if isinstance(tool_choice, str) and (
@@ -720,10 +719,11 @@ class ChatFireworks(BaseChatModel):
                 tool_choice = {"type": "function", "function": {"name": tool_choice}}
             if isinstance(tool_choice, bool):
                 if len(tools) > 1:
-                    raise ValueError(
+                    msg = (
                         "tool_choice can only be True when there is one tool. Received "
                         f"{len(tools)} tools."
                     )
+                    raise ValueError(msg)
                 tool_name = formatted_tools[0]["function"]["name"]
                 tool_choice = {
                     "type": "function",
@@ -735,21 +735,24 @@ class ChatFireworks(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Optional[Union[Dict, Type[BaseModel]]] = None,
+        schema: Optional[Union[dict, type[BaseModel]]] = None,
         *,
-        method: Literal["function_calling", "json_mode"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.7),
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.7),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -761,20 +764,30 @@ class ChatFireworks(BaseChatModel):
 
                         Added support for TypedDict class.
 
-            method:
-                The method for steering model generation, either "function_calling"
-                or "json_mode". If "function_calling" then the schema will be converted
-                to an OpenAI function and the returned model will make use of the
-                function-calling API. If "json_mode" then OpenAI's JSON mode will be
-                used. Note that if using "json_mode" then you must include instructions
-                for formatting the output into the desired schema into the model call.
+            method: The method for steering model generation, one of:
+
+                - ``'function_calling'``:
+                    Uses Fireworks's `tool-calling features <https://docs.fireworks.ai/guides/function-calling>`_.
+                - ``'json_schema'``:
+                    Uses Fireworks's `structured output feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+                - ``'json_mode'``:
+                    Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
+
+                .. versionchanged:: 0.2.8
+
+                    Added support for ``'json_schema'``.
+
             include_raw:
                 If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
+            kwargs:
+                Any additional parameters to pass to the
+                :class:`~langchain.runnable.Runnable` constructor.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -785,11 +798,13 @@ class ChatFireworks(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+
+            - ``'raw'``: BaseMessage
+            - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+            - ``'parsing_error'``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from typing import Optional
@@ -823,6 +838,7 @@ class ChatFireworks(BaseChatModel):
                 # )
 
         Example: schema=Pydantic class, method="function_calling", include_raw=True:
+
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
@@ -851,6 +867,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=TypedDict class, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 # IMPORTANT: If you are using Python <=3.8, you need to import Annotated
@@ -881,6 +898,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=OpenAI function schema, method="function_calling", include_raw=False:
+
             .. code-block:: python
 
                 from langchain_fireworks import ChatFireworks
@@ -894,9 +912,9 @@ class ChatFireworks(BaseChatModel):
                             'answer': {'type': 'string'},
                             'justification': {'description': 'A justification for the answer.', 'type': 'string'}
                         },
-                       'required': ['answer']
-                   }
-               }
+                        'required': ['answer']
+                    }
+                }
 
                 llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
                 structured_llm = llm.with_structured_output(oai_schema)
@@ -910,6 +928,7 @@ class ChatFireworks(BaseChatModel):
                 # }
 
         Example: schema=Pydantic class, method="json_mode", include_raw=True:
+
             .. code-block::
 
                 from langchain_fireworks import ChatFireworks
@@ -928,45 +947,58 @@ class ChatFireworks(BaseChatModel):
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
                 #     'parsed': AnswerWithJustification(answer='They are both the same weight.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'),
                 #     'parsing_error': None
                 # }
 
         Example: schema=None, method="json_mode", include_raw=True:
+
             .. code-block::
 
                 structured_llm = llm.with_structured_output(method="json_mode", include_raw=True)
 
                 structured_llm.invoke(
                     "Answer the following question. "
-                    "Make sure to return a JSON blob with keys 'answer' and 'justification'.\n\n"
+                    "Make sure to return a JSON blob with keys 'answer' and 'justification'. "
                     "What's heavier a pound of bricks or a pound of feathers?"
                 )
                 # -> {
-                #     'raw': AIMessage(content='{\n    "answer": "They are both the same weight.",\n    "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight." \n}'),
+                #     'raw': AIMessage(content='{"answer": "They are both the same weight.", "justification": "Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight."}'),
                 #     'parsed': {
                 #         'answer': 'They are both the same weight.',
                 #         'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The difference lies in the volume and density of the materials, not the weight.'
                 #     },
                 #     'parsing_error': None
                 # }
+
         """  # noqa: E501
+        _ = kwargs.pop("strict", None)
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
         is_pydantic_schema = _is_pydantic_class(schema)
         if method == "function_calling":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
-            tool_name = convert_to_openai_tool(schema)["function"]["name"]
-            llm = self.bind_tools([schema], tool_choice=tool_name)
+                raise ValueError(msg)
+            formatted_tool = convert_to_openai_tool(schema)
+            tool_name = formatted_tool["function"]["name"]
+            llm = self.bind_tools(
+                [schema],
+                tool_choice=tool_name,
+                ls_structured_output_format={
+                    "kwargs": {"method": "function_calling"},
+                    "schema": formatted_tool,
+                },
+            )
             if is_pydantic_schema:
                 output_parser: OutputParserLike = PydanticToolsParser(
                     tools=[schema],  # type: ignore[list-item]
@@ -976,18 +1008,45 @@ class ChatFireworks(BaseChatModel):
                 output_parser = JsonOutputKeyToolsParser(
                     key_name=tool_name, first_tool_only=True
                 )
+        elif method == "json_schema":
+            if schema is None:
+                msg = (
+                    "schema must be specified when method is 'json_schema'. "
+                    "Received None."
+                )
+                raise ValueError(msg)
+            formatted_schema = convert_to_json_schema(schema)
+            llm = self.bind(
+                response_format={"type": "json_object", "schema": formatted_schema},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_schema"},
+                    "schema": schema,
+                },
+            )
+            output_parser = (
+                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if is_pydantic_schema
+                else JsonOutputParser()
+            )
         elif method == "json_mode":
-            llm = self.bind(response_format={"type": "json_object"})
+            llm = self.bind(
+                response_format={"type": "json_object"},
+                ls_structured_output_format={
+                    "kwargs": {"method": "json_mode"},
+                    "schema": schema,
+                },
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)  # type: ignore[type-var, arg-type]
                 if is_pydantic_schema
                 else JsonOutputParser()
             )
         else:
-            raise ValueError(
+            msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling' or "
                 f"'json_mode'. Received: '{method}'"
             )
+            raise ValueError(msg)
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(
@@ -998,8 +1057,7 @@ class ChatFireworks(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser
 
 
 def _is_pydantic_class(obj: Any) -> bool:
@@ -1012,7 +1070,7 @@ def _lc_tool_call_to_fireworks_tool_call(tool_call: ToolCall) -> dict:
         "id": tool_call["id"],
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         },
     }
 

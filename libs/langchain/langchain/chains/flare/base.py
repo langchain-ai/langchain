@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import logging
 import re
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from collections.abc import Sequence
+from typing import Any, Optional
 
-import numpy as np
 from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
@@ -14,6 +15,7 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_core.retrievers import BaseRetriever
 from langchain_core.runnables import Runnable
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.chains.flare.prompts import (
@@ -23,8 +25,10 @@ from langchain.chains.flare.prompts import (
 )
 from langchain.chains.llm import LLMChain
 
+logger = logging.getLogger(__name__)
 
-def _extract_tokens_and_log_probs(response: AIMessage) -> Tuple[List[str], List[float]]:
+
+def _extract_tokens_and_log_probs(response: AIMessage) -> tuple[list[str], list[float]]:
     """Extract tokens and log probabilities from chat model response."""
     tokens = []
     log_probs = []
@@ -41,11 +45,12 @@ class QuestionGeneratorChain(LLMChain):
     """Prompt template for the chain."""
 
     @classmethod
+    @override
     def is_lc_serializable(cls) -> bool:
         return False
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys for the chain."""
         return ["user_input", "context", "response"]
 
@@ -56,8 +61,26 @@ def _low_confidence_spans(
     min_prob: float,
     min_token_gap: int,
     num_pad_tokens: int,
-) -> List[str]:
-    _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+) -> list[str]:
+    try:
+        import numpy as np
+
+        _low_idx = np.where(np.exp(log_probs) < min_prob)[0]
+    except ImportError:
+        logger.warning(
+            "NumPy not found in the current Python environment. FlareChain will use a "
+            "pure Python implementation for internal calculations, which may "
+            "significantly impact performance, especially for large datasets. For "
+            "optimal speed and efficiency, consider installing NumPy: pip install "
+            "numpy",
+        )
+        import math
+
+        _low_idx = [  # type: ignore[assignment]
+            idx
+            for idx, log_prob in enumerate(log_probs)
+            if math.exp(log_prob) < min_prob
+        ]
     low_idx = [i for i in _low_idx if re.search(r"\w", tokens[i])]
     if len(low_idx) == 0:
         return []
@@ -72,7 +95,9 @@ def _low_confidence_spans(
 
 
 class FlareChain(Chain):
-    """Chain that combines a retriever, a question generator,
+    """Flare chain.
+
+    Chain that combines a retriever, a question generator,
     and a response generator.
 
     See [Active Retrieval Augmented Generation](https://arxiv.org/abs/2305.06983) paper.
@@ -98,22 +123,22 @@ class FlareChain(Chain):
     """Whether to start with retrieval."""
 
     @property
-    def input_keys(self) -> List[str]:
+    def input_keys(self) -> list[str]:
         """Input keys for the chain."""
         return ["user_input"]
 
     @property
-    def output_keys(self) -> List[str]:
+    def output_keys(self) -> list[str]:
         """Output keys for the chain."""
         return ["response"]
 
     def _do_generation(
         self,
-        questions: List[str],
+        questions: list[str],
         user_input: str,
         response: str,
         _run_manager: CallbackManagerForChainRun,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         callbacks = _run_manager.get_child()
         docs = []
         for question in questions:
@@ -134,12 +159,12 @@ class FlareChain(Chain):
 
     def _do_retrieval(
         self,
-        low_confidence_spans: List[str],
+        low_confidence_spans: list[str],
         _run_manager: CallbackManagerForChainRun,
         user_input: str,
         response: str,
         initial_response: str,
-    ) -> Tuple[str, bool]:
+    ) -> tuple[str, bool]:
         question_gen_inputs = [
             {
                 "user_input": user_input,
@@ -151,7 +176,8 @@ class FlareChain(Chain):
         callbacks = _run_manager.get_child()
         if isinstance(self.question_generator_chain, LLMChain):
             question_gen_outputs = self.question_generator_chain.apply(
-                question_gen_inputs, callbacks=callbacks
+                question_gen_inputs,
+                callbacks=callbacks,
             )
             questions = [
                 output[self.question_generator_chain.output_keys[0]]
@@ -159,33 +185,39 @@ class FlareChain(Chain):
             ]
         else:
             questions = self.question_generator_chain.batch(
-                question_gen_inputs, config={"callbacks": callbacks}
+                question_gen_inputs,
+                config={"callbacks": callbacks},
             )
         _run_manager.on_text(
-            f"Generated Questions: {questions}", color="yellow", end="\n"
+            f"Generated Questions: {questions}",
+            color="yellow",
+            end="\n",
         )
         return self._do_generation(questions, user_input, response, _run_manager)
 
     def _call(
         self,
-        inputs: Dict[str, Any],
+        inputs: dict[str, Any],
         run_manager: Optional[CallbackManagerForChainRun] = None,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
 
         user_input = inputs[self.input_keys[0]]
 
         response = ""
 
-        for i in range(self.max_iter):
+        for _i in range(self.max_iter):
             _run_manager.on_text(
-                f"Current Response: {response}", color="blue", end="\n"
+                f"Current Response: {response}",
+                color="blue",
+                end="\n",
             )
             _input = {"user_input": user_input, "context": "", "response": response}
             tokens, log_probs = _extract_tokens_and_log_probs(
                 self.response_chain.invoke(
-                    _input, {"callbacks": _run_manager.get_child()}
-                )
+                    _input,
+                    {"callbacks": _run_manager.get_child()},
+                ),
             )
             low_confidence_spans = _low_confidence_spans(
                 tokens,
@@ -216,7 +248,10 @@ class FlareChain(Chain):
 
     @classmethod
     def from_llm(
-        cls, llm: BaseLanguageModel, max_generation_len: int = 32, **kwargs: Any
+        cls,
+        llm: Optional[BaseLanguageModel],
+        max_generation_len: int = 32,
+        **kwargs: Any,
     ) -> FlareChain:
         """Creates a FlareChain from a language model.
 
@@ -230,13 +265,43 @@ class FlareChain(Chain):
         """
         try:
             from langchain_openai import ChatOpenAI
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "OpenAI is required for FlareChain. "
                 "Please install langchain-openai."
                 "pip install langchain-openai"
             )
-        llm = ChatOpenAI(max_tokens=max_generation_len, logprobs=True, temperature=0)
+            raise ImportError(msg) from e
+        # Preserve supplied llm instead of always creating a new ChatOpenAI.
+        # Enforce ChatOpenAI requirement (token logprobs needed for FLARE).
+        if llm is None:
+            llm = ChatOpenAI(
+                max_completion_tokens=max_generation_len,
+                logprobs=True,
+                temperature=0,
+            )
+        else:
+            if not isinstance(llm, ChatOpenAI):
+                msg = (
+                    f"FlareChain.from_llm requires ChatOpenAI; got "
+                    f"{type(llm).__name__}."
+                )
+                raise TypeError(msg)
+            if not getattr(llm, "logprobs", False):  # attribute presence may vary
+                msg = (
+                    "Provided ChatOpenAI instance must be constructed with "
+                    "logprobs=True for FlareChain."
+                )
+                raise ValueError(msg)
+            current_max = getattr(llm, "max_completion_tokens", None)
+            if current_max is not None and current_max != max_generation_len:
+                logger.debug(
+                    "FlareChain.from_llm: supplied llm max_completion_tokens=%s "
+                    "differs from requested max_generation_len=%s; "
+                    "leaving model unchanged.",
+                    current_max,
+                    max_generation_len,
+                )
         response_chain = PROMPT | llm
         question_gen_chain = QUESTION_GENERATOR_PROMPT | llm | StrOutputParser()
         return cls(

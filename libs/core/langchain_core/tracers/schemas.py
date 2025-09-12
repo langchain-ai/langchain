@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import datetime
 import warnings
+from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
@@ -18,7 +18,11 @@ from langchain_core._api import deprecated
 
 @deprecated("0.1.0", alternative="Use string instead.", removal="1.0")
 def RunTypeEnum() -> type[RunTypeEnumDep]:  # noqa: N802
-    """RunTypeEnum."""
+    """``RunTypeEnum``.
+
+    Returns:
+        The ``RunTypeEnum`` class.
+    """
     warnings.warn(
         "RunTypeEnum is deprecated. Please directly use a string instead"
         " (e.g. 'llm', 'chain', 'tool').",
@@ -32,7 +36,7 @@ def RunTypeEnum() -> type[RunTypeEnumDep]:  # noqa: N802
 class TracerSessionV1Base(BaseModelV1):
     """Base class for TracerSessionV1."""
 
-    start_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
+    start_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
     name: Optional[str] = None
     extra: Optional[dict[str, Any]] = None
 
@@ -69,8 +73,8 @@ class BaseRun(BaseModelV1):
 
     uuid: str
     parent_uuid: Optional[str] = None
-    start_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
-    end_time: datetime.datetime = FieldV1(default_factory=datetime.datetime.utcnow)
+    start_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
+    end_time: datetime = FieldV1(default_factory=lambda: datetime.now(timezone.utc))
     extra: Optional[dict[str, Any]] = None
     execution_order: int
     child_execution_order: int

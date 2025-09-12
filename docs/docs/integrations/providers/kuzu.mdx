@@ -1,32 +1,40 @@
 # Kùzu
 
->[Kùzu](https://kuzudb.com/) is a company based in Waterloo, Ontario, Canada. 
-> It provides a highly scalable, extremely fast, easy-to-use [embeddable graph database](https://github.com/kuzudb/kuzu).
+> [Kùzu](https://kuzudb.com/) is an embeddable, scalable, extremely fast graph database.
+> It is permissively licensed with an MIT license, and you can see its source code [here](https://github.com/kuzudb/kuzu).
 
+> Key characteristics of Kùzu:
+>- Performance and scalability: Implements modern, state-of-the-art join algorithms for graphs.
+>- Usability: Very easy to set up and get started with, as there are no servers (embedded architecture).
+>- Interoperability: Can conveniently scan and copy data from external columnar formats, CSV, JSON and relational databases.
+>- Structured property graph model: Implements the property graph model, with added structure.
+>- Cypher support: Allows convenient querying of the graph in Cypher, a declarative query language.
+
+> Get started with Kùzu by visiting their [documentation](https://docs.kuzudb.com/).
 
 
 ## Installation and Setup
 
-You need to install the `kuzu` python package.
+Install the Python SDK as follows:
 
 ```bash
-pip install kuzu
+pip install -U langchain-kuzu
 ```
 
-## Graph database
+## Usage
+
+## Graphs
 
 See a [usage example](/docs/integrations/graphs/kuzu_db).
 
 ```python
-from langchain_community.graphs import KuzuGraph
+from langchain_kuzu.graphs.kuzu_graph import KuzuGraph
 ```
 
-## Chain
+## Chains
 
 See a [usage example](/docs/integrations/graphs/kuzu_db/#creating-kuzuqachain).
 
 ```python
-from langchain.chains import KuzuQAChain
+from langchain_kuzu.chains.graph_qa.kuzu import KuzuQAChain
 ```
-
-

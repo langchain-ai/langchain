@@ -6,13 +6,14 @@ import functools
 import importlib
 import os
 import warnings
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
 
 from packaging.version import parse
 from pydantic import SecretStr
 from requests import HTTPError, Response
+from typing_extensions import override
 
 from langchain_core.utils.pydantic import (
     is_pydantic_v1_subclass,
@@ -20,17 +21,14 @@ from langchain_core.utils.pydantic import (
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive."
+    """Validate specified keyword args are mutually exclusive.
 
     Args:
-        *arg_groups (Tuple[str, ...]): Groups of mutually exclusive keyword args.
+        *arg_groups (tuple[str, ...]): Groups of mutually exclusive keyword args.
 
     Returns:
         Callable: Decorator that validates the specified keyword args
-            are mutually exclusive
-
-    Raises:
-        ValueError: If more than one arg in a group is defined.
+            are mutually exclusive.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -73,7 +71,7 @@ def raise_for_status_with_text(response: Response) -> None:
 
 
 @contextlib.contextmanager
-def mock_now(dt_value):  # type: ignore
+def mock_now(dt_value: datetime.datetime) -> Iterator[type]:
     """Context manager for mocking out datetime.now() in unit tests.
 
     Args:
@@ -91,9 +89,10 @@ def mock_now(dt_value):  # type: ignore
         """Mock datetime.datetime.now() with a fixed datetime."""
 
         @classmethod
-        def now(cls):  # type: ignore
+        @override
+        def now(cls, tz: Union[datetime.tzinfo, None] = None) -> "MockDateTime":
             # Create a copy of dt_value.
-            return datetime.datetime(
+            return MockDateTime(
                 dt_value.year,
                 dt_value.month,
                 dt_value.day,
@@ -105,18 +104,19 @@ def mock_now(dt_value):  # type: ignore
             )
 
     real_datetime = datetime.datetime
-    datetime.datetime = MockDateTime
+    datetime.datetime = MockDateTime  # type: ignore[misc]
     try:
         yield datetime.datetime
     finally:
-        datetime.datetime = real_datetime
+        datetime.datetime = real_datetime  # type: ignore[misc]
 
 
 def guard_import(
     module_name: str, *, pip_name: Optional[str] = None, package: Optional[str] = None
 ) -> Any:
-    """Dynamically import a module and raise an exception if the module is not
-    installed.
+    """Dynamically import a module.
+
+    Raise an exception if the module is not installed.
 
     Args:
         module_name (str): The name of the module to import.
@@ -134,7 +134,7 @@ def guard_import(
     try:
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
-        pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
+        pip_name = pip_name or module_name.split(".", maxsplit=1)[0].replace("_", "-")
         msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
@@ -200,7 +200,7 @@ def get_pydantic_field_names(pydantic_cls: Any) -> set[str]:
         pydantic_cls: Pydantic class.
 
     Returns:
-        Set[str]: Field names.
+        set[str]: Field names.
     """
     all_required_field_names = set()
     if is_pydantic_v1_subclass(pydantic_cls):
@@ -227,7 +227,7 @@ def _build_model_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        Dict[str, Any]: Extra kwargs.
+        dict[str, Any]: Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.
@@ -275,7 +275,7 @@ def build_extra_kwargs(
         all_required_field_names: All required field names for the pydantic class.
 
     Returns:
-        Dict[str, Any]: Extra kwargs.
+        dict[str, Any]: Extra kwargs.
 
     Raises:
         ValueError: If a field is specified in both values and extra_kwargs.
@@ -378,10 +378,21 @@ def from_env(
         error_message: the error message which will be raised if the key is not found
             and no default value is provided.
             This will be raised as a ValueError.
+
+    Returns:
+        factory method that will look up the value from the environment.
     """
 
     def get_from_env_fn() -> Optional[str]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The value from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:
@@ -391,16 +402,14 @@ def from_env(
 
         if isinstance(default, (str, type(None))):
             return default
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                msg = (
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
-                raise ValueError(msg)
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_from_env_fn
 
@@ -444,7 +453,15 @@ def secret_from_env(
     """
 
     def get_secret_from_env() -> Optional[SecretStr]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The secret from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:
@@ -453,17 +470,15 @@ def secret_from_env(
             return SecretStr(os.environ[key])
         if isinstance(default, str):
             return SecretStr(default)
-        elif default is None:
+        if default is None:
             return None
-        else:
-            if error_message:
-                raise ValueError(error_message)
-            else:
-                msg = (
-                    f"Did not find {key}, please add an environment variable"
-                    f" `{key}` which contains it, or pass"
-                    f" `{key}` as a named parameter."
-                )
-                raise ValueError(msg)
+        if error_message:
+            raise ValueError(error_message)
+        msg = (
+            f"Did not find {key}, please add an environment variable"
+            f" `{key}` which contains it, or pass"
+            f" `{key}` as a named parameter."
+        )
+        raise ValueError(msg)
 
     return get_secret_from_env

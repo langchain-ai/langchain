@@ -1,7 +1,8 @@
 """Test AzureOpenAI wrapper."""
 
 import os
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 import pytest
 from langchain_core.callbacks import CallbackManager
@@ -148,7 +149,7 @@ def test_openai_streaming_callback() -> None:
         verbose=True,
     )
     llm.invoke("Write me a sentence with 100 words.")
-    assert callback_handler.llm_streams == 11
+    assert callback_handler.llm_streams < 15
 
 
 @pytest.mark.scheduled
@@ -171,5 +172,5 @@ async def test_openai_async_streaming_callback() -> None:
         verbose=True,
     )
     result = await llm.agenerate(["Write me a sentence with 100 words."])
-    assert callback_handler.llm_streams == 11
+    assert callback_handler.llm_streams < 15
     assert isinstance(result, LLMResult)

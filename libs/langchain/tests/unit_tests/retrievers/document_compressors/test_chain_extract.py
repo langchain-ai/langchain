@@ -26,11 +26,12 @@ def test_llm_chain_extractor() -> None:
             "Candlepin bowling is popular in New England.",
             "Candlepin bowling balls are smaller.",
             "NO_OUTPUT",
-        ]
+        ],
     )
     doc_compressor = LLMChainExtractor.from_llm(llm)
     output = doc_compressor.compress_documents(
-        documents, "Tell me about Candlepin bowling."
+        documents,
+        "Tell me about Candlepin bowling.",
     )
     expected = documents = [
         Document(
@@ -38,7 +39,8 @@ def test_llm_chain_extractor() -> None:
             metadata={"a": 1},
         ),
         Document(
-            page_content="Candlepin bowling balls are smaller.", metadata={"b": 2}
+            page_content="Candlepin bowling balls are smaller.",
+            metadata={"b": 2},
         ),
     ]
     assert output == expected
@@ -66,19 +68,21 @@ async def test_llm_chain_extractor_async() -> None:
             "Candlepin bowling is popular in New England.",
             "Candlepin bowling balls are smaller.",
             "NO_OUTPUT",
-        ]
+        ],
     )
     doc_compressor = LLMChainExtractor.from_llm(llm)
     output = await doc_compressor.acompress_documents(
-        documents, "Tell me about Candlepin bowling."
+        documents,
+        "Tell me about Candlepin bowling.",
     )
-    expected = documents = [
+    expected = [
         Document(
             page_content="Candlepin bowling is popular in New England.",
             metadata={"a": 1},
         ),
         Document(
-            page_content="Candlepin bowling balls are smaller.", metadata={"b": 2}
+            page_content="Candlepin bowling balls are smaller.",
+            metadata={"b": 2},
         ),
     ]
     assert output == expected

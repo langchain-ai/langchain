@@ -1,3 +1,5 @@
+"""Image prompt template for a multimodal model."""
+
 from typing import Any
 
 from pydantic import Field
@@ -9,7 +11,6 @@ from langchain_core.prompts.string import (
     PromptTemplateFormat,
 )
 from langchain_core.runnables import run_in_executor
-from langchain_core.utils import image as image_utils
 
 
 class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
@@ -22,6 +23,12 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
     Options are: 'f-string', 'mustache', 'jinja2'."""
 
     def __init__(self, **kwargs: Any) -> None:
+        """Create an image prompt template.
+
+        Raises:
+            ValueError: If the input variables contain ``'url'``, ``'path'``, or
+                ``'detail'``.
+        """
         if "input_variables" not in kwargs:
             kwargs["input_variables"] = []
 
@@ -42,7 +49,11 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "image"]``
+        """
         return ["langchain", "prompts", "image"]
 
     def format_prompt(self, **kwargs: Any) -> PromptValue:
@@ -80,14 +91,16 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             A formatted string.
 
         Raises:
-            ValueError: If the url or path is not provided.
-            ValueError: If the path or url is not a string.
+            ValueError: If the url is not provided.
+            ValueError: If the url is not a string.
+            ValueError: If ``'path'`` is provided in the template or kwargs.
 
         Example:
 
             .. code-block:: python
 
                 prompt.format(variable1="foo")
+
         """
         formatted = {}
         for k, v in self.template.items():
@@ -98,23 +111,23 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
             else:
                 formatted[k] = v
         url = kwargs.get("url") or formatted.get("url")
-        path = kwargs.get("path") or formatted.get("path")
-        detail = kwargs.get("detail") or formatted.get("detail")
-        if not url and not path:
-            msg = "Must provide either url or path."
+        if kwargs.get("path") or formatted.get("path"):
+            msg = (
+                "Loading images from 'path' has been removed as of 0.3.15 for security "
+                "reasons. Please specify images by 'url'."
+            )
             raise ValueError(msg)
+        detail = kwargs.get("detail") or formatted.get("detail")
         if not url:
-            if not isinstance(path, str):
-                msg = "path must be a string."
-                raise ValueError(msg)
-            url = image_utils.image_to_data_url(path)
+            msg = "Must provide url."
+            raise ValueError(msg)
         if not isinstance(url, str):
             msg = "url must be a string."
-            raise ValueError(msg)
+            raise ValueError(msg)  # noqa: TRY004
         output: ImageURL = {"url": url}
         if detail:
             # Don't check literal values here: let the API check them
-            output["detail"] = detail  # type: ignore[typeddict-item]
+            output["detail"] = detail
         return output
 
     async def aformat(self, **kwargs: Any) -> ImageURL:
@@ -125,14 +138,13 @@ class ImagePromptTemplate(BasePromptTemplate[ImageURL]):
 
         Returns:
             A formatted string.
-
-        Raises:
-            ValueError: If the url or path is not provided.
-            ValueError: If the path or url is not a string.
         """
         return await run_in_executor(None, self.format, **kwargs)
 
-    def pretty_repr(self, html: bool = False) -> str:
+    def pretty_repr(
+        self,
+        html: bool = False,  # noqa: FBT001,FBT002
+    ) -> str:
         """Return a pretty representation of the prompt.
 
         Args:

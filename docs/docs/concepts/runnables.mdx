@@ -1,0 +1,352 @@
+# Runnable interface
+
+The Runnable interface is the foundation for working with LangChain components, and it's implemented across many of them, such as [language models](/docs/concepts/chat_models), [output parsers](/docs/concepts/output_parsers), [retrievers](/docs/concepts/retrievers), [compiled LangGraph graphs](
+https://langchain-ai.github.io/langgraph/concepts/low_level/#compiling-your-graph) and more.
+
+This guide covers the main concepts and methods of the Runnable interface, which allows developers to interact with various LangChain components in a consistent and predictable manner.
+
+:::info Related Resources
+* The ["Runnable" Interface API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable) provides a detailed overview of the Runnable interface and its methods.
+* A list of built-in `Runnables` can be found in the [LangChain Core API Reference](https://python.langchain.com/api_reference/core/runnables.html). Many of these Runnables are useful when composing custom "chains" in LangChain using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel).
+:::
+
+## Overview of runnable interface
+
+The Runnable way defines a standard interface that allows a Runnable component to be:
+
+* [Invoked](/docs/how_to/lcel_cheatsheet/#invoke-a-runnable): A single input is transformed into an output.
+* [Batched](/docs/how_to/lcel_cheatsheet/#batch-a-runnable): Multiple inputs are efficiently transformed into outputs.
+* [Streamed](/docs/how_to/lcel_cheatsheet/#stream-a-runnable): Outputs are streamed as they are produced.
+* Inspected: Schematic information about Runnable's input, output, and configuration can be accessed.
+* Composed: Multiple Runnables can be composed to work together using [the LangChain Expression Language (LCEL)](/docs/concepts/lcel) to create complex pipelines.
+
+Please review the [LCEL Cheatsheet](/docs/how_to/lcel_cheatsheet) for some common patterns that involve the Runnable interface and LCEL expressions.
+
+<a id="batch"></a>
+### Optimized parallel execution (batch)
+<span data-heading-keywords="batch"></span>
+
+LangChain Runnables offer a built-in `batch` (and `batch_as_completed`) API that allow you to process multiple inputs in parallel.
+
+Using these methods can significantly improve performance when needing to process multiple independent inputs, as the
+processing can be done in parallel instead of sequentially.
+
+The two batching options are:
+
+* `batch`: Process multiple inputs in parallel, returning results in the same order as the inputs.
+* `batch_as_completed`: Process multiple inputs in parallel, returning results as they complete. Results may arrive out of order, but each includes the input index for matching.
+
+The default implementation of `batch` and `batch_as_completed` use a thread pool executor to run the `invoke` method in parallel. This allows for efficient parallel execution without the need for users to manage threads, and speeds up code that is I/O-bound (e.g., making API requests, reading files, etc.). It will not be as effective for CPU-bound operations, as the GIL (Global Interpreter Lock) in Python will prevent true parallel execution.
+
+Some Runnables may provide their own implementations of `batch` and `batch_as_completed` that are optimized for their specific use case (e.g.,
+rely on a `batch` API provided by a model provider).
+
+:::note
+The async versions of `abatch` and `abatch_as_completed` relies on asyncio's [gather](https://docs.python.org/3/library/asyncio-task.html#asyncio.gather) and [as_completed](https://docs.python.org/3/library/asyncio-task.html#asyncio.as_completed) functions to run the `ainvoke` method in parallel.
+:::
+
+:::tip
+When processing a large number of inputs using `batch` or `batch_as_completed`, users may want to control the maximum number of parallel calls. This can be done by setting the `max_concurrency` attribute in the `RunnableConfig` dictionary. See the [RunnableConfig](/docs/concepts/runnables/#runnableconfig) for more information.
+
+Chat Models also have a built-in [rate limiter](/docs/concepts/chat_models#rate-limiting) that can be used to control the rate at which requests are made.
+:::
+
+### Asynchronous support
+<span data-heading-keywords="async-api"></span>
+
+Runnables expose an asynchronous API, allowing them to be called using the `await` syntax in Python. Asynchronous methods can be identified by the "a" prefix (e.g., `ainvoke`, `abatch`, `astream`, `abatch_as_completed`).
+
+Please refer to the [Async Programming with LangChain](/docs/concepts/async) guide for more details.
+
+## Streaming APIs
+<span data-heading-keywords="streaming-api"></span>
+
+Streaming is critical in making applications based on LLMs feel responsive to end-users.
+
+Runnables expose the following three streaming APIs:
+
+1. sync [stream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.stream) and async [astream](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.astream): yields the output a Runnable as it is generated.
+2. The async `astream_events`: a more advanced streaming API that allows streaming intermediate steps and final output
+3. The **legacy** async `astream_log`: a legacy streaming API that streams intermediate steps and final output
+
+Please refer to the [Streaming Conceptual Guide](/docs/concepts/streaming) for more details on how to stream in LangChain.
+
+## Input and output types
+
+Every `Runnable` is characterized by an input and output type. These input and output types can be any Python object, and are defined by the Runnable itself.
+
+Runnable methods that result in the execution of the Runnable (e.g., `invoke`, `batch`, `stream`, `astream_events`) work with these input and output types.
+
+* invoke: Accepts an input and returns an output.
+* batch: Accepts a list of inputs and returns a list of outputs.
+* stream: Accepts an input and returns a generator that yields outputs.
+
+The **input type** and **output type** vary by component:
+
+| Component    | Input Type                                       | Output Type           |
+|--------------|--------------------------------------------------|-----------------------|
+| Prompt       | dictionary                                       | PromptValue           |
+| ChatModel    | a string, list of chat messages or a PromptValue | ChatMessage           |
+| LLM          | a string, list of chat messages or a PromptValue | String                |
+| OutputParser | the output of an LLM or ChatModel                | Depends on the parser |
+| Retriever    | a string                                         | List of Documents     |
+| Tool         | a string or dictionary, depending on the tool    | Depends on the tool   |
+
+Please refer to the individual component documentation for more information on the input and output types and how to use them.
+
+### Inspecting schemas
+
+:::note
+This is an advanced feature that is unnecessary for most users. You should probably
+skip this section unless you have a specific need to inspect the schema of a Runnable.
+:::
+
+In more advanced use cases, you may want to programmatically **inspect** the Runnable and determine what input and output types the Runnable expects and produces.
+
+The Runnable interface provides methods to get the [JSON Schema](https://json-schema.org/) of the input and output types of a Runnable, as well as [Pydantic schemas](https://docs.pydantic.dev/latest/) for the input and output types.
+
+These APIs are mostly used internally for unit-testing and by [LangServe](/docs/concepts/architecture#langserve) which uses the APIs for input validation and generation of [OpenAPI documentation](https://www.openapis.org/).
+
+In addition, to the input and output types, some Runnables have been set up with additional run time configuration options.
+There are corresponding APIs to get the Pydantic Schema and JSON Schema of the configuration options for the Runnable.
+Please see the [Configurable Runnables](#configurable-runnables) section for more information.
+
+| Method                  | Description                                                      |
+|-------------------------|------------------------------------------------------------------|
+| `get_input_schema`      | Gives the Pydantic Schema of the input schema for the Runnable.  |
+| `get_output_schema`      | Gives the Pydantic Schema of the output schema for the Runnable. |
+| `config_schema`         | Gives the Pydantic Schema of the config schema for the Runnable. |
+| `get_input_jsonschema`  | Gives the JSONSchema of the input schema for the Runnable.       |
+| `get_output_jsonschema` | Gives the JSONSchema of the output schema for the Runnable.      |
+| `get_config_jsonschema` | Gives the JSONSchema of the config schema for the Runnable.      |
+
+
+#### With_types
+
+LangChain will automatically try to infer the input and output types of a Runnable based on available information.
+
+Currently, this inference does not work well for more complex Runnables that are built using [LCEL](/docs/concepts/lcel) composition, and the inferred input and / or output types may be incorrect. In these cases, we recommend that users override the inferred input and output types using the `with_types` method ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.base.Runnable.html#langchain_core.runnables.base.Runnable.with_types
+)).
+
+## RunnableConfig
+
+Any of the methods that are used to execute the runnable (e.g., `invoke`, `batch`, `stream`, `astream_events`) accept a second argument called
+`RunnableConfig` ([API Reference](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.config.RunnableConfig.html#RunnableConfig)). This argument is a dictionary that contains configuration for the Runnable that will be used
+at run time during the execution of the runnable.
+
+A `RunnableConfig` can have any of the following properties defined:
+
+| Attribute       | Description                                                                                |
+|-----------------|--------------------------------------------------------------------------------------------|
+| run_name        | Name used for the given Runnable (not inherited).                                          |
+| run_id          | Unique identifier for this call. sub-calls will get their own unique run ids.              |
+| tags            | Tags for this call and any sub-calls.                                                      |
+| metadata        | Metadata for this call and any sub-calls.                                                  |
+| callbacks       | Callbacks for this call and any sub-calls.                                                 |
+| max_concurrency | Maximum number of parallel calls to make (e.g., used by batch).                            |
+| recursion_limit | Maximum number of times a call can recurse (e.g., used by Runnables that return Runnables) |
+| configurable    | Runtime values for configurable attributes of the Runnable.                                |
+
+Passing `config` to the `invoke` method is done like so:
+
+```python
+some_runnable.invoke(
+   some_input,
+   config={
+      'run_name': 'my_run',
+      'tags': ['tag1', 'tag2'],
+      'metadata': {'key': 'value'}
+
+   }
+)
+```
+
+### Propagation of RunnableConfig
+
+Many `Runnables` are composed of other Runnables, and it is important that the `RunnableConfig` is propagated to all sub-calls made by the Runnable. This allows providing run time configuration values to the parent Runnable that are inherited by all sub-calls.
+
+If this were not the case, it would be impossible to set and propagate [callbacks](/docs/concepts/callbacks) or other configuration values like `tags` and `metadata` which
+are expected to be inherited by all sub-calls.
+
+There are two main patterns by which new `Runnables` are created:
+
+1. Declaratively using [LangChain Expression Language (LCEL)](/docs/concepts/lcel):
+
+    ```python
+    chain = prompt | chat_model | output_parser
+    ```
+
+2. Using a [custom Runnable](#custom-runnables)  (e.g., `RunnableLambda`) or using the `@tool` decorator:
+
+    ```python
+    def foo(input):
+        # Note that .invoke() is used directly here
+        return bar_runnable.invoke(input)
+    foo_runnable = RunnableLambda(foo)
+    ```
+
+LangChain will try to propagate `RunnableConfig` automatically for both of the patterns.
+
+For handling the second pattern, LangChain relies on Python's [contextvars](https://docs.python.org/3/library/contextvars.html).
+
+In Python 3.11 and above, this works out of the box, and you do not need to do anything special to propagate the `RunnableConfig` to the sub-calls.
+
+In Python 3.9 and 3.10, if you are using **async code**, you need to manually pass the `RunnableConfig` through to the `Runnable` when invoking it.
+
+This is due to a limitation in [asyncio's tasks](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task)  in Python 3.9 and 3.10 which did
+not accept a `context` argument.
+
+Propagating the `RunnableConfig` manually is done like so:
+
+```python
+async def foo(input, config): # <-- Note the config argument
+    return await bar_runnable.ainvoke(input, config=config)
+
+foo_runnable = RunnableLambda(foo)
+```
+
+:::caution
+When using Python 3.10 or lower and writing async code, `RunnableConfig` cannot be propagated
+automatically, and you will need to do it manually! This is a common pitfall when
+attempting to stream data using `astream_events` and `astream_log` as these methods
+rely on proper propagation of [callbacks](/docs/concepts/callbacks) defined inside of `RunnableConfig`.
+:::
+
+### Setting custom run name, tags, and metadata
+
+The `run_name`, `tags`, and `metadata` attributes of the `RunnableConfig` dictionary can be used to set custom values for the run name, tags, and metadata for a given Runnable.
+
+The `run_name` is a string that can be used to set a custom name for the run. This name will be used in logs and other places to identify the run. It is not inherited by sub-calls.
+
+The `tags` and `metadata` attributes are lists and dictionaries, respectively, that can be used to set custom tags and metadata for the run. These values are inherited by sub-calls.
+
+Using these attributes can be useful for tracking and debugging runs, as they will be surfaced in [LangSmith](https://docs.smith.langchain.com/) as trace attributes that you can
+filter and search on.
+
+The attributes will also be propagated to [callbacks](/docs/concepts/callbacks), and will appear in streaming APIs like [astream_events](/docs/concepts/streaming) as part of each event in the stream.
+
+:::note Related
+* [How-to trace with LangChain](https://docs.smith.langchain.com/how_to_guides/tracing/trace_with_langchain)
+:::
+
+### Setting run id
+
+:::note
+This is an advanced feature that is unnecessary for most users.
+:::
+
+You may need to set a custom `run_id` for a given run, in case you want
+to reference it later or correlate it with other systems.
+
+The `run_id` MUST be a valid UUID string and **unique** for each run. It is used to identify
+the parent run, sub-class will get their own unique run ids automatically.
+
+To set a custom `run_id`, you can pass it as a key-value pair in the `config` dictionary when invoking the Runnable:
+
+```python
+import uuid
+
+run_id = uuid.uuid4()
+
+some_runnable.invoke(
+   some_input,
+   config={
+      'run_id': run_id
+   }
+)
+
+# Do something with the run_id
+```
+
+### Setting recursion limit
+
+:::note
+This is an advanced feature that is unnecessary for most users.
+:::
+
+Some Runnables may return other Runnables, which can lead to infinite recursion if not handled properly. To prevent this, you can set a `recursion_limit` in the `RunnableConfig` dictionary. This will limit the number of times a Runnable can recurse.
+
+### Setting max concurrency
+
+If using the `batch` or `batch_as_completed` methods, you can set the `max_concurrency` attribute in the `RunnableConfig` dictionary to control the maximum number of parallel calls to make. This can be useful when you want to limit the number of parallel calls to prevent overloading a server or API.
+
+
+:::tip
+If you're trying to rate limit the number of requests made by a **Chat Model**, you can use the built-in [rate limiter](/docs/concepts/chat_models#rate-limiting) instead of setting `max_concurrency`, which will be more effective.
+
+See the [How to handle rate limits](/docs/how_to/chat_model_rate_limiting/) guide for more information.
+:::
+
+### Setting configurable
+
+The `configurable` field is used to pass runtime values for configurable attributes of the Runnable.
+
+It is used frequently in [LangGraph](/docs/concepts/architecture#langgraph) with
+[LangGraph Persistence](https://langchain-ai.github.io/langgraph/concepts/persistence/)
+and [memory](https://langchain-ai.github.io/langgraph/concepts/memory/).
+
+It is used for a similar purpose in [RunnableWithMessageHistory](https://python.langchain.com/api_reference/core/runnables/langchain_core.runnables.history.RunnableWithMessageHistory.html#langchain_core.runnables.history.RunnableWithMessageHistory) to specify either
+a `session_id` / `conversation_id` to keep track of conversation history.
+
+In addition, you can use it to specify any custom configuration options to pass to any [Configurable Runnable](#configurable-runnables) that they create.
+
+### Setting callbacks
+
+Use this option to configure [callbacks](/docs/concepts/callbacks) for the runnable at
+runtime. The callbacks will be passed to all sub-calls made by the runnable.
+
+```python
+some_runnable.invoke(
+   some_input,
+   {
+      "callbacks": [
+         SomeCallbackHandler(),
+         AnotherCallbackHandler(),
+      ]
+   }
+)
+```
+
+Please read the [Callbacks Conceptual Guide](/docs/concepts/callbacks) for more information on how to use callbacks in LangChain.
+
+:::important
+If you're using Python 3.9 or 3.10 in an async environment, you must propagate
+the `RunnableConfig` manually to sub-calls in some cases. Please see the
+[Propagating RunnableConfig](#propagation-of-runnableconfig) section for more information.
+:::
+
+## Creating a runnable from a function {#custom-runnables}
+
+You may need to create a custom Runnable that runs arbitrary logic. This is especially
+useful if using [LangChain Expression Language (LCEL)](/docs/concepts/lcel) to compose
+multiple Runnables and you need to add custom processing logic in one of the steps.
+
+There are two ways to create a custom Runnable from a function:
+
+* `RunnableLambda`: Use this for simple transformations where streaming is not required.
+* `RunnableGenerator`: use this for more complex transformations when streaming is needed.
+
+See the [How to run custom functions](/docs/how_to/functions) guide for more information on how to use `RunnableLambda` and `RunnableGenerator`.
+
+:::important
+Users should not try to subclass Runnables to create a new custom Runnable. It is
+much more complex and error-prone than simply using `RunnableLambda` or `RunnableGenerator`.
+:::
+
+## Configurable runnables
+
+:::note
+This is an advanced feature that is unnecessary for most users.
+
+It helps with configuration of large "chains" created using the [LangChain Expression Language (LCEL)](/docs/concepts/lcel)
+and is leveraged by [LangServe](/docs/concepts/architecture#langserve) for deployed Runnables.
+:::
+
+Sometimes you may want to experiment with, or even expose to the end user, multiple different ways of doing things with your Runnable. This could involve adjusting parameters like the temperature in a chat model or even switching between different chat models.
+
+To simplify this process, the Runnable interface provides two methods for creating configurable Runnables at runtime:
+
+* `configurable_fields`: This method allows you to configure specific **attributes** in a Runnable. For example, the `temperature` attribute of a chat model.
+* `configurable_alternatives`: This method enables you to specify **alternative** Runnables that can be run during runtime. For example, you could specify a list of different chat models that can be used.
+
+See the [How to configure runtime chain internals](/docs/how_to/configure) guide for more information on how to configure runtime chain internals.

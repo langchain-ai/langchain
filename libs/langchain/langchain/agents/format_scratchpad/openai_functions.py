@@ -1,39 +1,48 @@
 import json
-from typing import List, Sequence, Tuple
+import logging
+from collections.abc import Sequence
+from typing import Any
 
 from langchain_core.agents import AgentAction, AgentActionMessageLog
 from langchain_core.messages import AIMessage, BaseMessage, FunctionMessage
 
+_logger = logging.getLogger(__name__)
+
 
 def _convert_agent_action_to_messages(
-    agent_action: AgentAction, observation: str
-) -> List[BaseMessage]:
+    agent_action: AgentAction,
+    observation: str,
+) -> list[BaseMessage]:
     """Convert an agent action to a message.
 
     This code is used to reconstruct the original AI message from the agent action.
 
     Args:
         agent_action: Agent action to convert.
+        observation: The result of the tool invocation.
 
     Returns:
         AIMessage or the previous messages plus a FunctionMessage that corresponds to
             the original tool invocation
     """
     if isinstance(agent_action, AgentActionMessageLog):
-        return list(agent_action.message_log) + [
-            _create_function_message(agent_action, observation)
+        return [
+            *list(agent_action.message_log),
+            _create_function_message(agent_action, observation),
         ]
-    else:
-        return [AIMessage(content=agent_action.log)]
+    return [AIMessage(content=agent_action.log)]
 
 
 def _create_function_message(
-    agent_action: AgentAction, observation: str
+    agent_action: AgentAction,
+    observation: Any,
 ) -> FunctionMessage:
     """Convert agent action and observation into a function message.
+
     Args:
         agent_action: the tool invocation request from the agent.
         observation: the result of the tool invocation.
+
     Returns:
         FunctionMessage that corresponds to the original tool invocation.
 
@@ -43,7 +52,10 @@ def _create_function_message(
     if not isinstance(observation, str):
         try:
             content = json.dumps(observation, ensure_ascii=False)
+        except TypeError:
+            content = str(observation)
         except Exception:
+            _logger.exception("Unexpected error converting observation to string.")
             content = str(observation)
     else:
         content = observation
@@ -54,8 +66,8 @@ def _create_function_message(
 
 
 def format_to_openai_function_messages(
-    intermediate_steps: Sequence[Tuple[AgentAction, str]],
-) -> List[BaseMessage]:
+    intermediate_steps: Sequence[tuple[AgentAction, str]],
+) -> list[BaseMessage]:
     """Convert (AgentAction, tool output) tuples into FunctionMessages.
 
     Args:

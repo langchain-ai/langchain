@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Literal, Union
+from typing import TYPE_CHECKING, Any, Literal, Union
 
 from typing_extensions import NotRequired, TypedDict
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class EventData(TypedDict, total=False):
@@ -49,8 +51,10 @@ class BaseStreamEvent(TypedDict):
 
             from langchain_core.runnables import RunnableLambda
 
+
             async def reverse(s: str) -> str:
                 return s[::-1]
+
 
             chain = RunnableLambda(func=reverse)
 
@@ -81,6 +85,7 @@ class BaseStreamEvent(TypedDict):
                     "tags": [],
                 },
             ]
+
     """
 
     event: str

@@ -6,14 +6,9 @@ import abc
 import asyncio
 import threading
 import time
-from typing import (
-    Optional,
-)
-
-from langchain_core._api import beta
+from typing import Optional
 
 
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class BaseRateLimiter(abc.ABC):
     """Base class for rate limiters.
 
@@ -73,7 +68,6 @@ class BaseRateLimiter(abc.ABC):
         """
 
 
-@beta(message="Introduced in 0.2.24. API subject to change.")
 class InMemoryRateLimiter(BaseRateLimiter):
     """An in memory rate limiter based on a token bucket algorithm.
 
@@ -116,9 +110,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
             )
 
             from langchain_anthropic import ChatAnthropic
+
             model = ChatAnthropic(
-                model_name="claude-3-opus-20240229",
-                rate_limiter=rate_limiter
+                model_name="claude-3-opus-20240229", rate_limiter=rate_limiter
             )
 
             for _ in range(5):
@@ -129,6 +123,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
 
     .. versionadded:: 0.2.24
+
     """  # noqa: E501
 
     def __init__(
@@ -152,13 +147,12 @@ class InMemoryRateLimiter(BaseRateLimiter):
 
         Args:
             requests_per_second: The number of tokens to add per second to the bucket.
-                Must be at least 1. The tokens represent "credit" that can be used
-                to make requests.
+                The tokens represent "credit" that can be used to make requests.
             check_every_n_seconds: check whether the tokens are available
                 every this many seconds. Can be a float to represent
                 fractions of a second.
             max_bucket_size: The maximum number of tokens that can be in the bucket.
-                This is used to prevent bursts of requests.
+                Must be at least 1. Used to prevent bursts of requests.
         """
         # Number of requests that we can make per second.
         self.requests_per_second = requests_per_second
@@ -248,14 +242,14 @@ class InMemoryRateLimiter(BaseRateLimiter):
         if not blocking:
             return self._consume()
 
-        while not self._consume():
+        while not self._consume():  # noqa: ASYNC110
             # This code ignores the ASYNC110 warning which is a false positive in this
             # case.
             # There is no external actor that can mark that the Event is done
             # since the tokens are managed by the rate limiter itself.
             # It needs to wake up to re-fill the tokens.
             # https://docs.astral.sh/ruff/rules/async-busy-wait/
-            await asyncio.sleep(self.check_every_n_seconds)  # ruff: noqa: ASYNC110
+            await asyncio.sleep(self.check_every_n_seconds)
         return True
 
 

@@ -1,6 +1,11 @@
 # Hugging Face
 
-All functionality related to the [Hugging Face Platform](https://huggingface.co/).
+All functionality related to [Hugging Face Hub](https://huggingface.co/) and libraries like [transformers](https://huggingface.co/docs/transformers/index), [sentence transformers](https://sbert.net/), and [datasets](https://huggingface.co/docs/datasets/index).
+
+> [Hugging Face](https://huggingface.co/) is an AI platform with all major open source models, datasets, MCPs, and demos.
+> It supplies model inference locally and via serverless [Inference Providers](https://huggingface.co/docs/inference-providers).
+>
+> You can use [Inference Providers](https://huggingface.co/docs/inference-providers) to run open source models like DeepSeek R1 on scalable serverless infrastructure.
 
 ## Installation
 
@@ -26,6 +31,7 @@ from langchain_huggingface import ChatHuggingFace
 
 ### HuggingFaceEndpoint
 
+We can use the `HuggingFaceEndpoint` class to run open source models via serverless [Inference Providers](https://huggingface.co/docs/inference-providers) or via dedicated [Inference Endpoints](https://huggingface.co/inference-endpoints/dedicated).
 
 See a [usage example](/docs/integrations/llms/huggingface_endpoint).
 
@@ -35,7 +41,7 @@ from langchain_huggingface import HuggingFaceEndpoint
 
 ### HuggingFacePipeline
 
-Hugging Face models can be run locally through the `HuggingFacePipeline` class.
+We can use the `HuggingFacePipeline` class to run open source models locally.
 
 See a [usage example](/docs/integrations/llms/huggingface_pipelines).
 
@@ -47,6 +53,8 @@ from langchain_huggingface import HuggingFacePipeline
 
 ### HuggingFaceEmbeddings
 
+We can use the `HuggingFaceEmbeddings` class to run open source embedding models locally.
+
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
@@ -54,6 +62,8 @@ from langchain_huggingface import HuggingFaceEmbeddings
 ```
 
 ### HuggingFaceEndpointEmbeddings
+
+We can use the `HuggingFaceEndpointEmbeddings` class to run open source embedding models via a dedicated [Inference Endpoint](https://huggingface.co/inference-endpoints/dedicated).
 
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
@@ -63,6 +73,8 @@ from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
 ### HuggingFaceInferenceAPIEmbeddings
 
+We can use the `HuggingFaceInferenceAPIEmbeddings` class to run open source embedding models via [Inference Providers](https://huggingface.co/docs/inference-providers).
+
 See a [usage example](/docs/integrations/text_embedding/huggingfacehub).
 
 ```python
@@ -70,6 +82,8 @@ from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 ```
 
 ### HuggingFaceInstructEmbeddings
+
+We can use the `HuggingFaceInstructEmbeddings` class to run open source embedding models locally.
 
 See a [usage example](/docs/integrations/text_embedding/instruct_embeddings).
 
@@ -114,9 +128,9 @@ from langchain_community.document_loaders.hugging_face_dataset import HuggingFac
 
 >Load model information from `Hugging Face Hub`, including README content.
 >
->This loader interfaces with the `Hugging Face Models API` to fetch 
-> and load model metadata and README files. 
-> The API allows you to search and filter models based on 
+>This loader interfaces with the `Hugging Face Models API` to fetch
+> and load model metadata and README files.
+> The API allows you to search and filter models based on
 > specific criteria such as model tags, authors, and more.
 
 ```python

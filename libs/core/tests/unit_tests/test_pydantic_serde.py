@@ -1,4 +1,6 @@
-"""A set of tests that verifies that Union discrimination works correctly with
+"""Test pydantic SerDe.
+
+A set of tests that verifies that Union discrimination works correctly with
 the various pydantic base models.
 
 These tests can uncover issues that will also arise during regular instantiation
@@ -25,7 +27,6 @@ from langchain_core.messages import (
 
 def test_serde_any_message() -> None:
     """Test AnyMessage() serder."""
-
     lc_objects = [
         HumanMessage(content="human"),
         HumanMessageChunk(content="human"),

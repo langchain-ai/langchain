@@ -1,12 +1,36 @@
 # Cloudflare
 
->[Cloudflare, Inc. (Wikipedia)](https://en.wikipedia.org/wiki/Cloudflare) is an American company that provides 
-> content delivery network services, cloud cybersecurity, DDoS mitigation, and ICANN-accredited 
+>[Cloudflare, Inc. (Wikipedia)](https://en.wikipedia.org/wiki/Cloudflare) is an American company that provides
+> content delivery network services, cloud cybersecurity, DDoS mitigation, and ICANN-accredited
 > domain registration services.
 
->[Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) allows you to run machine 
+>[Cloudflare Workers AI](https://developers.cloudflare.com/workers-ai/) allows you to run machine
 > learning models, on the `Cloudflare` network, from your code via REST API.
 
+
+## ChatModels
+
+See [installation instructions and usage example](/docs/integrations/chat/cloudflare_workersai).
+
+```python
+from langchain_cloudflare import ChatCloudflareWorkersAI
+```
+
+## VectorStore
+
+See [installation instructions and usage example](/docs/integrations/vectorstores/cloudflare_vectorize).
+
+```python
+from langchain_cloudflare import CloudflareVectorize
+```
+
+## Embeddings
+
+See [installation instructions and usage example](/docs/integrations/text_embedding/cloudflare_workersai).
+
+```python
+from langchain_cloudflare import CloudflareWorkersAIEmbeddings
+```
 
 ## LLMs
 
@@ -14,12 +38,4 @@ See [installation instructions and usage example](/docs/integrations/llms/cloudf
 
 ```python
 from langchain_community.llms.cloudflare_workersai import CloudflareWorkersAI
-```
-
-## Embedding models
-
-See [installation instructions and usage example](/docs/integrations/text_embedding/cloudflare_workersai).
-
-```python
-from langchain_community.embeddings.cloudflare_workersai import CloudflareWorkersAIEmbeddings
 ```

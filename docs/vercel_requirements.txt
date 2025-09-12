@@ -1,9 +1,5 @@
--e ../libs/core
--e ../libs/langchain
--e ../libs/community
--e ../libs/text-splitters
 langgraph
-langchain-cohere
+pyyaml
 urllib3==1.26.19
 nbconvert==7.16.4
 

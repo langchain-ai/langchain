@@ -1,4 +1,7 @@
-from typing import Any, List, Optional, Sequence
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Any, Optional
 
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
 
@@ -16,9 +19,11 @@ class FastEmbedSparse(SparseEmbeddings):
         parallel: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
-        """
-        Sparse encoder implementation using FastEmbed - https://qdrant.github.io/fastembed/
-        For a list of available models, see https://qdrant.github.io/fastembed/examples/Supported_Models/
+        """Sparse encoder implementation using FastEmbed.
+
+        Uses `FastEmbed <https://qdrant.github.io/fastembed/>`__ for sparse text
+        embeddings.
+        For a list of available models, see `the Qdrant docs <https://qdrant.github.io/fastembed/examples/Supported_Models/>`__.
 
         Args:
             model_name (str): The name of the model to use. Defaults to `"Qdrant/bm25"`.
@@ -37,15 +42,19 @@ class FastEmbedSparse(SparseEmbeddings):
             kwargs: Additional options to pass to fastembed.SparseTextEmbedding
         Raises:
             ValueError: If the model_name is not supported in SparseTextEmbedding.
+
         """
         try:
-            from fastembed import SparseTextEmbedding  # type: ignore
-        except ImportError:
-            raise ValueError(
+            from fastembed import (  # type: ignore[import-not-found]
+                SparseTextEmbedding,
+            )
+        except ImportError as err:
+            msg = (
                 "The 'fastembed' package is not installed. "
                 "Please install it with "
                 "`pip install fastembed` or `pip install fastembed-gpu`."
             )
+            raise ValueError(msg) from err
         self._batch_size = batch_size
         self._parallel = parallel
         self._model = SparseTextEmbedding(
@@ -56,7 +65,7 @@ class FastEmbedSparse(SparseEmbeddings):
             **kwargs,
         )
 
-    def embed_documents(self, texts: List[str]) -> List[SparseVector]:
+    def embed_documents(self, texts: list[str]) -> list[SparseVector]:
         results = self._model.embed(
             texts, batch_size=self._batch_size, parallel=self._parallel
         )

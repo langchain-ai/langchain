@@ -6,9 +6,12 @@ from typing import Any, Callable, Optional, Union
 from unittest.mock import patch
 
 import pytest
-from pydantic import SecretStr
+from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel as PydanticV1BaseModel
+from pydantic.v1 import Field as PydanticV1Field
 
 from langchain_core import utils
+from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -16,7 +19,6 @@ from langchain_core.utils import (
     guard_import,
 )
 from langchain_core.utils._merge import merge_dicts
-from langchain_core.utils.pydantic import PYDANTIC_MAJOR_VERSION
 from langchain_core.utils.utils import secret_from_env
 
 
@@ -46,7 +48,7 @@ def test_check_package_version(
 
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
-    (
+    [
         # Merge `None` and `1`.
         ({"a": None}, {"a": 1}, {"a": 1}),
         # Merge `1` and `None`.
@@ -96,7 +98,7 @@ def test_check_package_version(
                 TypeError,
                 match=(
                     "Additional kwargs key a already exists in left dict and value "
-                    "has unsupported type .+tuple.+."
+                    r"has unsupported type .+tuple.+."
                 ),
             ),
         ),
@@ -111,7 +113,7 @@ def test_check_package_version(
             {"a": [{"idx": 0, "b": "f"}]},
             {"a": [{"idx": 0, "b": "{"}, {"idx": 0, "b": "f"}]},
         ),
-    ),
+    ],
 )
 def test_merge_dicts(
     left: dict, right: dict, expected: Union[dict, AbstractContextManager]
@@ -130,15 +132,15 @@ def test_merge_dicts(
 
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
-    (
+    [
         # 'type' special key handling
         ({"type": "foo"}, {"type": "foo"}, {"type": "foo"}),
         (
             {"type": "foo"},
             {"type": "bar"},
-            pytest.raises(ValueError, match="Unable to merge."),
+            pytest.raises(ValueError, match="Unable to merge"),
         ),
-    ),
+    ],
 )
 @pytest.mark.xfail(reason="Refactors to make in 0.3")
 def test_merge_dicts_0_3(
@@ -183,71 +185,46 @@ def test_guard_import(
 
 
 @pytest.mark.parametrize(
-    ("module_name", "pip_name", "package"),
+    ("module_name", "pip_name", "package", "expected_pip_name"),
     [
-        ("langchain_core.utilsW", None, None),
-        ("langchain_core.utilsW", "langchain-core-2", None),
-        ("langchain_core.utilsW", None, "langchain-coreWX"),
-        ("langchain_core.utilsW", "langchain-core-2", "langchain-coreWX"),
-        ("langchain_coreW", None, None),  # ModuleNotFoundError
+        ("langchain_core.utilsW", None, None, "langchain-core"),
+        ("langchain_core.utilsW", "langchain-core-2", None, "langchain-core-2"),
+        ("langchain_core.utilsW", None, "langchain-coreWX", "langchain-core"),
+        (
+            "langchain_core.utilsW",
+            "langchain-core-2",
+            "langchain-coreWX",
+            "langchain-core-2",
+        ),
+        ("langchain_coreW", None, None, "langchain-coreW"),  # ModuleNotFoundError
     ],
 )
 def test_guard_import_failure(
-    module_name: str, pip_name: Optional[str], package: Optional[str]
+    module_name: str,
+    pip_name: Optional[str],
+    package: Optional[str],
+    expected_pip_name: str,
 ) -> None:
-    with pytest.raises(ImportError) as exc_info:
-        if package is None and pip_name is None:
-            guard_import(module_name)
-        elif package is None and pip_name is not None:
-            guard_import(module_name, pip_name=pip_name)
-        elif package is not None and pip_name is None:
-            guard_import(module_name, package=package)
-        elif package is not None and pip_name is not None:
-            guard_import(module_name, pip_name=pip_name, package=package)
-        else:
-            msg = "Invalid test case"
-            raise ValueError(msg)
-    pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
-    err_msg = (
-        f"Could not import {module_name} python package. "
-        f"Please install it with `pip install {pip_name}`."
-    )
-    assert exc_info.value.msg == err_msg
+    with pytest.raises(
+        ImportError,
+        match=f"Could not import {module_name} python package. "
+        f"Please install it with `pip install {expected_pip_name}`.",
+    ):
+        guard_import(module_name, pip_name=pip_name, package=package)
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v1_in_2() -> None:
-    from pydantic.v1 import BaseModel as PydanticV1BaseModel
-    from pydantic.v1 import Field
-
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str
         field2: int
-        alias_field: int = Field(alias="aliased_field")
+        alias_field: int = PydanticV1Field(alias="aliased_field")
 
     result = get_pydantic_field_names(PydanticV1Model)
     expected = {"field1", "field2", "aliased_field", "alias_field"}
     assert result == expected
 
 
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 2, reason="Requires pydantic 2")
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field
-
-    class PydanticModel(BaseModel):
-        field1: str
-        field2: int
-        alias_field: int = Field(alias="aliased_field")
-
-    result = get_pydantic_field_names(PydanticModel)
-    expected = {"field1", "field2", "aliased_field", "alias_field"}
-    assert result == expected
-
-
-@pytest.mark.skipif(PYDANTIC_MAJOR_VERSION != 1, reason="Requires pydantic 1")
-def test_get_pydantic_field_names_v1() -> None:
-    from pydantic import BaseModel, Field
-
     class PydanticModel(BaseModel):
         field1: str
         field2: int
@@ -361,13 +338,11 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from pydantic import BaseModel, Field
-
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
 
     # Pass the secret as a parameter
-    foo = Foo(secret="super_secret")  # type: ignore[arg-type]
+    foo = Foo(secret="super_secret")
     assert foo.secret.get_secret_value() == "super_secret"
 
     # Set the environment variable
@@ -387,7 +362,7 @@ def test_using_secret_from_env_as_default_factory(
         )
 
     # We know it will be SecretStr rather than Optional[SecretStr]
-    assert Buzz().secret.get_secret_value() == "hello"  # type: ignore
+    assert Buzz().secret.get_secret_value() == "hello"  # type: ignore[union-attr]
 
     class OhMy(BaseModel):
         secret: Optional[SecretStr] = Field(
@@ -396,3 +371,10 @@ def test_using_secret_from_env_as_default_factory(
 
     with pytest.raises(ValueError, match="Did not find FOOFOOFOOBAR"):
         OhMy()
+
+
+def test_generation_chunk_addition_type_error() -> None:
+    chunk1 = GenerationChunk(text="", generation_info={"len": 0})
+    chunk2 = GenerationChunk(text="Non-empty text", generation_info={"len": 14})
+    result = chunk1 + chunk2
+    assert result == GenerationChunk(text="Non-empty text", generation_info={"len": 14})

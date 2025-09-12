@@ -1,15 +1,15 @@
 # Alibaba Cloud
 
 >[Alibaba Group Holding Limited (Wikipedia)](https://en.wikipedia.org/wiki/Alibaba_Group), or `Alibaba`
-> (Chinese: 阿里巴巴), is a Chinese multinational technology company specializing in e-commerce, retail, 
+> (Chinese: 阿里巴巴), is a Chinese multinational technology company specializing in e-commerce, retail,
 > Internet, and technology.
-> 
+>
 > [Alibaba Cloud (Wikipedia)](https://en.wikipedia.org/wiki/Alibaba_Cloud), also known as `Aliyun`
-> (Chinese: 阿里云; pinyin: Ālǐyún; lit. 'Ali Cloud'), is a cloud computing company, a subsidiary 
-> of `Alibaba Group`. `Alibaba Cloud` provides cloud computing services to online businesses and 
+> (Chinese: 阿里云; pinyin: Ālǐyún; lit. 'Ali Cloud'), is a cloud computing company, a subsidiary
+> of `Alibaba Group`. `Alibaba Cloud` provides cloud computing services to online businesses and
 > Alibaba's own e-commerce ecosystem.
- 
- 
+
+
 ## LLMs
 
 ### Alibaba Cloud PAI EAS
@@ -44,6 +44,14 @@ See [installation instructions and a usage example](/docs/integrations/chat/tong
 
 ```python
 from langchain_community.chat_models.tongyi import ChatTongyi
+```
+
+### Qwen QwQ Chat
+
+See [installation instructions and a usage example](/docs/integrations/chat/qwq)
+
+```python
+from langchain_qwq import ChatQwQ
 ```
 
 ## Document Loaders
@@ -88,4 +96,12 @@ See [installation instructions and a usage example](/docs/integrations/vectorsto
 
 ```python
 from langchain_community.vectorstores import Hologres
+```
+
+### Tablestore
+
+See [installation instructions and a usage example](/docs/integrations/vectorstores/tablestore).
+
+```python
+from langchain_community.vectorstores import TablestoreVectorStore
 ```

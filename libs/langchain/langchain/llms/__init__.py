@@ -1,6 +1,6 @@
-"""
-**LLM** classes provide
-access to the large language model (**LLM**) APIs and services.
+"""**LLMs**.
+
+**LLM** classes provide access to the large language model (**LLM**) APIs and services.
 
 **Class hierarchy:**
 
@@ -19,7 +19,7 @@ access to the large language model (**LLM**) APIs and services.
 """  # noqa: E501
 
 import warnings
-from typing import Any, Callable, Dict, Type
+from typing import Any, Callable
 
 from langchain_core._api import LangChainDeprecationWarning
 from langchain_core.language_models.llms import BaseLLM
@@ -552,21 +552,23 @@ def __getattr__(name: str) -> Any:
             "Please import from langchain-community instead:\n\n"
             f"`from langchain_community.llms import {name}`.\n\n"
             "To install langchain-community run `pip install -U langchain-community`.",
+            stacklevel=2,
             category=LangChainDeprecationWarning,
         )
 
     if name == "type_to_cls_dict":
         # for backwards compatibility
-        type_to_cls_dict: Dict[str, Type[BaseLLM]] = {
+        type_to_cls_dict: dict[str, type[BaseLLM]] = {
             k: v() for k, v in get_type_to_cls_dict().items()
         }
         return type_to_cls_dict
-    else:
-        return getattr(llms, name)
+    return getattr(llms, name)
 
 
 __all__ = [
     "AI21",
+    "RWKV",
+    "VLLM",
     "AlephAlpha",
     "AmazonAPIGateway",
     "Anthropic",
@@ -592,8 +594,8 @@ __all__ = [
     "FakeListLLM",
     "Fireworks",
     "ForefrontAI",
-    "GigaChat",
     "GPT4All",
+    "GigaChat",
     "GooglePalm",
     "GooseAI",
     "GradientLLM",
@@ -602,18 +604,20 @@ __all__ = [
     "HuggingFacePipeline",
     "HuggingFaceTextGenInference",
     "HumanInputLLM",
+    "JavelinAIGateway",
     "KoboldApiLLM",
     "LlamaCpp",
-    "TextGen",
     "ManifestWrapper",
     "Minimax",
     "MlflowAIGateway",
     "Modal",
     "MosaicML",
-    "Nebula",
     "NIBittensorLLM",
     "NLPCloud",
+    "Nebula",
+    "OctoAIEndpoint",
     "Ollama",
+    "OpaquePrompts",
     "OpenAI",
     "OpenAIChat",
     "OpenLLM",
@@ -625,32 +629,28 @@ __all__ = [
     "PredictionGuard",
     "PromptLayerOpenAI",
     "PromptLayerOpenAIChat",
-    "OpaquePrompts",
-    "RWKV",
+    "QianfanLLMEndpoint",
     "Replicate",
     "SagemakerEndpoint",
     "SelfHostedHuggingFaceLLM",
     "SelfHostedPipeline",
     "StochasticAI",
+    "TextGen",
     "TitanTakeoff",
     "TitanTakeoffPro",
     "Tongyi",
+    "VLLMOpenAI",
     "VertexAI",
     "VertexAIModelGarden",
-    "VLLM",
-    "VLLMOpenAI",
+    "VolcEngineMaasLLM",
     "WatsonxLLM",
     "Writer",
-    "OctoAIEndpoint",
     "Xinference",
-    "JavelinAIGateway",
-    "QianfanLLMEndpoint",
     "YandexGPT",
-    "VolcEngineMaasLLM",
 ]
 
 
-def get_type_to_cls_dict() -> Dict[str, Callable[[], Type[BaseLLM]]]:
+def get_type_to_cls_dict() -> dict[str, Callable[[], type[BaseLLM]]]:
     return {
         "ai21": _import_ai21,
         "aleph_alpha": _import_aleph_alpha,

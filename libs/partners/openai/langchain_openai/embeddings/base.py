@@ -2,24 +2,13 @@ from __future__ import annotations
 
 import logging
 import warnings
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
-    cast,
-)
+from collections.abc import Iterable, Mapping, Sequence
+from typing import Any, Literal, Optional, Union, cast
 
 import openai
 import tiktoken
 from langchain_core.embeddings import Embeddings
+from langchain_core.runnables.config import run_in_executor
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from typing_extensions import Self
@@ -29,19 +18,19 @@ logger = logging.getLogger(__name__)
 
 def _process_batched_chunked_embeddings(
     num_texts: int,
-    tokens: List[Union[List[int], str]],
-    batched_embeddings: List[List[float]],
-    indices: List[int],
+    tokens: list[Union[list[int], str]],
+    batched_embeddings: list[list[float]],
+    indices: list[int],
     skip_empty: bool,
-) -> List[Optional[List[float]]]:
+) -> list[Optional[list[float]]]:
     # for each text, this is the list of embeddings (list of list of floats)
     # corresponding to the chunks of the text
-    results: List[List[List[float]]] = [[] for _ in range(num_texts)]
+    results: list[list[list[float]]] = [[] for _ in range(num_texts)]
 
     # for each text, this is the token length of each chunk
     # for transformers tokenization, this is the string length
     # for tiktoken, this is the number of tokens
-    num_tokens_in_batch: List[List[int]] = [[] for _ in range(num_texts)]
+    num_tokens_in_batch: list[list[int]] = [[] for _ in range(num_texts)]
 
     for i in range(len(indices)):
         if skip_empty and len(batched_embeddings[i]) == 1:
@@ -50,10 +39,10 @@ def _process_batched_chunked_embeddings(
         num_tokens_in_batch[indices[i]].append(len(tokens[i]))
 
     # for each text, this is the final embedding
-    embeddings: List[Optional[List[float]]] = []
+    embeddings: list[Optional[list[float]]] = []
     for i in range(num_texts):
         # an embedding for each chunk
-        _result: List[List[float]] = results[i]
+        _result: list[list[float]] = results[i]
 
         if len(_result) == 0:
             # this will be populated with the embedding of an empty string
@@ -104,14 +93,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             Name of OpenAI model to use.
         dimensions: Optional[int] = None
             The number of dimensions the resulting output embeddings should have.
-            Only supported in `text-embedding-3` and later models.
+            Only supported in ``'text-embedding-3'`` and later models.
 
     Key init args — client params:
         api_key: Optional[SecretStr] = None
             OpenAI API key.
         organization: Optional[str] = None
             OpenAI organization ID. If not passed in will be read
-            from env var OPENAI_ORG_ID.
+            from env var ``OPENAI_ORG_ID``.
         max_retries: int = 2
             Maximum number of retries to make when generating.
         request_timeout: Optional[Union[float, Tuple[float, float], Any]] = None
@@ -168,6 +157,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         .. code-block:: python
 
             [-0.009100092574954033, 0.005071679595857859, -0.0029193938244134188]
+
     """
 
     client: Any = Field(default=None, exclude=True)  #: :meta private:
@@ -205,29 +195,29 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     openai_api_key: Optional[SecretStr] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
-    """Automatically inferred from env var `OPENAI_API_KEY` if not provided."""
+    """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
     openai_organization: Optional[str] = Field(
         alias="organization",
         default_factory=from_env(
             ["OPENAI_ORG_ID", "OPENAI_ORGANIZATION"], default=None
         ),
     )
-    """Automatically inferred from env var `OPENAI_ORG_ID` if not provided."""
-    allowed_special: Union[Literal["all"], Set[str], None] = None
-    disallowed_special: Union[Literal["all"], Set[str], Sequence[str], None] = None
+    """Automatically inferred from env var ``OPENAI_ORG_ID`` if not provided."""
+    allowed_special: Union[Literal["all"], set[str], None] = None
+    disallowed_special: Union[Literal["all"], set[str], Sequence[str], None] = None
     chunk_size: int = 1000
     """Maximum number of texts to embed in each batch"""
     max_retries: int = 2
     """Maximum number of retries to make when generating."""
-    request_timeout: Optional[Union[float, Tuple[float, float], Any]] = Field(
+    request_timeout: Optional[Union[float, tuple[float, float], Any]] = Field(
         default=None, alias="timeout"
     )
-    """Timeout for requests to OpenAI completion API. Can be float, httpx.Timeout or
+    """Timeout for requests to OpenAI completion API. Can be float, ``httpx.Timeout`` or
         None."""
     headers: Any = None
     tiktoken_enabled: bool = True
     """Set this to False for non-OpenAI implementations of the embeddings API, e.g.
-    the `--extensions openai` extension for `text-generation-webui`"""
+    the ``--extensions openai`` extension for ``text-generation-webui``"""
     tiktoken_model_name: Optional[str] = None
     """The model name to pass to tiktoken when using this class.
     Tiktoken is used to count the number of tokens in documents to constrain
@@ -240,7 +230,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     when tiktoken is called, you can specify a model name to use here."""
     show_progress_bar: bool = False
     """Whether to show a progress bar when embedding."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     skip_empty: bool = False
     """Whether to skip empty strings when embedding or raise an error.
@@ -254,12 +244,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     retry_max_seconds: int = 20
     """Max number of seconds to wait between retries"""
     http_client: Union[Any, None] = None
-    """Optional httpx.Client. Only used for sync invocations. Must specify
-        http_async_client as well if you'd like a custom client for async invocations.
+    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
+        ``http_async_client`` as well if you'd like a custom client for async
+        invocations.
     """
     http_async_client: Union[Any, None] = None
-    """Optional httpx.AsyncClient. Only used for async invocations. Must specify
-        http_client as well if you'd like a custom client for sync invocations."""
+    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
+        ``http_client`` as well if you'd like a custom client for sync invocations."""
     check_embedding_ctx_length: bool = True
     """Whether to check the token length of inputs and automatically split inputs
         longer than embedding_ctx_length."""
@@ -270,7 +261,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Any:
+    def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         extra = values.get("model_kwargs", {})
@@ -300,8 +291,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """Validate that api key and python package exists in environment."""
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
             raise ValueError(
-                "If you are using Azure, "
-                "please use the `AzureOpenAIEmbeddings` class."
+                "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
         client_params: dict = {
             "api_key": (
@@ -354,15 +344,15 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return self
 
     @property
-    def _invocation_params(self) -> Dict[str, Any]:
-        params: Dict = {"model": self.model, **self.model_kwargs}
+    def _invocation_params(self) -> dict[str, Any]:
+        params: dict = {"model": self.model, **self.model_kwargs}
         if self.dimensions is not None:
             params["dimensions"] = self.dimensions
         return params
 
     def _tokenize(
-        self, texts: List[str], chunk_size: int
-    ) -> Tuple[Iterable[int], List[Union[List[int], str]], List[int]]:
+        self, texts: list[str], chunk_size: int
+    ) -> tuple[Iterable[int], list[Union[list[int], str]], list[int]]:
         """
         Take the input `texts` and `chunk_size` and return 3 iterables as a tuple:
 
@@ -383,8 +373,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         indices: An iterable of the same length as `tokens` that maps each token-array
             to the index of the original text in `texts`.
         """
-        tokens: List[Union[List[int], str]] = []
-        indices: List[int] = []
+        tokens: list[Union[list[int], str]] = []
+        indices: list[int] = []
         model_name = self.tiktoken_model_name or self.model
 
         # If tiktoken flag set to False
@@ -403,11 +393,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             )
             for i, text in enumerate(texts):
                 # Tokenize the text using HuggingFace transformers
-                tokenized: List[int] = tokenizer.encode(text, add_special_tokens=False)
+                tokenized: list[int] = tokenizer.encode(text, add_special_tokens=False)
 
                 # Split tokens into chunks respecting the embedding_ctx_length
                 for j in range(0, len(tokenized), self.embedding_ctx_length):
-                    token_chunk: List[int] = tokenized[
+                    token_chunk: list[int] = tokenized[
                         j : j + self.embedding_ctx_length
                     ]
 
@@ -420,7 +410,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 encoding = tiktoken.encoding_for_model(model_name)
             except KeyError:
                 encoding = tiktoken.get_encoding("cl100k_base")
-            encoder_kwargs: Dict[str, Any] = {
+            encoder_kwargs: dict[str, Any] = {
                 k: v
                 for k, v in {
                     "allowed_special": self.allowed_special,
@@ -459,8 +449,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     def _get_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
+        self,
+        texts: list[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
+        **kwargs: Any,
+    ) -> list[list[float]]:
         """
         Generate length-safe embeddings for a list of texts.
 
@@ -477,11 +472,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             List[List[float]]: A list of embeddings for each input text.
         """
         _chunk_size = chunk_size or self.chunk_size
+        client_kwargs = {**self._invocation_params, **kwargs}
         _iter, tokens, indices = self._tokenize(texts, _chunk_size)
-        batched_embeddings: List[List[float]] = []
+        batched_embeddings: list[list[float]] = []
         for i in _iter:
             response = self.client.create(
-                input=tokens[i : i + _chunk_size], **self._invocation_params
+                input=tokens[i : i + _chunk_size], **client_kwargs
             )
             if not isinstance(response, dict):
                 response = response.model_dump()
@@ -490,14 +486,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
         )
-        _cached_empty_embedding: Optional[List[float]] = None
+        _cached_empty_embedding: Optional[list[float]] = None
 
-        def empty_embedding() -> List[float]:
+        def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
-                average_embedded = self.client.create(
-                    input="", **self._invocation_params
-                )
+                average_embedded = self.client.create(input="", **client_kwargs)
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
                 _cached_empty_embedding = average_embedded["data"][0]["embedding"]
@@ -508,8 +502,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     # please refer to
     # https://github.com/openai/openai-cookbook/blob/main/examples/Embedding_long_inputs.ipynb
     async def _aget_len_safe_embeddings(
-        self, texts: List[str], *, engine: str, chunk_size: Optional[int] = None
-    ) -> List[List[float]]:
+        self,
+        texts: list[str],
+        *,
+        engine: str,
+        chunk_size: Optional[int] = None,
+        **kwargs: Any,
+    ) -> list[list[float]]:
         """
         Asynchronously generate length-safe embeddings for a list of texts.
 
@@ -527,12 +526,14 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         """
 
         _chunk_size = chunk_size or self.chunk_size
-        _iter, tokens, indices = self._tokenize(texts, _chunk_size)
-        batched_embeddings: List[List[float]] = []
-        _chunk_size = chunk_size or self.chunk_size
+        client_kwargs = {**self._invocation_params, **kwargs}
+        _iter, tokens, indices = await run_in_executor(
+            None, self._tokenize, texts, _chunk_size
+        )
+        batched_embeddings: list[list[float]] = []
         for i in range(0, len(tokens), _chunk_size):
             response = await self.async_client.create(
-                input=tokens[i : i + _chunk_size], **self._invocation_params
+                input=tokens[i : i + _chunk_size], **client_kwargs
             )
 
             if not isinstance(response, dict):
@@ -542,13 +543,13 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         embeddings = _process_batched_chunked_embeddings(
             len(texts), tokens, batched_embeddings, indices, self.skip_empty
         )
-        _cached_empty_embedding: Optional[List[float]] = None
+        _cached_empty_embedding: Optional[list[float]] = None
 
-        async def empty_embedding() -> List[float]:
+        async def empty_embedding() -> list[float]:
             nonlocal _cached_empty_embedding
             if _cached_empty_embedding is None:
                 average_embedded = await self.async_client.create(
-                    input="", **self._invocation_params
+                    input="", **client_kwargs
                 )
                 if not isinstance(average_embedded, dict):
                     average_embedded = average_embedded.model_dump()
@@ -558,84 +559,94 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         return [e if e is not None else await empty_embedding() for e in embeddings]
 
     def embed_documents(
-        self, texts: List[str], chunk_size: int | None = None
-    ) -> List[List[float]]:
+        self, texts: list[str], chunk_size: Optional[int] = None, **kwargs: Any
+    ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             List of embeddings, one for each text.
         """
         chunk_size_ = chunk_size or self.chunk_size
+        client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
-            embeddings: List[List[float]] = []
-            for i in range(0, len(texts), self.chunk_size):
+            embeddings: list[list[float]] = []
+            for i in range(0, len(texts), chunk_size_):
                 response = self.client.create(
-                    input=texts[i : i + chunk_size_], **self._invocation_params
+                    input=texts[i : i + chunk_size_], **client_kwargs
                 )
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
-        return self._get_len_safe_embeddings(texts, engine=engine)
+        return self._get_len_safe_embeddings(
+            texts, engine=engine, chunk_size=chunk_size, **kwargs
+        )
 
     async def aembed_documents(
-        self, texts: List[str], chunk_size: int | None = None
-    ) -> List[List[float]]:
+        self, texts: list[str], chunk_size: Optional[int] = None, **kwargs: Any
+    ) -> list[list[float]]:
         """Call out to OpenAI's embedding endpoint async for embedding search docs.
 
         Args:
             texts: The list of texts to embed.
             chunk_size: The chunk size of embeddings. If None, will use the chunk size
                 specified by the class.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             List of embeddings, one for each text.
         """
         chunk_size_ = chunk_size or self.chunk_size
+        client_kwargs = {**self._invocation_params, **kwargs}
         if not self.check_embedding_ctx_length:
-            embeddings: List[List[float]] = []
+            embeddings: list[list[float]] = []
             for i in range(0, len(texts), chunk_size_):
                 response = await self.async_client.create(
-                    input=texts[i : i + chunk_size_], **self._invocation_params
+                    input=texts[i : i + chunk_size_], **client_kwargs
                 )
                 if not isinstance(response, dict):
-                    response = response.dict()
+                    response = response.model_dump()
                 embeddings.extend(r["embedding"] for r in response["data"])
             return embeddings
 
         # NOTE: to keep things simple, we assume the list may contain texts longer
         #       than the maximum context and use length-safe embedding function.
         engine = cast(str, self.deployment)
-        return await self._aget_len_safe_embeddings(texts, engine=engine)
+        return await self._aget_len_safe_embeddings(
+            texts, engine=engine, chunk_size=chunk_size, **kwargs
+        )
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Call out to OpenAI's embedding endpoint for embedding query text.
 
         Args:
             text: The text to embed.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             Embedding for the text.
         """
-        return self.embed_documents([text])[0]
+        return self.embed_documents([text], **kwargs)[0]
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str, **kwargs: Any) -> list[float]:
         """Call out to OpenAI's embedding endpoint async for embedding query text.
 
         Args:
             text: The text to embed.
+            kwargs: Additional keyword arguments to pass to the embedding API.
 
         Returns:
             Embedding for the text.
         """
-        embeddings = await self.aembed_documents([text])
+        embeddings = await self.aembed_documents([text], **kwargs)
         return embeddings[0]

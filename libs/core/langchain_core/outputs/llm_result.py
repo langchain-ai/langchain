@@ -1,3 +1,5 @@
+"""LLMResult class."""
+
 from __future__ import annotations
 
 from copy import deepcopy
@@ -13,9 +15,9 @@ from langchain_core.outputs.run_info import RunInfo
 class LLMResult(BaseModel):
     """A container for results of an LLM call.
 
-    Both chat models and LLMs generate an LLMResult object. This object contains
-    the generated outputs and any additional information that the model provider
-    wants to return.
+    Both chat models and LLMs generate an LLMResult object. This object contains the
+    generated outputs and any additional information that the model provider wants to
+    return.
     """
 
     generations: list[
@@ -23,17 +25,16 @@ class LLMResult(BaseModel):
     ]
     """Generated outputs.
 
-    The first dimension of the list represents completions for different input
-    prompts.
+    The first dimension of the list represents completions for different input prompts.
 
-    The second dimension of the list represents different candidate generations
-    for a given prompt.
+    The second dimension of the list represents different candidate generations for a
+    given prompt.
 
-    When returned from an LLM the type is List[List[Generation]].
-    When returned from a chat model the type is List[List[ChatGeneration]].
+    - When returned from **an LLM**, the type is ``list[list[Generation]]``.
+    - When returned from a **chat model**, the type is ``list[list[ChatGeneration]]``.
 
-    ChatGeneration is a subclass of Generation that has a field for a structured
-    chat message.
+    ChatGeneration is a subclass of Generation that has a field for a structured chat
+    message.
     """
     llm_output: Optional[dict] = None
     """For arbitrary LLM provider specific output.
@@ -41,20 +42,22 @@ class LLMResult(BaseModel):
     This dictionary is a free-form dictionary that can contain any information that the
     provider wants to return. It is not standardized and is provider-specific.
 
-    Users should generally avoid relying on this field and instead rely on
-    accessing relevant information from standardized fields present in
-    AIMessage.
+    Users should generally avoid relying on this field and instead rely on accessing
+    relevant information from standardized fields present in AIMessage.
     """
     run: Optional[list[RunInfo]] = None
-    """List of metadata info for model call for each input."""
+    """List of metadata info for model call for each input.
 
-    type: Literal["LLMResult"] = "LLMResult"  # type: ignore[assignment]
+    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    """
+
+    type: Literal["LLMResult"] = "LLMResult"
     """Type is used exclusively for serialization purposes."""
 
     def flatten(self) -> list[LLMResult]:
         """Flatten generations into a single list.
 
-        Unpack List[List[Generation]] -> List[LLMResult] where each returned LLMResult
+        Unpack list[list[Generation]] -> list[LLMResult] where each returned LLMResult
         contains only a single Generation. If token usage information is available,
         it is kept only for the LLMResult corresponding to the top-choice
         Generation, to avoid over-counting of token usage downstream.
@@ -88,10 +91,19 @@ class LLMResult(BaseModel):
         return llm_results
 
     def __eq__(self, other: object) -> bool:
-        """Check for LLMResult equality by ignoring any metadata related to runs."""
+        """Check for ``LLMResult`` equality by ignoring any metadata related to runs.
+
+        Args:
+            other: Another ``LLMResult`` object to compare against.
+
+        Returns:
+            True if the generations and ``llm_output`` are equal, False otherwise.
+        """
         if not isinstance(other, LLMResult):
             return NotImplemented
         return (
             self.generations == other.generations
             and self.llm_output == other.llm_output
         )
+
+    __hash__ = None  # type: ignore[assignment]
