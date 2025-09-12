@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from abc import abstractmethod
 from typing import Any, Optional, Union, cast
@@ -21,6 +22,8 @@ from typing_extensions import override
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import StringEvaluator
 from langchain.schema import RUN_KEY
+
+_logger = logging.getLogger(__name__)
 
 
 def _get_messages_from_run_dict(messages: list[dict]) -> list[BaseMessage]:
@@ -373,6 +376,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             result = self({"run": run, "example": example}, include_run_info=True)
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
@@ -394,6 +398,7 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
             )
             return self._prepare_evaluator_output(result)
         except Exception as e:
+            _logger.exception("Error evaluating run %s", run.id)
             return EvaluationResult(
                 key=self.string_evaluator.evaluation_name,
                 comment=f"Error evaluating run {run.id}: {e}",
@@ -410,30 +415,33 @@ class StringRunEvaluatorChain(Chain, RunEvaluator):
         reference_key: Optional[str] = None,
         tags: Optional[list[str]] = None,
     ) -> StringRunEvaluatorChain:
-        """Create a StringRunEvaluatorChain from an evaluator and the run and dataset types.
+        """Create a StringRunEvaluatorChain.
+
+        Create a StringRunEvaluatorChain from an evaluator and the run and dataset
+        types.
 
         This method provides an easy way to instantiate a StringRunEvaluatorChain, by
         taking an evaluator and information about the type of run and the data.
         The method supports LLM and chain runs.
 
         Args:
-            evaluator (StringEvaluator): The string evaluator to use.
-            run_type (str): The type of run being evaluated.
+            evaluator: The string evaluator to use.
+            run_type: The type of run being evaluated.
                 Supported types are LLM and Chain.
-            data_type (DataType): The type of dataset used in the run.
-            input_key (str, optional): The key used to map the input from the run.
-            prediction_key (str, optional): The key used to map the prediction from the run.
-            reference_key (str, optional): The key used to map the reference from the dataset.
-            tags (List[str], optional): List of tags to attach to the evaluation chain.
+            data_type: The type of dataset used in the run.
+            input_key: The key used to map the input from the run.
+            prediction_key: The key used to map the prediction from the run.
+            reference_key: The key used to map the reference from the dataset.
+            tags: List of tags to attach to the evaluation chain.
 
         Returns:
-            StringRunEvaluatorChain: The instantiated evaluation chain.
+            The instantiated evaluation chain.
 
         Raises:
-            ValueError: If the run type is not supported, or if the evaluator requires a
-                reference from the dataset but the reference key is not provided.
+            If the run type is not supported, or if the evaluator requires a
+            reference from the dataset but the reference key is not provided.
 
-        """  # noqa: E501
+        """
         # Configure how run inputs/predictions are passed to the evaluator
         if run_type == "llm":
             run_mapper: StringRunMapper = LLMStringRunMapper()

@@ -20,7 +20,7 @@ env:
   POETRY_VERSION: "1.8.4"
   UV_FROZEN: "true"
   DEFAULT_LIBS: '["libs/partners/openai", "libs/partners/anthropic", "libs/partners/fireworks", "libs/partners/groq", "libs/partners/mistralai", "libs/partners/xai", "libs/partners/google-vertexai", "libs/partners/google-genai", "libs/partners/aws"]'
-  POETRY_LIBS: ("libs/partners/google-vertexai" "libs/partners/google-genai" "libs/partners/aws")
+  POETRY_LIBS: ("libs/partners/aws")
 
 jobs:
   # Generate dynamic test matrix based on input parameters or defaults

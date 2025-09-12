@@ -179,7 +179,18 @@ def test_load_llmchain_with_non_serializable_arg() -> None:
 def test_loads_with_missing_secrets() -> None:
     import openai
 
-    llm_string = '{"lc": 1, "type": "constructor", "id": ["langchain", "llms", "openai", "OpenAI"], "kwargs": {"model_name": "davinci", "temperature": 0.5, "max_tokens": 256, "top_p": 0.8, "n": 1, "best_of": 1, "openai_api_key": {"lc": 1, "type": "secret", "id": ["OPENAI_API_KEY"]}, "batch_size": 20, "max_retries": 2, "disallowed_special": "all"}, "name": "OpenAI"}'  # noqa: E501
+    llm_string = (
+        "{"
+        '"lc": 1, '
+        '"type": "constructor", '
+        '"id": ["langchain", "llms", "openai", "OpenAI"], '
+        '"kwargs": {'
+        '"model_name": "davinci", "temperature": 0.5, "max_tokens": 256, "top_p": 0.8, '
+        '"n": 1, "best_of": 1, '
+        '"openai_api_key": {"lc": 1, "type": "secret", "id": ["OPENAI_API_KEY"]}, '
+        '"batch_size": 20, "max_retries": 2, "disallowed_special": "all"}, '
+        '"name": "OpenAI"}'
+    )
     # Should throw on instantiation, not deserialization
     with pytest.raises(openai.OpenAIError):
         loads(llm_string)

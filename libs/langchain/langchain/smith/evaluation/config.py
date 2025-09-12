@@ -93,35 +93,7 @@ SINGLE_EVAL_CONFIG_TYPE = Union[EvaluatorType, str, EvalConfig]
 
 
 class RunEvalConfig(BaseModel):
-    """Configuration for a run evaluation.
-
-    Parameters
-    ----------
-    evaluators : List[Union[EvaluatorType, EvalConfig, RunEvaluator, Callable]]
-        Configurations for which evaluators to apply to the dataset run.
-        Each can be the string of an :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
-        as EvaluatorType.QA, the evaluator type string ("qa"), or a configuration for a
-        given evaluator (e.g., :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`).
-
-    custom_evaluators : Optional[List[Union[RunEvaluator, StringEvaluator]]]
-        Custom evaluators to apply to the dataset run.
-
-    reference_key : Optional[str]
-        The key in the dataset run to use as the reference string.
-        If not provided, it will be inferred automatically.
-
-    prediction_key : Optional[str]
-        The key from the traced run's outputs dictionary to use to
-        represent the prediction. If not provided, it will be inferred
-        automatically.
-
-    input_key : Optional[str]
-        The key from the traced run's inputs dictionary to use to represent the
-        input. If not provided, it will be inferred automatically.
-
-    eval_llm : Optional[BaseLanguageModel]
-        The language model to pass to any evaluators that use a language model.
-    """  # noqa: E501
+    """Configuration for a run evaluation."""
 
     evaluators: list[
         Union[

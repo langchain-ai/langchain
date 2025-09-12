@@ -35,9 +35,9 @@ Passage:
     message=(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
-        "See API reference for this function for replacement: "
-        "<https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html> "  # noqa: E501
-        "You can read more about `with_structured_output` here: "
+        "See API reference for this function for replacement: <"
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain.html"
+        "> You can read more about `with_structured_output` here: "
         "<https://python.langchain.com/docs/how_to/structured_output/>. "
         "If you notice other issues, please provide "
         "feedback here: "
@@ -110,9 +110,9 @@ def create_tagging_chain(
     message=(
         "LangChain has introduced a method called `with_structured_output` that "
         "is available on ChatModels capable of tool calling. "
-        "See API reference for this function for replacement: "
-        "<https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html> "  # noqa: E501
-        "You can read more about `with_structured_output` here: "
+        "See API reference for this function for replacement: <"
+        "https://api.python.langchain.com/en/latest/chains/langchain.chains.openai_functions.tagging.create_tagging_chain_pydantic.html"
+        "> You can read more about `with_structured_output` here: "
         "<https://python.langchain.com/docs/how_to/structured_output/>. "
         "If you notice other issues, please provide "
         "feedback here: "

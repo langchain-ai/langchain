@@ -22,6 +22,10 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+
+from importlib.metadata import version
+
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -1122,3 +1126,41 @@ def test_convert_to_json_schema(
     ):
         actual = convert_to_json_schema(fn)
         assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict_2() -> None:
+    def my_function(arg1: dict, arg2: Union[dict, None]) -> None:
+        """Dummy function."""
+
+    expected: dict = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "additionalProperties": False,
+                    "type": "object",
+                },
+                "arg2": {
+                    "anyOf": [
+                        {"additionalProperties": False, "type": "object"},
+                        {"type": "null"},
+                    ],
+                },
+            },
+            "required": ["arg1", "arg2"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    # there will be no extra `"additionalProperties": False` when Pydantic < 2.11
+    if parse(version("pydantic")) < parse("2.11"):
+        del expected["parameters"]["properties"]["arg1"]["additionalProperties"]
+        del expected["parameters"]["properties"]["arg2"]["anyOf"][0][
+            "additionalProperties"
+        ]
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
@@ -12,7 +13,7 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.output_parsers.openai_functions import JsonOutputFunctionsParser
 from langchain_core.prompts import BasePromptTemplate, ChatPromptTemplate
 from langchain_core.utils.input import get_colored_text
-from requests import Response
+from requests import JSONDecodeError, Response
 from typing_extensions import override
 
 from langchain.chains.base import Chain
@@ -22,6 +23,8 @@ from langchain.chains.sequential import SequentialChain
 if TYPE_CHECKING:
     from langchain_community.utilities.openapi import OpenAPISpec
     from openapi_pydantic import Parameter
+
+_logger = logging.getLogger(__name__)
 
 
 def _format_url(url: str, path_params: dict) -> str:
@@ -237,7 +240,10 @@ class SimpleRequestChain(Chain):
         else:
             try:
                 response = api_response.json()
+            except JSONDecodeError:
+                response = api_response.text
             except Exception:
+                _logger.exception("Unexpected error parsing response as JSON")
                 response = api_response.text
         return {self.output_key: response}
 
@@ -373,8 +379,12 @@ def get_openapi_chain(
                 break
             except ImportError:
                 raise
-            except Exception:  # noqa: S110
-                pass
+            except Exception:  # noqa: BLE001
+                _logger.debug(
+                    "Parse spec failed for OpenAPISpec.%s",
+                    conversion.__name__,
+                    exc_info=True,
+                )
         if isinstance(spec, str):
             msg = f"Unable to parse spec from source {spec}"
             raise ValueError(msg)  # noqa: TRY004

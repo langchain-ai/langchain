@@ -35,8 +35,8 @@ def create_json_chat_agent(
             does not support stop sequences.
         tools_renderer: This controls how the tools are converted into a string and
             then passed into the LLM. Default is `render_text_description`.
-        template_tool_response: Template prompt that uses the tool response (observation)
-            to make the LLM generate the next action to take.
+        template_tool_response: Template prompt that uses the tool response
+            (observation) to make the LLM generate the next action to take.
             Default is TEMPLATE_TOOL_RESPONSE.
 
     Returns:
@@ -68,6 +68,7 @@ def create_json_chat_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",
@@ -83,7 +84,8 @@ def create_json_chat_agent(
         The prompt must have input keys:
             * `tools`: contains descriptions and arguments for each tool.
             * `tool_names`: contains all tool names.
-            * `agent_scratchpad`: must be a MessagesPlaceholder. Contains previous agent actions and tool outputs as messages.
+            * `agent_scratchpad`: must be a MessagesPlaceholder. Contains previous
+              agent actions and tool outputs as messages.
 
         Here's an example:
 

@@ -565,7 +565,10 @@ def _create_openai_functions_structured_output_runnable(
     else:
 
         class _OutputFormatter(BaseModel):
-            """Output formatter. Should always be used to format your response to the user."""  # noqa: E501
+            """Output formatter.
+
+            Should always be used to format your response to the user.
+            """
 
             output: output_schema  # type: ignore[valid-type]
 
