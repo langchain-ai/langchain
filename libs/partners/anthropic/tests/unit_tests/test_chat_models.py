@@ -1301,7 +1301,7 @@ def test_usage_metadata_standardization() -> None:
     assert result["input_tokens"] == 15  # 10 + 3 + 2
     assert result["output_tokens"] == 5
     assert result["total_tokens"] == 20
-    assert result["input_token_details"] == {"cache_read": 3, "cache_creation": 2}
+    assert result.get("input_token_details") == {"cache_read": 3, "cache_creation": 2}
 
     # Null input and output tokens
     class UsageModelNulls(BaseModel):
@@ -1446,7 +1446,7 @@ def test_anthropic_model_params() -> None:
     }
 
     ls_params = llm._get_ls_params(model="claude-opus-4-1-20250805")
-    assert ls_params["ls_model_name"] == "claude-opus-4-1-20250805"
+    assert ls_params.get("ls_model_name") == "claude-opus-4-1-20250805"
 
 
 def test_streaming_cache_token_reporting() -> None:
