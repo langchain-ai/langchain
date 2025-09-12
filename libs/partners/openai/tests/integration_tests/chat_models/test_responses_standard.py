@@ -5,7 +5,7 @@ from typing import cast
 
 import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from langchain_openai import ChatOpenAI
 from tests.integration_tests.chat_models.test_base_standard import TestOpenAIStandard
@@ -47,6 +47,29 @@ class TestOpenAIResponses(TestOpenAIStandard):
         )
         input_ = "What was the 3rd highest building in 2000?"
         return _invoke(llm, input_, stream)
+
+    def test_openai_pdf_inputs(self, model: BaseChatModel) -> None:
+        """Test that the model can process PDF inputs."""
+        super().test_openai_pdf_inputs(model)
+        # Responses API additionally supports files via URL
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "What is the document title, verbatim?"},
+                {"type": "file", "url": url},
+            ]
+        )
+        _ = model.invoke([message])
+
+        # Test OpenAI Responses format
+        message = HumanMessage(
+            [
+                {"type": "text", "text": "What is the document title, verbatim?"},
+                {"type": "input_file", "file_url": url},
+            ]
+        )
+        _ = model.invoke([message])
 
 
 def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
