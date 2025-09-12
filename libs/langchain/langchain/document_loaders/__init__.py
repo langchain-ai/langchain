@@ -18,6 +18,7 @@
 from typing import TYPE_CHECKING, Any
 
 from langchain._api import create_importer
+from langchain.document_loaders.undatasio import UnDatasIOLoader
 
 if TYPE_CHECKING:
     from langchain_community.document_loaders import (
@@ -550,4 +551,5 @@ __all__ = [
     "YoutubeAudioLoader",
     "YoutubeLoader",
     "YuqueLoader",
+    "UnDatasIOLoader",
 ]
