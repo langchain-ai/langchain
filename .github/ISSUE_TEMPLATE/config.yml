@@ -1,9 +1,13 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: Documentation
+  - name: 📚 Documentation
     url: https://github.com/langchain-ai/docs/issues/new?template=langchain.yml
     about: Report an issue related to the LangChain documentation
-  - name: LangChain Forum
+  - name: 💬 LangChain Forum
     url:  https://forum.langchain.com/
     about: General community discussions and support
+  - name: 🔒 Security Vulnerabilities
+    url: https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true
+    about: Report security vulnerabilities through huntr.com or contact security@langchain.dev
+
