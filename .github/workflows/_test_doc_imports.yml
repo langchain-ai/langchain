@@ -27,7 +27,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
-          cache-suffix: test-doc-imports-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Test Dependencies'
         shell: bash

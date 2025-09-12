@@ -9,10 +9,10 @@ inputs:
     description: Enable caching for uv dependencies
     required: false
     default: 'true'
-  cache-suffix:
-    description: Custom cache key suffix for cache invalidation
+  working-directory:
+    description: Working directory for cache scoping
     required: false
-    default: ''
+    default: '**'
 
 env:
   UV_VERSION: "0.5.25"
@@ -27,7 +27,7 @@ runs:
         python-version: ${{ inputs.python-version }}
         enable-cache: ${{ inputs.enable-cache }}
         cache-dependency-glob: |
-          **/pyproject.toml
-          **/uv.lock
-          **/requirements*.txt
-        cache-suffix: ${{ inputs.cache-suffix }}
+          ${{ inputs.working-directory }}/pyproject.toml
+          ${{ inputs.working-directory }}/uv.lock
+          ${{ inputs.working-directory }}/requirements*.txt
+        cache-suffix: ${{ inputs.working-directory }}
