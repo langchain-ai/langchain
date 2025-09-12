@@ -94,4 +94,4 @@ class HumanResponse(TypedDict):
     """
 
     type: Literal["accept", "ignore", "response", "edit"]
-    args: None | str | ActionRequest
+    args: str | ActionRequest | None
