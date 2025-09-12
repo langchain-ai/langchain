@@ -1,6 +1,6 @@
 name: "📋 Task"
 description: Create a task for project management and tracking by LangChain maintainers. If you are not a maintainer, please use other templates or the forum.
-labels: ["task", "infra"]
+labels: ["task"]
 type: task
 body:
   - type: markdown
