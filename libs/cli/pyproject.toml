@@ -30,7 +30,7 @@ langchain-cli = "langchain_cli.cli:app"
 
 [dependency-groups]
 dev = ["pytest<9.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
-lint = ["ruff<0.13,>=0.12.2", "mypy<1.18,>=1.17.1"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<1.19,>=1.18.1"]
 test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []

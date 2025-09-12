@@ -22,7 +22,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<0.13,>=0.12.8", "langchain-core"]
 typing = [
-    "mypy<1.18,>=1.17.1",
+    "mypy<1.19,>=1.18.1",
     "lxml-stubs<1.0.0,>=0.5.1",
     "types-requests<3.0.0.0,>=2.31.0.20240218",
     "tiktoken<1.0.0,>=0.11.0",
