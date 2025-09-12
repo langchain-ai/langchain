@@ -1,3 +1,5 @@
+"""Unit tests for LangChain components."""
+
 # ruff: noqa: E402
 import pytest
 

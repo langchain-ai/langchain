@@ -270,6 +270,7 @@ def test_configurable_with_default() -> None:
             "max_retries": 2,
             "stop_sequences": None,
             "anthropic_api_url": "https://api.anthropic.com",
+            "anthropic_proxy": None,
             "anthropic_api_key": SecretStr("bar"),
             "betas": None,
             "default_headers": None,

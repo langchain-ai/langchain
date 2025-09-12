@@ -223,6 +223,49 @@ If codespell is incorrectly flagging a word, you can skip spellcheck for that wo
 ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
 ```
 
+### Pre-commit
+
+We use [pre-commit](https://pre-commit.com/) to ensure commits are formatted/linted.
+
+#### Installing Pre-commit
+
+First, install pre-commit:
+
+```bash
+# Option 1: Using uv (recommended)
+uv tool install pre-commit
+
+# Option 2: Using Homebrew (globally for macOS/Linux)
+brew install pre-commit
+
+# Option 3: Using pip
+pip install pre-commit
+```
+
+Then install the git hook scripts:
+
+```bash
+pre-commit install
+```
+
+#### How Pre-commit Works
+
+Once installed, pre-commit will automatically run on every `git commit`. Hooks are specified in `.pre-commit-config.yaml` and will:
+
+- Format code using `ruff` for the specific library/package you're modifying
+- Only run on files that have changed
+- Prevent commits if formatting fails
+
+#### Skipping Pre-commit
+
+In exceptional cases, you can skip pre-commit hooks with:
+
+```bash
+git commit --no-verify
+```
+
+However, this is discouraged as the CI system will still enforce the same formatting rules.
+
 ## Working with optional dependencies
 
 `langchain`, `langchain-community`, and `langchain-experimental` rely on optional dependencies to keep these packages lightweight.
