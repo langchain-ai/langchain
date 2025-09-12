@@ -14,9 +14,7 @@ body:
         if there's another way to solve your problem:
 
         * [LangChain Forum](https://forum.langchain.com/),
-        * [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
-        * [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
-        * [LangChain how-to guides](https://python.langchain.com/docs/how_to/),
+        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
         * [API Reference](https://python.langchain.com/api_reference/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
@@ -119,4 +117,5 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+
 
