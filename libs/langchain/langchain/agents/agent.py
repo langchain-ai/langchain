@@ -764,12 +764,13 @@ class Agent(BaseSingleActionAgent):
         self,
         intermediate_steps: list[tuple[AgentAction, str]],
     ) -> Union[str, list[BaseMessage]]:
-        """Construct the scratchpad that lets the agent continue its thought process."""
-        thoughts = ""
+        thoughts = []
         for action, observation in intermediate_steps:
-            thoughts += action.log
-            thoughts += f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
-        return thoughts
+            thoughts.append(action.log)
+            thoughts.append(
+                f"\n{self.observation_prefix}{observation}\n{self.llm_prefix}"
+            )
+        return "".join(thoughts)
 
     def plan(
         self,
