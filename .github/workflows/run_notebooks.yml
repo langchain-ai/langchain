@@ -32,7 +32,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ github.event.inputs.python_version || '3.11' }}
-          cache-key: run-notebooks-${{ github.event.inputs.working-directory || 'all' }}
+          cache-suffix: run-notebooks-${{ github.event.inputs.working-directory || 'all' }}
 
       - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'

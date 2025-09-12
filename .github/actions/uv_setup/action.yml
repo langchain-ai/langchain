@@ -9,7 +9,7 @@ inputs:
     description: Enable caching for uv dependencies
     required: false
     default: 'true'
-  cache-key:
+  cache-suffix:
     description: Custom cache key suffix for cache invalidation
     required: false
     default: ''
@@ -30,4 +30,4 @@ runs:
           **/pyproject.toml
           **/uv.lock
           **/requirements*.txt
-        cache-key: ${{ inputs.cache-key }}
+        cache-suffix: ${{ inputs.cache-suffix }}
