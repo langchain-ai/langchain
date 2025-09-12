@@ -124,11 +124,13 @@ target-version = "py39"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 strict = "True"
 strict_bytes = "True"
 ignore_missing_imports = "True"
 enable_error_code = "deprecated"
 report_deprecated_as_note = "True"
+warn_unreachable = "True"
 
 # TODO: activate for 'strict' checking
 disallow_untyped_calls = "False"
@@ -141,6 +143,9 @@ strict_equality = "False"
 skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
 ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
 ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [ "ALL",]
@@ -158,15 +163,9 @@ ignore = [
     "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
-    "BLE",
+    "ANN401",  # No type Any
     "D100",    # pydocstyle: missing docstring in public module
     "D104",    # pydocstyle: missing docstring in public package
-    "D2",
-    "D3",
-    "D4",
-    "ERA",
-    "N",
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try
 ]
@@ -178,7 +177,7 @@ unfixable = [
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
-pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
+pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 

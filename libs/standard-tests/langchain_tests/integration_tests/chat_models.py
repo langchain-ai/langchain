@@ -15,7 +15,6 @@ from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
     BaseMessage,
-    BaseMessageChunk,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -31,14 +30,14 @@ from pydantic import BaseModel, Field
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field as FieldV1
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, override
 from vcr.cassette import Cassette
 
 from langchain_tests.unit_tests.chat_models import ChatModelTests
 from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
-def _get_joke_class(
+def _get_joke_class(  # noqa: RET503
     schema_type: Literal["pydantic", "typeddict", "json_schema"],
 ) -> Any:
     class Joke(BaseModel):
@@ -57,7 +56,7 @@ def _get_joke_class(
         punchline: Annotated[str, ..., "answer to resolve the joke"]
 
     def validate_joke_dict(result: Any) -> bool:
-        return all(key in ["setup", "punchline"] for key in result)
+        return all(key in {"setup", "punchline"} for key in result)
 
     if schema_type == "pydantic":
         return Joke, validate_joke
@@ -67,8 +66,6 @@ def _get_joke_class(
 
     if schema_type == "json_schema":
         return Joke.model_json_schema(), validate_joke_dict
-    msg = "Invalid schema type"
-    raise ValueError(msg)
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
@@ -78,6 +75,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         super().__init__()
         self.options = []
 
+    @override
     def on_chat_model_start(
         self,
         serialized: Any,
@@ -430,7 +428,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         on invoke and streaming responses. Defaults to ``True``.
 
         ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         Example:
 
@@ -527,7 +526,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         and stream.
 
         ``usage_metadata`` is an optional dict attribute on ``AIMessage``s that track input
-        and output tokens. `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
+        and output tokens.
+        `See more. <https://python.langchain.com/api_reference/core/messages/langchain_core.messages.ai.UsageMetadata.html>`__
 
         It includes optional keys ``input_token_details`` and ``output_token_details``
         that can track usage details associated with special types of tokens, such as
@@ -551,7 +551,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def enable_vcr_tests(self) -> bool:
                     return True
 
-        2. Configure VCR to exclude sensitive headers and other information from cassettes.
+        2. Configure VCR to exclude sensitive headers and other information from
+           cassettes.
 
             .. important::
                 VCR will by default record authentication headers and other sensitive
@@ -571,7 +572,9 @@ class ChatModelIntegrationTests(ChatModelTests):
                 :caption: tests/conftest.py
 
                 import pytest
-                from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                from langchain_tests.conftest import (
+                    _base_vcr_config as _base_vcr_config,
+                )
 
                 _EXTRA_HEADERS = [
                     # Specify additional headers to redact
@@ -605,8 +608,13 @@ class ChatModelIntegrationTests(ChatModelTests):
                     :caption: tests/conftest.py
 
                     import pytest
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
-                    from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
+                    from langchain_tests.conftest import (
+                        _base_vcr_config as _base_vcr_config,
+                    )
                     from vcr import VCR
 
                     _EXTRA_HEADERS = [
@@ -650,10 +658,15 @@ class ChatModelIntegrationTests(ChatModelTests):
 
                 .. code-block:: python
 
-                    from langchain_tests.conftest import CustomPersister, CustomSerializer
+                    from langchain_tests.conftest import (
+                        CustomPersister,
+                        CustomSerializer,
+                    )
 
                     cassette_path = "/path/to/tests/cassettes/TestClass_test.yaml.gz"
-                    requests, responses = CustomPersister().load_cassette(path, CustomSerializer())
+                    requests, responses = CustomPersister().load_cassette(
+                        path, CustomSerializer()
+                    )
 
         3. Run tests to generate VCR cassettes.
 
@@ -699,9 +712,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(content="Output text")
-                    )]
+                    generations=[
+                        ChatGeneration(message=AIMessage(content="Output text"))
+                    ]
                 )
 
         """
@@ -732,9 +745,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(content="Output text")
-                    )]
+                    generations=[
+                        ChatGeneration(message=AIMessage(content="Output text"))
+                    ]
                 )
 
         """
@@ -765,9 +778,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                yield ChatGenerationChunk(
-                    message=AIMessageChunk(content="chunk text")
-                )
+                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
 
         """
         num_chunks = 0
@@ -802,9 +813,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             .. code-block:: python
 
-                yield ChatGenerationChunk(
-                    message=AIMessageChunk(content="chunk text")
-                )
+                yield ChatGenerationChunk(message=AIMessageChunk(content="chunk text"))
 
         """
         num_chunks = 0
@@ -922,10 +931,11 @@ class ChatModelIntegrationTests(ChatModelTests):
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
-            1. Your model API can handle double messages, or the integration should merge messages before sending them to the API.
+            1. Your model API can handle double messages, or the integration should
+               merge messages before sending them to the API.
             2. The response is a valid :class:`~langchain_core.messages.AIMessage`
 
-        """  # noqa: E501
+        """
         messages = [
             SystemMessage("hello"),
             SystemMessage("hello"),
@@ -1004,25 +1014,27 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 return ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(
-                            content="Output text",
-                            usage_metadata={
-                                "input_tokens": 350,
-                                "output_tokens": 240,
-                                "total_tokens": 590,
-                                "input_token_details": {
-                                    "audio": 10,
-                                    "cache_creation": 200,
-                                    "cache_read": 100,
+                    generations=[
+                        ChatGeneration(
+                            message=AIMessage(
+                                content="Output text",
+                                usage_metadata={
+                                    "input_tokens": 350,
+                                    "output_tokens": 240,
+                                    "total_tokens": 590,
+                                    "input_token_details": {
+                                        "audio": 10,
+                                        "cache_creation": 200,
+                                        "cache_read": 100,
+                                    },
+                                    "output_token_details": {
+                                        "audio": 10,
+                                        "reasoning": 200,
+                                    },
                                 },
-                                "output_token_details": {
-                                    "audio": 10,
-                                    "reasoning": 200,
-                                }
-                            }
+                            )
                         )
-                    )]
+                    ]
                 )
 
             Check also that the response includes a ``'model_name'`` key in its
@@ -1045,7 +1057,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = result.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name != "", "model_name is empty"
+        assert model_name, "model_name is empty"
 
         # `input_tokens` is the total, possibly including other unclassified or
         # system-level tokens.
@@ -1059,10 +1071,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(input_token_details.get("audio"), int)
             # Asserts that total input tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("input_tokens", 0) >= sum(
                 v for v in input_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
         if "audio_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_audio_output()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1071,10 +1082,9 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(output_token_details.get("audio"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("output_tokens", 0) >= sum(
                 v for v in output_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "reasoning_output" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_reasoning_output()
             assert (usage_metadata := msg.usage_metadata) is not None
@@ -1083,34 +1093,41 @@ class ChatModelIntegrationTests(ChatModelTests):
             ) is not None
             assert isinstance(output_token_details.get("reasoning"), int)
             # Asserts that total output tokens are at least the sum of the token counts
-            total_detailed_tokens = sum(
+            assert usage_metadata.get("output_tokens", 0) >= sum(
                 v for v in output_token_details.values() if isinstance(v, int)
             )
-            assert usage_metadata.get("output_tokens", 0) >= total_detailed_tokens
         if "cache_read_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_read_input()
-            assert (usage_metadata := msg.usage_metadata) is not None
-            assert (
-                input_token_details := usage_metadata.get("input_token_details")
-            ) is not None
-            assert isinstance(input_token_details.get("cache_read"), int)
+            usage_metadata = msg.usage_metadata
+            assert usage_metadata is not None
+            input_token_details = usage_metadata.get("input_token_details")
+            assert input_token_details is not None
+            cache_read_tokens = input_token_details.get("cache_read")
+            assert isinstance(cache_read_tokens, int)
+            assert cache_read_tokens >= 0
             # Asserts that total input tokens are at least the sum of the token counts
             total_detailed_tokens = sum(
-                v for v in input_token_details.values() if isinstance(v, int)
+                v for v in input_token_details.values() if isinstance(v, int) and v >= 0
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
+            input_tokens = usage_metadata.get("input_tokens", 0)
+            assert isinstance(input_tokens, int)
+            assert input_tokens >= total_detailed_tokens
         if "cache_creation_input" in self.supported_usage_metadata_details["invoke"]:
             msg = self.invoke_with_cache_creation_input()
-            assert (usage_metadata := msg.usage_metadata) is not None
-            assert (
-                input_token_details := usage_metadata.get("input_token_details")
-            ) is not None
-            assert isinstance(input_token_details.get("cache_creation"), int)
+            usage_metadata = msg.usage_metadata
+            assert usage_metadata is not None
+            input_token_details = usage_metadata.get("input_token_details")
+            assert input_token_details is not None
+            cache_creation_tokens = input_token_details.get("cache_creation")
+            assert isinstance(cache_creation_tokens, int)
+            assert cache_creation_tokens >= 0
             # Asserts that total input tokens are at least the sum of the token counts
             total_detailed_tokens = sum(
-                v for v in input_token_details.values() if isinstance(v, int)
+                v for v in input_token_details.values() if isinstance(v, int) and v >= 0
             )
-            assert usage_metadata.get("input_tokens", 0) >= total_detailed_tokens
+            input_tokens = usage_metadata.get("input_tokens", 0)
+            assert isinstance(input_tokens, int)
+            assert input_tokens >= total_detailed_tokens
 
     def test_usage_metadata_streaming(self, model: BaseChatModel) -> None:
         """Test usage metadata in streaming mode.
@@ -1180,29 +1197,31 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 yield ChatResult(
-                    generations=[ChatGeneration(
-                        message=AIMessage(
-                            content="Output text",
-                            usage_metadata={
-                                "input_tokens": (
-                                    num_input_tokens if is_first_chunk else 0
-                                ),
-                                "output_tokens": 11,
-                                "total_tokens": (
-                                    11+num_input_tokens if is_first_chunk else 11
-                                ),
-                                "input_token_details": {
-                                    "audio": 10,
-                                    "cache_creation": 200,
-                                    "cache_read": 100,
+                    generations=[
+                        ChatGeneration(
+                            message=AIMessage(
+                                content="Output text",
+                                usage_metadata={
+                                    "input_tokens": (
+                                        num_input_tokens if is_first_chunk else 0
+                                    ),
+                                    "output_tokens": 11,
+                                    "total_tokens": (
+                                        11 + num_input_tokens if is_first_chunk else 11
+                                    ),
+                                    "input_token_details": {
+                                        "audio": 10,
+                                        "cache_creation": 200,
+                                        "cache_read": 100,
+                                    },
+                                    "output_token_details": {
+                                        "audio": 10,
+                                        "reasoning": 200,
+                                    },
                                 },
-                                "output_token_details": {
-                                    "audio": 10,
-                                    "reasoning": 200,
-                                }
-                            }
+                            )
                         )
-                    )]
+                    ]
                 )
 
             Check also that the aggregated response includes a ``'model_name'`` key
@@ -1238,7 +1257,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         # Needed for langchain_core.callbacks.usage
         model_name = full.response_metadata.get("model_name")
         assert isinstance(model_name, str)
-        assert model_name != "", "model_name is empty"
+        assert model_name, "model_name is empty"
 
         if "audio_input" in self.supported_usage_metadata_details["stream"]:
             msg = self.invoke_with_audio_input(stream=True)
@@ -1381,7 +1400,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test stream
-        full: Optional[BaseMessageChunk] = None
+        full: Optional[BaseMessage] = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1443,7 +1462,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test astream
-        full: Optional[BaseMessageChunk] = None
+        full: Optional[BaseMessage] = None
         async for chunk in model_with_tools.astream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1545,9 +1564,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include ``AIMessage`` objects with ``""`` content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly handled and passed to the model in an appropriate format.
-            3. The model can correctly handle ``ToolMessage`` objects with string content and arbitrary string values for ``tool_call_id``.
+            1. The model can correctly handle message histories that include
+               ``AIMessage`` objects with ``""`` content.
+            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
+               handled and passed to the model in an appropriate format.
+            3. The model can correctly handle ``ToolMessage`` objects with string
+               content and arbitrary string values for ``tool_call_id``.
 
             You can ``xfail`` the test if tool calling is implemented but this format
             is not supported.
@@ -1555,16 +1577,18 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Not implemented."))
-                def test_tool_message_histories_string_content(self, *args: Any) -> None:
+                def test_tool_message_histories_string_content(
+                    self, *args: Any
+                ) -> None:
                     super().test_tool_message_histories_string_content(*args)
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
         model_with_tools = model.bind_tools([my_adder_tool])
         function_name = "my_adder_tool"
-        function_args = {"a": "1", "b": "2"}
+        function_args = {"a": 1, "b": 2}
 
         messages_string_content = [
             HumanMessage("What is 1 + 2"),
@@ -1632,9 +1656,12 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include ``AIMessage`` objects with list content.
-            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly handled and passed to the model in an appropriate format.
-            3. The model can correctly handle ToolMessage objects with string content and arbitrary string values for ``tool_call_id``.
+            1. The model can correctly handle message histories that include
+               ``AIMessage`` objects with list content.
+            2. The ``tool_calls`` attribute on ``AIMessage`` objects is correctly
+               handled and passed to the model in an appropriate format.
+            3. The model can correctly handle ToolMessage objects with string content
+               and arbitrary string values for ``tool_call_id``.
 
             You can ``xfail`` the test if tool calling is implemented but this format
             is not supported.
@@ -1645,7 +1672,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 def test_tool_message_histories_list_content(self, *args: Any) -> None:
                     super().test_tool_message_histories_list_content(*args)
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -1723,7 +1750,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool choice.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # noqa: ARG001
             """Get weather at a location."""
             return "It's sunny."
 
@@ -1773,13 +1800,15 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 @pytest.mark.xfail(reason=("Does not support tool_choice."))
-                def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+                def test_tool_calling_with_no_arguments(
+                    self, model: BaseChatModel
+                ) -> None:
                     super().test_tool_calling_with_no_arguments(model)
 
             Otherwise, in the case that only one tool is bound, ensure that
             ``tool_choice`` supports the string ``'any'`` to force calling that tool.
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling.")
 
@@ -1791,7 +1820,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
-        full: Optional[BaseMessageChunk] = None
+        full: Optional[BaseMessage] = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1932,7 +1961,11 @@ class ChatModelIntegrationTests(ChatModelTests):
         assert isinstance(result, AIMessage)
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
-    def test_structured_output(self, model: BaseChatModel, schema_type: str) -> None:
+    def test_structured_output(
+        self,
+        model: BaseChatModel,
+        schema_type: Literal["pydantic", "typeddict", "json_schema"],
+    ) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
         This test is optional and should be skipped if the model does not support
@@ -1968,7 +2001,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
-        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+        schema, validation_function = _get_joke_class(schema_type)
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         mock_callback = MagicMock()
         mock_callback.on_chat_model_start = MagicMock()
@@ -2012,7 +2045,9 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     @pytest.mark.parametrize("schema_type", ["pydantic", "typeddict", "json_schema"])
     async def test_structured_output_async(
-        self, model: BaseChatModel, schema_type: str
+        self,
+        model: BaseChatModel,
+        schema_type: Literal["pydantic", "typeddict", "json_schema"],
     ) -> None:
         """Test to verify structured output is generated both on invoke and stream.
 
@@ -2049,7 +2084,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
-        schema, validation_function = _get_joke_class(schema_type)  # type: ignore[arg-type]
+        schema, validation_function = _get_joke_class(schema_type)
 
         chat = model.with_structured_output(schema, **self.structured_output_kwargs)
         ainvoke_callback = _TestCallbackHandler()
@@ -2127,7 +2162,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             See `example implementation <https://python.langchain.com/api_reference/_modules/langchain_openai/chat_models/base.html#BaseChatOpenAI.with_structured_output>`__
             of ``with_structured_output``.
 
-        """  # noqa: E501
+        """
         if not self.has_structured_output:
             pytest.skip("Test requires structured output.")
 
@@ -2259,8 +2294,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.supports_json_mode:
             pytest.skip("Test requires json mode support.")
 
-        from pydantic import BaseModel as BaseModelProper
-        from pydantic import Field as FieldProper
+        from pydantic import BaseModel as BaseModelProper  # noqa: PLC0415
+        from pydantic import Field as FieldProper  # noqa: PLC0415
 
         class Joke(BaseModelProper):
             """Joke to tell user."""
@@ -2269,9 +2304,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             punchline: str = FieldProper(description="answer to resolve the joke")
 
         # Pydantic class
-        # Type ignoring since the interface only officially supports pydantic 1
-        # or pydantic.v1.BaseModel but not pydantic.BaseModel from pydantic 2.
-        # We'll need to do a pass updating the type signatures.
         chat = model.with_structured_output(Joke, method="json_mode")
         msg = (
             "Tell me a joke about cats. Return the result as a JSON with 'setup' and "
@@ -2321,7 +2353,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
-
                     @property
                     def supports_pdf_inputs(self) -> bool:
                         return False
@@ -2398,7 +2429,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             .. code-block:: python
 
                 class TestMyChatModelIntegration(ChatModelIntegrationTests):
-
                     @property
                     def supports_audio_inputs(self) -> bool:
                         return False
@@ -2708,7 +2738,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                         "content": [
                             {
                                 "type": "text",
-                                "text": "green is a great pick! that's my sister's favorite color",  # noqa: E501
+                                "text": "green is a great pick! "
+                                "that's my sister's favorite color",
                             }
                         ],
                         "is_error": False,
@@ -2736,14 +2767,17 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, check that:
 
-            1. The model can correctly handle message histories that include message objects with list content.
-            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled and passed to the model in an appropriate format.
-            3. ``HumanMessage``s with "tool_result" content blocks are correctly handled.
+            1. The model can correctly handle message histories that include message
+               objects with list content.
+            2. The ``tool_calls`` attribute on AIMessage objects is correctly handled
+               and passed to the model in an appropriate format.
+            3. ``HumanMessage``s with "tool_result" content blocks are correctly
+               handled.
 
             Otherwise, if Anthropic tool call and result formats are not supported,
             set the ``supports_anthropic_inputs`` property to False.
 
-        """  # noqa: E501
+        """
         if not self.supports_anthropic_inputs:
             pytest.skip("Model does not explicitly support Anthropic inputs.")
 
@@ -2912,7 +2946,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         @tool
-        def get_weather(location: str) -> str:
+        def get_weather(location: str) -> str:  # noqa: ARG001
             """Call to surf the web."""
             return "It's sunny."
 
@@ -3021,13 +3055,15 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Args:
             model: The chat model to test
-            tool_choice: Tool choice parameter to pass to ``bind_tools()`` (provider-specific)
-            force_tool_call: Whether to force a tool call (use ``tool_choice=True`` if None)
+            tool_choice: Tool choice parameter to pass to ``bind_tools()``
+                (provider-specific)
+            force_tool_call: Whether to force a tool call
+                (use ``tool_choice=True`` if None)
 
         Tests that Unicode characters in tool call arguments are preserved correctly,
         not escaped as ``\\uXXXX`` sequences.
 
-        """  # noqa: E501
+        """
         if not self.has_tool_calling:
             pytest.skip("Test requires tool calling support.")
 

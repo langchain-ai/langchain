@@ -1,6 +1,9 @@
 blank_issues_enabled: false
 version: 2.1
 contact_links:
-  - name: LangChain Forum
-    url: https://forum.langchain.com/
-    about: General community discussions, support, and feature requests
+  - name: 📚 Documentation
+    url: https://github.com/langchain-ai/docs/issues/new?template=langchain.yml
+    about: Report an issue related to the LangChain documentation
+  - name: 💬 LangChain Forum
+    url:  https://forum.langchain.com/
+    about: General community discussions and support
