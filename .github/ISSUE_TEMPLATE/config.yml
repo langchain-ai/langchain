@@ -7,7 +7,3 @@ contact_links:
   - name: 💬 LangChain Forum
     url:  https://forum.langchain.com/
     about: General community discussions and support
-  - name: 🔒 Security Vulnerabilities
-    url: https://huntr.com/bounties/disclose/?target=https%3A%2F%2Fgithub.com%2Flangchain-ai%2Flangchain&validSearch=true
-    about: Report security vulnerabilities through huntr.com or contact security@langchain.dev
-
