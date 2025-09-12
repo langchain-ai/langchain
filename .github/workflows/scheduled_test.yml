@@ -96,7 +96,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           poetry-version: ${{ env.POETRY_VERSION }}
           working-directory: langchain/${{ matrix.working-directory }}
-          cache-suffix: scheduled
+          cache-key: scheduled
 
       - name: '🐍 Set up Python ${{ matrix.python-version }} + UV'
         if: "!contains(env.POETRY_LIBS, matrix.working-directory)"
