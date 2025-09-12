@@ -39,8 +39,6 @@ from langchain_core.messages import (
 )
 
 
-# get core to run
-
 class AgentAction(Serializable):
     """Represents a request to execute an action by an agent.
 
