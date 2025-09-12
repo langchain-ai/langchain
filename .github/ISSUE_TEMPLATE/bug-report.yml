@@ -34,6 +34,8 @@ body:
           required: true
         - label: The bug is not resolved by updating to the latest stable version of LangChain (or the specific integration package).
           required: true
+        - label: This is not related to the langchain-community package.
+          required: true
         - label: I read what a minimal reproducible example is (https://stackoverflow.com/help/minimal-reproducible-example).
           required: true
         - label: I posted a self-contained, minimal, reproducible example. A maintainer can copy it and run it AS IS.
@@ -117,6 +119,7 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+
 
 
 
