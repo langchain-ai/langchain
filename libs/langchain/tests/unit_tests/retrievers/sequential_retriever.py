@@ -6,7 +6,7 @@ from typing_extensions import override
 
 
 class SequentialRetriever(BaseRetriever):
-    """Test util that returns a sequence of documents"""
+    """Test util that returns a sequence of documents."""
 
     sequential_responses: list[list[Document]]
     response_index: int = 0

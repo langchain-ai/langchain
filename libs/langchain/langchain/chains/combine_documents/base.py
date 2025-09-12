@@ -92,8 +92,9 @@ class BaseCombineDocumentsChain(Chain, ABC):
         context limit.
 
         Args:
-            docs: List[Document], a list of documents to use to calculate the
-                total prompt length.
+            docs: a list of documents to use to calculate the total prompt length.
+            **kwargs: additional parameters that may be needed to calculate the
+                prompt length.
 
         Returns:
             Returns None if the method does not depend on the prompt length,
@@ -205,9 +206,7 @@ class AnalyzeDocumentChain(Chain):
             from operator import itemgetter
             from langchain_core.runnables import RunnableLambda, RunnableParallel
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnableParallel(
                 question=itemgetter("question"),
                 input_documents=itemgetter("input_document") | split_text,
@@ -225,14 +224,13 @@ class AnalyzeDocumentChain(Chain):
                 RunnablePassthrough,
             )
 
-            split_text = RunnableLambda(
-                lambda x: text_splitter.create_documents([x])
-            )
+            split_text = RunnableLambda(lambda x: text_splitter.create_documents([x]))
             summarize_document_chain = RunnablePassthrough.assign(
                 output_text=RunnableParallel(
                     question=itemgetter("question"),
                     input_documents=itemgetter("input_document") | split_text,
-                ) | chain.pick("output_text")
+                )
+                | chain.pick("output_text")
             )
 
     """
