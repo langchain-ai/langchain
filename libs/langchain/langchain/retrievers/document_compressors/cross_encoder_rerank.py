@@ -33,8 +33,7 @@ class CrossEncoderReranker(BaseDocumentCompressor):
         query: str,
         callbacks: Optional[Callbacks] = None,
     ) -> Sequence[Document]:
-        """
-        Rerank documents using CrossEncoder.
+        """Rerank documents using CrossEncoder.
 
         Args:
             documents: A sequence of documents to compress.

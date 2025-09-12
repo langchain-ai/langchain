@@ -189,6 +189,7 @@ def load_qa_with_sources_chain(
             "map_reduce", "refine" and "map_rerank".
         verbose: Whether chains should be run in verbose mode or not. Note that this
             applies to all chains that make up the final chain.
+        **kwargs: Additional keyword arguments.
 
     Returns:
         A chain to use for question answering with sources.

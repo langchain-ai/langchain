@@ -134,12 +134,12 @@ def resolve_criteria(
             -  a single criterion name present in one of the default criteria
             -  a single `ConstitutionalPrinciple` instance
 
-    Returns
+    Returns:
     -------
     Dict[str, str]
         A dictionary mapping criterion names to descriptions.
 
-    Examples
+    Examples:
     --------
     >>> criterion = "relevance"
     >>> CriteriaEvalChain.resolve_criteria(criteria)
@@ -168,7 +168,7 @@ def resolve_criteria(
 
 
 class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
-    """LLM Chain for evaluating runs against criteria.
+    r"""LLM Chain for evaluating runs against criteria.
 
     Parameters
     ----------
@@ -189,21 +189,24 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     **kwargs : Any
         Additional keyword arguments to pass to the `LLMChain` constructor.
 
-    Returns
+    Returns:
     -------
     CriteriaEvalChain
         An instance of the `CriteriaEvalChain` class.
 
-    Examples
+    Examples:
     --------
     >>> from langchain_anthropic import ChatAnthropic
     >>> from langchain.evaluation.criteria import CriteriaEvalChain
     >>> llm = ChatAnthropic(temperature=0)
     >>> criteria = {"my-custom-criterion": "Is the submission the most amazing ever?"}
     >>> evaluator = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-    >>> evaluator.evaluate_strings(prediction="Imagine an ice cream flavor for the color aquamarine", input="Tell me an idea")
+    >>> evaluator.evaluate_strings(
+    ...     prediction="Imagine an ice cream flavor for the color aquamarine",
+    ...     input="Tell me an idea",
+    ... )
     {
-        'reasoning': 'Here is my step-by-step reasoning for the given criteria:\\n\\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \\n\\nN',
+        'reasoning': 'Here is my step-by-step reasoning for the given criteria:\n\nThe criterion is: "Is the submission the most amazing ever?" This is a subjective criterion and open to interpretation. The submission suggests an aquamarine-colored ice cream flavor which is creative but may or may not be considered the most amazing idea ever conceived. There are many possible amazing ideas and this one ice cream flavor suggestion may or may not rise to that level for every person. \n\nN',
         'value': 'N',
         'score': 0,
     }
@@ -217,13 +220,13 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     ...     criteria=criteria,
     ... )
     >>> evaluator.evaluate_strings(
-    ...   prediction="The answer is 4",
-    ...   input="How many apples are there?",
-    ...   reference="There are 3 apples",
-    ...   )
+    ...     prediction="The answer is 4",
+    ...     input="How many apples are there?",
+    ...     reference="There are 3 apples",
+    ... )
     {
         'score': 0,
-        'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\\n\\nN',
+        'reasoning': 'The criterion for this task is the correctness of the submission. The submission states that there are 4 apples, but the reference indicates that there are actually 3 apples. Therefore, the submission is not correct, accurate, or factual according to the given criterion.\n\nN',
         'value': 'N',
     }
 
@@ -258,7 +261,7 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     def evaluation_name(self) -> str:
         """Get the name of the evaluation.
 
-        Returns
+        Returns:
         -------
         str
             The name of the evaluation.
@@ -303,12 +306,12 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
                 -  a single criterion name present in one of the default criteria
                 -  a single `ConstitutionalPrinciple` instance
 
-        Returns
+        Returns:
         -------
         Dict[str, str]
             A dictionary mapping criterion names to descriptions.
 
-        Examples
+        Examples:
         --------
         >>> criterion = "relevance"
         >>> CriteriaEvalChain.resolve_criteria(criteria)
@@ -343,12 +346,12 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
             Additional keyword arguments to pass to the `LLMChain`
             constructor.
 
-        Returns
+        Returns:
         -------
         CriteriaEvalChain
             An instance of the `CriteriaEvalChain` class.
 
-        Examples
+        Examples:
         --------
         >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain
@@ -420,36 +423,32 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     ) -> dict:
         """Evaluate a prediction against the criteria.
 
-        Parameters
-        ----------
-        prediction : str
-            The predicted text to evaluate.
-        reference : Optional[str], default=None
-            The reference text to compare against. This is required if
-            `requires_reference` is `True`.
-        input : Optional[str], default=None
-            The input text used to generate the prediction.
-        **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain` `__call__`
-            method.
+        Args:
+            prediction: The predicted text to evaluate.
+            reference: The reference text to compare against. This is required if
+                `requires_reference` is `True`.
+            input: The input text used to generate the prediction.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments to pass to the `LLMChain` `__call__`
+                method.
 
-        Returns
-        -------
-        dict
+        Returns:
             The evaluation results.
 
-        Examples
-        --------
-        >>> from langchain_openai import OpenAI
-        >>> from langchain.evaluation.criteria import CriteriaEvalChain
-        >>> llm = OpenAI()
-        >>> criteria = "conciseness"
-        >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-        >>> chain.evaluate_strings(
-                prediction="The answer is 42.",
-                reference="42",
-                input="What is the answer to life, the universe, and everything?",
-            )
+        Examples:
+            >>> from langchain_openai import OpenAI
+            >>> from langchain.evaluation.criteria import CriteriaEvalChain
+            >>> llm = OpenAI()
+            >>> criteria = "conciseness"
+            >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+            >>> chain.evaluate_strings(
+                    prediction="The answer is 42.",
+                    reference="42",
+                    input="What is the answer to life, the universe, and everything?",
+                )
         """
         input_ = self._get_eval_input(prediction, reference, input)
         result = self(
@@ -476,36 +475,32 @@ class CriteriaEvalChain(StringEvaluator, LLMEvalChain, LLMChain):
     ) -> dict:
         """Asynchronously evaluate a prediction against the criteria.
 
-        Parameters
-        ----------
-        prediction : str
-            The predicted text to evaluate.
-        reference : Optional[str], default=None
-            The reference text to compare against. This is required if
-            `requires_reference` is `True`.
-        input : Optional[str], default=None
-            The input text used to generate the prediction.
-        **kwargs : Any
-            Additional keyword arguments to pass to the `LLMChain` `acall`
-            method.
+        Args:
+            prediction: The predicted text to evaluate.
+            reference: The reference text to compare against. This is required if
+                `requires_reference` is `True`.
+            input: The input text used to generate the prediction.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments to pass to the `LLMChain` `__call__`
+                method.
 
-        Returns
-        -------
-        dict
+        Returns:
             The evaluation results.
 
-        Examples
-        --------
-        >>> from langchain_openai import OpenAI
-        >>> from langchain.evaluation.criteria import CriteriaEvalChain
-        >>> llm = OpenAI()
-        >>> criteria = "conciseness"
-        >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
-        >>> await chain.aevaluate_strings(
-                prediction="The answer is 42.",
-                reference="42",
-                input="What is the answer to life, the universe, and everything?",
-            )
+        Examples:
+            >>> from langchain_openai import OpenAI
+            >>> from langchain.evaluation.criteria import CriteriaEvalChain
+            >>> llm = OpenAI()
+            >>> criteria = "conciseness"
+            >>> chain = CriteriaEvalChain.from_llm(llm=llm, criteria=criteria)
+            >>> await chain.aevaluate_strings(
+                    prediction="The answer is 42.",
+                    reference="42",
+                    input="What is the answer to life, the universe, and everything?",
+                )
         """
         input_ = self._get_eval_input(prediction, reference, input)
         result = await self.acall(
@@ -573,12 +568,12 @@ class LabeledCriteriaEvalChain(CriteriaEvalChain):
             Additional keyword arguments to pass to the `LLMChain`
             constructor.
 
-        Returns
+        Returns:
         -------
         LabeledCriteriaEvalChain
             An instance of the `LabeledCriteriaEvalChain` class.
 
-        Examples
+        Examples:
         --------
         >>> from langchain_openai import OpenAI
         >>> from langchain.evaluation.criteria import LabeledCriteriaEvalChain

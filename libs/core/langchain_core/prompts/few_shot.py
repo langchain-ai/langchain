@@ -117,7 +117,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     validate_template: bool = False
@@ -153,7 +153,7 @@ class FewShotPromptTemplate(_FewShotPromptTemplateMixin, StringPromptTemplate):
                 self.template_format,
                 self.input_variables + list(self.partial_variables),
             )
-        elif self.template_format or None:
+        elif self.template_format:
             self.input_variables = [
                 var
                 for var in get_template_variables(
@@ -272,7 +272,7 @@ class FewShotChatMessagePromptTemplate(
 
             from langchain_core.prompts import (
                 FewShotChatMessagePromptTemplate,
-                ChatPromptTemplate
+                ChatPromptTemplate,
             )
 
             examples = [
@@ -281,7 +281,7 @@ class FewShotChatMessagePromptTemplate(
             ]
 
             example_prompt = ChatPromptTemplate.from_messages(
-            [('human', 'What is {input}?'), ('ai', '{output}')]
+                [("human", "What is {input}?"), ("ai", "{output}")]
             )
 
             few_shot_prompt = FewShotChatMessagePromptTemplate(
@@ -292,9 +292,9 @@ class FewShotChatMessagePromptTemplate(
 
             final_prompt = ChatPromptTemplate.from_messages(
                 [
-                    ('system', 'You are a helpful AI Assistant'),
+                    ("system", "You are a helpful AI Assistant"),
                     few_shot_prompt,
-                    ('human', '{input}'),
+                    ("human", "{input}"),
                 ]
             )
             final_prompt.format(input="What is 4+4?")
@@ -314,10 +314,7 @@ class FewShotChatMessagePromptTemplate(
                 # ...
             ]
 
-            to_vectorize = [
-                " ".join(example.values())
-                for example in examples
-            ]
+            to_vectorize = [" ".join(example.values()) for example in examples]
             embeddings = OpenAIEmbeddings()
             vectorstore = Chroma.from_texts(
                 to_vectorize, embeddings, metadatas=examples
@@ -355,6 +352,7 @@ class FewShotChatMessagePromptTemplate(
 
             # Use within an LLM
             from langchain_core.chat_models import ChatAnthropic
+
             chain = final_prompt | ChatAnthropic(model="claude-3-haiku-20240307")
             chain.invoke({"input": "What's 3+3?"})
 
@@ -369,7 +367,7 @@ class FewShotChatMessagePromptTemplate(
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return False as this class is not serializable."""
         return False
 
     model_config = ConfigDict(

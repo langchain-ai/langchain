@@ -54,7 +54,8 @@ DEFAULT_EXAMPLES = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",  # noqa: E501
+        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage "
+        "romance under 3 minutes long in the dance pop genre",
         "structured_request": FULL_ANSWER,
     },
     {
@@ -69,7 +70,8 @@ EXAMPLES_WITH_LIMIT = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",  # noqa: E501
+        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage "
+        "romance under 3 minutes long in the dance pop genre",
         "structured_request": FULL_ANSWER,
     },
     {

@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+from types import UnionType
 from typing import (
     Annotated,
     Union,
@@ -343,16 +344,19 @@ def test__infer_handled_types() -> None:
     def handle2(e: Exception) -> str:
         return ""
 
-    def handle3(e: Union[ValueError, ToolException]) -> str:
+    def handle3(e: ValueError | ToolException) -> str:
+        return ""
+
+    def handle4(e: Union[ValueError, ToolException]) -> str:
         return ""
 
     class Handler:
         def handle(self, e: ValueError) -> str:
             return ""
 
-    handle4 = Handler().handle
+    handle5 = Handler().handle
 
-    def handle5(e: Union[Union[TypeError, ValueError], ToolException]) -> str:
+    def handle6(e: Union[Union[TypeError, ValueError], ToolException]) -> str:
         return ""
 
     expected: tuple = (Exception,)
@@ -367,12 +371,16 @@ def test__infer_handled_types() -> None:
     actual = _infer_handled_types(handle3)
     assert expected == actual
 
-    expected = (ValueError,)
+    expected = (ValueError, ToolException)
     actual = _infer_handled_types(handle4)
     assert expected == actual
 
-    expected = (TypeError, ValueError, ToolException)
+    expected = (ValueError,)
     actual = _infer_handled_types(handle5)
+    assert expected == actual
+
+    expected = (TypeError, ValueError, ToolException)
+    actual = _infer_handled_types(handle6)
     assert expected == actual
 
     with pytest.raises(ValueError):
