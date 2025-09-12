@@ -7,6 +7,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from pydantic import Field
+from typing_extensions import override
 
 
 class ChatParrotLink(BaseChatModel):
@@ -26,8 +27,9 @@ class ChatParrotLink(BaseChatModel):
 
             model = ChatParrotLink(parrot_buffer_length=2, model="bird-brain-001")
             result = model.invoke([HumanMessage(content="hello")])
-            result = model.batch([[HumanMessage(content="hello")],
-                                 [HumanMessage(content="world")]])
+            result = model.batch(
+                [[HumanMessage(content="hello")], [HumanMessage(content="world")]]
+            )
 
     """
 
@@ -41,6 +43,7 @@ class ChatParrotLink(BaseChatModel):
     stop: Optional[list[str]] = None
     max_retries: int = 2
 
+    @override
     def _generate(
         self,
         messages: list[BaseMessage],
@@ -92,6 +95,7 @@ class ChatParrotLink(BaseChatModel):
         generation = ChatGeneration(message=message)
         return ChatResult(generations=[generation])
 
+    @override
     def _stream(
         self,
         messages: list[BaseMessage],
