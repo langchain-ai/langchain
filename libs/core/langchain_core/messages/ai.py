@@ -5,7 +5,7 @@ import logging
 import operator
 from typing import Any, Literal, Optional, Union, cast
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from typing_extensions import NotRequired, Self, TypedDict, override
 
 from langchain_core.messages.base import (
@@ -175,6 +175,23 @@ class AIMessage(BaseMessage):
     """If provided, usage metadata for a message, such as token counts.
 
     This is a standard representation of token usage that is consistent across models.
+    """
+    raw_response: Optional[Any] = Field(default=None, exclude=True)
+    """Raw response object from the model provider.
+
+    .. warning::
+        This field contains the unprocessed response from the model provider and may
+        include sensitive information. It is excluded from serialization for security
+        reasons and should only be used for debugging or inspection purposes during
+        runtime.
+
+    This field is only populated when explicitly requested via
+    ``include_raw_response=True``. It contains the complete response object as returned
+    by the underlying API client.
+
+    For merged message chunks (e.g., from streaming), this may be a list containing
+    all raw responses from the individual chunks, preserving the complete streaming
+    history. Single responses remain as individual objects for backward compatibility.
     """
 
     type: Literal["ai"] = "ai"
@@ -446,6 +463,19 @@ def add_ai_message_chunks(
                 chunk_id = id_
                 break
 
+    # Raw response handling: Collect all raw responses into a list
+    # Each chunk in streaming maintains its own raw response, preserve each in [result]
+    raw_responses = [left.raw_response] + [o.raw_response for o in others]
+    non_none_responses = [r for r in raw_responses if r is not None]
+    if len(non_none_responses) == 0:
+        raw_response = None
+    elif len(non_none_responses) == 1:
+        raw_response = non_none_responses[
+            0
+        ]  # Keep single response as-is for compatibility
+    else:
+        raw_response = non_none_responses  # Multiple responses as list
+
     return left.__class__(
         example=left.example,
         content=content,
@@ -453,6 +483,7 @@ def add_ai_message_chunks(
         tool_call_chunks=tool_call_chunks,
         response_metadata=response_metadata,
         usage_metadata=usage_metadata,
+        raw_response=raw_response,
         id=chunk_id,
     )
 
