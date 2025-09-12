@@ -33,6 +33,7 @@ jobs:
         with:
           python-version: ${{ github.event.inputs.python_version || '3.11' }}
           cache-suffix: run-notebooks-${{ github.event.inputs.working-directory || 'all' }}
+          working-directory: ${{ github.event.inputs.working-directory || '**' }}
 
       - name: '🔐 Authenticate to Google Cloud'
         id: 'auth'

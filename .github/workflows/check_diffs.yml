@@ -146,6 +146,7 @@ jobs:
         with:
           python-version: ${{ matrix.job-configs.python-version }}
           cache-suffix: extended-tests-${{ matrix.job-configs.working-directory }}
+          working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: '📦 Install Dependencies & Run Extended Tests'
         shell: bash

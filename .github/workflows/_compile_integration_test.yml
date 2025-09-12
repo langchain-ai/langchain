@@ -34,6 +34,7 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
           cache-suffix: compile-integration-tests-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Integration Dependencies'
         shell: bash
