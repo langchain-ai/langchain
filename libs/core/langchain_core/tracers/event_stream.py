@@ -9,21 +9,23 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Optional,
+    TypedDict,
     TypeVar,
     Union,
     cast,
 )
 from uuid import UUID, uuid4
 
-from typing_extensions import NotRequired, TypedDict, override
+from typing_extensions import NotRequired, override
 
-from langchain_core.callbacks.base import AsyncCallbackHandler
+from langchain_core.callbacks.base import AsyncCallbackHandler, BaseCallbackManager
 from langchain_core.messages import AIMessageChunk, BaseMessage, BaseMessageChunk
 from langchain_core.outputs import (
     ChatGenerationChunk,
     GenerationChunk,
     LLMResult,
 )
+from langchain_core.runnables import ensure_config
 from langchain_core.runnables.schema import (
     CustomStreamEvent,
     EventData,
@@ -36,6 +38,11 @@ from langchain_core.runnables.utils import (
     _RootEventFilter,
 )
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
+from langchain_core.tracers.log_stream import (
+    LogStreamCallbackHandler,
+    RunLog,
+    _astream_log_implementation,
+)
 from langchain_core.tracers.memory_stream import _MemoryStream
 from langchain_core.utils.aiter import aclosing, py_anext
 
@@ -53,22 +60,20 @@ class RunInfo(TypedDict):
     """Information about a run.
 
     This is used to keep track of the metadata associated with a run.
-
-    Parameters:
-        name: The name of the run.
-        tags: The tags associated with the run.
-        metadata: The metadata associated with the run.
-        run_type: The type of the run.
-        inputs: The inputs to the run.
-        parent_run_id: The ID of the parent run.
     """
 
     name: str
+    """The name of the run."""
     tags: list[str]
+    """The tags associated with the run."""
     metadata: dict[str, Any]
+    """The metadata associated with the run."""
     run_type: str
+    """The type of the run."""
     inputs: NotRequired[Any]
+    """The inputs to the run."""
     parent_run_id: Optional[UUID]
+    """The ID of the parent run."""
 
 
 def _assign_name(name: Optional[str], serialized: Optional[dict[str, Any]]) -> str:
@@ -219,7 +224,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 yield chunk
 
     def tap_output_iter(self, run_id: UUID, output: Iterator[T]) -> Iterator[T]:
-        """Tap the output aiter.
+        """Tap the output iter.
 
         Args:
             run_id: The ID of the run.
@@ -310,7 +315,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Start a trace for an LLM run."""
+        """Start a trace for a chat model run."""
         name_ = _assign_name(name, serialized)
         run_type = "chat_model"
 
@@ -352,7 +357,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         name: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Start a trace for an LLM run."""
+        """Start a trace for a (non-chat model) LLM run."""
         name_ = _assign_name(name, serialized)
         run_type = "llm"
 
@@ -416,6 +421,10 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> None:
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
+        """
         run_info = self.run_map.get(run_id)
         chunk_: Union[GenerationChunk, BaseMessageChunk]
 
@@ -461,17 +470,15 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_llm_end(
         self, response: LLMResult, *, run_id: UUID, **kwargs: Any
     ) -> None:
-        """End a trace for an LLM run.
+        """End a trace for a model run.
 
-        Args:
-            response (LLMResult): The response which was generated.
-            run_id (UUID): The run ID. This is the ID of the current run.
+        For both chat models and non-chat models (legacy LLMs).
 
         Raises:
             ValueError: If the run type is not ``'llm'`` or ``'chat_model'``.
         """
         run_info = self.run_map.pop(run_id)
-        inputs_ = run_info["inputs"]
+        inputs_ = run_info.get("inputs")
 
         generations: Union[list[list[GenerationChunk]], list[list[ChatGenerationChunk]]]
         output: Union[dict, BaseMessage] = {}
@@ -649,10 +656,6 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run.
 
-        Args:
-            output: The output of the tool.
-            run_id: The run ID. This is the ID of the current run.
-
         Raises:
             AssertionError: If the run ID is a tool call and does not have inputs
         """
@@ -737,7 +740,7 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
                 "event": "on_retriever_end",
                 "data": {
                     "output": documents,
-                    "input": run_info["inputs"],
+                    "input": run_info.get("inputs"),
                 },
                 "run_id": str(run_id),
                 "name": run_info["name"],
@@ -770,14 +773,6 @@ async def _astream_events_implementation_v1(
     exclude_tags: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
-    from langchain_core.runnables import ensure_config
-    from langchain_core.runnables.utils import _RootEventFilter
-    from langchain_core.tracers.log_stream import (
-        LogStreamCallbackHandler,
-        RunLog,
-        _astream_log_implementation,
-    )
-
     stream = LogStreamCallbackHandler(
         auto_close=False,
         include_names=include_names,
@@ -857,12 +852,12 @@ async def _astream_events_implementation_v1(
                 # Usually they will NOT be available for components that operate
                 # on streams, since those components stream the input and
                 # don't know its final value until the end of the stream.
-                inputs = log_entry["inputs"]
+                inputs = log_entry.get("inputs")
                 if inputs is not None:
                     data["input"] = inputs
 
             if event_type == "end":
-                inputs = log_entry["inputs"]
+                inputs = log_entry.get("inputs")
                 if inputs is not None:
                     data["input"] = inputs
 
@@ -955,9 +950,6 @@ async def _astream_events_implementation_v2(
     **kwargs: Any,
 ) -> AsyncIterator[StandardStreamEvent]:
     """Implementation of the astream events API for V2 runnables."""
-    from langchain_core.callbacks.base import BaseCallbackManager
-    from langchain_core.runnables import ensure_config
-
     event_streamer = _AstreamEventsCallbackHandler(
         include_names=include_names,
         include_types=include_types,

@@ -357,7 +357,9 @@ class BaseLLM(BaseLanguageModel[str], ABC):
             ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
+        if "model" in kwargs and isinstance(kwargs["model"], str):
+            ls_params["ls_model_name"] = kwargs["model"]
+        elif hasattr(self, "model") and isinstance(self.model, str):
             ls_params["ls_model_name"] = self.model
         elif hasattr(self, "model_name") and isinstance(self.model_name, str):
             ls_params["ls_model_name"] = self.model_name
@@ -853,10 +855,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.
@@ -1118,10 +1121,11 @@ class BaseLLM(BaseLanguageModel[str], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             prompts: List of string prompts.

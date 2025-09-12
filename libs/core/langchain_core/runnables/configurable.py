@@ -51,17 +51,15 @@ if TYPE_CHECKING:
 class DynamicRunnable(RunnableSerializable[Input, Output]):
     """Serializable Runnable that can be dynamically configured.
 
-    A DynamicRunnable should be initiated using the `configurable_fields` or
-    `configurable_alternatives` method of a Runnable.
-
-    Parameters:
-        default: The default Runnable to use.
-        config: The configuration to use.
+    A DynamicRunnable should be initiated using the ``configurable_fields`` or
+    ``configurable_alternatives`` method of a Runnable.
     """
 
     default: RunnableSerializable[Input, Output]
+    """The default Runnable to use."""
 
     config: Optional[RunnableConfig] = None
+    """The configuration to use."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -328,9 +326,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     A RunnableConfigurableFields should be initiated using the
     `configurable_fields` method of a Runnable.
 
-    Parameters:
-        fields: The configurable fields to use.
-
     Here is an example of using a RunnableConfigurableFields with LLMs:
 
         .. code-block:: python
@@ -388,6 +383,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     """
 
     fields: dict[str, AnyConfigurableField]
+    """The configurable fields to use."""
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:

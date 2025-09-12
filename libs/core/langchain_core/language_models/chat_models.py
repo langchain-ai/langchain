@@ -46,6 +46,10 @@ from langchain_core.messages import (
     message_chunk_to_message,
 )
 from langchain_core.messages.ai import _LC_ID_PREFIX
+from langchain_core.output_parsers.openai_tools import (
+    JsonOutputKeyToolsParser,
+    PydanticToolsParser,
+)
 from langchain_core.outputs import (
     ChatGeneration,
     ChatGenerationChunk,
@@ -148,8 +152,6 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                             "type": key,
                             key: block[key],
                         }
-                    else:
-                        pass
         messages_to_trace.append(message_to_trace)
 
     return messages_to_trace
@@ -718,7 +720,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
+        if "model" in kwargs and isinstance(kwargs["model"], str):
+            ls_params["ls_model_name"] = kwargs["model"]
+        elif hasattr(self, "model") and isinstance(self.model, str):
             ls_params["ls_model_name"] = self.model
         elif hasattr(self, "model_name") and isinstance(self.model_name, str):
             ls_params["ls_model_name"] = self.model_name
@@ -769,10 +773,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             messages: List of list of messages.
@@ -884,10 +889,11 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         API.
 
         Use this method when you want to:
-            1. take advantage of batched calls,
-            2. need more output from the model than just the top generated value,
-            3. are building chains that are agnostic to the underlying language model
-                type (e.g., pure text completion models vs chat models).
+
+        1. Take advantage of batched calls,
+        2. Need more output from the model than just the top generated value,
+        3. Are building chains that are agnostic to the underlying language model
+           type (e.g., pure text completion models vs chat models).
 
         Args:
             messages: List of list of messages.
@@ -1589,11 +1595,6 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
-
-        from langchain_core.output_parsers.openai_tools import (
-            JsonOutputKeyToolsParser,
-            PydanticToolsParser,
-        )
 
         if type(self).bind_tools is BaseChatModel.bind_tools:
             msg = "with_structured_output is not implemented for this model."

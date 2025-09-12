@@ -15,6 +15,14 @@ from langchain_core.messages import BaseMessage
 from langchain_core.output_parsers.transform import BaseTransformOutputParser
 from langchain_core.runnables.utils import AddableDict
 
+try:
+    from defusedxml import ElementTree  # type: ignore[import-untyped]
+    from defusedxml.ElementTree import XMLParser  # type: ignore[import-untyped]
+
+    _HAS_DEFUSEDXML = True
+except ImportError:
+    _HAS_DEFUSEDXML = False
+
 XML_FORMAT_INSTRUCTIONS = """The output should be formatted as a XML file.
 1. Output should conform to the tags below.
 2. If tags are not given, make them on your own.
@@ -50,17 +58,13 @@ class _StreamingParser:
                 parser is requested.
         """
         if parser == "defusedxml":
-            try:
-                from defusedxml.ElementTree import (  # type: ignore[import-untyped]
-                    XMLParser,
-                )
-            except ImportError as e:
+            if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml` "
                 )
-                raise ImportError(msg) from e
+                raise ImportError(msg)
             parser_ = XMLParser(target=TreeBuilder())
         else:
             parser_ = None
@@ -151,14 +155,15 @@ class XMLOutputParser(BaseTransformOutputParser):
     Note this may not be perfect depending on the LLM implementation.
 
     For example, with tags=["foo", "bar", "baz"]:
-            1. A well-formatted XML instance:
-                "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"
 
-            2. A badly-formatted XML instance (missing closing tag for 'bar'):
-                "<foo>\n   <bar>\n   </foo>"
+    1. A well-formatted XML instance:
+       "<foo>\n   <bar>\n      <baz></baz>\n   </bar>\n</foo>"
 
-            3. A badly-formatted XML instance (unexpected 'tag' element):
-                "<foo>\n   <tag>\n   </tag>\n</foo>"
+    2. A badly-formatted XML instance (missing closing tag for 'bar'):
+       "<foo>\n   <bar>\n   </foo>"
+
+    3. A badly-formatted XML instance (unexpected 'tag' element):
+       "<foo>\n   <tag>\n   </tag>\n</foo>"
     """
     encoding_matcher: re.Pattern = re.compile(
         r"<([^>]*encoding[^>]*)>\n(.*)", re.MULTILINE | re.DOTALL
@@ -206,16 +211,14 @@ class XMLOutputParser(BaseTransformOutputParser):
         # Imports are temporarily placed here to avoid issue with caching on CI
         # likely if you're reading this you can move them to the top of the file
         if self.parser == "defusedxml":
-            try:
-                from defusedxml import ElementTree  # type: ignore[import-untyped]
-            except ImportError as e:
+            if not _HAS_DEFUSEDXML:
                 msg = (
                     "defusedxml is not installed. "
                     "Please install it to use the defusedxml parser."
                     "You can install it with `pip install defusedxml`"
                     "See https://github.com/tiran/defusedxml for more details"
                 )
-                raise ImportError(msg) from e
+                raise ImportError(msg)
             et = ElementTree  # Use the defusedxml parser
         else:
             et = ET  # Use the standard library parser

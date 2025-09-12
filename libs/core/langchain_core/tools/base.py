@@ -81,6 +81,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "json",
     "search_result",
     "custom_tool_call_output",
+    "document",
 )
 
 
@@ -271,15 +272,12 @@ def _function_annotations_are_pydantic_v1(
 
 
 class _SchemaConfig:
-    """Configuration for Pydantic models generated from function signatures.
-
-    Attributes:
-        extra: Whether to allow extra fields in the model.
-        arbitrary_types_allowed: Whether to allow arbitrary types in the model.
-    """
+    """Configuration for Pydantic models generated from function signatures."""
 
     extra: str = "forbid"
+    """Whether to allow extra fields in the model."""
     arbitrary_types_allowed: bool = True
+    """Whether to allow arbitrary types in the model."""
 
 
 def create_schema_from_function(
@@ -548,6 +546,8 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
+        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
+            json_schema = self.args_schema.schema()
         else:
             input_schema = self.get_input_schema()
             json_schema = input_schema.model_json_schema()
@@ -661,10 +661,7 @@ class ChildTool(BaseTool):
                 return tool_input
             if issubclass(input_args, BaseModel):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -679,10 +676,7 @@ class ChildTool(BaseTool):
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -1370,8 +1364,8 @@ def get_all_basemodel_annotations(
                 continue
 
             # if class = FooBar inherits from Baz[str]:
-            # parent = Baz[str],
-            # parent_origin = Baz,
+            # parent = class Baz[str],
+            # parent_origin = class Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
             generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())

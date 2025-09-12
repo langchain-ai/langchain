@@ -152,11 +152,8 @@ class PromptTemplate(StringPromptTemplate):
         """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
-            if self.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
-                raise ValueError(msg)
-            if other.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
+            if self.template_format != other.template_format:
+                msg = "Cannot add templates of different formats"
                 raise ValueError(msg)
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
@@ -174,11 +171,14 @@ class PromptTemplate(StringPromptTemplate):
                 template=template,
                 input_variables=input_variables,
                 partial_variables=partial_variables,
-                template_format="f-string",
+                template_format=self.template_format,
                 validate_template=validate_template,
             )
         if isinstance(other, str):
-            prompt = PromptTemplate.from_template(other)
+            prompt = PromptTemplate.from_template(
+                other,
+                template_format=self.template_format,
+            )
             return self + prompt
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)

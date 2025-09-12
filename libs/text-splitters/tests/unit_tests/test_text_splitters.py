@@ -2849,6 +2849,21 @@ def test_split_text_on_tokens() -> None:
     assert output == expected_output
 
 
+def test_decode_returns_no_chunks() -> None:
+    """Test that when decode returns only empty strings, output is empty, not ['']."""
+    text = "foo bar baz 123"
+
+    tokenizer = Tokenizer(
+        chunk_overlap=3,
+        tokens_per_chunk=7,
+        decode=(lambda _: ""),
+        encode=(lambda it: [ord(c) for c in it]),
+    )
+    output = split_text_on_tokens(text=text, tokenizer=tokenizer)
+    expected_output: list[Any] = []
+    assert output == expected_output
+
+
 @pytest.mark.requires("bs4")
 @pytest.mark.requires("lxml")
 def test_section_aware_happy_path_splitting_based_on_header_1_2() -> None:

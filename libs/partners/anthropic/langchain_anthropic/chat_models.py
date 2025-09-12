@@ -71,6 +71,10 @@ class AnthropicTool(TypedDict):
 
 
 def _is_builtin_tool(tool: Any) -> bool:
+    """Check if a tool is a built-in Anthropic tool.
+
+    https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/overview
+    """
     if not isinstance(tool, dict):
         return False
 
@@ -83,6 +87,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "computer_",
         "bash_",
         "web_search_",
+        "web_fetch_",
         "code_execution_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
@@ -277,16 +282,7 @@ def _format_data_content_block(block: dict) -> dict:
 def _format_messages(
     messages: Sequence[BaseMessage],
 ) -> tuple[Union[str, list[dict], None], list[dict]]:
-    """Format messages for anthropic."""
-    """
-    [
-                {
-                    "role": _message_type_lookups[m.type],
-                    "content": [_AnthropicMessageContent(text=m.content).model_dump()],
-                }
-                for m in messages
-            ]
-    """
+    """Format messages for Anthropic's API."""
     system: Union[str, list[dict], None] = None
     formatted_messages: list[dict] = []
     merged_messages = _merge_messages(messages)
@@ -440,6 +436,7 @@ def _format_messages(
                         "code_execution_tool_result",
                         "mcp_tool_result",
                         "web_search_tool_result",
+                        "web_fetch_tool_result",
                     ):
                         content.append(
                             {
@@ -452,6 +449,7 @@ def _format_messages(
                                     "tool_use_id",
                                     "is_error",  # for mcp_tool_result
                                     "cache_control",
+                                    "retrieved_at",  # for web_fetch_tool_result
                                 )
                             },
                         )
@@ -1128,13 +1126,31 @@ class ChatAnthropic(BaseChatModel):
 
                 from langchain_anthropic import ChatAnthropic
 
-                llm = ChatAnthropic(model="claude-3-5-sonnet-latest")
+                llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 
                 tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
                 llm_with_tools = llm.bind_tools([tool])
 
                 response = llm_with_tools.invoke(
                     "How do I update a web app to TypeScript 5.5?"
+                )
+
+        .. dropdown::  Web fetch (beta)
+
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(
+                    model="claude-3-5-haiku-latest",
+                    betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
+                )
+
+                tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 3}
+                llm_with_tools = llm.bind_tools([tool])
+
+                response = llm_with_tools.invoke(
+                    "Please analyze the content at https://example.com/article"
                 )
 
         .. dropdown::  Code execution
@@ -1360,7 +1376,7 @@ class ChatAnthropic(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="anthropic",
-            ls_model_name=self.model,
+            ls_model_name=params.get("model", self.model),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -2232,6 +2248,7 @@ def _make_message_chunk_from_anthropic_event(
             "mcp_tool_result",
             "server_tool_use",  # Server-side tool usage
             "web_search_tool_result",  # Built-in web search results
+            "web_fetch_tool_result",  # Built-in web fetch results,
         )
     ):
         if coerce_content_to_string:

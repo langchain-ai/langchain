@@ -42,11 +42,16 @@ from langchain_core.messages.system import SystemMessage, SystemMessageChunk
 from langchain_core.messages.tool import ToolCall, ToolMessage, ToolMessageChunk
 
 if TYPE_CHECKING:
-    from langchain_text_splitters import TextSplitter
-
     from langchain_core.language_models import BaseLanguageModel
     from langchain_core.prompt_values import PromptValue
     from langchain_core.runnables.base import Runnable
+
+try:
+    from langchain_text_splitters import TextSplitter
+
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = True
+except ImportError:
+    _HAS_LANGCHAIN_TEXT_SPLITTERS = False
 
 logger = logging.getLogger(__name__)
 
@@ -281,6 +286,9 @@ def _create_message_from_message_type(
         message = FunctionMessage(content=content, **kwargs)
     elif message_type == "tool":
         artifact = kwargs.get("additional_kwargs", {}).pop("artifact", None)
+        status = kwargs.get("additional_kwargs", {}).pop("status", None)
+        if status is not None:
+            kwargs["status"] = status
         message = ToolMessage(content=content, artifact=artifact, **kwargs)
     elif message_type == "remove":
         message = RemoveMessage(**kwargs)
@@ -361,7 +369,7 @@ def convert_to_messages(
         list of messages (BaseMessages).
     """
     # Import here to avoid circular imports
-    from langchain_core.prompt_values import PromptValue
+    from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
 
     if isinstance(messages, PromptValue):
         return messages.to_messages()
@@ -386,7 +394,8 @@ def _runnable_support(func: Callable) -> Callable:
         list[BaseMessage],
         Runnable[Sequence[MessageLikeRepresentation], list[BaseMessage]],
     ]:
-        from langchain_core.runnables.base import RunnableLambda
+        # Import locally to prevent circular import.
+        from langchain_core.runnables.base import RunnableLambda  # noqa: PLC0415
 
         if messages is not None:
             return func(messages, **kwargs)
@@ -425,8 +434,8 @@ def filter_messages(
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
 
-            - ``True``: all AIMessages with tool calls and all ToolMessages will be
-              excluded.
+            - ``True``: Each ``AIMessages`` with tool calls and all ``ToolMessages``
+              will be excluded.
             - a sequence of tool call IDs to exclude:
 
               - ToolMessages with the corresponding tool call ID will be excluded.
@@ -736,9 +745,11 @@ def trim_messages(
                 exact token counting is not necessary.
 
         strategy: Strategy for trimming.
+
             - "first": Keep the first <= n_count tokens of the messages.
             - "last": Keep the last <= n_count tokens of the messages.
-            Default is "last".
+
+            Default is ``'last'``.
         allow_partial: Whether to split a message if only part of the message can be
             included. If ``strategy="last"`` then the last partial contents of a message
             are included. If ``strategy="first"`` then the first partial contents of a
@@ -987,17 +998,12 @@ def trim_messages(
         )
         raise ValueError(msg)
 
-    try:
-        from langchain_text_splitters import TextSplitter
-    except ImportError:
-        text_splitter_fn: Optional[Callable] = cast("Optional[Callable]", text_splitter)
+    if _HAS_LANGCHAIN_TEXT_SPLITTERS and isinstance(text_splitter, TextSplitter):
+        text_splitter_fn = text_splitter.split_text
+    elif text_splitter:
+        text_splitter_fn = cast("Callable", text_splitter)
     else:
-        if isinstance(text_splitter, TextSplitter):
-            text_splitter_fn = text_splitter.split_text
-        else:
-            text_splitter_fn = text_splitter
-
-    text_splitter_fn = text_splitter_fn or _default_text_splitter
+        text_splitter_fn = _default_text_splitter
 
     if strategy == "first":
         return _first_max_tokens(
@@ -1035,16 +1041,16 @@ def convert_to_openai_messages(
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
 
-                - "string":
-                    If a message has a string content, this is left as a string. If
-                    a message has content blocks that are all of type 'text', these are
-                    joined with a newline to make a single string. If a message has
-                    content blocks and at least one isn't of type 'text', then
-                    all blocks are left as dicts.
-                - "block":
-                    If a message has a string content, this is turned into a list
-                    with a single content block of type 'text'. If a message has content
-                    blocks these are left as is.
+            - ``'string'``:
+              If a message has a string content, this is left as a string. If
+              a message has content blocks that are all of type 'text', these are
+              joined with a newline to make a single string. If a message has
+              content blocks and at least one isn't of type 'text', then
+              all blocks are left as dicts.
+            - ``'block'``:
+              If a message has a string content, this is turned into a list
+              with a single content block of type 'text'. If a message has content
+              blocks these are left as is.
 
     Raises:
         ValueError: if an unrecognized ``text_format`` is specified, or if a message
@@ -1052,12 +1058,13 @@ def convert_to_openai_messages(
 
     Returns:
         The return type depends on the input type:
-            - dict:
-                If a single message-like object is passed in, a single OpenAI message
-                dict is returned.
-            - list[dict]:
-                If a sequence of message-like objects are passed in, a list of OpenAI
-                message dicts is returned.
+
+        - dict:
+          If a single message-like object is passed in, a single OpenAI message
+          dict is returned.
+        - list[dict]:
+          If a sequence of message-like objects are passed in, a list of OpenAI
+          message dicts is returned.
 
     Example:
 

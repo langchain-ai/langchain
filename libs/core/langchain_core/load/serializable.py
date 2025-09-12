@@ -20,53 +20,41 @@ logger = logging.getLogger(__name__)
 
 
 class BaseSerialized(TypedDict):
-    """Base class for serialized objects.
-
-    Parameters:
-        lc: The version of the serialization format.
-        id: The unique identifier of the object.
-        name: The name of the object. Optional.
-        graph: The graph of the object. Optional.
-    """
+    """Base class for serialized objects."""
 
     lc: int
+    """The version of the serialization format."""
     id: list[str]
+    """The unique identifier of the object."""
     name: NotRequired[str]
+    """The name of the object. Optional."""
     graph: NotRequired[dict[str, Any]]
+    """The graph of the object. Optional."""
 
 
 class SerializedConstructor(BaseSerialized):
-    """Serialized constructor.
-
-    Parameters:
-        type: The type of the object. Must be "constructor".
-        kwargs: The constructor arguments.
-    """
+    """Serialized constructor."""
 
     type: Literal["constructor"]
+    """The type of the object. Must be ``'constructor'``."""
     kwargs: dict[str, Any]
+    """The constructor arguments."""
 
 
 class SerializedSecret(BaseSerialized):
-    """Serialized secret.
-
-    Parameters:
-        type: The type of the object. Must be "secret".
-    """
+    """Serialized secret."""
 
     type: Literal["secret"]
+    """The type of the object. Must be ``'secret'``."""
 
 
 class SerializedNotImplemented(BaseSerialized):
-    """Serialized not implemented.
-
-    Parameters:
-        type: The type of the object. Must be "not_implemented".
-        repr: The representation of the object. Optional.
-    """
+    """Serialized not implemented."""
 
     type: Literal["not_implemented"]
+    """The type of the object. Must be ``'not_implemented'``."""
     repr: Optional[str]
+    """The representation of the object. Optional."""
 
 
 def try_neq_default(value: Any, key: str, model: BaseModel) -> bool:
@@ -106,19 +94,19 @@ class Serializable(BaseModel, ABC):
 
     It relies on the following methods and properties:
 
-    - `is_lc_serializable`: Is this class serializable?
-        By design, even if a class inherits from Serializable, it is not serializable by
-        default. This is to prevent accidental serialization of objects that should not
-        be serialized.
-    - `get_lc_namespace`: Get the namespace of the langchain object.
-        During deserialization, this namespace is used to identify
-        the correct class to instantiate.
-        Please see the `Reviver` class in `langchain_core.load.load` for more details.
-        During deserialization an additional mapping is handle
-        classes that have moved or been renamed across package versions.
-    - `lc_secrets`: A map of constructor argument names to secret ids.
-    - `lc_attributes`: List of additional attribute names that should be included
-        as part of the serialized representation.
+    - ``is_lc_serializable``: Is this class serializable?
+      By design, even if a class inherits from Serializable, it is not serializable by
+      default. This is to prevent accidental serialization of objects that should not
+      be serialized.
+    - ``get_lc_namespace``: Get the namespace of the langchain object.
+      During deserialization, this namespace is used to identify
+      the correct class to instantiate.
+      Please see the ``Reviver`` class in ``langchain_core.load.load`` for more details.
+      During deserialization an additional mapping is handle
+      classes that have moved or been renamed across package versions.
+    - ``lc_secrets``: A map of constructor argument names to secret ids.
+    - ``lc_attributes``: List of additional attribute names that should be included
+      as part of the serialized representation.
     """
 
     # Remove default BaseModel init docstring.

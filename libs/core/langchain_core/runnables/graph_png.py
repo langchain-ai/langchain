@@ -4,29 +4,25 @@ from typing import Any, Optional
 
 from langchain_core.runnables.graph import Graph, LabelsDict
 
+try:
+    import pygraphviz as pgv  # type: ignore[import-not-found]
+
+    _HAS_PYGRAPHVIZ = True
+except ImportError:
+    _HAS_PYGRAPHVIZ = False
+
 
 class PngDrawer:
     """Helper class to draw a state graph into a PNG file.
 
-    It requires `graphviz` and `pygraphviz` to be installed.
-    :param fontname: The font to use for the labels
-    :param labels: A dictionary of label overrides. The dictionary
-        should have the following format:
-        {
-            "nodes": {
-                "node1": "CustomLabel1",
-                "node2": "CustomLabel2",
-                "__end__": "End Node"
-            },
-            "edges": {
-                "continue": "ContinueLabel",
-                "end": "EndLabel"
-            }
-        }
-        The keys are the original labels, and the values are the new labels.
-    Usage:
-        drawer = PngDrawer()
-        drawer.draw(state_graph, 'graph.png')
+    It requires ``graphviz`` and ``pygraphviz`` to be installed.
+
+    Example:
+
+        .. code-block:: python
+
+            drawer = PngDrawer()
+            drawer.draw(state_graph, "graph.png")
     """
 
     def __init__(
@@ -136,11 +132,9 @@ class PngDrawer:
         Returns:
             The PNG bytes if ``output_path`` is None, else None.
         """
-        try:
-            import pygraphviz as pgv  # type: ignore[import-not-found]
-        except ImportError as exc:
+        if not _HAS_PYGRAPHVIZ:
             msg = "Install pygraphviz to draw graphs: `pip install pygraphviz`."
-            raise ImportError(msg) from exc
+            raise ImportError(msg)
 
         # Create a directed graph
         viz = pgv.AGraph(directed=True, nodesep=0.9, ranksep=1.0)

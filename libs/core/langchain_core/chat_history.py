@@ -27,6 +27,7 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -113,8 +114,6 @@ class BaseChatMessageHistory(ABC):
         Returns:
             The messages.
         """
-        from langchain_core.runnables.config import run_in_executor
-
         return await run_in_executor(None, lambda: self.messages)
 
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
@@ -190,8 +189,6 @@ class BaseChatMessageHistory(ABC):
         Args:
             messages: A sequence of BaseMessage objects to store.
         """
-        from langchain_core.runnables.config import run_in_executor
-
         await run_in_executor(None, self.add_messages, messages)
 
     @abstractmethod
@@ -200,8 +197,6 @@ class BaseChatMessageHistory(ABC):
 
     async def aclear(self) -> None:
         """Async remove all messages from the store."""
-        from langchain_core.runnables.config import run_in_executor
-
         await run_in_executor(None, self.clear)
 
     def __str__(self) -> str:

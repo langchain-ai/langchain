@@ -1,6 +1,7 @@
 name: "\U0001F41B Bug Report"
 description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the LangChain forum.
 labels: ["bug"]
+type: bug
 body:
   - type: markdown
     attributes:
@@ -13,9 +14,7 @@ body:
         if there's another way to solve your problem:
 
         * [LangChain Forum](https://forum.langchain.com/),
-        * [LangChain Github Issues](https://github.com/langchain-ai/langchain/issues?q=is%3Aissue),
-        * [LangChain documentation with the integrated search](https://python.langchain.com/docs/get_started/introduction),
-        * [LangChain how-to guides](https://python.langchain.com/docs/how_to/),
+        * [LangChain documentation with the integrated search](https://docs.langchain.com/oss/python/langchain/overview),
         * [API Reference](https://python.langchain.com/api_reference/),
         * [LangChain ChatBot](https://chat.langchain.com/)
         * [GitHub search](https://github.com/langchain-ai/langchain),
@@ -25,7 +24,7 @@ body:
       label: Checked other resources
       description: Please confirm and check all the following options.
       options:
-        - label: This is a bug, not a usage question. For questions, please use the LangChain Forum (https://forum.langchain.com/).
+        - label: This is a bug, not a usage question.
           required: true
         - label: I added a clear and descriptive title that summarizes this issue.
           required: true
@@ -34,6 +33,8 @@ body:
         - label: I am sure that this is a bug in LangChain rather than my code.
           required: true
         - label: The bug is not resolved by updating to the latest stable version of LangChain (or the specific integration package).
+          required: true
+        - label: This is not related to the langchain-community package.
           required: true
         - label: I read what a minimal reproducible example is (https://stackoverflow.com/help/minimal-reproducible-example).
           required: true
@@ -118,3 +119,7 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+
+
+
+

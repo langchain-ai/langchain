@@ -118,7 +118,8 @@ class BaseMessage(Serializable):
         Returns:
             A ChatPromptTemplate containing both messages.
         """
-        from langchain_core.prompts.chat import ChatPromptTemplate
+        # Import locally to prevent circular imports.
+        from langchain_core.prompts.chat import ChatPromptTemplate  # noqa: PLC0415
 
         prompt = ChatPromptTemplate(messages=[self])
         return prompt + other
@@ -179,9 +180,7 @@ def merge_content(
         elif merged and isinstance(merged[-1], str):
             merged[-1] += content
         # If second content is an empty string, treat as a no-op
-        elif content == "":
-            pass
-        else:
+        elif content:
             # Otherwise, add the second content as a new element of the list
             merged.append(content)
     return merged

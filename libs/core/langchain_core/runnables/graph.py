@@ -19,6 +19,8 @@ from typing import (
 )
 from uuid import UUID, uuid4
 
+from langchain_core.load.serializable import to_json_not_implemented
+from langchain_core.runnables.base import Runnable, RunnableSerializable
 from langchain_core.utils.pydantic import _IgnoreUnserializable, is_basemodel_subclass
 
 if TYPE_CHECKING:
@@ -62,19 +64,16 @@ def is_uuid(value: str) -> bool:
 
 
 class Edge(NamedTuple):
-    """Edge in a graph.
-
-    Parameters:
-        source: The source node id.
-        target: The target node id.
-        data: Optional data associated with the edge. Defaults to None.
-        conditional: Whether the edge is conditional. Defaults to False.
-    """
+    """Edge in a graph."""
 
     source: str
+    """The source node id."""
     target: str
+    """The target node id."""
     data: Optional[Stringifiable] = None
+    """Optional data associated with the edge. Defaults to None."""
     conditional: bool = False
+    """Whether the edge is conditional. Defaults to False."""
 
     def copy(
         self, *, source: Optional[str] = None, target: Optional[str] = None
@@ -97,19 +96,16 @@ class Edge(NamedTuple):
 
 
 class Node(NamedTuple):
-    """Node in a graph.
-
-    Parameters:
-        id: The unique identifier of the node.
-        name: The name of the node.
-        data: The data of the node.
-        metadata: Optional metadata for the node. Defaults to None.
-    """
+    """Node in a graph."""
 
     id: str
+    """The unique identifier of the node."""
     name: str
+    """The name of the node."""
     data: Union[type[BaseModel], RunnableType, None]
+    """The data of the node."""
     metadata: Optional[dict[str, Any]]
+    """Optional metadata for the node. Defaults to None."""
 
     def copy(
         self,
@@ -135,16 +131,12 @@ class Node(NamedTuple):
 
 
 class Branch(NamedTuple):
-    """Branch in a graph.
-
-    Parameters:
-        condition: A callable that returns a string representation of the condition.
-        ends: Optional dictionary of end node ids for the branches. Defaults
-            to None.
-    """
+    """Branch in a graph."""
 
     condition: Callable[..., str]
+    """A callable that returns a string representation of the condition."""
     ends: Optional[dict[str, str]]
+    """Optional dictionary of end node ids for the branches. Defaults to None."""
 
 
 class CurveStyle(Enum):
@@ -168,7 +160,7 @@ class CurveStyle(Enum):
 class NodeStyles:
     """Schema for Hexadecimal color codes for different node types.
 
-    Parameters:
+    Args:
         default: The default color code. Defaults to "fill:#f2f0ff,line-height:1.2".
         first: The color code for the first node. Defaults to "fill-opacity:0".
         last: The color code for the last node. Defaults to "fill:#bfb6fc".
@@ -182,8 +174,10 @@ class NodeStyles:
 class MermaidDrawMethod(Enum):
     """Enum for different draw methods supported by Mermaid."""
 
-    PYPPETEER = "pyppeteer"  # Uses Pyppeteer to render the graph
-    API = "api"  # Uses Mermaid.INK API to render the graph
+    PYPPETEER = "pyppeteer"
+    """Uses Pyppeteer to render the graph"""
+    API = "api"
+    """Uses Mermaid.INK API to render the graph"""
 
 
 def node_data_str(
@@ -199,8 +193,6 @@ def node_data_str(
     Returns:
         A string representation of the data.
     """
-    from langchain_core.runnables.base import Runnable
-
     if not is_uuid(id) or data is None:
         return id
     data_str = data.get_name() if isinstance(data, Runnable) else data.__name__
@@ -220,9 +212,6 @@ def node_data_json(
     Returns:
         A dictionary with the type of the data and the data itself.
     """
-    from langchain_core.load.serializable import to_json_not_implemented
-    from langchain_core.runnables.base import Runnable, RunnableSerializable
-
     if node.data is None:
         json: dict[str, Any] = {}
     elif isinstance(node.data, RunnableSerializable):
@@ -269,7 +258,7 @@ def node_data_json(
 class Graph:
     """Graph of nodes and edges.
 
-    Parameters:
+    Args:
         nodes: Dictionary of nodes in the graph. Defaults to an empty dictionary.
         edges: List of edges in the graph. Defaults to an empty list.
     """
@@ -526,7 +515,8 @@ class Graph:
         Returns:
             The ASCII art string.
         """
-        from langchain_core.runnables.graph_ascii import draw_ascii
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_ascii import draw_ascii  # noqa: PLC0415
 
         return draw_ascii(
             {node.id: node.name for node in self.nodes.values()},
@@ -570,7 +560,8 @@ class Graph:
         Returns:
             The PNG image as bytes if output_file_path is None, None otherwise.
         """
-        from langchain_core.runnables.graph_png import PngDrawer
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_png import PngDrawer  # noqa: PLC0415
 
         default_node_labels = {node.id: node.name for node in self.nodes.values()}
 
@@ -623,9 +614,9 @@ class Graph:
 
         Returns:
             The Mermaid syntax string.
-
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import draw_mermaid  # noqa: PLC0415
 
         graph = self.reid()
         first_node = graph.first_node()
@@ -656,6 +647,7 @@ class Graph:
         max_retries: int = 1,
         retry_delay: float = 1.0,
         frontmatter_config: Optional[dict[str, Any]] = None,
+        base_url: Optional[str] = None,
     ) -> bytes:
         """Draw the graph as a PNG image using Mermaid.
 
@@ -691,12 +683,17 @@ class Graph:
                         "themeVariables": { "primaryColor": "#e2e2e2"},
                     }
                 }
+            base_url: The base URL of the Mermaid server for rendering via API.
+                Defaults to None.
 
         Returns:
             The PNG image as bytes.
 
         """
-        from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+        # Import locally to prevent circular import
+        from langchain_core.runnables.graph_mermaid import (  # noqa: PLC0415
+            draw_mermaid_png,
+        )
 
         mermaid_syntax = self.draw_mermaid(
             curve_style=curve_style,
@@ -712,6 +709,7 @@ class Graph:
             padding=padding,
             max_retries=max_retries,
             retry_delay=retry_delay,
+            base_url=base_url,
         )
 
 
