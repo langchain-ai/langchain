@@ -733,3 +733,10 @@ packages:
   provider_page: timbr
   path: .
   repo: WPSemantix/langchain-timbr
+- name: langchain-zenrows
+  path: .
+  repo: ZenRows-Hub/langchain-zenrows
+- name: langchain-oci
+  name_title: Oracle Cloud Infrastructure (OCI)
+  repo: oracle/langchain-oracle
+  path: .
