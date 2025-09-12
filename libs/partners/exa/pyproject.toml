@@ -6,9 +6,9 @@ build-backend = "pdm.backend"
 authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.60", "exa-py<2.0.0,>=1.0.8"]
+dependencies = ["langchain-core<1.0.0,>=0.3.76", "exa-py<2.0.0,>=1.0.8"]
 name = "langchain-exa"
-version = "0.3.0"
+version = "0.3.1"
 description = "An integration package connecting Exa and LangChain"
 readme = "README.md"
 
@@ -91,6 +91,8 @@ ignore = [
     "D104",    # Missing docstring in public package
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
+    "D203",    # Incompatible with D211 (blank line before class)
+    "D213",    # Incompatible with D212 (multi-line summary)
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -112,6 +114,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
