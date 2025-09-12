@@ -1,3 +1,5 @@
+"""Document."""
+
 from langchain_core.documents import Document
 
 __all__ = [
