@@ -142,8 +142,8 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content: "Our new LangChain Academy Course Deep Research with LangGraph is now live! <a href='https://academy.langchain.com/courses/deep-research-with-langgraph/?utm_medium=internal&utm_source=docs&utm_campaign=q3-2025_deep-research-course_co' target='_blank'>Enroll for free</a>.",
-        backgroundColor: "#d0c9fe",
+        content: "These docs will be deprecated and no longer maintained with the release of LangChain v1.0 in October 2025. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the v1.0 alpha docs</a>",
+        backgroundColor: "#FFAE42",
       },
       prism: {
         theme: {

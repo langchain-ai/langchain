@@ -7,13 +7,13 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.9"
 dependencies = [
-    "langchain-core>=0.3.70",
+    "langchain-core>=0.3.76",
     "numpy>=1.26.0; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
-    "chromadb>=1.0.9",
+    "chromadb>=1.0.20",
 ]
 name = "langchain-chroma"
-version = "0.2.5"
+version = "0.2.6"
 description = "An integration package connecting Chroma and LangChain."
 readme = "README.md"
 

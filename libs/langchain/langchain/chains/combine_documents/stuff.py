@@ -31,12 +31,13 @@ def create_stuff_documents_chain(
     document_separator: str = DEFAULT_DOCUMENT_SEPARATOR,
     document_variable_name: str = DOCUMENTS_KEY,
 ) -> Runnable[dict[str, Any], Any]:
-    """Create a chain for passing a list of Documents to a model.
+    r"""Create a chain for passing a list of Documents to a model.
 
     Args:
         llm: Language model.
         prompt: Prompt template. Must contain input variable "context" (override by
-            setting document_variable), which will be used for passing in the formatted documents.
+            setting document_variable), which will be used for passing in the formatted
+            documents.
         output_parser: Output parser. Defaults to StrOutputParser.
         document_prompt: Prompt used for formatting each document into a string. Input
             variables can be "page_content" or any metadata keys that are in all
@@ -45,8 +46,8 @@ def create_stuff_documents_chain(
             automatically retrieved from the `Document.metadata` dictionary. Default to
             a prompt that only contains `Document.page_content`.
         document_separator: String separator to use between formatted document strings.
-        document_variable_name: Variable name to use for the formatted documents in the prompt.
-            Defaults to "context".
+        document_variable_name: Variable name to use for the formatted documents in the
+            prompt. Defaults to "context".
 
     Returns:
         An LCEL Runnable. The input is a dictionary that must have a "context" key that
@@ -64,20 +65,21 @@ def create_stuff_documents_chain(
             from langchain.chains.combine_documents import create_stuff_documents_chain
 
             prompt = ChatPromptTemplate.from_messages(
-                [("system", "What are everyone's favorite colors:\\n\\n{context}")]
+                [("system", "What are everyone's favorite colors:\n\n{context}")]
             )
             llm = ChatOpenAI(model="gpt-3.5-turbo")
             chain = create_stuff_documents_chain(llm, prompt)
 
             docs = [
                 Document(page_content="Jesse loves red but not yellow"),
-                Document(page_content = "Jamal loves green but not as much as he loves orange")
+                Document(
+                    page_content="Jamal loves green but not as much as he loves orange"
+                ),
             ]
 
             chain.invoke({"context": docs})
 
-    """  # noqa: E501
-
+    """
     _validate_prompt(prompt, document_variable_name)
     _document_prompt = document_prompt or DEFAULT_DOCUMENT_PROMPT
     _output_parser = output_parser or StrOutputParser()
@@ -127,21 +129,18 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
 
     """
@@ -234,8 +233,8 @@ class StuffDocumentsChain(BaseCombineDocumentsChain):
         context limit.
 
         Args:
-            docs: List[Document], a list of documents to use to calculate the
-                total prompt length.
+            docs: a list of documents to use to calculate the total prompt length.
+            **kwargs: additional parameters to use to get inputs to LLMChain.
 
         Returns:
             Returns None if the method does not depend on the prompt length,

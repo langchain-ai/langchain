@@ -18,7 +18,7 @@ class ReadOnlySharedMemory(BaseMemory):
         return self.memory.load_memory_variables(inputs)
 
     def save_context(self, inputs: dict[str, Any], outputs: dict[str, str]) -> None:
-        """Nothing should be saved or changed"""
+        """Nothing should be saved or changed."""
 
     def clear(self) -> None:
         """Nothing to clear, got a memory like a vault."""

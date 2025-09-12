@@ -451,7 +451,6 @@ def test_agent_invalid_tool() -> None:
 
 async def test_runnable_agent() -> None:
     """Simple test to verify that an agent built with LCEL works."""
-
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
@@ -1242,7 +1241,8 @@ async def test_openai_agent_tools_agent() -> None:
             {
                 "messages": [
                     FunctionMessage(
-                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        content="check_time is not a valid tool, "
+                        "try one of [find_pet].",
                         name="check_time",
                     ),
                 ],
