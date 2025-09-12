@@ -1,5 +1,9 @@
+from enum import Enum
+
 import pytest
 
+from langchain_core.tools import tool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.json_schema import dereference_refs
 
 
@@ -781,106 +785,33 @@ def test_dereference_refs_non_dict_ref_target() -> None:
     assert actual == expected
 
 
-def test_dereference_refs_preserves_default_values() -> None:
-    """Test that default values are preserved when dereferencing refs."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "status": {
-                "$ref": "#/$defs/Status",
-                "default": "completed"
+def test_convert_to_openai_tool_preserves_enum_defaults() -> None:
+    """Test that we preserve default values from enum parameters."""
+
+    class Status(Enum):
+        PENDING = "pending"
+        COMPLETED = "completed"
+        ERROR = "error"
+
+    @tool(description="tool description")
+    def a_test_tool(status: Status = Status.PENDING) -> str:
+        return f"Status is: {status.value}"
+
+    result = convert_to_openai_tool(a_test_tool)
+    assert result == {
+        "function": {
+            "description": "tool description",
+            "name": "a_test_tool",
+            "parameters": {
+                "properties": {
+                    "status": {
+                        "default": "pending",
+                        "enum": ["pending", "completed", "error"],
+                        "type": "string",
+                    }
+                },
+                "type": "object",
             },
-            "priority": {"$ref": "#/$defs/Priority"},
         },
-        "$defs": {
-            "Status": {
-                "type": "string",
-                "enum": ["pending", "completed", "error"]
-            },
-            "Priority": {
-                "type": "string",
-                "enum": ["low", "medium", "high"],
-                "default": "medium"
-            },
-        },
+        "type": "function",
     }
-
-    expected = {
-        "type": "object",
-        "properties": {
-            "status": {
-                "type": "string",
-                "enum": ["pending", "completed", "error"],
-                "default": "completed"
-            },
-            "priority": {
-                "type": "string",
-                "enum": ["low", "medium", "high"],
-                "default": "medium"
-            },
-        },
-        "$defs": {
-            "Status": {
-                "type": "string",
-                "enum": ["pending", "completed", "error"]
-            },
-            "Priority": {
-                "type": "string",
-                "enum": ["low", "medium", "high"],
-                "default": "medium"
-            },
-        },
-    }
-
-    actual = dereference_refs(schema)
-    assert actual == expected
-
-
-def test_dereference_refs_preserves_all_mixed_properties() -> None:
-    """Test that all additional properties are preserved in mixed $ref objects."""
-    schema = {
-        "type": "object",
-        "properties": {
-            "field": {
-                "$ref": "#/$defs/BaseField",
-                "title": "Custom Title",
-                "description": "Custom Description", 
-                "default": "custom_default",
-                "nullable": True,
-                "example": "example_value"
-            }
-        },
-        "$defs": {
-            "BaseField": {
-                "type": "string",
-                "minLength": 1,
-                "pattern": "^[a-z]+$"
-            }
-        },
-    }
-
-    expected = {
-        "type": "object", 
-        "properties": {
-            "field": {
-                "type": "string",
-                "minLength": 1,
-                "pattern": "^[a-z]+$",
-                "title": "Custom Title",
-                "description": "Custom Description",
-                "default": "custom_default", 
-                "nullable": True,
-                "example": "example_value"
-            }
-        },
-        "$defs": {
-            "BaseField": {
-                "type": "string",
-                "minLength": 1,
-                "pattern": "^[a-z]+$"
-            }
-        },
-    }
-
-    actual = dereference_refs(schema)
-    assert actual == expected
