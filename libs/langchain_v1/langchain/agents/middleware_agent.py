@@ -5,7 +5,7 @@ from collections.abc import Callable, Sequence
 from typing import Any
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
@@ -211,24 +211,6 @@ def create_agent(  # noqa: PLR0915
         context_schema=context_schema,
     )
 
-    def _prepare_model_request(state: dict[str, Any]) -> tuple[ModelRequest, list[AnyMessage]]:
-        """Prepare model request and messages."""
-        request = state.get("model_request") or ModelRequest(
-            model=model,
-            tools=default_tools,
-            system_prompt=system_prompt,
-            response_format=response_format,
-            messages=state["messages"],
-            tool_choice=None,
-        )
-
-        # prepare messages
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
-
-        return request, messages
-
     def _handle_model_output(state: dict[str, Any], output: AIMessage) -> dict[str, Any]:
         """Handle model output including structured responses."""
         # Handle structured output with native strategy
@@ -342,8 +324,14 @@ def create_agent(  # noqa: PLR0915
 
     def model_request(state: dict[str, Any]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
-        # Start with the base model request
-        request, messages = _prepare_model_request(state)
+        request = ModelRequest(
+            model=model,
+            tools=default_tools,
+            system_prompt=system_prompt,
+            response_format=response_format,
+            messages=state["messages"],
+            tool_choice=None,
+        )
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
@@ -351,15 +339,26 @@ def create_agent(  # noqa: PLR0915
             filtered_state = _filter_state_for_schema(state, m.state_schema)
             request = m.modify_model_request(request, filtered_state)
 
-        # Get the bound model with the final request
+        # Get the final model and messages
         model_ = _get_bound_model(request)
+        messages = request.messages
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
+
         output = model_.invoke(messages)
         return _handle_model_output(state, output)
 
     async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Start with the base model request
-        request, messages = _prepare_model_request(state)
+        request = ModelRequest(
+            model=model,
+            tools=default_tools,
+            system_prompt=system_prompt,
+            response_format=response_format,
+            messages=state["messages"],
+            tool_choice=None,
+        )
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
@@ -367,8 +366,12 @@ def create_agent(  # noqa: PLR0915
             filtered_state = _filter_state_for_schema(state, m.state_schema)
             request = m.modify_model_request(request, filtered_state)
 
-        # Get the bound model with the final request
+        # Get the final model and messages
         model_ = _get_bound_model(request)
+        messages = request.messages
+        if request.system_prompt:
+            messages = [SystemMessage(request.system_prompt), *messages]
+
         output = await model_.ainvoke(messages)
         return _handle_model_output(state, output)
 

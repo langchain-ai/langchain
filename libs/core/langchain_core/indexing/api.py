@@ -56,7 +56,7 @@ def _warn_about_sha1() -> None:
             "that map to the same fingerprint. If this matters in your "
             "threat model, switch to a stronger algorithm such "
             "as 'blake2b', 'sha256', or 'sha512' by specifying "
-            " `key_encoder` parameter in the the `index` or `aindex` function. ",
+            " `key_encoder` parameter in the `index` or `aindex` function. ",
             category=UserWarning,
             stacklevel=2,
         )
