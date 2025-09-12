@@ -729,6 +729,9 @@ packages:
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
+- name: langchain-notion
+  repo: rujeetjahagirdar/langchain-notion
+  path: .
 - name: langchain-zenrows
   path: .
   repo: ZenRows-Hub/langchain-zenrows
