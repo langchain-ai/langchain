@@ -54,6 +54,7 @@ jobs:
       dependencies: ${{ steps.set-matrix.outputs.dependencies }}
       test-doc-imports: ${{ steps.set-matrix.outputs.test-doc-imports }}
       test-pydantic: ${{ steps.set-matrix.outputs.test-pydantic }}
+      codspeed: ${{ steps.set-matrix.outputs.codspeed }}
   # Run linting only on packages that have changed files
   lint:
     needs: [ build ]
@@ -144,6 +145,8 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.job-configs.python-version }}
+          cache-suffix: extended-tests-${{ matrix.job-configs.working-directory }}
+          working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: '📦 Install Dependencies & Run Extended Tests'
         shell: bash
@@ -166,10 +169,50 @@ jobs:
           # and `set -e` above will cause the step to fail.
           echo "$STATUS" | grep 'nothing to commit, working tree clean'
 
+  # Run codspeed benchmarks only on packages that have changed files
+  codspeed:
+    name: '⚡ CodSpeed Benchmarks'
+    needs: [ build ]
+    if: ${{ needs.build.outputs.codspeed != '[]' && !contains(github.event.pull_request.labels.*.name, 'codspeed-ignore') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        job-configs: ${{ fromJson(needs.build.outputs.codspeed) }}
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v5
+
+      # We have to use 3.12 as 3.13 is not yet supported
+      - name: '📦 Install UV Package Manager'
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: '📦 Install Test Dependencies'
+        run: uv sync --group test
+        working-directory: ${{ matrix.job-configs.working-directory }}
+
+      - name: '⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}'
+        uses: CodSpeedHQ/action@v3
+        with:
+          token: ${{ secrets.CODSPEED_TOKEN }}
+          run: |
+            cd ${{ matrix.job-configs.working-directory }}
+            if [ "${{ matrix.job-configs.working-directory }}" = "libs/core" ]; then
+              uv run --no-sync pytest ./tests/benchmarks --codspeed
+            else
+              uv run --no-sync pytest ./tests/ --codspeed
+            fi
+          mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'instrumentation' }}
+
   # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
     name: '✅ CI Success'
-    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic]
+    needs: [build, lint, test, compile-integration-tests, extended-tests, test-doc-imports, test-pydantic, codspeed]
     if: |
       always()
     runs-on: ubuntu-latest

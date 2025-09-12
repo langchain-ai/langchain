@@ -19,7 +19,8 @@ from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, AgentState
+from langchain_core.tools import BaseTool
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
@@ -710,3 +711,25 @@ def test_summarization_middleware_full_workflow() -> None:
 
     assert summary_message is not None
     assert "Generated summary" in summary_message.content
+
+
+def test_modify_model_request() -> None:
+    class ModifyMiddleware(AgentMiddleware):
+        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+            request.messages.append(HumanMessage("remember to be nice!"))
+            return request
+
+    builder = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[ModifyMiddleware()],
+    )
+
+    agent = builder.compile()
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["messages"][0].content == "Hello"
+    assert result["messages"][1].content == "remember to be nice!"
+    assert (
+        result["messages"][2].content == "You are a helpful assistant.-Hello-remember to be nice!"
+    )
