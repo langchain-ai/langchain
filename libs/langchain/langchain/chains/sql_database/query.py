@@ -38,7 +38,7 @@ def create_sql_query_chain(
     *,
     get_col_comments: Optional[bool] = None,
 ) -> Runnable[Union[SQLInput, SQLInputWithTables, dict[str, Any]], str]:
-    """Create a chain that generates SQL queries.
+    r"""Create a chain that generates SQL queries.
 
     *Security Note*: This chain generates SQL queries for the given database.
 
@@ -83,15 +83,17 @@ def create_sql_query_chain(
             response = chain.invoke({"question": "How many employees are there"})
 
     Prompt:
-        If no prompt is provided, a default prompt is selected based on the SQLDatabase dialect. If one is provided, it must support input variables:
-            * input: The user question plus suffix "\nSQLQuery: " is passed here.
+        If no prompt is provided, a default prompt is selected based on the SQLDatabase
+        dialect. If one is provided, it must support input variables:
+
+            * input: The user question plus suffix "\\nSQLQuery: " is passed here.
             * top_k: The number of results per select statement (the `k` argument to
-                this function) is passed in here.
+              this function) is passed in here.
             * table_info: Table definitions and sample rows are passed in here. If the
-                user specifies "table_names_to_use" when invoking chain, only those
-                will be included. Otherwise, all tables are included.
+              user specifies "table_names_to_use" when invoking chain, only those
+              will be included. Otherwise, all tables are included.
             * dialect (optional): If dialect input variable is in prompt, the db
-                dialect will be passed in here.
+              dialect will be passed in here.
 
         Here's an example prompt:
 

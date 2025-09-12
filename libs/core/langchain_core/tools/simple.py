@@ -64,11 +64,7 @@ class Tool(BaseTool):
             The input arguments for the tool.
         """
         if self.args_schema is not None:
-            if isinstance(self.args_schema, dict):
-                json_schema = self.args_schema
-            else:
-                json_schema = self.args_schema.model_json_schema()
-            return json_schema["properties"]
+            return super().args
         # For backwards compatibility, if the function signature is ambiguous,
         # assume it takes a single string input.
         return {"tool_input": {"type": "string"}}
@@ -76,7 +72,19 @@ class Tool(BaseTool):
     def _to_args_and_kwargs(
         self, tool_input: Union[str, dict], tool_call_id: Optional[str]
     ) -> tuple[tuple, dict]:
-        """Convert tool input to pydantic model."""
+        """Convert tool input to pydantic model.
+
+        Args:
+            tool_input: The input to the tool.
+            tool_call_id: The ID of the tool call.
+
+        Raises:
+            ToolException: If the tool input is invalid.
+
+        Returns:
+            the pydantic model args and kwargs.
+
+        """
         args, kwargs = super()._to_args_and_kwargs(tool_input, tool_call_id)
         # For backwards compatibility. The tool must be run with a single input
         all_args = list(args) + list(kwargs.values())
@@ -96,7 +104,17 @@ class Tool(BaseTool):
         run_manager: Optional[CallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool."""
+        """Use the tool.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.func:
             if run_manager and signature(self.func).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()
@@ -113,7 +131,17 @@ class Tool(BaseTool):
         run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
         **kwargs: Any,
     ) -> Any:
-        """Use the tool asynchronously."""
+        """Use the tool asynchronously.
+
+        Args:
+            *args: Positional arguments to pass to the tool
+            config: Configuration for the run
+            run_manager: Optional callback manager to use for the run
+            **kwargs: Keyword arguments to pass to the tool
+
+        Returns:
+            The result of the tool execution
+        """
         if self.coroutine:
             if run_manager and signature(self.coroutine).parameters.get("callbacks"):
                 kwargs["callbacks"] = run_manager.get_child()

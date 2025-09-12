@@ -2,8 +2,7 @@ from typing import Any
 
 
 def get_prompt_input_key(inputs: dict[str, Any], memory_variables: list[str]) -> str:
-    """
-    Get the prompt input key.
+    """Get the prompt input key.
 
     Args:
         inputs: Dict[str, Any]
