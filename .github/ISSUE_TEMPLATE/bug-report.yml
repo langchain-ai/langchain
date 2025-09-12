@@ -1,6 +1,7 @@
 name: "\U0001F41B Bug Report"
 description: Report a bug in LangChain. To report a security issue, please instead use the security option below. For questions, please use the LangChain forum.
 labels: ["bug"]
+type: bug
 body:
   - type: markdown
     attributes:
@@ -118,3 +119,4 @@ body:
         python -m langchain_core.sys_info
     validations:
       required: true
+
