@@ -12,6 +12,10 @@ from typing import (
 from pydantic import BaseModel, ConfigDict
 from typing_extensions import override
 
+from langchain_core.beta.runnables.context import (
+    CONTEXT_CONFIG_PREFIX,
+    CONTEXT_CONFIG_SUFFIX_SET,
+)
 from langchain_core.runnables.base import (
     Runnable,
     RunnableLike,
@@ -44,10 +48,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     If no condition evaluates to True, the default branch is run on the input.
 
-    Parameters:
-        branches: A list of (condition, Runnable) pairs.
-        default: A Runnable to run if no condition is met.
-
     Examples:
 
         .. code-block:: python
@@ -61,13 +61,15 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
                 lambda x: "goodbye",
             )
 
-            branch.invoke("hello") # "HELLO"
-            branch.invoke(None) # "goodbye"
+            branch.invoke("hello")  # "HELLO"
+            branch.invoke(None)  # "goodbye"
 
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
+    """A list of (condition, Runnable) pairs."""
     default: Runnable[Input, Output]
+    """A Runnable to run if no condition is met."""
 
     def __init__(
         self,
@@ -136,7 +138,7 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
         super().__init__(
             branches=branches_,
             default=default_,
-        )  # type: ignore[call-arg]
+        )
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -144,12 +146,17 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """RunnableBranch is serializable if all its branches are serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @override
@@ -174,11 +181,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     @property
     @override
     def config_specs(self) -> list[ConfigurableFieldSpec]:
-        from langchain_core.beta.runnables.context import (
-            CONTEXT_CONFIG_PREFIX,
-            CONTEXT_CONFIG_SUFFIX_SET,
-        )
-
         specs = get_unique_config_specs(
             spec
             for step in (
@@ -260,7 +262,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     async def ainvoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        """Async version of invoke."""
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         run_manager = await callback_manager.on_chain_start(
@@ -321,9 +322,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
@@ -408,9 +406,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         Yields:
             The output of the branch that was run.
-
-        Raises:
-            BaseException: If an error occurs during the execution of the Runnable.
         """
         config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)

@@ -1,8 +1,17 @@
+"""Sentence transformers text splitter."""
+
 from __future__ import annotations
 
 from typing import Any, Optional, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
+
+try:
+    from sentence_transformers import SentenceTransformer
+
+    _HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    _HAS_SENTENCE_TRANSFORMERS = False
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
@@ -18,15 +27,13 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         """Create a new TextSplitter."""
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as err:
+        if not _HAS_SENTENCE_TRANSFORMERS:
             msg = (
                 "Could not import sentence_transformers python package. "
-                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
+                "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)
