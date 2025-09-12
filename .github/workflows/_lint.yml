@@ -39,6 +39,8 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: lint-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Lint & Typing Dependencies'
         # Also installs dev/lint/test/typing dependencies, to ensure we have
