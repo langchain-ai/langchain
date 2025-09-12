@@ -205,7 +205,7 @@ jobs:
             else
               uv run --no-sync pytest ./tests/ --codspeed
             fi
-          mode: ${{ matrix.job-configs.mode || 'instrumentation' }}
+          mode: ${{ matrix.job-configs.working-directory == 'libs/core' && 'walltime' || 'instrumentation' }}
 
   # Final status check - ensures all required jobs passed before allowing merge
   ci_success:
