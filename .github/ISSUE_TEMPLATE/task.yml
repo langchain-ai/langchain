@@ -1,0 +1,143 @@
+name: "📋 Task"
+description: Create a task for project management and tracking by LangChain maintainers. If you are not a maintainer, please use other templates or the forum.
+labels: ["task"]
+type: task
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for creating a task to help organize LangChain development! 🚀
+
+        This template is for **maintainer tasks** such as project management, development planning, refactoring, documentation updates, and other organizational work.
+
+        If you are not a LangChain maintainer or were not asked directly by a maintainer to create a task, then please start the conversation on the [LangChain Forum](https://forum.langchain.com/) instead or use the appropriate bug report or feature request templates.
+
+        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository
+        or are a regular contributor to LangChain with previous merged pull requests.
+  - type: checkboxes
+    id: maintainer
+    attributes:
+      label: Maintainer task
+      description: Confirm that you are allowed to create a task here.
+      options:
+        - label: I am a LangChain maintainer, or was asked directly by a LangChain maintainer to create a task here.
+          required: true
+  - type: dropdown
+    id: task-type
+    attributes:
+      label: Task Type
+      description: What type of task is this?
+      options:
+        - Project Management
+        - Documentation
+        - Refactoring
+        - Testing
+        - CI/CD
+        - Release Management
+        - Code Cleanup
+        - Performance Optimization
+        - Security
+        - Other
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: What is the priority level of this task?
+      options:
+        - Low
+        - Medium
+        - High
+        - Critical
+    validations:
+      required: true
+  - type: textarea
+    id: task-description
+    attributes:
+      label: Task Description
+      description: |
+        Provide a clear and detailed description of the task.
+        
+        What needs to be done? Be specific about the scope and requirements.
+      placeholder: |
+        This task involves...
+        
+        The goal is to...
+        
+        Specific requirements:
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: |
+        Define the criteria that must be met for this task to be considered complete.
+        
+        What are the specific deliverables or outcomes expected?
+      placeholder: |
+        This task will be complete when:
+        - [ ] ...
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context and Background
+      description: |
+        Provide any relevant context, background information, or links to related issues/PRs.
+        
+        Why is this task needed? What problem does it solve?
+      placeholder: |
+        Background:
+        - ...
+        
+        Related issues/PRs:
+        - #...
+        
+        Additional context:
+        - ...
+    validations:
+      required: false
+  - type: textarea
+    id: implementation-notes
+    attributes:
+      label: Implementation Notes
+      description: |
+        Any specific implementation details, constraints, or considerations for this task.
+        
+        Are there any technical requirements or limitations to be aware of?
+      placeholder: |
+        Technical considerations:
+        - ...
+        
+        Constraints:
+        - ...
+        
+        Suggested approach:
+        - ...
+    validations:
+      required: false
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: |
+        List any dependencies or blockers for this task.
+        
+        Are there other tasks, issues, or external factors that need to be completed first?
+      placeholder: |
+        This task depends on:
+        - [ ] Issue #...
+        - [ ] PR #...
+        - [ ] External dependency: ...
+        
+        Blocked by:
+        - ...
+    validations:
+      required: false
