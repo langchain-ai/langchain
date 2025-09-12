@@ -39,7 +39,7 @@ jobs:
         id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
-          working-directory: ${{ inputs.working-directory }}
+          cache-suffix: test-${{ inputs.working-directory }}
 
       - name: '📦 Install Test Dependencies'
         shell: bash

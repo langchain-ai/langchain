@@ -145,7 +145,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ matrix.job-configs.python-version }}
-          working-directory: ${{ matrix.job-configs.working-directory }}
+          cache-suffix: extended-tests-${{ matrix.job-configs.working-directory }}
 
       - name: '📦 Install Dependencies & Run Extended Tests'
         shell: bash
