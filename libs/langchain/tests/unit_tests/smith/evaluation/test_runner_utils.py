@@ -333,7 +333,7 @@ async def test_arun_on_dataset() -> None:
             project_name="test_project",
             client=client,
         )
-        expected = {
+        expected: dict[str, Any] = {
             str(example.id): {
                 "output": {
                     "result": f"Result for example {uuid.UUID(str(example.id))}",
