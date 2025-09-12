@@ -1243,6 +1243,16 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
                 raise ValueError(msg)  # noqa:TRY004
         return result
 
+    def to_messages(self) -> list[BaseMessage]:
+        """Convert template into a list of messages.
+
+        This method fills in the template variables with placeholder values.
+
+        Returns:
+            List of messages.
+        """
+        return self.format_messages(**{k: "{" + k + "}" for k in self.input_variables})
+
     def partial(self, **kwargs: Any) -> ChatPromptTemplate:
         """Get a new ChatPromptTemplate with some input variables already filled in.
 
