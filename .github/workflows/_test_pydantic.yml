@@ -40,6 +40,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-key: test-pydantic-${{ inputs.working-directory }}
 
       - name: '📦 Install Test Dependencies'
         shell: bash

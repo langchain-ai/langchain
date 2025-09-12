@@ -33,6 +33,7 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-key: compile-integration-tests-${{ inputs.working-directory }}
 
       - name: '📦 Install Integration Dependencies'
         shell: bash
