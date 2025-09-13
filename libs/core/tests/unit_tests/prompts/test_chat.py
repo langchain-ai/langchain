@@ -1236,3 +1236,46 @@ def test_dict_message_prompt_template_errors_on_jinja2() -> None:
         _ = ChatPromptTemplate.from_messages(
             [("human", [prompt])], template_format="jinja2"
         )
+
+
+def test_to_messages() -> None:
+    prompt = ChatPromptTemplate(
+        [
+            {"role": "system", "content": "{foo} and {bar}"},
+            {"role": "user", "content": "{baz} qux"},
+        ]
+    )
+    result = prompt.to_messages()
+    expected = [SystemMessage("{foo} and {bar}"), HumanMessage("{baz} qux")]
+    assert result == expected
+
+    prompt = ChatPromptTemplate(
+        [
+            {
+                "role": "system",
+                "content": "Describe the image provided.",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image",
+                        "url": "{url}",
+                    },
+                ],
+            },
+        ]
+    )
+    result = prompt.to_messages()
+    expected = [
+        SystemMessage("Describe the image provided."),
+        HumanMessage(
+            content=[
+                {
+                    "type": "image",
+                    "url": "{url}",
+                }
+            ]
+        ),
+    ]
+    assert result == expected
