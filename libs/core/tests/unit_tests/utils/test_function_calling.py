@@ -1080,6 +1080,7 @@ def test_convert_to_openai_function_no_args() -> None:
             "properties": {},
             "additionalProperties": False,
             "type": "object",
+            "required": [],
         },
         "strict": True,
     }
@@ -1169,8 +1170,9 @@ def test_convert_to_openai_function_nested_strict_2() -> None:
 def test_convert_to_openai_function_strict_required() -> None:
     class my_function(BaseModel):  # noqa: N801
         """Dummy function."""
+
         arg1: int = Field(..., description="foo")
-        arg2: str = Field(None, description="bar")
+        arg2: Optional[str] = Field(None, description="bar")
 
     expected = ["arg1", "arg2"]
     func = convert_to_openai_function(my_function, strict=True)
