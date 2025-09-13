@@ -89,7 +89,7 @@ build-backend = "pdm.backend"
 
 
 [tool.codespell]
-skip = '.git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig,*cache*,*.msgpack.zlib,*.csv,*.lock,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.ico,*.webp,*.tiff,*.mp4,*.mp3,*.wav,*.avi,*.mov,*.zip,*.tar,*.gz,*.rar,*.7z,*.exe,*.dll,*.so,*.dylib,*.bin,*.dat,*.db,*.sqlite'
+skip = '.git,*.pdf,*.svg,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig,*cache*,*.msgpack.zlib,*.csv,*.lock,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.ico,*.webp,*.tiff,*.mp4,*.mp3,*.wav,*.avi,*.mov,*.zip,*.tar,*.gz,*.rar,*.7z,*.exe,*.dll,*.so,*.dylib,*.bin,*.dat,*.db,*.sqlite'
 # Ignore latin etc
 ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
 # whats is a typo but used frequently in queries so kept as is
