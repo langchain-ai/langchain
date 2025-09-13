@@ -720,8 +720,12 @@ class AzureChatOpenAI(BaseChatOpenAI):
         self,
         response: Union[dict, openai.BaseModel],
         generation_info: Optional[dict] = None,
+        *,
+        raw_response: Optional[Any] = None,
     ) -> ChatResult:
-        chat_result = super()._create_chat_result(response, generation_info)
+        chat_result = super()._create_chat_result(
+            response, generation_info, raw_response=raw_response
+        )
 
         if not isinstance(response, dict):
             response = response.model_dump()
