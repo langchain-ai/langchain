@@ -1,5 +1,11 @@
-import pytest
+from enum import Enum
 
+import pydantic
+import pytest
+from packaging.version import Version
+
+from langchain_core.tools import tool
+from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_core.utils.json_schema import dereference_refs
 
 
@@ -779,3 +785,44 @@ def test_dereference_refs_non_dict_ref_target() -> None:
 
     actual = dereference_refs(schema)
     assert actual == expected
+
+
+def test_convert_to_openai_tool_preserves_enum_defaults() -> None:
+    """Test that we preserve default values from enum parameters."""
+
+    class Status(Enum):
+        PENDING = "pending"
+        COMPLETED = "completed"
+        ERROR = "error"
+
+    @tool(description="tool description")
+    def a_test_tool(status: Status = Status.PENDING) -> str:
+        return f"Status is: {status.value}"
+
+    result = convert_to_openai_tool(a_test_tool)
+
+    if Version(pydantic.__version__) >= Version("2.9.0"):
+        assert result == {
+            "function": {
+                "description": "tool description",
+                "name": "a_test_tool",
+                "parameters": {
+                    "properties": {
+                        "status": {
+                            "default": "pending",
+                            "enum": ["pending", "completed", "error"],
+                            "type": "string",
+                        }
+                    },
+                    "type": "object",
+                },
+            },
+            "type": "function",
+        }
+    else:
+        # Just check the default value for older pydantic versions.
+        # Older versions had more variation in the JSON schema output.
+        assert (
+            result["function"]["parameters"]["properties"]["status"]["default"]
+            == "pending"
+        )
