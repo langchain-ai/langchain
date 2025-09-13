@@ -220,7 +220,7 @@ def _build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
-    """Build "model_kwargs" param from Pydanitc constructor values.
+    """Build "model_kwargs" param from Pydantic constructor values.
 
     Args:
         values: All init args passed in by user.
