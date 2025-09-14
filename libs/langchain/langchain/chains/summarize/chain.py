@@ -36,7 +36,21 @@ def _load_stuff_chain(
     **kwargs: Any,
 ) -> StuffDocumentsChain:
     llm_chain = LLMChain(llm=llm, prompt=prompt, verbose=verbose)
-    # TODO: document prompt
+    """Load a StuffDocumentsChain for summarization.
+
+    Args:
+        llm: Language Model to use in the chain.
+        prompt: Prompt template that controls how the documents are formatted and
+            passed into the LLM. Defaults to `stuff_prompt.PROMPT`.
+        document_variable_name: Variable name in the prompt template where the
+            document text will be inserted. Defaults to "text".
+        verbose: Whether to log progress and intermediate steps. Defaults to None.
+        **kwargs: Additional keyword arguments passed to the StuffDocumentsChain.
+
+    Returns:
+        A StuffDocumentsChain that takes in documents, formats them with the
+        given prompt, and runs the chain on the provided LLM.
+    """
     return StuffDocumentsChain(
         llm_chain=llm_chain,
         document_variable_name=document_variable_name,
