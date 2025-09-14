@@ -149,6 +149,7 @@ def test_configurable() -> None:
             "request_timeout": None,
             "max_retries": None,
             "presence_penalty": None,
+            'prompt_cache_key': None,
             "reasoning": None,
             "reasoning_effort": None,
             "verbosity": None,
