@@ -6,6 +6,7 @@ import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig, RunnableSequence
+from langchain_huggingface.chat_models import ChatHuggingFace
 from pydantic import SecretStr
 
 from langchain.chat_models.base import __all__, init_chat_model
@@ -289,3 +290,16 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+def test_init_chat_model_huggingface() -> None:
+    """Test that init_chat_model works with huggingface."""
+    model_name = "google-bert/bert-base-uncased"
+
+    llm = init_chat_model(
+        model=model_name,
+        model_provider="huggingface",
+        task="text-generation",
+    )
+    assert isinstance(llm, ChatHuggingFace)
+    assert llm.llm.model_id == model_name
