@@ -691,6 +691,7 @@ def trim_messages(
         Callable[[list[BaseMessage]], int],
         Callable[[BaseMessage], int],
         BaseLanguageModel,
+        str,
     ],
     strategy: Literal["first", "last"] = "last",
     allow_partial: bool = False,
@@ -734,15 +735,17 @@ def trim_messages(
     Args:
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
-        token_counter: Function or llm for counting tokens in a BaseMessage or a list of
-            BaseMessage. If a BaseLanguageModel is passed in then
-            BaseLanguageModel.get_num_tokens_from_messages() will be used.
-            Set to `len` to count the number of **messages** in the chat history.
+        token_counter: Function, string identifier, or llm for counting tokens in a
+            BaseMessage or a list of BaseMessage. If a BaseLanguageModel is passed in
+            then ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
+            Set to ``len`` to count the number of **messages** in the chat history.
+            The string ``"approx"`` will use ``count_tokens_approximately``.
 
             .. note::
-                Use `count_tokens_approximately` to get fast, approximate token counts.
-                This is recommended for using `trim_messages` on the hot path, where
-                exact token counting is not necessary.
+                Use ``"approx"`` or ``count_tokens_approximately`` to get fast,
+                approximate token counts. This is recommended for using
+                ``trim_messages`` on the hot path, where exact token counting is not
+                necessary.
 
         strategy: Strategy for trimming.
 
@@ -977,6 +980,16 @@ def trim_messages(
         raise ValueError(msg)
 
     messages = convert_to_messages(messages)
+    if isinstance(token_counter, str):
+        try:
+            token_counter = _TOKEN_COUNTERS[token_counter]
+        except KeyError:
+            msg = (
+                "'token_counter' expected one of "
+                f"{sorted(_TOKEN_COUNTERS)} when provided as a string. "
+                f"Received {token_counter!r}."
+            )
+            raise ValueError(msg) from None
     if hasattr(token_counter, "get_num_tokens_from_messages"):
         list_token_counter = token_counter.get_num_tokens_from_messages
     elif callable(token_counter):
@@ -1754,3 +1767,8 @@ def count_tokens_approximately(
 
     # round up once more time in case extra_tokens_per_message is a float
     return math.ceil(token_count)
+
+
+_TOKEN_COUNTERS: dict[str, Callable[[Iterable[MessageLikeRepresentation]], int]] = {
+    "approx": count_tokens_approximately,
+}
