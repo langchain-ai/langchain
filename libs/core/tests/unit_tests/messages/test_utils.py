@@ -513,6 +513,16 @@ def test_trim_messages_bound_model_token_counter() -> None:
     trimmer.invoke([HumanMessage("foobar")])
 
 
+def test_trim_messages_string_token_counter() -> None:
+    expected = trim_messages(
+        _MESSAGES_TO_TRIM,
+        max_tokens=10,
+        token_counter=count_tokens_approximately,
+    )
+    actual = trim_messages(_MESSAGES_TO_TRIM, max_tokens=10, token_counter="approx")
+    assert actual == expected
+
+
 def test_trim_messages_bad_token_counter() -> None:
     trimmer = trim_messages(max_tokens=10, token_counter={})
     with pytest.raises(
@@ -522,6 +532,15 @@ def test_trim_messages_bad_token_counter() -> None:
             "'get_num_tokens_from_messages()' or a function. "
             "Received object of type <class 'dict'>."
         ),
+    ):
+        trimmer.invoke([HumanMessage("foobar")])
+
+
+def test_trim_messages_bad_token_counter_string() -> None:
+    trimmer = trim_messages(max_tokens=10, token_counter="unknown")
+    with pytest.raises(
+        ValueError,
+        match=r"token_counter' expected one of \['approx'\] when provided as a string",
     ):
         trimmer.invoke([HumanMessage("foobar")])
 
