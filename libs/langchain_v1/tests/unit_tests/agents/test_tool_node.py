@@ -1,3 +1,4 @@
+import asyncio
 import contextlib
 import dataclasses
 import json
@@ -47,6 +48,76 @@ from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
 
 pytestmark = pytest.mark.anyio
+
+
+async def test_tool_node_timeout() -> None:
+    """Test that ToolNode times out correctly."""
+
+    async def slow_tool(sleep_time: float) -> str:
+        """A tool that sleeps for a specified amount of time."""
+        await asyncio.sleep(sleep_time)
+        return "I'm awake!"
+
+    # Test that the tool times out
+    with pytest.raises(TimeoutError) as exc_info:
+        tool_node = ToolNode([slow_tool], timeout=0.1)
+        await tool_node.ainvoke(
+            {
+                "messages": [
+                    AIMessage(
+                        "hi?",
+                        tool_calls=[
+                            {
+                                "name": "slow_tool",
+                                "args": {"sleep_time": 5},
+                                "id": "some 0",
+                            }
+                        ],
+                    )
+                ]
+            }
+        )
+    assert "Timed out after 0.1s while running tools: 'slow_tool'" in str(exc_info.value)
+
+    # Test that the tool completes successfully if it's fast enough
+    tool_node = ToolNode([slow_tool], timeout=5)
+    result = await tool_node.ainvoke(
+        {
+            "messages": [
+                AIMessage(
+                    "hi?",
+                    tool_calls=[
+                        {
+                            "name": "slow_tool",
+                            "args": {"sleep_time": 0.1},
+                            "id": "some 1",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+    assert result["messages"][0].content == "I'm awake!"
+
+    # Test that the tool runs without a timeout if none is specified
+    tool_node = ToolNode([slow_tool])
+    result = await tool_node.ainvoke(
+        {
+            "messages": [
+                AIMessage(
+                    "hi?",
+                    tool_calls=[
+                        {
+                            "name": "slow_tool",
+                            "args": {"sleep_time": 0.1},
+                            "id": "some 2",
+                        }
+                    ],
+                )
+            ]
+        }
+    )
+    assert result["messages"][0].content == "I'm awake!"
 
 
 def tool1(some_val: int, some_other_val: str) -> str:

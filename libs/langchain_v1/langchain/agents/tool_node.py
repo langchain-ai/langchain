@@ -315,6 +315,9 @@ class ToolNode(RunnableCallable):
             and visualization. Defaults to "tools".
         tags: Optional metadata tags to associate with the node for filtering
             and organization. Defaults to None.
+        timeout: Optional timeout in seconds for each tool invocation.
+            If a tool runs for longer than this, it will be cancelled and raise
+            an `asyncio.TimeoutError`. Defaults to None.
         handle_tool_errors: Configuration for error handling during tool execution.
             Supports multiple strategies:
 
@@ -388,6 +391,7 @@ class ToolNode(RunnableCallable):
         *,
         name: str = "tools",
         tags: list[str] | None = None,
+        timeout: float | None = None,
         handle_tool_errors: bool
         | str
         | Callable[..., str]
@@ -401,6 +405,7 @@ class ToolNode(RunnableCallable):
             tools: Sequence of tools to make available for execution.
             name: Node name for graph identification.
             tags: Optional metadata tags.
+            timeout: Optional timeout in seconds for each tool invocation.
             handle_tool_errors: Error handling configuration.
             messages_key: State key containing messages.
         """
@@ -410,6 +415,7 @@ class ToolNode(RunnableCallable):
         self._tool_to_store_arg: dict[str, str | None] = {}
         self._handle_tool_errors = handle_tool_errors
         self._messages_key = messages_key
+        self._timeout = timeout
         for tool in tools:
             if not isinstance(tool, BaseTool):
                 tool_ = create_tool(cast("type[BaseTool]", tool))
@@ -447,9 +453,24 @@ class ToolNode(RunnableCallable):
         store: Optional[BaseStore],  # noqa: UP045
     ) -> Any:
         tool_calls, input_type = self._parse_input(input, store)
-        outputs = await asyncio.gather(
-            *(self._arun_one(call, input_type, config) for call in tool_calls)
-        )
+        if self._timeout is not None:
+            try:
+                outputs = await asyncio.wait_for(
+                    asyncio.gather(
+                        *(self._arun_one(call, input_type, config) for call in tool_calls)
+                    ),
+                    timeout=self._timeout,
+                )
+            except asyncio.TimeoutError as e:
+                tool_names = ", ".join(
+                    f"'{call['name']}'" for call in tool_calls if isinstance(call, dict)
+                )
+                msg = f"Timed out after {self._timeout}s while running tools: {tool_names}"
+                raise TimeoutError(msg) from e
+        else:
+            outputs = await asyncio.gather(
+                *(self._arun_one(call, input_type, config) for call in tool_calls)
+            )
 
         return self._combine_tool_outputs(outputs, input_type)
 
