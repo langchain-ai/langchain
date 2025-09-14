@@ -701,6 +701,9 @@ class BaseChatOpenAI(BaseChatModel):
 
     """
 
+    prompt_cache_key: Optional[str] = None
+    """Prompt cache key for the improving the cache hit rate """
+
     model_config = ConfigDict(populate_by_name=True)
 
     @model_validator(mode="before")
@@ -840,6 +843,7 @@ class BaseChatOpenAI(BaseChatModel):
             "service_tier": self.service_tier,
             "truncation": self.truncation,
             "store": self.store,
+            "prompt_cache_key": self.prompt_cache_key,
         }
 
         params = {
