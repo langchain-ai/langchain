@@ -50,7 +50,6 @@ def new(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
         ),
     ] = None,
     noninteractive: Annotated[
@@ -58,7 +57,6 @@ def new(
         typer.Option(
             "--non-interactive/--interactive",
             help="Don't prompt for any input",
-            is_flag=True,
         ),
     ] = False,
 ) -> None:
@@ -154,7 +152,6 @@ def add(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
@@ -241,7 +238,7 @@ def add(
     try:
         add_dependencies_to_pyproject_toml(
             project_root / "pyproject.toml",
-            zip(installed_destination_names, installed_destination_paths),
+            zip(installed_destination_names, installed_destination_paths, strict=False),
         )
     except Exception:
         # Can fail if user modified/removed pyproject.toml
@@ -279,11 +276,11 @@ def add(
 
     imports = [
         f"from {e['module']} import {e['attr']} as {name}"
-        for e, name in zip(installed_exports, chain_names)
+        for e, name in zip(installed_exports, chain_names, strict=False)
     ]
     routes = [
         f'add_routes(app, {name}, path="{path}")'
-        for name, path in zip(chain_names, api_paths)
+        for name, path in zip(chain_names, api_paths, strict=False)
     ]
 
     t = (
