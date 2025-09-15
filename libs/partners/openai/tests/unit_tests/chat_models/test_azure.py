@@ -102,6 +102,47 @@ def test_max_completion_tokens_in_payload() -> None:
     }
 
 
+def test_max_tokens_and_max_completion_tokens_parameters() -> None:
+    """Test that both max_tokens and max_completion_tokens parameters work correctly."""
+    # Test max_tokens parameter
+    llm_max_tokens = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2024-12-01-preview",
+        azure_endpoint="my-base-url",
+        max_tokens=100,
+    )
+    
+    # Test max_completion_tokens parameter (using alias)
+    llm_max_completion_tokens = AzureChatOpenAI(
+        azure_deployment="gpt-35-turbo",
+        api_version="2024-12-01-preview",
+        azure_endpoint="my-base-url",
+        max_completion_tokens=100,
+    )
+    
+    # Both should have the same max_tokens value
+    assert llm_max_tokens.max_tokens == 100
+    assert llm_max_completion_tokens.max_tokens == 100
+    
+    # Test that both produce the same payload
+    messages = [HumanMessage("Hello")]
+    payload_max_tokens = llm_max_tokens._get_request_payload(messages)
+    payload_max_completion_tokens = llm_max_completion_tokens._get_request_payload(messages)
+    
+    # Both payloads should be identical and contain max_completion_tokens
+    # (since the base class conversion logic converts max_tokens to max_completion_tokens)
+    expected_payload = {
+        "messages": [{"content": "Hello", "role": "user"}],
+        "model": None,
+        "stream": False,
+        "max_completion_tokens": 100,
+    }
+    
+    assert payload_max_tokens == expected_payload
+    assert payload_max_completion_tokens == expected_payload
+    assert payload_max_tokens == payload_max_completion_tokens
+
+
 def test_responses_api_uses_deployment_name() -> None:
     """Test that Azure deployment name is used for Responses API."""
     llm = AzureChatOpenAI(
@@ -139,3 +180,4 @@ def test_chat_completions_api_uses_model_name() -> None:
     assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
+
