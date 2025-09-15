@@ -166,7 +166,7 @@ def new(
                 typer.echo(f"File {dst_path} exists.")
                 raise typer.Exit(code=1)
 
-        for src_path, dst_path in zip(src_paths, dst_paths):
+        for src_path, dst_path in zip(src_paths, dst_paths, strict=False):
             shutil.copy(src_path, dst_path)
             replace_file(dst_path, cast("dict[str, str]", replacements))
 
