@@ -46,7 +46,7 @@ _e2e_test:
 		cd langchain-parrot-link && \
 			unset UV_FROZEN && \
 			uv sync && \
-			uv add -e ../../../standard-tests && \
+			uv add --editable ../../../standard-tests && \
 			make format lint tests && \
-			uv add -e ../../../core && \
+			uv add --editable ../../../core && \
 			make integration_test 
