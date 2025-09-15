@@ -726,6 +726,9 @@ packages:
   name_title: MCP Toolbox
   repo: googleapis/mcp-toolbox-sdk-python
   path: packages/toolbox-langchain
+- name: langchain-aimlapi
+  path: libs/aimlapi
+  repo: D1m7asis/langchain-aimlapi
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
