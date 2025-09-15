@@ -17,7 +17,7 @@ def _populate_extras(
 
     for key, value in block.items():
         if key not in known_fields:
-            if "extras" not in block:
+            if "extras" not in standard_block:
                 # Below type-ignores are because mypy thinks a non-standard block can
                 # get here, although we exclude them above.
                 standard_block["extras"] = {}  # type: ignore[typeddict-unknown-key]
