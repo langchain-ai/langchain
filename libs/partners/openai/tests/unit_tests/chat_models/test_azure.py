@@ -113,7 +113,7 @@ def test_max_tokens_and_max_completion_tokens_parameters() -> None:
         api_key="test-key",
         max_tokens=100,
     )
-    
+
     # Test max_completion_tokens parameter (using alias)
     llm_max_completion_tokens = AzureChatOpenAI(
         azure_deployment="gpt-35-turbo",
@@ -122,16 +122,18 @@ def test_max_tokens_and_max_completion_tokens_parameters() -> None:
         api_key="test-key",
         max_completion_tokens=100,
     )
-    
+
     # Both should have the same max_tokens value
     assert llm_max_tokens.max_tokens == 100
     assert llm_max_completion_tokens.max_tokens == 100
-    
+
     # Test that both produce the same payload
     messages = [HumanMessage("Hello")]
     payload_max_tokens = llm_max_tokens._get_request_payload(messages)
-    payload_max_completion_tokens = llm_max_completion_tokens._get_request_payload(messages)
-    
+    payload_max_completion_tokens = llm_max_completion_tokens._get_request_payload(
+        messages
+    )
+
     # Both payloads should be identical and contain max_tokens
     # (AzureChatOpenAI doesn't have the conversion logic that ChatOpenAI has)
     expected_payload = {
@@ -140,7 +142,7 @@ def test_max_tokens_and_max_completion_tokens_parameters() -> None:
         "stream": False,
         "max_tokens": 100,
     }
-    
+
     assert payload_max_tokens == expected_payload
     assert payload_max_completion_tokens == expected_payload
     assert payload_max_tokens == payload_max_completion_tokens
@@ -183,8 +185,3 @@ def test_chat_completions_api_uses_model_name() -> None:
     assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
-
-
-
-
-
