@@ -247,7 +247,18 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/perplexity/chat_models/langchain_perplexity.chat_models.ChatPerplexity.html"
-            }
+            },
+            {
+                "name": "ChatOCIGenAI",
+                "package": "langchain-oci",
+                "link": "oci_generative_ai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://github.com/oracle/langchain-oracle"
+            },
         ],
     },
     llms: {
@@ -330,6 +341,13 @@ const FEATURE_TABLES = {
                 link: "nvidia_ai_endpoints",
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/llm/langchain_nvidia_ai_endpoints.llm.NVIDIA.html"
+            },
+            {
+                name: "OCIGenAIEmbeddings",
+                link: "oci_generative_ai",
+                package: "langchain-oci",
+                apiLink: "https://github.com/oracle/langchain-oracle"
+
             },
         ],
     },
