@@ -1559,10 +1559,10 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 3
             tokens_per_name = 1
         elif model.startswith("deepseek-chat"):
-            # DeepSeek 的消息模板会加上 <｜begin▁of▁sentence｜> 和 <｜end▁of▁sentence｜>
-            # 实测下来每条消息大约多出 4 个 token 的固定开销
+            # DeepSeek's message template will add <｜begin▁of▁sentence｜> and <｜end▁of▁sentence｜>.
+            # In practical tests, each message incurs an approximate fixed overhead of 4 tokens.
             tokens_per_message = 4
-            # DeepSeek 的 chat 模板里目前没有特别处理 name 字段，所以设置为 0
+            # There is currently no special handling for the name field in DeepSeek's chat template, so it is set to 0.
             tokens_per_name = 0
         else:
             raise NotImplementedError(
