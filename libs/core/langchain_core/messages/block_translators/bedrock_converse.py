@@ -137,6 +137,14 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 
 def _convert_to_v1_from_converse(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Bedrock Converse message content to v1 format."""
+    if (
+        message.content == ""
+        and not message.additional_kwargs
+        and not message.tool_calls
+    ):
+        # Converse outputs multiple chunks containing response metadata
+        return []
+
     if isinstance(message.content, str):
         message.content = [{"type": "text", "text": message.content}]
 
