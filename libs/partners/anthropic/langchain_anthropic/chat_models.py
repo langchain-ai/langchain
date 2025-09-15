@@ -565,7 +565,7 @@ def _handle_anthropic_bad_request(e: anthropic.BadRequestError) -> None:
 class ChatAnthropic(BaseChatModel):
     """Anthropic chat models.
 
-    See `Anthropic's docs <https://docs.anthropic.com/en/docs/models-overview>`__ for a
+    See `Anthropic's docs <https://docs.anthropic.com/en/docs/about-claude/models/overview>`__ for a
     list of the latest models.
 
     Setup:
