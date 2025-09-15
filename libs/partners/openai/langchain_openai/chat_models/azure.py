@@ -578,6 +578,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
     ``'parallel_tools_calls'`` will be disabled.
     """
 
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")
+    """Maximum number of tokens to generate."""
+
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
@@ -1165,3 +1168,4 @@ class AzureChatOpenAI(BaseChatOpenAI):
         return super().with_structured_output(
             schema, method=method, include_raw=include_raw, strict=strict, **kwargs
         )
+
