@@ -88,7 +88,41 @@ def _load_map_reduce_chain(
         verbose=verbose,
         callbacks=callbacks,
     )
-    # TODO: document prompt
+    """Load a MapReduceDocumentsChain for summarization.
+
+    This chain first applies a "map" step to summarize each document,
+    then applies a "reduce" step to combine the summaries into a
+    final result. Optionally, a "collapse" step can be used to handle
+    long intermediate results.
+
+    Args:
+        llm: Language Model to use for map and reduce steps.
+        map_prompt: Prompt used to summarize each documnet in the map step.
+            Defaults to `map_reduce_prompt.PROMPT`.
+        combine_prompt: Prompt used to combine summaries in the reduce step.
+            Defaults to `map_reduce_prompt.PROMPT`.
+        combine_document_variable_name: Variable name in the `combine_prompt` where
+            the mapped summaries are inserted. Defaults to "text".
+        map_reduce_document_variable_name: Variable name in the `map_prompt`
+            where document text is inserted. Defaults to "text".
+        collapse_prompt: Optional prompt used to collapse intermediate summaries
+            if they exceed the token limit (`token_max`). Defaults to None.
+        reduce_llm: Optional separate LLM for the reduce step. Defaults to None,
+            which uses the same model as the map step.
+        collapse_llm: Optional separate LLM for the collapse step. Defaults to None,
+            which uses the same model as the map step.
+        verbose: Whether to log progess and intermediate steps. Defaults to None.
+        token_max: Token threshold that triggers the collapse step during reduction.
+            Defaults to 3000.
+        callbacks: Optional callbacks for logging and tracing. Defaults to None.
+        collapse_max_retries: Maximum retries for the collapse step if it fails.
+            Defaults to None.
+        **kwargs: Additional keyword arguments passed to the MapReduceDocumentsChain.
+
+    Returns:
+        A MapReduceDocumentsChain that maps each document to a summary,
+        then reduces all summaries into a single cohesive result.
+    """
     combine_documents_chain = StuffDocumentsChain(
         llm_chain=reduce_chain,
         document_variable_name=combine_document_variable_name,
