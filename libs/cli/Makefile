@@ -45,6 +45,7 @@ _e2e_test:
 		$(PYTHON) -m langchain_cli.cli integration create-doc --name parrot-link --name-class ParrotLinkB --component-type ChatModel --destination-dir langchain-parrot-link/docs && \
 		cd langchain-parrot-link && \
 			unset UV_FROZEN && \
+			unset VIRTUAL_ENV && \
 			uv sync && \
 			uv add --editable ../../../standard-tests && \
 			make format lint tests && \
