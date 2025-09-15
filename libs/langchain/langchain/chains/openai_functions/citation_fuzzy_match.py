@@ -99,7 +99,7 @@ def create_citation_fuzzy_match_runnable(llm: BaseChatModel) -> Runnable:
         Runnable that can be used to answer questions with citations.
 
     """
-    if llm.bind_tools is BaseChatModel.bind_tools:
+    if type(llm).bind_tools is BaseChatModel.bind_tools:
         msg = "Language model must implement bind_tools to use this function."
         raise ValueError(msg)
     prompt = ChatPromptTemplate(
