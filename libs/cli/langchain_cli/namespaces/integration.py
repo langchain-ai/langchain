@@ -127,8 +127,9 @@ def new(
 
         # dependency install
         try:
+            # Use --no-progress to avoid tty issues in CI/test environments
             subprocess.run(
-                ["uv", "sync", "--dev"],  # noqa: S607
+                ["uv", "sync", "--dev", "--no-progress"],  # noqa: S607
                 cwd=destination_dir,
                 check=True,
             )
@@ -136,6 +137,11 @@ def new(
             typer.echo(
                 "uv is not installed. Skipping dependency installation; run "
                 "`uv sync --dev` manually if needed.",
+            )
+        except subprocess.CalledProcessError:
+            typer.echo(
+                "Failed to install dependencies. You may need to run "
+                "`uv sync --dev` manually in the package directory.",
             )
     else:
         # confirm src and dst are the same length
