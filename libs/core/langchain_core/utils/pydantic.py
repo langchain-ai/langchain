@@ -57,6 +57,9 @@ def get_pydantic_major_version() -> int:
     """DEPRECATED - Get the major version of Pydantic.
 
     Use PYDANTIC_VERSION.major instead.
+
+    Returns:
+        The major version of Pydantic.
     """
     return PYDANTIC_VERSION.major
 
@@ -74,12 +77,20 @@ TBaseModel = TypeVar("TBaseModel", bound=PydanticBaseModel)
 
 
 def is_pydantic_v1_subclass(cls: type) -> bool:
-    """Check if the installed Pydantic version is 1.x-like."""
+    """Check if the given class is Pydantic v1-like.
+
+    Returns:
+        True if the given class is a subclass of Pydantic ``BaseModel`` 1.x.
+    """
     return issubclass(cls, BaseModelV1)
 
 
 def is_pydantic_v2_subclass(cls: type) -> bool:
-    """Check if the installed Pydantic version is 1.x-like."""
+    """Check if the given class is Pydantic v2-like.
+
+    Returns:
+        True if the given class is a subclass of Pydantic BaseModel 2.x.
+    """
     return issubclass(cls, BaseModel)
 
 
@@ -90,6 +101,9 @@ def is_basemodel_subclass(cls: type) -> bool:
 
     * pydantic.BaseModel in Pydantic 2.x
     * pydantic.v1.BaseModel in Pydantic 2.x
+
+    Returns:
+        True if the given class is a subclass of Pydantic ``BaseModel``.
     """
     # Before we can use issubclass on the cls we need to check if it is a class
     if not inspect.isclass(cls) or isinstance(cls, GenericAlias):
@@ -105,6 +119,9 @@ def is_basemodel_instance(obj: Any) -> bool:
 
     * pydantic.BaseModel in Pydantic 2.x
     * pydantic.v1.BaseModel in Pydantic 2.x
+
+    Returns:
+        True if the given class is an instance of Pydantic ``BaseModel``.
     """
     return isinstance(obj, (BaseModel, BaseModelV1))
 
@@ -125,7 +142,7 @@ def pre_init(func: Callable) -> Any:
         # Ideally we would use @model_validator(mode="before") but this would change the
         # order of the validators. See https://github.com/pydantic/pydantic/discussions/7434.
         # So we keep root_validator for backward compatibility.
-        @root_validator(pre=True)
+        @root_validator(pre=True)  # type: ignore[deprecated]
         @wraps(func)
         def wrapper(cls: type[BaseModel], values: dict[str, Any]) -> dict[str, Any]:
             """Decorator to run a function before model initialization.
@@ -262,7 +279,11 @@ def _create_subset_model(
     descriptions: Optional[dict] = None,
     fn_description: Optional[str] = None,
 ) -> type[BaseModel]:
-    """Create subset model using the same pydantic version as the input model."""
+    """Create subset model using the same pydantic version as the input model.
+
+    Returns:
+        The created subset model.
+    """
     if issubclass(model, BaseModelV1):
         return _create_subset_model_v1(
             name,
@@ -299,13 +320,21 @@ def get_fields(model: BaseModelV1) -> dict[str, ModelField]: ...
 def get_fields(
     model: Union[type[Union[BaseModel, BaseModelV1]], BaseModel, BaseModelV1],
 ) -> Union[dict[str, FieldInfoV2], dict[str, ModelField]]:
-    """Get the field names of a Pydantic model."""
-    if hasattr(model, "model_fields"):
-        return model.model_fields
+    """Return the field names of a Pydantic model.
 
-    if hasattr(model, "__fields__"):
+    Args:
+        model: The Pydantic model or instance.
+
+    Raises:
+        TypeError: If the model is not a Pydantic model.
+    """
+    if not isinstance(model, type):
+        model = type(model)
+    if issubclass(model, BaseModel):
+        return model.model_fields
+    if issubclass(model, BaseModelV1):
         return model.__fields__
-    msg = f"Expected a Pydantic model. Got {type(model)}"
+    msg = f"Expected a Pydantic model. Got {model}"
     raise TypeError(msg)
 
 

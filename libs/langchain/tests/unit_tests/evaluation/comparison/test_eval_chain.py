@@ -27,7 +27,7 @@ def test_resolve_criteria_list_enum() -> None:
     assert set(val.keys()) == {c.value for c in list(Criteria)}
 
 
-def test_PairwiseStringResultOutputParser_parse() -> None:
+def test_pairwise_string_result_output_parser_parse() -> None:
     output_parser = PairwiseStringResultOutputParser()
     text = """I like pie better than cake.
 [[A]]"""

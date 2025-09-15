@@ -468,7 +468,7 @@ def _build_rst_file(package_name: str = "langchain") -> None:
     """Create a rst file for building of documentation.
 
     Args:
-        package_name: Can be either "langchain" or "core" or "experimental".
+        package_name: Can be either "langchain" or "core"
     """
     package_dir = _package_dir(package_name)
     package_members = _load_package_modules(package_dir)
@@ -487,7 +487,7 @@ def _package_namespace(package_name: str) -> str:
     """Returns the package name used.
 
     Args:
-        package_name: Can be either "langchain" or "core" or "experimental".
+        package_name: Can be either "langchain" or "core"
 
     Returns:
         modified package_name: Can be either "langchain" or "langchain_{package_name}"
@@ -550,7 +550,6 @@ def _build_index(dirs: List[str]) -> None:
         "langchain",
         "text-splitters",
         "community",
-        "experimental",
         "standard-tests",
     ]
     main_ = [dir_ for dir_ in ordered if dir_ in dirs]

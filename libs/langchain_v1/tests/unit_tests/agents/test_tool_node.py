@@ -272,7 +272,7 @@ def test_tool_node_error_handling_default_exception() -> None:
 
 
 async def test_tool_node_error_handling() -> None:
-    def handle_all(e: Union[ValueError, ToolException, ToolInvocationError]):
+    def handle_all(e: ValueError | ToolException | ToolInvocationError):
         return TOOL_CALL_ERROR_TEMPLATE.format(error=repr(e))
 
     # test catching all exceptions, via:

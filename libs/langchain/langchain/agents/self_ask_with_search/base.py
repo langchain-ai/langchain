@@ -122,7 +122,8 @@ def create_self_ask_with_search_agent(
             from langchain import hub
             from langchain_community.chat_models import ChatAnthropic
             from langchain.agents import (
-                AgentExecutor, create_self_ask_with_search_agent
+                AgentExecutor,
+                create_self_ask_with_search_agent,
             )
 
             prompt = hub.pull("hwchase17/self-ask-with-search")

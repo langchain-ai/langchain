@@ -32,13 +32,16 @@ jobs:
     name: 'Python ${{ inputs.python-version }}'
     steps:
       - name: '📋 Checkout Code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         id: setup-python
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: test-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
+
       - name: '📦 Install Test Dependencies'
         shell: bash
         run: uv sync --group test --dev
