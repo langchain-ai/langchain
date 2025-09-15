@@ -185,4 +185,3 @@ def test_chat_completions_api_uses_model_name() -> None:
     assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
-
