@@ -57,8 +57,8 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "URL, Snippet, Title, Search Rank, Site Links, Authors",
         "link": "/docs/integrations/tools/searchapi",
     },
-    "SerpAPI": {
-        "pricing": "100 Free Searches/Month",
+    "SerpApi": {
+        "pricing": "250 Free Searches/Month",
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
