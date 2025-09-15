@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from langchain_core.messages import ToolCall, ToolMessage
+from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.prebuilt.interrupt import (
     ActionRequest,
     HumanInterrupt,
@@ -42,7 +42,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         last_message = messages[-1]
 
-        if not hasattr(last_message, "tool_calls") or not last_message.tool_calls:
+        if not isinstance(last_message, AIMessage) or not last_message.tool_calls:
             return None
 
         # Separate tool calls that need interrupts from those that don't
@@ -106,7 +106,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 rejected_tool_calls.append(tool_call)
                 ignore_message = ToolMessage(
                     content=(
-                        f"User ignored the tool call for `{tool_name}` with id {tool_call['id']}"
+                        f"User ignored the tool call for `{tool_call['name']}` "
+                        f"with id {tool_call['id']}"
                     ),
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
