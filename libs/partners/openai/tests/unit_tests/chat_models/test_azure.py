@@ -131,13 +131,13 @@ def test_max_tokens_and_max_completion_tokens_parameters() -> None:
     payload_max_tokens = llm_max_tokens._get_request_payload(messages)
     payload_max_completion_tokens = llm_max_completion_tokens._get_request_payload(messages)
     
-    # Both payloads should be identical and contain max_completion_tokens
-    # (since the base class conversion logic converts max_tokens to max_completion_tokens)
+    # Both payloads should be identical and contain max_tokens
+    # (AzureChatOpenAI doesn't have the conversion logic that ChatOpenAI has)
     expected_payload = {
         "messages": [{"content": "Hello", "role": "user"}],
         "model": None,
         "stream": False,
-        "max_completion_tokens": 100,
+        "max_tokens": 100,
     }
     
     assert payload_max_tokens == expected_payload
@@ -182,5 +182,6 @@ def test_chat_completions_api_uses_model_name() -> None:
     assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
+
 
 
