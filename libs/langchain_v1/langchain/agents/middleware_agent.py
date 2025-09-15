@@ -522,7 +522,7 @@ def _make_model_to_tools_edge(
         ]
 
         if pending_tool_calls:
-            # TODO: we should not be injecting state, store here,
+            # imo we should not be injecting state, store here,
             # this should be done by the tool node itself ideally but this is a consequence
             # of using Send w/ tool calls directly
             pending_tool_calls = [

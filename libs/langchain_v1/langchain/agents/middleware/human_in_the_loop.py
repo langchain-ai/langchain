@@ -85,7 +85,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         responses: list[HumanResponse] = interrupt(interrupt_requests)
 
-        # TODO: map responses to tool call ids explicitly instead of assuming order
+        # we might want to map responses to tool call ids explicitly instead of assuming order
         # Right now this will fail if there's not a corresponding response for each tool call
         # Which we want to block on anyways but can do more gracefully
         for i, response in enumerate(responses):
@@ -105,7 +105,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             elif response["type"] == "ignore":
                 rejected_tool_calls.append(tool_call)
                 ignore_message = ToolMessage(
-                    content=f"User ignored the tool call for `{tool_name}` with id {tool_call['id']}",
+                    content=(
+                        f"User ignored the tool call for `{tool_name}` with id {tool_call['id']}"
+                    ),
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                     status="success",
@@ -114,7 +116,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             elif response["type"] == "response":
                 rejected_tool_calls.append(tool_call)
                 tool_message = ToolMessage(
-                    content=response["args"],  # type: ignore[assignment]
+                    content=response["args"],  # type: ignore[arg-type]
                     name=tool_call["name"],
                     tool_call_id=tool_call["id"],
                     status="error",
@@ -124,7 +126,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 msg = f"Unknown response type: {response['type']}"
                 raise ValueError(msg)
 
-        last_message.tool_calls = [*approved_tool_calls, *rejected_tool_calls]  # type: ignore[assignment]
+        last_message.tool_calls = [*approved_tool_calls, *rejected_tool_calls]
 
         if len(approved_tool_calls) > 0:
             return {"messages": [last_message, *artificial_tool_messages]}
