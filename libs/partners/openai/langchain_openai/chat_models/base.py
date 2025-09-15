@@ -1558,6 +1558,12 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             tokens_per_message = 3
             tokens_per_name = 1
+        elif model.startswith("deepseek-chat"):
+            # DeepSeek 的消息模板会加上 <｜begin▁of▁sentence｜> 和 <｜end▁of▁sentence｜>
+            # 实测下来每条消息大约多出 4 个 token 的固定开销
+            tokens_per_message = 4
+            # DeepSeek 的 chat 模板里目前没有特别处理 name 字段，所以设置为 0
+            tokens_per_name = 0
         else:
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
