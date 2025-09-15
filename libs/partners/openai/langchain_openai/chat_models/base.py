@@ -1559,10 +1559,7 @@ class BaseChatOpenAI(BaseChatModel):
             tokens_per_message = 3
             tokens_per_name = 1
         elif model.startswith("deepseek-chat"):
-            # DeepSeek's message template will add <｜begin▁of▁sentence｜> and <｜end▁of▁sentence｜>.
-            # In practical tests, each message incurs an approximate fixed overhead of 4 tokens.
             tokens_per_message = 4
-            # There is currently no special handling for the name field in DeepSeek's chat template, so it is set to 0.
             tokens_per_name = 0
         else:
             raise NotImplementedError(
