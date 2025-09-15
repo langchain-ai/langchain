@@ -735,6 +735,10 @@ packages:
 - name: langchain-google-bigtable
   name_title: Bigtable
   repo: googleapis/langchain-google-bigtable-python
+- name: langchain-oci
+  name_title: Oracle Cloud Infrastructure (OCI)
+  repo: oracle/langchain-oracle
+  path: .
 - name: langchain-timbr
   provider_page: timbr
   path: .
@@ -742,7 +746,6 @@ packages:
 - name: langchain-zenrows
   path: .
   repo: ZenRows-Hub/langchain-zenrows
-- name: langchain-oci
-  name_title: Oracle Cloud Infrastructure (OCI)
-  repo: oracle/langchain-oracle
-  path: .
+- name: langchain-zeusdb
+  repo: zeusdb/langchain-zeusdb
+  path: libs/zeusdb
