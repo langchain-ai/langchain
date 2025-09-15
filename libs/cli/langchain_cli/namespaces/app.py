@@ -50,7 +50,6 @@ def new(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
         ),
     ] = None,
     noninteractive: Annotated[
@@ -58,7 +57,6 @@ def new(
         typer.Option(
             "--non-interactive/--interactive",
             help="Don't prompt for any input",
-            is_flag=True,
         ),
     ] = False,
 ) -> None:
@@ -154,7 +152,6 @@ def add(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
