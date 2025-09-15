@@ -38,7 +38,7 @@ _e2e_test:
 	mkdir .integration_test
 	cd .integration_test && \
 		python3 -m venv .venv && \
-		pip install --upgrade poetry && \
+		$(PYTHON) -m pip install --upgrade poetry && \
 		$(PYTHON) -m pip install -e .. && \
 		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
 		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLinkB --src=integration_template/chat_models.py --dst=langchain-parrot-link/langchain_parrot_link/chat_models_b.py && \
