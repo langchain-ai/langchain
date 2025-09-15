@@ -117,7 +117,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
         """
-        if llm.with_structured_output == BaseLanguageModel.with_structured_output:
+        if type(llm).with_structured_output == BaseLanguageModel.with_structured_output:
             msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )
