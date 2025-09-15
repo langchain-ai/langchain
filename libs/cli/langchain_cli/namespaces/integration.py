@@ -1,5 +1,6 @@
 """Develop integration packages for LangChain."""
 
+import os
 import re
 import shutil
 import subprocess
@@ -128,10 +129,13 @@ def new(
         # dependency install
         try:
             # Use --no-progress to avoid tty issues in CI/test environments
+            env = os.environ.copy()
+            env.pop("UV_FROZEN", None)
             subprocess.run(
                 ["uv", "sync", "--dev", "--no-progress"],  # noqa: S607
                 cwd=destination_dir,
                 check=True,
+                env=env,
             )
         except FileNotFoundError:
             typer.echo(
