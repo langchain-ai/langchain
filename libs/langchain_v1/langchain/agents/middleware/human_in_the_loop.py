@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from langchain_core.messages import ToolCall, ToolMessage
 from langgraph.prebuilt.interrupt import (
     ActionRequest,
     HumanInterrupt,
@@ -10,7 +11,6 @@ from langgraph.prebuilt.interrupt import (
 )
 from langgraph.types import interrupt
 
-from langchain.agents.middleware._utils import _generate_correction_tool_messages
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 
 ToolInterruptConfig = dict[str, HumanInterruptConfig]
@@ -60,76 +60,73 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if not interrupt_tool_calls:
             return None
 
-        approved_tool_calls = auto_approved_tool_calls.copy()
+        # Process all tool calls that require interrupts
+        approved_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
+        rejected_tool_calls: list[ToolCall] = []
+        artificial_tool_messages: list[ToolMessage] = []
 
-        # Right now, we do not support multiple tool calls with interrupts
-        if len(interrupt_tool_calls) > 1:
-            tool_names = [t["name"] for t in interrupt_tool_calls]
-            msg = (
-                f"Called the following tools which require interrupts: {tool_names}\n\n"
-                "You may only call ONE tool that requires an interrupt at a time"
-            )
-            return {
-                "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
-                "jump_to": "model",
+        # Create interrupt requests for all tools that need approval
+        interrupt_requests: list[HumanInterrupt] = []
+        for tool_call in interrupt_tool_calls:
+            tool_name = tool_call["name"]
+            tool_args = tool_call["args"]
+            description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
+            tool_config = self.tool_configs[tool_name]
+
+            request: HumanInterrupt = {
+                "action_request": ActionRequest(
+                    action=tool_name,
+                    args=tool_args,
+                ),
+                "config": tool_config,
+                "description": description,
             }
+            interrupt_requests.append(request)
 
-        # Right now, we do not support interrupting a tool call if other tool calls exist
-        if auto_approved_tool_calls:
-            tool_names = [t["name"] for t in interrupt_tool_calls]
-            msg = (
-                f"Called the following tools which require interrupts: {tool_names}. "
-                "You also called other tools that do not require interrupts. "
-                "If you call a tool that requires and interrupt, you may ONLY call that tool."
-            )
-            return {
-                "messages": _generate_correction_tool_messages(msg, last_message.tool_calls),
-                "jump_to": "model",
-            }
+        responses: list[HumanResponse] = interrupt(interrupt_requests)
 
-        # Only one tool call will need interrupts
-        tool_call = interrupt_tool_calls[0]
-        tool_name = tool_call["name"]
-        tool_args = tool_call["args"]
-        description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
-        tool_config = self.tool_configs[tool_name]
+        # TODO: map responses to tool call ids explicitly instead of assuming order
+        # Right now this will fail if there's not a corresponding response for each tool call
+        # Which we want to block on anyways but can do more gracefully
+        for i, response in enumerate(responses):
+            tool_call = interrupt_tool_calls[i]
 
-        request: HumanInterrupt = {
-            "action_request": ActionRequest(
-                action=tool_name,
-                args=tool_args,
-            ),
-            "config": tool_config,
-            "description": description,
-        }
+            if response["type"] == "accept":
+                approved_tool_calls.append(tool_call)
+            elif response["type"] == "edit":
+                edited: ActionRequest = response["args"]  # type: ignore[assignment]
+                new_tool_call = ToolCall(
+                    type="tool_call",
+                    name=tool_call["name"],
+                    args=edited["args"],
+                    id=tool_call["id"],
+                )
+                approved_tool_calls.append(new_tool_call)
+            elif response["type"] == "ignore":
+                rejected_tool_calls.append(tool_call)
+                ignore_message = ToolMessage(
+                    content=f"User ignored the tool call for `{tool_name}` with id {tool_call['id']}",
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                    status="success",
+                )
+                artificial_tool_messages.append(ignore_message)
+            elif response["type"] == "response":
+                rejected_tool_calls.append(tool_call)
+                tool_message = ToolMessage(
+                    content=response["args"],  # type: ignore[assignment]
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                    status="error",
+                )
+                artificial_tool_messages.append(tool_message)
+            else:
+                msg = f"Unknown response type: {response['type']}"
+                raise ValueError(msg)
 
-        responses: list[HumanResponse] = interrupt([request])
-        response = responses[0]
+        last_message.tool_calls = [*approved_tool_calls, *rejected_tool_calls]  # type: ignore[assignment]
 
-        if response["type"] == "accept":
-            approved_tool_calls.append(tool_call)
-        elif response["type"] == "edit":
-            edited: ActionRequest = response["args"]  # type: ignore[assignment]
-            new_tool_call = {
-                "type": "tool_call",
-                "name": tool_call["name"],
-                "args": edited["args"],
-                "id": tool_call["id"],
-            }
-            approved_tool_calls.append(new_tool_call)
-        elif response["type"] == "ignore":
-            return {"jump_to": "__end__"}
-        elif response["type"] == "response":
-            tool_message = {
-                "role": "tool",
-                "tool_call_id": tool_call["id"],
-                "content": response["args"],
-            }
-            return {"messages": [tool_message], "jump_to": "model"}
-        else:
-            msg = f"Unknown response type: {response['type']}"
-            raise ValueError(msg)
+        if len(approved_tool_calls) > 0:
+            return {"messages": [last_message, *artificial_tool_messages]}
 
-        last_message.tool_calls = approved_tool_calls
-
-        return {"messages": [last_message]}
+        return {"jump_to": "model", "messages": artificial_tool_messages}

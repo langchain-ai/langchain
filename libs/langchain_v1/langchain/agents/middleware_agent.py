@@ -2,7 +2,7 @@
 
 import itertools
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
@@ -10,6 +10,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.types import Send
 from langgraph.typing import ContextT
 from typing_extensions import TypedDict, TypeVar
 
@@ -422,7 +423,7 @@ def create_agent(  # noqa: PLR0915
         )
         graph.add_conditional_edges(
             last_node,
-            _make_model_to_tools_edge(first_node, structured_output_tools),
+            _make_model_to_tools_edge(first_node, structured_output_tools, tool_node),
             [first_node, "tools", END],
         )
     elif last_node == "model_request":
@@ -482,26 +483,53 @@ def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
 
 
 def _make_model_to_tools_edge(
-    first_node: str, structured_output_tools: dict[str, OutputToolBinding]
-) -> Callable[[AgentState], str | None]:
-    def model_to_tools(state: AgentState) -> str | None:
+    first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
+) -> Callable[[AgentState], str | list[Send] | None]:
+    def model_to_tools(state: AgentState) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
-        message = state["messages"][-1]
+        last_message = state["messages"][-1]
 
         # Check if this is a ToolMessage from structured output - if so, end
-        if isinstance(message, ToolMessage) and message.name in structured_output_tools:
+        # interesting, should we be auto ending here? should we execute other tools?
+        if isinstance(last_message, ToolMessage) and last_message.name in structured_output_tools:
             return END
 
-        # Check for tool calls
-        if isinstance(message, AIMessage) and message.tool_calls:
-            # If all tool calls are for structured output, don't go to tools
-            non_structured_calls = [
-                tc for tc in message.tool_calls if tc["name"] not in structured_output_tools
+        # Find the last AI message and all tool messages since said AI message
+        last_ai_index = None
+        last_ai_message: AIMessage
+        for i in range(len(state["messages"]) - 1, -1, -1):
+            if isinstance(state["messages"][i], AIMessage):
+                last_ai_index = i
+                last_ai_message = cast("AIMessage", state["messages"][i])
+                break
+
+        tool_messages = (
+            [
+                m.tool_call_id
+                for m in state["messages"][last_ai_index + 1 :]
+                if isinstance(m, ToolMessage)
             ]
-            if non_structured_calls:
-                return "tools"
+            if last_ai_index is not None
+            else []
+        )
+
+        pending_tool_calls = [
+            c
+            for c in last_ai_message.tool_calls
+            if c["id"] not in tool_messages and c["name"] not in structured_output_tools
+        ]
+
+        if pending_tool_calls:
+            # TODO: we should not be injecting state, store here,
+            # this should be done by the tool node itself ideally but this is a consequence
+            # of using Send w/ tool calls directly
+            pending_tool_calls = [
+                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
+                for call in pending_tool_calls
+            ]
+            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         return END
 
