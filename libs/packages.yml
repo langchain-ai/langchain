@@ -742,4 +742,8 @@ packages:
 - name: langchain-oci
   name_title: Oracle Cloud Infrastructure (OCI)
   repo: oracle/langchain-oracle
+- name: langchain-notion
+  path: .
+- name: langchain-notion
+  repo: rujeetjahagirdar/langchain-notion
   path: .
