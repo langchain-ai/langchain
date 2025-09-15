@@ -468,7 +468,7 @@ requires-dist = [
     { name = "gritql", specifier = ">=0.2.0,<1.0.0" },
     { name = "langserve", extras = ["all"], specifier = ">=0.0.51" },
     { name = "tomlkit", specifier = ">=0.12" },
-    { name = "typer", specifier = ">=0.9.0,<1.0.0" },
+    { name = "typer", specifier = ">=0.17,<1.0.0" },
     { name = "uvicorn", specifier = ">=0.23,<1.0" },
 ]
 
