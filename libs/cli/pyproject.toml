@@ -80,6 +80,12 @@ pyupgrade.keep-runtime-typing = true
 "tests/**" = [ "D1", "DOC", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
 
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
+
 [tool.mypy]
 plugins = ["pydantic.mypy"]
 strict = true
