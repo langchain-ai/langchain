@@ -125,12 +125,18 @@ def new(
         # replacements in files
         replace_glob(destination_dir, "**/*", cast("dict[str, str]", replacements))
 
-        # poetry install
-        subprocess.run(
-            ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
-            cwd=destination_dir,
-            check=True,
-        )
+        # dependency install
+        try:
+            subprocess.run(
+                ["uv", "sync", "--dev"],  # noqa: S607
+                cwd=destination_dir,
+                check=True,
+            )
+        except FileNotFoundError:
+            typer.echo(
+                "uv is not installed. Skipping dependency installation; run "
+                "`uv sync --dev` manually if needed.",
+            )
     else:
         # confirm src and dst are the same length
         if not src:
