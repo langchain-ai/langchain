@@ -206,7 +206,11 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         return ChatMessage(content=_dict.get("content", ""), role=role, id=id_)  # type: ignore[arg-type]
 
 
-def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any:
+def _format_message_content(
+    content: Any,
+    api: Literal["chat/completions", "responses"] = "chat/completions",
+    role: Optional[str] = None,
+) -> Any:
     """Format message content."""
     if content and isinstance(content, list):
         formatted_content = []
@@ -223,9 +227,9 @@ def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any
                 and is_data_content_block(block)
                 # Responses API messages handled separately in _compat (parsed into
                 # image generation calls)
-                and not responses_ai_msg
+                and not (api == "responses" and str(role).lower().startswith("ai"))
             ):
-                formatted_content.append(convert_to_openai_data_block(block))
+                formatted_content.append(convert_to_openai_data_block(block, api=api))
             # Anthropic image blocks
             elif (
                 isinstance(block, dict)
@@ -258,13 +262,12 @@ def _format_message_content(content: Any, responses_ai_msg: bool = False) -> Any
 
 
 def _convert_message_to_dict(
-    message: BaseMessage, responses_ai_msg: bool = False
+    message: BaseMessage,
+    api: Literal["chat/completions", "responses"] = "chat/completions",
 ) -> dict:
     """Convert a LangChain message to dictionary format expected by OpenAI."""
     message_dict: dict[str, Any] = {
-        "content": _format_message_content(
-            message.content, responses_ai_msg=responses_ai_msg
-        )
+        "content": _format_message_content(message.content, api=api, role=message.type)
     }
     if (name := message.name or message.additional_kwargs.get("name")) is not None:
         message_dict["name"] = name
@@ -306,7 +309,7 @@ def _convert_message_to_dict(
                 isinstance(block, dict)
                 and block.get("type") == "audio"
                 and (id_ := block.get("id"))
-                and not responses_ai_msg
+                and api != "responses"
             ):
                 # openai doesn't support passing the data back - only the id
                 # https://platform.openai.com/docs/guides/audio/multi-turn-conversations
@@ -1566,7 +1569,7 @@ class BaseChatOpenAI(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="openai",
-            ls_model_name=self.model_name,
+            ls_model_name=params.get("model", self.model_name),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -3767,7 +3770,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
     for lc_msg in messages:
         if isinstance(lc_msg, AIMessage):
             lc_msg = _convert_from_v03_ai_message(lc_msg)
-            msg = _convert_message_to_dict(lc_msg, responses_ai_msg=True)
+            msg = _convert_message_to_dict(lc_msg, api="responses")
             if isinstance(msg.get("content"), list) and all(
                 isinstance(block, dict) for block in msg["content"]
             ):
@@ -3782,7 +3785,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 ]
                 msg["content"] = _convert_from_v1_to_responses(msg["content"], tcs)
         else:
-            msg = _convert_message_to_dict(lc_msg)
+            msg = _convert_message_to_dict(lc_msg, api="responses")
             # Get content from non-standard content blocks
             if isinstance(msg["content"], list):
                 for i, block in enumerate(msg["content"]):

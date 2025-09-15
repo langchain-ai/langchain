@@ -1,5 +1,7 @@
 """Tools unit tests."""
 
+from __future__ import annotations
+
 import os
 from abc import abstractmethod
 from unittest import mock

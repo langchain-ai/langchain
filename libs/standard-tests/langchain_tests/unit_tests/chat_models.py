@@ -1,5 +1,7 @@
 """:autodoc-options: autoproperty."""
 
+from __future__ import annotations
+
 import inspect
 import os
 from abc import abstractmethod

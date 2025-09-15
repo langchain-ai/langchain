@@ -12,16 +12,16 @@
   	parent_2(parent_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> parent_1;
-  	child_child_2 --> parent_2;
-  	parent_1 --> child_child_1_grandchild_1;
+  	child\3achild_2 --> parent_2;
+  	parent_1 --> child\3achild_1\3agrandchild_1;
   	parent_2 --> __end__;
   	subgraph child
-  	child_child_2(child_2)
-  	child_child_1_grandchild_2 --> child_child_2;
+  	child\3achild_2(child_2)
+  	child\3achild_1\3agrandchild_2 --> child\3achild_2;
   	subgraph child_1
-  	child_child_1_grandchild_1(grandchild_1)
-  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
-  	child_child_1_grandchild_1 --> child_child_1_grandchild_2;
+  	child\3achild_1\3agrandchild_1(grandchild_1)
+  	child\3achild_1\3agrandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child\3achild_1\3agrandchild_1 --> child\3achild_1\3agrandchild_2;
   	end
   	end
   	classDef default fill:#f2f0ff,line-height:1.2
@@ -34,13 +34,13 @@
   '''
   graph TD;
   	PromptInput --> PromptTemplate_1;
-  	Parallel_llm1_llm2_Input --> FakeListLLM_1;
-  	FakeListLLM_1 --> Parallel_llm1_llm2_Output;
-  	Parallel_llm1_llm2_Input --> FakeListLLM_2;
-  	FakeListLLM_2 --> Parallel_llm1_llm2_Output;
-  	PromptTemplate_1 --> Parallel_llm1_llm2_Input;
+  	Parallel\3cllm1\2cllm2\3eInput --> FakeListLLM_1;
+  	FakeListLLM_1 --> Parallel\3cllm1\2cllm2\3eOutput;
+  	Parallel\3cllm1\2cllm2\3eInput --> FakeListLLM_2;
+  	FakeListLLM_2 --> Parallel\3cllm1\2cllm2\3eOutput;
+  	PromptTemplate_1 --> Parallel\3cllm1\2cllm2\3eInput;
   	PromptTemplate_2 --> PromptTemplateOutput;
-  	Parallel_llm1_llm2_Output --> PromptTemplate_2;
+  	Parallel\3cllm1\2cllm2\3eOutput --> PromptTemplate_2;
   
   '''
 # ---
@@ -59,6 +59,27 @@
   	__start__([<p>__start__</p>]):::first
   	my_node([my_node]):::last
   	__start__ --> my_node;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_graph_mermaid_special_chars[mermaid]
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	\5f00\59cb(开始)
+  	\7ed3\675f(结束)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> \5f00\59cb;
+  	\5f00\59cb --> \7ed3\675f;
+  	\7ed3\675f --> __end__;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -442,11 +463,6 @@
                   ]),
                   'title': 'Content',
                 }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -558,11 +574,6 @@
                     }),
                   ]),
                   'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -976,11 +987,6 @@
                   ]),
                   'title': 'Content',
                 }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
-                }),
                 'id': dict({
                   'anyOf': list([
                     dict({
@@ -1050,11 +1056,6 @@
                     }),
                   ]),
                   'title': 'Content',
-                }),
-                'example': dict({
-                  'default': False,
-                  'title': 'Example',
-                  'type': 'boolean',
                 }),
                 'id': dict({
                   'anyOf': list([
@@ -1931,15 +1932,15 @@
   graph TD;
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
-  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
-  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	Parallel\3cas_list\2cas_str\3eInput --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel\3cas_list\2cas_str\3eOutput;
   	conditional_str_parser_input --> StrOutputParser;
   	StrOutputParser --> conditional_str_parser_output;
   	conditional_str_parser_input --> XMLOutputParser;
   	XMLOutputParser --> conditional_str_parser_output;
-  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
-  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
-  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	Parallel\3cas_list\2cas_str\3eInput --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel\3cas_list\2cas_str\3eOutput;
+  	FakeListLLM --> Parallel\3cas_list\2cas_str\3eInput;
   
   '''
 # ---
@@ -1954,8 +1955,8 @@
   	PromptInput([PromptInput]):::first
   	PromptTemplate(PromptTemplate)
   	FakeListLLM(FakeListLLM)
-  	Parallel_as_list_as_str_Input(Parallel<as_list,as_str>Input)
-  	Parallel_as_list_as_str_Output([Parallel<as_list,as_str>Output]):::last
+  	Parallel\3cas_list\2cas_str\3eInput(Parallel<as_list,as_str>Input)
+  	Parallel\3cas_list\2cas_str\3eOutput([Parallel<as_list,as_str>Output]):::last
   	CommaSeparatedListOutputParser(CommaSeparatedListOutputParser)
   	conditional_str_parser_input(conditional_str_parser_input)
   	conditional_str_parser_output(conditional_str_parser_output)
@@ -1963,15 +1964,15 @@
   	XMLOutputParser(XMLOutputParser)
   	PromptInput --> PromptTemplate;
   	PromptTemplate --> FakeListLLM;
-  	Parallel_as_list_as_str_Input --> CommaSeparatedListOutputParser;
-  	CommaSeparatedListOutputParser --> Parallel_as_list_as_str_Output;
+  	Parallel\3cas_list\2cas_str\3eInput --> CommaSeparatedListOutputParser;
+  	CommaSeparatedListOutputParser --> Parallel\3cas_list\2cas_str\3eOutput;
   	conditional_str_parser_input --> StrOutputParser;
   	StrOutputParser --> conditional_str_parser_output;
   	conditional_str_parser_input --> XMLOutputParser;
   	XMLOutputParser --> conditional_str_parser_output;
-  	Parallel_as_list_as_str_Input --> conditional_str_parser_input;
-  	conditional_str_parser_output --> Parallel_as_list_as_str_Output;
-  	FakeListLLM --> Parallel_as_list_as_str_Input;
+  	Parallel\3cas_list\2cas_str\3eInput --> conditional_str_parser_input;
+  	conditional_str_parser_output --> Parallel\3cas_list\2cas_str\3eOutput;
+  	FakeListLLM --> Parallel\3cas_list\2cas_str\3eInput;
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
   	classDef last fill:#bfb6fc
@@ -2029,20 +2030,20 @@
   	outer_2(outer_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> outer_1;
-  	inner_1_inner_2 --> outer_2;
-  	inner_2_inner_2 --> outer_2;
-  	outer_1 --> inner_1_inner_1;
-  	outer_1 --> inner_2_inner_1;
+  	inner_1\3ainner_2 --> outer_2;
+  	inner_2\3ainner_2 --> outer_2;
+  	outer_1 --> inner_1\3ainner_1;
+  	outer_1 --> inner_2\3ainner_1;
   	outer_2 --> __end__;
   	subgraph inner_1
-  	inner_1_inner_1(inner_1)
-  	inner_1_inner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
-  	inner_1_inner_1 --> inner_1_inner_2;
+  	inner_1\3ainner_1(inner_1)
+  	inner_1\3ainner_2(inner_2<hr/><small><em>__interrupt = before</em></small>)
+  	inner_1\3ainner_1 --> inner_1\3ainner_2;
   	end
   	subgraph inner_2
-  	inner_2_inner_1(inner_1)
-  	inner_2_inner_2(inner_2)
-  	inner_2_inner_1 --> inner_2_inner_2;
+  	inner_2\3ainner_1(inner_1)
+  	inner_2\3ainner_2(inner_2)
+  	inner_2\3ainner_1 --> inner_2\3ainner_2;
   	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
@@ -2060,10 +2061,10 @@
   graph TD;
   	__start__([<p>__start__</p>]):::first
   	__end__([<p>__end__</p>]):::last
-  	__start__ --> sub_meow;
-  	sub_meow --> __end__;
+  	__start__ --> sub\3ameow;
+  	sub\3ameow --> __end__;
   	subgraph sub
-  	sub_meow(meow)
+  	sub\3ameow(meow)
   	end
   	classDef default fill:#f2f0ff,line-height:1.2
   	classDef first fill-opacity:0
@@ -2146,19 +2147,19 @@
   	parent_2(parent_2)
   	__end__([<p>__end__</p>]):::last
   	__start__ --> parent_1;
-  	child_child_2 --> parent_2;
-  	parent_1 --> child_child_1_grandchild_1;
+  	child\3achild_2 --> parent_2;
+  	parent_1 --> child\3achild_1\3agrandchild_1;
   	parent_2 --> __end__;
   	subgraph child
-  	child_child_2(child_2)
-  	child_child_1_grandchild_2 --> child_child_2;
+  	child\3achild_2(child_2)
+  	child\3achild_1\3agrandchild_2 --> child\3achild_2;
   	subgraph child_1
-  	child_child_1_grandchild_1(grandchild_1)
-  	child_child_1_grandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
-  	child_child_1_grandchild_1_greatgrandchild --> child_child_1_grandchild_2;
+  	child\3achild_1\3agrandchild_1(grandchild_1)
+  	child\3achild_1\3agrandchild_2(grandchild_2<hr/><small><em>__interrupt = before</em></small>)
+  	child\3achild_1\3agrandchild_1\3agreatgrandchild --> child\3achild_1\3agrandchild_2;
   	subgraph grandchild_1
-  	child_child_1_grandchild_1_greatgrandchild(greatgrandchild)
-  	child_child_1_grandchild_1 --> child_child_1_grandchild_1_greatgrandchild;
+  	child\3achild_1\3agrandchild_1\3agreatgrandchild(greatgrandchild)
+  	child\3achild_1\3agrandchild_1 --> child\3achild_1\3agrandchild_1\3agreatgrandchild;
   	end
   	end
   	end

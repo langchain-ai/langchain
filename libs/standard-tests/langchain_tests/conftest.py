@@ -1,5 +1,7 @@
 """Pytest conftest."""
 
+from __future__ import annotations
+
 import gzip
 from os import PathLike
 from pathlib import Path

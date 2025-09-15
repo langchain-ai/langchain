@@ -1,22 +1,31 @@
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
-from typing import Annotated as TypingAnnotated
+from typing import Annotated as ExtensionsAnnotated
 from typing import (
     Any,
     Callable,
     Literal,
     Optional,
-    TypeAlias,
     Union,
 )
 from typing import TypedDict as TypingTypedDict
 
 import pytest
-from pydantic import BaseModel, Field
 from pydantic import BaseModel as BaseModelV2Maybe  # pydantic: ignore
 from pydantic import Field as FieldV2Maybe  # pydantic: ignore
-from typing_extensions import Annotated as ExtensionsAnnotated  # noqa: UP035
+from typing_extensions import TypeAlias
 from typing_extensions import TypedDict as ExtensionsTypedDict
+
+try:
+    from typing import Annotated as TypingAnnotated
+except ImportError:
+    TypingAnnotated = ExtensionsAnnotated
+
+
+from importlib.metadata import version
+
+from packaging.version import parse
+from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langchain_core.runnables import Runnable, RunnableLambda
@@ -171,8 +180,8 @@ def dummy_typing_typed_dict() -> type:
     class dummy_function(TypingTypedDict):  # noqa: N801
         """Dummy function."""
 
-        arg1: TypingAnnotated[int, ..., "foo"]
-        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]
+        arg1: TypingAnnotated[int, ..., "foo"]  # noqa: F821
+        arg2: TypingAnnotated[Literal["bar", "baz"], ..., "one of 'bar', 'baz'"]  # noqa: F722
 
     return dummy_function
 
@@ -1113,3 +1122,41 @@ def test_convert_to_json_schema(
     ):
         actual = convert_to_json_schema(fn)
         assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict_2() -> None:
+    def my_function(arg1: dict, arg2: Union[dict, None]) -> None:
+        """Dummy function."""
+
+    expected: dict = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "additionalProperties": False,
+                    "type": "object",
+                },
+                "arg2": {
+                    "anyOf": [
+                        {"additionalProperties": False, "type": "object"},
+                        {"type": "null"},
+                    ],
+                },
+            },
+            "required": ["arg1", "arg2"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    # there will be no extra `"additionalProperties": False` when Pydantic < 2.11
+    if parse(version("pydantic")) < parse("2.11"):
+        del expected["parameters"]["properties"]["arg1"]["additionalProperties"]
+        del expected["parameters"]["properties"]["arg2"]["anyOf"][0][
+            "additionalProperties"
+        ]
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected

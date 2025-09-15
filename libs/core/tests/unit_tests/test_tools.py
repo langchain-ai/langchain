@@ -1904,6 +1904,11 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
         name="some_tool", description="some description", args_schema=pydantic_model
     )
 
+    assert tool.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "string"},
+    }
+
     input_schema = tool.get_input_schema()
     if issubclass(input_schema, BaseModel):
         input_json_schema = input_schema.model_json_schema()

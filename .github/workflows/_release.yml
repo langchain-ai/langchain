@@ -183,13 +183,36 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
-    permissions: write-all
-    with:
-      working-directory: ${{ inputs.working-directory }}
-      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   pre-release-checks:
     needs:
