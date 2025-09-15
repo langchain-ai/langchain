@@ -111,7 +111,7 @@ def test_max_tokens_and_max_completion_tokens_parameters() -> None:
         api_version="2024-12-01-preview",
         azure_endpoint="my-base-url",
         api_key=SecretStr("test-key"),
-        max_tokens=100,
+        max_tokens=100,  # type: ignore[call-arg]
     )
 
     # Test max_completion_tokens parameter (using alias)
@@ -185,3 +185,4 @@ def test_chat_completions_api_uses_model_name() -> None:
     assert payload["model"] == "gpt-5"
     assert "messages" in payload  # Chat Completions API uses 'messages'
     assert "input" not in payload
+
