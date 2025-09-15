@@ -197,7 +197,7 @@ jobs:
         working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: '⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}'
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |

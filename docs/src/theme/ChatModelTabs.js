@@ -119,7 +119,7 @@ export default function ChatModelTabs(props) {
       value: "anthropic",
       label: "Anthropic",
       model: "claude-3-7-sonnet-20250219",
-      comment: "# Note: Model versions may become outdated. Check https://docs.anthropic.com/en/docs/models-overview for latest versions",
+      comment: "# Note: Model versions may become outdated. Check https://docs.anthropic.com/en/docs/about-claude/models/overview for latest versions",
       apiKeyName: "ANTHROPIC_API_KEY",
       packageName: "langchain[anthropic]",
     },
