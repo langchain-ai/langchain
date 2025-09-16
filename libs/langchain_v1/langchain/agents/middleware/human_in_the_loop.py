@@ -138,16 +138,15 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         if not messages:
             return None
 
-        last_message = messages[-1]
-
-        if not isinstance(last_message, AIMessage) or not last_message.tool_calls:
+        last_ai_msg = next((msg for msg in messages if isinstance(msg, AIMessage)), None)
+        if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
         # Separate tool calls that need interrupts from those that don't
         interrupt_tool_calls: dict[str, ToolCall] = {}
         auto_approved_tool_calls = []
 
-        for tool_call in last_message.tool_calls:
+        for tool_call in last_ai_msg.tool_calls:
             tool_name = tool_call["name"]
             if tool_name in self.tool_configs:
                 # fix: id should not be typed as Optional on `langchain_core.messages.tool.ToolCall`
@@ -259,9 +258,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 )
                 raise ValueError(msg)
 
-        last_message.tool_calls = [*approved_tool_calls, *rejected_tool_calls]
+        last_ai_msg.tool_calls = [*approved_tool_calls, *rejected_tool_calls]
 
         if len(approved_tool_calls) > 0:
-            return {"messages": [last_message, *artificial_tool_messages]}
+            return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
         return {"jump_to": "model", "messages": artificial_tool_messages}
