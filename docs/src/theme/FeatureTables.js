@@ -40,6 +40,17 @@ const FEATURE_TABLES = {
                 "apiLink": "https://python.langchain.com/api_reference/mistralai/chat_models/langchain_mistralai.chat_models.ChatMistralAI.html"
             },
             {
+              "name": "ChatAIMLAPI",
+              "package": "langchain-aimlapi",
+              "link": "aimlapi/",
+              "structured_output": true,
+              "tool_calling": true,
+              "json_mode": true,
+              "multimodal": true,
+              "local": false,
+              "apiLink": "https://python.langchain.com/api_reference/aimlapi/chat_models/langchain_aimlapi.chat_models.ChatAIMLAPI.html"
+            },
+            {
                 "name": "ChatFireworks",
                 "package": "langchain-fireworks",
                 "link": "fireworks/",
@@ -247,6 +258,17 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://python.langchain.com/api_reference/perplexity/chat_models/langchain_perplexity.chat_models.ChatPerplexity.html"
+            },
+            {
+                "name": "ChatOCIGenAI",
+                "package": "langchain-oci",
+                "link": "oci_generative_ai",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": true,
+                "multimodal": true,
+                "local": false,
+                "apiLink": "https://github.com/oracle/langchain-oracle"
             }
         ],
     },
@@ -300,6 +322,12 @@ const FEATURE_TABLES = {
                 link: "fireworks",
                 package: "langchain-fireworks",
                 apiLink: "https://python.langchain.com/api_reference/fireworks/llms/langchain_fireworks.llms.Fireworks.html"
+            },
+            {
+                name: "AimlapiLLM",
+                link: "aimlapi",
+                package: "langchain-aimlapi",
+                apiLink: "https://python.langchain.com/api_reference/aimlapi/llms/langchain_aimlapi.llms.AimlapiLLM.html"
             },
             {
                 name: "OllamaLLM",
@@ -383,6 +411,12 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/fireworks/embeddings/langchain_fireworks.embeddings.FireworksEmbeddings.html"
             },
             {
+                name: "AI/ML API",
+                link: "/docs/integrations/text_embedding/aimlapi",
+                package: "langchain-aimlapi",
+                apiLink: "https://python.langchain.com/api_reference/aimlapi/embeddings/langchain_aimlapi.embeddings.AimlapiEmbeddings.html"
+            },
+            {
                 name: "MistralAI",
                 link: "/docs/integrations/text_embedding/mistralai",
                 package: "langchain-mistralai",
@@ -418,6 +452,13 @@ const FEATURE_TABLES = {
                 package: "langchain-nvidia",
                 apiLink: "https://python.langchain.com/api_reference/nvidia_ai_endpoints/embeddings/langchain_nvidia_ai_endpoints.embeddings.NVIDIAEmbeddings.html"
             },
+            {
+                name: "OCIGenAIEmbeddings",
+                link: "oci_generative_ai",
+                package: "langchain-oci",
+                apiLink: "https://github.com/oracle/langchain-oracle"
+
+            }
         ]
     },
     document_retrievers: {
@@ -823,9 +864,16 @@ const FEATURE_TABLES = {
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.sitemap.SitemapLoader.html"
             },
             {
+                name: "Spider",
+                link: "spider",
+                source: "Crawler and scraper that returns LLM-ready data.",
+                api: "API",
+                apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.spider.SpiderLoader.html"
+            },
+            {
                 name: "Firecrawl",
                 link: "firecrawl",
-                source: "API service that can be deployed locally, hosted version has free credits.",
+                source: "API service that can be deployed locally.",
                 api: "API",
                 apiLink: "https://python.langchain.com/api_reference/community/document_loaders/langchain_community.document_loaders.firecrawl.FireCrawlLoader.html"
             },
@@ -849,6 +897,13 @@ const FEATURE_TABLES = {
                 source: "Web interaction and structured data extraction from any web page using an AgentQL query or a Natural Language prompt",
                 api: "API",
                 apiLink: "https://python.langchain.com/docs/integrations/document_loaders/agentql/"
+            },
+            {
+                name: "Oxylabs",
+                link: "oxylabs",
+                source: "Web intelligence platform enabling the access to various data sources.",
+                api: "API",
+                apiLink: "https://github.com/oxylabs/langchain-oxylabs"
             }
         ]
     },

@@ -16,7 +16,7 @@ dependencies = [
     "pydantic>=2.7.4",
 ]
 name = "langchain-core"
-version = "0.3.72"
+version = "0.3.76"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -28,7 +28,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 lint = ["ruff<0.13,>=0.12.2"]
 typing = [
-    "mypy<1.16,>=1.15",
+    "mypy<1.19,>=1.18.1",
     "types-pyyaml<7.0.0.0,>=6.0.12.2",
     "types-requests<3.0.0.0,>=2.28.11.5",
     "langchain-text-splitters",
@@ -64,52 +64,64 @@ langchain-text-splitters = { path = "../text-splitters" }
 
 
 [tool.mypy]
-strict = "True"
-strict_bytes = "True"
+plugins = ["pydantic.mypy"]
+strict = true
 enable_error_code = "deprecated"
 
 # TODO: activate for 'strict' checking
-disallow_any_generics = "False"
-warn_return_any = "False"
+disallow_any_generics = false
+warn_return_any = false
 
 
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
-    "C90", # McCabe complexity
-    "COM812", # Messes with the formatter
-    "FA100", # Can't activate since we exclude UP007 for now
-    "FIX002", # Line contains TODO
-    "ISC001", # Messes with the formatter
+    "C90",     # McCabe complexity
+    "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
+    "FIX002",  # Line contains TODO
+    "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "PLR09", # Too many something (arg, statements, etc)
-    "RUF012", # Doesn't play well with Pydantic
-    "TC001", # Doesn't play well with Pydantic
-    "TC002", # Doesn't play well with Pydantic
-    "TC003", # Doesn't play well with Pydantic
-    "TD002", # Missing author in TODO
-    "TD003", # Missing issue link in TODO
+    "PLR09",   # Too many something (arg, statements, etc)
+    "RUF012",  # Doesn't play well with Pydantic
+    "TC001",   # Doesn't play well with Pydantic
+    "TC002",   # Doesn't play well with Pydantic
+    "TC003",   # Doesn't play well with Pydantic
+    "TD002",   # Missing author in TODO
+    "TD003",   # Missing issue link in TODO
 
     # TODO rules
-    "ANN401",
-    "BLE",
-    "ERA",
-    "PLC0415",
-    "PLR2004",
+    "ANN401",  # No Any types
+    "BLE",     # Blind exceptions
+    "DOC",     # Docstrings (preview)
+    "ERA",     # No commented-out code
+    "PLR2004", # Comparison to magic number
 ]
-unfixable = ["PLW1510",]
+unfixable = [
+    "B028",    # People should intentionally tune the stacklevel
+    "PLW1510", # People should intentionally set the check argument
+]
 
 flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
+flake8-builtins.ignorelist = ["id", "input", "type"]
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
 pydocstyle.convention = "google"
 pydocstyle.ignore-var-parameters = true
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.per-file-ignores]
+"langchain_core/utils/mustache.py" = [ "PLW0603",]
+"tests/unit_tests/test_tools.py" = [ "ARG",]
+"tests/**" = [ "D1", "S", "SLF",]
+"scripts/**" = [ "INP", "S",]
 
 [tool.coverage.run]
 omit = [ "tests/*",]
@@ -121,8 +133,3 @@ asyncio_mode = "auto"
 filterwarnings = [ "ignore::langchain_core._api.beta_decorator.LangChainBetaWarning",]
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.ruff.lint.per-file-ignores]
-"langchain_core/utils/mustache.py" = [ "PLW0603",]
-"tests/unit_tests/test_tools.py" = [ "ARG",]
-"tests/**" = [ "D1", "S", "SLF",]
-"scripts/**" = [ "INP", "S",]

@@ -115,7 +115,10 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
     """A model deployment.
 
         If given sets the base client URL to include `/deployments/{azure_deployment}`.
-        Note: this means you won't be able to use non-deployment endpoints.
+
+        .. note::
+            This means you won't be able to use non-deployment endpoints.
+
     """
     # Check OPENAI_KEY for backwards compatibility.
     # TODO: Remove OPENAI_API_KEY support to avoid possible conflict when using
@@ -132,7 +135,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         alias="api_version",
     )
     """Automatically inferred from env var ``OPENAI_API_VERSION`` if not provided.
-    
+
     Set to ``'2023-05-15'`` by default if env variable ``OPENAI_API_VERSION`` is not
     set.
     """
@@ -170,13 +173,15 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         # between azure_endpoint and base_url (openai_api_base).
         openai_api_base = self.openai_api_base
         if openai_api_base and self.validate_base_url:
-            if "/openai" not in openai_api_base:
-                self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
-                raise ValueError(
-                    "As of openai>=1.0.0, Azure endpoints should be specified via "
-                    "the `azure_endpoint` param not `openai_api_base` "
-                    "(or alias `base_url`). "
-                )
+            # Only validate openai_api_base if azure_endpoint is not provided
+            if not self.azure_endpoint:
+                if "/openai" not in openai_api_base:
+                    self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
+                    raise ValueError(
+                        "As of openai>=1.0.0, Azure endpoints should be specified via "
+                        "the `azure_endpoint` param not `openai_api_base` "
+                        "(or alias `base_url`). "
+                    )
             if self.deployment:
                 raise ValueError(
                     "As of openai>=1.0.0, if `deployment` (or alias "

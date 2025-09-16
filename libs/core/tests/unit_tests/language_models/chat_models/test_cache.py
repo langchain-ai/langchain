@@ -12,6 +12,7 @@ from langchain_core.language_models.fake_chat_models import (
     FakeListChatModel,
     GenericFakeChatModel,
 )
+from langchain_core.load import dumps
 from langchain_core.messages import AIMessage
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.outputs.chat_result import ChatResult
@@ -318,8 +319,6 @@ def test_cache_with_generation_objects() -> None:
     cache = InMemoryCache()
 
     # Create a simple fake chat model that we can control
-    from langchain_core.messages import AIMessage
-
     class SimpleFakeChat:
         """Simple fake chat model for testing."""
 
@@ -332,8 +331,6 @@ def test_cache_with_generation_objects() -> None:
 
         def generate_response(self, prompt: str) -> ChatResult:
             """Simulate the cache lookup and generation logic."""
-            from langchain_core.load import dumps
-
             llm_string = self._get_llm_string()
             prompt_str = dumps([prompt])
 
@@ -458,3 +455,23 @@ def test_cleanup_serialized() -> None:
         "name": "CustomChat",
         "type": "constructor",
     }
+
+
+def test_token_costs_are_zeroed_out() -> None:
+    # We zero-out token costs for cache hits
+    local_cache = InMemoryCache()
+    messages = [
+        AIMessage(
+            content="Hello, how are you?",
+            usage_metadata={"input_tokens": 5, "output_tokens": 10, "total_tokens": 15},
+        ),
+    ]
+    model = GenericFakeChatModel(messages=iter(messages), cache=local_cache)
+    first_response = model.invoke("Hello")
+    assert isinstance(first_response, AIMessage)
+    assert first_response.usage_metadata
+
+    second_response = model.invoke("Hello")
+    assert isinstance(second_response, AIMessage)
+    assert second_response.usage_metadata
+    assert second_response.usage_metadata["total_cost"] == 0  # type: ignore[typeddict-item]

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Annotated, Optional
 
 import typer
+import uvicorn
 
 from langchain_cli.utils.events import create_events
 from langchain_cli.utils.git import (
@@ -49,7 +50,6 @@ def new(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
         ),
     ] = None,
     noninteractive: Annotated[
@@ -57,7 +57,6 @@ def new(
         typer.Option(
             "--non-interactive/--interactive",
             help="Don't prompt for any input",
-            is_flag=True,
         ),
     ] = False,
 ) -> None:
@@ -71,9 +70,7 @@ def new(
         name_str = name
         pip_bool = bool(pip)  # None should be false
     else:
-        name_str = (
-            name if name else typer.prompt("What folder would you like to create?")
-        )
+        name_str = name or typer.prompt("What folder would you like to create?")
         if not has_packages:
             package = []
             package_prompt = "What package would you like to add? (leave blank to skip)"
@@ -155,7 +152,6 @@ def add(
         typer.Option(
             "--pip/--no-pip",
             help="Pip install the template(s) as editable dependencies",
-            is_flag=True,
             prompt="Would you like to `pip install -e` the template(s)?",
         ),
     ],
@@ -242,7 +238,7 @@ def add(
     try:
         add_dependencies_to_pyproject_toml(
             project_root / "pyproject.toml",
-            zip(installed_destination_names, installed_destination_paths),
+            zip(installed_destination_names, installed_destination_paths, strict=False),
         )
     except Exception:
         # Can fail if user modified/removed pyproject.toml
@@ -261,7 +257,7 @@ def add(
             cmd = ["pip", "install", "-e", *installed_destination_strs]
             cmd_str = " \\\n  ".join(installed_destination_strs)
             typer.echo(f"Running: pip install -e \\\n  {cmd_str}")
-            subprocess.run(cmd, cwd=cwd)  # noqa: S603
+            subprocess.run(cmd, cwd=cwd, check=True)  # noqa: S603
 
     chain_names = []
     for e in installed_exports:
@@ -280,11 +276,11 @@ def add(
 
     imports = [
         f"from {e['module']} import {e['attr']} as {name}"
-        for e, name in zip(installed_exports, chain_names)
+        for e, name in zip(installed_exports, chain_names, strict=False)
     ]
     routes = [
         f'add_routes(app, {name}, path="{path}")'
-        for name, path in zip(chain_names, api_paths)
+        for name, path in zip(chain_names, api_paths, strict=False)
     ]
 
     t = (
@@ -366,8 +362,6 @@ def serve(
 
     app_str = app if app is not None else "app.server:app"
     host_str = host if host is not None else "127.0.0.1"
-
-    import uvicorn
 
     uvicorn.run(
         app_str,
