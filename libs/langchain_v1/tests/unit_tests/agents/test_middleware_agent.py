@@ -16,17 +16,19 @@ from langchain_core.messages import (
 from langchain_core.tools import tool
 
 from langchain.agents.middleware_agent import create_agent
-from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
+from langchain.agents.middleware.human_in_the_loop import (
+    HumanInTheLoopMiddleware,
+    HumanInterruptConfig,
+)
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, AgentState
-from langchain_core.tools import BaseTool
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.prebuilt.interrupt import ActionRequest, HumanInterruptConfig
+from langgraph.prebuilt.interrupt import ActionRequest
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
@@ -357,7 +359,7 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -371,7 +373,7 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -401,7 +403,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -414,7 +416,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "accept", "args": None}]
+        return [{"type": "approve", "args": None, "tool_call_id": "1"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -429,7 +431,7 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -443,7 +445,12 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
 
     def mock_edit(requests):
         return [
-            {"type": "edit", "args": ActionRequest(action="test_tool", args={"input": "edited"})}
+            {
+                "type": "edit",
+                "action": "test_tool",
+                "args": {"input": "edited"},
+                "tool_call_id": "1",
+            }
         ]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_edit):
@@ -459,7 +466,7 @@ def test_human_in_the_loop_middleware_single_tool_ignore() -> None:
     """Test HumanInTheLoopMiddleware with single tool ignore response."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -472,7 +479,7 @@ def test_human_in_the_loop_middleware_single_tool_ignore() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_ignore(requests):
-        return [{"type": "ignore", "args": None}]
+        return [{"type": "ignore", "args": None, "tool_call_id": "1"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_ignore):
         result = middleware.after_model(state)
@@ -491,7 +498,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response type."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -504,7 +511,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_response(requests):
-        return [{"type": "response", "args": "Custom response"}]
+        return [{"type": "response", "tool_message": "Custom response", "tool_call_id": "1"}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
@@ -525,10 +532,10 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
     tool_configs = {
         "get_forecast": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
         "get_temperature": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
     }
 
@@ -544,7 +551,10 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
 
     def mock_mixed_responses(requests):
-        return [{"type": "accept", "args": None}, {"type": "ignore", "args": None}]
+        return [
+            {"type": "approve", "args": None, "tool_call_id": "1"},
+            {"type": "ignore", "args": None, "tool_call_id": "2"},
+        ]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_mixed_responses
@@ -571,10 +581,10 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
     tool_configs = {
         "get_forecast": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
         "get_temperature": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
     }
 
@@ -593,11 +603,15 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         return [
             {
                 "type": "edit",
-                "args": ActionRequest(action="get_forecast", args={"location": "New York"}),
+                "action": "get_forecast",
+                "args": {"location": "New York"},
+                "tool_call_id": "1",
             },
             {
                 "type": "edit",
-                "args": ActionRequest(action="get_temperature", args={"location": "New York"}),
+                "action": "get_temperature",
+                "args": {"location": "New York"},
+                "tool_call_id": "2",
             },
         ]
 
@@ -620,10 +634,10 @@ def test_human_in_the_loop_middleware_multiple_tools_response_types() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and response type responses."""
     tool_configs = {
         "get_forecast": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
         "get_temperature": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
     }
 
@@ -640,8 +654,16 @@ def test_human_in_the_loop_middleware_multiple_tools_response_types() -> None:
 
     def mock_response_responses(requests):
         return [
-            {"type": "response", "args": "actually, please get the conditions in NYC"},
-            {"type": "response", "args": "actually, please get the temperature in NYC"},
+            {
+                "type": "response",
+                "tool_message": "actually, please get the conditions in NYC",
+                "tool_call_id": "1",
+            },
+            {
+                "type": "response",
+                "tool_message": "actually, please get the temperature in NYC",
+                "tool_call_id": "2",
+            },
         ]
 
     with patch(
@@ -669,7 +691,7 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -682,10 +704,79 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_unknown(requests):
-        return [{"type": "unknown", "args": None}]
+        return [{"type": "unknown", "args": None, "tool_call_id": "1"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(ValueError, match="Unknown response type: unknown"):
+        with pytest.raises(
+            ValueError,
+            match="Unexpected human response: {'type': 'unknown', 'args': None, 'tool_call_id': '1'}. Response type 'unknown' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'edit', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
+        ):
+            middleware.after_model(state)
+
+
+def test_human_in_the_loop_middleware_disallowed_response_type() -> None:
+    """Test HumanInTheLoopMiddleware with response type not allowed by tool config."""
+    tool_configs = {
+        "test_tool": HumanInterruptConfig(
+            allow_approve=True, allow_ignore=True, allow_response=False, allow_edit=False
+        )
+    }
+
+    middleware = HumanInTheLoopMiddleware(tool_configs=tool_configs)
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    def mock_disallowed_response(requests):
+        return [{"type": "response", "args": "Custom response", "tool_call_id": "1"}]
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt",
+        side_effect=mock_disallowed_response,
+    ):
+        with pytest.raises(
+            ValueError,
+            match="Unexpected human response: {'type': 'response', 'args': 'Custom response', 'tool_call_id': '1'}. Response type 'response' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'ignore'\\] based on the tool's interrupt configuration.",
+        ):
+            middleware.after_model(state)
+
+
+def test_human_in_the_loop_middleware_disallowed_edit_type() -> None:
+    """Test HumanInTheLoopMiddleware with edit type not allowed by tool config."""
+    tool_configs = {
+        "test_tool": HumanInterruptConfig(
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=False
+        )
+    }
+
+    middleware = HumanInTheLoopMiddleware(tool_configs=tool_configs)
+
+    ai_message = AIMessage(
+        content="I'll help you",
+        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
+    )
+    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
+
+    def mock_disallowed_edit(requests):
+        return [
+            {
+                "type": "edit",
+                "action": "test_tool",
+                "args": {"input": "edited"},
+                "tool_call_id": "1",
+            }
+        ]
+
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_disallowed_edit
+    ):
+        with pytest.raises(
+            ValueError,
+            match="Unexpected human response: {'type': 'edit', 'action': 'test_tool', 'args': {'input': 'edited'}, 'tool_call_id': '1'}. Response type 'edit' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
+        ):
             middleware.after_model(state)
 
 
@@ -693,7 +784,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
     tool_configs = {
         "interrupt_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -709,7 +800,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "accept", "args": None}]
+        return [{"type": "approve", "args": None, "tool_call_id": "2"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -728,10 +819,10 @@ def test_human_in_the_loop_middleware_all_ignored() -> None:
     """Test HumanInTheLoopMiddleware when all tools are ignored."""
     tool_configs = {
         "get_forecast": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
         "get_temperature": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         ),
     }
 
@@ -747,7 +838,10 @@ def test_human_in_the_loop_middleware_all_ignored() -> None:
     state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
 
     def mock_all_ignore(requests):
-        return [{"type": "ignore", "args": None}, {"type": "ignore", "args": None}]
+        return [
+            {"type": "ignore", "args": None, "tool_call_id": "1"},
+            {"type": "ignore", "args": None, "tool_call_id": "2"},
+        ]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_all_ignore
@@ -773,7 +867,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
     tool_configs = {
         "test_tool": HumanInterruptConfig(
-            allow_ignore=True, allow_respond=True, allow_edit=True, allow_accept=True
+            allow_approve=True, allow_ignore=True, allow_response=True, allow_edit=True
         )
     }
 
@@ -789,7 +883,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
 
     def mock_capture_requests(requests):
         captured_requests.extend(requests)
-        return [{"type": "accept", "args": None}]
+        return [{"type": "approve", "args": None, "tool_call_id": "1"}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
@@ -799,12 +893,13 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert len(captured_requests) == 1
         request = captured_requests[0]
 
-        assert "action_request" in request
+        assert "action" in request
+        assert "args" in request
         assert "config" in request
         assert "description" in request
 
-        assert request["action_request"]["action"] == "test_tool"
-        assert request["action_request"]["args"] == {"input": "test", "location": "SF"}
+        assert request["action"] == "test_tool"
+        assert request["args"] == {"input": "test", "location": "SF"}
         assert request["config"] == tool_configs["test_tool"]
         assert "Custom prefix" in request["description"]
         assert "Tool: test_tool" in request["description"]

@@ -524,7 +524,8 @@ def _make_model_to_tools_edge(
         if pending_tool_calls:
             # imo we should not be injecting state, store here,
             # this should be done by the tool node itself ideally but this is a consequence
-            # of using Send w/ tool calls directly
+            # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
+            # largely internal so can be fixed later
             pending_tool_calls = [
                 tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
                 for call in pending_tool_calls
