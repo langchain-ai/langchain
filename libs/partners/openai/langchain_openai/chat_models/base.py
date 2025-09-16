@@ -1295,7 +1295,9 @@ class BaseChatOpenAI(BaseChatModel):
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
             if hasattr(message, "reasoning"):  # e.g. parsing from openrouter
-                generations[0].message.additional_kwargs["reasoning_content"] = message.reasoning
+                generations[0].message.additional_kwargs[
+                    "reasoning_content"
+                ] = message.reasoning
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
