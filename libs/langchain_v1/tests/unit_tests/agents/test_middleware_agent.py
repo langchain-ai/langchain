@@ -416,7 +416,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "approve", "args": None, "tool_call_id": "1"}]
+        return [{"type": "approve"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -449,7 +449,6 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
                 "type": "edit",
                 "action": "test_tool",
                 "args": {"input": "edited"},
-                "tool_call_id": "1",
             }
         ]
 
@@ -479,7 +478,7 @@ def test_human_in_the_loop_middleware_single_tool_ignore() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_ignore(requests):
-        return [{"type": "ignore", "args": None, "tool_call_id": "1"}]
+        return [{"type": "ignore"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_ignore):
         result = middleware.after_model(state)
@@ -511,7 +510,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_response(requests):
-        return [{"type": "response", "tool_message": "Custom response", "tool_call_id": "1"}]
+        return [{"type": "response", "tool_message": "Custom response"}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
@@ -552,8 +551,8 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
     def mock_mixed_responses(requests):
         return [
-            {"type": "approve", "args": None, "tool_call_id": "1"},
-            {"type": "ignore", "args": None, "tool_call_id": "2"},
+            {"type": "approve"},
+            {"type": "ignore"},
         ]
 
     with patch(
@@ -605,13 +604,11 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
                 "type": "edit",
                 "action": "get_forecast",
                 "args": {"location": "New York"},
-                "tool_call_id": "1",
             },
             {
                 "type": "edit",
                 "action": "get_temperature",
                 "args": {"location": "New York"},
-                "tool_call_id": "2",
             },
         ]
 
@@ -657,12 +654,10 @@ def test_human_in_the_loop_middleware_multiple_tools_response_types() -> None:
             {
                 "type": "response",
                 "tool_message": "actually, please get the conditions in NYC",
-                "tool_call_id": "1",
             },
             {
                 "type": "response",
                 "tool_message": "actually, please get the temperature in NYC",
-                "tool_call_id": "2",
             },
         ]
 
@@ -704,12 +699,12 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_unknown(requests):
-        return [{"type": "unknown", "args": None, "tool_call_id": "1"}]
+        return [{"type": "unknown"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
         with pytest.raises(
             ValueError,
-            match="Unexpected human response: {'type': 'unknown', 'args': None, 'tool_call_id': '1'}. Response type 'unknown' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'edit', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
+            match="Unexpected human response: {'type': 'unknown'}. Response type 'unknown' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'edit', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
         ):
             middleware.after_model(state)
 
@@ -731,7 +726,7 @@ def test_human_in_the_loop_middleware_disallowed_response_type() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_disallowed_response(requests):
-        return [{"type": "response", "args": "Custom response", "tool_call_id": "1"}]
+        return [{"type": "response", "tool_message": "Custom response"}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
@@ -739,7 +734,7 @@ def test_human_in_the_loop_middleware_disallowed_response_type() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match="Unexpected human response: {'type': 'response', 'args': 'Custom response', 'tool_call_id': '1'}. Response type 'response' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'ignore'\\] based on the tool's interrupt configuration.",
+            match="Unexpected human response: {'type': 'response', 'tool_message': 'Custom response'}. Response type 'response' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'ignore'\\] based on the tool's interrupt configuration.",
         ):
             middleware.after_model(state)
 
@@ -766,7 +761,6 @@ def test_human_in_the_loop_middleware_disallowed_edit_type() -> None:
                 "type": "edit",
                 "action": "test_tool",
                 "args": {"input": "edited"},
-                "tool_call_id": "1",
             }
         ]
 
@@ -775,7 +769,7 @@ def test_human_in_the_loop_middleware_disallowed_edit_type() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match="Unexpected human response: {'type': 'edit', 'action': 'test_tool', 'args': {'input': 'edited'}, 'tool_call_id': '1'}. Response type 'edit' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
+            match="Unexpected human response: {'type': 'edit', 'action': 'test_tool', 'args': {'input': 'edited'}}. Response type 'edit' is not allowed for tool 'test_tool'. Expected one with `'type'` in \\['accept', 'response', 'ignore'\\] based on the tool's interrupt configuration.",
         ):
             middleware.after_model(state)
 
@@ -800,7 +794,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"type": "approve", "args": None, "tool_call_id": "2"}]
+        return [{"type": "approve"}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -839,8 +833,8 @@ def test_human_in_the_loop_middleware_all_ignored() -> None:
 
     def mock_all_ignore(requests):
         return [
-            {"type": "ignore", "args": None, "tool_call_id": "1"},
-            {"type": "ignore", "args": None, "tool_call_id": "2"},
+            {"type": "ignore"},
+            {"type": "ignore"},
         ]
 
     with patch(
@@ -883,7 +877,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
 
     def mock_capture_requests(requests):
         captured_requests.extend(requests)
-        return [{"type": "approve", "args": None, "tool_call_id": "1"}]
+        return [{"type": "approve"}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
@@ -919,7 +913,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     # Test approve
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "approve", "tool_call_id": "1"}],
+        return_value=[{"type": "approve"}],
     ):
         result = middleware.after_model(state)
         assert result is not None
@@ -933,7 +927,6 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         return_value=[
             {
                 "type": "edit",
-                "tool_call_id": "1",
                 "action": "test_tool",
                 "args": {"input": "edited"},
             }
@@ -948,7 +941,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     # Test ignore
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "ignore", "tool_call_id": "1"}],
+        return_value=[{"type": "ignore"}],
     ):
         result = middleware.after_model(state)
         assert result is not None
@@ -963,7 +956,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     # Test response
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "response", "tool_call_id": "1", "tool_message": "Custom response"}],
+        return_value=[{"type": "response", "tool_message": "Custom response"}],
     ):
         result = middleware.after_model(state)
         assert result is not None
@@ -981,8 +974,8 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     assert result is None
 
 
-def test_human_in_the_loop_middleware_missing_tool_call_id() -> None:
-    """Test that missing tool call ID in resume raises an error."""
+def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
+    """Test that sequence mismatch in resume raises an error."""
     middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": True})
 
     ai_message = AIMessage(
@@ -991,23 +984,25 @@ def test_human_in_the_loop_middleware_missing_tool_call_id() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
+    # Test with too few responses
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "approve"}],  # Missing tool_call_id
+        return_value=[],  # No responses for 1 tool call
     ):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human response: \{'type': 'approve'\}\. Expected one with `'tool_call_id'` in \['1'\]\.",
+            match=r"Number of human responses \(0\) does not match number of hanging tool calls \(1\)\.",
         ):
             middleware.after_model(state)
 
+    # Test with too many responses
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"type": "approve", "tool_call_id": "nonexistent"}],
+        return_value=[{"type": "approve"}, {"type": "approve"}],  # 2 responses for 1 tool call
     ):
         with pytest.raises(
             ValueError,
-            match=r"Unexpected human response: \{'type': 'approve', 'tool_call_id': 'nonexistent'\}\. Expected one with `'tool_call_id'` in \['1'\]\.",
+            match=r"Number of human responses \(2\) does not match number of hanging tool calls \(1\)\.",
         ):
             middleware.after_model(state)
 

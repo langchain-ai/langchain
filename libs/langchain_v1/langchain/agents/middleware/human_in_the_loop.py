@@ -1,6 +1,6 @@
 """Human in the loop middleware."""
 
-from typing import Any, Literal, cast
+from typing import Any, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
 from langgraph.types import interrupt
@@ -40,7 +40,6 @@ class HumanInterrupt(TypedDict):
         args: Arguments for the action (tool kwargs)
         config: Configuration defining what actions are allowed
         description: Optional detailed description of what input is needed
-        tool_call_id: Identifier for the associated tool call
 
     Example:
         # Send the interrupt request and get the response
@@ -54,7 +53,6 @@ class HumanInterrupt(TypedDict):
                 allow_approve=True,  # Allow direct acceptance
             ),
             description="Please review the command before execution",
-            tool_call_id="call_123",
         )
         # Send the interrupt request and get the response
         response = interrupt([request])[0]
@@ -65,21 +63,18 @@ class HumanInterrupt(TypedDict):
     args: dict
     config: HumanInterruptConfig
     description: str | None
-    tool_call_id: str
 
 
 class ApprovePayload(TypedDict):
     """Human chose to approve the current state without changes."""
 
     type: Literal["approve"]
-    tool_call_id: str
 
 
 class IgnorePayload(TypedDict):
     """Human chose to ignore/skip the current step with optional tool message customization."""
 
     type: Literal["ignore"]
-    tool_call_id: str
     tool_message: NotRequired[str | ToolMessage]
 
 
@@ -87,7 +82,6 @@ class ResponsePayload(TypedDict):
     """Human provided text feedback or instructions."""
 
     type: Literal["response"]
-    tool_call_id: str
     tool_message: str | ToolMessage
 
 
@@ -95,7 +89,6 @@ class EditPayload(TypedDict):
     """Human chose to edit/modify the current state/content."""
 
     type: Literal["edit"]
-    tool_call_id: str
     action: str
     args: dict
 
@@ -173,7 +166,8 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         # Create interrupt requests for all tools that need approval
         interrupt_requests: list[HumanInterrupt] = []
-        for tool_call in interrupt_tool_calls.values():
+        interrupt_tool_calls_list = list(interrupt_tool_calls.values())
+        for tool_call in interrupt_tool_calls_list:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
             description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
@@ -184,22 +178,21 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 "args": tool_args,
                 "config": tool_config,
                 "description": description,
-                # ids should always be present on tool calls
-                "tool_call_id": cast("str", tool_call["id"]),
             }
             interrupt_requests.append(request)
 
         responses: list[HumanResponse] = interrupt(interrupt_requests)
 
-        for response in responses:
-            try:
-                tool_call = interrupt_tool_calls[response["tool_call_id"]]
-            except KeyError:
-                msg = (
-                    f"Unexpected human response: {response}. "
-                    f"Expected one with `'tool_call_id'` in {list(interrupt_tool_calls.keys())}."
-                )
-                raise ValueError(msg)
+        # Validate that the number of responses matches the number of interrupt tool calls
+        if len(responses) != len(interrupt_tool_calls_list):
+            msg = (
+                f"Number of human responses ({len(responses)}) does not match "
+                f"number of hanging tool calls ({len(interrupt_tool_calls_list)})."
+            )
+            raise ValueError(msg)
+
+        for i, response in enumerate(responses):
+            tool_call = interrupt_tool_calls_list[i]
 
             tool_config = self.tool_configs[tool_call["name"]]
 
