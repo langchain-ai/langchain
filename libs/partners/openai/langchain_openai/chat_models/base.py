@@ -1247,6 +1247,7 @@ class BaseChatOpenAI(BaseChatModel):
         # separately below).
         if response_dict.get("error"):
             raise ValueError(response_dict.get("error"))
+
         # Raise informative error messages for non-OpenAI chat completions APIs
         # that return malformed responses.
         try:
