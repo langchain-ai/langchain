@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.10, <4.0"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.72",
     "langchain-text-splitters<1.0.0,>=0.3.9",
@@ -29,16 +29,16 @@ openai = ["langchain-openai"]
 # cohere = ["langchain-cohere"]
 # google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
-fireworks = ["langchain-fireworks"]
-ollama = ["langchain-ollama"]
+# fireworks = ["langchain-fireworks"]
+# ollama = ["langchain-ollama"]
 together = ["langchain-together"]
-mistralai = ["langchain-mistralai"]
-huggingface = ["langchain-huggingface"]
-groq = ["langchain-groq"]
+# mistralai = ["langchain-mistralai"]
+# huggingface = ["langchain-huggingface"]
+# groq = ["langchain-groq"]
 # aws = ["langchain-aws"]
-deepseek = ["langchain-deepseek"]
+# deepseek = ["langchain-deepseek"]
 # xai = ["langchain-xai"]
-perplexity = ["langchain-perplexity"]
+# perplexity = ["langchain-perplexity"]
 
 [project.urls]
 "Source Code" = "https://github.com/langchain-ai/langchain/tree/master/libs/langchain"
