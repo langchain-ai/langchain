@@ -1,5 +1,6 @@
 """Develop integration packages for LangChain."""
 
+import os
 import re
 import shutil
 import subprocess
@@ -125,12 +126,28 @@ def new(
         # replacements in files
         replace_glob(destination_dir, "**/*", cast("dict[str, str]", replacements))
 
-        # poetry install
-        subprocess.run(
-            ["poetry", "install", "--with", "lint,test,typing,test_integration"],  # noqa: S607
-            cwd=destination_dir,
-            check=True,
-        )
+        # dependency install
+        try:
+            # Use --no-progress to avoid tty issues in CI/test environments
+            env = os.environ.copy()
+            env.pop("UV_FROZEN", None)
+            env.pop("VIRTUAL_ENV", None)
+            subprocess.run(
+                ["uv", "sync", "--dev", "--no-progress"],  # noqa: S607
+                cwd=destination_dir,
+                check=True,
+                env=env,
+            )
+        except FileNotFoundError:
+            typer.echo(
+                "uv is not installed. Skipping dependency installation; run "
+                "`uv sync --dev` manually if needed.",
+            )
+        except subprocess.CalledProcessError:
+            typer.echo(
+                "Failed to install dependencies. You may need to run "
+                "`uv sync --dev` manually in the package directory.",
+            )
     else:
         # confirm src and dst are the same length
         if not src:
@@ -166,7 +183,7 @@ def new(
                 typer.echo(f"File {dst_path} exists.")
                 raise typer.Exit(code=1)
 
-        for src_path, dst_path in zip(src_paths, dst_paths):
+        for src_path, dst_path in zip(src_paths, dst_paths, strict=False):
             shutil.copy(src_path, dst_path)
             replace_file(dst_path, cast("dict[str, str]", replacements))
 
