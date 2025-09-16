@@ -346,15 +346,9 @@ requires-dist = [
     { name = "langchain-anthropic", marker = "extra == 'anthropic'" },
     { name = "langchain-community", marker = "extra == 'community'" },
     { name = "langchain-core", editable = "../core" },
-    { name = "langchain-deepseek", marker = "extra == 'deepseek'" },
-    { name = "langchain-fireworks", marker = "extra == 'fireworks'" },
     { name = "langchain-google-genai", marker = "extra == 'google-genai'" },
-    { name = "langchain-groq", marker = "extra == 'groq'" },
-    { name = "langchain-huggingface", marker = "extra == 'huggingface'" },
-    { name = "langchain-mistralai", marker = "extra == 'mistralai'" },
-    { name = "langchain-ollama", marker = "extra == 'ollama'" },
+    { name = "langchain-google-vertexai", marker = "extra == 'google-vertexai'" },
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
-    { name = "langchain-perplexity", marker = "extra == 'perplexity'" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langsmith", specifier = ">=0.1.17" },
@@ -363,7 +357,7 @@ requires-dist = [
     { name = "requests", specifier = ">=2,<3" },
     { name = "sqlalchemy", specifier = ">=1.4,<3" },
 ]
-provides-extras = ["community", "anthropic", "openai", "google-genai", "fireworks", "ollama", "together", "mistralai", "huggingface", "groq", "deepseek", "perplexity"]
+provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "together"]
 
 [package.metadata.requires-dev]
 codespell = [{ name = "codespell", specifier = ">=2.2.0,<3.0.0" }]
