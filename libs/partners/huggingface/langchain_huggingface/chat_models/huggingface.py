@@ -492,7 +492,7 @@ class ChatHuggingFace(BaseChatModel):
     """Modify the likelihood of specified tokens appearing in the completion."""
     streaming: bool = False
     """Whether to stream the results or not."""
-    stream_usage: bool = False
+    stream_usage: Optional[bool] = None
     """Whether to include usage metadata in streaming output. If True, an additional
     message chunk will be generated during the stream including usage metadata."""
     n: Optional[int] = None
