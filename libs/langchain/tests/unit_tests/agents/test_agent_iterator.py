@@ -235,7 +235,7 @@ def test_agent_iterator_properties_and_setters() -> None:
     assert agent_iter.tags is None
     assert isinstance(agent_iter.agent_executor, AgentExecutor)
 
-    agent_iter.inputs = "New input"  # type: ignore[assignment]
+    agent_iter.inputs = "New input"
     assert isinstance(agent_iter.inputs, dict)
 
     agent_iter.callbacks = [FakeCallbackHandler()]
