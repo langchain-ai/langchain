@@ -111,19 +111,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         """Initialize the human in the loop middleware.
 
         Args:
-            tool_configs: Mapping of tool name to interrupt config.
+            tool_configs: Mapping of tool name to interrupt config (bool | HumanInterruptConfig).
+                * `True` indicates all interrupt config options are allowed.
+                * `False` indicates that the tool is auto-approved.
+                * `HumanInterruptConfig` indicates the specific interrupt config options to use.
             message_prefix: The message prefix to use when constructing interrupt content.
         """
         super().__init__()
         resolved_tool_configs = {}
         for tool_name, tool_config in tool_configs.items():
             if isinstance(tool_config, bool):
-                resolved_tool_configs[tool_name] = HumanInterruptConfig(
-                    allow_approve=tool_config,
-                    allow_ignore=tool_config,
-                    allow_response=tool_config,
-                    allow_edit=tool_config,
-                )
+                if tool_config is True:
+                    resolved_tool_configs[tool_name] = HumanInterruptConfig(
+                        allow_approve=True,
+                        allow_ignore=True,
+                        allow_response=True,
+                        allow_edit=True,
+                    )
             else:
                 resolved_tool_configs[tool_name] = tool_config
         self.tool_configs = resolved_tool_configs
