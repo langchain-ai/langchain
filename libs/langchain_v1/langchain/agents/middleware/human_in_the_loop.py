@@ -111,7 +111,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         """Initialize the human in the loop middleware.
 
         Args:
-            tool_configs: The tool interrupt configs to use for the middleware.
+            tool_configs: Mapping of tool name to interrupt config.
             message_prefix: The message prefix to use when constructing interrupt content.
         """
         super().__init__()
@@ -181,9 +181,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         responses: list[HumanResponse] = interrupt(interrupt_requests)
 
-        # we might want to map responses to tool call ids explicitly instead of assuming order
-        # Right now this will fail if there's not a corresponding response for each tool call
-        # Which we want to block on anyways but can do more gracefully
         for response in responses:
             try:
                 tool_call = interrupt_tool_calls[response["tool_call_id"]]
