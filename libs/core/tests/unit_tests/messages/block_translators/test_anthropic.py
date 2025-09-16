@@ -162,6 +162,11 @@ def test_convert_to_v1_from_anthropic() -> None:
     # Check no mutation
     assert message.content != expected_content
 
+    message = AIMessage("Hello", response_metadata={"model_provider": "anthropic"})
+    expected_content = [{"type": "text", "text": "Hello"}]
+    assert message.content_blocks == expected_content
+    assert message.content != expected_content  # check no mutation
+
 
 def test_convert_to_v1_from_anthropic_chunk() -> None:
     chunks = [
