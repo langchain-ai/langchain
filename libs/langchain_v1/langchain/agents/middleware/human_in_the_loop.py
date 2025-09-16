@@ -15,10 +15,12 @@ class HumanInterruptConfig(TypedDict):
     This controls the available interaction options when the graph is paused for human input.
 
     Attributes:
-        allow_approve: Whether the human can accept/approve the current state
-        allow_ignore: Whether the human can choose to ignore/skip the current step
-        allow_response: Whether the human can provide a text response/feedback
-        allow_edit: Whether the human can edit the provided content/state
+        allow_approve: Whether the human can approve a given tool call
+        allow_ignore: Whether the human can choose to ignore a given tool call.
+            Results in an artificial tool message added to the `messages` list.
+        allow_response: Whether the human can provide a response to a given tool call.
+            Results in an artificial tool message added to the `messages` list.
+        allow_edit: Whether the human can edit a tool call (name and args)
     """
 
     allow_approve: bool
@@ -30,7 +32,8 @@ class HumanInterruptConfig(TypedDict):
 class HumanInterrupt(TypedDict):
     """Represents an interrupt triggered by the graph that requires human intervention.
 
-    This is passed to the `interrupt` function when execution is paused for human input.
+    For each tool call requiring human input, a `HumanInterrupt` is created and
+    is accessible in the agent state when execution is paused for human input.
 
     Attributes:
         action: The action being requested (a tool name)
@@ -106,16 +109,19 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
     def __init__(
         self,
         tool_configs: dict[str, bool | HumanInterruptConfig],
+        *,
         message_prefix: str = "Tool execution requires approval",
     ) -> None:
         """Initialize the human in the loop middleware.
 
         Args:
             tool_configs: Mapping of tool name to interrupt config (bool | HumanInterruptConfig).
+                If a tool doesn't have an entry, it's auto-approved by default.
                 * `True` indicates all interrupt config options are allowed.
                 * `False` indicates that the tool is auto-approved.
                 * `HumanInterruptConfig` indicates the specific interrupt config options to use.
-            message_prefix: The message prefix to use when constructing interrupt content.
+            message_prefix: The prefix to use when constructing interrupts (requests for input).
+                This is used to provide context about the tool call and the action being requested.
         """
         super().__init__()
         resolved_tool_configs = {}
