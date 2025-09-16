@@ -728,8 +728,16 @@ class ChatHuggingFace(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
+        *,
+        stream_usage: Optional[bool] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
+        kwargs["stream"] = True
+        stream_usage = self._should_stream_usage(
+            stream_usage=stream_usage, **kwargs
+        )
+        if stream_usage:
+            kwargs["stream_options"] = {"include_usage": stream_usage}
         message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
@@ -738,6 +746,23 @@ class ChatHuggingFace(BaseChatModel):
         async for chunk in await self.llm.async_client.chat_completion(
             messages=message_dicts, **params
         ):
+            usage = chunk.get("usage")
+            if usage:
+                usage_msg = AIMessageChunk(
+                    content="",
+                    additional_kwargs={},
+                    response_metadata={},
+                    usage_metadata={
+                        "input_tokens": usage.get("prompt_tokens", 0),
+                        "output_tokens": usage.get("completion_tokens", 0),
+                        "total_tokens": usage.get("total_tokens", 0),
+                        "input_token_details": {"audio": 0, "cache_read": 0},
+                        "output_token_details": {"audio": 0, "reasoning": 0},
+                    },
+                )
+                yield ChatGenerationChunk(message=usage_msg)
+                continue
+
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
