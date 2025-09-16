@@ -4,15 +4,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
 from langchain_core.messages.block_translators.anthropic import (
     _convert_to_v1_from_anthropic,
-    _convert_to_v1_from_anthropic_input,
 )
-
-
-def _convert_to_v1_from_bedrock_input(
-    content: list[types.ContentBlock],
-) -> list[types.ContentBlock]:
-    """Attempt to unpack non-standard blocks."""
-    return _convert_to_v1_from_anthropic_input(content)
 
 
 def _convert_to_v1_from_bedrock(message: AIMessage) -> list[types.ContentBlock]:
