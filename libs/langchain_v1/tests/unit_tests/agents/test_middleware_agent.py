@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from syrupy.assertion import SnapshotAssertion
 
+from pydantic import BaseModel, Field
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -14,6 +15,7 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.tools import tool
+from langgraph.types import Command
 
 from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.human_in_the_loop import (
@@ -28,7 +30,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.prebuilt.interrupt import ActionRequest
+from langchain.agents.structured_output import ToolStrategy
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
@@ -1275,3 +1277,78 @@ def test_modify_model_request() -> None:
     assert (
         result["messages"][2].content == "You are a helpful assistant.-Hello-remember to be nice!"
     )
+
+
+def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
+    """Test that when there are both structured and regular tool calls, we execute regular and jump to END."""
+
+    class WeatherResponse(BaseModel):
+        """Weather response."""
+
+        temperature: float = Field(description="Temperature in fahrenheit")
+        condition: str = Field(description="Weather condition")
+
+    @tool
+    def regular_tool(query: str) -> str:
+        """A regular tool that returns a string."""
+        return f"Regular tool result for: {query}"
+
+    # Create a fake model that returns both structured and regular tool calls
+    class FakeModelWithBothToolCalls(FakeToolCallingModel):
+        def __init__(self):
+            super().__init__()
+            self.tool_calls = [
+                [
+                    ToolCall(
+                        name="WeatherResponse",
+                        args={"temperature": 72.0, "condition": "sunny"},
+                        id="structured_call_1",
+                    ),
+                    ToolCall(
+                        name="regular_tool", args={"query": "test query"}, id="regular_call_1"
+                    ),
+                ]
+            ]
+
+    # Create agent with both structured output and regular tools
+    agent = create_agent(
+        model=FakeModelWithBothToolCalls(),
+        tools=[regular_tool],
+        response_format=ToolStrategy(schema=WeatherResponse),
+    )
+
+    # Compile and invoke the agent
+    compiled_agent = agent.compile()
+    result = compiled_agent.invoke(
+        {"messages": [HumanMessage("What's the weather and help me with a query?")]}
+    )
+
+    # Verify that we have the expected messages:
+    # 1. Human message
+    # 2. AI message with both tool calls
+    # 3. Tool message from structured tool call
+    # 4. Tool message from regular tool call
+
+    messages = result["messages"]
+    assert len(messages) >= 4
+
+    # Check that we have the AI message with both tool calls
+    ai_message = messages[1]
+    assert isinstance(ai_message, AIMessage)
+    assert len(ai_message.tool_calls) == 2
+
+    # Check that we have a tool message from the regular tool
+    tool_messages = [m for m in messages if isinstance(m, ToolMessage)]
+    assert len(tool_messages) >= 1
+
+    # The regular tool should have been executed
+    regular_tool_message = next((m for m in tool_messages if m.name == "regular_tool"), None)
+    assert regular_tool_message is not None
+    assert "Regular tool result for: test query" in regular_tool_message.content
+
+    # Verify that the structured response is available in the result
+    assert "response" in result
+    assert result["response"] is not None
+    assert hasattr(result["response"], "temperature")
+    assert result["response"].temperature == 72.0
+    assert result["response"].condition == "sunny"
