@@ -7,7 +7,7 @@ authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
 requires-python = ">=3.10"
 dependencies = [
-    "typer<1.0.0,>=0.9.0",
+    "typer<1.0.0,>=0.17",
     "gitpython<4,>=3",
     "langserve[all]>=0.0.51",
     "uvicorn<1.0,>=0.23",
@@ -30,7 +30,7 @@ langchain-cli = "langchain_cli.cli:app"
 
 [dependency-groups]
 dev = ["pytest<9.0.0,>=7.4.2", "pytest-watcher<1.0.0,>=0.3.4"]
-lint = ["ruff<0.13,>=0.12.2", "mypy<1.18,>=1.17.1"]
+lint = ["ruff<0.13,>=0.12.2", "mypy<1.19,>=1.18.1"]
 test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []
@@ -79,6 +79,12 @@ pyupgrade.keep-runtime-typing = true
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [ "D1", "DOC", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
+
+[tool.pytest.ini_options]
+addopts = "--strict-markers --strict-config --durations=5"
+markers = [
+    "compile: mark placeholder test used to compile integration tests without running them",
+]
 
 [tool.mypy]
 plugins = ["pydantic.mypy"]

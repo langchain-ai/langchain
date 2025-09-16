@@ -14,16 +14,16 @@ dependencies = [
 ]
 
 name = "langchain"
-version = "1.0.0a4"
+version = "1.0.0a5"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
 [project.optional-dependencies]
-# community = ["langchain-community"]
+community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
 azure-ai = ["langchain-azure-ai"]
-# cohere = ["langchain-cohere"]
+cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
@@ -62,7 +62,7 @@ lint = [
     "ruff>=0.12.2",
 ]
 typing = [
-    "mypy<1.18,>=1.17.1",
+    "mypy<1.19,>=1.18.1",
     "types-toml>=0.10.8.20240310",
 ]
 

@@ -487,7 +487,7 @@ def test_tool_use() -> None:
     assert content_blocks[1]["args"]
 
     # Testing token-efficient tools
-    # https://docs.anthropic.com/en/docs/build-with-claude/tool-use/token-efficient-tool-use
+    # https://docs.anthropic.com/en/docs/agents-and-tools/tool-use/token-efficient-tool-use
     assert gathered.usage_metadata
     assert response.usage_metadata
     assert (
