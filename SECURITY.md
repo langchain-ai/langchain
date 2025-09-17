@@ -22,9 +22,7 @@ Example scenarios with mitigation strategies:
 * A user may ask an agent with write access to an external API to write malicious data to the API, or delete data from that API. To mitigate, give the agent read-only API keys, or limit it to only use endpoints that are already resistant to such misuse.
 * A user may ask an agent with access to a database to drop a table or mutate the schema. To mitigate, scope the credentials to only the tables that the agent needs to access and consider issuing READ-ONLY credentials.
 
-If you're building applications that access external resources like file systems, APIs
-or databases, consider speaking with your company's security team to determine how to best
-design and secure your applications.
+If you're building applications that access external resources like file systems, APIs or databases, consider speaking with your company's security team to determine how to best design and secure your applications.
 
 ## Reporting OSS Vulnerabilities
 
@@ -38,9 +36,7 @@ Before reporting a vulnerability, please review:
 
 1) In-Scope Targets and Out-of-Scope Targets below.
 2) The [langchain-ai/langchain](https://python.langchain.com/docs/contributing/repo_structure) monorepo structure.
-3) The [Best Practices](#best-practices) above to
-   understand what we consider to be a security vulnerability vs. developer
-   responsibility.
+3) The [Best Practices](#best-practices) above to understand what we consider to be a security vulnerability vs. developer responsibility.
 
 ### In-Scope Targets
 

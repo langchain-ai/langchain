@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.9"
 dependencies = [
     "langchain-core<1.0.0,>=0.3.72",
     "langchain-text-splitters<1.0.0,>=0.3.9",
@@ -25,9 +25,9 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-# azure-ai = ["langchain-azure-ai"]
-# cohere = ["langchain-cohere"]
-# google-vertexai = ["langchain-google-vertexai"]
+azure-ai = ["langchain-azure-ai"]
+cohere = ["langchain-cohere"]
+google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
 ollama = ["langchain-ollama"]
@@ -35,9 +35,9 @@ together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
 huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
-# aws = ["langchain-aws"]
+aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
-# xai = ["langchain-xai"]
+xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 
 [project.urls]
