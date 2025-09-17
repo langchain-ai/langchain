@@ -8,8 +8,8 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from langchain_core.language_models._utils import (
-    _is_openai_data_block,
     _parse_data_uri,
+    is_openai_data_block,
 )
 from langchain_core.messages import content as types
 
@@ -178,7 +178,7 @@ def _convert_to_v1_from_chat_completions_input(
             "image_url",
             "input_audio",
             "file",
-        } and _is_openai_data_block(block):
+        } and is_openai_data_block(block):
             converted_block = _convert_openai_format_to_data_block(block)
             # If conversion succeeded, use it; otherwise keep as non_standard
             if (
