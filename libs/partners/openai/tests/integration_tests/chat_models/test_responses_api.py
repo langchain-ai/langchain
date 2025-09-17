@@ -498,12 +498,12 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         tool_outputs = [
             item
             for item in response.content_blocks
-            if item["type"] == "code_interpreter_call"
+            if item["type"] == "server_tool_call" and item["name"] == "code_interpreter"
         ]
         code_interpreter_result = next(
             item
             for item in response.content_blocks
-            if item["type"] == "code_interpreter_result"
+            if item["type"] == "server_tool_result"
         )
         assert tool_outputs
         assert code_interpreter_result
@@ -542,12 +542,10 @@ def test_code_interpreter(output_version: Literal["v0", "responses/v1", "v1"]) -
         code_interpreter_call = next(
             item
             for item in full.content_blocks
-            if item["type"] == "code_interpreter_call"
+            if item["type"] == "server_tool_call" and item["name"] == "code_interpreter"
         )
         code_interpreter_result = next(
-            item
-            for item in full.content_blocks
-            if item["type"] == "code_interpreter_result"
+            item for item in full.content_blocks if item["type"] == "server_tool_result"
         )
         assert code_interpreter_call
         assert code_interpreter_result

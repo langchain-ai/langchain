@@ -747,6 +747,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     }
                     if sources:
                         web_search_result["output"] = {"sources": sources}
+
                     status = block.get("status")
                     if status == "failed":
                         web_search_result["status"] = "error"
@@ -762,14 +763,23 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
 
             elif block_type == "code_interpreter_call":
                 code_interpreter_call = {
-                    "type": "code_interpreter_call",
+                    "type": "server_tool_call",
+                    "name": "code_interpreter",
                     "id": block["id"],
                 }
                 if "code" in block:
-                    code_interpreter_call["code"] = block["code"]
+                    code_interpreter_call["args"] = {"code": block["code"]}
                 if "index" in block:
                     code_interpreter_call["index"] = f"lc_cic_{block['index']}"
-                known_fields = {"type", "id", "language", "code", "extras", "index"}
+                known_fields = {
+                    "type",
+                    "id",
+                    "outputs",
+                    "status",
+                    "code",
+                    "extras",
+                    "index",
+                }
                 for key in block:
                     if key not in known_fields:
                         if "extras" not in code_interpreter_call:
@@ -777,33 +787,26 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         code_interpreter_call["extras"][key] = block[key]
 
                 code_interpreter_result = {
-                    "type": "code_interpreter_result",
-                    "id": block["id"],
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
                 }
                 if "outputs" in block:
-                    code_interpreter_result["outputs"] = block["outputs"]
-                    for output in block["outputs"]:
-                        if (
-                            isinstance(output, dict)
-                            and (output_type := output.get("type"))
-                            and output_type == "logs"
-                        ):
-                            if "output" not in code_interpreter_result:
-                                code_interpreter_result["output"] = []
-                            code_interpreter_result["output"].append(
-                                {
-                                    "type": "code_interpreter_output",
-                                    "stdout": output.get("logs", ""),
-                                }
-                            )
+                    code_interpreter_result["output"] = block["outputs"]
 
-                if "status" in block:
-                    code_interpreter_result["status"] = block["status"]
+                status = block.get("status")
+                if status == "failed":
+                    code_interpreter_result["status"] = "error"
+                elif status == "completed":
+                    code_interpreter_result["status"] = "success"
+                elif status:
+                    code_interpreter_result["extras"] = {"status": status}
+                else:
+                    pass
                 if "index" in block and isinstance(block["index"], int):
                     code_interpreter_result["index"] = f"lc_cir_{block['index'] + 1}"
 
-                yield cast("types.CodeInterpreterCall", code_interpreter_call)
-                yield cast("types.CodeInterpreterResult", code_interpreter_result)
+                yield cast("types.ServerToolCall", code_interpreter_call)
+                yield cast("types.ServerToolResult", code_interpreter_result)
 
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)

@@ -283,10 +283,9 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
             break
 
         # If this really is the matching “result” – collapse
-        if (
-            nxt.get("type") == "server_tool_result"
-            and nxt.get("tool_call_id") == current.get("id")
-        ):
+        if nxt.get("type") == "server_tool_result" and nxt.get(
+            "tool_call_id"
+        ) == current.get("id"):
             if current.get("name") == "web_search":
                 collapsed = {"id": current["id"]}
                 if "args" in current:
@@ -305,9 +304,11 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     pass
                 collapsed["type"] = "web_search_call"
 
-            if current.get("name") == "code_interpreter_call":
+            if current.get("name") == "code_interpreter":
                 collapsed = {"id": current["id"]}
-                for key in ("code", "container_id"):
+                if "args" in current and "code" in current["args"]:
+                    collapsed["code"] = current["args"]["code"]
+                for key in ("container_id",):
                     if key in current:
                         collapsed[key] = current[key]
                     elif key in current.get("extras", {}):
@@ -315,13 +316,15 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     else:
                         pass
 
-                for key in ("outputs", "status"):
-                    if key in nxt:
-                        collapsed[key] = nxt[key]
-                    elif key in nxt.get("extras", {}):
-                        collapsed[key] = nxt["extras"][key]
-                    else:
-                        pass
+                if "output" in nxt:
+                    collapsed["outputs"] = nxt["output"]
+                if status := nxt.get("status"):
+                    if status == "success":
+                        collapsed["status"] = "completed"
+                    elif status == "error":
+                        collapsed["status"] = "failed"
+                elif nxt.get("extras", {}).get("status"):
+                    collapsed["status"] = nxt["extras"]["status"]
                 collapsed["type"] = "code_interpreter_call"
 
             yield collapsed
