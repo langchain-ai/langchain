@@ -953,7 +953,7 @@ def is_data_content_block(block: dict) -> bool:
     if block.get("type") not in _get_data_content_block_types():
         return False
 
-    if any(key in block for key in ("url", "base64", "file_id")):
+    if any(key in block for key in ("url", "base64", "file_id", "text")):
         # Type is valid and at least one data field is present
         # (Accepts old-style image and audio URLContentBlock)
         return True
