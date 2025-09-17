@@ -743,3 +743,7 @@ packages:
   name_title: Oracle Cloud Infrastructure (OCI)
   repo: oracle/langchain-oracle
   path: .
+- name: langchain-polaris-ai-datainsight
+  path: .
+  repo: PolarisOffice/langchain-polaris-ai-datainsight
+  name_title: Polaris AI Data Insight

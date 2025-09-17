@@ -1029,6 +1029,12 @@ const FEATURE_TABLES = {
                 source: "Various file types (see https://ds4sd.github.io/docling/)",
                 apiLink: "https://python.langchain.com/docs/integrations/document_loaders/docling/"
             },
+            {
+                name: "PolarisAIDataInsightLoader",
+                link: "../../integrations/document_loaders/polaris_ai_datainsight",
+                source: "Various file types (see https://datainsight.polarisoffice.com/documentation?docType=doc_extract)",
+                apiLink: "https://python.langchain.com/docs/integrations/document_loaders/polaris_ai_datainsight/"
+            },
         ]
     },
     vectorstores: {
