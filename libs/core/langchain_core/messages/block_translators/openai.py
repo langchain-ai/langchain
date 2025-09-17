@@ -713,21 +713,26 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     yield tool_call_block
 
             elif block_type == "web_search_call":
-                web_search_call = {"type": "web_search_call", "id": block["id"]}
+                web_search_call = {
+                    "type": "server_tool_call",
+                    "name": "web_search",
+                    "id": block["id"],
+                }
                 if "index" in block:
                     web_search_call["index"] = f"lc_wsc_{block['index']}"
-                if (
-                    "action" in block
-                    and isinstance(block["action"], dict)
-                    and block["action"].get("type") == "search"
-                    and "query" in block["action"]
-                ):
-                    web_search_call["query"] = block["action"]["query"]
+
+                sources: Optional[dict[str, Any]] = None
+                if "action" in block and isinstance(block["action"], dict):
+                    if "sources" in block["action"]:
+                        sources = block["action"]["sources"]
+                    web_search_call["args"] = {
+                        k: v for k, v in block["action"].items() if k != "sources"
+                    }
                 for key in block:
-                    if key not in ("type", "id", "index"):
+                    if key not in ("type", "id", "action", "status", "index"):
                         web_search_call[key] = block[key]
 
-                yield cast("types.WebSearchCall", web_search_call)
+                yield cast("types.ServerToolCall", web_search_call)
 
                 # If .content already has web_search_result, don't add
                 if not any(
@@ -736,10 +741,24 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     and other_block.get("id") == block["id"]
                     for other_block in message.content
                 ):
-                    web_search_result = {"type": "web_search_result", "id": block["id"]}
+                    web_search_result = {
+                        "type": "server_tool_result",
+                        "tool_call_id": block["id"],
+                    }
+                    if sources:
+                        web_search_result["output"] = {"sources": sources}
+                    status = block.get("status")
+                    if status == "failed":
+                        web_search_result["status"] = "error"
+                    elif status == "completed":
+                        web_search_result["status"] = "success"
+                    elif status:
+                        web_search_result["extras"] = {"status": status}
+                    else:
+                        pass
                     if "index" in block and isinstance(block["index"], int):
                         web_search_result["index"] = f"lc_wsr_{block['index'] + 1}"
-                    yield cast("types.WebSearchResult", web_search_result)
+                    yield cast("types.ServerToolResult", web_search_result)
 
             elif block_type == "code_interpreter_call":
                 code_interpreter_call = {

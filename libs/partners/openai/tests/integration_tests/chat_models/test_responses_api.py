@@ -109,7 +109,7 @@ def test_web_search(output_version: Literal["responses/v1", "v1"]) -> None:
         if output_version == "responses/v1":
             assert block_types == ["web_search_call", "text"]
         else:
-            assert block_types == ["web_search_call", "web_search_result", "text"]
+            assert block_types == ["server_tool_call", "server_tool_result", "text"]
 
 
 @pytest.mark.flaky(retries=3, delay=1)

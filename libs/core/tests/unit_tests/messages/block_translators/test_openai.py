@@ -354,8 +354,12 @@ def test_compat_responses_v03() -> None:
             "id": "call_abc",
             "extras": {"item_id": "fc_abc"},
         },
-        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},  # type: ignore[list-item]
-        {"type": "web_search_result", "id": "websearch_123"},
+        {"type": "server_tool_call", "name": "web_search", "id": "websearch_123"},
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "websearch_123",
+            "status": "success",
+        },
     ]
     assert message_v03.content_blocks == expected_content
 
