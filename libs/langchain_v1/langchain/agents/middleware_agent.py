@@ -5,7 +5,7 @@ from collections.abc import Callable, Sequence
 from typing import Any, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
@@ -219,8 +219,6 @@ def create_agent(  # noqa: PLR0915
             if not output.tool_calls and native_output_binding:
                 structured_response = native_output_binding.parse(output)
                 return {"messages": [output], "response": structured_response}
-            if state.get("response") is not None:
-                return {"messages": [output], "response": None}
             return {"messages": [output]}
 
         # Handle structured output with tools strategy
@@ -418,7 +416,7 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, first_node),
+            _make_tools_to_model_edge(tool_node, first_node, structured_output_tools),
             [first_node, END],
         )
         graph.add_conditional_edges(
@@ -482,6 +480,22 @@ def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
     return None
 
 
+def _fetch_last_ai_and_tool_messages(
+    messages: list[AnyMessage],
+) -> tuple[AIMessage, list[ToolMessage]]:
+    last_ai_index: int
+    last_ai_message: AIMessage
+
+    for i in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[i], AIMessage):
+            last_ai_index = i
+            last_ai_message = cast("AIMessage", messages[i])
+            break
+
+    tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
+    return last_ai_message, tool_messages
+
+
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
 ) -> Callable[[AgentState], str | list[Send] | None]:
@@ -489,31 +503,7 @@ def _make_model_to_tools_edge(
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
-        last_message = state["messages"][-1]
-
-        # Check if this is a ToolMessage from structured output - if so, end
-        # interesting, should we be auto ending here? should we execute other tools?
-        if isinstance(last_message, ToolMessage) and last_message.name in structured_output_tools:
-            return END
-
-        # Find the last AI message and all tool messages since said AI message
-        last_ai_index = None
-        last_ai_message: AIMessage
-        for i in range(len(state["messages"]) - 1, -1, -1):
-            if isinstance(state["messages"][i], AIMessage):
-                last_ai_index = i
-                last_ai_message = cast("AIMessage", state["messages"][i])
-                break
-
-        tool_messages = (
-            [
-                m.tool_call_id
-                for m in state["messages"][last_ai_index + 1 :]
-                if isinstance(m, ToolMessage)
-            ]
-            if last_ai_index is not None
-            else []
-        )
+        last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         pending_tool_calls = [
             c
@@ -538,15 +528,19 @@ def _make_model_to_tools_edge(
 
 
 def _make_tools_to_model_edge(
-    tool_node: ToolNode, next_node: str
+    tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
 ) -> Callable[[AgentState], str | None]:
     def tools_to_model(state: AgentState) -> str | None:
-        ai_message = [m for m in state["messages"] if isinstance(m, AIMessage)][-1]
+        last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
         if all(
             tool_node.tools_by_name[c["name"]].return_direct
-            for c in ai_message.tool_calls
+            for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
         ):
+            return END
+
+        if any(t.name in structured_output_tools for t in tool_messages):
             return END
 
         return next_node
