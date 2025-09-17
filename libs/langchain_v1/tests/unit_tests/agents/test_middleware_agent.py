@@ -20,6 +20,8 @@ from langgraph.types import Command
 from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
+    HumanInTheLoopConfig,
+    ActionRequest,
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
@@ -360,18 +362,26 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={"test_tool": ["approve", "reject", "edit"]},
-        action_request_prefix="Custom prefix",
+        tool_configs={
+            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        },
+        description_prefix="Custom prefix",
     )
 
-    assert middleware.tool_configs == {"test_tool": ["approve", "reject", "edit"]}
-    assert middleware.action_request_prefix == "Custom prefix"
+    assert middleware.tool_configs == {
+        "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+    }
+    assert middleware.description_prefix == "Custom prefix"
 
 
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
+        }
+    )
 
     # Test with no messages
     state: dict[str, Any] = {"messages": []}
@@ -396,7 +406,11 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -405,7 +419,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"action": "approve"}]
+        return [{"type": "accept", "args": None}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -418,7 +432,11 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -429,8 +447,11 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     def mock_edit(requests):
         return [
             {
-                "action": "approve",
-                "args": {"tool_name": "test_tool", "tool_args": {"input": "edited"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="test_tool",
+                    args={"input": "edited"},
+                ),
             }
         ]
 
@@ -443,10 +464,14 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
         assert result["messages"][0].tool_calls[0]["id"] == "1"  # ID should be preserved
 
 
-def test_human_in_the_loop_middleware_single_tool_reject() -> None:
-    """Test HumanInTheLoopMiddleware with single tool reject response."""
+def test_human_in_the_loop_middleware_single_tool_response() -> None:
+    """Test HumanInTheLoopMiddleware with single tool response with custom message."""
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -454,45 +479,18 @@ def test_human_in_the_loop_middleware_single_tool_reject() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
-    def mock_reject(requests):
-        return [{"action": "reject"}]
+    def mock_response(requests):
+        return [{"type": "response", "args": "Custom response message"}]
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject):
+    with patch(
+        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_response
+    ):
         result = middleware.after_model(state)
         assert result is not None
-        assert "jump_to" in result
-        assert result["jump_to"] == "model"
         assert "messages" in result
-        assert len(result["messages"]) == 1
+        assert len(result["messages"]) == 1  # Only tool message when no approved tool calls
         assert isinstance(result["messages"][0], ToolMessage)
-        assert (
-            "User rejected the tool call for `test_tool` with id 1" in result["messages"][0].content
-        )
-
-
-def test_human_in_the_loop_middleware_single_tool_reject_with_message() -> None:
-    """Test HumanInTheLoopMiddleware with single tool reject with custom message."""
-
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
-
-    ai_message = AIMessage(
-        content="I'll help you",
-        tool_calls=[{"name": "test_tool", "args": {"input": "test"}, "id": "1"}],
-    )
-    state = {"messages": [HumanMessage(content="Hello"), ai_message]}
-
-    def mock_reject(requests):
-        return [{"action": "reject", "message": "Custom rejection message"}]
-
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_reject):
-        result = middleware.after_model(state)
-        assert result is not None
-        assert "jump_to" in result
-        assert result["jump_to"] == "model"
-        assert "messages" in result
-        assert len(result["messages"]) == 1
-        assert isinstance(result["messages"][0], ToolMessage)
-        assert result["messages"][0].content == "Custom rejection message"
+        assert result["messages"][0].content == "Custom response message"
         assert result["messages"][0].name == "test_tool"
         assert result["messages"][0].tool_call_id == "1"
 
@@ -502,8 +500,8 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
     middleware = HumanInTheLoopMiddleware(
         tool_configs={
-            "get_forecast": ["approve", "reject", "edit"],
-            "get_temperature": ["approve", "reject", "edit"],
+            "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
+            "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
     )
 
@@ -518,8 +516,8 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
     def mock_mixed_responses(requests):
         return [
-            {"action": "approve"},
-            {"action": "reject"},
+            {"type": "accept", "args": None},
+            {"type": "response", "args": "User rejected this tool call"},
         ]
 
     with patch(
@@ -528,19 +526,20 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
         result = middleware.after_model(state)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 2
+        assert (
+            len(result["messages"]) == 2
+        )  # AI message with accepted tool call + tool message for rejected
 
         # First message should be the AI message with updated tool calls
         updated_ai_message = result["messages"][0]
+        assert len(updated_ai_message.tool_calls) == 1  # Only accepted tool call
         assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
-        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Rejected
 
-        # Second message should be the reject message
-        reject_message = result["messages"][1]
-        assert isinstance(reject_message, ToolMessage)
-        assert (
-            "User rejected the tool call for `get_temperature` with id 2" in reject_message.content
-        )
+        # Second message should be the tool message for the rejected tool call
+        tool_message = result["messages"][1]
+        assert isinstance(tool_message, ToolMessage)
+        assert tool_message.content == "User rejected this tool call"
+        assert tool_message.name == "get_temperature"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
@@ -548,8 +547,8 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
     middleware = HumanInTheLoopMiddleware(
         tool_configs={
-            "get_forecast": ["approve", "reject", "edit"],
-            "get_temperature": ["approve", "reject", "edit"],
+            "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
+            "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
     )
 
@@ -565,12 +564,18 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     def mock_edit_responses(requests):
         return [
             {
-                "action": "approve",
-                "args": {"tool_name": "get_forecast", "tool_args": {"location": "New York"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="get_forecast",
+                    args={"location": "New York"},
+                ),
             },
             {
-                "action": "approve",
-                "args": {"tool_name": "get_temperature", "tool_args": {"location": "New York"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="get_temperature",
+                    args={"location": "New York"},
+                ),
             },
         ]
 
@@ -589,10 +594,14 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
         assert updated_ai_message.tool_calls[1]["id"] == "2"  # ID preserved
 
 
-def test_human_in_the_loop_middleware_approve_with_modified_args() -> None:
-    """Test HumanInTheLoopMiddleware with approve action that includes modified args."""
+def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
+    """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -600,17 +609,20 @@ def test_human_in_the_loop_middleware_approve_with_modified_args() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
-    def mock_approve_with_args(requests):
+    def mock_edit_with_args(requests):
         return [
             {
-                "action": "approve",
-                "args": {"tool_name": "test_tool", "tool_args": {"input": "modified"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="test_tool",
+                    args={"input": "modified"},
+                ),
             }
         ]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        side_effect=mock_approve_with_args,
+        side_effect=mock_edit_with_args,
     ):
         result = middleware.after_model(state)
         assert result is not None
@@ -623,9 +635,13 @@ def test_human_in_the_loop_middleware_approve_with_modified_args() -> None:
         assert updated_ai_message.tool_calls[0]["id"] == "1"  # ID preserved
 
 
-def test_human_in_the_loop_middleware_unknown_response_action() -> None:
-    """Test HumanInTheLoopMiddleware with unknown response action."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject", "edit"]})
+def test_human_in_the_loop_middleware_unknown_response_type() -> None:
+    """Test HumanInTheLoopMiddleware with unknown response type."""
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -634,12 +650,12 @@ def test_human_in_the_loop_middleware_unknown_response_action() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_unknown(requests):
-        return [{"action": "unknown"}]
+        return [{"type": "unknown", "args": None}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
         with pytest.raises(
             ValueError,
-            match="Unexpected human response: {'action': 'unknown'}. Response action 'unknown' is not allowed for tool 'test_tool'. Expected one of \\['approve', 'reject', 'edit'\\] based on the tool's configuration.",
+            match=r"Unexpected human response: {'type': 'unknown', 'args': None}. Response action 'unknown' is not allowed for tool 'test_tool'. Expected one of \['accept', 'edit', 'response'\] based on the tool's configuration.",
         ):
             middleware.after_model(state)
 
@@ -648,7 +664,11 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     """Test HumanInTheLoopMiddleware with action not allowed by tool config."""
 
     # edit is not allowed by tool config
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": ["approve", "reject"]})
+    middleware = HumanInTheLoopMiddleware(
+        tool_configs={
+            "test_tool": {"allow_respond": True, "allow_edit": False, "allow_accept": True}
+        }
+    )
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -659,8 +679,11 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     def mock_disallowed_action(requests):
         return [
             {
-                "action": "edit",
-                "args": {"tool_name": "test_tool", "tool_args": {"input": "modified"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="test_tool",
+                    args={"input": "modified"},
+                ),
             }
         ]
 
@@ -670,7 +693,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
     ):
         with pytest.raises(
             ValueError,
-            match="Unexpected human response: {'action': 'edit', 'args': {'tool_name': 'test_tool', 'tool_args': {'input': 'modified'}}}. Response action 'edit' is not allowed for tool 'test_tool'. Expected one of \\['approve', 'reject'\\] based on the tool's configuration.",
+            match=r"Unexpected human response: {'type': 'edit', 'args': {'action': 'test_tool', 'args': {'input': 'modified'}}}. Response action 'edit' is not allowed for tool 'test_tool'. Expected one of \['accept', 'response'\] based on the tool's configuration.",
         ):
             middleware.after_model(state)
 
@@ -679,7 +702,9 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={"interrupt_tool": ["approve", "reject", "edit"]}
+        tool_configs={
+            "interrupt_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
+        }
     )
 
     ai_message = AIMessage(
@@ -692,7 +717,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     def mock_accept(requests):
-        return [{"action": "approve"}]
+        return [{"type": "accept", "args": None}]
 
     with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_accept):
         result = middleware.after_model(state)
@@ -707,57 +732,14 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
         assert updated_ai_message.tool_calls[1]["name"] == "interrupt_tool"
 
 
-def test_human_in_the_loop_middleware_all_rejected() -> None:
-    """Test HumanInTheLoopMiddleware when all tools are rejected."""
-
-    middleware = HumanInTheLoopMiddleware(
-        tool_configs={
-            "get_forecast": ["approve", "reject", "edit"],
-            "get_temperature": ["approve", "reject", "edit"],
-        }
-    )
-
-    ai_message = AIMessage(
-        content="I'll help you with weather",
-        tool_calls=[
-            {"name": "get_forecast", "args": {"location": "San Francisco"}, "id": "1"},
-            {"name": "get_temperature", "args": {"location": "San Francisco"}, "id": "2"},
-        ],
-    )
-    state = {"messages": [HumanMessage(content="What's the weather?"), ai_message]}
-
-    def mock_all_reject(requests):
-        return [
-            {"action": "reject"},
-            {"action": "reject"},
-        ]
-
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_all_reject
-    ):
-        result = middleware.after_model(state)
-        assert result is not None
-        assert "jump_to" in result
-        assert result["jump_to"] == "model"
-        assert "messages" in result
-        assert len(result["messages"]) == 2
-
-        # Both should be reject messages
-        reject1 = result["messages"][0]
-        reject2 = result["messages"][1]
-
-        assert isinstance(reject1, ToolMessage)
-        assert isinstance(reject2, ToolMessage)
-        assert "User rejected the tool call for `get_forecast` with id 1" in reject1.content
-        assert "User rejected the tool call for `get_temperature` with id 2" in reject2.content
-
-
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={"test_tool": ["approve", "reject", "edit"]},
-        action_request_prefix="Custom prefix",
+        tool_configs={
+            "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        },
+        description_prefix="Custom prefix",
     )
 
     ai_message = AIMessage(
@@ -770,7 +752,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
 
     def mock_capture_requests(requests):
         captured_requests.extend(requests)
-        return [{"action": "approve"}]
+        return [{"type": "accept", "args": None}]
 
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_capture_requests
@@ -780,20 +762,17 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert len(captured_requests) == 1
         request = captured_requests[0]
 
-        assert "message" in request
-        assert "args" in request
-        assert "allowed_actions" in request
+        assert "action_request" in request
+        assert "config" in request
         assert "description" in request
 
-        assert request["args"] == {
-            "tool_name": "test_tool",
-            "tool_args": {"input": "test", "location": "SF"},
-        }
-        assert request["allowed_actions"] == ["approve", "reject", "edit"]
-        assert "Custom prefix" in request["message"]
-        assert "Tool: test_tool" in request["message"]
-        assert "Args: {'input': 'test', 'location': 'SF'}" in request["message"]
-        assert request["description"] == request["message"]
+        assert request["action_request"]["action"] == "test_tool"
+        assert request["action_request"]["args"] == {"input": "test", "location": "SF"}
+        expected_config = {"allow_accept": True, "allow_edit": True, "allow_respond": True}
+        assert request["config"] == expected_config
+        assert "Custom prefix" in request["description"]
+        assert "Tool: test_tool" in request["description"]
+        assert "Args: {'input': 'test', 'location': 'SF'}" in request["description"]
 
 
 def test_human_in_the_loop_middleware_boolean_configs() -> None:
@@ -806,10 +785,10 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
     )
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
-    # Test approve
+    # Test accept
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"action": "approve"}],
+        return_value=[{"type": "accept", "args": None}],
     ):
         result = middleware.after_model(state)
         assert result is not None
@@ -822,8 +801,11 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         "langchain.agents.middleware.human_in_the_loop.interrupt",
         return_value=[
             {
-                "action": "approve",
-                "args": {"tool_name": "test_tool", "tool_args": {"input": "edited"}},
+                "type": "edit",
+                "args": ActionRequest(
+                    action="test_tool",
+                    args={"input": "edited"},
+                ),
             }
         ],
     ):
@@ -832,21 +814,6 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         assert "messages" in result
         assert len(result["messages"]) == 1
         assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
-
-    # Test reject
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"action": "reject"}],
-    ):
-        result = middleware.after_model(state)
-        assert result is not None
-        assert "jump_to" in result
-        assert result["jump_to"] == "model"
-        assert len(result["messages"]) == 1
-        assert isinstance(result["messages"][0], ToolMessage)
-        assert (
-            "User rejected the tool call for `test_tool` with id 1" in result["messages"][0].content
-        )
 
     middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": False})
 
@@ -879,7 +846,10 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     # Test with too many responses
     with patch(
         "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[{"action": "approve"}, {"action": "approve"}],  # 2 responses for 1 tool call
+        return_value=[
+            {"type": "accept", "args": None},
+            {"type": "accept", "args": None},
+        ],  # 2 responses for 1 tool call
     ):
         with pytest.raises(
             ValueError,
