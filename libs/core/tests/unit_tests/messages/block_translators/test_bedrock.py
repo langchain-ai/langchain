@@ -33,6 +33,20 @@ def test_convert_to_v1_from_bedrock() -> None:
             },
             {"type": "something_else", "foo": "bar"},
         ],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "abc_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+            },
+            {
+                "type": "tool_call",
+                "id": "abc_234",
+                "name": "another_tool",
+                "args": {"arg_1": "value_1"},
+            },
+        ],
         response_metadata={
             "model_provider": "bedrock",
             "model_name": "us.anthropic.claude-sonnet-4-20250514-v1:0",
@@ -72,6 +86,12 @@ def test_convert_to_v1_from_bedrock() -> None:
         {
             "type": "non_standard",
             "value": {"type": "something_else", "foo": "bar"},
+        },
+        {
+            "type": "tool_call",
+            "id": "abc_234",
+            "name": "another_tool",
+            "args": {"arg_1": "value_1"},
         },
     ]
     assert message.content_blocks == expected_content
