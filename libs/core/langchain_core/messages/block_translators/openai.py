@@ -851,6 +851,64 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 yield cast("types.ServerToolCall", code_interpreter_call)
                 yield cast("types.ServerToolResult", code_interpreter_result)
 
+            elif block_type == "mcp_call":
+                mcp_call = {
+                    "type": "server_tool_call",
+                    "name": "remote_mcp",
+                    "id": block["id"],
+                }
+                if (arguments := block.get("arguments")) and isinstance(arguments, str):
+                    try:
+                        mcp_call["args"] = json.loads(block["arguments"])
+                    except json.JSONDecodeError:
+                        mcp_call["extras"] = {"arguments": arguments}
+                if "name" in block:
+                    mcp_call["tool_name"] = block["name"]
+                if "server_label" in block:
+                    if "extras" not in mcp_call:
+                        mcp_call["extras"] = {}
+                    mcp_call["extras"]["server_label"] = block["server_label"]
+                if "index" in block:
+                    mcp_call["index"] = f"lc_mcp_{block['index']}"
+                known_fields = {
+                    "type",
+                    "id",
+                    "arguments",
+                    "name",
+                    "server_label",
+                    "output",
+                    "error",
+                    "extras",
+                    "index",
+                }
+                for key in block:
+                    if key not in known_fields:
+                        if "extras" not in mcp_call:
+                            mcp_call["extras"] = {}
+                        mcp_call["extras"][key] = block[key]
+
+                yield cast("types.ServerToolCall", mcp_call)
+
+                mcp_result = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                }
+                if mcp_output := block.get("output"):
+                    mcp_result["output"] = mcp_output
+
+                error = block.get("error")
+                if error:
+                    if "extras" not in mcp_result:
+                        mcp_result["extras"] = {}
+                    mcp_result["extras"]["error"] = error
+                    mcp_result["status"] = "error"
+                else:
+                    mcp_result["status"] = "success"
+
+                if "index" in block and isinstance(block["index"], int):
+                    mcp_result["index"] = f"lc_mcpr_{block['index'] + 1}"
+                yield cast("types.ServerToolResult", mcp_result)
+
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)
             else:

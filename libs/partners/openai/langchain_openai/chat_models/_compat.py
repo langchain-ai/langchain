@@ -322,7 +322,7 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     pass
                 collapsed["type"] = "file_search_call"
 
-            if current.get("name") == "code_interpreter":
+            elif current.get("name") == "code_interpreter":
                 collapsed = {"id": current["id"]}
                 if "args" in current and "code" in current["args"]:
                     collapsed["code"] = current["args"]["code"]
@@ -344,6 +344,33 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                 elif nxt.get("extras", {}).get("status"):
                     collapsed["status"] = nxt["extras"]["status"]
                 collapsed["type"] = "code_interpreter_call"
+
+            elif current.get("name") == "remote_mcp":
+                collapsed = {"id": current["id"]}
+                if "args" in current:
+                    collapsed["arguments"] = json.dumps(
+                        current["args"], separators=(",", ":")
+                    )
+                elif "arguments" in current.get("extras", {}):
+                    collapsed["arguments"] = current["extras"]["arguments"]
+                else:
+                    pass
+
+                if tool_name := current.get("tool_name"):
+                    collapsed["name"] = tool_name
+                if server_label := current.get("extras", {}).get("server_label"):
+                    collapsed["server_label"] = server_label
+                collapsed["type"] = "mcp_call"
+
+                if error := nxt.get("extras", {}).get("error"):
+                    collapsed["error"] = error
+                if "output" in nxt:
+                    collapsed["output"] = nxt["output"]
+                for k, v in current.get("extras", {}).items():
+                    if k not in ("server_label", "arguments"):
+                        collapsed[k] = v
+            else:
+                pass
 
             yield collapsed
 
