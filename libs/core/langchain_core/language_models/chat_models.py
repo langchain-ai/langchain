@@ -147,8 +147,9 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                         )
                     elif (
                         block.get("type") == "file"
-                        and is_data_content_block(block)
+                        and is_data_content_block(block)  # v0 (image/audio/file) or v1
                         and "base64" in block
+                        # Narrows to old Base64ContentBlock or new FileContentBlock
                     ):
                         if message_to_trace is message:
                             # Shallow copy
