@@ -13,37 +13,28 @@ class HumanInTheLoopConfig(TypedDict):
     """Configuration that defines what actions are allowed for a human interrupt.
 
     This controls the available interaction options when the graph is paused for human input.
-
-    Attributes:
-        allow_accept: Whether the human can approve the current action without changes
-        allow_respond: Whether the human can reject the current action with feedback
-        allow_edit: Whether the human can approve the current action with edited content
     """
 
     allow_accept: NotRequired[bool]
+    """Whether the human can approve the current action without changes."""
     allow_edit: NotRequired[bool]
+    """Whether the human can approve the current action with edited content."""
     allow_respond: NotRequired[bool]
+    """Whether the human can reject the current action with feedback."""
 
 
 class ActionRequest(TypedDict):
-    """Represents a request with a name and arguments.
-
-    Attributes:
-        action: The type or name of action being requested (e.g., "add_numbers")
-        args: Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})
-    """
+    """Represents a request with a name and arguments."""
 
     action: str
+    """The type or name of action being requested (e.g., "add_numbers")."""
     args: dict
+    """Key-value pairs of arguments needed for the action (e.g., {"a": 1, "b": 2})."""
 
 
 class HumanInTheLoopRequest(TypedDict):
     """Represents an interrupt triggered by the graph that requires human intervention.
 
-    Attributes:
-        action_request: The specific action being requested from the human
-        config: Configuration defining what response types are allowed
-        description: Optional detailed description of what input is needed
     Example:
         ```python
         # Extract a tool call from the state and create an interrupt request
@@ -65,49 +56,55 @@ class HumanInTheLoopRequest(TypedDict):
     """
 
     action_request: ActionRequest
+    """The specific action being requested from the human."""
     config: HumanInTheLoopConfig
+    """Configuration defining what response types are allowed."""
     description: str | None
+    """Optional detailed description of what input is needed."""
 
 
 class AcceptPayload(TypedDict):
     """Response when a human approves the action."""
 
     type: Literal["accept"]
+    """The type of response when a human approves the action."""
 
 
 class ResponsePayload(TypedDict):
     """Response when a human rejects the action."""
 
     type: Literal["response"]
+    """The type of response when a human rejects the action."""
 
     args: NotRequired[str]
+    """The message to be sent to the model explaining why the action was rejected."""
 
 
 class EditPayload(TypedDict):
     """Response when a human edits the action."""
 
     type: Literal["edit"]
+    """The type of response when a human edits the action."""
 
     args: ActionRequest
+    """The action request with the edited content."""
 
 
 HumanInTheLoopResponse = AcceptPayload | ResponsePayload | EditPayload
+"""Aggregated response type for all possible human in the loop responses."""
 
 
 class ToolConfig(TypedDict):
-    """Configuration for a tool requiring human in the loop.
-
-    Attributes:
-        allow_accept: Whether the human can approve the current action without changes
-        allow_edit: Whether the human can approve the current action with edited content
-        allow_respond: Whether the human can reject the current action with feedback
-        description: The description attached to the request for human input
-    """
+    """Configuration for a tool requiring human in the loop."""
 
     allow_accept: NotRequired[bool]
+    """Whether the human can approve the current action without changes."""
     allow_edit: NotRequired[bool]
+    """Whether the human can approve the current action with edited content."""
     allow_respond: NotRequired[bool]
+    """Whether the human can reject the current action with feedback."""
     description: NotRequired[str]
+    """The description attached to the request for human input."""
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
@@ -129,6 +126,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 * ToolConfig indicates the specific actions allowed for this tool.
             description_prefix: The prefix to use when constructing action requests.
                 This is used to provide context about the tool call and the action being requested.
+                Not used if a tool has a description in its ToolConfig.
         """
         super().__init__()
         resolved_tool_configs: dict[str, ToolConfig] = {}
