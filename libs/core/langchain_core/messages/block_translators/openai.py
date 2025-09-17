@@ -67,7 +67,7 @@ def convert_to_openai_data_block(
     elif block["type"] == "file":
         if block.get("source_type") == "base64" or "base64" in block:
             # Handle v0 format (Base64CB): {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format (FileCB): {"base64": "...", ...}
+            # Handle v1 format (IDCB): {"base64": "...", ...}
             base64_data = block["data"] if "source_type" in block else block["base64"]
             file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
@@ -90,7 +90,7 @@ def convert_to_openai_data_block(
                 formatted_block = {"type": "input_file", **formatted_block["file"]}
         elif block.get("source_type") == "id" or "file_id" in block:
             # Handle v0 format (IDContentBlock): {"source_type": "id", "id": "...", ...}
-            # Handle v1 format (FileCB): {"file_id": "...", ...}
+            # Handle v1 format (IDCB): {"file_id": "...", ...}
             file_id = block["id"] if "source_type" in block else block["file_id"]
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
             if api == "responses":
