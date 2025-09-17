@@ -1,5 +1,4 @@
 from collections.abc import Callable
-from typing import Union
 
 import pytest
 from pydantic import BaseModel
@@ -36,8 +35,8 @@ class ResponseFormat(BaseModel):
 def test_react_agent_graph_structure(
     snapshot: SnapshotAssertion,
     tools: list[Callable],
-    pre_model_hook: Union[Callable, None],
-    post_model_hook: Union[Callable, None],
+    pre_model_hook: Callable | None,
+    post_model_hook: Callable | None,
 ) -> None:
     agent = create_agent(
         model,

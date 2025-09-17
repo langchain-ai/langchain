@@ -48,7 +48,7 @@ Respond ONLY with the extracted context. Do not include any additional informati
 <messages>
 Messages to summarize:
 {messages}
-</messages>"""  # noqa: E501
+</messages>"""
 
 SUMMARY_PREFIX = "## Previous conversation summary:"
 
@@ -229,7 +229,7 @@ class SummarizationMiddleware(AgentMiddleware):
         try:
             response = self.model.invoke(self.summary_prompt.format(messages=trimmed_messages))
             return cast("str", response.content).strip()
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             return f"Error generating summary: {e!s}"
 
     def _trim_messages_for_summary(self, messages: list[AnyMessage]) -> list[AnyMessage]:
@@ -244,5 +244,5 @@ class SummarizationMiddleware(AgentMiddleware):
                 allow_partial=True,
                 include_system=True,
             )
-        except Exception:  # noqa: BLE001
+        except Exception:
             return messages[-_DEFAULT_FALLBACK_MESSAGE_COUNT:]

@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 
 def resolve_prompt(
-    prompt: str | None | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
+    prompt: str | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]] | None,
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,
@@ -86,9 +86,9 @@ def resolve_prompt(
 
 async def aresolve_prompt(
     prompt: str
-    | None
     | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]]
-    | Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
+    | Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]]
+    | None,
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,

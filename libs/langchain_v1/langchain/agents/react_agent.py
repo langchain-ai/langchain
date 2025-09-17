@@ -122,9 +122,9 @@ def _get_prompt_runnable(prompt: Prompt | None) -> Runnable:
             lambda state: _get_state_value(state, "messages"), name=PROMPT_RUNNABLE_NAME
         )
     elif isinstance(prompt, str):
-        _system_message: BaseMessage = SystemMessage(content=prompt)
+        system_message: BaseMessage = SystemMessage(content=prompt)
         prompt_runnable = RunnableCallable(
-            lambda state: [_system_message, *_get_state_value(state, "messages")],
+            lambda state: [system_message, *_get_state_value(state, "messages")],
             name=PROMPT_RUNNABLE_NAME,
         )
     elif isinstance(prompt, SystemMessage):
@@ -220,7 +220,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 "The `model` parameter should not have pre-bound tools, "
                 "simply pass the model and tools separately."
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         self._setup_tools()
         self._setup_state_schema()
@@ -397,13 +397,13 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                     "structured_response": structured_response,
                 }
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             exception = StructuredOutputValidationError(tool_call["name"], exc)
 
             should_retry, error_message = self._handle_structured_output_error(exception)
 
             if not should_retry:
-                raise exception
+                raise exception from exc
 
             return Command(
                 update={
@@ -583,7 +583,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 remaining_steps is not None  # type: ignore[return-value]
                 and (
                     (remaining_steps < 1 and all_tools_return_direct)
-                    or (remaining_steps < 2 and has_tool_calls)
+                    or (remaining_steps < 2 and has_tool_calls)  # noqa: PLR2004
                 )
             )
 
@@ -1188,7 +1188,7 @@ def create_agent(  # noqa: D417
             response_format = ToolStrategy(
                 schema=response_format,
             )
-    elif isinstance(response_format, tuple) and len(response_format) == 2:
+    elif isinstance(response_format, tuple) and len(response_format) == 2:  # noqa: PLR2004
         msg = "Passing a 2-tuple as response_format is no longer supported. "
         raise ValueError(msg)
 

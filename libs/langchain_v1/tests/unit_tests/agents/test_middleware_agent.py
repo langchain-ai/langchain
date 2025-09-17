@@ -1,11 +1,8 @@
-import pytest
 from typing import Any
 from unittest.mock import patch
 
-from syrupy.assertion import SnapshotAssertion
-
+import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -14,19 +11,19 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.tools import tool
-
-from langchain.agents.middleware_agent import create_agent
-from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
-from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
-from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, AgentState
-from langchain_core.tools import BaseTool
-
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from langgraph.prebuilt.interrupt import ActionRequest, HumanInterruptConfig
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import override
+
+from langchain.agents.middleware.human_in_the_loop import HumanInTheLoopMiddleware
+from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
+from langchain.agents.middleware.summarization import SummarizationMiddleware
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware_agent import create_agent
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
@@ -237,16 +234,16 @@ def test_create_agent_invoke(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
                 [
-                    {"args": {"input": "yo"}, "id": "1", "name": "my_tool"},
+                    {"args": {"value": "yo"}, "id": "1", "name": "my_tool"},
                 ],
                 [],
             ]
@@ -268,7 +265,7 @@ def test_create_agent_invoke(
                 tool_calls=[
                     {
                         "name": "my_tool",
-                        "args": {"input": "yo"},
+                        "args": {"value": "yo"},
                         "id": "1",
                         "type": "tool_call",
                     }
@@ -330,14 +327,14 @@ def test_create_agent_jump(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"value": "yo"})]],
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
@@ -460,9 +457,11 @@ def test_human_in_the_loop_middleware_interrupt_responses() -> None:
     def mock_unknown(requests):
         return [{"type": "unknown", "args": None}]
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(ValueError, match="Unknown response type: unknown"):
-            middleware.after_model(state)
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        pytest.raises(ValueError, match="Unknown response type: unknown"),
+    ):
+        middleware.after_model(state)
 
 
 # Tests for AnthropicPromptCachingMiddleware
@@ -470,15 +469,15 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
     # Test with custom values
     middleware = AnthropicPromptCachingMiddleware(
-        type="ephemeral", ttl="1h", min_messages_to_cache=5
+        cache_type="ephemeral", ttl="1h", min_messages_to_cache=5
     )
-    assert middleware.type == "ephemeral"
+    assert middleware.cache_type == "ephemeral"
     assert middleware.ttl == "1h"
     assert middleware.min_messages_to_cache == 5
 
     # Test with default values
     middleware = AnthropicPromptCachingMiddleware()
-    assert middleware.type == "ephemeral"
+    assert middleware.cache_type == "ephemeral"
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
 
@@ -608,14 +607,14 @@ def test_summarization_middleware_summary_creation() -> None:
     """Test SummarizationMiddleware summary creation."""
 
     class MockModel(BaseChatModel):
-        def invoke(self, prompt):
+        def invoke(self, prompt, **kwargs):
             from langchain_core.messages import AIMessage
 
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -636,12 +635,14 @@ def test_summarization_middleware_summary_creation() -> None:
 
     # Test error handling
     class ErrorModel(BaseChatModel):
-        def invoke(self, prompt):
-            raise Exception("Model error")
+        @override
+        def invoke(self, input, **kwargs):
+            msg = "Model error"
+            raise ValueError(msg)
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -664,8 +665,8 @@ def test_summarization_middleware_full_workflow() -> None:
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
