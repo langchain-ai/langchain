@@ -915,7 +915,15 @@ KNOWN_BLOCK_TYPES = {
 
 
 def _get_data_content_block_types() -> tuple[str, ...]:
-    """Get type literals from DataContentBlock union members dynamically."""
+    """Get type literals from DataContentBlock union members dynamically.
+
+    Example: ("image", "video", "audio", "text-plain", "file")
+
+    Note that old style multimodal blocks type literals with new style blocks.
+    Speficially, "image", "audio", and "file".
+
+    See the docstring of `_normalize_messages` in `language_models._utils` for details.
+    """
     data_block_types = []
 
     for block_type in get_args(DataContentBlock):
