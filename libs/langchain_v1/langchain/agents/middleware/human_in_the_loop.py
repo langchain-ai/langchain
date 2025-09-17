@@ -9,91 +9,47 @@ from typing_extensions import NotRequired, TypedDict
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 
 
-class HumanInterruptConfig(TypedDict):
-    """Configuration that defines what actions are allowed for a human interrupt.
-
-    This controls the available interaction options when the graph is paused for human input.
+class ActionRequest(TypedDict):
+    """Request for human feedback.
 
     Attributes:
-        allow_approve: Whether the human can approve a given tool call
-        allow_ignore: Whether the human can choose to ignore a given tool call.
-            Results in an artificial tool message added to the `messages` list.
-        allow_response: Whether the human can provide a response to a given tool call.
-            Results in an artificial tool message added to the `messages` list.
-        allow_edit: Whether the human can edit a tool call (name and args)
+        message: Human-readable message describing what action is needed
+        args: Args associated with the action (tool kwargs, for example)
+        allowed_actions: List of allowed action types, can be one of "approve", "reject", "edit"
+        description: Optional detailed description
+
+        TODO: add args_schema to specify the allowed schema for the response args
     """
 
-    allow_approve: bool
-    allow_ignore: bool
-    allow_response: bool
-    allow_edit: bool
-
-
-class HumanInterrupt(TypedDict):
-    """Represents an interrupt triggered by the graph that requires human intervention.
-
-    For each tool call requiring human input, a `HumanInterrupt` is created and
-    is accessible in the agent state when execution is paused for human input.
-
-    Attributes:
-        action: The action being requested (a tool name)
-        args: Arguments for the action (tool kwargs)
-        config: Configuration defining what actions are allowed
-        description: Optional detailed description of what input is needed
-
-    Example:
-        # Send the interrupt request and get the response
-        request = HumanInterrupt(
-            action="run_command",  # The action being requested
-            args={"command": "ls", "args": ["-l"]},  # Arguments for the action
-            config=HumanInterruptConfig(
-                allow_ignore=True,  # Allow skipping this step
-                allow_response=True,  # Allow text feedback
-                allow_edit=False,  # Don't allow editing
-                allow_approve=True,  # Allow direct acceptance
-            ),
-            description="Please review the command before execution",
-        )
-        # Send the interrupt request and get the response
-        response = interrupt([request])[0]
-        ```
-    """
-
-    action: str
+    message: str
     args: dict
-    config: HumanInterruptConfig
+    allowed_actions: list[Literal["approve", "reject", "edit"]]
     description: str | None
 
 
-class ApprovePayload(TypedDict):
-    """Human chose to approve the current state without changes."""
+class ApproveResponse(TypedDict):
+    """Response when a human approves the action."""
 
-    type: Literal["approve"]
+    action: Literal["approve"]
+    """Type of action taken by the human, always 'approve'."""
 
-
-class IgnorePayload(TypedDict):
-    """Human chose to ignore/skip the current step with optional tool message customization."""
-
-    type: Literal["ignore"]
-    tool_message: NotRequired[str | ToolMessage]
+    args: NotRequired[dict]
+    """Edits to the args, if provided."""
 
 
-class ResponsePayload(TypedDict):
-    """Human provided text feedback or instructions."""
+class RejectResponse(TypedDict):
+    """Response when a human rejects the action."""
 
-    type: Literal["response"]
-    tool_message: str | ToolMessage
+    action: Literal["reject"]
+    """Type of action taken by the human, always 'reject'."""
 
-
-class EditPayload(TypedDict):
-    """Human chose to edit/modify the current state/content."""
-
-    type: Literal["edit"]
-    action: str
-    args: dict
+    message: NotRequired[str]
+    """Reason for the rejection, if provided."""
 
 
-HumanResponse = ApprovePayload | IgnorePayload | ResponsePayload | EditPayload
+ActionResponse = ApproveResponse | RejectResponse
+
+AllowedActions = Literal["approve", "reject", "edit"]
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
@@ -101,36 +57,31 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        tool_configs: dict[str, bool | HumanInterruptConfig],
+        tool_configs: dict[str, bool | list[AllowedActions]],
         *,
-        message_prefix: str = "Tool execution requires approval",
+        action_request_prefix: str = "Tool execution requires approval",
     ) -> None:
         """Initialize the human in the loop middleware.
 
         Args:
-            tool_configs: Mapping of tool name to interrupt config (bool | HumanInterruptConfig).
+            tool_configs: Mapping of tool name to allowed actions.
                 If a tool doesn't have an entry, it's auto-approved by default.
-                * `True` indicates all interrupt config options are allowed.
+                * `True` indicates all actions are allowed: ["approve", "reject", "edit"].
                 * `False` indicates that the tool is auto-approved.
-                * `HumanInterruptConfig` indicates the specific interrupt config options to use.
-            message_prefix: The prefix to use when constructing interrupts (requests for input).
+                * List of actions indicates the specific actions allowed for this tool.
+            action_request_prefix: The prefix to use when constructing action requests.
                 This is used to provide context about the tool call and the action being requested.
         """
         super().__init__()
-        resolved_tool_configs = {}
+        resolved_tool_configs: dict[str, list[AllowedActions]] = {}
         for tool_name, tool_config in tool_configs.items():
             if isinstance(tool_config, bool):
                 if tool_config is True:
-                    resolved_tool_configs[tool_name] = HumanInterruptConfig(
-                        allow_approve=True,
-                        allow_ignore=True,
-                        allow_response=True,
-                        allow_edit=True,
-                    )
+                    resolved_tool_configs[tool_name] = ["approve", "reject", "edit"]
             else:
                 resolved_tool_configs[tool_name] = tool_config
         self.tool_configs = resolved_tool_configs
-        self.message_prefix = message_prefix
+        self.action_request_prefix = action_request_prefix
 
     def after_model(self, state: AgentState) -> dict[str, Any] | None:  # noqa: PLR0915
         """Trigger HITL flows for relevant tool calls after an AIMessage."""
@@ -164,23 +115,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create interrupt requests for all tools that need approval
-        interrupt_requests: list[HumanInterrupt] = []
+        interrupt_requests: list[ActionRequest] = []
         interrupt_tool_calls_list = list(interrupt_tool_calls.values())
         for tool_call in interrupt_tool_calls_list:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
-            description = f"{self.message_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
-            tool_config = self.tool_configs[tool_name]
+            message = f"{self.action_request_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
+            allowed_actions = self.tool_configs[tool_name]
 
-            request: HumanInterrupt = {
-                "action": tool_name,
+            request: ActionRequest = {
+                "message": message,
                 "args": tool_args,
-                "config": tool_config,
-                "description": description,
+                "allowed_actions": allowed_actions,
+                "description": message,
             }
             interrupt_requests.append(request)
 
-        responses: list[HumanResponse] = interrupt(interrupt_requests)
+        responses: list[ActionResponse] = interrupt(interrupt_requests)
 
         # Validate that the number of responses matches the number of interrupt tool calls
         if len(responses) != len(interrupt_tool_calls_list):
@@ -192,69 +143,55 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
         for i, response in enumerate(responses):
             tool_call = interrupt_tool_calls_list[i]
+            allowed_actions = self.tool_configs[tool_call["name"]]
 
-            tool_config = self.tool_configs[tool_call["name"]]
-
-            if response["type"] == "approve" and tool_config["allow_approve"]:
-                approved_tool_calls.append(tool_call)
-            elif response["type"] == "edit" and tool_config["allow_edit"]:
-                new_tool_call = ToolCall(
-                    type="tool_call",
-                    name=response["action"],
-                    args=response["args"],
-                    id=tool_call["id"],
-                )
-                approved_tool_calls.append(new_tool_call)
-            elif response["type"] == "ignore" and tool_config["allow_ignore"]:
-                rejected_tool_calls.append(tool_call)
-                if isinstance(human_tool_message := response.get("tool_message"), ToolMessage):
-                    tool_message = human_tool_message
-                else:
-                    if isinstance(human_tool_message, str):
-                        content = human_tool_message
-                    else:
-                        content = (
-                            f"User ignored the tool call for `{tool_call['name']}` "
-                            f"with id {tool_call['id']}"
+            if response["action"] == "approve" and "approve" in allowed_actions:
+                # Use modified args if provided, otherwise use original args
+                # need to raise if edits not supported, also support editing tool name
+                if "args" in response:
+                    if "edit" in allowed_actions:
+                        edits = response["args"]
+                        new_tool_call = ToolCall(
+                            type="tool_call",
+                            name=edits["tool_name"],
+                            args=edits["tool_args"],
+                            id=tool_call["id"],
                         )
-
-                    tool_message = ToolMessage(
-                        content=content,
-                        name=tool_call["name"],
-                        tool_call_id=tool_call["id"],
-                        status="success",
-                    )
-
-                artificial_tool_messages.append(tool_message)
-            elif response["type"] == "response" and tool_config["allow_response"]:
-                rejected_tool_calls.append(tool_call)
-                if isinstance(human_tool_message := response["tool_message"], ToolMessage):
-                    tool_message = human_tool_message
+                        approved_tool_calls.append(new_tool_call)
+                    else:
+                        error_msg = (
+                            f"Unexpected human response: {response}. "
+                            f"Response action 'approve' is not allowed "
+                            f"for tool '{tool_call['name']}'. Expected one of "
+                            f"{allowed_actions} based on the tool's configuration."
+                        )
+                        raise ValueError(error_msg)
                 else:
-                    tool_message = ToolMessage(
-                        content=human_tool_message,
-                        name=tool_call["name"],
-                        tool_call_id=tool_call["id"],
-                        status="error",
+                    approved_tool_calls.append(tool_call)
+            elif response["action"] == "reject" and "reject" in allowed_actions:
+                rejected_tool_calls.append(tool_call)
+                # Use custom message if provided, otherwise use default
+                if "message" in response:
+                    content = response["message"]
+                else:
+                    content = (
+                        f"User rejected the tool call for `{tool_call['name']}` "
+                        f"with id {tool_call['id']}"
                     )
+
+                tool_message = ToolMessage(
+                    content=content,
+                    name=tool_call["name"],
+                    tool_call_id=tool_call["id"],
+                    status="error",
+                )
                 artificial_tool_messages.append(tool_message)
             else:
-                allowed_types = [
-                    type_name
-                    for type_name, is_allowed in {
-                        "accept": tool_config["allow_approve"],
-                        "edit": tool_config["allow_edit"],
-                        "response": tool_config["allow_response"],
-                        "ignore": tool_config["allow_ignore"],
-                    }.items()
-                    if is_allowed
-                ]
-
                 msg = (
-                    f"Unexpected human response: {response}. Response type '{response['type']}' "
+                    f"Unexpected human response: {response}. "
+                    f"Response action '{response['action']}' "
                     f"is not allowed for tool '{tool_call['name']}'. "
-                    f"Expected one with `'type'` in {allowed_types} based on "
-                    f"the tool's interrupt configuration."
+                    f"Expected one of {allowed_actions} based on the tool's configuration."
                 )
                 raise ValueError(msg)
 

@@ -212,7 +212,7 @@ def create_agent(  # noqa: PLR0915
         context_schema=context_schema,
     )
 
-    def _handle_model_output(state: dict[str, Any], output: AIMessage) -> dict[str, Any]:
+    def _handle_model_output(output: AIMessage) -> dict[str, Any]:
         """Handle model output including structured responses."""
         # Handle structured output with native strategy
         if isinstance(response_format, ProviderStrategy):
@@ -296,9 +296,6 @@ def create_agent(  # noqa: PLR0915
                         ],
                     }
 
-        # Standard response handling
-        if state.get("response") is not None:
-            return {"messages": [output], "response": None}
         return {"messages": [output]}
 
     def _get_bound_model(request: ModelRequest) -> Runnable:
@@ -345,7 +342,7 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
-        return _handle_model_output(state, output)
+        return _handle_model_output(output)
 
     async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -372,7 +369,7 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
-        return _handle_model_output(state, output)
+        return _handle_model_output(output)
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable
@@ -504,11 +501,12 @@ def _make_model_to_tools_edge(
             return _resolve_jump(jump_to, first_node)
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+        tool_message_ids = [m.tool_call_id for m in tool_messages]
 
         pending_tool_calls = [
             c
             for c in last_ai_message.tool_calls
-            if c["id"] not in tool_messages and c["name"] not in structured_output_tools
+            if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
         if pending_tool_calls:
