@@ -1049,7 +1049,7 @@ typing = [
 
 [[package]]
 name = "langchain-tests"
-version = "0.3.21"
+version = "1.0.0a1"
 source = { directory = "../standard-tests" }
 dependencies = [
     { name = "httpx" },

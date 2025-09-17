@@ -184,6 +184,9 @@ class BaseMessage(Serializable):
         from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
         )
+        from langchain_core.messages.block_translators.google_genai import (  # noqa: PLC0415
+            _convert_to_v1_from_genai_input,
+        )
         from langchain_core.messages.block_translators.langchain_v0 import (  # noqa: PLC0415
             _convert_v0_multimodal_input_to_v1,
         )
@@ -214,6 +217,7 @@ class BaseMessage(Serializable):
             _convert_v0_multimodal_input_to_v1,
             _convert_to_v1_from_chat_completions_input,
             _convert_to_v1_from_anthropic_input,
+            _convert_to_v1_from_genai_input,
         ]:
             blocks = parsing_step(blocks)
         return blocks
