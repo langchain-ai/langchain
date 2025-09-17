@@ -304,6 +304,24 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                     pass
                 collapsed["type"] = "web_search_call"
 
+            if current.get("name") == "file_search":
+                collapsed = {"id": current["id"]}
+                if "args" in current and "queries" in current["args"]:
+                    collapsed["queries"] = current["args"]["queries"]
+
+                if "output" in nxt:
+                    collapsed["results"] = nxt["output"]
+                if status := nxt.get("status"):
+                    if status == "success":
+                        collapsed["status"] = "completed"
+                    elif status == "error":
+                        collapsed["status"] = "failed"
+                elif nxt.get("extras", {}).get("status"):
+                    collapsed["status"] = nxt["extras"]["status"]
+                else:
+                    pass
+                collapsed["type"] = "file_search_call"
+
             if current.get("name") == "code_interpreter":
                 collapsed = {"id": current["id"]}
                 if "args" in current and "code" in current["args"]:

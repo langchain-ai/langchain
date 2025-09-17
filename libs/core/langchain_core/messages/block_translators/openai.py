@@ -761,6 +761,49 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         web_search_result["index"] = f"lc_wsr_{block['index'] + 1}"
                     yield cast("types.ServerToolResult", web_search_result)
 
+            elif block_type == "file_search_call":
+                file_search_call = {
+                    "type": "server_tool_call",
+                    "name": "file_search",
+                    "id": block["id"],
+                    "args": {"queries": block.get("queries", [])},
+                }
+                if "index" in block:
+                    file_search_call["index"] = f"lc_fsc_{block['index']}"
+
+                for key in block:
+                    if key not in (
+                        "type",
+                        "id",
+                        "queries",
+                        "results",
+                        "status",
+                        "index",
+                    ):
+                        file_search_call[key] = block[key]
+
+                yield cast("types.ServerToolCall", file_search_call)
+
+                file_search_result = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                }
+                if file_search_output := block.get("results"):
+                    file_search_result["output"] = file_search_output
+
+                status = block.get("status")
+                if status == "failed":
+                    file_search_result["status"] = "error"
+                elif status == "completed":
+                    file_search_result["status"] = "success"
+                elif status:
+                    file_search_result["extras"] = {"status": status}
+                else:
+                    pass
+                if "index" in block and isinstance(block["index"], int):
+                    file_search_result["index"] = f"lc_fsr_{block['index'] + 1}"
+                yield cast("types.ServerToolResult", file_search_result)
+
             elif block_type == "code_interpreter_call":
                 code_interpreter_call = {
                     "type": "server_tool_call",

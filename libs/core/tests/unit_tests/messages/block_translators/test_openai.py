@@ -53,6 +53,13 @@ def test_convert_to_v1_from_responses() -> None:
                 ],
             },
             {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+            {
+                "type": "file_search_call",
+                "id": "fs_123",
+                "queries": ["query for file search"],
+                "results": [{"file_id": "file-123"}],
+                "status": "completed",
+            },
             {"type": "something_else", "foo": "bar"},
         ],
         tool_calls=[
@@ -103,6 +110,18 @@ def test_convert_to_v1_from_responses() -> None:
             ],
         },
         {"type": "image", "base64": "...", "id": "ig_123"},
+        {
+            "type": "server_tool_call",
+            "name": "file_search",
+            "id": "fs_123",
+            "args": {"queries": ["query for file search"]},
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "fs_123",
+            "output": [{"file_id": "file-123"}],
+            "status": "success",
+        },
         {
             "type": "non_standard",
             "value": {"type": "something_else", "foo": "bar"},
