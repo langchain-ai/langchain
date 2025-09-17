@@ -785,7 +785,10 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
         assert "allowed_actions" in request
         assert "description" in request
 
-        assert request["args"] == {"input": "test", "location": "SF"}
+        assert request["args"] == {
+            "tool_name": "test_tool",
+            "tool_args": {"input": "test", "location": "SF"},
+        }
         assert request["allowed_actions"] == ["approve", "reject", "edit"]
         assert "Custom prefix" in request["message"]
         assert "Tool: test_tool" in request["message"]
