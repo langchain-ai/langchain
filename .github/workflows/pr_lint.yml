@@ -26,9 +26,10 @@
 #   • release    — prepare a new release
 #
 # Allowed Scopes (optional):
-#   core, cli, langchain, standard-tests, docs, anthropic, chroma, deepseek,
-#   exa, fireworks, groq, huggingface, mistralai, nomic, ollama, openai,
-#   perplexity, prompty, qdrant, xai
+#   core, cli, langchain, langchain_v1, langchain_legacy, standard-tests, 
+#   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
+#   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
+#   xai, infra
 #
 # Rules & Tips for New Committers:
 #   1. Subject (type) must start with a lowercase letter and, if possible, be
@@ -84,6 +85,7 @@ jobs:
             cli
             langchain
             langchain_v1
+            langchain_legacy
             standard-tests
             text-splitters
             docs
