@@ -16,8 +16,8 @@ from langchain_core.messages.content import (
 )
 
 
-def _is_openai_data_block(block: dict) -> bool:
-    """Check if the block contains multimodal data in OpenAI Chat Completions format.
+def is_openai_data_block(block: dict) -> bool:
+    """Check whether a block contains multimodal data in OpenAI Chat Completions format.
 
     Supports both data and ID-style blocks (e.g. ``'file_data'`` and ``'file_id'``)
 
@@ -232,7 +232,7 @@ def _normalize_messages(
                     isinstance(block, dict)
                     and block.get("type") in {"input_audio", "file"}
                     # Discriminate between OpenAI/LC format since they share `'type'`
-                    and _is_openai_data_block(block)
+                    and is_openai_data_block(block)
                 ):
                     formatted_message = _ensure_message_copy(message, formatted_message)
 
