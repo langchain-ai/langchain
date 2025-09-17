@@ -69,6 +69,7 @@ class BaseChatMessageHistory(ABC):
             import os
             from langchain_core.messages import messages_from_dict, message_to_dict
 
+
             class FileChatMessageHistory(BaseChatMessageHistory):
                 storage_path: str
                 session_id: str
