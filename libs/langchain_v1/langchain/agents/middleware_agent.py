@@ -2,14 +2,15 @@
 
 import itertools
 from collections.abc import Callable, Sequence
-from typing import Any
+from typing import Any, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.types import Send
 from langgraph.typing import ContextT
 from typing_extensions import TypedDict, TypeVar
 
@@ -211,15 +212,13 @@ def create_agent(  # noqa: PLR0915
         context_schema=context_schema,
     )
 
-    def _handle_model_output(state: dict[str, Any], output: AIMessage) -> dict[str, Any]:
+    def _handle_model_output(output: AIMessage) -> dict[str, Any]:
         """Handle model output including structured responses."""
         # Handle structured output with native strategy
         if isinstance(response_format, ProviderStrategy):
             if not output.tool_calls and native_output_binding:
                 structured_response = native_output_binding.parse(output)
                 return {"messages": [output], "response": structured_response}
-            if state.get("response") is not None:
-                return {"messages": [output], "response": None}
             return {"messages": [output]}
 
         # Handle structured output with tools strategy
@@ -297,9 +296,6 @@ def create_agent(  # noqa: PLR0915
                         ],
                     }
 
-        # Standard response handling
-        if state.get("response") is not None:
-            return {"messages": [output], "response": None}
         return {"messages": [output]}
 
     def _get_bound_model(request: ModelRequest) -> Runnable:
@@ -346,7 +342,7 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
-        return _handle_model_output(state, output)
+        return _handle_model_output(output)
 
     async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -373,7 +369,7 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
-        return _handle_model_output(state, output)
+        return _handle_model_output(output)
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable
@@ -417,12 +413,12 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, first_node),
+            _make_tools_to_model_edge(tool_node, first_node, structured_output_tools),
             [first_node, END],
         )
         graph.add_conditional_edges(
             last_node,
-            _make_model_to_tools_edge(first_node, structured_output_tools),
+            _make_model_to_tools_edge(first_node, structured_output_tools, tool_node),
             [first_node, "tools", END],
         )
     elif last_node == "model_request":
@@ -481,27 +477,48 @@ def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
     return None
 
 
+def _fetch_last_ai_and_tool_messages(
+    messages: list[AnyMessage],
+) -> tuple[AIMessage, list[ToolMessage]]:
+    last_ai_index: int
+    last_ai_message: AIMessage
+
+    for i in range(len(messages) - 1, -1, -1):
+        if isinstance(messages[i], AIMessage):
+            last_ai_index = i
+            last_ai_message = cast("AIMessage", messages[i])
+            break
+
+    tool_messages = [m for m in messages[last_ai_index + 1 :] if isinstance(m, ToolMessage)]
+    return last_ai_message, tool_messages
+
+
 def _make_model_to_tools_edge(
-    first_node: str, structured_output_tools: dict[str, OutputToolBinding]
-) -> Callable[[AgentState], str | None]:
-    def model_to_tools(state: AgentState) -> str | None:
+    first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
+) -> Callable[[AgentState], str | list[Send] | None]:
+    def model_to_tools(state: AgentState) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
-        message = state["messages"][-1]
+        last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+        tool_message_ids = [m.tool_call_id for m in tool_messages]
 
-        # Check if this is a ToolMessage from structured output - if so, end
-        if isinstance(message, ToolMessage) and message.name in structured_output_tools:
-            return END
+        pending_tool_calls = [
+            c
+            for c in last_ai_message.tool_calls
+            if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
+        ]
 
-        # Check for tool calls
-        if isinstance(message, AIMessage) and message.tool_calls:
-            # If all tool calls are for structured output, don't go to tools
-            non_structured_calls = [
-                tc for tc in message.tool_calls if tc["name"] not in structured_output_tools
+        if pending_tool_calls:
+            # imo we should not be injecting state, store here,
+            # this should be done by the tool node itself ideally but this is a consequence
+            # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
+            # largely internal so can be fixed later
+            pending_tool_calls = [
+                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
+                for call in pending_tool_calls
             ]
-            if non_structured_calls:
-                return "tools"
+            return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         return END
 
@@ -509,15 +526,19 @@ def _make_model_to_tools_edge(
 
 
 def _make_tools_to_model_edge(
-    tool_node: ToolNode, next_node: str
+    tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
 ) -> Callable[[AgentState], str | None]:
     def tools_to_model(state: AgentState) -> str | None:
-        ai_message = [m for m in state["messages"] if isinstance(m, AIMessage)][-1]
+        last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
+
         if all(
             tool_node.tools_by_name[c["name"]].return_direct
-            for c in ai_message.tool_calls
+            for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
         ):
+            return END
+
+        if any(t.name in structured_output_tools for t in tool_messages):
             return END
 
         return next_node
