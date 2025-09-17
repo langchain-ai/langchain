@@ -8,13 +8,15 @@ from typing_extensions import NotRequired, TypedDict
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState
 
+AllowedActions = Literal["approve", "reject", "edit"]
 
-class ActionRequest(TypedDict):
+
+class HumanInTheLoopRequest(TypedDict):
     """Request for human feedback.
 
     Attributes:
         message: Human-readable message describing what action is needed
-        args: Args associated with the action (tool kwargs, for example)
+        args: Args associated with the action (tool call information, for example)
         allowed_actions: List of allowed action types, can be one of "approve", "reject", "edit"
         description: Optional detailed description
 
@@ -47,9 +49,7 @@ class RejectResponse(TypedDict):
     """Reason for the rejection, if provided."""
 
 
-ActionResponse = ApproveResponse | RejectResponse
-
-AllowedActions = Literal["approve", "reject", "edit"]
+HumanResponse = ApproveResponse | RejectResponse
 
 
 class HumanInTheLoopMiddleware(AgentMiddleware):
@@ -112,14 +112,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create interrupt requests for all tools that need approval
-        interrupt_requests: list[ActionRequest] = []
+        interrupt_requests: list[HumanInTheLoopRequest] = []
         for tool_call in interrupt_tool_calls:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
             message = f"{self.action_request_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
             allowed_actions = self.tool_configs[tool_name]
 
-            request: ActionRequest = {
+            request: HumanInTheLoopRequest = {
                 "message": message,
                 "args": {"tool_name": tool_name, "tool_args": tool_args},
                 "allowed_actions": allowed_actions,
@@ -127,7 +127,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             }
             interrupt_requests.append(request)
 
-        responses: list[ActionResponse] = interrupt(interrupt_requests)
+        responses: list[HumanResponse] = interrupt(interrupt_requests)
 
         # Validate that the number of responses matches the number of interrupt tool calls
         if (responses_len := len(responses)) != (
