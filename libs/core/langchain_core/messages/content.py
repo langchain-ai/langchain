@@ -939,7 +939,9 @@ def _get_data_content_block_types() -> tuple[str, ...]:
 
 
 def is_data_content_block(block: dict) -> bool:
-    """Check if the provided content block is a standard v1 data content block.
+    """Check if the provided content block is a data content block.
+
+    Returns for both v0 (old-style) and v1 (new-style) multimodal data blocks.
 
     Args:
         block: The content block to check.
@@ -951,7 +953,9 @@ def is_data_content_block(block: dict) -> bool:
     if block.get("type") not in _get_data_content_block_types():
         return False
 
-    if any(key in block for key in ("url", "base64", "file_id", "text")):
+    if any(key in block for key in ("url", "base64", "file_id")):
+        # Type is valid and at least one data field is present
+        # (Accepts old-style image and audio URLContentBlock)
         return True
 
     # Verify data presence based on source type
@@ -966,6 +970,8 @@ def is_data_content_block(block: dict) -> bool:
         ):
             return True
 
+    # Type may be valid, but no data fields are present
+    # (required case since each is optional and we have no validation)
     return False
 
 
