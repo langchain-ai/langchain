@@ -336,22 +336,37 @@ def default_tool_parser(
     for raw_tool_call in raw_tool_calls:
         if "function" not in raw_tool_call:
             continue
-        function_name = raw_tool_call["function"]["name"]
+
+        function_dict = raw_tool_call["function"]
+        function_name = function_dict.get("name", "")
+
+        # Check if required fields exist
+        if "arguments" not in function_dict:
+            invalid_tool_calls.append(
+                invalid_tool_call(
+                    name=function_name,
+                    args="Missing 'arguments' field",
+                    id=raw_tool_call.get("id"),
+                    error="Missing required 'arguments' field in function call",
+                )
+            )
+            continue
+
         try:
-            function_args = json.loads(raw_tool_call["function"]["arguments"])
+            function_args = json.loads(function_dict["arguments"])
             parsed = tool_call(
-                name=function_name or "",
+                name=function_name,
                 args=function_args or {},
                 id=raw_tool_call.get("id"),
             )
             tool_calls.append(parsed)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, TypeError, ValueError) as exc:
             invalid_tool_calls.append(
                 invalid_tool_call(
                     name=function_name,
-                    args=raw_tool_call["function"]["arguments"],
+                    args=function_dict["arguments"],
                     id=raw_tool_call.get("id"),
-                    error=None,
+                    error=f"Failed to parse arguments: {exc}",
                 )
             )
     return tool_calls, invalid_tool_calls
