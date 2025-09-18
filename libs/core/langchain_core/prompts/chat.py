@@ -1300,13 +1300,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         """Name of prompt type. Used for serialization."""
         return "chat"
 
-    def save(self, file_path: Union[Path, str]) -> None:
-        """Save prompt to file.
-
-        Args:
-            file_path: path to file.
-        """
-        raise NotImplementedError
 
     @override
     def pretty_repr(self, html: bool = False) -> str:
