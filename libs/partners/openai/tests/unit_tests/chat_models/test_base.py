@@ -789,6 +789,22 @@ def test_format_message_content() -> None:
     for content in contents:
         assert expected == _format_message_content([content])
 
+    # Test warn if PDF is missing a filename
+    pdf_block = {
+        "type": "file",
+        "base64": "<base64 data>",
+        "mime_type": "application/pdf",
+    }
+    expected = [
+        # N.B. this format is invalid for OpenAI
+        {
+            "type": "file",
+            "file": {"file_data": "data:application/pdf;base64,<base64 data>"},
+        }
+    ]
+    with pytest.warns(match="filename"):
+        assert expected == _format_message_content([pdf_block])
+
     contents = [
         {"type": "file", "source_type": "id", "id": "file-abc123"},
         {"type": "file", "file_id": "file-abc123"},
