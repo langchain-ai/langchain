@@ -2780,3 +2780,168 @@ def test_gpt_5_temperature(use_responses_api: bool) -> None:
     messages = [HumanMessage(content="Hello")]
     payload = llm._get_request_payload(messages)
     assert payload["temperature"] == 0.5  # gpt-5-chat is exception
+
+
+def test_convert_chunk_to_generation_chunk_reasoning_content() -> None:
+    """Test that reasoning content is properly handled in streaming chunks."""
+    from langchain_openai.chat_models.base import ChatOpenAI
+
+    llm = ChatOpenAI(model="o1-preview")
+
+    # Test with reasoning_content field (direct OpenAI)
+    chunk_with_reasoning_content = {
+        "id": "chatcmpl-test",
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "Hello",
+                    "reasoning_content": "Let me think about this..."
+                },
+                "index": 0,
+                "finish_reason": None
+            }
+        ],
+        "created": 1234567890,
+        "model": "o1-preview",
+        "object": "chat.completion.chunk"
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_with_reasoning_content, AIMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, AIMessageChunk)
+    assert generation_chunk.message.content == "Hello"
+    assert "reasoning_content" in generation_chunk.message.additional_kwargs
+    assert generation_chunk.message.additional_kwargs["reasoning_content"] == "Let me think about this..."
+
+    # Test with reasoning field (OpenRouter)
+    chunk_with_reasoning = {
+        "id": "chatcmpl-test",
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "Hello again",
+                    "reasoning": "More thinking here..."
+                },
+                "index": 0,
+                "finish_reason": None
+            }
+        ],
+        "created": 1234567890,
+        "model": "o1-preview",
+        "object": "chat.completion.chunk"
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_with_reasoning, AIMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, AIMessageChunk)
+    assert generation_chunk.message.content == "Hello again"
+    assert "reasoning_content" in generation_chunk.message.additional_kwargs
+    assert generation_chunk.message.additional_kwargs["reasoning_content"] == "More thinking here..."
+
+    # Test chunk without reasoning content works normally
+    chunk_without_reasoning = {
+        "id": "chatcmpl-test",
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "Normal response"
+                },
+                "index": 0,
+                "finish_reason": None
+            }
+        ],
+        "created": 1234567890,
+        "model": "gpt-4",
+        "object": "chat.completion.chunk"
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_without_reasoning, AIMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, AIMessageChunk)
+    assert generation_chunk.message.content == "Normal response"
+    assert "reasoning_content" not in generation_chunk.message.additional_kwargs
+
+    # Test with empty reasoning content
+    chunk_with_empty_reasoning = {
+        "id": "chatcmpl-test",
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "Response",
+                    "reasoning_content": ""
+                },
+                "index": 0,
+                "finish_reason": None
+            }
+        ],
+        "created": 1234567890,
+        "model": "o1-preview",
+        "object": "chat.completion.chunk"
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_with_empty_reasoning, AIMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, AIMessageChunk)
+    assert generation_chunk.message.content == "Response"
+    assert "reasoning_content" in generation_chunk.message.additional_kwargs
+    assert generation_chunk.message.additional_kwargs["reasoning_content"] == ""
+
+    # Test with both reasoning_content and reasoning (reasoning_content takes precedence)
+    chunk_with_both = {
+        "id": "chatcmpl-test",
+        "choices": [
+            {
+                "delta": {
+                    "role": "assistant",
+                    "content": "Response",
+                    "reasoning_content": "Direct reasoning",
+                    "reasoning": "OpenRouter reasoning"
+                },
+                "index": 0,
+                "finish_reason": None
+            }
+        ],
+        "created": 1234567890,
+        "model": "o1-preview",
+        "object": "chat.completion.chunk"
+    }
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_with_both, AIMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, AIMessageChunk)
+    assert generation_chunk.message.content == "Response"
+    assert "reasoning_content" in generation_chunk.message.additional_kwargs
+    assert generation_chunk.message.additional_kwargs["reasoning_content"] == "Direct reasoning"
+
+    # Test that non-AIMessageChunk types are not affected
+    from langchain_core.messages import HumanMessageChunk
+
+    generation_chunk = llm._convert_chunk_to_generation_chunk(
+        chunk_with_reasoning_content, HumanMessageChunk, {}
+    )
+
+    assert generation_chunk is not None
+    assert isinstance(generation_chunk.message, HumanMessageChunk)
+    assert generation_chunk.message.content == "Hello"
+    assert "reasoning_content" not in generation_chunk.message.additional_kwargs
+
+

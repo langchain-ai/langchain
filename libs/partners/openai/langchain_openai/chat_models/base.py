@@ -927,6 +927,15 @@ class BaseChatOpenAI(BaseChatModel):
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 
+        # Handle reasoning content in streaming chunks
+        if isinstance(message_chunk, AIMessageChunk):
+            delta = choice.get("delta", {})
+            # parsing reasoning tokens
+            if (reasoning_content := delta.get("reasoning_content")) is not None:
+                message_chunk.additional_kwargs["reasoning_content"] = reasoning_content
+            elif (reasoning := delta.get("reasoning")) is not None:
+                message_chunk.additional_kwargs["reasoning_content"] = reasoning
+
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -1294,10 +1303,13 @@ class BaseChatOpenAI(BaseChatModel):
                 generations[0].message.additional_kwargs["parsed"] = message.parsed
             if hasattr(message, "refusal"):
                 generations[0].message.additional_kwargs["refusal"] = message.refusal
+            # parsing reasoning tokens
             if hasattr(message, "reasoning"):  # e.g. parsing from openrouter
                 generations[0].message.additional_kwargs[
                     "reasoning_content"
                 ] = message.reasoning
+            elif hasattr(message, "reasoning_content"):
+                generations[0].message.additional_kwargs["reasoning_content"] = message.reasoning_content
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
