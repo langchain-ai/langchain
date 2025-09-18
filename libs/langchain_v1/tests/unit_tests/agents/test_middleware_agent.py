@@ -495,6 +495,55 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         assert result["messages"][0].tool_call_id == "1"
 
 
+def test_nested_middleware_runs_before_parent() -> None:
+    calls: list[str] = []
+
+    class Child(AgentMiddleware):
+        def before_model(self, state):
+            calls.append("child.before")
+
+        def modify_model_request(self, request: ModelRequest, state):
+            calls.append("child.modify")
+            return request
+
+        def after_model(self, state):
+            calls.append("child.after")
+
+    class Parent(AgentMiddleware):
+        def __init__(self) -> None:
+            # Include child middleware which should run before this one
+            self.middleware = [Child()]
+
+        def before_model(self, state):
+            calls.append("parent.before")
+
+        def modify_model_request(self, request: ModelRequest, state):
+            calls.append("parent.modify")
+            return request
+
+        def after_model(self, state):
+            calls.append("parent.after")
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        middleware=[Parent()],
+        system_prompt="sys",
+    ).compile()
+
+    res = agent.invoke({"messages": ["hi"]})
+    assert "messages" in res and len(res["messages"]) >= 2
+    # Order: before -> child then parent; modify -> child then parent; after -> parent then child
+    assert calls == [
+        "child.before",
+        "parent.before",
+        "child.modify",
+        "parent.modify",
+        "parent.after",
+        "child.after",
+    ]
+
+
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
 
