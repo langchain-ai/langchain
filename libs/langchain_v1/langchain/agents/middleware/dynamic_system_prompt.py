@@ -68,6 +68,8 @@ class DynamicSystemPromptMiddleware(AgentMiddleware):
         ```
     """
 
+    _accepts_runtime: bool
+
     def __init__(
         self,
         dynamic_system_prompt: DynamicSystemPrompt[ContextT],
@@ -81,8 +83,7 @@ class DynamicSystemPromptMiddleware(AgentMiddleware):
         """
         super().__init__()
         self.dynamic_system_prompt = dynamic_system_prompt
-        sig = signature(dynamic_system_prompt)
-        self.accepts_runtime = "runtime" in sig.parameters
+        self._accepts_runtime = "runtime" in signature(dynamic_system_prompt).parameters
 
     def modify_model_request(
         self,
@@ -91,7 +92,7 @@ class DynamicSystemPromptMiddleware(AgentMiddleware):
         runtime: Runtime[ContextT],
     ) -> ModelRequest:
         """Modify the model request to include the dynamic system prompt."""
-        if self.accepts_runtime:
+        if self._accepts_runtime:
             system_prompt = cast(
                 "DynamicSystemPromptWithRuntime[ContextT]", self.dynamic_system_prompt
             )(state, runtime)
