@@ -356,7 +356,7 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                 else:
                     pass
 
-                if tool_name := current.get("tool_name"):
+                if tool_name := current.get("extras", {}).get("tool_name"):
                     collapsed["name"] = tool_name
                 if server_label := current.get("extras", {}).get("server_label"):
                     collapsed["server_label"] = server_label
@@ -367,7 +367,20 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
                 if "output" in nxt:
                     collapsed["output"] = nxt["output"]
                 for k, v in current.get("extras", {}).items():
-                    if k not in ("server_label", "arguments"):
+                    if k not in ("server_label", "arguments", "tool_name", "error"):
+                        collapsed[k] = v
+
+            elif current.get("name") == "mcp_list_tools":
+                collapsed = {"id": current["id"]}
+                if server_label := current.get("extras", {}).get("server_label"):
+                    collapsed["server_label"] = server_label
+                if "output" in nxt:
+                    collapsed["tools"] = nxt["output"]
+                collapsed["type"] = "mcp_list_tools"
+                if error := nxt.get("extras", {}).get("error"):
+                    collapsed["error"] = error
+                for k, v in current.get("extras", {}).items():
+                    if k not in ("server_label", "error"):
                         collapsed[k] = v
             else:
                 pass
