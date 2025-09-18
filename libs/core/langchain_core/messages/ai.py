@@ -508,6 +508,30 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         return self
 
+    @model_validator(mode="after")
+    def init_server_tool_calls(self) -> Self:
+        """Parse server_tool_call_chunks."""
+        if (
+            self.chunk_position == "last"
+            and self.response_metadata.get("output_version") == "v1"
+            and isinstance(self.content, list)
+        ):
+            for idx, block in enumerate(self.content):
+                if (
+                    isinstance(block, dict)
+                    and block.get("type")
+                    in ("server_tool_call", "server_tool_call_chunk")
+                    and (args_str := block.get("args"))
+                ):
+                    try:
+                        args = json.loads(args_str)
+                        if isinstance(args, dict):
+                            self.content[idx]["type"] = "server_tool_call"  # type: ignore[index]
+                            self.content[idx]["args"] = args  # type: ignore[index]
+                    except json.JSONDecodeError:
+                        pass
+        return self
+
     @overload  # type: ignore[override]  # summing BaseMessages gives ChatPromptTemplate
     def __add__(self, other: "AIMessageChunk") -> "AIMessageChunk": ...
 

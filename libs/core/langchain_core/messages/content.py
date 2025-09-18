@@ -406,7 +406,26 @@ class ServerToolCall(TypedDict):
     """Provider-specific metadata."""
 
 
-# TODO: ServerToolCallChunk
+class ServerToolCallChunk(TypedDict):
+    """A chunk of a tool call (as part of a stream)."""
+
+    type: Literal["server_tool_call_chunk"]
+    """Used for discrimination."""
+
+    name: NotRequired[str]
+    """The name of the tool to be called."""
+
+    args: NotRequired[str]
+    """JSON substring of the arguments to the tool call."""
+
+    id: NotRequired[str]
+    """An identifier associated with the tool call."""
+
+    index: NotRequired[Union[int, str]]
+    """Index of block in aggregate response. Used during streaming."""
+
+    extras: NotRequired[dict[str, Any]]
+    """Provider-specific metadata."""
 
 
 class ServerToolResult(TypedDict):
@@ -785,6 +804,7 @@ ToolContentBlock = Union[
     ToolCall,
     ToolCallChunk,
     ServerToolCall,
+    ServerToolCallChunk,
     ServerToolResult,
 ]
 
@@ -814,6 +834,7 @@ KNOWN_BLOCK_TYPES = {
     "video",
     # Server-side tool calls
     "server_tool_call",
+    "server_tool_call_chunk",
     "server_tool_result",
     # Catch-all
     "non_standard",

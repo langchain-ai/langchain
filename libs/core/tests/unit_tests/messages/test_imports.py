@@ -28,6 +28,7 @@ EXPECTED_ALL = [
     "NonStandardContentBlock",
     "PlainTextContentBlock",
     "ServerToolCall",
+    "ServerToolCallChunk",
     "ServerToolResult",
     "SystemMessage",
     "SystemMessageChunk",

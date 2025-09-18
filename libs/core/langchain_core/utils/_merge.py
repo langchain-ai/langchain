@@ -38,11 +38,20 @@ def merge_dicts(left: dict[str, Any], *others: dict[str, Any]) -> dict[str, Any]
             elif right_v is None:
                 continue
             elif type(merged[right_k]) is not type(right_v):
-                msg = (
-                    f'additional_kwargs["{right_k}"] already exists in this message,'
-                    " but with a different type."
-                )
-                raise TypeError(msg)
+                if (
+                    left.get("type") == "server_tool_call"
+                    and right_k == "args"
+                    and merged[right_k] == {}
+                    and isinstance(right_v, str)
+                    and set(right.keys()) == {"args", "index"}
+                ):
+                    merged[right_k] = right_v
+                else:
+                    msg = (
+                        f'additional_kwargs["{right_k}"] already exists in this'
+                        " message, but with a different type."
+                    )
+                    raise TypeError(msg)
             elif isinstance(merged[right_k], str):
                 # TODO: Add below special handling for 'type' key in 0.3 and remove
                 # merge_lists 'type' logic.
