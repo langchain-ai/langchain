@@ -934,6 +934,7 @@ class BaseChatOpenAI(BaseChatModel):
             if (reasoning_content := delta.get("reasoning_content")) is not None:
                 message_chunk.additional_kwargs["reasoning_content"] = reasoning_content
             elif (reasoning := delta.get("reasoning")) is not None:
+                # Handle use via OpenRouter
                 message_chunk.additional_kwargs["reasoning_content"] = reasoning
 
         generation_chunk = ChatGenerationChunk(
@@ -1309,7 +1310,9 @@ class BaseChatOpenAI(BaseChatModel):
                     "reasoning_content"
                 ] = message.reasoning
             elif hasattr(message, "reasoning_content"):
-                generations[0].message.additional_kwargs["reasoning_content"] = message.reasoning_content
+                generations[0].message.additional_kwargs[
+                    "reasoning_content"
+                ] = message.reasoning_content
 
         return ChatResult(generations=generations, llm_output=llm_output)
 
