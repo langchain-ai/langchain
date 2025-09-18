@@ -342,6 +342,13 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
+    model_request_signatures: list[
+        tuple[bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
+    ] = [
+        ("runtime" in signature(m.modify_model_request).parameters, m)
+        for m in middleware_w_modify_model_request
+    ]
+
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
@@ -354,9 +361,8 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            sig = signature(m.modify_model_request)
-            if "runtime" in sig.parameters:
+        for use_runtime, m in model_request_signatures:
+            if use_runtime:
                 m.modify_model_request(request, state, runtime)
             else:
                 m.modify_model_request(request, state)  # type: ignore[call-arg]
@@ -383,9 +389,8 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            sig = signature(m.modify_model_request)
-            if "runtime" in sig.parameters:
+        for use_runtime, m in model_request_signatures:
+            if use_runtime:
                 m.modify_model_request(request, state, runtime)
             else:
                 m.modify_model_request(request, state)  # type: ignore[call-arg]

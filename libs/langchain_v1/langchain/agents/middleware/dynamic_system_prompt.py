@@ -63,6 +63,7 @@ class DynamicSystemPromptMiddleware(AgentMiddleware):
                 f"You are a helpful assistant. Always address the user by their name: {user_name}"
             )
 
+
         middleware = DynamicSystemPromptMiddleware(system_prompt)
         ```
     """
