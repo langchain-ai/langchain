@@ -270,159 +270,80 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         tool_call_block["index"] = block["index"]
                     yield tool_call_block
 
-            elif (
-                block_type == "input_json_delta"
-                and isinstance(message, AIMessageChunk)
-                and len(message.tool_call_chunks) == 1
+            elif block_type == "input_json_delta" and isinstance(
+                message, AIMessageChunk
             ):
-                tool_call_chunk = (
-                    message.tool_call_chunks[0].copy()  # type: ignore[assignment]
-                )
-                if "type" not in tool_call_chunk:
-                    tool_call_chunk["type"] = "tool_call_chunk"
-                yield tool_call_chunk
-
-            elif block_type == "server_tool_use":
-                if block.get("name") == "web_search":
-                    web_search_call: types.WebSearchCall = {"type": "web_search_call"}
-
-                    if query := block.get("input", {}).get("query"):
-                        web_search_call["query"] = query
-
-                    elif block.get("input") == {} and "partial_json" in block:
-                        try:
-                            input_ = json.loads(block["partial_json"])
-                            if isinstance(input_, dict) and "query" in input_:
-                                web_search_call["query"] = input_["query"]
-                        except json.JSONDecodeError:
-                            pass
-
-                    if "id" in block:
-                        web_search_call["id"] = block["id"]
-                    if "index" in block:
-                        web_search_call["index"] = block["index"]
-                    known_fields = {"type", "name", "input", "id", "index"}
-                    for key, value in block.items():
-                        if key not in known_fields:
-                            if "extras" not in web_search_call:
-                                web_search_call["extras"] = {}
-                            web_search_call["extras"][key] = value
-                    yield web_search_call
-
-                elif block.get("name") == "code_execution":
-                    code_interpreter_call: types.CodeInterpreterCall = {
-                        "type": "code_interpreter_call"
-                    }
-
-                    if code := block.get("input", {}).get("code"):
-                        code_interpreter_call["code"] = code
-
-                    elif block.get("input") == {} and "partial_json" in block:
-                        try:
-                            input_ = json.loads(block["partial_json"])
-                            if isinstance(input_, dict) and "code" in input_:
-                                code_interpreter_call["code"] = input_["code"]
-                        except json.JSONDecodeError:
-                            pass
-
-                    if "id" in block:
-                        code_interpreter_call["id"] = block["id"]
-                    if "index" in block:
-                        code_interpreter_call["index"] = block["index"]
-                    known_fields = {"type", "name", "input", "id", "index"}
-                    for key, value in block.items():
-                        if key not in known_fields:
-                            if "extras" not in code_interpreter_call:
-                                code_interpreter_call["extras"] = {}
-                            code_interpreter_call["extras"][key] = value
-                    yield code_interpreter_call
+                if len(message.tool_call_chunks) == 1:
+                    tool_call_chunk = (
+                        message.tool_call_chunks[0].copy()  # type: ignore[assignment]
+                    )
+                    if "type" not in tool_call_chunk:
+                        tool_call_chunk["type"] = "tool_call_chunk"
+                    yield tool_call_chunk
 
                 else:
-                    new_block: types.NonStandardContentBlock = {
-                        "type": "non_standard",
-                        "value": block,
+                    server_tool_call_chunk: types.ServerToolCallChunk = {
+                        "type": "server_tool_call_chunk",
+                        "args": block.get("partial_json", ""),
                     }
-                    if "index" in new_block["value"]:
-                        new_block["index"] = new_block["value"].pop("index")
-                    yield new_block
+                    if "index" in block:
+                        server_tool_call_chunk["index"] = block["index"]
+                    yield server_tool_call_chunk
 
-            elif block_type == "web_search_tool_result":
-                web_search_result: types.WebSearchResult = {"type": "web_search_result"}
-                if "tool_use_id" in block:
-                    web_search_result["id"] = block["tool_use_id"]
-                if "index" in block:
-                    web_search_result["index"] = block["index"]
-
-                if web_search_result_content := block.get("content", []):
-                    if "extras" not in web_search_result:
-                        web_search_result["extras"] = {}
-                    urls = []
-                    extra_content = []
-                    for result_content in web_search_result_content:
-                        if isinstance(result_content, dict):
-                            if "url" in result_content:
-                                urls.append(result_content["url"])
-                            extra_content.append(result_content)
-                    web_search_result["extras"]["content"] = extra_content
-                    if urls:
-                        web_search_result["urls"] = urls
-                yield web_search_result
-
-            elif block_type == "code_execution_tool_result":
-                code_interpreter_result: types.CodeInterpreterResult = {
-                    "type": "code_interpreter_result",
-                    "output": [],
-                }
-                if "tool_use_id" in block:
-                    code_interpreter_result["id"] = block["tool_use_id"]
-                if "index" in block:
-                    code_interpreter_result["index"] = block["index"]
-
-                code_interpreter_output: types.CodeInterpreterOutput = {
-                    "type": "code_interpreter_output"
+            elif block_type == "server_tool_use":
+                if block.get("name") == "code_execution":
+                    server_tool_use_name = "code_interpreter"
+                else:
+                    server_tool_use_name = block.get("name", "")
+                server_tool_call: types.ServerToolCall = {
+                    "type": "server_tool_call",
+                    "name": server_tool_use_name,
+                    "args": block.get("input", {}),
+                    "id": block.get("id", ""),
                 }
 
-                code_execution_content = block.get("content", {})
-                if code_execution_content.get("type") == "code_execution_result":
-                    if "return_code" in code_execution_content:
-                        code_interpreter_output["return_code"] = code_execution_content[
-                            "return_code"
-                        ]
-                    if "stdout" in code_execution_content:
-                        code_interpreter_output["stdout"] = code_execution_content[
-                            "stdout"
-                        ]
-                    if stderr := code_execution_content.get("stderr"):
-                        code_interpreter_output["stderr"] = stderr
-                    if (
-                        output := code_interpreter_output.get("content")
-                    ) and isinstance(output, list):
-                        if "extras" not in code_interpreter_result:
-                            code_interpreter_result["extras"] = {}
-                        code_interpreter_result["extras"]["content"] = output
-                        for output_block in output:
-                            if "file_id" in output_block:
-                                if "file_ids" not in code_interpreter_output:
-                                    code_interpreter_output["file_ids"] = []
-                                code_interpreter_output["file_ids"].append(
-                                    output_block["file_id"]
-                                )
-                    code_interpreter_result["output"].append(code_interpreter_output)
+                if block.get("input") == {} and "partial_json" in block:
+                    try:
+                        input_ = json.loads(block["partial_json"])
+                        if isinstance(input_, dict):
+                            server_tool_call["args"] = input_
+                    except json.JSONDecodeError:
+                        pass
 
-                elif (
-                    code_execution_content.get("type")
-                    == "code_execution_tool_result_error"
-                ):
-                    if "extras" not in code_interpreter_result:
-                        code_interpreter_result["extras"] = {}
-                    code_interpreter_result["extras"]["error_code"] = (
-                        code_execution_content.get("error_code")
-                    )
+                if "index" in block:
+                    server_tool_call["index"] = block["index"]
+                known_fields = {"type", "name", "input", "partial_json", "id", "index"}
+                _populate_extras(server_tool_call, block, known_fields)
 
-                yield code_interpreter_result
+                yield server_tool_call
+
+            elif block_type in (
+                "code_execution_tool_result",
+                "web_search_tool_result",
+            ):
+                server_tool_result: types.ServerToolResult = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block.get("tool_use_id", ""),
+                    "status": "success",
+                    "extras": {"block_type": block_type},
+                }
+                if output := block.get("content", []):
+                    server_tool_result["output"] = output
+                    if hasattr(output, "error_code"):
+                        server_tool_result["status"] = "error"
+                if "index" in block:
+                    server_tool_result["index"] = block["index"]
+
+                known_fields = {"type", "tool_use_id", "content", "index"}
+                _populate_extras(server_tool_result, block, known_fields)
+
+                yield server_tool_result
 
             else:
-                new_block = {"type": "non_standard", "value": block}
+                new_block: types.NonStandardContentBlock = {
+                    "type": "non_standard",
+                    "value": block,
+                }
                 if "index" in new_block["value"]:
                     new_block["index"] = new_block["value"].pop("index")
                 yield new_block

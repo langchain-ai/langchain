@@ -1095,20 +1095,21 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
     else:
-        assert block_types == {"text", "web_search_call", "web_search_result"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
+
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
     else:
-        assert block_types == {"text", "web_search_call", "web_search_result"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {
@@ -1413,11 +1414,7 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
     else:
-        assert block_types == {
-            "text",
-            "code_interpreter_call",
-            "code_interpreter_result",
-        }
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1430,11 +1427,7 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
     else:
-        assert block_types == {
-            "text",
-            "code_interpreter_call",
-            "code_interpreter_result",
-        }
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {
