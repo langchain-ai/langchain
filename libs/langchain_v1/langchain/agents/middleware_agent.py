@@ -10,6 +10,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.runtime import Runtime
 from langgraph.types import Send
 from langgraph.typing import ContextT
 from typing_extensions import TypedDict, TypeVar
@@ -19,7 +20,6 @@ from langchain.agents.middleware.types import (
     AgentState,
     JumpTo,
     ModelRequest,
-    PublicAgentState,
 )
 
 # Import structured output classes from the old implementation
@@ -49,15 +49,6 @@ def _merge_state_schemas(schemas: list[type]) -> type:
         all_annotations.update(schema.__annotations__)
 
     return TypedDict("MergedState", all_annotations)  # type: ignore[operator]
-
-
-def _filter_state_for_schema(state: dict[str, Any], schema: type) -> dict[str, Any]:
-    """Filter state to only include fields defined in the given schema."""
-    if not hasattr(schema, "__annotations__"):
-        return state
-
-    schema_fields = set(schema.__annotations__.keys())
-    return {k: v for k, v in state.items() if k in schema_fields}
 
 
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
@@ -114,12 +105,10 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware] = (),
+    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     context_schema: type[ContextT] | None = None,
-) -> StateGraph[
-    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
-]:
+) -> StateGraph[AgentState[ResponseT], ContextT, AgentState[ResponseT], AgentState[ResponseT]]:
     """Create a middleware agent graph."""
     # init chat model
     if isinstance(model, str):
@@ -200,15 +189,16 @@ def create_agent(  # noqa: PLR0915
     ]
 
     # Collect all middleware state schemas and create merged schema
-    merged_state_schema: type[AgentState] = _merge_state_schemas(
+    merged_state_schema: type[AgentState[ResponseT]] = _merge_state_schemas(
         [m.state_schema for m in middleware]
     )
 
     # create graph, add nodes
     graph = StateGraph(
         merged_state_schema,
-        input_schema=PublicAgentState,
-        output_schema=PublicAgentState,
+        input_schema=merged_state_schema,
+        # new feature: allow configuration for omitting fields from output, maybe with annotations
+        output_schema=merged_state_schema,
         context_schema=context_schema,
     )
 
@@ -318,7 +308,7 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
-    def model_request(state: dict[str, Any]) -> dict[str, Any]:
+    def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -331,9 +321,7 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            # Filter state to only include fields defined in this middleware's schema
-            filtered_state = _filter_state_for_schema(state, m.state_schema)
-            request = m.modify_model_request(request, filtered_state)
+            m.modify_model_request(request, state, runtime)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -344,7 +332,7 @@ def create_agent(  # noqa: PLR0915
         output = model_.invoke(messages)
         return _handle_model_output(output)
 
-    async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
+    async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Start with the base model request
         request = ModelRequest(
@@ -358,9 +346,7 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            # Filter state to only include fields defined in this middleware's schema
-            filtered_state = _filter_state_for_schema(state, m.state_schema)
-            request = m.modify_model_request(request, filtered_state)
+            request = m.modify_model_request(request, state, runtime)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -547,7 +533,7 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
+    graph: StateGraph[AgentState, ContextT, AgentState, AgentState],
     name: str,
     default_destination: str,
     model_destination: str,
