@@ -14,7 +14,7 @@ dependencies = [
     "pydantic<3,>=2",
 ]
 name = "langchain-mistralai"
-version = "0.2.11"
+version = "0.2.12"
 description = "An integration package connecting Mistral and LangChain"
 readme = "README.md"
 
