@@ -3,7 +3,7 @@
 import itertools
 from collections.abc import Callable, Sequence
 from inspect import signature
-from typing import Any, cast
+from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -14,17 +14,16 @@ from langgraph.graph.state import StateGraph
 from langgraph.runtime import Runtime
 from langgraph.types import Send
 from langgraph.typing import ContextT
-from typing_extensions import TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,
     ModelRequest,
+    OmitFromSchema,
     PublicAgentState,
 )
-
-# Import structured output classes from the old implementation
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     OutputToolBinding,
@@ -40,33 +39,49 @@ from langchain.chat_models import init_chat_model
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 
-def _merge_state_schemas(schemas: list[type]) -> type:
-    """Merge multiple TypedDict schemas into a single schema with all fields."""
-    if not schemas:
-        return AgentState
+def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
+    """Resolve schema by merging schemas and optionally respecting OmitFromSchema annotations.
 
-    all_annotations = {}
-
-    for schema in schemas:
-        all_annotations.update(schema.__annotations__)
-
-    return TypedDict("MergedState", all_annotations)  # type: ignore[operator]
-
-
-def _merge_public_state_schemas(schemas: list[type]) -> type:
-    """Merge multiple TypedDict schemas into a single schema with all fields.
-
-    Should add support for omitting fields from custom state schemas
-    via annotations.
+    Args:
+        schemas: List of schema types to merge
+        schema_name: Name for the generated TypedDict
+        omit_flag: If specified, omit fields with this flag set ('input' or 'output')
     """
-    if not schemas:
-        return PublicAgentState
-
     all_annotations = {}
+
     for schema in schemas:
-        all_annotations.update(schema.__annotations__)
-    all_annotations.pop("jump_to")
-    return TypedDict("MergedPublicState", all_annotations)  # type: ignore[operator]
+        hints = get_type_hints(schema, include_extras=True)
+
+        for field_name, field_type in hints.items():
+            should_omit = False
+
+            if omit_flag:
+                # Check for omission in the annotation metadata
+                metadata = _extract_metadata(field_type)
+                for meta in metadata:
+                    if isinstance(meta, OmitFromSchema) and getattr(meta, omit_flag) is True:
+                        should_omit = True
+                        break
+
+            if not should_omit:
+                all_annotations[field_name] = field_type
+
+    return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
+
+
+def _extract_metadata(type_: type) -> list:
+    """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
+    # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
+    if get_origin(type_) in (Required, NotRequired):
+        inner_type = get_args(type_)[0]
+        if get_origin(inner_type) is Annotated:
+            return list(get_args(inner_type)[1:])
+
+    # Handle direct Annotated[...]
+    elif get_origin(type_) is Annotated:
+        return list(get_args(type_)[1:])
+
+    return []
 
 
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
@@ -208,20 +223,16 @@ def create_agent(  # noqa: PLR0915
         m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
     ]
 
-    # Collect all middleware state schemas and create merged schema
-    merged_state_schema: type[AgentState[ResponseT]] = _merge_state_schemas(
-        [m.state_schema for m in middleware]
-    )
-
-    merged_public_state_schema: type[PublicAgentState[ResponseT]] = _merge_public_state_schemas(
-        [m.state_schema for m in middleware]
-    )
+    state_schemas = {m.state_schema for m in middleware}
+    state_schemas.add(AgentState)
 
     # create graph, add nodes
-    graph = StateGraph(
-        merged_state_schema,
-        input_schema=merged_public_state_schema,
-        output_schema=merged_public_state_schema,
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    ] = StateGraph(
+        state_schema=_resolve_schema(state_schemas, "StateSchema", None),
+        input_schema=_resolve_schema(state_schemas, "InputSchema", "input"),
+        output_schema=_resolve_schema(state_schemas, "OutputSchema", "output"),
         context_schema=context_schema,
     )
 
