@@ -2,6 +2,7 @@
 
 import itertools
 from collections.abc import Callable, Sequence
+from inspect import signature
 from typing import Any, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -20,6 +21,7 @@ from langchain.agents.middleware.types import (
     AgentState,
     JumpTo,
     ModelRequest,
+    PublicAgentState,
 )
 
 # Import structured output classes from the old implementation
@@ -49,6 +51,22 @@ def _merge_state_schemas(schemas: list[type]) -> type:
         all_annotations.update(schema.__annotations__)
 
     return TypedDict("MergedState", all_annotations)  # type: ignore[operator]
+
+
+def _merge_public_state_schemas(schemas: list[type]) -> type:
+    """Merge multiple TypedDict schemas into a single schema with all fields.
+
+    Should add support for omitting fields from custom state schemas
+    via annotations.
+    """
+    if not schemas:
+        return PublicAgentState
+
+    all_annotations = {}
+    for schema in schemas:
+        all_annotations.update(schema.__annotations__)
+    all_annotations.pop("jump_to")
+    return TypedDict("MergedPublicState", all_annotations)  # type: ignore[operator]
 
 
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
@@ -108,7 +126,9 @@ def create_agent(  # noqa: PLR0915
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     context_schema: type[ContextT] | None = None,
-) -> StateGraph[AgentState[ResponseT], ContextT, AgentState[ResponseT], AgentState[ResponseT]]:
+) -> StateGraph[
+    AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+]:
     """Create a middleware agent graph."""
     # init chat model
     if isinstance(model, str):
@@ -193,12 +213,15 @@ def create_agent(  # noqa: PLR0915
         [m.state_schema for m in middleware]
     )
 
+    merged_public_state_schema: type[PublicAgentState[ResponseT]] = _merge_public_state_schemas(
+        [m.state_schema for m in middleware]
+    )
+
     # create graph, add nodes
     graph = StateGraph(
         merged_state_schema,
-        input_schema=merged_state_schema,
-        # new feature: allow configuration for omitting fields from output, maybe with annotations
-        output_schema=merged_state_schema,
+        input_schema=merged_public_state_schema,
+        output_schema=merged_public_state_schema,
         context_schema=context_schema,
     )
 
@@ -321,7 +344,11 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            m.modify_model_request(request, state, runtime)
+            sig = signature(m.modify_model_request)
+            if "runtime" in sig.parameters:
+                m.modify_model_request(request, state, runtime)
+            else:
+                m.modify_model_request(request, state)  # type: ignore[call-arg]
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -346,7 +373,11 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            request = m.modify_model_request(request, state, runtime)
+            sig = signature(m.modify_model_request)
+            if "runtime" in sig.parameters:
+                m.modify_model_request(request, state, runtime)
+            else:
+                m.modify_model_request(request, state)  # type: ignore[call-arg]
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -533,7 +564,7 @@ def _make_tools_to_model_edge(
 
 
 def _add_middleware_edge(
-    graph: StateGraph[AgentState, ContextT, AgentState, AgentState],
+    graph: StateGraph[AgentState, ContextT, PublicAgentState, PublicAgentState],
     name: str,
     default_destination: str,
     model_destination: str,

@@ -20,7 +20,6 @@ from langgraph.types import Command
 from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
-    HumanInTheLoopConfig,
     ActionRequest,
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
