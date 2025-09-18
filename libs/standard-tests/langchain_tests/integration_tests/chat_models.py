@@ -2376,7 +2376,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "type": "file",
                     "mime_type": "application/pdf",
                     "base64": pdf_data,
-                    "filename": "dummy.pdf",
                 },
             ]
         )

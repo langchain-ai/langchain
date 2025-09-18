@@ -48,7 +48,6 @@ from langchain_core.messages import (
     message_chunk_to_message,
 )
 from langchain_core.messages.block_translators.openai import (
-    convert_to_openai_data_block,
     convert_to_openai_image_block,
 )
 from langchain_core.output_parsers.openai_tools import (
@@ -149,16 +148,18 @@ def _format_for_tracing(messages: list[BaseMessage]) -> list[BaseMessage]:
                         block.get("type") == "file"
                         and is_data_content_block(block)  # v0 (image/audio/file) or v1
                         and "base64" in block
-                        # Narrows to old Base64ContentBlock or new FileContentBlock
+                        # Backward compat: convert v1 base64 blocks to v0
                     ):
                         if message_to_trace is message:
                             # Shallow copy
                             message_to_trace = message.model_copy()
                             message_to_trace.content = list(message_to_trace.content)
 
-                        message_to_trace.content[idx] = convert_to_openai_data_block(  # type: ignore[index]
-                            block
-                        )
+                        message_to_trace.content[idx] = {  # type: ignore[index]
+                            **{k: v for k, v in block.items() if k != "base64"},
+                            "data": block["base64"],
+                            "source_type": "base64",
+                        }
                     elif len(block) == 1 and "type" not in block:
                         # Tracing assumes all content blocks have a "type" key. Here
                         # we add this key if it is missing, and there's an obvious

@@ -59,7 +59,7 @@ class BaseStore(ABC, Generic[K, V]):
                 def __init__(self) -> None:
                     self.store: dict[str, int] = {}
 
-                def mget(self, keys: Sequence[str]) -> list[Optional[int]]:
+                def mget(self, keys: Sequence[str]) -> list[int | None]:
                     return [self.store.get(key) for key in keys]
 
                 def mset(self, key_value_pairs: Sequence[tuple[str, int]]) -> None:
@@ -71,7 +71,7 @@ class BaseStore(ABC, Generic[K, V]):
                         if key in self.store:
                             del self.store[key]
 
-                def yield_keys(self, prefix: Optional[str] = None) -> Iterator[str]:
+                def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
                     if prefix is None:
                         yield from self.store.keys()
                     else:
