@@ -15,6 +15,7 @@ from langchain_core.messages.tool import tool_call as create_tool_call
 from langchain_core.output_parsers.transform import BaseCumulativeTransformOutputParser
 from langchain_core.outputs import ChatGeneration, Generation
 from langchain_core.utils.json import parse_partial_json
+from langchain_core.utils.json import parse_json_markdown
 from langchain_core.utils.pydantic import TypeBaseModel
 
 logger = logging.getLogger(__name__)
@@ -53,8 +54,10 @@ def parse_tool_call(
             return None
     else:
         try:
-            function_args = json.loads(
-                raw_tool_call["function"]["arguments"], strict=strict
+            # Use markdown-aware stripping but keep strict JSON parsing
+            function_args = parse_json_markdown(
+                raw_tool_call["function"]["arguments"],
+                parser=lambda s: json.loads(s, strict=strict),
             )
         except JSONDecodeError as e:
             msg = (
