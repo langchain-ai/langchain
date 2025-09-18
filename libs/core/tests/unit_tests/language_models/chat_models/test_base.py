@@ -1,6 +1,7 @@
 """Test base chat model."""
 
 import uuid
+import warnings
 from collections.abc import AsyncIterator, Iterator
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
@@ -497,6 +498,45 @@ def test_trace_images_in_openai_format() -> None:
                         {
                             "type": "image_url",
                             "image_url": {"url": "https://example.com/image.png"},
+                        }
+                    ]
+                )
+            ]
+        ]
+    ]
+
+
+def test_trace_pdfs() -> None:
+    # For backward compat
+    llm = ParrotFakeChatModel()
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "file",
+                    "mime_type": "application/pdf",
+                    "base64": "<base64 string>",
+                }
+            ],
+        }
+    ]
+    tracer = FakeChatModelStartTracer()
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        llm.invoke(messages, config={"callbacks": [tracer]})
+
+    assert tracer.messages == [
+        [
+            [
+                HumanMessage(
+                    content=[
+                        {
+                            "type": "file",
+                            "mime_type": "application/pdf",
+                            "source_type": "base64",
+                            "data": "<base64 string>",
                         }
                     ]
                 )
