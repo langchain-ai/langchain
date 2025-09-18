@@ -151,6 +151,27 @@ def create_agent(  # noqa: PLR0915
             native_output_binding = ProviderStrategyBinding.from_schema_spec(
                 response_format.schema_spec
             )
+    # Expand nested middleware so that any middleware declared within a middleware
+    # is run before the declaring middleware.
+    def _expand_middleware(mw: Sequence[AgentMiddleware]) -> list[AgentMiddleware]:
+        expanded: list[AgentMiddleware] = []
+        seen: set[str] = set()
+
+        def add(m: AgentMiddleware) -> None:
+            # Add children first (depth-first), then the parent
+            for child in getattr(m, "middleware", ()) or ():
+                add(child)
+            name = m.__class__.__name__
+            if name not in seen:
+                expanded.append(m)
+                seen.add(name)
+
+        for root in mw:
+            add(root)
+        return expanded
+
+    middleware = tuple(_expand_middleware(middleware))
+
     middleware_tools = [t for m in middleware for t in getattr(m, "tools", [])]
 
     # Setup tools
@@ -183,7 +204,7 @@ def create_agent(  # noqa: PLR0915
             list(structured_output_tools.values()) if structured_output_tools else []
         ) + middleware_tools
 
-    # validate middleware
+    # validate middleware (after expansion)
     assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (  # noqa: S101
         "Please remove duplicate middleware instances."
     )

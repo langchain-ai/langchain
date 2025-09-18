@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
+from collections.abc import Sequence
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
@@ -67,6 +68,11 @@ class AgentMiddleware(Generic[StateT]):
 
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
+
+    # Nested middleware that should run before this middleware.
+    # These will be expanded into the main agent's middleware list
+    # and executed in order prior to this middleware.
+    middleware: Sequence["AgentMiddleware"] = ()
 
     def before_model(self, state: StateT) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
