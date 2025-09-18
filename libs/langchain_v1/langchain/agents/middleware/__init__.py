@@ -11,8 +11,8 @@ __all__ = [
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
+    "DynamicSystemPromptMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",
     "SummarizationMiddleware",
-    "DynamicSystemPromptMiddleware",
 ]
