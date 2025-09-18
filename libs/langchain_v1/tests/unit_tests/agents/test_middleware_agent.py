@@ -1,9 +1,12 @@
+from typing_extensions import TypedDict
 import pytest
 from typing import Any
 from unittest.mock import patch
 
 from syrupy.assertion import SnapshotAssertion
 
+from langgraph.runtime import Runtime
+from typing_extensions import Annotated, TypedDict
 from pydantic import BaseModel, Field
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -15,7 +18,6 @@ from langchain_core.messages import (
     ToolMessage,
 )
 from langchain_core.tools import tool
-from langgraph.types import Command
 
 from langchain.agents.middleware_agent import create_agent
 from langchain.agents.middleware.human_in_the_loop import (
@@ -24,7 +26,15 @@ from langchain.agents.middleware.human_in_the_loop import (
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
-from langchain.agents.middleware.types import AgentMiddleware, ModelRequest, AgentState
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    ModelRequest,
+    AgentState,
+    OmitFromInput,
+    OmitFromOutput,
+    PrivateStateAttr,
+)
+from langchain.agents.middleware.dynamic_system_prompt import DynamicSystemPromptMiddleware
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
@@ -1200,3 +1210,128 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
     assert hasattr(result["response"], "temperature")
     assert result["response"].temperature == 72.0
     assert result["response"].condition == "sunny"
+
+
+# Tests for DynamicSystemPromptMiddleware
+def test_dynamic_system_prompt_middleware_basic() -> None:
+    """Test basic functionality of DynamicSystemPromptMiddleware."""
+
+    def dynamic_system_prompt(state: AgentState) -> str:
+        messages = state.get("messages", [])
+        if messages:
+            return f"You are a helpful assistant. Message count: {len(messages)}"
+        return "You are a helpful assistant. No messages yet."
+
+    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
+
+    # Test with empty state
+    empty_state = {"messages": []}
+    request = ModelRequest(
+        model=FakeToolCallingModel(),
+        system_prompt="Original prompt",
+        messages=[],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+
+    modified_request = middleware.modify_model_request(request, empty_state, None)
+    assert modified_request.system_prompt == "You are a helpful assistant. No messages yet."
+
+    state_with_messages = {"messages": [HumanMessage("Hello"), AIMessage("Hi")]}
+    modified_request = middleware.modify_model_request(request, state_with_messages, None)
+    assert modified_request.system_prompt == "You are a helpful assistant. Message count: 2"
+
+
+def test_dynamic_system_prompt_middleware_with_context() -> None:
+    """Test DynamicSystemPromptMiddleware with runtime context."""
+
+    class MockContext(TypedDict):
+        user_role: str
+
+    def dynamic_system_prompt(state: AgentState, runtime: Runtime[MockContext]) -> str:
+        base_prompt = "You are a helpful assistant."
+        if runtime and hasattr(runtime, "context"):
+            user_role = runtime.context.get("user_role", "user")
+            return f"{base_prompt} User role: {user_role}"
+        return base_prompt
+
+    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
+
+    # Create a mock runtime with context
+    class MockRuntime:
+        def __init__(self, context):
+            self.context = context
+
+    mock_runtime = MockRuntime(context={"user_role": "admin"})
+
+    request = ModelRequest(
+        model=FakeToolCallingModel(),
+        system_prompt="Original prompt",
+        messages=[HumanMessage("Test")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+
+    state = {"messages": [HumanMessage("Test")]}
+    modified_request = middleware.modify_model_request(request, state, mock_runtime)
+
+    assert modified_request.system_prompt == "You are a helpful assistant. User role: admin"
+
+
+def test_public_private_state_for_custom_middleware() -> None:
+    """Test public and private state for custom middleware."""
+
+    class CustomState(AgentState):
+        omit_input: Annotated[str, OmitFromInput]
+        omit_output: Annotated[str, OmitFromOutput]
+        private_state: Annotated[str, PrivateStateAttr]
+
+    class CustomMiddleware(AgentMiddleware[CustomState]):
+        state_schema: type[CustomState] = CustomState
+
+        def before_model(self, state: CustomState) -> dict[str, Any]:
+            assert "omit_input" not in state
+            assert "omit_output" in state
+            assert "private_state" not in state
+            return {"omit_input": "test", "omit_output": "test", "private_state": "test"}
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
+    agent = agent.compile()
+    result = agent.invoke(
+        {
+            "messages": [HumanMessage("Hello")],
+            "omit_input": "test in",
+            "private_state": "test in",
+            "omit_output": "test in",
+        }
+    )
+    assert "omit_input" in result
+    assert "omit_output" not in result
+    assert "private_state" not in result
+
+
+def test_runtime_injected_into_middleware() -> None:
+    """Test that the runtime is injected into the middleware."""
+
+    class CustomMiddleware(AgentMiddleware):
+        def before_model(self, state: AgentState, runtime: Runtime) -> None:
+            assert runtime is not None
+            return None
+
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
+            assert runtime is not None
+            return request
+
+        def after_model(self, state: AgentState, runtime: Runtime) -> None:
+            assert runtime is not None
+            return None
+
+    middleware = CustomMiddleware()
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
+    agent = agent.compile()
+    agent.invoke({"messages": [HumanMessage("Hello")]})

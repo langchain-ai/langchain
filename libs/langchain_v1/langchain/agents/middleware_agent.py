@@ -226,6 +226,8 @@ def create_agent(  # noqa: PLR0915
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
 
+    print(_resolve_schema(state_schemas, "InputSchema", "input").__annotations__)
+
     # create graph, add nodes
     graph: StateGraph[
         AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]

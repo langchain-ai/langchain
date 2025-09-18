@@ -9,10 +9,14 @@ from __future__ import annotations
 from inspect import signature
 from typing import TYPE_CHECKING, Protocol, TypeAlias, cast
 
-from langchain_core.messages import SystemMessage
 from langgraph.typing import ContextT
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import (
+    AgentMiddleware,
+    AgentState,
+    ContextT,
+    ModelRequest,
+)
 
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
@@ -21,7 +25,7 @@ if TYPE_CHECKING:
 class DynamicSystemPromptWithoutRuntime(Protocol):
     """Dynamic system prompt without runtime in call signature."""
 
-    def __call__(self, state: AgentState) -> str | SystemMessage:
+    def __call__(self, state: AgentState) -> str:
         """Return the system prompt for the next model call."""
         ...
 
@@ -29,15 +33,17 @@ class DynamicSystemPromptWithoutRuntime(Protocol):
 class DynamicSystemPromptWithRuntime(Protocol[ContextT]):
     """Dynamic system prompt with runtime in call signature."""
 
-    def __call__(self, state: AgentState, runtime: Runtime[ContextT]) -> str | SystemMessage:
+    def __call__(self, state: AgentState, runtime: Runtime[ContextT]) -> str:
         """Return the system prompt for the next model call."""
         ...
 
 
-DynamicSystemPrompt: TypeAlias = DynamicSystemPromptWithoutRuntime | DynamicSystemPromptWithRuntime
+DynamicSystemPrompt: TypeAlias = (
+    DynamicSystemPromptWithoutRuntime | DynamicSystemPromptWithRuntime[ContextT]
+)
 
 
-class DynamicSystemPromptMiddleware(AgentMiddleware[AgentState, ContextT]):
+class DynamicSystemPromptMiddleware(AgentMiddleware):
     """Dynamic System Prompt Middleware.
 
     Allows setting the system prompt dynamically right before each model invocation.
@@ -45,39 +51,34 @@ class DynamicSystemPromptMiddleware(AgentMiddleware[AgentState, ContextT]):
 
     Example:
         ```python
-        from langchain.agents.middleware.dynamic_system_prompt import DynamicSystemPromptMiddleware
-        from langchain_core.messages import SystemMessage
+        from langchain.agents.middleware import DynamicSystemPromptMiddleware
 
 
-        def get_system_prompt(state: AgentState, runtime: Runtime) -> str:
-            region = runtime.context.get("region", "n/a")
-            return f"You are a helpful assistant. Region: {region}"
+        class Context(TypedDict):
+            user_name: str
 
 
-        middleware = DynamicSystemPromptMiddleware(get_system_prompt)
-        ```
-
-    Example with SystemMessage:
-        ```python
-        def get_system_message(state: AgentState, runtime: Runtime) -> SystemMessage:
-            region = runtime.context.get("region", "n/a")
-            return SystemMessage(content=f"You are a helpful assistant. Region: {region}")
+        def system_prompt(state: AgentState, runtime: Runtime[Context]) -> str:
+            user_name = runtime.context.get("user_name", "n/a")
+            return (
+                f"You are a helpful assistant. Always address the user by their name: {user_name}"
+            )
 
 
-        middleware = DynamicSystemPromptMiddleware(get_system_message)
+        middleware = DynamicSystemPromptMiddleware(system_prompt)
         ```
     """
 
     def __init__(
         self,
-        dynamic_system_prompt: DynamicSystemPrompt,
+        dynamic_system_prompt: DynamicSystemPrompt[ContextT],
     ) -> None:
         """Initialize the dynamic system prompt middleware.
 
         Args:
-            dynamic_system_prompt: Function that receives the current agent state and runtime,
-                and returns the system prompt for the next model call. It can return either a
-                SystemMessage or a string (which will be wrapped in a SystemMessage).
+            dynamic_system_prompt: Function that receives the current agent state
+                and optionally runtime with context, and returns the system prompt for
+                the next model call. Returns a string.
         """
         super().__init__()
         self.dynamic_system_prompt = dynamic_system_prompt
@@ -100,9 +101,5 @@ class DynamicSystemPromptMiddleware(AgentMiddleware[AgentState, ContextT]):
                 state
             )
 
-        request.system_prompt = (
-            str(system_prompt.content)
-            if isinstance(system_prompt, SystemMessage)
-            else system_prompt
-        )
+        request.system_prompt = system_prompt
         return request
