@@ -1,4 +1,5 @@
 import json
+
 import pytest
 
 from langchain_core.exceptions import OutputParserException
@@ -51,7 +52,7 @@ def test_tool_call_parses_fenced_json() -> None:
 
 def test_tool_call_incomplete_json_raises() -> None:
     # Arrange: incomplete JSON should raise before and after the change
-    incomplete_args = "{""a"": 1"  # missing closing brace
+    incomplete_args = '{"a": 1'  # missing closing brace
     result = _build_generation_with_arguments(incomplete_args)
     parser = JsonOutputKeyToolsParser(key_name="func", first_tool_only=True)
 
