@@ -4,7 +4,7 @@ from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 from langchain_core.messages import content as types
 
 
-def test_convert_to_v1_from_anthropic() -> None:
+def test_convert_to_v1_from_bedrock() -> None:
     message = AIMessage(
         [
             {"type": "thinking", "thinking": "foo", "signature": "foo_signature"},
@@ -31,51 +31,26 @@ def test_convert_to_v1_from_anthropic() -> None:
                     {"bar": "baz"},
                 ],
             },
-            {
-                "type": "server_tool_use",
-                "name": "web_search",
-                "input": {"query": "web search query"},
-                "id": "srvtoolu_abc123",
-            },
-            {
-                "type": "web_search_tool_result",
-                "tool_use_id": "srvtoolu_abc123",
-                "content": [
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 1",
-                        "url": "<page url 1>",
-                        "page_age": "January 1, 2025",
-                        "encrypted_content": "<encrypted content 1>",
-                    },
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 2",
-                        "url": "<page url 2>",
-                        "page_age": "January 2, 2025",
-                        "encrypted_content": "<encrypted content 2>",
-                    },
-                ],
-            },
-            {
-                "type": "server_tool_use",
-                "id": "srvtoolu_def456",
-                "name": "code_execution",
-                "input": {"code": "import numpy as np..."},
-            },
-            {
-                "type": "code_execution_tool_result",
-                "tool_use_id": "srvtoolu_def456",
-                "content": {
-                    "type": "code_execution_result",
-                    "stdout": "Mean: 5.5\nStandard deviation...",
-                    "stderr": "",
-                    "return_code": 0,
-                },
-            },
             {"type": "something_else", "foo": "bar"},
         ],
-        response_metadata={"model_provider": "anthropic"},
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "abc_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+            },
+            {
+                "type": "tool_call",
+                "id": "abc_234",
+                "name": "another_tool",
+                "args": {"arg_1": "value_1"},
+            },
+        ],
+        response_metadata={
+            "model_provider": "bedrock",
+            "model_name": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        },
     )
     expected_content: list[types.ContentBlock] = [
         {
@@ -109,52 +84,14 @@ def test_convert_to_v1_from_anthropic() -> None:
             ],
         },
         {
-            "type": "web_search_call",
-            "id": "srvtoolu_abc123",
-            "query": "web search query",
-        },
-        {
-            "type": "web_search_result",
-            "id": "srvtoolu_abc123",
-            "urls": ["<page url 1>", "<page url 2>"],
-            "extras": {
-                "content": [
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 1",
-                        "url": "<page url 1>",
-                        "page_age": "January 1, 2025",
-                        "encrypted_content": "<encrypted content 1>",
-                    },
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 2",
-                        "url": "<page url 2>",
-                        "page_age": "January 2, 2025",
-                        "encrypted_content": "<encrypted content 2>",
-                    },
-                ]
-            },
-        },
-        {
-            "type": "code_interpreter_call",
-            "id": "srvtoolu_def456",
-            "code": "import numpy as np...",
-        },
-        {
-            "type": "code_interpreter_result",
-            "id": "srvtoolu_def456",
-            "output": [
-                {
-                    "type": "code_interpreter_output",
-                    "return_code": 0,
-                    "stdout": "Mean: 5.5\nStandard deviation...",
-                }
-            ],
-        },
-        {
             "type": "non_standard",
             "value": {"type": "something_else", "foo": "bar"},
+        },
+        {
+            "type": "tool_call",
+            "id": "abc_234",
+            "name": "another_tool",
+            "args": {"arg_1": "value_1"},
         },
     ]
     assert message.content_blocks == expected_content
@@ -162,21 +99,47 @@ def test_convert_to_v1_from_anthropic() -> None:
     # Check no mutation
     assert message.content != expected_content
 
-    message = AIMessage("Hello", response_metadata={"model_provider": "anthropic"})
-    expected_content = [{"type": "text", "text": "Hello"}]
+    # Test with a non-Anthropic message
+    message = AIMessage(
+        [
+            {"type": "text", "text": "Let's call a tool."},
+            {"type": "something_else", "foo": "bar"},
+        ],
+        tool_calls=[
+            {
+                "type": "tool_call",
+                "id": "abc_123",
+                "name": "get_weather",
+                "args": {"location": "San Francisco"},
+            }
+        ],
+        response_metadata={"model_provider": "bedrock"},
+    )
+    expected_content = [
+        {"type": "text", "text": "Let's call a tool."},
+        {
+            "type": "non_standard",
+            "value": {"type": "something_else", "foo": "bar"},
+        },
+        {
+            "type": "tool_call",
+            "id": "abc_123",
+            "name": "get_weather",
+            "args": {"location": "San Francisco"},
+        },
+    ]
     assert message.content_blocks == expected_content
-    assert message.content != expected_content  # check no mutation
 
 
-def test_convert_to_v1_from_anthropic_chunk() -> None:
+def test_convert_to_v1_from_bedrock_chunk() -> None:
     chunks = [
         AIMessageChunk(
             content=[{"text": "Looking ", "type": "text", "index": 0}],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[{"text": "now.", "type": "text", "index": 0}],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[
@@ -197,7 +160,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
                     "index": 1,
                 }
             ],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[{"type": "input_json_delta", "partial_json": "", "index": 1}],
@@ -210,7 +173,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
                     "type": "tool_call_chunk",
                 }
             ],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[
@@ -225,7 +188,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
                     "type": "tool_call_chunk",
                 }
             ],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[
@@ -240,7 +203,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
                     "type": "tool_call_chunk",
                 }
             ],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
             content=[
@@ -255,7 +218,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
                     "type": "tool_call_chunk",
                 }
             ],
-            response_metadata={"model_provider": "anthropic"},
+            response_metadata={"model_provider": "bedrock"},
         ),
     ]
     expected_contents: list[types.ContentBlock] = [
@@ -325,7 +288,7 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
     assert full.content_blocks == expected_content_blocks
 
 
-def test_convert_to_v1_from_anthropic_input() -> None:
+def test_convert_to_v1_from_bedrock_input() -> None:
     message = HumanMessage(
         [
             {"type": "text", "text": "foo"},

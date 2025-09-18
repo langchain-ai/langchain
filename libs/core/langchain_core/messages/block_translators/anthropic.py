@@ -2,7 +2,7 @@
 
 import json
 from collections.abc import Iterable
-from typing import Any, Optional, cast
+from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -17,7 +17,7 @@ def _populate_extras(
 
     for key, value in block.items():
         if key not in known_fields:
-            if "extras" not in block:
+            if "extras" not in standard_block:
                 # Below type-ignores are because mypy thinks a non-standard block can
                 # get here, although we exclude them above.
                 standard_block["extras"] = {}  # type: ignore[typeddict-unknown-key]
@@ -186,10 +186,12 @@ def _convert_citation_to_v1(citation: dict[str, Any]) -> types.Annotation:
 def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock]:
     """Convert Anthropic message content to v1 format."""
     if isinstance(message.content, str):
-        message.content = [{"type": "text", "text": message.content}]
+        content: list[Union[str, dict]] = [{"type": "text", "text": message.content}]
+    else:
+        content = message.content
 
     def _iter_blocks() -> Iterable[types.ContentBlock]:
-        for block in message.content:
+        for block in content:
             if not isinstance(block, dict):
                 continue
             block_type = block.get("type")
@@ -429,12 +431,12 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message with OpenAI content."""
+    """Derive standard content blocks from a message with Anthropic content."""
     return _convert_to_v1_from_anthropic(message)
 
 
 def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
-    """Derive standard content blocks from a message chunk with OpenAI content."""
+    """Derive standard content blocks from a message chunk with Anthropic content."""
     return _convert_to_v1_from_anthropic(message)
 
 
