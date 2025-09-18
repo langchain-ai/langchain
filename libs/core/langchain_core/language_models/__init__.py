@@ -45,6 +45,7 @@ https://python.langchain.com/docs/how_to/custom_llm/
 from typing import TYPE_CHECKING
 
 from langchain_core._import_utils import import_attr
+from langchain_core.language_models._utils import is_openai_data_block
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import (
@@ -85,6 +86,7 @@ __all__ = (
     "ParrotFakeChatModel",
     "SimpleChatModel",
     "get_tokenizer",
+    "is_openai_data_block",
 )
 
 _dynamic_imports = {
@@ -104,6 +106,7 @@ _dynamic_imports = {
     "ParrotFakeChatModel": "fake_chat_models",
     "LLM": "llms",
     "BaseLLM": "llms",
+    "is_openai_data_block": "_utils",
 }
 
 

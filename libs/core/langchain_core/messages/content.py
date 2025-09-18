@@ -915,7 +915,15 @@ KNOWN_BLOCK_TYPES = {
 
 
 def _get_data_content_block_types() -> tuple[str, ...]:
-    """Get type literals from DataContentBlock union members dynamically."""
+    """Get type literals from DataContentBlock union members dynamically.
+
+    Example: ("image", "video", "audio", "text-plain", "file")
+
+    Note that old style multimodal blocks type literals with new style blocks.
+    Speficially, "image", "audio", and "file".
+
+    See the docstring of `_normalize_messages` in `language_models._utils` for details.
+    """
     data_block_types = []
 
     for block_type in get_args(DataContentBlock):
@@ -931,7 +939,9 @@ def _get_data_content_block_types() -> tuple[str, ...]:
 
 
 def is_data_content_block(block: dict) -> bool:
-    """Check if the provided content block is a standard v1 data content block.
+    """Check if the provided content block is a data content block.
+
+    Returns for both v0 (old-style) and v1 (new-style) multimodal data blocks.
 
     Args:
         block: The content block to check.
@@ -944,6 +954,8 @@ def is_data_content_block(block: dict) -> bool:
         return False
 
     if any(key in block for key in ("url", "base64", "file_id", "text")):
+        # Type is valid and at least one data field is present
+        # (Accepts old-style image and audio URLContentBlock)
         return True
 
     # Verify data presence based on source type
@@ -958,6 +970,8 @@ def is_data_content_block(block: dict) -> bool:
         ):
             return True
 
+    # Type may be valid, but no data fields are present
+    # (required case since each is optional and we have no validation)
     return False
 
 

@@ -8,8 +8,8 @@ from collections.abc import Iterable
 from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast
 
 from langchain_core.language_models._utils import (
-    _is_openai_data_block,
     _parse_data_uri,
+    is_openai_data_block,
 )
 from langchain_core.messages import content as types
 
@@ -45,7 +45,11 @@ def convert_to_openai_image_block(block: dict[str, Any]) -> dict:
 def convert_to_openai_data_block(
     block: dict, api: Literal["chat/completions", "responses"] = "chat/completions"
 ) -> dict:
-    """Format standard data content block to format expected by OpenAI."""
+    """Format standard data content block to format expected by OpenAI.
+
+    "Standard data content block" can include old-style LangChain v0 blocks
+    (URLContentBlock, Base64ContentBlock, IDContentBlock) or new ones.
+    """
     if block["type"] == "image":
         chat_completions_block = convert_to_openai_image_block(block)
         if api == "responses":
@@ -61,9 +65,9 @@ def convert_to_openai_data_block(
             formatted_block = chat_completions_block
 
     elif block["type"] == "file":
-        if "base64" in block or block.get("source_type") == "base64":
-            # Handle v0 format: {"source_type": "base64", "data": "...", ...}
-            # Handle v1 format: {"base64": "...", ...}
+        if block.get("source_type") == "base64" or "base64" in block:
+            # Handle v0 format (Base64CB): {"source_type": "base64", "data": "...", ...}
+            # Handle v1 format (IDCB): {"base64": "...", ...}
             base64_data = block["data"] if "source_type" in block else block["base64"]
             file = {"file_data": f"data:{block['mime_type']};base64,{base64_data}"}
             if filename := block.get("filename"):
@@ -74,23 +78,24 @@ def convert_to_openai_data_block(
                 # Backward compat
                 file["filename"] = extras["filename"]
             else:
+                # Can't infer filename
                 warnings.warn(
-                    "OpenAI may require a filename for file inputs. Specify a filename "
-                    "in the content block: {'type': 'file', 'mime_type': "
-                    "'application/pdf', 'base64': '...', 'filename': 'my-pdf'}",
+                    "OpenAI may require a filename for file uploads. Specify a filename"
+                    " in the content block, e.g.: {'type': 'file', 'mime_type': "
+                    "'...', 'base64': '...', 'filename': 'my-file.pdf'}",
                     stacklevel=1,
                 )
             formatted_block = {"type": "file", "file": file}
             if api == "responses":
                 formatted_block = {"type": "input_file", **formatted_block["file"]}
-        elif "file_id" in block or block.get("source_type") == "id":
-            # Handle v0 format: {"source_type": "id", "id": "...", ...}
-            # Handle v1 format: {"file_id": "...", ...}
+        elif block.get("source_type") == "id" or "file_id" in block:
+            # Handle v0 format (IDContentBlock): {"source_type": "id", "id": "...", ...}
+            # Handle v1 format (IDCB): {"file_id": "...", ...}
             file_id = block["id"] if "source_type" in block else block["file_id"]
             formatted_block = {"type": "file", "file": {"file_id": file_id}}
             if api == "responses":
                 formatted_block = {"type": "input_file", **formatted_block["file"]}
-        elif "url" in block:
+        elif "url" in block:  # Intentionally do not check for source_type="url"
             if api == "chat/completions":
                 error_msg = "OpenAI Chat Completions does not support file URLs."
                 raise ValueError(error_msg)
@@ -173,7 +178,7 @@ def _convert_to_v1_from_chat_completions_input(
             "image_url",
             "input_audio",
             "file",
-        } and _is_openai_data_block(block):
+        } and is_openai_data_block(block):
             converted_block = _convert_openai_format_to_data_block(block)
             # If conversion succeeded, use it; otherwise keep as non_standard
             if (
