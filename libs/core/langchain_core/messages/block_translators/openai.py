@@ -716,6 +716,7 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                 web_search_call = {
                     "type": "server_tool_call",
                     "name": "web_search",
+                    "args": {},
                     "id": block["id"],
                 }
                 if "index" in block:

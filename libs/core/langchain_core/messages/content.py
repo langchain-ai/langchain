@@ -393,11 +393,11 @@ class ServerToolCall(TypedDict):
     name: str
     """The name of the tool to be called."""
 
+    args: dict[str, Any]
+    """The arguments to the tool call."""
+
     id: str
     """An identifier associated with the tool call."""
-
-    args: NotRequired[dict[str, Any]]
-    """The arguments to the tool call."""
 
     index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""

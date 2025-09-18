@@ -373,7 +373,12 @@ def test_compat_responses_v03() -> None:
             "id": "call_abc",
             "extras": {"item_id": "fc_abc"},
         },
-        {"type": "server_tool_call", "name": "web_search", "id": "websearch_123"},
+        {
+            "type": "server_tool_call",
+            "name": "web_search",
+            "args": {},
+            "id": "websearch_123",
+        },
         {
             "type": "server_tool_result",
             "tool_call_id": "websearch_123",
