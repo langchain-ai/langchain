@@ -22,13 +22,13 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Union[Callable[..., Any], Runnable[Any, Any]]], BaseTool]: ...
 
 
 @overload
 def tool(
     name_or_callable: str,
-    runnable: Runnable,
+    runnable: Runnable[Any, Any],
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
@@ -42,7 +42,7 @@ def tool(
 
 @overload
 def tool(
-    name_or_callable: Callable,
+    name_or_callable: Callable[..., Any],
     *,
     description: Optional[str] = None,
     return_direct: bool = False,
@@ -65,12 +65,12 @@ def tool(
     response_format: Literal["content", "content_and_artifact"] = "content",
     parse_docstring: bool = False,
     error_on_invalid_docstring: bool = True,
-) -> Callable[[Union[Callable, Runnable]], BaseTool]: ...
+) -> Callable[[Union[Callable[..., Any], Runnable[Any, Any]]], BaseTool]: ...
 
 
 def tool(
-    name_or_callable: Optional[Union[str, Callable]] = None,
-    runnable: Optional[Runnable] = None,
+    name_or_callable: Optional[Union[str, Callable[..., Any]]] = None,
+    runnable: Optional[Runnable[Any, Any]] = None,
     *args: Any,
     description: Optional[str] = None,
     return_direct: bool = False,
@@ -81,7 +81,7 @@ def tool(
     error_on_invalid_docstring: bool = True,
 ) -> Union[
     BaseTool,
-    Callable[[Union[Callable, Runnable]], BaseTool],
+    Callable[[Union[Callable[..., Any], Runnable[Any, Any]]], BaseTool],
 ]:
     """Make tools out of functions, can be used with or without arguments.
 
