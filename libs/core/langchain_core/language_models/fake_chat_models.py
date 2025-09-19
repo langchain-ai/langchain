@@ -12,6 +12,9 @@ from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
 )
+from langchain_core.language_models._utils import (
+    _update_message_content_to_blocks,
+)
 from langchain_core.language_models.chat_models import BaseChatModel, SimpleChatModel
 from langchain_core.messages import AIMessage, AIMessageChunk, BaseMessage
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
@@ -248,10 +251,32 @@ class GenericFakeChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> ChatResult:
         message = next(self.messages)
         message_ = AIMessage(content=message) if isinstance(message, str) else message
+
+        if output_version == "v1":
+            message_ = _update_message_content_to_blocks(message_, "v1")
+
+        # Only set in response metadata if output_version is explicitly provided
+        # (If output_version is "v0" and self.output_version is None, it's the default)
+        output_version_explicit = not (
+            output_version == "v0" and getattr(self, "output_version", None) is None
+        )
+        if output_version_explicit:
+            if hasattr(message_, "response_metadata"):
+                message_.response_metadata = {"output_version": output_version}
+            else:
+                message_ = AIMessage(
+                    content=message_.content,
+                    additional_kwargs=message_.additional_kwargs,
+                    response_metadata={"output_version": output_version},
+                    id=message_.id,
+                )
+
         generation = ChatGeneration(message=message_)
         return ChatResult(generations=[generation])
 
@@ -260,10 +285,16 @@ class GenericFakeChatModel(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
+        *,
+        output_version: str = "v0",
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         chat_result = self._generate(
-            messages, stop=stop, run_manager=run_manager, **kwargs
+            messages,
+            stop=stop,
+            run_manager=run_manager,
+            output_version="v0",  # Always call with v0 to get original string content
+            **kwargs,
         )
         if not isinstance(chat_result, ChatResult):
             msg = (
@@ -302,6 +333,21 @@ class GenericFakeChatModel(BaseChatModel):
                     and not message.additional_kwargs
                 ):
                     chunk.message.chunk_position = "last"
+
+                if output_version == "v1":
+                    chunk.message = _update_message_content_to_blocks(
+                        chunk.message, "v1"
+                    )
+
+                output_version_explicit = not (
+                    output_version == "v0"
+                    and getattr(self, "output_version", None) is None
+                )
+                if output_version_explicit:
+                    chunk.message.response_metadata = {"output_version": output_version}
+                else:
+                    chunk.message.response_metadata = {}
+
                 if run_manager:
                     run_manager.on_llm_new_token(token, chunk=chunk)
                 yield chunk
@@ -321,7 +367,7 @@ class GenericFakeChatModel(BaseChatModel):
                                         id=message.id,
                                         content="",
                                         additional_kwargs={
-                                            "function_call": {fkey: fvalue_chunk}
+                                            "function_call": {fkey: fvalue_chunk},
                                         },
                                     )
                                 )
@@ -336,7 +382,9 @@ class GenericFakeChatModel(BaseChatModel):
                                 message=AIMessageChunk(
                                     id=message.id,
                                     content="",
-                                    additional_kwargs={"function_call": {fkey: fvalue}},
+                                    additional_kwargs={
+                                        "function_call": {fkey: fvalue},
+                                    },
                                 )
                             )
                             if run_manager:
@@ -348,7 +396,9 @@ class GenericFakeChatModel(BaseChatModel):
                 else:
                     chunk = ChatGenerationChunk(
                         message=AIMessageChunk(
-                            id=message.id, content="", additional_kwargs={key: value}
+                            id=message.id,
+                            content="",
+                            additional_kwargs={key: value},
                         )
                     )
                     if run_manager:
@@ -357,6 +407,14 @@ class GenericFakeChatModel(BaseChatModel):
                             chunk=chunk,  # No token for function call
                         )
                     yield chunk
+
+            # Add a final chunk with chunk_position="last" after all additional_kwargs
+            final_chunk = ChatGenerationChunk(
+                message=AIMessageChunk(id=message.id, content="", chunk_position="last")
+            )
+            if run_manager:
+                run_manager.on_llm_new_token("", chunk=final_chunk)
+            yield final_chunk
 
     @property
     def _llm_type(self) -> str:
