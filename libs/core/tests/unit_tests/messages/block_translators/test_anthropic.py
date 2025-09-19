@@ -109,48 +109,50 @@ def test_convert_to_v1_from_anthropic() -> None:
             ],
         },
         {
-            "type": "web_search_call",
+            "type": "server_tool_call",
+            "name": "web_search",
             "id": "srvtoolu_abc123",
-            "query": "web search query",
+            "args": {"query": "web search query"},
         },
         {
-            "type": "web_search_result",
-            "id": "srvtoolu_abc123",
-            "urls": ["<page url 1>", "<page url 2>"],
-            "extras": {
-                "content": [
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 1",
-                        "url": "<page url 1>",
-                        "page_age": "January 1, 2025",
-                        "encrypted_content": "<encrypted content 1>",
-                    },
-                    {
-                        "type": "web_search_result",
-                        "title": "Page Title 2",
-                        "url": "<page url 2>",
-                        "page_age": "January 2, 2025",
-                        "encrypted_content": "<encrypted content 2>",
-                    },
-                ]
-            },
-        },
-        {
-            "type": "code_interpreter_call",
-            "id": "srvtoolu_def456",
-            "code": "import numpy as np...",
-        },
-        {
-            "type": "code_interpreter_result",
-            "id": "srvtoolu_def456",
+            "type": "server_tool_result",
+            "tool_call_id": "srvtoolu_abc123",
             "output": [
                 {
-                    "type": "code_interpreter_output",
-                    "return_code": 0,
-                    "stdout": "Mean: 5.5\nStandard deviation...",
-                }
+                    "type": "web_search_result",
+                    "title": "Page Title 1",
+                    "url": "<page url 1>",
+                    "page_age": "January 1, 2025",
+                    "encrypted_content": "<encrypted content 1>",
+                },
+                {
+                    "type": "web_search_result",
+                    "title": "Page Title 2",
+                    "url": "<page url 2>",
+                    "page_age": "January 2, 2025",
+                    "encrypted_content": "<encrypted content 2>",
+                },
             ],
+            "status": "success",
+            "extras": {"block_type": "web_search_tool_result"},
+        },
+        {
+            "type": "server_tool_call",
+            "name": "code_interpreter",
+            "id": "srvtoolu_def456",
+            "args": {"code": "import numpy as np..."},
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "srvtoolu_def456",
+            "output": {
+                "type": "code_execution_result",
+                "return_code": 0,
+                "stdout": "Mean: 5.5\nStandard deviation...",
+                "stderr": "",
+            },
+            "status": "success",
+            "extras": {"block_type": "code_execution_tool_result"},
         },
         {
             "type": "non_standard",

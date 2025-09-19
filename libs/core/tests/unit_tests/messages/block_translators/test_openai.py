@@ -53,6 +53,13 @@ def test_convert_to_v1_from_responses() -> None:
                 ],
             },
             {"type": "image_generation_call", "id": "ig_123", "result": "..."},
+            {
+                "type": "file_search_call",
+                "id": "fs_123",
+                "queries": ["query for file search"],
+                "results": [{"file_id": "file-123"}],
+                "status": "completed",
+            },
             {"type": "something_else", "foo": "bar"},
         ],
         tool_calls=[
@@ -103,6 +110,18 @@ def test_convert_to_v1_from_responses() -> None:
             ],
         },
         {"type": "image", "base64": "...", "id": "ig_123"},
+        {
+            "type": "server_tool_call",
+            "name": "file_search",
+            "id": "fs_123",
+            "args": {"queries": ["query for file search"]},
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "fs_123",
+            "output": [{"file_id": "file-123"}],
+            "status": "success",
+        },
         {
             "type": "non_standard",
             "value": {"type": "something_else", "foo": "bar"},
@@ -354,8 +373,17 @@ def test_compat_responses_v03() -> None:
             "id": "call_abc",
             "extras": {"item_id": "fc_abc"},
         },
-        {"type": "web_search_call", "id": "websearch_123", "status": "completed"},  # type: ignore[list-item]
-        {"type": "web_search_result", "id": "websearch_123"},
+        {
+            "type": "server_tool_call",
+            "name": "web_search",
+            "args": {},
+            "id": "websearch_123",
+        },
+        {
+            "type": "server_tool_result",
+            "tool_call_id": "websearch_123",
+            "status": "success",
+        },
     ]
     assert message_v03.content_blocks == expected_content
 

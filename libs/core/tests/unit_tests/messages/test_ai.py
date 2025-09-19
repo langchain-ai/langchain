@@ -389,6 +389,39 @@ def test_content_blocks() -> None:
         {"type": "non_standard", "index": 0, "value": {"foo": "bar baz"}},
     ]
 
+    # Test server_tool_call_chunks
+    chunk_1 = AIMessageChunk(
+        content=[
+            {
+                "type": "server_tool_call_chunk",
+                "index": 0,
+                "name": "foo",
+            }
+        ]
+    )
+    chunk_2 = AIMessageChunk(
+        content=[{"type": "server_tool_call_chunk", "index": 0, "args": '{"a'}]
+    )
+    chunk_3 = AIMessageChunk(
+        content=[{"type": "server_tool_call_chunk", "index": 0, "args": '": 1}'}]
+    )
+    merged_chunk = chunk_1 + chunk_2 + chunk_3
+    assert merged_chunk.content == [
+        {
+            "type": "server_tool_call_chunk",
+            "name": "foo",
+            "index": 0,
+            "args": '{"a": 1}',
+        }
+    ]
+
+    full_chunk = merged_chunk + AIMessageChunk(
+        content=[], chunk_position="last", response_metadata={"output_version": "v1"}
+    )
+    assert full_chunk.content == [
+        {"type": "server_tool_call", "name": "foo", "index": 0, "args": {"a": 1}}
+    ]
+
     # Test non-standard + non-standard
     chunk_1 = AIMessageChunk(
         content=[
@@ -428,7 +461,13 @@ def test_content_blocks() -> None:
 
     # Test standard + non-standard with same index
     standard_content_1 = [
-        {"type": "web_search_call", "id": "ws_123", "query": "web query", "index": 0}
+        {
+            "type": "server_tool_call",
+            "name": "web_search",
+            "id": "ws_123",
+            "args": {"query": "web query"},
+            "index": 0,
+        }
     ]
     standard_content_2 = [{"type": "non_standard", "value": {"foo": "bar"}, "index": 0}]
     chunk_1 = AIMessageChunk(
@@ -440,9 +479,10 @@ def test_content_blocks() -> None:
     merged_chunk = chunk_1 + chunk_2
     assert merged_chunk.content == [
         {
-            "type": "web_search_call",
+            "type": "server_tool_call",
+            "name": "web_search",
             "id": "ws_123",
-            "query": "web query",
+            "args": {"query": "web query"},
             "index": 0,
             "extras": {"foo": "bar"},
         }

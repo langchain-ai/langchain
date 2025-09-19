@@ -1095,25 +1095,88 @@ def test_web_search(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
     else:
-        assert block_types == {"text", "web_search_call", "web_search_result"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm_with_tools.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
+
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     block_types = {block["type"] for block in full.content}  # type: ignore[index]
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "web_search_tool_result"}
     else:
-        assert block_types == {"text", "web_search_call", "web_search_result"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {
         "role": "user",
         "content": "Please repeat the last search, but focus on sources from 2024.",
+    }
+    _ = llm_with_tools.invoke(
+        [input_message, full, next_message],
+    )
+
+
+@pytest.mark.default_cassette("test_web_fetch_v1.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_web_fetch_v1(output_version: Literal["v0", "v1"]) -> None:
+    """Test that http calls are unchanged between v0 and v1."""
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        betas=["web-fetch-2025-09-10"],
+        output_version=output_version,
+    )
+
+    if output_version == "v0":
+        call_key = "server_tool_use"
+        result_key = "web_fetch_tool_result"
+    else:
+        # v1
+        call_key = "server_tool_call"
+        result_key = "server_tool_result"
+
+    tool = {
+        "type": "web_fetch_20250910",
+        "name": "web_fetch",
+        "max_uses": 1,
+        "citations": {"enabled": True},
+    }
+    llm_with_tools = llm.bind_tools([tool])
+
+    input_message = {
+        "role": "user",
+        "content": [
+            {
+                "type": "text",
+                "text": "Fetch the content at https://docs.langchain.com and analyze",
+            },
+        ],
+    }
+    response = llm_with_tools.invoke([input_message])
+    assert all(isinstance(block, dict) for block in response.content)
+    block_types = {block["type"] for block in response.content}  # type: ignore[index]
+    assert block_types == {"text", call_key, result_key}
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+
+    assert isinstance(full, AIMessageChunk)
+    assert isinstance(full.content, list)
+    block_types = {block["type"] for block in full.content}  # type: ignore[index]
+    assert block_types == {"text", call_key, result_key}
+
+    # Test we can pass back in
+    next_message = {
+        "role": "user",
+        "content": "What does the site you just fetched say about models?",
     }
     _ = llm_with_tools.invoke(
         [input_message, full, next_message],
@@ -1417,11 +1480,7 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
     else:
-        assert block_types == {
-            "text",
-            "code_interpreter_call",
-            "code_interpreter_result",
-        }
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1434,11 +1493,7 @@ def test_code_execution(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "server_tool_use", "code_execution_tool_result"}
     else:
-        assert block_types == {
-            "text",
-            "code_interpreter_call",
-            "code_interpreter_result",
-        }
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {
@@ -1494,7 +1549,7 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
     else:
-        assert block_types == {"text", "non_standard"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -1508,7 +1563,7 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
     else:
-        assert block_types == {"text", "non_standard"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {
