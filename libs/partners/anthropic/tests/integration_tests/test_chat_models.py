@@ -1483,13 +1483,15 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
     else:
-        assert block_types == {"text", "non_standard"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
+    chunks = []
     for chunk in llm.stream([input_message]):
         assert isinstance(chunk, AIMessageChunk)
         full = chunk if full is None else full + chunk
+        chunks.append(chunk)
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert all(isinstance(block, dict) for block in full.content)
@@ -1497,7 +1499,7 @@ def test_remote_mcp(output_version: Literal["v0", "v1"]) -> None:
     if output_version == "v0":
         assert block_types == {"text", "mcp_tool_use", "mcp_tool_result"}
     else:
-        assert block_types == {"text", "non_standard"}
+        assert block_types == {"text", "server_tool_call", "server_tool_result"}
 
     # Test we can pass back in
     next_message = {

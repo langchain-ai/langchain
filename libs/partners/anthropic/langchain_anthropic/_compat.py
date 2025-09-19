@@ -164,9 +164,17 @@ def _convert_from_v1_to_anthropic(
                 pass
             if block.get("name") == "code_interpreter":
                 new_block["name"] = "code_execution"
+            elif block.get("name") == "remote_mcp":
+                if "tool_name" in block.get("extras", {}):
+                    new_block["name"] = block["extras"]["tool_name"]
+                if "server_name" in block.get("extras", {}):
+                    new_block["server_name"] = block["extras"]["server_name"]
             else:
                 new_block["name"] = block.get("name", "")
-            new_block["type"] = "server_tool_use"
+            if block.get("name") == "remote_mcp":
+                new_block["type"] = "mcp_tool_use"
+            else:
+                new_block["type"] = "server_tool_use"
             new_content.append(new_block)
 
         elif (
@@ -176,9 +184,12 @@ def _convert_from_v1_to_anthropic(
             new_block = {}
             if "output" in block:
                 new_block["content"] = block["output"]
+            server_tool_result_type = block.get("extras", {}).get("block_type", "")
+            if server_tool_result_type == "mcp_tool_result":
+                new_block["is_error"] = block.get("status") == "error"
             if "tool_call_id" in block:
                 new_block["tool_use_id"] = block["tool_call_id"]
-            new_block["type"] = block.get("extras", {}).get("block_type", "")
+            new_block["type"] = server_tool_result_type
             new_content.append(new_block)
 
         elif (

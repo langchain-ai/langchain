@@ -317,9 +317,26 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
                 yield server_tool_call
 
+            elif block_type == "mcp_tool_use":
+                server_tool_call = {
+                    "type": "server_tool_call",
+                    "name": "remote_mcp",
+                    "args": block.get("input", {}),
+                    "id": block.get("id", ""),
+                }
+                if "name" in block:
+                    server_tool_call["extras"] = {"tool_name": block["name"]}
+                known_fields = {"type", "name", "input", "id", "index"}
+                _populate_extras(server_tool_call, block, known_fields)
+                if "index" in block:
+                    server_tool_call["index"] = block["index"]
+
+                yield server_tool_call
+
             elif block_type in (
                 "code_execution_tool_result",
                 "web_search_tool_result",
+                "mcp_tool_result",
             ):
                 server_tool_result: types.ServerToolResult = {
                     "type": "server_tool_result",
@@ -329,12 +346,16 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                 }
                 if output := block.get("content", []):
                     server_tool_result["output"] = output
-                    if hasattr(output, "error_code"):
+                    if isinstance(output, dict) and output.get(
+                        "error_code"  # web_search, code_interpreter
+                    ):
                         server_tool_result["status"] = "error"
+                if block.get("is_error"):  # mcp_tool_result
+                    server_tool_result["status"] = "error"
                 if "index" in block:
                     server_tool_result["index"] = block["index"]
 
-                known_fields = {"type", "tool_use_id", "content", "index"}
+                known_fields = {"type", "tool_use_id", "content", "is_error", "index"}
                 _populate_extras(server_tool_result, block, known_fields)
 
                 yield server_tool_result
