@@ -226,13 +226,17 @@ def create_agent(  # noqa: PLR0915
     state_schemas = {m.state_schema for m in middleware}
     state_schemas.add(AgentState)
 
+    state_schema = _resolve_schema(state_schemas, "StateSchema", None)
+    input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
+    output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
+
     # create graph, add nodes
     graph: StateGraph[
         AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
     ] = StateGraph(
-        state_schema=_resolve_schema(state_schemas, "StateSchema", None),
-        input_schema=_resolve_schema(state_schemas, "InputSchema", "input"),
-        output_schema=_resolve_schema(state_schemas, "OutputSchema", "output"),
+        state_schema=state_schema,
+        input_schema=input_schema,
+        output_schema=output_schema,
         context_schema=context_schema,
     )
 
@@ -417,16 +421,12 @@ def create_agent(  # noqa: PLR0915
     for m in middleware:
         if m.__class__.before_model is not AgentMiddleware.before_model:
             graph.add_node(
-                f"{m.__class__.__name__}.before_model",
-                m.before_model,
-                input_schema=m.state_schema,
+                f"{m.__class__.__name__}.before_model", m.before_model, input_schema=state_schema
             )
 
         if m.__class__.after_model is not AgentMiddleware.after_model:
             graph.add_node(
-                f"{m.__class__.__name__}.after_model",
-                m.after_model,
-                input_schema=m.state_schema,
+                f"{m.__class__.__name__}.after_model", m.after_model, input_schema=state_schema
             )
 
     # add start edge
@@ -528,8 +528,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[AgentState], str | list[Send] | None]:
-    def model_to_tools(state: AgentState) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
@@ -548,8 +548,7 @@ def _make_model_to_tools_edge(
             # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
             # largely internal so can be fixed later
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
-                for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
