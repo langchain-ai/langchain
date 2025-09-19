@@ -547,14 +547,25 @@ class ContextThreadPoolExecutor(ThreadPoolExecutor):
         Returns:
             Iterator[T]: The iterator for the mapped function.
         """
-        contexts = [copy_context() for _ in range(len(iterables[0]))]  # type: ignore[arg-type]
+        # Convert iterables to lists to get their length and allow indexing
+        iterables_as_lists = [list(iterable) for iterable in iterables]
 
-        def _wrapped_fn(*args: Any) -> T:
-            return contexts.pop().run(fn, *args)
+        # Create contexts for each item in the first iterable
+        contexts = [copy_context() for _ in range(len(iterables_as_lists[0]))]
 
+        # Create a wrapper that includes the index with the arguments
+        def _wrapped_fn_with_index(index: int, *args: Any) -> T:
+            # Use the index to get the corresponding context
+            return contexts[index].run(fn, *args)
+
+        # Create indexed versions: index is first, then actual values
+        indices = list(range(len(iterables_as_lists[0])))
+        indexed_iterables = [indices, *iterables_as_lists]
+
+        # Map the wrapped function over the indexed iterables
         return super().map(
-            _wrapped_fn,
-            *iterables,
+            _wrapped_fn_with_index,
+            *indexed_iterables,
             timeout=timeout,
             chunksize=chunksize,
         )
