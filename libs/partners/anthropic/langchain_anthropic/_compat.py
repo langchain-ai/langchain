@@ -149,10 +149,7 @@ def _convert_from_v1_to_anthropic(
 
             new_content.append(new_block)
 
-        elif (
-            block["type"] == "server_tool_call"
-            and model_provider == "anthropic"
-        ):
+        elif block["type"] == "server_tool_call" and model_provider == "anthropic":
             new_block = {}
             if "id" in block:
                 new_block["id"] = block["id"]
@@ -177,10 +174,7 @@ def _convert_from_v1_to_anthropic(
                 new_block["type"] = "server_tool_use"
             new_content.append(new_block)
 
-        elif (
-            block["type"] == "server_tool_result"
-            and model_provider == "anthropic"
-        ):
+        elif block["type"] == "server_tool_result" and model_provider == "anthropic":
             new_block = {}
             if "output" in block:
                 new_block["content"] = block["output"]
