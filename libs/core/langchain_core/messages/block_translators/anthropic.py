@@ -335,6 +335,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
             elif block_type in (
                 "code_execution_tool_result",
+                "web_fetch_tool_result",
                 "web_search_tool_result",
                 "mcp_tool_result",
             ):

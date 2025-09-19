@@ -42,6 +42,7 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
 
             for key, value in annotation.get("extras", {}).items():
                 out[key] = value
+            out = {k: out[k] for k in sorted(out)}
 
             return out
 
