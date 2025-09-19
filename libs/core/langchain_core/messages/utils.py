@@ -1029,8 +1029,24 @@ def trim_messages(
     raise ValueError(msg)
 
 
+@overload
 def convert_to_openai_messages(
-    messages: Union[MessageLikeRepresentation, Sequence[MessageLikeRepresentation]],
+    messages: BaseMessage | dict | str,
+    *,
+    text_format: Literal["string", "block"] = "string",
+) -> dict: ...
+
+
+@overload
+def convert_to_openai_messages(
+    messages: Sequence[BaseMessage | list[str] | tuple[str, str] | dict[str, Any]],
+    *,
+    text_format: Literal["string", "block"] = "string",
+) -> list[dict]: ...
+
+
+def convert_to_openai_messages(
+    messages: Union[BaseMessage, dict, str, Sequence[MessageLikeRepresentation]],
     *,
     text_format: Literal["string", "block"] = "string",
 ) -> Union[dict, list[dict]]:
