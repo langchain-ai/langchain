@@ -586,6 +586,13 @@ class BaseChatOpenAI(BaseChatModel):
 
     include_response_headers: bool = False
     """Whether to include response headers in the output message ``response_metadata``."""  # noqa: E501
+    include_raw_response: bool = False
+    """Whether to include the raw response object in the ``raw_response`` message field.
+
+    .. warning::
+        The raw response may contain sensitive information and is excluded from
+        serialization. Use only for debugging and inspection during runtime.
+    """
     disabled_params: Optional[dict[str, Any]] = Field(default=None)
     """Parameters of the OpenAI client or chat.completions endpoint that should be
     disabled for the given model.
@@ -881,6 +888,8 @@ class BaseChatOpenAI(BaseChatModel):
         chunk: dict,
         default_chunk_class: type,
         base_generation_info: Optional[dict],
+        *,
+        raw_response: Optional[Any] = None,
     ) -> Optional[ChatGenerationChunk]:
         if chunk.get("type") == "content.delta":  # from beta.chat.completions.stream
             return None
@@ -927,6 +936,10 @@ class BaseChatOpenAI(BaseChatModel):
         if usage_metadata and isinstance(message_chunk, AIMessageChunk):
             message_chunk.usage_metadata = usage_metadata
 
+        # Add raw response if provided
+        if raw_response is not None and isinstance(message_chunk, AIMessageChunk):
+            message_chunk.raw_response = raw_response
+
         generation_chunk = ChatGenerationChunk(
             message=message_chunk, generation_info=generation_info or None
         )
@@ -951,6 +964,7 @@ class BaseChatOpenAI(BaseChatModel):
             context_manager = self.root_client.responses.create(**payload)
             headers = {}
         original_schema_obj = kwargs.get("response_format")
+        include_raw = self._should_include_raw_response(**kwargs)
 
         with context_manager as response:
             is_first_chunk = True
@@ -960,6 +974,7 @@ class BaseChatOpenAI(BaseChatModel):
             has_reasoning = False
             for chunk in response:
                 metadata = headers if is_first_chunk else {}
+                raw_response_to_include = response if include_raw else None
                 (
                     current_index,
                     current_output_index,
@@ -974,6 +989,7 @@ class BaseChatOpenAI(BaseChatModel):
                     metadata=metadata,
                     has_reasoning=has_reasoning,
                     output_version=self.output_version,
+                    raw_response=raw_response_to_include,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1006,6 +1022,7 @@ class BaseChatOpenAI(BaseChatModel):
             context_manager = await self.root_async_client.responses.create(**payload)
             headers = {}
         original_schema_obj = kwargs.get("response_format")
+        include_raw = self._should_include_raw_response(**kwargs)
 
         async with context_manager as response:
             is_first_chunk = True
@@ -1015,6 +1032,7 @@ class BaseChatOpenAI(BaseChatModel):
             has_reasoning = False
             async for chunk in response:
                 metadata = headers if is_first_chunk else {}
+                raw_response_to_include = response if include_raw else None
                 (
                     current_index,
                     current_output_index,
@@ -1029,6 +1047,7 @@ class BaseChatOpenAI(BaseChatModel):
                     metadata=metadata,
                     has_reasoning=has_reasoning,
                     output_version=self.output_version,
+                    raw_response=raw_response_to_include,
                 )
                 if generation_chunk:
                     if run_manager:
@@ -1058,6 +1077,23 @@ class BaseChatOpenAI(BaseChatModel):
             if isinstance(source, bool):
                 return source
         return self.stream_usage
+
+    def _should_include_raw_response(
+        self, include_raw_response: Optional[bool] = None, **kwargs: Any
+    ) -> bool:
+        """Determine whether to include raw response in output.
+
+        Supports per-invocation override via kwargs, similar to `stream_usage`.
+        """
+        include_raw_sources = [  # order of precedence
+            include_raw_response,
+            kwargs.get("include_raw_response"),
+            self.include_raw_response,
+        ]
+        for source in include_raw_sources:
+            if isinstance(source, bool):
+                return source
+        return self.include_raw_response
 
     def _stream(
         self,
@@ -1093,16 +1129,20 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = self.client.create(**payload)
             context_manager = response
+        include_raw = self._should_include_raw_response(**kwargs)
+
         try:
             with context_manager as response:
                 is_first_chunk = True
                 for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
+                    raw_response_to_include = response if include_raw else None
                     generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
                         base_generation_info if is_first_chunk else {},
+                        raw_response=raw_response_to_include,
                     )
                     if generation_chunk is None:
                         continue
@@ -1121,7 +1161,7 @@ class BaseChatOpenAI(BaseChatModel):
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
-                final_completion
+                final_completion, raw_response=response if include_raw else None
             )
             if run_manager:
                 run_manager.on_llm_new_token(
@@ -1169,11 +1209,26 @@ class BaseChatOpenAI(BaseChatModel):
                 response = raw_response.parse()
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
+
+                include_raw = self._should_include_raw_response(**kwargs)
+                raw_response_to_include = None
+                if include_raw and raw_response is not None:
+                    # Convert raw response to dict for consistent interface
+                    if hasattr(raw_response, "parse"):
+                        parsed_response = raw_response.parse()
+                        if hasattr(parsed_response, "model_dump"):
+                            raw_response_to_include = parsed_response.model_dump()
+                        else:
+                            raw_response_to_include = parsed_response
+                    else:
+                        raw_response_to_include = raw_response
+
                 return _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
+                    raw_response=raw_response_to_include,
                 )
             else:
                 raw_response = self.client.with_raw_response.create(**payload)
@@ -1188,7 +1243,23 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
-        return self._create_chat_result(response, generation_info)
+
+        include_raw = self._should_include_raw_response(**kwargs)
+        raw_response_to_include = None
+        if include_raw and raw_response is not None:
+            # Convert raw response to dict for consistent interface
+            if hasattr(raw_response, "parse"):
+                parsed_response = raw_response.parse()
+                if hasattr(parsed_response, "model_dump"):
+                    raw_response_to_include = parsed_response.model_dump()
+                else:
+                    raw_response_to_include = parsed_response
+            else:
+                raw_response_to_include = raw_response
+
+        return self._create_chat_result(
+            response, generation_info, raw_response=raw_response_to_include
+        )
 
     def _use_responses_api(self, payload: dict) -> bool:
         if isinstance(self.use_responses_api, bool):
@@ -1217,7 +1288,10 @@ class BaseChatOpenAI(BaseChatModel):
         if stop is not None:
             kwargs["stop"] = stop
 
-        payload = {**self._default_params, **kwargs}
+        filtered_kwargs = {
+            k: v for k, v in kwargs.items() if k != "include_raw_response"
+        }
+        payload = {**self._default_params, **filtered_kwargs}
 
         if self._use_responses_api(payload):
             if self.use_previous_response_id:
@@ -1236,6 +1310,8 @@ class BaseChatOpenAI(BaseChatModel):
         self,
         response: Union[dict, openai.BaseModel],
         generation_info: Optional[dict] = None,
+        *,
+        raw_response: Optional[Any] = None,
     ) -> ChatResult:
         generations = []
 
@@ -1266,6 +1342,8 @@ class BaseChatOpenAI(BaseChatModel):
             message = _convert_dict_to_message(res["message"])
             if token_usage and isinstance(message, AIMessage):
                 message.usage_metadata = _create_usage_metadata(token_usage)
+            if raw_response is not None and isinstance(message, AIMessage):
+                message.raw_response = raw_response
             generation_info = generation_info or {}
             generation_info["finish_reason"] = (
                 res.get("finish_reason")
@@ -1335,16 +1413,20 @@ class BaseChatOpenAI(BaseChatModel):
             else:
                 response = await self.async_client.create(**payload)
             context_manager = response
+        include_raw = self._should_include_raw_response(**kwargs)
+
         try:
             async with context_manager as response:
                 is_first_chunk = True
                 async for chunk in response:
                     if not isinstance(chunk, dict):
                         chunk = chunk.model_dump()
+                    raw_response_to_include = response if include_raw else None
                     generation_chunk = self._convert_chunk_to_generation_chunk(
                         chunk,
                         default_chunk_class,
                         base_generation_info if is_first_chunk else {},
+                        raw_response=raw_response_to_include,
                     )
                     if generation_chunk is None:
                         continue
@@ -1363,7 +1445,7 @@ class BaseChatOpenAI(BaseChatModel):
         if hasattr(response, "get_final_completion") and "response_format" in payload:
             final_completion = await response.get_final_completion()
             generation_chunk = self._get_generation_chunk_from_completion(
-                final_completion
+                final_completion, raw_response=response if include_raw else None
             )
             if run_manager:
                 await run_manager.on_llm_new_token(
@@ -1413,11 +1495,26 @@ class BaseChatOpenAI(BaseChatModel):
                 response = raw_response.parse()
                 if self.include_response_headers:
                     generation_info = {"headers": dict(raw_response.headers)}
+
+                include_raw = self._should_include_raw_response(**kwargs)
+                raw_response_to_include = None
+                if include_raw and raw_response is not None:
+                    # Convert raw response to dict for consistent interface
+                    if hasattr(raw_response, "parse"):
+                        parsed_response = raw_response.parse()
+                        if hasattr(parsed_response, "model_dump"):
+                            raw_response_to_include = parsed_response.model_dump()
+                        else:
+                            raw_response_to_include = parsed_response
+                    else:
+                        raw_response_to_include = raw_response
+
                 return _construct_lc_result_from_responses_api(
                     response,
                     schema=original_schema_obj,
                     metadata=generation_info,
                     output_version=self.output_version,
+                    raw_response=raw_response_to_include,
                 )
             else:
                 raw_response = await self.async_client.with_raw_response.create(
@@ -1434,8 +1531,25 @@ class BaseChatOpenAI(BaseChatModel):
             and hasattr(raw_response, "headers")
         ):
             generation_info = {"headers": dict(raw_response.headers)}
+
+        include_raw = self._should_include_raw_response(**kwargs)
+        raw_response_to_include = None
+        if include_raw and raw_response is not None:
+            # Convert raw response to dict for consistent interface
+            if hasattr(raw_response, "parse"):
+                parsed_response = raw_response.parse()
+                if hasattr(parsed_response, "model_dump"):
+                    raw_response_to_include = parsed_response.model_dump()
+                else:
+                    raw_response_to_include = parsed_response
+            else:
+                raw_response_to_include = raw_response
+
         return await run_in_executor(
-            None, self._create_chat_result, response, generation_info
+            None,
+            partial(self._create_chat_result, raw_response=raw_response_to_include),
+            response,
+            generation_info,
         )
 
     @property
@@ -2047,10 +2161,10 @@ class BaseChatOpenAI(BaseChatModel):
         return filtered
 
     def _get_generation_chunk_from_completion(
-        self, completion: openai.BaseModel
+        self, completion: openai.BaseModel, *, raw_response: Optional[Any] = None
     ) -> ChatGenerationChunk:
         """Get chunk from completion (e.g., from final completion of a stream)."""
-        chat_result = self._create_chat_result(completion)
+        chat_result = self._create_chat_result(completion, raw_response=raw_response)
         chat_message = chat_result.generations[0].message
         if isinstance(chat_message, AIMessage):
             usage_metadata = chat_message.usage_metadata
@@ -2063,6 +2177,7 @@ class BaseChatOpenAI(BaseChatModel):
             content="",
             additional_kwargs=chat_message.additional_kwargs,
             usage_metadata=usage_metadata,
+            raw_response=raw_response,
         )
         return ChatGenerationChunk(
             message=message, generation_info=chat_result.llm_output
@@ -3855,6 +3970,8 @@ def _construct_lc_result_from_responses_api(
     schema: Optional[type[_BM]] = None,
     metadata: Optional[dict] = None,
     output_version: Literal["v0", "responses/v1"] = "v0",
+    *,
+    raw_response: Optional[Any] = None,
 ) -> ChatResult:
     """Construct ChatResponse from OpenAI Response API response."""
     if response.error:
@@ -4002,6 +4119,7 @@ def _construct_lc_result_from_responses_api(
         additional_kwargs=additional_kwargs,
         tool_calls=tool_calls,
         invalid_tool_calls=invalid_tool_calls,
+        raw_response=raw_response,
     )
     if output_version == "v0":
         message = _convert_to_v03_ai_message(message)
@@ -4019,6 +4137,8 @@ def _convert_responses_chunk_to_generation_chunk(
     metadata: Optional[dict] = None,
     has_reasoning: bool = False,
     output_version: Literal["v0", "responses/v1"] = "v0",
+    *,
+    raw_response: Optional[Any] = None,
 ) -> tuple[int, int, int, Optional[ChatGenerationChunk]]:
     def _advance(output_idx: int, sub_idx: Optional[int] = None) -> None:
         """Advance indexes tracked during streaming.
@@ -4221,6 +4341,7 @@ def _convert_responses_chunk_to_generation_chunk(
         usage_metadata=usage_metadata,
         response_metadata=response_metadata,
         additional_kwargs=additional_kwargs,
+        raw_response=raw_response,
         id=id,
     )
     if output_version == "v0":
