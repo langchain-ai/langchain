@@ -295,43 +295,90 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                     server_tool_use_name = "code_interpreter"
                 else:
                     server_tool_use_name = block.get("name", "")
-                server_tool_call: types.ServerToolCall = {
-                    "type": "server_tool_call",
-                    "name": server_tool_use_name,
-                    "args": block.get("input", {}),
-                    "id": block.get("id", ""),
-                }
+                if (
+                    isinstance(message, AIMessageChunk)
+                    and block.get("input") == {}
+                    and "partial_json" not in block
+                    and message.chunk_position != "last"
+                ):
+                    # First chunk in a stream
+                    server_tool_call_chunk = {
+                        "type": "server_tool_call_chunk",
+                        "name": server_tool_use_name,
+                        "args": "",
+                        "id": block.get("id", ""),
+                    }
+                    if "index" in block:
+                        server_tool_call_chunk["index"] = block["index"]
+                    known_fields = {"type", "name", "input", "id", "index"}
+                    _populate_extras(server_tool_call_chunk, block, known_fields)
+                    yield server_tool_call_chunk
+                else:
+                    server_tool_call: types.ServerToolCall = {
+                        "type": "server_tool_call",
+                        "name": server_tool_use_name,
+                        "args": block.get("input", {}),
+                        "id": block.get("id", ""),
+                    }
 
-                if block.get("input") == {} and "partial_json" in block:
-                    try:
-                        input_ = json.loads(block["partial_json"])
-                        if isinstance(input_, dict):
-                            server_tool_call["args"] = input_
-                    except json.JSONDecodeError:
-                        pass
+                    if block.get("input") == {} and "partial_json" in block:
+                        try:
+                            input_ = json.loads(block["partial_json"])
+                            if isinstance(input_, dict):
+                                server_tool_call["args"] = input_
+                        except json.JSONDecodeError:
+                            pass
 
-                if "index" in block:
-                    server_tool_call["index"] = block["index"]
-                known_fields = {"type", "name", "input", "partial_json", "id", "index"}
-                _populate_extras(server_tool_call, block, known_fields)
+                    if "index" in block:
+                        server_tool_call["index"] = block["index"]
+                    known_fields = {
+                        "type",
+                        "name",
+                        "input",
+                        "partial_json",
+                        "id",
+                        "index",
+                    }
+                    _populate_extras(server_tool_call, block, known_fields)
 
-                yield server_tool_call
+                    yield server_tool_call
 
             elif block_type == "mcp_tool_use":
-                server_tool_call = {
-                    "type": "server_tool_call",
-                    "name": "remote_mcp",
-                    "args": block.get("input", {}),
-                    "id": block.get("id", ""),
-                }
-                if "name" in block:
-                    server_tool_call["extras"] = {"tool_name": block["name"]}
-                known_fields = {"type", "name", "input", "id", "index"}
-                _populate_extras(server_tool_call, block, known_fields)
-                if "index" in block:
-                    server_tool_call["index"] = block["index"]
+                if (
+                    isinstance(message, AIMessageChunk)
+                    and block.get("input") == {}
+                    and "partial_json" not in block
+                    and message.chunk_position != "last"
+                ):
+                    # First chunk in a stream
+                    server_tool_call_chunk = {
+                        "type": "server_tool_call_chunk",
+                        "name": "remote_mcp",
+                        "args": "",
+                        "id": block.get("id", ""),
+                    }
+                    if "name" in block:
+                        server_tool_call_chunk["extras"] = {"tool_name": block["name"]}
+                    known_fields = {"type", "name", "input", "id", "index"}
+                    _populate_extras(server_tool_call_chunk, block, known_fields)
+                    if "index" in block:
+                        server_tool_call_chunk["index"] = block["index"]
+                    yield server_tool_call_chunk
+                else:
+                    server_tool_call = {
+                        "type": "server_tool_call",
+                        "name": "remote_mcp",
+                        "args": block.get("input", {}),
+                        "id": block.get("id", ""),
+                    }
+                    if "name" in block:
+                        server_tool_call["extras"] = {"tool_name": block["name"]}
+                    known_fields = {"type", "name", "input", "id", "index"}
+                    _populate_extras(server_tool_call, block, known_fields)
+                    if "index" in block:
+                        server_tool_call["index"] = block["index"]
 
-                yield server_tool_call
+                    yield server_tool_call
 
             elif block_type in (
                 "code_execution_tool_result",
