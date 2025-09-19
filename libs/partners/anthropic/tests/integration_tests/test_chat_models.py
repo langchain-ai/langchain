@@ -1127,7 +1127,11 @@ def test_web_fetch() -> None:
 
     TODO: Update to remove beta once it's generally available.
     """
-    llm = ChatAnthropic(model="claude-3-5-haiku-latest", betas=["web-fetch-2025-09-10"])  # type: ignore[call-arg]
+    llm = ChatAnthropic(
+        model="claude-3-5-haiku-latest",  # type: ignore[call-arg]
+        max_tokens=1024,
+        betas=["web-fetch-2025-09-10"],
+    )
     tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 1}
     llm_with_tools = llm.bind_tools([tool])
 
