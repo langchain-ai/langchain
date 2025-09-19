@@ -1558,6 +1558,9 @@ class BaseChatOpenAI(BaseChatModel):
         ):
             tokens_per_message = 3
             tokens_per_name = 1
+        elif model.startswith("deepseek-chat"):
+            tokens_per_message = 4
+            tokens_per_name = 0
         else:
             raise NotImplementedError(
                 f"get_num_tokens_from_messages() is not presently implemented "
