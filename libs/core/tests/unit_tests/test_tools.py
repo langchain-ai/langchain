@@ -21,7 +21,7 @@ from typing import (
 )
 
 import pytest
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import ValidationError as ValidationErrorV1
 from typing_extensions import TypedDict, override
@@ -643,7 +643,7 @@ def test_named_tool_decorator_return_direct() -> None:
     """Test functionality when arguments and return direct are provided as input."""
 
     @tool("search", return_direct=True)
-    def search_api(query: str, *args: Any) -> str:
+    def search_api(query: str) -> str:
         """Search the API for the query."""
         return "API result"
 
@@ -2766,3 +2766,50 @@ def test_tool_args_schema_with_annotated_type() -> None:
             "type": "array",
         }
     }
+
+
+def test_tool_args_schema_with_pydantic_validator() -> None:
+    """Test that Pydantic model validators can transform input structure.
+
+    This test verifies that when a Pydantic validator wraps input in a nested
+    structure, the tool correctly processes the transformed input rather than
+    filtering it back to only the original input keys.
+
+    Before the fix, the tool would filter the result to only include keys from
+    the original tool_input, which broke validators that added structure.
+    """
+
+    class InnerModel(BaseModel):
+        query: str
+        count: int = 10
+
+    class OuterModel(BaseModel):
+        x: InnerModel
+
+        @model_validator(mode="before")
+        @classmethod
+        def wrap_in_x(cls, data: Any) -> Any:
+            """Wrap flat input in nested 'x' structure if not already wrapped."""
+            if isinstance(data, dict) and "x" not in data:
+                return {"x": data}
+            return data
+
+    @tool(args_schema=OuterModel)
+    def search_with_nested_schema(x: InnerModel) -> str:
+        """Search with nested input schema and validator transformation."""
+        return f"Searched for '{x.query}' with count {x.count}"
+
+    # Test 1: Direct nested input
+    nested_input = {"x": {"query": "test", "count": 5}}
+    result1 = search_with_nested_schema.invoke(nested_input)
+    assert result1 == "Searched for 'test' with count 5"
+
+    # Test 2: Flat input that gets wrapped by validator
+    flat_input = {"query": "test query", "count": 3}
+    result2 = search_with_nested_schema.invoke(flat_input)
+    assert result2 == "Searched for 'test query' with count 3"
+
+    # Test 3: Flat input with default values
+    minimal_input = {"query": "minimal test"}
+    result3 = search_with_nested_schema.invoke(minimal_input)
+    assert result3 == "Searched for 'minimal test' with count 10"
