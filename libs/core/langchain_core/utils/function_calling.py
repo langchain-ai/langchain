@@ -17,12 +17,15 @@ from typing import (
     Optional,
     Union,
     cast,
+    get_args,
+    get_origin,
 )
 
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
-from pydantic.v1 import Field, create_model
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from pydantic.v1 import Field as Field_v1
+from pydantic.v1 import create_model as create_model_v1
+from typing_extensions import TypedDict, is_typeddict
 
 import langchain_core
 from langchain_core._api import beta, deprecated
@@ -294,7 +297,7 @@ def _convert_any_typed_dicts_to_pydantic(
                     raise ValueError(msg)
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
             else:
                 new_arg_type = _convert_any_typed_dicts_to_pydantic(
                     arg_type, depth=depth + 1, visited=visited
@@ -302,8 +305,8 @@ def _convert_any_typed_dicts_to_pydantic(
                 field_kwargs = {"default": ...}
                 if arg_desc := arg_descriptions.get(arg):
                     field_kwargs["description"] = arg_desc
-                fields[arg] = (new_arg_type, Field(**field_kwargs))
-        model = create_model(typed_dict.__name__, **fields)
+                fields[arg] = (new_arg_type, Field_v1(**field_kwargs))
+        model = create_model_v1(typed_dict.__name__, **fields)
         model.__doc__ = description
         visited[typed_dict] = model
         return model

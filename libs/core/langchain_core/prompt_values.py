@@ -129,7 +129,7 @@ class ImagePromptValue(PromptValue):
 
     def to_string(self) -> str:
         """Return prompt (image URL) as string."""
-        return self.image_url["url"]
+        return self.image_url.get("url", "")
 
     def to_messages(self) -> list[BaseMessage]:
         """Return prompt (image URL) as messages."""

@@ -23,6 +23,13 @@ class EventData(TypedDict, total=False):
     won't be known until the *END* of the Runnable when it has finished streaming
     its inputs.
     """
+    error: NotRequired[BaseException]
+    """The error that occurred during the execution of the Runnable.
+
+    This field is only available if the Runnable raised an exception.
+
+    .. versionadded:: 1.0.0
+    """
     output: Any
     """The output of the Runnable that generated the event.
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import json
-from typing import Any, Optional
+from typing import Any
 
 from langchain_core.documents import Document
 
@@ -25,7 +25,7 @@ class RecursiveJsonSplitter:
     explicitly provided."""
 
     def __init__(
-        self, max_chunk_size: int = 2000, min_chunk_size: Optional[int] = None
+        self, max_chunk_size: int = 2000, min_chunk_size: int | None = None
     ) -> None:
         """Initialize the chunk size configuration for text processing.
 
@@ -55,14 +55,14 @@ class RecursiveJsonSplitter:
     def _set_nested_dict(
         d: dict[str, Any],
         path: list[str],
-        value: Any,  # noqa: ANN401
+        value: Any,
     ) -> None:
         """Set a value in a nested dictionary based on the given path."""
         for key in path[:-1]:
             d = d.setdefault(key, {})
         d[path[-1]] = value
 
-    def _list_to_dict_preprocessing(self, data: Any) -> Any:  # noqa: ANN401
+    def _list_to_dict_preprocessing(self, data: Any) -> Any:
         if isinstance(data, dict):
             # Process each key-value pair in the dictionary
             return {k: self._list_to_dict_preprocessing(v) for k, v in data.items()}
@@ -77,9 +77,9 @@ class RecursiveJsonSplitter:
 
     def _json_split(
         self,
-        data: Any,  # noqa: ANN401
-        current_path: Optional[list[str]] = None,
-        chunks: Optional[list[dict[str, Any]]] = None,
+        data: Any,
+        current_path: list[str] | None = None,
+        chunks: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         """Split json into maximum size dictionaries while preserving structure."""
         current_path = current_path or []
@@ -139,7 +139,7 @@ class RecursiveJsonSplitter:
         texts: list[dict[str, Any]],
         convert_lists: bool = False,  # noqa: FBT001,FBT002
         ensure_ascii: bool = True,  # noqa: FBT001,FBT002
-        metadatas: Optional[list[dict[Any, Any]]] = None,
+        metadatas: list[dict[Any, Any]] | None = None,
     ) -> list[Document]:
         """Create documents from a list of json objects (Dict)."""
         metadatas_ = metadatas or [{}] * len(texts)

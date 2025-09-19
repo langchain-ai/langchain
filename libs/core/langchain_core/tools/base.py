@@ -1271,7 +1271,7 @@ class InjectedToolCallId(InjectedToolArg):
 
     .. code-block:: python
 
-        from typing_extensions import Annotated
+        from typing import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
 
@@ -1325,7 +1325,7 @@ def get_all_basemodel_annotations(
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
         # Gather pydantic field objects (v2: model_fields / v1: __fields__)
-        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        fields = get_fields(cls)
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
         annotations: dict[str, Union[type, TypeVar]] = {}

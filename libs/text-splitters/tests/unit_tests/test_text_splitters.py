@@ -5,7 +5,8 @@ from __future__ import annotations
 import random
 import re
 import string
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import pytest
 from bs4 import Tag
@@ -2597,7 +2598,9 @@ def test_html_header_text_splitter(
         f"Test Case '{test_case}' Failed: Number of documents mismatch. "
         f"Expected {len(expected_documents)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_documents), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_documents, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"Test Case '{test_case}' Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}"
@@ -2751,7 +2754,9 @@ def test_additional_html_header_text_splitter(
         f"{test_case} Failed: Number of documents mismatch. "
         f"Expected {len(expected_output)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_output, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}\n"
@@ -2822,7 +2827,9 @@ def test_html_no_headers_with_multiple_splitters(
         f"{test_case} Failed: Number of documents mismatch. "
         f"Expected {len(expected_output)}, got {len(docs)}."
     )
-    for idx, (doc, expected) in enumerate(zip(docs, expected_output), start=1):
+    for idx, (doc, expected) in enumerate(
+        zip(docs, expected_output, strict=False), start=1
+    ):
         assert doc.page_content == expected.page_content, (
             f"{test_case} Failed at Document {idx}: "
             f"Content mismatch.\nExpected: {expected.page_content}\n"
