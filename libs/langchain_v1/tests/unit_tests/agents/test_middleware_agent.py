@@ -1335,3 +1335,216 @@ def test_runtime_injected_into_middleware() -> None:
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent = agent.compile()
     agent.invoke({"messages": [HumanMessage("Hello")]})
+
+
+def test_middleware_agent_llm_alias_basic_functionality() -> None:
+    """Test that llm parameter works as an alias for model parameter in middleware agent."""
+
+    # Test creating middleware agent with llm parameter
+    agent_with_llm = create_agent(
+        llm=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+    )
+
+    # Test creating middleware agent with model parameter
+    agent_with_model = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+    )
+
+    # Both should work and produce equivalent graph structures
+    compiled_llm = agent_with_llm.compile()
+    compiled_model = agent_with_model.compile()
+
+    # Test that both agents work
+    inputs = {"messages": [HumanMessage("test")]}
+
+    result_llm = compiled_llm.invoke(inputs)
+    result_model = compiled_model.invoke(inputs)
+
+    # Results should be equivalent in structure and content
+    assert len(result_llm["messages"]) == len(result_model["messages"])
+
+    # Compare all messages in the results
+    for i in range(len(result_llm["messages"])):
+        assert result_llm["messages"][i].content == result_model["messages"][i].content
+
+
+def test_middleware_agent_llm_alias_validation_both_parameters() -> None:
+    """Test that providing both model and llm parameters raises an error in middleware agent."""
+    model = FakeToolCallingModel()
+
+    with pytest.raises(ValueError, match="Cannot specify both 'model' and 'llm' parameters"):
+        create_agent(
+            model=model,
+            llm=model,
+            tools=[],
+            system_prompt="You are a helpful assistant.",
+        )
+
+
+def test_middleware_agent_llm_alias_validation_neither_parameter() -> None:
+    """Test that providing neither model nor llm parameters raises an error in middleware agent."""
+    with pytest.raises(ValueError, match="Must specify either 'model' or 'llm' parameter"):
+        create_agent(
+            tools=[],
+            system_prompt="You are a helpful assistant.",
+        )
+
+
+def test_middleware_agent_llm_alias_with_middleware() -> None:
+    """Test llm parameter works with actual middleware in middleware agent."""
+
+    class TestMiddleware(AgentMiddleware):
+        def before_model(self, state):
+            return {"messages": [*state["messages"], HumanMessage("Added by middleware")]}
+
+    agent = create_agent(
+        llm=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[TestMiddleware()],
+    )
+
+    compiled_agent = agent.compile()
+    result = compiled_agent.invoke({"messages": [HumanMessage("original")]})
+
+    # Should have original message, middleware-added message, and AI response
+    assert len(result["messages"]) == 3
+    assert result["messages"][0].content == "original"
+    assert result["messages"][1].content == "Added by middleware"
+    # AI response should include both messages in its content
+    assert "original" in result["messages"][2].content
+    assert "Added by middleware" in result["messages"][2].content
+
+
+def test_middleware_agent_llm_alias_with_tools() -> None:
+    """Test llm parameter works with tools in middleware agent."""
+
+    @tool
+    def middleware_test_tool(input_str: str) -> str:
+        """Test tool for middleware agent."""
+        return f"Processed: {input_str}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {"input_str": "test"}, "id": "1", "name": "middleware_test_tool"}],
+            [],
+        ]
+    )
+
+    agent = create_agent(
+        llm=model,
+        tools=[middleware_test_tool],
+        system_prompt="You are a helpful assistant.",
+    )
+
+    compiled_agent = agent.compile()
+    result = compiled_agent.invoke({"messages": [HumanMessage("test with tools")]})
+
+    # Should have human message, AI message with tool calls, tool message, and final AI message
+    assert len(result["messages"]) == 4
+    assert isinstance(result["messages"][2], ToolMessage)
+    assert result["messages"][2].content == "Processed: test"
+    assert result["messages"][2].name == "middleware_test_tool"
+
+
+def test_middleware_agent_llm_alias_with_structured_output() -> None:
+    """Test llm parameter works with structured output in middleware agent."""
+
+    class MiddlewareResponse(BaseModel):
+        """Middleware response model."""
+
+        answer: str = Field(description="The answer")
+        confidence: float = Field(description="Confidence level")
+
+    agent = create_agent(
+        llm=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        response_format=ToolStrategy(schema=MiddlewareResponse),
+    )
+
+    compiled_agent = agent.compile()
+
+    # Should not raise an error during creation
+    assert compiled_agent is not None
+
+
+def test_middleware_agent_llm_alias_equivalence() -> None:
+    """Comprehensive test ensuring model and llm parameters are equivalent in middleware agent."""
+
+    class EqualityMiddleware(AgentMiddleware):
+        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+            # Add a marker to verify middleware was applied
+            request.messages.append(HumanMessage("middleware marker"))
+            return request
+
+    @tool
+    def equality_tool(value: str) -> str:
+        """Equality test tool."""
+        return f"equal: {value}"
+
+    # Create identical models
+    model1 = FakeToolCallingModel(
+        tool_calls=[[{"args": {"value": "test"}, "id": "1", "name": "equality_tool"}], []]
+    )
+    model2 = FakeToolCallingModel(
+        tool_calls=[[{"args": {"value": "test"}, "id": "1", "name": "equality_tool"}], []]
+    )
+
+    # Create agents - one with model, one with llm
+    agent_model = create_agent(
+        model=model1,
+        tools=[equality_tool],
+        system_prompt="Test system prompt",
+        middleware=[EqualityMiddleware()],
+    )
+
+    agent_llm = create_agent(
+        llm=model2,
+        tools=[equality_tool],
+        system_prompt="Test system prompt",
+        middleware=[EqualityMiddleware()],
+    )
+
+    # Compile agents
+    compiled_model = agent_model.compile()
+    compiled_llm = agent_llm.compile()
+
+    # Test inputs
+    inputs = {"messages": [HumanMessage("equality test")]}
+
+    result_model = compiled_model.invoke(inputs)
+    result_llm = compiled_llm.invoke(inputs)
+
+    # Results should be structurally identical
+    assert len(result_model["messages"]) == len(result_llm["messages"])
+
+    # Both should have the middleware marker in the AI message content
+    ai_message_model = result_model["messages"][1]
+    ai_message_llm = result_llm["messages"][1]
+
+    assert "middleware marker" in ai_message_model.content
+    assert "middleware marker" in ai_message_llm.content
+
+    # Tool messages should be identical
+    tool_message_model = result_model["messages"][2]
+    tool_message_llm = result_llm["messages"][2]
+
+    assert tool_message_model.content == tool_message_llm.content
+    assert tool_message_model.name == tool_message_llm.name
+
+
+def test_middleware_agent_llm_alias_with_string_model() -> None:
+    """Test that llm parameter works with string model identifiers in middleware agent."""
+    # This would normally require an API key, but we'll test that it at least
+    # tries to initialize the model the same way
+    with pytest.raises(Exception):  # Will fail due to missing API key, which is expected
+        create_agent(
+            llm="openai:gpt-3.5-turbo",
+            tools=[],
+            system_prompt="You are a helpful assistant.",
+        )

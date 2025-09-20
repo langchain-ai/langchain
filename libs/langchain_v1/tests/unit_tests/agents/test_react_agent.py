@@ -1651,3 +1651,262 @@ def test_response_format_using_tool_choice() -> None:
         }
     )
     assert response.get("structured_response") == expected_structured_response
+
+
+def test_llm_alias_basic_functionality() -> None:
+    """Test that llm parameter works as an alias for model parameter."""
+    model = FakeToolCallingModel()
+
+    # Test creating agent with llm parameter
+    agent_with_llm = create_agent(
+        llm=model,
+        tools=[],
+    )
+
+    # Test creating agent with model parameter
+    agent_with_model = create_agent(
+        model=model,
+        tools=[],
+    )
+
+    # Both should work and produce equivalent results
+    inputs = {"messages": [HumanMessage("hi?")]}
+
+    result_llm = agent_with_llm.invoke(inputs)
+    result_model = agent_with_model.invoke(inputs)
+
+    # Results should be equivalent in structure and content
+    assert len(result_llm["messages"]) == len(result_model["messages"])
+    assert result_llm["messages"][0].content == result_model["messages"][0].content
+    assert result_llm["messages"][1].content == result_model["messages"][1].content
+
+
+def test_llm_alias_with_string_model() -> None:
+    """Test that llm parameter works with string model identifiers."""
+    # This would normally require an API key, but we'll test that it at least
+    # tries to initialize the model the same way
+    with pytest.raises(Exception):  # Will fail due to missing API key, which is expected
+        create_agent(llm="openai:gpt-3.5-turbo", tools=[])
+
+
+def test_llm_alias_validation_both_parameters() -> None:
+    """Test that providing both model and llm parameters raises an error."""
+    model = FakeToolCallingModel()
+
+    with pytest.raises(ValueError, match="Cannot specify both 'model' and 'llm' parameters"):
+        create_agent(
+            model=model,
+            llm=model,
+            tools=[],
+        )
+
+
+def test_llm_alias_validation_neither_parameter() -> None:
+    """Test that providing neither model nor llm parameters raises an error."""
+    with pytest.raises(ValueError, match="Must specify either 'model' or 'llm' parameter"):
+        create_agent(
+            tools=[],
+        )
+
+
+def test_llm_alias_with_tools() -> None:
+    """Test llm parameter works with tool calling."""
+
+    @dec_tool
+    def test_tool(x: int) -> str:
+        """Test tool."""
+        return f"result: {x}"
+
+    model = FakeToolCallingModel(
+        tool_calls=[[{"args": {"x": 42}, "id": "1", "name": "test_tool"}], []]
+    )
+
+    agent = create_agent(
+        llm=model,
+        tools=[test_tool],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("test")]})
+
+    # Should have human message, AI message, tool message, and final AI message
+    assert len(result["messages"]) == 4
+    assert isinstance(result["messages"][2], ToolMessage)
+    assert result["messages"][2].content == "result: 42"
+    assert result["messages"][2].name == "test_tool"
+
+
+def test_llm_alias_with_structured_response() -> None:
+    """Test llm parameter works with structured response format."""
+
+    class TestResponse(BaseModel):
+        message: str = Field(description="Test message")
+        value: int = Field(description="Test value")
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {"message": "test", "value": 123}, "id": "1", "name": "TestResponse"}]
+        ]
+    )
+
+    agent = create_agent(
+        llm=model,
+        tools=[],
+        response_format=TestResponse,
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("test")]})
+
+    # Should have structured response
+    assert "structured_response" in result
+    assert result["structured_response"].message == "test"
+    assert result["structured_response"].value == 123
+
+
+def test_llm_alias_with_prompt() -> None:
+    """Test llm parameter works with different prompt types."""
+    model = FakeToolCallingModel()
+
+    # Test with string prompt
+    agent = create_agent(llm=model, tools=[], prompt="You are a test assistant.")
+
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    expected_content = "You are a test assistant.-hello"
+    assert result["messages"][-1].content == expected_content
+
+    # Test with SystemMessage prompt
+    system_prompt = SystemMessage(content="System message test")
+    agent = create_agent(llm=model, tools=[], prompt=system_prompt)
+
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    expected_content = "System message test-hello"
+    assert result["messages"][-1].content == expected_content
+
+
+def test_llm_alias_with_dynamic_model() -> None:
+    """Test llm parameter works with dynamic model functions."""
+
+    def dynamic_model(state, runtime: Runtime):
+        return FakeToolCallingModel(tool_calls=[])
+
+    agent = create_agent(
+        llm=dynamic_model,
+        tools=[],
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("test")]})
+    assert len(result["messages"]) == 2
+    assert result["messages"][-1].content == "test"
+
+
+async def test_llm_alias_async() -> None:
+    """Test llm parameter works with async operations."""
+    model = FakeToolCallingModel()
+
+    agent = create_agent(
+        llm=model,
+        tools=[],
+    )
+
+    result = await agent.ainvoke({"messages": [HumanMessage("async test")]})
+    assert len(result["messages"]) == 2
+    assert result["messages"][-1].content == "async test"
+
+
+def test_llm_alias_with_checkpointer(sync_checkpointer: BaseCheckpointSaver) -> None:
+    """Test llm parameter works with checkpointer."""
+    model = FakeToolCallingModel()
+
+    agent = create_agent(
+        llm=model,
+        tools=[],
+        checkpointer=sync_checkpointer,
+    )
+
+    config = {"configurable": {"thread_id": "llm_test"}}
+    inputs = {"messages": [HumanMessage("checkpoint test")]}
+
+    result = agent.invoke(inputs, config)
+    assert len(result["messages"]) == 2
+
+    # Verify it was saved to checkpoint
+    saved = sync_checkpointer.get_tuple(config)
+    assert saved is not None
+    assert len(saved.checkpoint["channel_values"]["messages"]) == 2
+
+
+def test_llm_alias_with_state_schema() -> None:
+    """Test llm parameter works with custom state schema."""
+
+    class CustomLlmState(AgentState):
+        custom_field: str = "default"
+
+    model = FakeToolCallingModel()
+
+    agent = create_agent(
+        llm=model,
+        tools=[],
+        state_schema=CustomLlmState,
+    )
+
+    result = agent.invoke({"messages": [HumanMessage("state test")], "custom_field": "test_value"})
+
+    assert len(result["messages"]) == 2
+    assert result["custom_field"] == "test_value"
+
+
+def test_llm_alias_equivalence_comprehensive() -> None:
+    """Comprehensive test ensuring model and llm parameters are completely equivalent."""
+
+    @dec_tool
+    def equivalence_tool(x: str) -> str:
+        """Equivalence test tool."""
+        return f"processed: {x}"
+
+    class EquivalenceResponse(BaseModel):
+        result: str = Field(description="Test result")
+
+    # Create identical models
+    model1 = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {"x": "test"}, "id": "1", "name": "equivalence_tool"}],
+            [{"args": {"result": "final"}, "id": "2", "name": "EquivalenceResponse"}],
+        ]
+    )
+    model2 = FakeToolCallingModel(
+        tool_calls=[
+            [{"args": {"x": "test"}, "id": "1", "name": "equivalence_tool"}],
+            [{"args": {"result": "final"}, "id": "2", "name": "EquivalenceResponse"}],
+        ]
+    )
+
+    # Create agents - one with model, one with llm
+    agent_model = create_agent(
+        model=model1,
+        tools=[equivalence_tool],
+        prompt="Test system prompt",
+        response_format=EquivalenceResponse,
+    )
+
+    agent_llm = create_agent(
+        llm=model2,
+        tools=[equivalence_tool],
+        prompt="Test system prompt",
+        response_format=EquivalenceResponse,
+    )
+
+    # Test inputs
+    inputs = {"messages": [HumanMessage("equivalence test")]}
+
+    result_model = agent_model.invoke(inputs)
+    result_llm = agent_llm.invoke(inputs)
+
+    # Results should be structurally identical
+    assert len(result_model["messages"]) == len(result_llm["messages"])
+    assert "structured_response" in result_model
+    assert "structured_response" in result_llm
+    assert result_model["structured_response"].result == result_llm["structured_response"].result
+
+    # Message contents should match
+    for i in range(len(result_model["messages"])):
+        assert result_model["messages"][i].content == result_llm["messages"][i].content
+        assert type(result_model["messages"][i]) == type(result_llm["messages"][i])
