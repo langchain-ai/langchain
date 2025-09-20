@@ -135,19 +135,32 @@ ResponseT = TypeVar("ResponseT")
 
 def create_agent(  # noqa: PLR0915
     *,
-    model: str | BaseChatModel,
+    model: str | BaseChatModel | None = None,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
     system_prompt: str | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     context_schema: type[ContextT] | None = None,
+    llm: str | BaseChatModel | None = None,
 ) -> StateGraph[
     AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
 ]:
     """Create a middleware agent graph."""
+    # Handle model/llm parameter aliasing
+    if model is not None and llm is not None:
+        msg = "Cannot specify both 'model' and 'llm' parameters. Please use only one."
+        raise ValueError(msg)
+
+    if model is None and llm is None:
+        msg = "Must specify either 'model' or 'llm' parameter."
+        raise ValueError(msg)
+
+    # Use whichever parameter was provided
+    actual_model: str | BaseChatModel = model if model is not None else llm  # type: ignore[assignment]
+
     # init chat model
-    if isinstance(model, str):
-        model = init_chat_model(model)
+    if isinstance(actual_model, str):
+        actual_model = init_chat_model(actual_model)
 
     # Handle tools being None or empty
     if tools is None:
@@ -160,7 +173,7 @@ def create_agent(  # noqa: PLR0915
     if response_format is not None:
         if not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
             # Auto-detect strategy based on model capabilities
-            if _supports_native_structured_output(model):
+            if _supports_native_structured_output(actual_model):
                 response_format = ProviderStrategy(schema=response_format)
             else:
                 response_format = ToolStrategy(schema=response_format)
@@ -356,7 +369,7 @@ def create_agent(  # noqa: PLR0915
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
-            model=model,
+            model=actual_model,
             tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,
@@ -384,7 +397,7 @@ def create_agent(  # noqa: PLR0915
         """Async model request handler with sequential middleware processing."""
         # Start with the base model request
         request = ModelRequest(
-            model=model,
+            model=actual_model,
             tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,

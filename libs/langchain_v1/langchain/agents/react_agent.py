@@ -905,9 +905,16 @@ def _supports_native_structured_output(
 
 
 def create_agent(  # noqa: D417
-    model: str | BaseChatModel | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
-    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
+    model: str
+    | BaseChatModel
+    | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel]
+    | None = None,
+    tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode = (),
     *,
+    llm: str
+    | BaseChatModel
+    | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel]
+    | None = None,
     middleware: Sequence[AgentMiddleware] = (),
     prompt: Prompt | None = None,
     response_format: ToolStrategy[StructuredResponseT]
@@ -934,7 +941,7 @@ def create_agent(  # noqa: D417
 
     Args:
         model: The language model for the agent. Supports static and dynamic
-            model selection.
+            model selection. Cannot be used together with `llm` parameter.
 
             - **Static model**: A chat model instance (e.g., `ChatOpenAI()`) or
               string identifier (e.g., `"openai:gpt-4"`)
@@ -979,6 +986,9 @@ def create_agent(  # noqa: D417
         tools: A list of tools or a ToolNode instance.
             If an empty list is provided, the agent will consist of a single LLM node
             without tool calling.
+        llm: Alias for `model` parameter. The language model for the agent. Supports
+            the same static and dynamic model selection as `model`. Cannot be used
+            together with `model` parameter. Either `model` or `llm` must be specified.
         prompt: An optional prompt for the LLM. Can take a few different forms:
 
             - str: This is converted to a SystemMessage and added to the beginning
@@ -1141,15 +1151,27 @@ def create_agent(  # noqa: D417
             print(chunk)
         ```
     """
+    # Handle model/llm parameter aliasing
+    if model is not None and llm is not None:
+        msg = "Cannot specify both 'model' and 'llm' parameters. Please use only one."
+        raise ValueError(msg)
+
+    if model is None and llm is None:
+        msg = "Must specify either 'model' or 'llm' parameter."
+        raise ValueError(msg)
+
+    # Use whichever parameter was provided
+    actual_model: str | BaseChatModel = model if model is not None else llm  # type: ignore[assignment]
+
     if middleware:
-        assert isinstance(model, str | BaseChatModel)  # noqa: S101
+        assert isinstance(actual_model, str | BaseChatModel)  # noqa: S101
         assert isinstance(prompt, str | None)  # noqa: S101
         assert not isinstance(response_format, tuple)  # noqa: S101
         assert pre_model_hook is None  # noqa: S101
         assert post_model_hook is None  # noqa: S101
         assert state_schema is None  # noqa: S101
         return create_middleware_agent(  # type: ignore[return-value]
-            model=model,
+            model=actual_model,
             tools=tools,
             system_prompt=prompt,
             middleware=middleware,
@@ -1180,7 +1202,7 @@ def create_agent(  # noqa: D417
         raise TypeError(msg)
 
     if response_format and not isinstance(response_format, (ToolStrategy, ProviderStrategy)):
-        if _supports_native_structured_output(model):
+        if _supports_native_structured_output(actual_model):
             response_format = ProviderStrategy(
                 schema=response_format,
             )
@@ -1194,7 +1216,7 @@ def create_agent(  # noqa: D417
 
     # Create and configure the agent builder
     builder = _AgentBuilder(
-        model=model,
+        model=actual_model,
         tools=tools,
         prompt=prompt,
         response_format=cast("ResponseFormat[StructuredResponseT] | None", response_format),
