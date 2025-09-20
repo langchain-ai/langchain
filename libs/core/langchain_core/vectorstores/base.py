@@ -319,7 +319,9 @@ class VectorStore(ABC):
 
             texts = [doc.page_content for doc in documents]
             metadatas = [doc.metadata for doc in documents]
-            return await self.aadd_texts(texts, metadatas, **kwargs)
+            # Extract ids from kwargs to avoid duplication with positional parameter
+            ids_param = kwargs.pop("ids", None)
+            return await self.aadd_texts(texts, metadatas, ids=ids_param, **kwargs)
 
         return await run_in_executor(None, self.add_documents, documents, **kwargs)
 
