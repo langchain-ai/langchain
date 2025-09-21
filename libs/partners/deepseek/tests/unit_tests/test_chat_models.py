@@ -15,7 +15,13 @@ from pydantic import SecretStr
 from langchain_deepseek.chat_models import ChatDeepSeek
 
 # patch validation for Pydantic 2.7 (issue due to OpenAI SDK)
-pydantic._internal._model_construction.is_valid_field_name = lambda name: True
+try:
+    import pydantic._internal._model_construction
+
+    # Simple patch: make field validation always return False to avoid conflicts
+    pydantic._internal._model_construction.is_valid_field_name = lambda name: False
+except (AttributeError, ImportError):
+    pass
 
 
 class MockOpenAIResponse(BaseModel):

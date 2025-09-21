@@ -13,15 +13,12 @@ from langchain.chains.flare.base import FlareChain
 
 # patch validation for Pydantic 2.7 (issue due to OpenAI SDK)
 try:
-    if hasattr(pydantic._internal._model_construction, "is_valid_field_name"):
-        pydantic._internal._model_construction.is_valid_field_name = (
-            lambda name: True  # noqa: ARG005
-        )
-    else:
-        # For Pydantic 2.7+, we need to set it on the module if it doesn't exist
-        pydantic._internal._model_construction.is_valid_field_name = (  # type: ignore[attr-defined]
-            lambda name: True  # noqa: ARG005
-        )
+    import pydantic._internal._model_construction
+
+    # Simple patch: make field validation always return False to avoid conflicts
+    pydantic._internal._model_construction.is_valid_field_name = (  # type: ignore[attr-defined]
+        lambda name: False  # noqa: ARG005
+    )
 except (AttributeError, ImportError):
     pass
 

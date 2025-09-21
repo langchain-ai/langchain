@@ -17,7 +17,13 @@ from langchain_openai.chat_models.base import (
 from langchain_xai import ChatXAI
 
 # patch validation for Pydantic 2.7 (issue due to OpenAI SDK)
-pydantic._internal._model_construction.is_valid_field_name = lambda name: True
+try:
+    import pydantic._internal._model_construction
+
+    # Simple patch: make field validation always return False to avoid conflicts
+    pydantic._internal._model_construction.is_valid_field_name = lambda name: False
+except (AttributeError, ImportError):
+    pass
 
 MODEL_NAME = "grok-4"
 
