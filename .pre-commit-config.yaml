@@ -37,12 +37,6 @@ repos:
         entry: make -C libs/partners/chroma format lint
         files: ^libs/partners/chroma/
         pass_filenames: false
-      - id: couchbase
-        name: format and lint partners/couchbase
-        language: system
-        entry: make -C libs/partners/couchbase format lint
-        files: ^libs/partners/couchbase/
-        pass_filenames: false
       - id: exa
         name: format and lint partners/exa
         language: system
