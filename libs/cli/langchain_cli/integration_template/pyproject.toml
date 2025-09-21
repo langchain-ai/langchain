@@ -9,7 +9,7 @@ description = "An integration package connecting __ModuleName__ and LangChain"
 authors = []
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = "~=3.10.0"
 dependencies = [
     "langchain-core>=0.3.15",
 ]
@@ -29,7 +29,6 @@ dev-dependencies = [
     "pytest-socket>=0.7.0",
     "pytest-watcher>=0.3.4",
     "langchain-tests>=0.3.5",
-    "codespell>=2.2.6",
     "ruff>=0.5",
     "mypy>=1.10",
 ]

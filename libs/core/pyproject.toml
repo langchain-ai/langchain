@@ -5,15 +5,15 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = {text = "MIT"}
-requires-python = ">=3.9"
+requires-python = "~=3.9.0"
 dependencies = [
-    "langsmith>=0.3.45",
-    "tenacity!=8.4.0,<10.0.0,>=8.1.0",
-    "jsonpatch<2.0,>=1.33",
-    "PyYAML>=5.3",
-    "typing-extensions>=4.7",
-    "packaging>=23.2",
-    "pydantic>=2.7.4",
+    "langsmith>=0.3.45,<1.0.0",
+    "tenacity!=8.4.0,>=8.1.0,<10.0.0",
+    "jsonpatch>=1.33.0,<2.0.0",
+    "PyYAML>=5.3.0,<7.0.0",
+    "typing-extensions>=4.7.0,<5.0.0",
+    "packaging>=23.2.0,<26.0.0",
+    "pydantic>=2.7.4,<3.0.0",
 ]
 name = "langchain-core"
 version = "0.3.76"
@@ -26,30 +26,30 @@ readme = "README.md"
 repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff>=0.12.2,<0.13.0"]
 typing = [
-    "mypy<1.19,>=1.18.1",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
+    "mypy>=1.18.1,<1.19.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
+    "types-requests>=2.28.11.5,<3.0.0.0",
     "langchain-text-splitters",
 ]
 dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "setuptools<68.0.0,>=67.6.1",
-    "grandalf<1.0,>=0.8",
+    "jupyter>=1.0.0,<2.0.0",
+    "setuptools>=67.6.1,<68.0.0",
+    "grandalf>=0.8.0,<1.0.0",
 ]
 test = [
-    "pytest<9,>=8",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "grandalf<1.0,>=0.8",
-    "responses<1.0.0,>=0.25.0",
-    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest>=8.0.0,<9.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "grandalf>=0.8.0,<1.0.0",
+    "responses>=0.25.0,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster~=1.5.18",
+    "blockbuster>=1.5.18,<1.6.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
     "langchain-tests",

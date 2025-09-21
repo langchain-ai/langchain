@@ -1,7 +1,7 @@
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = "~=3.9.0"
 dependencies = []
 name = "langchain-monorepo"
 version = "0.0.1"
@@ -12,18 +12,14 @@ readme = "README.md"
 repository = "https://www.github.com/langchain-ai/langchain"
 
 [dependency-groups]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff>=0.12.2,<0.13.0"]
 dev = [
     "langchain-core",
     "langchain-text-splitters",
     "langchain-community",
     "langchain",
     "langchain-openai",
-    "ipykernel<7.0.0,>=6.29.2",
-]
-codespell = [
-    "codespell<3.0.0,>=2.2.0",
-    "tomli>=2.2.1",
+    "ipykernel>=6.29.2",
 ]
 typing = []
 test = [
@@ -41,28 +37,28 @@ test = [
     "langchain-unstructured @ git+https://github.com/langchain-ai/langchain-unstructured.git#subdirectory=libs/unstructured",
     "langgraph",
     "msgpack",
-    "jupyter<2.0.0,>=1.1.1",
-    "click<9.0.0,>=8.1.7",
-    "aiofiles<25.0.0,>=24.1.0",
-    "faiss-cpu<2.0.0,>=1.7.4",
-    "grandalf<1.0,>=0.8",
-    "lark<2.0.0,>=1.1.9",
-    "pandas<3,>=2",
-    "rank-bm25<1.0.0,>=0.2.2",
-    "tabulate<1.0.0,>=0.9.0",
-    "unstructured[md]<1.0.0,>=0.16.11; python_version < \"3.13\"",
-    "wikipedia<2.0.0,>=1.4.0",
-    "pypdf<6.0.0,>=5.0.0",
-    "vcrpy<7.0.0,>=6.0.1",
-    "linkchecker>=10.5.0",
+    "jupyter>=1.1.1,<2.0.0",
+    "click>=8.1.7,<9.0.0",
+    "aiofiles>=24.1.0,<25.0.0",
+    "faiss-cpu>=1.7.4,<2.0.0",
+    "grandalf>=0.8.0,<1.0.0",
+    "lark>=1.1.9,<2.0.0",
+    "pandas>=2.0.0,<3.0.0",
+    "rank-bm25>=0.2.2,<1.0.0",
+    "tabulate>=0.9.0,<1.0.0",
+    "unstructured[md]>=0.16.11,<1.0.0; python_version < \"3.13\"",
+    "wikipedia>=1.4.0,<2.0.0",
+    "pypdf>=5.0.0,<6.0.0",
+    "vcrpy>=6.0.1,<7.0.0",
+    "linkchecker>=10.5.0,<11.0.0",
 ]
 docs = [
-    "toml>=0.10.2",
-    "autodoc-pydantic>=2,<3",
-    "sphinx>=6,<8",
-    "myst-parser>=3",
+    "toml>=0.10.2,<0.11.0",
+    "autodoc-pydantic>=2.0.0,<3.0.0",
+    "sphinx>=6.0.0,<8.0.0",
+    "myst-parser>=3.0.0,<4.0.0",
     "sphinx-autobuild>=2024",
-    "pydata-sphinx-theme>=0.15",
+    "pydata-sphinx-theme>=0.15.0",
     "myst-nb>=1.1.1",
     "pyyaml",
     "sphinx-design",
@@ -87,15 +83,6 @@ langchain-mistralai = { path = "./libs/partners/mistralai", editable = true }
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-
-[tool.codespell]
-skip = '.git,*.pdf,*.svg,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,templates,*.trig,*cache*,*.msgpack.zlib,*.csv,*.lock,*.png,*.jpg,*.jpeg,*.gif,*.bmp,*.ico,*.webp,*.tiff,*.mp4,*.mp3,*.wav,*.avi,*.mov,*.zip,*.tar,*.gz,*.rar,*.7z,*.exe,*.dll,*.so,*.dylib,*.bin,*.dat,*.db,*.sqlite'
-# Ignore latin etc
-ignore-regex = '.*(Stati Uniti|Tense=Pres).*'
-# whats is a typo but used frequently in queries so kept as is
-# aapply - async apply
-# unsecure - typo but part of API, decided to not bother for now
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin,cann'
 
 [tool.ruff]
 extend-include = ["*.ipynb"]
