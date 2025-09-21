@@ -1,5 +1,5 @@
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import]
 
 from langchain_prompty import create_chat_prompt
 

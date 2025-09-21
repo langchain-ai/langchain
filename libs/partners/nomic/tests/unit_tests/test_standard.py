@@ -1,5 +1,5 @@
 import pytest
-from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import-untyped]
+from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import]
 
 from langchain_nomic import NomicEmbeddings
 
@@ -10,6 +10,6 @@ def test_nomic_embeddings_init_time(benchmark: BenchmarkFixture) -> None:
 
     def _init_nomic_embeddings() -> None:
         for _ in range(10):
-            NomicEmbeddings()
+            NomicEmbeddings(model="test")
 
     benchmark(_init_nomic_embeddings)

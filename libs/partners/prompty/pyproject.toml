@@ -32,7 +32,10 @@ test = [
     "langchain-tests",
 ]
 test_integration = []
-lint = ["ruff>=0.12.2,<0.13.0"]
+lint = [
+    "ruff>=0.12.2,<0.13.0",
+    "types-urllib3>=1.26.25.14,<2.0.0.0",
+]
 dev = ["types-pyyaml>=6.0.12.20240311,<7.0.0.0", "langchain-core"]
 typing = [
     "mypy>=0.991.0,<1.0.0",
