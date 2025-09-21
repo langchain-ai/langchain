@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
+import pydantic
 from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
@@ -13,12 +14,16 @@ from pydantic import SecretStr
 
 from langchain_deepseek.chat_models import ChatDeepSeek
 
+# patch validation to ignore leading underscores due to OpenAI client issue
+# TODO: remove when fixed in OpenAI client
+pydantic._internal._model_construction.is_valid_field_name = lambda name: True
+
 
 class MockOpenAIResponse(BaseModel):
     choices: list
     error: None = None
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
         mode: Union[Literal["json", "python"], str] = "python",  # noqa: PYI051
