@@ -111,6 +111,7 @@ jobs:
 
   # Verify integration tests compile without actually running them (faster feedback)
   compile-integration-tests:
+    name: 'Compile Integration Tests'
     needs: [ build ]
     if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
     strategy:
