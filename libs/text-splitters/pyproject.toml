@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "~=3.9.0"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
     "langchain-core>=0.3.75,<2.0.0",
 ]

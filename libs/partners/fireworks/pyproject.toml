@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "~=3.9.0"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
     "langchain-core>=0.3.55,<1.0.0",
     "fireworks-ai>=0.13.0,<1.0.0",

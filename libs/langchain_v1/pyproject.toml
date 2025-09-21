@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = "~=3.10.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=0.3.75,<2.0.0",
     "langchain-text-splitters>=0.3.11,<2.0.0",
@@ -82,7 +82,6 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py310"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 line-length = 100
 
