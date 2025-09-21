@@ -2859,6 +2859,8 @@ test = [
 test-integration = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "nltk", specifier = ">=3.9.1,<4.0.0" },
+    { name = "scipy", marker = "python_full_version == '3.12.*'", specifier = ">=1.7.0,<2.0.0" },
+    { name = "scipy", marker = "python_full_version >= '3.13'", specifier = ">=1.14.1,<2.0.0" },
     { name = "sentence-transformers", specifier = ">=3.0.1,<4.0.0" },
     { name = "spacy", specifier = ">=3.8.7,<4.0.0" },
     { name = "thinc", specifier = ">=8.3.6,<9.0.0" },

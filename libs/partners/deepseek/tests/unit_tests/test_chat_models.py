@@ -14,8 +14,7 @@ from pydantic import SecretStr
 
 from langchain_deepseek.chat_models import ChatDeepSeek
 
-# patch validation to ignore leading underscores due to OpenAI client issue
-# TODO: remove when fixed in OpenAI client
+# patch validation for Pydantic 2.7 (issue due to OpenAI SDK)
 pydantic._internal._model_construction.is_valid_field_name = lambda name: True
 
 

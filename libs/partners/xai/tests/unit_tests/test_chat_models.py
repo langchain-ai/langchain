@@ -16,8 +16,7 @@ from langchain_openai.chat_models.base import (
 
 from langchain_xai import ChatXAI
 
-# patch validation to ignore leading underscores due to OpenAI client issue
-# TODO: remove when fixed in OpenAI client
+# patch validation for Pydantic 2.7 (issue due to OpenAI SDK)
 pydantic._internal._model_construction.is_valid_field_name = lambda name: True
 
 MODEL_NAME = "grok-4"
