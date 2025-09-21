@@ -82,12 +82,6 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
-spell_check:
-	uv run --all-groups codespell --toml pyproject.toml
-
-spell_fix:
-	uv run --all-groups codespell --toml pyproject.toml -w
-
 ######################
 # HELP
 ######################
@@ -104,8 +98,6 @@ help:
 	@echo '-- LINTING --'
 	@echo 'format                       - run code formatters'
 	@echo 'lint                         - run linters'
-	@echo 'spell_check               	- run codespell on the project'
-	@echo 'spell_fix               		- run codespell on the project and fix the errors'
 	@echo '-- TESTS --'
 	@echo 'coverage                     - run unit tests and generate coverage report'
 	@echo 'test                         - run unit tests with all services'
