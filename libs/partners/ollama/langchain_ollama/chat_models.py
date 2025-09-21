@@ -79,6 +79,30 @@ def _get_usage_metadata_from_generation_info(
     return None
 
 
+def _strip_think_tags(content: str) -> str:
+    """Strip <think> and </think> tags from content.
+
+    This function is necessary because some models (like DeepSeek R1) include
+    reasoning/thinking as their default behavior. When reasoning=False is set,
+    the user explicitly wants no reasoning content, but Ollama cannot disable
+    thinking at the API level for these models. Therefore, post-processing is
+    required to strip the <think> tags.
+
+    Args:
+        content: The content string that may contain think tags
+
+    Returns:
+        The content string with think tags removed
+    """
+    import re
+    # Remove <think>...</think> blocks, including multiline content
+    # Also clean up extra whitespace/newlines that might be left behind
+    result = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+    # Clean up multiple consecutive newlines and trim
+    result = re.sub(r'\n\s*\n', '\n', result)
+    return result.strip()
+
+
 def _parse_json_string(
     json_string: str,
     *,
@@ -883,6 +907,10 @@ class ChatOllama(BaseChatModel):
                 ):
                     additional_kwargs["reasoning_content"] = thinking_content
 
+                # Strip think tags from content when reasoning=False
+                if reasoning is False:
+                    content = _strip_think_tags(content)
+
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
                         content=content,
@@ -958,6 +986,10 @@ class ChatOllama(BaseChatModel):
                     and (thinking_content := stream_resp["message"].get("thinking"))
                 ):
                     additional_kwargs["reasoning_content"] = thinking_content
+
+                # Strip think tags from content when reasoning=False
+                if reasoning is False:
+                    content = _strip_think_tags(content)
 
                 chunk = ChatGenerationChunk(
                     message=AIMessageChunk(
