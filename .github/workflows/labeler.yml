@@ -1,0 +1,22 @@
+name: "🏷️ Pull Request Labeler"
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  labeler:
+    name: 'label'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Label Pull Request
+      uses: actions/labeler@v6
+      with:
+        repo-token: "${{ secrets.GITHUB_TOKEN }}"
+        configuration-path: .github/labeler.yml
+        sync-labels: true
