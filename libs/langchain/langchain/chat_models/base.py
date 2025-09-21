@@ -76,6 +76,7 @@ def init_chat_model(
         Union[Literal["any"], list[str], tuple[str, ...]]
     ] = None,
     config_prefix: Optional[str] = None,
+    context_schema: Optional[type] = None,
     **kwargs: Any,
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel in a single line using the model's name and provider.
@@ -149,6 +150,10 @@ def init_chat_model(
             ``config["configurable"]["{config_prefix}_{param}"]`` keys. If
             ``'config_prefix'`` is an empty string then model will be configurable via
             ``config["configurable"]["{param}"]``.
+        context_schema: An optional schema type for runtime context. When provided,
+            model parameters can be passed via the context argument at runtime instead
+            of through config["configurable"]. This aligns with LangGraph v0.6+
+            recommendations for static runtime context.
         temperature: Model temperature.
         max_tokens: Max output tokens.
         timeout: The maximum time (in seconds) to wait for a response from the model
@@ -286,6 +291,40 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
 
+    .. dropdown:: Use context_schema for model configuration
+
+        You can use ``context_schema`` to configure models via runtime context instead
+        of the configurable pattern, which aligns with LangGraph v0.6+ recommendations.
+
+        .. code-block:: python
+
+            # pip install langchain langchain-openai
+            from langchain.chat_models import init_chat_model
+            from typing import NamedTuple
+
+            class ModelContext(NamedTuple):
+                model: str
+                temperature: float
+
+            # Create model with context_schema
+            configurable_model = init_chat_model(
+                context_schema=ModelContext,
+                model_provider="openai"
+            )
+
+            # Configure model via context instead of configurable
+            configurable_model.invoke(
+                "What's the weather like?",
+                context={"model": "gpt-4o", "temperature": 0.7}
+            )
+            # GPT-4o response with temperature 0.7
+
+            configurable_model.invoke(
+                "What's the weather like?",
+                context=ModelContext(model="gpt-3.5-turbo", temperature=0.2)
+            )
+            # GPT-3.5-turbo response with temperature 0.2
+
     .. versionadded:: 0.2.7
 
     .. versionchanged:: 0.2.8
@@ -310,6 +349,12 @@ def init_chat_model(
 
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
+    .. versionchanged:: 0.3.20
+
+        Support for ``context_schema`` added. Model parameters can now be passed
+        via runtime context instead of config["configurable"], aligning with
+        LangGraph v0.6+ recommendations for static runtime context.
+
     """  # noqa: E501
     if not model and not configurable_fields:
         configurable_fields = ("model", "model_provider")
@@ -322,7 +367,7 @@ def init_chat_model(
             stacklevel=2,
         )
 
-    if not configurable_fields:
+    if not configurable_fields and not context_schema:
         return _init_chat_model_helper(
             cast("str", model),
             model_provider=model_provider,
@@ -336,6 +381,7 @@ def init_chat_model(
         default_config=kwargs,
         config_prefix=config_prefix,
         configurable_fields=configurable_fields,
+        context_schema=context_schema,
     )
 
 
@@ -555,6 +601,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         default_config: Optional[dict] = None,
         configurable_fields: Union[Literal["any"], list[str], tuple[str, ...]] = "any",
         config_prefix: str = "",
+        context_schema: Optional[type] = None,
         queued_declarative_operations: Sequence[tuple[str, tuple, dict]] = (),
     ) -> None:
         self._default_config: dict = default_config or {}
@@ -568,6 +615,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if config_prefix and not config_prefix.endswith("_")
             else config_prefix
         )
+        self._context_schema = context_schema
         self._queued_declarative_operations: list[tuple[str, tuple, dict]] = list(
             queued_declarative_operations,
         )
@@ -590,6 +638,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
                     if isinstance(self._configurable_fields, list)
                     else self._configurable_fields,
                     config_prefix=self._config_prefix,
+                    context_schema=self._context_schema,
                     queued_declarative_operations=queued_declarative_operations,
                 )
 
@@ -611,15 +660,51 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
         config = ensure_config(config)
-        model_params = {
-            k.removeprefix(self._config_prefix): v
-            for k, v in config.get("configurable", {}).items()
-            if k.startswith(self._config_prefix)
-        }
-        if self._configurable_fields != "any":
-            model_params = {
-                k: v for k, v in model_params.items() if k in self._configurable_fields
+        model_params = {}
+
+        # Extract parameters from configurable (legacy approach)
+        if self._configurable_fields:
+            configurable_params = {
+                k.removeprefix(self._config_prefix): v
+                for k, v in config.get("configurable", {}).items()
+                if k.startswith(self._config_prefix)
             }
+            if self._configurable_fields != "any":
+                configurable_params = {
+                    k: v for k, v in configurable_params.items() if k in self._configurable_fields
+                }
+            model_params.update(configurable_params)
+
+        # Extract parameters from context (new approach)
+        if self._context_schema and "context" in config:
+            context = config["context"]
+            if context:
+                # Extract model-related parameters from context
+                context_params = {}
+                if hasattr(context, "model"):
+                    context_params["model"] = context.model
+                if hasattr(context, "model_provider"):
+                    context_params["model_provider"] = context.model_provider
+                if hasattr(context, "temperature"):
+                    context_params["temperature"] = context.temperature
+                if hasattr(context, "max_tokens"):
+                    context_params["max_tokens"] = context.max_tokens
+                if hasattr(context, "timeout"):
+                    context_params["timeout"] = context.timeout
+                if hasattr(context, "max_retries"):
+                    context_params["max_retries"] = context.max_retries
+                if hasattr(context, "base_url"):
+                    context_params["base_url"] = context.base_url
+
+                # If context is a dict, try to access as dict
+                if isinstance(context, dict):
+                    for param in ["model", "model_provider", "temperature", "max_tokens",
+                                "timeout", "max_retries", "base_url"]:
+                        if param in context:
+                            context_params[param] = context[param]
+
+                model_params.update(context_params)
+
         return model_params
 
     def with_config(
@@ -651,6 +736,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
             if isinstance(self._configurable_fields, list)
             else self._configurable_fields,
             config_prefix=self._config_prefix,
+            context_schema=self._context_schema,
             queued_declarative_operations=queued_declarative_operations,
         )
 

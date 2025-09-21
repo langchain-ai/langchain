@@ -289,3 +289,116 @@ def test_configurable_with_default() -> None:
     prompt = ChatPromptTemplate.from_messages([("system", "foo")])
     chain = prompt | model_with_config
     assert isinstance(chain, RunnableSequence)
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {"OPENAI_API_KEY": "foo"},
+    clear=True,
+)
+def test_context_schema() -> None:
+    """Test context_schema functionality with init_chat_model.
+
+    Verifies that:
+    - Context schema parameter is accepted
+    - Model parameters can be passed via context instead of configurable
+    - Context parameters override default parameters
+    - Both dict and object context formats work
+    """
+    from typing import NamedTuple
+
+    # Define a context schema
+    class ModelContext(NamedTuple):
+        model: str
+        temperature: float
+
+    # Create configurable model with context_schema
+    model = init_chat_model(
+        context_schema=ModelContext,
+        model_provider="openai"
+    )
+
+    # Test that model is configurable
+    assert hasattr(model, '_context_schema')
+    assert model._context_schema == ModelContext
+
+    # Test that context parameters work with dict format
+    model_params = model._model_params({
+        "context": {"model": "gpt-4o", "temperature": 0.5}
+    })
+    assert model_params["model"] == "gpt-4o"
+    assert model_params["temperature"] == 0.5
+
+    # Test that context parameters work with object format
+    context_obj = ModelContext(model="gpt-3.5-turbo", temperature=0.7)
+    model_params = model._model_params({
+        "context": context_obj
+    })
+    assert model_params["model"] == "gpt-3.5-turbo"
+    assert model_params["temperature"] == 0.7
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {"OPENAI_API_KEY": "foo"},
+    clear=True,
+)
+def test_context_schema_with_defaults() -> None:
+    """Test context_schema with default parameters."""
+    from typing import NamedTuple
+
+    class ModelContext(NamedTuple):
+        model: str
+        temperature: float
+
+    # Create model with defaults and context_schema
+    model = init_chat_model(
+        model="gpt-4o",
+        temperature=0.2,
+        context_schema=ModelContext,
+        model_provider="openai"
+    )
+
+    # Test that defaults are preserved when no context
+    model_params = model._model_params({})
+    assert "model" not in model_params  # No context provided
+
+    # Test that context overrides defaults
+    model_params = model._model_params({
+        "context": {"model": "gpt-3.5-turbo", "temperature": 0.8}
+    })
+    assert model_params["model"] == "gpt-3.5-turbo"
+    assert model_params["temperature"] == 0.8
+
+
+@pytest.mark.requires("langchain_openai")
+@mock.patch.dict(
+    os.environ,
+    {"OPENAI_API_KEY": "foo"},
+    clear=True,
+)
+def test_context_schema_with_configurable() -> None:
+    """Test that context_schema works alongside configurable fields."""
+    from typing import NamedTuple
+
+    class ModelContext(NamedTuple):
+        model: str
+        temperature: float
+
+    # Create model with both configurable and context_schema
+    model = init_chat_model(
+        configurable_fields=["max_tokens"],
+        context_schema=ModelContext,
+        model_provider="openai"
+    )
+
+    # Test that both configurable and context work together
+    model_params = model._model_params({
+        "configurable": {"max_tokens": 100},
+        "context": {"model": "gpt-4o", "temperature": 0.5}
+    })
+    assert model_params["max_tokens"] == 100  # From configurable
+    assert model_params["model"] == "gpt-4o"  # From context
+    assert model_params["temperature"] == 0.5  # From context
