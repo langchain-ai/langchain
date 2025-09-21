@@ -83,11 +83,13 @@ def init_chat_model(
 
     .. note::
         Must have the integration package corresponding to the model provider installed.
-        You should look at the `provider integration's API reference <https://python.langchain.com/api_reference/reference.html#integrations>`__
+        You should look at the `provider integration's API reference
+        <https://python.langchain.com/api_reference/reference.html#integrations>`__
         to see what parameters are supported by the model.
 
     Args:
-        model: The name of the model, e.g. ``'o3-mini'``, ``'claude-3-5-sonnet-latest'``. You can
+        model: The name of the model, e.g. ``'o3-mini'``,
+            ``'claude-3-5-sonnet-latest'``. You can
             also specify model and model provider in a single argument using
             ``'{model_provider}:{model}'`` format, e.g. ``'openai:o1'``.
         model_provider: The model provider if not specified as part of model arg (see
@@ -226,7 +228,7 @@ def init_chat_model(
 
             configurable_model_with_default = init_chat_model(
                 "openai:gpt-4o",
-                configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
+                configurable_fields="any",  # configure params at runtime
                 config_prefix="foo",
                 temperature=0,
             )
@@ -698,8 +700,10 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
                 # If context is a dict, try to access as dict
                 if isinstance(context, dict):
-                    for param in ["model", "model_provider", "temperature", "max_tokens",
-                                "timeout", "max_retries", "base_url"]:
+                    for param in [
+                        "model", "model_provider", "temperature", "max_tokens",
+                        "timeout", "max_retries", "base_url"
+                    ]:
                         if param in context:
                             context_params[param] = context[param]
 
