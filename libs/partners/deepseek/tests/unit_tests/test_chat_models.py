@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
+import pydantic
 from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
@@ -12,6 +13,9 @@ from openai.types.chat import ChatCompletionMessage
 from pydantic import SecretStr
 
 from langchain_deepseek.chat_models import ChatDeepSeek
+
+# patch validation to ignore leading underscores due to OpenAI client issue
+pydantic._internal._model_construction.is_valid_field_name = lambda name: True
 
 
 class MockOpenAIResponse(BaseModel):
