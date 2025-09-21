@@ -48,7 +48,7 @@ def test_init_chat_model(model_name: str, model_provider: Optional[str]) -> None
         f"{model_provider}:{model_name}",
         api_key="foo",
     )
-    assert llm1.dict() == llm2.dict()
+    assert llm1.model_dump() == llm2.model_dump()
 
 
 def test_init_missing_dep() -> None:

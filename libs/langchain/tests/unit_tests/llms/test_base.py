@@ -22,7 +22,7 @@ def test_caching() -> None:
     """Test caching behavior."""
     set_llm_cache(InMemoryCache())
     llm = FakeLLM()
-    params = llm.dict()
+    params = llm.model_dump()
     params["stop"] = None
     llm_string = str(sorted([(k, v) for k, v in params.items()]))
     get_llm_cache().update("foo", llm_string, [Generation(text="fizz")])

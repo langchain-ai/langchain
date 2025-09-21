@@ -174,7 +174,7 @@ class BaseSingleActionAgent(BaseModel):
         Returns:
             Dict: Dictionary representation of agent.
         """
-        _dict = super().model_dump()
+        _dict = super().model_dump(**kwargs)
         try:
             _type = self._agent_type
         except NotImplementedError:
@@ -205,7 +205,7 @@ class BaseSingleActionAgent(BaseModel):
         directory_path.mkdir(parents=True, exist_ok=True)
 
         # Fetch dictionary to save
-        agent_dict = self.dict()
+        agent_dict = self.model_dump()
         if "_type" not in agent_dict:
             msg = f"Agent {self} does not support saving"
             raise NotImplementedError(msg)
@@ -320,7 +320,7 @@ class BaseMultiActionAgent(BaseModel):
     @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
-        _dict = super().model_dump()
+        _dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             _dict["_type"] = str(self._agent_type)
         return _dict
@@ -346,7 +346,7 @@ class BaseMultiActionAgent(BaseModel):
         save_path = Path(file_path) if isinstance(file_path, str) else file_path
 
         # Fetch dictionary to save
-        agent_dict = self.dict()
+        agent_dict = self.model_dump()
         if "_type" not in agent_dict:
             msg = f"Agent {self} does not support saving."
             raise NotImplementedError(msg)
@@ -655,8 +655,8 @@ class LLMSingleActionAgent(BaseSingleActionAgent):
     @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
-        del _dict["output_parser"]
+        _dict = super().model_dump(**kwargs)
+        _dict.pop("output_parser", None)
         return _dict
 
     def plan(
@@ -740,8 +740,8 @@ class Agent(BaseSingleActionAgent):
     @override
     def dict(self, **kwargs: Any) -> builtins.dict:
         """Return dictionary representation of agent."""
-        _dict = super().dict()
-        del _dict["output_parser"]
+        _dict = super().model_dump(**kwargs)
+        _dict.pop("output_parser", None)
         return _dict
 
     def get_allowed_tools(self) -> Optional[list[str]]:
