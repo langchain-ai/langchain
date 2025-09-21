@@ -1,6 +1,5 @@
 import json
 
-import pydantic
 import pytest  # type: ignore[import-not-found]
 from langchain_core.messages import (
     AIMessage,
@@ -15,10 +14,6 @@ from langchain_openai.chat_models.base import (
 )
 
 from langchain_xai import ChatXAI
-
-# patch validation to ignore leading underscores due to OpenAI client issue
-# TODO: remove when fixed in OpenAI client
-pydantic._internal._model_construction.is_valid_field_name = lambda name: True
 
 MODEL_NAME = "grok-4"
 
