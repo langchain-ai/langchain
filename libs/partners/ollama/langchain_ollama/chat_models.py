@@ -95,11 +95,12 @@ def _strip_think_tags(content: str) -> str:
         The content string with think tags removed
     """
     import re
+
     # Remove <think>...</think> blocks, including multiline content
     # Also clean up extra whitespace/newlines that might be left behind
-    result = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL)
+    result = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
     # Clean up multiple consecutive newlines and trim
-    result = re.sub(r'\n\s*\n', '\n', result)
+    result = re.sub(r"\n\s*\n", "\n", result)
     return result.strip()
 
 
