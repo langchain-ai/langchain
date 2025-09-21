@@ -10,6 +10,6 @@ def test_exa_retriever_init_time(benchmark: BenchmarkFixture) -> None:
 
     def _init_exa_retriever() -> None:
         for _ in range(10):
-            ExaSearchRetriever(api_key="test-key")
+            ExaSearchRetriever()
 
     benchmark(_init_exa_retriever)
