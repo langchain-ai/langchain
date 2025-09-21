@@ -3,6 +3,12 @@
 # Format: type(scope): description or type!: description (breaking)
 
 label-mapping:
+  # Features and enhancements
+  feature: ["feat"]
+
+  # Bug fixes
+  fix: ["fix"]
+
   # Documentation
   documentation: ["docs"]
 
@@ -35,3 +41,6 @@ label-mapping:
 
 # Enable breaking change detection
 parse-all-commits: false # Only parse PR title, not all commits
+
+# Auto-create missing labels
+add-missing-labels: true
