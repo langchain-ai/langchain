@@ -38,6 +38,7 @@ test = [
     "syrupy>=4.0.2,<5.0.0",
     "requests>=2.31.0,<3.0.0",
     "langchain-core",
+    "langchain-tests",
 ]
 test_integration = []
 lint = ["ruff>=0.12.2,<0.13.0"]
@@ -46,6 +47,7 @@ typing = ["mypy>=1.10.0,<2.0.0", "simsimd>=6.0.0,<7.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.ruff]
 target-version = "py39"

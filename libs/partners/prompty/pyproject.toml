@@ -29,6 +29,7 @@ test = [
     "langchain-core",
     "langchain",
     "langchain-text-splitters",
+    "langchain-tests",
 ]
 test_integration = []
 lint = ["ruff>=0.12.2,<0.13.0"]
@@ -44,6 +45,7 @@ typing = [
 langchain-core = { path = "../../core", editable = true }
 langchain-text-splitters = { path = "../../text-splitters", editable = true }
 langchain = { path = "../../langchain", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.ruff]
 target-version = "py39"
