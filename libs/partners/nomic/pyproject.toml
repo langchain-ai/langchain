@@ -27,6 +27,7 @@ test = [
     "pytest-mock>=3.10.0,<4.0.0",
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-benchmark",
     "freezegun>=1.2.2,<2.0.0",
     "syrupy>=4.0.2,<5.0.0",
     "langchain-core",

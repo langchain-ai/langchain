@@ -25,14 +25,15 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = [
     "pytest>=7.3.0,<8.0.0",
-    "freezegun>=1.2.2,<2.0.0",
     "pytest-mock>=3.10.0,<4.0.0",
-    "syrupy>=4.0.2,<5.0.0",
+    "pytest-benchmark",
     "pytest-watcher>=0.3.4,<1.0.0",
     "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "syrupy>=4.0.2,<5.0.0",
     "onnxruntime<1.20.0; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
-    "pytest-socket>=0.7.0,<1.0.0",
     "langchain-core",
     "langchain-tests",
 ]
