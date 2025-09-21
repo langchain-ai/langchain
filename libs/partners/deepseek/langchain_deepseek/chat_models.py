@@ -174,7 +174,10 @@ class ChatDeepSeek(BaseChatOpenAI):
     )
     """DeepSeek API base URL"""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True,
+        extra="ignore",
+    )
 
     @property
     def _llm_type(self) -> str:
