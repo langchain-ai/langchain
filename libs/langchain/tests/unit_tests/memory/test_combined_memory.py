@@ -1,5 +1,7 @@
 """Test for CombinedMemory class."""
 
+import re
+
 import pytest
 
 from langchain.memory import CombinedMemory, ConversationBufferMemory
@@ -34,7 +36,9 @@ def test_repeated_memory_var(example_memory: list[ConversationBufferMemory]) -> 
     """Test raising error when repeated memory variables found."""
     with pytest.raises(
         ValueError,
-        match="Value error, The same variables {'bar'} are found in "
-        "multiplememory object, which is not allowed by CombinedMemory.",
+        match=re.escape(
+            "Value error, The same variables {'bar'} are found in "
+            "multiplememory object, which is not allowed by CombinedMemory."
+        ),
     ):
         CombinedMemory(memories=[example_memory[1], example_memory[2]])
