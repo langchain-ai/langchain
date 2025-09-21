@@ -1,0 +1,37 @@
+# PR Title Labeler Configuration
+# Labels PRs based on conventional commit patterns in titles
+# Format: type(scope): description or type!: description (breaking)
+
+label-mapping:
+  # Documentation
+  documentation: ["docs"]
+
+  # Infrastructure and tooling
+  infra: ["chore", "ci", "build", "infra"]
+
+  # Breaking changes (detected by ! syntax)
+  breaking: ["breaking"]
+
+  integration:
+    [
+      "anthropic",
+      "chroma",
+      "deepseek",
+      "exa",
+      "fireworks",
+      "groq",
+      "huggingface",
+      "mistralai",
+      "nomic",
+      "ollama",
+      "openai",
+      "perplexity",
+      "prompty",
+      "qdrant",
+      "xai",
+    ]
+
+  release: ["release"]
+
+# Enable breaking change detection
+parse-all-commits: false # Only parse PR title, not all commits
