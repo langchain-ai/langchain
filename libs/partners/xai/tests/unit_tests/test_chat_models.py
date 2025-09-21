@@ -34,7 +34,7 @@ def test_xai_model_param() -> None:
     llm = ChatXAI(model_name="foo")  # type: ignore[call-arg]
     assert llm.model_name == "foo"
     ls_params = llm._get_ls_params()
-    assert ls_params["ls_provider"] == "xai"
+    assert ls_params.get("ls_provider") == "xai"
 
 
 def test_chat_xai_invalid_streaming_params() -> None:
