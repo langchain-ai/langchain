@@ -5,8 +5,8 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.10"
-dependencies = ["langchain-core<2.0.0,>=0.3.75", "groq<1,>=0.30.0"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = ["langchain-core>=0.3.76,<2.0.0", "groq>=0.30.0,<1.0.0"]
 name = "langchain-groq"
 version = "0.3.8"
 description = "An integration package connecting Groq and LangChain"
@@ -19,19 +19,18 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-retry<1.8.0,>=1.7.0",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-retry>=1.7.0,<1.8.0",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<0.13,>=0.12.2"]
+lint = ["ruff>=0.12.2,<0.13.0"]
 dev = ["langchain-core"]
 test_integration = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }

@@ -189,40 +189,6 @@ This can be very helpful when you've made changes to only certain parts of the p
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
 
-### Spellcheck
-
-Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
-Note that `codespell` finds common typos, so it could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
-
-To check spelling for this project:
-
-```bash
-# If you have `make` installed:
-make spell_check
-
-# If you don't have `make` (Windows alternative):
-uv run --all-groups codespell --toml pyproject.toml
-```
-
-To fix spelling in place:
-
-```bash
-# If you have `make` installed:
-make spell_fix
-
-# If you don't have `make` (Windows alternative):
-uv run --all-groups codespell --toml pyproject.toml -w
-```
-
-If codespell is incorrectly flagging a word, you can skip spellcheck for that word by adding it to the codespell config in the `pyproject.toml` file.
-
-```python
-[tool.codespell]
-...
-# Add here:
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
-```
-
 ### Pre-commit
 
 We use [pre-commit](https://pre-commit.com/) to ensure commits are formatted/linted.

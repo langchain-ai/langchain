@@ -5,7 +5,7 @@ AKA `version.py` in CI's `check_version_equality`.
 
 from typing import Any
 
-__version__ = "1.0.0a5"
+__version__ = "1.0.0a6"
 
 
 def __getattr__(name: str) -> Any:  # noqa: ANN401

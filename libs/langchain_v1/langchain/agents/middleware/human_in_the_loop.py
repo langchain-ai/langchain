@@ -143,7 +143,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         self.tool_configs = resolved_tool_configs
         self.description_prefix = description_prefix
 
-    def after_model(self, state: AgentState) -> dict[str, Any] | None:
+    def after_model(self, state: AgentState) -> dict[str, Any] | None:  # type: ignore[override]
         """Trigger HITL flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:
