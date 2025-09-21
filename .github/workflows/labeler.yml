@@ -1,4 +1,4 @@
-name: "Pull Request Labeler"
+name: "🏷️ Pull Request Labeler"
 
 on:
   pull_request_target:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   labeler:
+    name: 'label'
     permissions:
       contents: read
       pull-requests: write
