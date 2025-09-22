@@ -34,12 +34,12 @@ class Folder:
                 files.append(cls.from_structure(path))
             else:
                 files.append(
-                    File(path.name, path.read_text(encoding="utf-8").splitlines())
+                    File(path.name, path.read_text(encoding="utf-8").splitlines()),
                 )
 
         return Folder(name, *files)
 
-    def __eq__(self, __value: object) -> bool:
+    def __eq__(self, __value: object, /) -> bool:
         if isinstance(__value, File):
             return False
 
@@ -52,8 +52,11 @@ class Folder:
         if len(self.files) != len(__value.files):
             return False
 
-        for self_file, other_file in zip(self.files, __value.files):
+        for self_file, other_file in zip(self.files, __value.files, strict=False):
             if self_file != other_file:
                 return False
 
         return True
+
+    def __hash__(self) -> int:
+        return hash((self.name, tuple(self.files)))

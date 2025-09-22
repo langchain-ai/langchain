@@ -1,7 +1,9 @@
-"""**Embedding models**  are wrappers around embedding models
+"""**Embedding models**.
+
+**Embedding models**  are wrappers around embedding models
 from different APIs and services.
 
-**Embedding models** can be LLMs or not.
+Embedding models can be LLMs or not.
 
 **Class hierarchy:**
 
@@ -83,17 +85,17 @@ class HypotheticalDocumentEmbedder:
     def __init__(self, *args: Any, **kwargs: Any):
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead",
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
-        return H(*args, **kwargs)  # type: ignore[return-value]
+        return H(*args, **kwargs)  # type: ignore[return-value] # noqa: PLE0101
 
     @classmethod
     def from_llm(cls, *args: Any, **kwargs: Any) -> Any:
         logger.warning(
             "Using a deprecated class. Please use "
-            "`from langchain.chains import HypotheticalDocumentEmbedder` instead"
+            "`from langchain.chains import HypotheticalDocumentEmbedder` instead",
         )
         from langchain.chains.hyde.base import HypotheticalDocumentEmbedder as H
 
@@ -187,8 +189,8 @@ __all__ = [
     "ErnieEmbeddings",
     "FakeEmbeddings",
     "FastEmbedEmbeddings",
-    "GooglePalmEmbeddings",
     "GPT4AllEmbeddings",
+    "GooglePalmEmbeddings",
     "GradientEmbeddings",
     "HuggingFaceBgeEmbeddings",
     "HuggingFaceEmbeddings",

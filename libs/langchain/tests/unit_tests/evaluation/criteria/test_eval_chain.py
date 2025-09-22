@@ -15,24 +15,24 @@ from tests.unit_tests.llms.fake_llm import FakeLLM
 
 def test_resolve_criteria_str() -> None:
     assert CriteriaEvalChain.resolve_criteria("helpfulness") == {
-        "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS]
+        "helpfulness": _SUPPORTED_CRITERIA[Criteria.HELPFULNESS],
     }
     assert CriteriaEvalChain.resolve_criteria("correctness") == {
-        "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS]
+        "correctness": _SUPPORTED_CRITERIA[Criteria.CORRECTNESS],
     }
 
 
 @pytest.mark.parametrize(
-    "text,want",
+    ("text", "want"),
     [
         ("Y", {"reasoning": "", "value": "Y", "score": 1}),
         (
-            """Here is my step-by-step reasoning for the given criteria:
-The criterion is: "Do you like cake?" I like cake.
-Y""",
+            "Here is my step-by-step reasoning for the given criteria:\n"
+            'The criterion is: "Do you like cake?" I like cake.\n'
+            "Y",
             {
-                "reasoning": """Here is my step-by-step reasoning for the given criteria:
-The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
+                "reasoning": "Here is my step-by-step reasoning for the given criteria:"
+                '\nThe criterion is: "Do you like cake?" I like cake.',
                 "value": "Y",
                 "score": 1,
             },
@@ -51,7 +51,7 @@ The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
         ),
     ],
 )
-def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
+def test_criteria_result_output_parser_parse(text: str, want: dict) -> None:
     output_parser = CriteriaResultOutputParser()
     got = output_parser.parse(text)
     assert got.get("reasoning") == want["reasoning"]
@@ -62,20 +62,23 @@ def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
 @pytest.mark.parametrize("criterion", list(Criteria))
 def test_resolve_criteria_enum(criterion: Criteria) -> None:
     assert CriteriaEvalChain.resolve_criteria(criterion) == {
-        criterion.value: _SUPPORTED_CRITERIA[criterion]
+        criterion.value: _SUPPORTED_CRITERIA[criterion],
     }
 
 
 def test_criteria_eval_chain() -> None:
     chain = CriteriaEvalChain.from_llm(
         llm=FakeLLM(
-            queries={"text": "The meaning of life\nY"}, sequential_responses=True
+            queries={"text": "The meaning of life\nY"},
+            sequential_responses=True,
         ),
         criteria={"my criterion": "my criterion description"},
     )
     with pytest.warns(UserWarning, match=chain._skip_reference_warning):
         result = chain.evaluate_strings(
-            prediction="my prediction", reference="my reference", input="my input"
+            prediction="my prediction",
+            reference="my reference",
+            input="my input",
         )
     assert result["reasoning"] == "The meaning of life"
 
@@ -88,7 +91,9 @@ def test_criteria_eval_chain_missing_reference() -> None:
         ),
         criteria={"my criterion": "my criterion description"},
     )
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="LabeledCriteriaEvalChain requires a reference string."
+    ):
         chain.evaluate_strings(prediction="my prediction", input="my input")
 
 

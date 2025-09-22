@@ -11,7 +11,6 @@ from langchain_core.exceptions import OutputParserException
 from langchain_core.output_parsers import JsonOutputParser
 from langchain_core.outputs import Generation
 from langchain_core.utils.pydantic import (
-    IS_PYDANTIC_V2,
     PydanticBaseModel,
     TBaseModel,
 )
@@ -24,22 +23,16 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
     """The pydantic model to parse."""
 
     def _parse_obj(self, obj: dict) -> TBaseModel:
-        if IS_PYDANTIC_V2:
-            try:
-                if issubclass(self.pydantic_object, pydantic.BaseModel):
-                    return self.pydantic_object.model_validate(obj)
-                if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
-                    return self.pydantic_object.parse_obj(obj)
-                msg = f"Unsupported model version for PydanticOutputParser: \
-                            {self.pydantic_object.__class__}"
-                raise OutputParserException(msg)
-            except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
-                raise self._parser_exception(e, obj) from e
-        else:  # pydantic v1
-            try:
+        try:
+            if issubclass(self.pydantic_object, pydantic.BaseModel):
+                return self.pydantic_object.model_validate(obj)
+            if issubclass(self.pydantic_object, pydantic.v1.BaseModel):
                 return self.pydantic_object.parse_obj(obj)
-            except pydantic.ValidationError as e:
-                raise self._parser_exception(e, obj) from e
+            msg = f"Unsupported model version for PydanticOutputParser: \
+                        {self.pydantic_object.__class__}"
+            raise OutputParserException(msg)
+        except (pydantic.ValidationError, pydantic.v1.ValidationError) as e:
+            raise self._parser_exception(e, obj) from e
 
     def _parser_exception(
         self, e: Exception, json_object: dict
@@ -60,6 +53,10 @@ class PydanticOutputParser(JsonOutputParser, Generic[TBaseModel]):
                 If True, the output will be a JSON object containing
                 all the keys that have been returned so far.
                 Defaults to False.
+
+        Raises:
+            OutputParserException: If the result is not valid JSON
+                or does not conform to the pydantic model.
 
         Returns:
             The parsed pydantic object.

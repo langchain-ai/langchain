@@ -20,7 +20,7 @@ from langchain_core.runnables import RunnableConfig, RunnableSerializable, ensur
 from langchain_core.tools import BaseTool
 from langchain_core.utils.function_calling import convert_to_openai_tool
 from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self
+from typing_extensions import Self, override
 
 if TYPE_CHECKING:
     import openai
@@ -80,14 +80,14 @@ def _get_openai_client() -> openai.OpenAI:
 
         return openai.OpenAI()
     except ImportError as e:
-        raise ImportError(
-            "Unable to import openai, please install with `pip install openai`."
-        ) from e
+        msg = "Unable to import openai, please install with `pip install openai`."
+        raise ImportError(msg) from e
     except AttributeError as e:
-        raise AttributeError(
+        msg = (
             "Please make sure you are using a v1.1-compatible version of openai. You "
             'can install with `pip install "openai>=1.1"`.'
-        ) from e
+        )
+        raise AttributeError(msg) from e
 
 
 def _get_openai_async_client() -> openai.AsyncOpenAI:
@@ -96,14 +96,14 @@ def _get_openai_async_client() -> openai.AsyncOpenAI:
 
         return openai.AsyncOpenAI()
     except ImportError as e:
-        raise ImportError(
-            "Unable to import openai, please install with `pip install openai`."
-        ) from e
+        msg = "Unable to import openai, please install with `pip install openai`."
+        raise ImportError(msg) from e
     except AttributeError as e:
-        raise AttributeError(
+        msg = (
             "Please make sure you are using a v1.1-compatible version of openai. You "
             'can install with `pip install "openai>=1.1"`.'
-        ) from e
+        )
+        raise AttributeError(msg) from e
 
 
 def _is_assistants_builtin_tool(
@@ -128,8 +128,7 @@ def _get_assistants_tool(
     """
     if _is_assistants_builtin_tool(tool):
         return tool  # type: ignore[return-value]
-    else:
-        return convert_to_openai_tool(tool)
+    return convert_to_openai_tool(tool)
 
 
 OutputType = Union[
@@ -150,11 +149,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
 
             interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview"
+                model="gpt-4-1106-preview",
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = interpreter_assistant.invoke(
+                {"content": "What's 10 - 4 raised to the 2.7"}
+            )
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -167,10 +169,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
@@ -189,11 +192,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
+
 
             def execute_agent(agent, tools, input):
                 tool_map = {tool.name: tool for tool in tools}
@@ -202,21 +207,30 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                        tool_outputs.append(
+                            {"output": tool_output, "tool_call_id": action.tool_call_id}
+                        )
                     response = agent.invoke(
                         {
                             "tool_outputs": tool_outputs,
                             "run_id": action.run_id,
-                            "thread_id": action.thread_id
+                            "thread_id": action.thread_id,
                         }
                     )
 
                 return response
 
-            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
-            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
 
-    """  # noqa: E501
+            response = execute_agent(
+                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+            )
+            next_response = execute_agent(
+                agent,
+                tools,
+                {"content": "now add 17.241", "thread_id": response.thread_id},
+            )
+
+    """
 
     client: Any = Field(default_factory=_get_openai_client)
     """OpenAI or AzureOpenAI client."""
@@ -230,7 +244,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
     """Use as a LangChain agent, compatible with the AgentExecutor."""
 
     @model_validator(mode="after")
-    def validate_async_client(self) -> Self:
+    def _validate_async_client(self) -> Self:
         if self.async_client is None:
             import openai
 
@@ -272,8 +286,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         )
         return cls(assistant_id=assistant.id, client=client, **kwargs)
 
+    @override
     def invoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: dict,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> OutputType:
         """Invoke assistant.
 
@@ -299,6 +317,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
             config: Runnable config. Defaults to None.
+            **kwargs: Additional arguments.
 
         Return:
             If self.as_agent, will return
@@ -306,7 +325,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -314,13 +332,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
         )
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
                 tool_outputs = self._parse_intermediate_steps(
-                    input["intermediate_steps"]
+                    input["intermediate_steps"],
                 )
                 run = self.client.beta.threads.runs.submit_tool_outputs(**tool_outputs)
             # Starting a new thread and a new run.
@@ -332,7 +352,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                             "content": input["content"],
                             "metadata": input.get("message_metadata"),
                             "attachments": input.get("attachments"),
-                        }
+                        },
                     ],
                     "metadata": input.get("thread_metadata"),
                 }
@@ -353,12 +373,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run = self._wait_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
+            # Use sync response handler in sync invoke
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
@@ -385,6 +406,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
                 Will create default async_client if not specified.
+            **kwargs: Additional arguments.
 
         Returns:
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
@@ -399,8 +421,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         )
         return cls(assistant_id=assistant.id, async_client=async_client, **kwargs)
 
+    @override
     async def ainvoke(
-        self, input: dict, config: Optional[RunnableConfig] = None, **kwargs: Any
+        self,
+        input: dict,
+        config: Optional[RunnableConfig] = None,
+        **kwargs: Any,
     ) -> OutputType:
         """Async invoke assistant.
 
@@ -433,7 +459,6 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = config or {}
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -441,16 +466,18 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             inheritable_metadata=config.get("metadata"),
         )
         run_manager = callback_manager.on_chain_start(
-            dumpd(self), input, name=config.get("run_name") or self.get_name()
+            dumpd(self),
+            input,
+            name=config.get("run_name") or self.get_name(),
         )
         try:
             # Being run within AgentExecutor and there are tool outputs to submit.
             if self.as_agent and input.get("intermediate_steps"):
                 tool_outputs = await self._aparse_intermediate_steps(
-                    input["intermediate_steps"]
+                    input["intermediate_steps"],
                 )
                 run = await self.async_client.beta.threads.runs.submit_tool_outputs(
-                    **tool_outputs
+                    **tool_outputs,
                 )
             # Starting a new thread and a new run.
             elif "thread_id" not in input:
@@ -460,7 +487,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                             "role": "user",
                             "content": input["content"],
                             "metadata": input.get("message_metadata"),
-                        }
+                        },
                     ],
                     "metadata": input.get("thread_metadata"),
                 }
@@ -478,23 +505,25 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             # framework.
             else:
                 run = await self.async_client.beta.threads.runs.submit_tool_outputs(
-                    **input
+                    **input,
                 )
             run = await self._await_for_run(run.id, run.thread_id)
         except BaseException as e:
             run_manager.on_chain_error(e)
-            raise e
+            raise
         try:
-            response = self._get_response(run)
+            # Use async response handler in async ainvoke
+            response = await self._aget_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
-            raise e
+            raise
         else:
             run_manager.on_chain_end(response)
             return response
 
     def _parse_intermediate_steps(
-        self, intermediate_steps: list[tuple[OpenAIAssistantAction, str]]
+        self,
+        intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
@@ -508,17 +537,16 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]
-        submit_tool_outputs = {
+        return {
             "tool_outputs": tool_outputs,
             "run_id": last_action.run_id,
             "thread_id": last_action.thread_id,
         }
-        return submit_tool_outputs
 
-    def _create_run(self, input: dict) -> Any:
+    def _create_run(self, input_dict: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -534,15 +562,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             )
         }
         return self.client.beta.threads.runs.create(
-            input["thread_id"],
+            input_dict["thread_id"],
             assistant_id=self.assistant_id,
             **params,
         )
 
-    def _create_thread_and_run(self, input: dict, thread: dict) -> Any:
+    def _create_thread_and_run(self, input_dict: dict, thread: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -556,12 +584,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 "run_metadata",
             )
         }
-        run = self.client.beta.threads.create_and_run(
+        return self.client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
             **params,
         )
-        return run
 
     def _get_response(self, run: Any) -> Any:
         # TODO: Pagination
@@ -572,11 +599,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = self.client.beta.threads.messages.list(
-                run.thread_id, order="asc"
+                run.thread_id,
+                order="asc",
             )
             new_messages = [msg for msg in messages if msg.run_id == run.id]
             if not self.as_agent:
@@ -610,7 +638,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_id=run.id,
                 thread_id=run.thread_id,
             )
-        elif run.status == "requires_action":
+        if run.status == "requires_action":
             if not self.as_agent:
                 return run.required_action.submit_tool_outputs.tool_calls
             actions = []
@@ -619,10 +647,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 try:
                     args = json.loads(function.arguments, strict=False)
                 except JSONDecodeError as e:
-                    raise ValueError(
+                    msg = (
                         f"Received invalid JSON function arguments: "
                         f"{function.arguments} for function {function.name}"
-                    ) from e
+                    )
+                    raise ValueError(msg) from e
                 if len(args) == 1 and "__arg1" in args:
                     args = args["__arg1"]
                 actions.append(
@@ -633,14 +662,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                         log="",
                         run_id=run.id,
                         thread_id=run.thread_id,
-                    )
+                    ),
                 )
             return actions
-        else:
-            run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+        run_info = json.dumps(run.dict(), indent=2)
+        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info}"
+        raise ValueError(msg)
 
     def _wait_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True
@@ -652,7 +679,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         return run
 
     async def _aparse_intermediate_steps(
-        self, intermediate_steps: list[tuple[OpenAIAssistantAction, str]]
+        self,
+        intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
         last_action, last_output = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
@@ -666,17 +694,16 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             for action, output in intermediate_steps
             if action.tool_call_id in required_tool_call_ids
         ]
-        submit_tool_outputs = {
+        return {
             "tool_outputs": tool_outputs,
             "run_id": last_action.run_id,
             "thread_id": last_action.thread_id,
         }
-        return submit_tool_outputs
 
-    async def _acreate_run(self, input: dict) -> Any:
+    async def _acreate_run(self, input_dict: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -692,15 +719,15 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             )
         }
         return await self.async_client.beta.threads.runs.create(
-            input["thread_id"],
+            input_dict["thread_id"],
             assistant_id=self.assistant_id,
             **params,
         )
 
-    async def _acreate_thread_and_run(self, input: dict, thread: dict) -> Any:
+    async def _acreate_thread_and_run(self, input_dict: dict, thread: dict) -> Any:
         params = {
             k: v
-            for k, v in input.items()
+            for k, v in input_dict.items()
             if k
             in (
                 "instructions",
@@ -714,12 +741,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 "run_metadata",
             )
         }
-        run = await self.async_client.beta.threads.create_and_run(
+        return await self.async_client.beta.threads.create_and_run(
             assistant_id=self.assistant_id,
             thread=thread,
             **params,
         )
-        return run
 
     async def _aget_response(self, run: Any) -> Any:
         # TODO: Pagination
@@ -730,11 +756,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             major_version = int(openai.version.VERSION.split(".")[0])
             minor_version = int(openai.version.VERSION.split(".")[1])
             version_gte_1_14 = (major_version > 1) or (
-                major_version == 1 and minor_version >= 14
+                major_version == 1 and minor_version >= 14  # noqa: PLR2004
             )
 
             messages = await self.async_client.beta.threads.messages.list(
-                run.thread_id, order="asc"
+                run.thread_id,
+                order="asc",
             )
             new_messages = [msg for msg in messages if msg.run_id == run.id]
             if not self.as_agent:
@@ -764,7 +791,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 run_id=run.id,
                 thread_id=run.thread_id,
             )
-        elif run.status == "requires_action":
+        if run.status == "requires_action":
             if not self.as_agent:
                 return run.required_action.submit_tool_outputs.tool_calls
             actions = []
@@ -773,10 +800,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 try:
                     args = json.loads(function.arguments, strict=False)
                 except JSONDecodeError as e:
-                    raise ValueError(
+                    msg = (
                         f"Received invalid JSON function arguments: "
                         f"{function.arguments} for function {function.name}"
-                    ) from e
+                    )
+                    raise ValueError(msg) from e
                 if len(args) == 1 and "__arg1" in args:
                     args = args["__arg1"]
                 actions.append(
@@ -787,20 +815,19 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                         log="",
                         run_id=run.id,
                         thread_id=run.thread_id,
-                    )
+                    ),
                 )
             return actions
-        else:
-            run_info = json.dumps(run.dict(), indent=2)
-            raise ValueError(
-                f"Unexpected run status: {run.status}. Full run info:\n\n{run_info})"
-            )
+        run_info = json.dumps(run.dict(), indent=2)
+        msg = f"Unexpected run status: {run.status}. Full run info:\n\n{run_info}"
+        raise ValueError(msg)
 
     async def _await_for_run(self, run_id: str, thread_id: str) -> Any:
         in_progress = True
         while in_progress:
             run = await self.async_client.beta.threads.runs.retrieve(
-                run_id, thread_id=thread_id
+                run_id,
+                thread_id=thread_id,
             )
             in_progress = run.status in ("in_progress", "queued")
             if in_progress:

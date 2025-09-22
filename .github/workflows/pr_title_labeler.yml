@@ -1,0 +1,21 @@
+name: "🏷️ PR Title Labeler"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  pr-title-labeler:
+    name: 'label'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Label PR based on title
+      uses: grafana/pr-labeler-action@v0.1.0
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/pr-title-labeler.yml

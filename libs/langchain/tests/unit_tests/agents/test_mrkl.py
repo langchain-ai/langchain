@@ -16,8 +16,7 @@ def get_action_and_input(text: str) -> tuple[str, str]:
     output = MRKLOutputParser().parse(text)
     if isinstance(output, AgentAction):
         return output.tool, str(output.tool_input)
-    else:
-        return "Final Answer", output.return_values["output"]
+    return "Final Answer", output.return_values["output"]
 
 
 def test_get_action_and_input() -> None:
@@ -48,9 +47,11 @@ def test_get_action_and_input_newline() -> None:
 
 
 def test_get_action_and_input_newline_after_keyword() -> None:
-    """Test getting an action and action input from the text
+    """Test when there is a new line before the action.
+
+    Test getting an action and action input from the text
     when there is a new line before the action
-    (after the keywords "Action:" and "Action Input:")
+    (after the keywords "Action:" and "Action Input:").
     """
     llm_output = """
     I can use the `ls` command to list the contents of the directory \
@@ -69,8 +70,10 @@ def test_get_action_and_input_newline_after_keyword() -> None:
 
 
 def test_get_action_and_input_sql_query() -> None:
-    """Test getting the action and action input from the text
-    when the LLM output is a well formed SQL query
+    """Test when the LLM output is a well-formed SQL query.
+
+    Test getting the action and action input from the text
+    when the LLM output is a well formed SQL query.
     """
     llm_output = """
     I should query for the largest single shift payment for every unique user.
@@ -142,11 +145,11 @@ def test_valid_action_and_answer_raises_exception() -> None:
 def test_from_chains() -> None:
     """Test initializing from chains."""
     chain_configs = [
-        Tool(name="foo", func=lambda x: "foo", description="foobar1"),
-        Tool(name="bar", func=lambda x: "bar", description="foobar2"),
+        Tool(name="foo", func=lambda _x: "foo", description="foobar1"),
+        Tool(name="bar", func=lambda _x: "bar", description="foobar2"),
     ]
     agent = ZeroShotAgent.from_llm_and_tools(FakeLLM(), chain_configs)
-    expected_tools_prompt = "foo(x) - foobar1\nbar(x) - foobar2"
+    expected_tools_prompt = "foo(_x) - foobar1\nbar(_x) - foobar2"
     expected_tool_names = "foo, bar"
     expected_template = "\n\n".join(
         [
@@ -154,7 +157,7 @@ def test_from_chains() -> None:
             expected_tools_prompt,
             FORMAT_INSTRUCTIONS.format(tool_names=expected_tool_names),
             SUFFIX,
-        ]
+        ],
     )
     prompt = agent.llm_chain.prompt
     assert isinstance(prompt, PromptTemplate)

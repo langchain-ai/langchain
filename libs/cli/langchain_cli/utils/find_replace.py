@@ -1,8 +1,18 @@
+"""Find and replace text in files."""
+
 from pathlib import Path
-from typing import Dict
 
 
-def find_and_replace(source: str, replacements: Dict[str, str]) -> str:
+def find_and_replace(source: str, replacements: dict[str, str]) -> str:
+    """Find and replace text in a string.
+
+    Args:
+        source: The source string.
+        replacements: A dictionary of `{find: replace}` pairs.
+
+    Returns:
+        The modified string.
+    """
     rtn = source
 
     # replace keys in deterministic alphabetical order
@@ -14,6 +24,7 @@ def find_and_replace(source: str, replacements: Dict[str, str]) -> str:
 
 
 def replace_file(source: Path, replacements: dict[str, str]) -> None:
+    """Replace text in a file."""
     try:
         content = source.read_text()
     except UnicodeDecodeError:
@@ -25,6 +36,7 @@ def replace_file(source: Path, replacements: dict[str, str]) -> None:
 
 
 def replace_glob(parent: Path, glob: str, replacements: dict[str, str]) -> None:
+    """Replace text in files matching a glob pattern."""
     for file in parent.glob(glob):
         if not file.is_file():
             continue

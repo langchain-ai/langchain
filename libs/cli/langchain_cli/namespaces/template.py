@@ -1,16 +1,15 @@
-"""
-Develop installable templates.
-"""
+"""Develop installable templates."""
 
 import re
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Annotated
 
 import typer
-from typing_extensions import Annotated
+import uvicorn
 
+from langchain_cli.utils.github import list_packages
 from langchain_cli.utils.packages import get_langserve_export, get_package_root
 
 package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
@@ -19,14 +18,12 @@ package_cli = typer.Typer(no_args_is_help=True, add_completion=False)
 @package_cli.command()
 def new(
     name: Annotated[str, typer.Argument(help="The name of the folder to create")],
-    with_poetry: Annotated[
+    with_poetry: Annotated[  # noqa: FBT002
         bool,
         typer.Option("--with-poetry/--no-poetry", help="Don't run poetry install"),
     ] = False,
-):
-    """
-    Creates a new template package.
-    """
+) -> None:
+    """Create a new template package."""
     computed_name = name if name != "." else Path.cwd().name
     destination_dir = Path.cwd() / name if name != "." else Path.cwd()
 
@@ -37,7 +34,7 @@ def new(
     package_name_split = computed_name.split("/")
     package_name = (
         package_name_split[-2]
-        if len(package_name_split) > 1 and package_name_split[-1] == ""
+        if len(package_name_split) > 1 and not package_name_split[-1]
         else package_name_split[-1]
     )
     module_name = re.sub(
@@ -58,8 +55,9 @@ def new(
     pyproject_contents = pyproject.read_text()
     pyproject.write_text(
         pyproject_contents.replace("__package_name__", package_name).replace(
-            "__module_name__", module_name
-        )
+            "__module_name__",
+            module_name,
+        ),
     )
 
     # move module folder
@@ -76,26 +74,29 @@ def new(
     readme_contents = readme.read_text()
     readme.write_text(
         readme_contents.replace("__package_name__", package_name).replace(
-            "__app_route_code__", app_route_code
-        )
+            "__app_route_code__",
+            app_route_code,
+        ),
     )
 
     # poetry install
     if with_poetry:
-        subprocess.run(["poetry", "install"], cwd=destination_dir)
+        subprocess.run(["poetry", "install"], cwd=destination_dir, check=True)  # noqa: S607
 
 
 @package_cli.command()
 def serve(
     *,
     port: Annotated[
-        Optional[int], typer.Option(help="The port to run the server on")
+        int | None,
+        typer.Option(help="The port to run the server on"),
     ] = None,
     host: Annotated[
-        Optional[str], typer.Option(help="The host to run the server on")
+        str | None,
+        typer.Option(help="The host to run the server on"),
     ] = None,
     configurable: Annotated[
-        Optional[bool],
+        bool | None,
         typer.Option(
             "--configurable/--no-configurable",
             help="Whether to include a configurable route",
@@ -109,9 +110,7 @@ def serve(
         ),
     ] = False,
 ) -> None:
-    """
-    Starts a demo app for this template.
-    """
+    """Start a demo app for this template."""
     # load pyproject.toml
     project_dir = get_package_root()
     pyproject = project_dir / "pyproject.toml"
@@ -131,8 +130,6 @@ def serve(
         )
     )
 
-    import uvicorn
-
     uvicorn.run(
         script,
         factory=True,
@@ -143,12 +140,8 @@ def serve(
 
 
 @package_cli.command()
-def list(contains: Annotated[Optional[str], typer.Argument()] = None) -> None:
-    """
-    List all or search for available templates.
-    """
-    from langchain_cli.utils.github import list_packages
-
+def list(contains: Annotated[str | None, typer.Argument()] = None) -> None:  # noqa: A001
+    """List all or search for available templates."""
     packages = list_packages(contains=contains)
     for package in packages:
         typer.echo(package)

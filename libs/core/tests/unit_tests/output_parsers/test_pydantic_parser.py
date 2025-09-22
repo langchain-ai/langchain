@@ -1,7 +1,7 @@
 """Test PydanticOutputParser."""
 
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 import pydantic
 import pytest
@@ -13,7 +13,7 @@ from langchain_core.language_models import ParrotFakeChatModel
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.output_parsers.json import JsonOutputParser
 from langchain_core.prompts.prompt import PromptTemplate
-from langchain_core.utils.pydantic import TBaseModel
+from langchain_core.utils.pydantic import PydanticBaseModel, TBaseModel
 
 
 class ForecastV2(pydantic.BaseModel):
@@ -30,7 +30,7 @@ class ForecastV1(V1BaseModel):
 
 @pytest.mark.parametrize("pydantic_object", [ForecastV2, ForecastV1])
 def test_pydantic_parser_chaining(
-    pydantic_object: TBaseModel,
+    pydantic_object: Union[type[ForecastV2], type[ForecastV1]],
 ) -> None:
     prompt = PromptTemplate(
         template="""{{
@@ -43,11 +43,11 @@ def test_pydantic_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type,var-annotated]
+    parser = PydanticOutputParser[PydanticBaseModel](pydantic_object=pydantic_object)
     chain = prompt | model | parser
 
     res = chain.invoke({})
-    assert type(res) is pydantic_object
+    assert isinstance(res, pydantic_object)
     assert res.f_or_c == "C"
     assert res.temperature == 20
     assert res.forecast == "Sunny"
@@ -66,7 +66,9 @@ def test_pydantic_parser_validation(pydantic_object: TBaseModel) -> None:
 
     model = ParrotFakeChatModel()
 
-    parser = PydanticOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type,var-annotated]
+    parser: PydanticOutputParser[PydanticBaseModel] = PydanticOutputParser(
+        pydantic_object=pydantic_object
+    )
     chain = bad_prompt | model | parser
     with pytest.raises(OutputParserException):
         chain.invoke({})
@@ -88,7 +90,7 @@ def test_json_parser_chaining(
 
     model = ParrotFakeChatModel()
 
-    parser = JsonOutputParser(pydantic_object=pydantic_object)  # type: ignore[arg-type]
+    parser = JsonOutputParser(pydantic_object=pydantic_object)
     chain = prompt | model | parser
 
     res = chain.invoke({})
@@ -171,7 +173,7 @@ def test_pydantic_output_parser_type_inference() -> None:
 
     # Ignoring mypy error that appears in python 3.8, but not 3.11.
     # This seems to be functionally correct, so we'll ignore the error.
-    pydantic_parser = PydanticOutputParser(pydantic_object=SampleModel)
+    pydantic_parser = PydanticOutputParser[SampleModel](pydantic_object=SampleModel)
     schema = pydantic_parser.get_output_schema().model_json_schema()
 
     assert schema == {
@@ -187,8 +189,6 @@ def test_pydantic_output_parser_type_inference() -> None:
 
 def test_format_instructions_preserves_language() -> None:
     """Test format instructions does not attempt to encode into ascii."""
-    from pydantic import BaseModel, Field
-
     description = (
         "你好, こんにちは, नमस्ते, Bonjour, Hola, "
         "Olá, 안녕하세요, Jambo, Merhaba, Γειά σου"  # noqa: RUF001
@@ -202,5 +202,5 @@ def test_format_instructions_preserves_language() -> None:
             )
         )
 
-    parser = PydanticOutputParser(pydantic_object=Foo)
+    parser = PydanticOutputParser[Foo](pydantic_object=Foo)
     assert description in parser.get_format_instructions()

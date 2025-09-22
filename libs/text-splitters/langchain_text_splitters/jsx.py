@@ -1,5 +1,7 @@
+"""JavaScript framework text splitter."""
+
 import re
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
@@ -9,13 +11,15 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
 
     This splitter extends RecursiveCharacterTextSplitter to handle
     React (JSX), Vue, and Svelte code by:
+
     1. Detecting and extracting custom component tags from the text
     2. Using those tags as additional separators along with standard JS syntax
 
     The splitter combines:
-    - Custom component tags as separators (e.g. <Component, <div)
-    - JavaScript syntax elements (function, const, if, etc)
-    - Standard text splitting on newlines
+
+    * Custom component tags as separators (e.g. <Component, <div)
+    * JavaScript syntax elements (function, const, if, etc)
+    * Standard text splitting on newlines
 
     This allows chunks to break at natural boundaries in
     React, Vue, and Svelte component code.
@@ -23,7 +27,7 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
 
     def __init__(
         self,
-        separators: Optional[List[str]] = None,
+        separators: Optional[list[str]] = None,
         chunk_size: int = 2000,
         chunk_overlap: int = 0,
         **kwargs: Any,
@@ -39,13 +43,14 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
         super().__init__(chunk_size=chunk_size, chunk_overlap=chunk_overlap, **kwargs)
         self._separators = separators or []
 
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split text into chunks.
 
         This method splits the text into chunks by:
-        - Extracting unique opening component tags using regex
-        - Creating separators list with extracted tags and JS separators
-        - Splitting the text using the separators by calling the parent class method
+
+        * Extracting unique opening component tags using regex
+        * Creating separators list with extracted tags and JS separators
+        * Splitting the text using the separators by calling the parent class method
 
         Args:
             text: String containing code to split
@@ -94,5 +99,4 @@ class JSFrameworkTextSplitter(RecursiveCharacterTextSplitter):
             + ["<>", "\n\n", "&&\n", "||\n"]
         )
         self._separators = separators
-        chunks = super().split_text(text)
-        return chunks
+        return super().split_text(text)

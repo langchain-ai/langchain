@@ -65,7 +65,7 @@ const config = {
             },
             {
               test: /\.ya?ml$/,
-              use: 'yaml-loader'
+              use: "yaml-loader",
             },
             {
               test: /\.ipynb$/,
@@ -86,7 +86,8 @@ const config = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
-          editUrl: "https://github.com/langchain-ai/langchain/edit/master/docs/",
+          editUrl:
+            "https://github.com/langchain-ai/langchain/edit/master/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
@@ -120,6 +121,9 @@ const config = {
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
         },
+        googleTagManager: {
+          containerId: "GTM-MH4VTX4V",
+        },
       }),
     ],
   ],
@@ -138,9 +142,8 @@ const config = {
         respectPrefersColorScheme: true,
       },
       announcementBar: {
-        content:
-          '<strong>We are growing and hiring for multiple roles for LangChain, LangGraph and LangSmith. <a href="https://www.langchain.com/careers" target="_blank" rel="noopener noreferrer"> Join our team!</a></strong>',
-          backgroundColor: '#d0c9fe'
+        content: "These docs will be deprecated and no longer maintained with the release of LangChain v1.0 in October 2025. <a href='https://docs.langchain.com/oss/python/langchain/overview' target='_blank'>Visit the v1.0 alpha docs</a>",
+        backgroundColor: "#FFAE42",
       },
       prism: {
         theme: {
@@ -160,7 +163,10 @@ const config = {
       },
       image: "img/brand/theme-image.png",
       navbar: {
-        logo: {src: "img/brand/wordmark.png", srcDark: "img/brand/wordmark-dark.png"},
+        logo: {
+          src: "img/brand/wordmark.png",
+          srcDark: "img/brand/wordmark-dark.png",
+        },
         items: [
           {
             type: "docSidebar",
@@ -193,8 +199,9 @@ const config = {
                 label: "Error reference",
               },
               {
-                type: 'html',
-                value: '<hr class="dropdown-separator" style="margin-top: 0.5rem; margin-bottom: 0.5rem">',
+                type: "html",
+                value:
+                  '<hr class="dropdown-separator" style="margin-top: 0.5rem; margin-bottom: 0.5rem">',
               },
               {
                 href: "https://docs.smith.langchain.com",
@@ -212,7 +219,7 @@ const config = {
                 href: "https://js.langchain.com",
                 label: "LangChain JS/TS",
               },
-            ]
+            ],
           },
           {
             type: "dropdown",
@@ -221,17 +228,17 @@ const config = {
             items: [
               {
                 label: "v0.3",
-                href: "/docs/introduction"
+                href: "/docs/introduction",
               },
               {
                 label: "v0.2",
-                href: "https://python.langchain.com/v0.2/docs/introduction"
+                href: "https://python.langchain.com/v0.2/docs/introduction",
               },
               {
                 label: "v0.1",
-                href: "https://python.langchain.com/v0.1/docs/get_started/introduction"
-              }
-            ]
+                href: "https://python.langchain.com/v0.1/docs/get_started/introduction",
+              },
+            ],
           },
           {
             to: "https://chat.langchain.com",
@@ -254,8 +261,16 @@ const config = {
             title: "Community",
             items: [
               {
+                label: "LangChain Forum",
+                href: "https://forum.langchain.com/",
+              },
+              {
                 label: "Twitter",
                 href: "https://twitter.com/LangChainAI",
+              },
+              {
+                label: "Slack",
+                href: "https://www.langchain.com/join-community",
               },
             ],
           },
@@ -309,15 +324,6 @@ const config = {
         contextualSearch: false,
       },
     }),
-
-  scripts: [
-    baseUrl + "js/google_analytics.js",
-    {
-      src: "https://www.googletagmanager.com/gtag/js?id=G-9B66JQQH2F",
-      async: true,
-    },
-  ],
-
   customFields: {
     supabasePublicKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY,
     supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL,

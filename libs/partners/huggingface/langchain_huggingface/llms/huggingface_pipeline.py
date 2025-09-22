@@ -10,7 +10,7 @@ from langchain_core.language_models.llms import BaseLLM
 from langchain_core.outputs import Generation, GenerationChunk, LLMResult
 from pydantic import ConfigDict, model_validator
 
-from ..utils.import_utils import (
+from langchain_huggingface.utils.import_utils import (
     IMPORT_ERROR,
     is_ipex_available,
     is_openvino_available,
@@ -23,6 +23,7 @@ DEFAULT_TASK = "text-generation"
 VALID_TASKS = (
     "text2text-generation",
     "text-generation",
+    "image-text-to-text",
     "summarization",
     "translation",
 )
@@ -38,8 +39,8 @@ class HuggingFacePipeline(BaseLLM):
 
     To use, you should have the ``transformers`` python package installed.
 
-    Only supports `text-generation`, `text2text-generation`, `summarization` and
-    `translation`  for now.
+    Only supports `text-generation`, `text2text-generation`, `image-text-to-text`,
+    `summarization` and `translation`  for now.
 
     Example using from_model_id:
         .. code-block:: python
@@ -63,6 +64,7 @@ class HuggingFacePipeline(BaseLLM):
                 "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
             )
             hf = HuggingFacePipeline(pipeline=pipe)
+
     """
 
     pipeline: Any = None  #: :meta private:
@@ -86,7 +88,7 @@ class HuggingFacePipeline(BaseLLM):
     def pre_init_validator(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Ensure model_id is set either by pipeline or user input."""
         if "model_id" not in values:
-            if "pipeline" in values and values["pipeline"]:
+            if values.get("pipeline"):
                 values["model_id"] = values["pipeline"].model.name_or_path
             else:
                 values["model_id"] = DEFAULT_MODEL_ID
@@ -114,37 +116,41 @@ class HuggingFacePipeline(BaseLLM):
             )
             from transformers import pipeline as hf_pipeline  # type: ignore[import]
 
-        except ImportError:
-            raise ValueError(
+        except ImportError as e:
+            msg = (
                 "Could not import transformers python package. "
                 "Please install it with `pip install transformers`."
             )
+            raise ValueError(msg) from e
 
         _model_kwargs = model_kwargs.copy() if model_kwargs else {}
         if device_map is not None:
             if device is not None:
-                raise ValueError(
+                msg = (
                     "Both `device` and `device_map` are specified. "
                     "`device` will override `device_map`. "
                     "You will most likely encounter unexpected behavior."
                     "Please remove `device` and keep "
                     "`device_map`."
                 )
+                raise ValueError(msg)
 
             if "device_map" in _model_kwargs:
-                raise ValueError("`device_map` is already specified in `model_kwargs`.")
+                msg = "`device_map` is already specified in `model_kwargs`."
+                raise ValueError(msg)
 
             _model_kwargs["device_map"] = device_map
         tokenizer = AutoTokenizer.from_pretrained(model_id, **_model_kwargs)
 
         if backend in {"openvino", "ipex"}:
             if task not in VALID_TASKS:
-                raise ValueError(
+                msg = (
                     f"Got invalid task {task}, "
                     f"currently only {VALID_TASKS} are supported"
                 )
+                raise ValueError(msg)
 
-            err_msg = f'Backend: {backend} {IMPORT_ERROR.format(f"optimum[{backend}]")}'
+            err_msg = f"Backend: {backend} {IMPORT_ERROR.format(f'optimum[{backend}]')}"
             if not is_optimum_intel_available():
                 raise ImportError(err_msg)
 
@@ -155,12 +161,13 @@ class HuggingFacePipeline(BaseLLM):
                 else _MIN_OPTIMUM_VERSION
             )
             if is_optimum_intel_version("<", min_optimum_version):
-                raise ImportError(
+                msg = (
                     f"Backend: {backend} requires optimum-intel>="
                     f"{min_optimum_version}. You can install it with pip: "
                     "`pip install --upgrade --upgrade-strategy eager "
                     f"`optimum[{backend}]`."
                 )
+                raise ImportError(msg)
 
             if backend == "openvino":
                 if not is_openvino_available():
@@ -239,10 +246,11 @@ class HuggingFacePipeline(BaseLLM):
 
             cuda_device_count = torch.cuda.device_count()
             if device < -1 or (device >= cuda_device_count):
-                raise ValueError(
+                msg = (
                     f"Got device=={device}, "
                     f"device is required to be within [-1, {cuda_device_count})"
                 )
+                raise ValueError(msg)
             if device_map is not None and device < 0:
                 device = None
             if device is not None and device < 0 and cuda_device_count > 0:
@@ -270,10 +278,11 @@ class HuggingFacePipeline(BaseLLM):
             **_pipeline_kwargs,
         )
         if pipeline.task not in VALID_TASKS:
-            raise ValueError(
+            msg = (
                 f"Got invalid task {pipeline.task}, "
                 f"currently only {VALID_TASKS} are supported"
             )
+            raise ValueError(msg)
         return cls(
             pipeline=pipeline,
             model_id=model_id,
@@ -323,19 +332,22 @@ class HuggingFacePipeline(BaseLLM):
                     # if model returns multiple generations, pick the top one
                     response = response[0]
 
-                if self.pipeline.task == "text-generation":
-                    text = response["generated_text"]
-                elif self.pipeline.task == "text2text-generation":
+                if (
+                    self.pipeline.task == "text-generation"
+                    or self.pipeline.task == "text2text-generation"
+                    or self.pipeline.task == "image-text-to-text"
+                ):
                     text = response["generated_text"]
                 elif self.pipeline.task == "summarization":
                     text = response["summary_text"]
                 elif self.pipeline.task in "translation":
                     text = response["translation_text"]
                 else:
-                    raise ValueError(
+                    msg = (
                         f"Got invalid task {self.pipeline.task}, "
                         f"currently only {VALID_TASKS} are supported"
                     )
+                    raise ValueError(msg)
                 if skip_prompt:
                     text = text[len(batch_prompts[j]) :]
                 # Append the processed text to results
@@ -375,10 +387,7 @@ class HuggingFacePipeline(BaseLLM):
                 scores: torch.FloatTensor,
                 **kwargs: Any,
             ) -> bool:
-                for stop_id in stopping_ids_list:
-                    if input_ids[0][-1] == stop_id:
-                        return True
-                return False
+                return any(input_ids[0][-1] == stop_id for stop_id in stopping_ids_list)
 
         stopping_criteria = StoppingCriteriaList([StopOnTokens()])
 

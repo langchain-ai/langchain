@@ -23,13 +23,15 @@ def test_default_regex_matching(
     prediction = "Mindy is the CTO"
     reference = "^Mindy.*CTO$"
     result = regex_match_string_evaluator.evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] == 1.0
 
     reference = "^Mike.*CEO$"
     result = regex_match_string_evaluator.evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] == 0.0
 
@@ -40,6 +42,7 @@ def test_regex_matching_with_ignore_case(
     prediction = "Mindy is the CTO"
     reference = "^mindy.*cto$"
     result = regex_match_string_evaluator_ignore_case.evaluate_strings(
-        prediction=prediction, reference=reference
+        prediction=prediction,
+        reference=reference,
     )
     assert result["score"] == 1.0

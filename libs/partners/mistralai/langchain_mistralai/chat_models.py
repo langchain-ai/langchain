@@ -83,7 +83,7 @@ logger = logging.getLogger(__name__)
 TOOL_CALL_ID_PATTERN = re.compile(r"^[a-zA-Z0-9]{9}$")
 
 
-# This SSL context is equivelent to the default `verify=True`.
+# This SSL context is equivalent to the default `verify=True`.
 # https://www.python-httpx.org/advanced/ssl/#configuring-client-instances
 global_ssl_context = ssl.create_default_context(cafile=certifi.where())
 
@@ -94,8 +94,7 @@ def _create_retry_decorator(
         Union[AsyncCallbackManagerForLLMRun, CallbackManagerForLLMRun]
     ] = None,
 ) -> Callable[[Any], Any]:
-    """Returns a tenacity retry decorator, preconfigured to handle exceptions"""
-
+    """Return a tenacity retry decorator, preconfigured to handle exceptions."""
     errors = [httpx.RequestError, httpx.StreamError]
     return create_base_retry_decorator(
         error_types=errors, max_retries=llm.max_retries, run_manager=run_manager
@@ -103,12 +102,12 @@ def _create_retry_decorator(
 
 
 def _is_valid_mistral_tool_call_id(tool_call_id: str) -> bool:
-    """Check if tool call ID is nine character string consisting of a-z, A-Z, 0-9"""
+    """Check if tool call ID is nine character string consisting of a-z, A-Z, 0-9."""
     return bool(TOOL_CALL_ID_PATTERN.match(tool_call_id))
 
 
 def _base62_encode(num: int) -> str:
-    """Encodes a number in base62 and ensures result is of a specified length."""
+    """Encode a number in base62 and ensures result is of a specified length."""
     base62 = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if num == 0:
         return base62[0]
@@ -122,24 +121,24 @@ def _base62_encode(num: int) -> str:
 
 
 def _convert_tool_call_id_to_mistral_compatible(tool_call_id: str) -> str:
-    """Convert a tool call ID to a Mistral-compatible format"""
+    """Convert a tool call ID to a Mistral-compatible format."""
     if _is_valid_mistral_tool_call_id(tool_call_id):
         return tool_call_id
-    else:
-        hash_bytes = hashlib.sha256(tool_call_id.encode()).digest()
-        hash_int = int.from_bytes(hash_bytes, byteorder="big")
-        base62_str = _base62_encode(hash_int)
-        if len(base62_str) >= 9:
-            return base62_str[:9]
-        else:
-            return base62_str.rjust(9, "0")
+    hash_bytes = hashlib.sha256(tool_call_id.encode()).digest()
+    hash_int = int.from_bytes(hash_bytes, byteorder="big")
+    base62_str = _base62_encode(hash_int)
+    if len(base62_str) >= 9:
+        return base62_str[:9]
+    return base62_str.rjust(9, "0")
 
 
 def _convert_mistral_chat_message_to_message(
     _message: dict,
 ) -> BaseMessage:
     role = _message["role"]
-    assert role == "assistant", f"Expected role to be 'assistant', got {role}"
+    if role != "assistant":
+        msg = f"Expected role to be 'assistant', got {role}"
+        raise ValueError(msg)
     content = cast(str, _message["content"])
 
     additional_kwargs: dict = {}
@@ -169,9 +168,12 @@ def _raise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
         error_message = response.read().decode("utf-8")
-        raise httpx.HTTPStatusError(
+        msg = (
             f"Error response {response.status_code} "
-            f"while fetching {response.url}: {error_message}",
+            f"while fetching {response.url}: {error_message}"
+        )
+        raise httpx.HTTPStatusError(
+            msg,
             request=response.request,
             response=response,
         )
@@ -181,9 +183,12 @@ async def _araise_on_error(response: httpx.Response) -> None:
     """Raise an error if the response is an error."""
     if httpx.codes.is_error(response.status_code):
         error_message = (await response.aread()).decode("utf-8")
-        raise httpx.HTTPStatusError(
+        msg = (
             f"Error response {response.status_code} "
-            f"while fetching {response.url}: {error_message}",
+            f"while fetching {response.url}: {error_message}"
+        )
+        raise httpx.HTTPStatusError(
+            msg,
             request=response.request,
             response=response,
         )
@@ -219,10 +224,9 @@ async def acompletion_with_retry(
                 llm.async_client, "POST", "/chat/completions", json=kwargs
             )
             return _aiter_sse(event_source)
-        else:
-            response = await llm.async_client.post(url="/chat/completions", json=kwargs)
-            await _araise_on_error(response)
-            return response.json()
+        response = await llm.async_client.post(url="/chat/completions", json=kwargs)
+        await _araise_on_error(response)
+        return response.json()
 
     return await _completion_with_retry(**kwargs)
 
@@ -236,7 +240,7 @@ def _convert_chunk_to_message_chunk(
     content = _delta.get("content") or ""
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    if role == "assistant" or default_class == AIMessageChunk:
         additional_kwargs: dict = {}
         response_metadata = {}
         if raw_tool_calls := _delta.get("tool_calls"):
@@ -271,7 +275,8 @@ def _convert_chunk_to_message_chunk(
         if _choice.get("finish_reason") is not None and isinstance(
             chunk.get("model"), str
         ):
-            response_metadata["model_name"] = chunk.get("model")
+            response_metadata["model_name"] = chunk["model"]
+            response_metadata["finish_reason"] = _choice["finish_reason"]
         return AIMessageChunk(
             content=content,
             additional_kwargs=additional_kwargs,
@@ -279,20 +284,19 @@ def _convert_chunk_to_message_chunk(
             usage_metadata=usage_metadata,  # type: ignore[arg-type]
             response_metadata=response_metadata,
         )
-    elif role == "system" or default_class == SystemMessageChunk:
+    if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
-    elif role or default_class == ChatMessageChunk:
+    if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
-    else:
-        return default_class(content=content)  # type: ignore[call-arg]
+    return default_class(content=content)  # type: ignore[call-arg]
 
 
 def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
-    """Format Langchain ToolCall to dict expected by Mistral."""
+    """Format LangChain ToolCall to dict expected by Mistral."""
     result: dict[str, Any] = {
         "function": {
             "name": tool_call["name"],
-            "arguments": json.dumps(tool_call["args"]),
+            "arguments": json.dumps(tool_call["args"], ensure_ascii=False),
         }
     }
     if _id := tool_call.get("id"):
@@ -302,7 +306,7 @@ def _format_tool_call_for_mistral(tool_call: ToolCall) -> dict:
 
 
 def _format_invalid_tool_call_for_mistral(invalid_tool_call: InvalidToolCall) -> dict:
-    """Format Langchain InvalidToolCall to dict expected by Mistral."""
+    """Format LangChain InvalidToolCall to dict expected by Mistral."""
     result: dict[str, Any] = {
         "function": {
             "name": invalid_tool_call["name"],
@@ -319,18 +323,24 @@ def _convert_message_to_mistral_chat_message(
     message: BaseMessage,
 ) -> dict:
     if isinstance(message, ChatMessage):
-        return dict(role=message.role, content=message.content)
-    elif isinstance(message, HumanMessage):
-        return dict(role="user", content=message.content)
-    elif isinstance(message, AIMessage):
+        return {"role": message.role, "content": message.content}
+    if isinstance(message, HumanMessage):
+        return {"role": "user", "content": message.content}
+    if isinstance(message, AIMessage):
         message_dict: dict[str, Any] = {"role": "assistant"}
         tool_calls = []
         if message.tool_calls or message.invalid_tool_calls:
             for tool_call in message.tool_calls:
-                tool_calls.append(_format_tool_call_for_mistral(tool_call))
+                tool_calls.extend(
+                    [
+                        _format_tool_call_for_mistral(tool_call)
+                        for tool_call in message.tool_calls
+                    ]
+                )
             for invalid_tool_call in message.invalid_tool_calls:
-                tool_calls.append(
+                tool_calls.extend(
                     _format_invalid_tool_call_for_mistral(invalid_tool_call)
+                    for invalid_tool_call in message.invalid_tool_calls
                 )
         elif "tool_calls" in message.additional_kwargs:
             for tc in message.additional_kwargs["tool_calls"]:
@@ -357,9 +367,9 @@ def _convert_message_to_mistral_chat_message(
         if "prefix" in message.additional_kwargs:
             message_dict["prefix"] = message.additional_kwargs["prefix"]
         return message_dict
-    elif isinstance(message, SystemMessage):
-        return dict(role="system", content=message.content)
-    elif isinstance(message, ToolMessage):
+    if isinstance(message, SystemMessage):
+        return {"role": "system", "content": message.content}
+    if isinstance(message, ToolMessage):
         return {
             "role": "tool",
             "content": message.content,
@@ -368,8 +378,8 @@ def _convert_message_to_mistral_chat_message(
                 message.tool_call_id
             ),
         }
-    else:
-        raise ValueError(f"Got unknown type {message}")
+    msg = f"Got unknown type {message}"
+    raise ValueError(msg)
 
 
 class ChatMistralAI(BaseChatModel):
@@ -378,10 +388,10 @@ class ChatMistralAI(BaseChatModel):
     # The type for client and async_client is ignored because the type is not
     # an Optional after the model is initialized and the model_validator
     # is run.
-    client: httpx.Client = Field(  # type: ignore # : meta private:
+    client: httpx.Client = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
     )
-    async_client: httpx.AsyncClient = Field(  # type: ignore # : meta private:
+    async_client: httpx.AsyncClient = Field(  # type: ignore[assignment] # : meta private:
         default=None, exclude=True
     )  #: :meta private:
     mistral_api_key: Optional[SecretStr] = Field(
@@ -397,7 +407,8 @@ class ChatMistralAI(BaseChatModel):
     max_tokens: Optional[int] = None
     top_p: float = 1
     """Decode using nucleus sampling: consider the smallest set of tokens whose
-       probability sum is at least top_p. Must be in the closed interval [0.0, 1.0]."""
+    probability sum is at least ``top_p``. Must be in the closed interval
+    ``[0.0, 1.0]``."""
     random_seed: Optional[int] = None
     safe_mode: Optional[bool] = None
     streaming: bool = False
@@ -414,8 +425,7 @@ class ChatMistralAI(BaseChatModel):
     def build_extra(cls, values: dict[str, Any]) -> Any:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
-        values = _build_model_kwargs(values, all_required_field_names)
-        return values
+        return _build_model_kwargs(values, all_required_field_names)
 
     @property
     def _default_params(self) -> dict[str, Any]:
@@ -429,8 +439,7 @@ class ChatMistralAI(BaseChatModel):
             "safe_prompt": self.safe_mode,
             **self.model_kwargs,
         }
-        filtered = {k: v for k, v in defaults.items() if v is not None}
-        return filtered
+        return {k: v for k, v in defaults.items() if v is not None}
 
     def _get_ls_params(
         self, stop: Optional[list[str]] = None, **kwargs: Any
@@ -439,7 +448,7 @@ class ChatMistralAI(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="mistral",
-            ls_model_name=self.model,
+            ls_model_name=params.get("model", self.model),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -478,13 +487,11 @@ class ChatMistralAI(BaseChatModel):
                             yield event.json()
 
                 return iter_sse()
-            else:
-                response = self.client.post(url="/chat/completions", json=kwargs)
-                _raise_on_error(response)
-                return response.json()
+            response = self.client.post(url="/chat/completions", json=kwargs)
+            _raise_on_error(response)
+            return response.json()
 
-        rtn = _completion_with_retry(**kwargs)
-        return rtn
+        return _completion_with_retry(**kwargs)
 
     def _combine_llm_outputs(self, llm_outputs: list[Optional[dict]]) -> dict:
         overall_token_usage: dict = {}
@@ -499,8 +506,7 @@ class ChatMistralAI(BaseChatModel):
                         overall_token_usage[k] += v
                     else:
                         overall_token_usage[k] = v
-        combined = {"token_usage": overall_token_usage, "model_name": self.model}
-        return combined
+        return {"token_usage": overall_token_usage, "model_name": self.model}
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
@@ -542,10 +548,12 @@ class ChatMistralAI(BaseChatModel):
             )
 
         if self.temperature is not None and not 0 <= self.temperature <= 1:
-            raise ValueError("temperature must be in the range [0.0, 1.0]")
+            msg = "temperature must be in the range [0.0, 1.0]"
+            raise ValueError(msg)
 
         if self.top_p is not None and not 0 <= self.top_p <= 1:
-            raise ValueError("top_p must be in the range [0.0, 1.0]")
+            msg = "top_p must be in the range [0.0, 1.0]"
+            raise ValueError(msg)
 
         return self
 
@@ -554,7 +562,7 @@ class ChatMistralAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -592,7 +600,7 @@ class ChatMistralAI(BaseChatModel):
         llm_output = {
             "token_usage": token_usage,
             "model_name": self.model,
-            "model": self.model,  # Backwards compatability
+            "model": self.model,  # Backwards compatibility
         }
         return ChatResult(generations=generations, llm_output=llm_output)
 
@@ -666,7 +674,7 @@ class ChatMistralAI(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        stream: Optional[bool] = None,
+        stream: Optional[bool] = None,  # noqa: FBT001
         **kwargs: Any,
     ) -> ChatResult:
         should_stream = stream if stream is not None else self.streaming
@@ -686,7 +694,7 @@ class ChatMistralAI(BaseChatModel):
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,  # noqa: PYI051
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -699,20 +707,20 @@ class ChatMistralAI(BaseChatModel):
                 :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
-                "auto" to automatically determine which function to call
+                ``'auto'`` to automatically determine which function to call
                 (if any), or a dict of the form:
                 {"type": "function", "function": {"name": <<tool_name>>}}.
             kwargs: Any additional parameters are passed directly to
                 ``self.bind(**kwargs)``.
-        """
 
+        """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
         if tool_choice:
             tool_names = []
             for tool in formatted_tools:
-                if "function" in tool and (name := tool["function"].get("name")):
-                    tool_names.append(name)
-                elif name := tool.get("name"):
+                if ("function" in tool and (name := tool["function"].get("name"))) or (
+                    name := tool.get("name")
+                ):
                     tool_names.append(name)
                 else:
                     pass
@@ -735,15 +743,16 @@ class ChatMistralAI(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
-            schema:
-                The output schema. Can be passed in as:
-                    - an OpenAI function/tool schema,
-                    - a JSON Schema,
-                    - a TypedDict class (support added in 0.1.12),
-                    - or a Pydantic class.
+            schema: The output schema. Can be passed in as:
+
+                - an OpenAI function/tool schema,
+                - a JSON Schema,
+                - a TypedDict class (support added in 0.1.12),
+                - or a Pydantic class.
+
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
@@ -757,13 +766,13 @@ class ChatMistralAI(BaseChatModel):
 
             method: The method for steering model generation, one of:
 
-                - "function_calling":
+                - ``'function_calling'``:
                     Uses Mistral's
                     `function-calling feature <https://docs.mistral.ai/capabilities/function_calling/>`_.
-                - "json_schema":
+                - ``'json_schema'``:
                     Uses Mistral's
                     `structured output feature <https://docs.mistral.ai/capabilities/structured-output/custom_structured_output/>`_.
-                - "json_mode":
+                - ``'json_mode'``:
                     Uses Mistral's
                     `JSON mode <https://docs.mistral.ai/capabilities/structured-output/json_mode/>`_.
                     Note that if using JSON mode then you
@@ -780,7 +789,13 @@ class ChatMistralAI(BaseChatModel):
                 then both the raw model response (a BaseMessage) and the parsed model
                 response will be returned. If an error occurs during output parsing it
                 will be caught and returned as well. The final output is always a dict
-                with keys "raw", "parsed", and "parsing_error".
+                with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
+
+            kwargs: Any additional parameters are passed directly to
+                ``self.bind(**kwargs)``. This is useful for passing in
+                parameters such as ``tool_choice`` or ``tools`` to control
+                which tool the model should call, or to pass in parameters such as
+                ``stop`` to control when the model should stop generating output.
 
         Returns:
             A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
@@ -791,9 +806,9 @@ class ChatMistralAI(BaseChatModel):
             Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
             If ``include_raw`` is True, then Runnable outputs a dict with keys:
-                - ``"raw"``: BaseMessage
-                - ``"parsed"``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
-                - ``"parsing_error"``: Optional[BaseException]
+                - ``'raw'``: BaseMessage
+                - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
+                - ``'parsing_error'``: Optional[BaseException]
 
         Example: schema=Pydantic class, method="function_calling", include_raw=False:
             .. code-block:: python
@@ -965,14 +980,16 @@ class ChatMistralAI(BaseChatModel):
         """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
-            raise ValueError(f"Received unsupported arguments {kwargs}")
+            msg = f"Received unsupported arguments {kwargs}"
+            raise ValueError(msg)
         is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
         if method == "function_calling":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is 'function_calling'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             # TODO: Update to pass in tool name as tool_choice if/when Mistral supports
             # specifying a tool.
             llm = self.bind_tools(
@@ -1011,10 +1028,11 @@ class ChatMistralAI(BaseChatModel):
             )
         elif method == "json_schema":
             if schema is None:
-                raise ValueError(
+                msg = (
                     "schema must be specified when method is 'json_schema'. "
                     "Received None."
                 )
+                raise ValueError(msg)
             response_format = _convert_to_openai_response_format(schema, strict=True)
             llm = self.bind(
                 response_format=response_format,
@@ -1038,8 +1056,7 @@ class ChatMistralAI(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser
 
     @property
     def _identifying_params(self) -> dict[str, Any]:
@@ -1057,7 +1074,7 @@ class ChatMistralAI(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this model can be serialized by Langchain."""
+        """Return whether this model can be serialized by LangChain."""
         return True
 
     @classmethod
@@ -1069,7 +1086,7 @@ class ChatMistralAI(BaseChatModel):
 def _convert_to_openai_response_format(
     schema: Union[dict[str, Any], type], *, strict: Optional[bool] = None
 ) -> dict:
-    """Same as in ChatOpenAI, but don't pass through Pydantic BaseModels."""
+    """Perform same op as in ChatOpenAI, but do not pass through Pydantic BaseModels."""
     if (
         isinstance(schema, dict)
         and "json_schema" in schema

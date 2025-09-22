@@ -1,18 +1,13 @@
 import asyncio
 import re
 import sys
+import time
 import uuid
 import warnings
 from collections.abc import AsyncIterator, Awaitable, Iterator, Sequence
 from functools import partial
 from operator import itemgetter
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Optional, Union, cast
 from uuid import UUID
 
 import pytest
@@ -23,6 +18,7 @@ from pytest_mock import MockerFixture
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import TypedDict, override
 
+from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.callbacks.manager import (
     AsyncCallbackManagerForRetrieverRun,
     CallbackManagerForRetrieverRun,
@@ -35,13 +31,10 @@ from langchain_core.language_models import (
     FakeListLLM,
     FakeStreamingListLLM,
 )
+from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.load import dumpd, dumps
 from langchain_core.load.load import loads
-from langchain_core.messages import (
-    AIMessageChunk,
-    HumanMessage,
-    SystemMessage,
-)
+from langchain_core.messages import AIMessageChunk, HumanMessage, SystemMessage
 from langchain_core.messages.base import BaseMessage
 from langchain_core.output_parsers import (
     BaseOutputParser,
@@ -90,9 +83,7 @@ from langchain_core.tracers import (
     RunLogPatch,
 )
 from langchain_core.tracers.context import collect_runs
-from langchain_core.utils.pydantic import (
-    PYDANTIC_VERSION,
-)
+from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _normalize_schema, _schema
 from tests.unit_tests.stubs import AnyStr, _any_id_ai_message, _any_id_ai_message_chunk
 
@@ -102,6 +93,7 @@ PYDANTIC_VERSION_AT_LEAST_210 = version.parse("2.10") <= PYDANTIC_VERSION
 
 class FakeTracer(BaseTracer):
     """Fake tracer that records LangChain execution.
+
     It replaces run ids with deterministic UUIDs for snapshotting.
     """
 
@@ -242,7 +234,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
     }
     assert fake.get_config_jsonschema(include=["tags", "metadata", "run_name"]) == {
         "properties": {
-            "metadata": {"default": None, "title": "Metadata", "type": "object"},
+            "metadata": {
+                "default": None,
+                "title": "Metadata",
+                "type": "object",
+            },
             "run_name": {"default": None, "title": "Run Name", "type": "string"},
             "tags": {
                 "default": None,
@@ -321,14 +317,11 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
                 "\n"
                 "    .. code-block:: python\n"
                 "\n"
-                "        from langchain_core.documents "
-                "import Document\n"
+                "        from langchain_core.documents import Document\n"
                 "\n"
                 "        document = Document(\n"
-                '            page_content="Hello, '
-                'world!",\n'
-                '            metadata={"source": '
-                '"https://example.com"}\n'
+                '            page_content="Hello, world!", '
+                'metadata={"source": "https://example.com"}\n'
                 "        )",
                 "properties": {
                     "id": {
@@ -442,13 +435,7 @@ def test_schemas(snapshot: SnapshotAssertion) -> None:
         "$ref": "#/definitions/RouterInput",
         "definitions": {
             "RouterInput": {
-                "description": "Router input.\n"
-                "\n"
-                "Attributes:\n"
-                "    key: The key to route "
-                "on.\n"
-                "    input: The input to pass "
-                "to the selected Runnable.",
+                "description": "Router input.",
                 "properties": {
                     "input": {"title": "Input"},
                     "key": {"title": "Key", "type": "string"},
@@ -671,7 +658,7 @@ def test_with_types_with_type_generics() -> None:
 
 def test_schema_with_itemgetter() -> None:
     """Test runnable with itemgetter."""
-    foo = RunnableLambda(itemgetter("hello"))
+    foo: Runnable = RunnableLambda(itemgetter("hello"))
     assert _schema(foo.input_schema) == {
         "properties": {"hello": {"title": "Hello"}},
         "required": ["hello"],
@@ -2785,7 +2772,12 @@ Question:
                 response_metadata={},
             ),
             HumanMessage(
-                content="Context:\n[Document(metadata={}, page_content='foo'), Document(metadata={}, page_content='bar')]\n\nQuestion:\nWhat is your name?",
+                content="Context:\n"
+                "[Document(metadata={}, page_content='foo'), "
+                "Document(metadata={}, page_content='bar')]\n"
+                "\n"
+                "Question:\n"
+                "What is your name?",
                 additional_kwargs={},
                 response_metadata={},
             ),
@@ -3804,12 +3796,14 @@ class FakeSplitIntoListParser(BaseOutputParser[list[str]]):
         """Return whether or not the class is serializable."""
         return True
 
+    @override
     def get_format_instructions(self) -> str:
         return (
             "Your response should be a list of comma separated values, "
             "eg: `foo, bar, baz`"
         )
 
+    @override
     def parse(self, text: str) -> list[str]:
         """Parse the output of an LLM call."""
         return text.strip().split(", ")
@@ -3870,14 +3864,14 @@ def test_retrying(mocker: MockerFixture) -> None:
             raise RuntimeError(msg)
         return x
 
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock)
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.invoke(1)
 
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
@@ -3886,8 +3880,8 @@ def test_retrying(mocker: MockerFixture) -> None:
             exponential_jitter_params={"initial": 0.1},
         ).invoke(1)
 
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
 
     with pytest.raises(RuntimeError):
         runnable.with_retry(
@@ -3896,8 +3890,8 @@ def test_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError,),
         ).invoke(2)
 
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1  # did not retry
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         runnable.with_retry(
@@ -3907,8 +3901,8 @@ def test_retrying(mocker: MockerFixture) -> None:
         ).batch([1, 2, 0])
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 3 + 2
+    lambda_mock.reset_mock()
 
     output = runnable.with_retry(
         stop_after_attempt=2,
@@ -3917,12 +3911,64 @@ def test_retrying(mocker: MockerFixture) -> None:
     ).batch([1, 2, 0], return_exceptions=True)
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
+    assert lambda_mock.call_count == 3 + 2
     assert len(output) == 3
     assert isinstance(output[0], ValueError)
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
-    _lambda_mock.reset_mock()
+    lambda_mock.reset_mock()
+
+
+def test_retry_batch_preserves_order() -> None:
+    """Regression test: batch with retry should preserve input order.
+
+    The previous implementation stored successful results in a map keyed by the
+    index within the *pending* (filtered) list rather than the original input
+    index, causing collisions after retries. This produced duplicated outputs
+    and dropped earlier successes (e.g. [0,1,2] -> [1,1,2]).
+    """
+    # Fail only the middle element on the first attempt to trigger the bug.
+    first_fail: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:  # pragma: no cover - trivial
+        if x in first_fail:
+            first_fail.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail)
+
+    results = runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).batch([0, 1, 2])
+
+    # Expect exact ordering preserved.
+    assert results == [0, 1, 2]
+
+
+async def test_async_retry_batch_preserves_order() -> None:
+    """Async variant of order preservation regression test."""
+    first_fail: set[int] = {1}
+
+    def sometimes_fail(x: int) -> int:  # pragma: no cover - trivial
+        if x in first_fail:
+            first_fail.remove(x)
+            msg = "fail once"
+            raise ValueError(msg)
+        return x
+
+    runnable = RunnableLambda(sometimes_fail)
+
+    results = await runnable.with_retry(
+        stop_after_attempt=2,
+        wait_exponential_jitter=False,
+        retry_if_exception_type=(ValueError,),
+    ).abatch([0, 1, 2])
+
+    assert results == [0, 1, 2]
 
 
 async def test_async_retrying(mocker: MockerFixture) -> None:
@@ -3935,14 +3981,14 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             raise RuntimeError(msg)
         return x
 
-    _lambda_mock = mocker.Mock(side_effect=_lambda)
-    runnable = RunnableLambda(_lambda_mock)
+    lambda_mock = mocker.Mock(side_effect=_lambda)
+    runnable = RunnableLambda(lambda_mock)
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.ainvoke(1)
 
-    assert _lambda_mock.call_count == 1
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
@@ -3951,8 +3997,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError, KeyError),
         ).ainvoke(1)
 
-    assert _lambda_mock.call_count == 2  # retried
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 2  # retried
+    lambda_mock.reset_mock()
 
     with pytest.raises(RuntimeError):
         await runnable.with_retry(
@@ -3961,8 +4007,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
             retry_if_exception_type=(ValueError,),
         ).ainvoke(2)
 
-    assert _lambda_mock.call_count == 1  # did not retry
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 1  # did not retry
+    lambda_mock.reset_mock()
 
     with pytest.raises(ValueError, match="x is 1"):
         await runnable.with_retry(
@@ -3972,8 +4018,8 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
         ).abatch([1, 2, 0])
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
-    _lambda_mock.reset_mock()
+    assert lambda_mock.call_count == 3 + 2
+    lambda_mock.reset_mock()
 
     output = await runnable.with_retry(
         stop_after_attempt=2,
@@ -3982,12 +4028,12 @@ async def test_async_retrying(mocker: MockerFixture) -> None:
     ).abatch([1, 2, 0], return_exceptions=True)
 
     # 3rd input isn't retried because it succeeded
-    assert _lambda_mock.call_count == 3 + 2
+    assert lambda_mock.call_count == 3 + 2
     assert len(output) == 3
     assert isinstance(output[0], ValueError)
     assert isinstance(output[1], RuntimeError)
     assert output[2] == 0
-    _lambda_mock.reset_mock()
+    lambda_mock.reset_mock()
 
 
 def test_runnable_lambda_stream() -> None:
@@ -4001,7 +4047,7 @@ def test_runnable_lambda_stream() -> None:
     # sleep to better simulate a real stream
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
 
-    output = list(RunnableLambda(lambda _: llm).stream(""))
+    output = list(RunnableLambda[str, str](lambda _: llm).stream(""))
     assert output == list(llm_res)
 
 
@@ -4014,9 +4060,9 @@ def test_runnable_lambda_stream_with_callbacks() -> None:
     llm = FakeStreamingListLLM(responses=[llm_res], sleep=0.01)
     config: RunnableConfig = {"callbacks": [tracer]}
 
-    assert list(RunnableLambda(lambda _: llm).stream("", config=config)) == list(
-        llm_res
-    )
+    assert list(
+        RunnableLambda[str, str](lambda _: llm).stream("", config=config)
+    ) == list(llm_res)
 
     assert len(tracer.runs) == 1
     assert tracer.runs[0].error is None
@@ -4075,10 +4121,7 @@ async def test_runnable_lambda_astream() -> None:
     assert output == list(llm_res)
 
     output = [
-        chunk
-        async for chunk in cast(
-            "AsyncIterator[str]", RunnableLambda(lambda _: llm).astream("")
-        )
+        chunk async for chunk in RunnableLambda[str, str](lambda _: llm).astream("")
     ]
     assert output == list(llm_res)
 
@@ -4093,7 +4136,10 @@ async def test_runnable_lambda_astream_with_callbacks() -> None:
     config: RunnableConfig = {"callbacks": [tracer]}
 
     assert [
-        _ async for _ in RunnableLambda(lambda _: llm).astream("", config=config)
+        _
+        async for _ in RunnableLambda[str, str](lambda _: llm).astream(
+            "", config=config
+        )
     ] == list(llm_res)
 
     assert len(tracer.runs) == 1
@@ -4140,7 +4186,8 @@ def test_seq_batch_return_exceptions(mocker: MockerFixture) -> None:
                 if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) "
+                            f"fail for {value}"
                         )
                     )
                 else:
@@ -4280,7 +4327,8 @@ async def test_seq_abatch_return_exceptions(mocker: MockerFixture) -> None:
                 if value.startswith(self.fail_starts_with):
                     outputs.append(
                         ValueError(
-                            f"ControlledExceptionRunnable({self.fail_starts_with}) fail for {value}"
+                            f"ControlledExceptionRunnable({self.fail_starts_with}) "
+                            f"fail for {value}"
                         )
                     )
                 else:
@@ -4860,7 +4908,9 @@ async def test_runnable_gen_async() -> None:
 
 
 def test_runnable_gen_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -4931,12 +4981,15 @@ def test_runnable_gen_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_gen_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     async def agen(_: AsyncIterator[Any]) -> AsyncIterator[int]:
@@ -5002,7 +5055,9 @@ async def test_runnable_gen_context_config_async() -> None:
 
 
 def test_runnable_iter_context_config() -> None:
-    """Test that a generator can call other runnables with config
+    """Test generator runnable config propagation.
+
+    Test that a generator can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5057,12 +5112,15 @@ def test_runnable_iter_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_iter_context_config_async() -> None:
-    """Test that a generator can call other runnables with config
-    propagated from the context."""
+    """Test generator runnable config propagation.
 
+    Test that a generator can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5126,7 +5184,9 @@ async def test_runnable_iter_context_config_async() -> None:
 
 
 def test_runnable_lambda_context_config() -> None:
-    """Test that a function can call other runnables with config
+    """Test function runnable config propagation.
+
+    Test that a function can call other runnables with config
     propagated from the context.
     """
     fake = RunnableLambda(len)
@@ -5179,12 +5239,15 @@ def test_runnable_lambda_context_config() -> None:
 
 @pytest.mark.skipif(
     sys.version_info < (3, 11),
-    reason="Python 3.10 and below don't support running async tasks in a specific context",
+    reason="Python 3.10 and below don't support running "
+    "async tasks in a specific context",
 )
 async def test_runnable_lambda_context_config_async() -> None:
-    """Test that a function can call other runnables with config
-    propagated from the context."""
+    """Test function runnable config propagation.
 
+    Test that a function can call other runnables with config
+    propagated from the context.
+    """
     fake = RunnableLambda(len)
 
     @chain
@@ -5285,7 +5348,9 @@ def test_with_config_callbacks() -> None:
 
 
 async def test_ainvoke_on_returned_runnable() -> None:
-    """Verify that a runnable returned by a sync runnable in the async path will
+    """Test ainvoke on a returned runnable.
+
+    Verify that a runnable returned by a sync runnable in the async path will
     be runthroughaasync path (issue #13407).
     """
 
@@ -5300,7 +5365,7 @@ async def test_ainvoke_on_returned_runnable() -> None:
     def func(_input: dict, /) -> Runnable:
         return idchain
 
-    assert await RunnableLambda(func).ainvoke({})
+    assert await RunnableLambda[dict, bool](func).ainvoke({})
 
 
 def test_invoke_stream_passthrough_assign_trace() -> None:
@@ -5363,7 +5428,7 @@ async def test_astream_log_deep_copies() -> None:
         """Get run log."""
         run_log = RunLog(state=None)  # type: ignore[arg-type]
         for log_patch in run_log_patches:
-            run_log = run_log + log_patch
+            run_log += log_patch
         return run_log
 
     def add_one(x: int) -> int:
@@ -5506,9 +5571,6 @@ async def test_passthrough_atransform_with_dicts() -> None:
 
 
 def test_listeners() -> None:
-    from langchain_core.runnables import RunnableLambda
-    from langchain_core.tracers.schemas import Run
-
     def fake_chain(inputs: dict) -> dict:
         return {**inputs, "key": "extra"}
 
@@ -5536,9 +5598,6 @@ def test_listeners() -> None:
 
 
 async def test_listeners_async() -> None:
-    from langchain_core.runnables import RunnableLambda
-    from langchain_core.tracers.schemas import Run
-
     def fake_chain(inputs: dict) -> dict:
         return {**inputs, "key": "extra"}
 
@@ -5568,12 +5627,6 @@ async def test_listeners_async() -> None:
 
 def test_closing_iterator_doesnt_raise_error() -> None:
     """Test that closing an iterator calls on_chain_end rather than on_chain_error."""
-    import time
-
-    from langchain_core.callbacks import BaseCallbackHandler
-    from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-    from langchain_core.output_parsers import StrOutputParser
-
     on_chain_error_triggered = False
     on_chain_end_triggered = False
 
@@ -5627,7 +5680,9 @@ def test_pydantic_protected_namespaces() -> None:
 
 
 def test_schema_for_prompt_and_chat_model() -> None:
-    """Testing that schema is generated properly when using variable names
+    """Test schema generation for prompt and chat model.
+
+    Testing that schema is generated properly when using variable names
     that collide with pydantic attributes.
     """
     prompt = ChatPromptTemplate([("system", "{model_json_schema}, {_private}, {json}")])

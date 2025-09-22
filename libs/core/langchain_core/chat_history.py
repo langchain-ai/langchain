@@ -27,6 +27,7 @@ from langchain_core.messages import (
     HumanMessage,
     get_buffer_string,
 )
+from langchain_core.runnables.config import run_in_executor
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
@@ -64,29 +65,44 @@ class BaseChatMessageHistory(ABC):
 
         .. code-block:: python
 
+            import json
+            import os
+            from langchain_core.messages import messages_from_dict, message_to_dict
+
+
             class FileChatMessageHistory(BaseChatMessageHistory):
-                storage_path:  str
+                storage_path: str
                 session_id: str
 
-               @property
-               def messages(self):
-                   with open(os.path.join(storage_path, session_id), 'r:utf-8') as f:
-                       messages = json.loads(f.read())
-                    return messages_from_dict(messages)
+                @property
+                def messages(self) -> list[BaseMessage]:
+                    try:
+                        with open(
+                            os.path.join(self.storage_path, self.session_id),
+                            "r",
+                            encoding="utf-8",
+                        ) as f:
+                            messages_data = json.load(f)
+                        return messages_from_dict(messages_data)
+                    except FileNotFoundError:
+                        return []
 
-               def add_messages(self, messages: Sequence[BaseMessage]) -> None:
-                   all_messages = list(self.messages) # Existing messages
-                   all_messages.extend(messages) # Add new messages
+                def add_messages(self, messages: Sequence[BaseMessage]) -> None:
+                    all_messages = list(self.messages)  # Existing messages
+                    all_messages.extend(messages)  # Add new messages
 
-                   serialized = [message_to_dict(message) for message in all_messages]
-                   # Can be further optimized by only writing new messages
-                   # using append mode.
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       json.dump(f, messages)
+                    serialized = [message_to_dict(message) for message in all_messages]
+                    file_path = os.path.join(self.storage_path, self.session_id)
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump(serialized, f)
 
-               def clear(self):
-                   with open(os.path.join(storage_path, session_id), 'w') as f:
-                       f.write("[]")
+                def clear(self) -> None:
+                    file_path = os.path.join(self.storage_path, self.session_id)
+                    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+                    with open(file_path, "w", encoding="utf-8") as f:
+                        json.dump([], f)
+
     """
 
     messages: list[BaseMessage]
@@ -104,17 +120,18 @@ class BaseChatMessageHistory(ABC):
 
         In general, fetching messages may involve IO to the underlying
         persistence layer.
-        """
-        from langchain_core.runnables.config import run_in_executor
 
+        Returns:
+            The messages.
+        """
         return await run_in_executor(None, lambda: self.messages)
 
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
-        Please note that this is a convenience method. Code should favor the
-        bulk add_messages interface instead to save on round-trips to the underlying
-        persistence layer.
+        .. note::
+            This is a convenience method. Code should favor the bulk ``add_messages``
+            interface instead to save on round-trips to the persistence layer.
 
         This method may be deprecated in a future release.
 
@@ -129,9 +146,9 @@ class BaseChatMessageHistory(ABC):
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
-        Please note that this is a convenience method. Code should favor the bulk
-        add_messages interface instead to save on round-trips to the underlying
-        persistence layer.
+        .. note::
+            This is a convenience method. Code should favor the bulk ``add_messages``
+            interface instead to save on round-trips to the persistence layer.
 
         This method may be deprecated in a future release.
 
@@ -182,8 +199,6 @@ class BaseChatMessageHistory(ABC):
         Args:
             messages: A sequence of BaseMessage objects to store.
         """
-        from langchain_core.runnables.config import run_in_executor
-
         await run_in_executor(None, self.add_messages, messages)
 
     @abstractmethod
@@ -192,8 +207,6 @@ class BaseChatMessageHistory(ABC):
 
     async def aclear(self) -> None:
         """Async remove all messages from the store."""
-        from langchain_core.runnables.config import run_in_executor
-
         await run_in_executor(None, self.clear)
 
     def __str__(self) -> str:

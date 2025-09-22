@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 DEPRECATED_LOOKUP = {
     "AzureCognitiveServicesToolkit": (
         "langchain_community.agent_toolkits.azure_cognitive_services"
-    )
+    ),
 }
 
 _import_attribute = create_importer(__package__, deprecated_lookups=DEPRECATED_LOOKUP)

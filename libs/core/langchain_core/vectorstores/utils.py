@@ -7,11 +7,24 @@ as they can change without notice.
 from __future__ import annotations
 
 import logging
+import warnings
 from typing import TYPE_CHECKING, Union
 
-if TYPE_CHECKING:
+try:
     import numpy as np
 
+    _HAS_NUMPY = True
+except ImportError:
+    _HAS_NUMPY = False
+
+try:
+    import simsimd as simd  # type: ignore[import-not-found]
+
+    _HAS_SIMSIMD = True
+except ImportError:
+    _HAS_SIMSIMD = False
+
+if TYPE_CHECKING:
     Matrix = Union[list[list[float]], list[np.ndarray], np.ndarray]
 
 logger = logging.getLogger(__name__)
@@ -32,29 +45,42 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         ValueError: If the number of columns in X and Y are not the same.
         ImportError: If numpy is not installed.
     """
-    try:
-        import numpy as np
-    except ImportError as e:
+    if not _HAS_NUMPY:
         msg = (
             "cosine_similarity requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     if len(x) == 0 or len(y) == 0:
-        return np.array([])
+        return np.array([[]])
 
     x = np.array(x)
     y = np.array(y)
+
+    # Check for NaN
+    if np.any(np.isnan(x)) or np.any(np.isnan(y)):
+        warnings.warn(
+            "NaN found in input arrays, unexpected return might follow",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )
+
+    # Check for Inf
+    if np.any(np.isinf(x)) or np.any(np.isinf(y)):
+        warnings.warn(
+            "Inf found in input arrays, unexpected return might follow",
+            category=RuntimeWarning,
+            stacklevel=2,
+        )
+
     if x.shape[1] != y.shape[1]:
         msg = (
             f"Number of columns in X and Y must be the same. X has shape {x.shape} "
             f"and Y has shape {y.shape}."
         )
         raise ValueError(msg)
-    try:
-        import simsimd as simd  # type: ignore[import-not-found]
-    except ImportError:
+    if not _HAS_SIMSIMD:
         logger.debug(
             "Unable to import simsimd, defaulting to NumPy implementation. If you want "
             "to use simsimd please install with `pip install simsimd`."
@@ -64,6 +90,9 @@ def _cosine_similarity(x: Matrix, y: Matrix) -> np.ndarray:
         # Ignore divide by zero errors run time warnings as those are handled below.
         with np.errstate(divide="ignore", invalid="ignore"):
             similarity = np.dot(x, y.T) / np.outer(x_norm, y_norm)
+        if np.isnan(similarity).all():
+            msg = "NaN values found, please remove the NaN values and try again"
+            raise ValueError(msg) from None
         similarity[np.isnan(similarity) | np.isinf(similarity)] = 0.0
         return similarity
 
@@ -92,14 +121,12 @@ def maximal_marginal_relevance(
     Raises:
         ImportError: If numpy is not installed.
     """
-    try:
-        import numpy as np
-    except ImportError as e:
+    if not _HAS_NUMPY:
         msg = (
             "maximal_marginal_relevance requires numpy to be installed. "
             "Please install numpy with `pip install numpy`."
         )
-        raise ImportError(msg) from e
+        raise ImportError(msg)
 
     if min(k, len(embedding_list)) <= 0:
         return []

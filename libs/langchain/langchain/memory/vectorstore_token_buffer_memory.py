@@ -1,5 +1,4 @@
-"""
-Class for a conversation memory buffer with older messages stored in a vectorstore .
+"""Class for a conversation memory buffer with older messages stored in a vectorstore .
 
 This implements a conversation memory in which the messages are stored in a memory
 buffer up to a specified token limit. When the limit is exceeded, older messages are
@@ -9,7 +8,7 @@ sessions.
 
 import warnings
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from langchain_core.messages import BaseMessage
 from langchain_core.prompts.chat import SystemMessagePromptTemplate
@@ -23,7 +22,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 DEFAULT_HISTORY_TEMPLATE = """
 Current date and time: {current_time}.
 
-Potentially relevant timestamped excerpts of previous conversations (you 
+Potentially relevant timestamped excerpts of previous conversations (you
 do not need to use these if irrelevant):
 {previous_history}
 
@@ -65,40 +64,41 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     .. code-block:: python
 
         from langchain.memory.token_buffer_vectorstore_memory import (
-                ConversationVectorStoreTokenBufferMemory
+            ConversationVectorStoreTokenBufferMemory,
         )
         from langchain_chroma import Chroma
         from langchain_community.embeddings import HuggingFaceInstructEmbeddings
         from langchain_openai import OpenAI
 
         embedder = HuggingFaceInstructEmbeddings(
-                        query_instruction="Represent the query for retrieval: "
+            query_instruction="Represent the query for retrieval: "
         )
-        chroma = Chroma(collection_name="demo",
-                        embedding_function=embedder,
-                        collection_metadata={"hnsw:space": "cosine"},
-                        )
+        chroma = Chroma(
+            collection_name="demo",
+            embedding_function=embedder,
+            collection_metadata={"hnsw:space": "cosine"},
+        )
 
         retriever = chroma.as_retriever(
-                search_type="similarity_score_threshold",
-                search_kwargs={
-                    'k': 5,
-                    'score_threshold': 0.75,
-                },
+            search_type="similarity_score_threshold",
+            search_kwargs={
+                "k": 5,
+                "score_threshold": 0.75,
+            },
         )
 
         conversation_memory = ConversationVectorStoreTokenBufferMemory(
-                return_messages=True,
-                llm=OpenAI(),
-                retriever=retriever,
-                max_token_limit = 1000,
+            return_messages=True,
+            llm=OpenAI(),
+            retriever=retriever,
+            max_token_limit=1000,
         )
 
-        conversation_memory.save_context({"Human": "Hi there"},
-                                          {"AI": "Nice to meet you!"}
+        conversation_memory.save_context(
+            {"Human": "Hi there"}, {"AI": "Nice to meet you!"}
         )
-        conversation_memory.save_context({"Human": "Nice day isn't it?"},
-                                          {"AI": "I love Wednesdays."}
+        conversation_memory.save_context(
+            {"Human": "Nice day isn't it?"}, {"AI": "I love Wednesdays."}
         )
         conversation_memory.load_memory_variables({"input": "What time is it?"})
 
@@ -109,7 +109,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
     previous_history_template: str = DEFAULT_HISTORY_TEMPLATE
     split_chunk_size: int = 1000
 
-    _memory_retriever: VectorStoreRetrieverMemory = PrivateAttr(default=None)  # type: ignore[assignment]
+    _memory_retriever: Optional[VectorStoreRetrieverMemory] = PrivateAttr(default=None)
     _timestamps: list[datetime] = PrivateAttr(default_factory=list)
 
     @property
@@ -131,13 +131,13 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             previous_history = ""
         current_history = super().load_memory_variables(inputs)
         template = SystemMessagePromptTemplate.from_template(
-            self.previous_history_template
+            self.previous_history_template,
         )
         messages = [
             template.format(
                 previous_history=previous_history,
                 current_time=datetime.now().astimezone().strftime(TIMESTAMP_FORMAT),
-            )
+            ),
         ]
         messages.extend(current_history[self.memory_key])
         return {self.memory_key: messages}
@@ -155,8 +155,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
                 curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)
 
     def save_remainder(self) -> None:
-        """
-        Save the remainder of the conversation buffer to the vector store.
+        """Save the remainder of the conversation buffer to the vector store.
 
         This is useful if you have made the vectorstore persistent, in which
         case this can be called before the end of the session to store the
@@ -167,7 +166,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
             self._pop_and_store_interaction(buffer)
 
     def _pop_and_store_interaction(self, buffer: list[BaseMessage]) -> None:
-        input = buffer.pop(0)
+        input_ = buffer.pop(0)
         output = buffer.pop(0)
         timestamp = self._timestamps.pop(0).strftime(TIMESTAMP_FORMAT)
         # Split AI output into smaller chunks to avoid creating documents
@@ -175,7 +174,7 @@ class ConversationVectorStoreTokenBufferMemory(ConversationTokenBufferMemory):
         ai_chunks = self._split_long_ai_text(str(output.content))
         for index, chunk in enumerate(ai_chunks):
             self.memory_retriever.save_context(
-                {"Human": f"<{timestamp}/00> {str(input.content)}"},
+                {"Human": f"<{timestamp}/00> {input_.content!s}"},
                 {"AI": f"<{timestamp}/{index:02}> {chunk}"},
             )
 

@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts.prompt import PromptTemplate
 
 _DEFAULT_ENTITY_EXTRACTION_TEMPLATE = """You are an AI assistant reading the transcript of a conversation between an AI and a human. Extract all of the proper nouns from the last line of conversation. As a guideline, a proper noun is generally capitalized. You should definitely extract all names and places.
@@ -34,7 +33,7 @@ Conversation history (for reference only):
 Last line of conversation (for extraction):
 Human: {input}
 
-Output:"""
+Output:"""  # noqa: E501
 ENTITY_EXTRACTION_PROMPT = PromptTemplate(
     input_variables=["history", "input"], template=_DEFAULT_ENTITY_EXTRACTION_TEMPLATE
 )

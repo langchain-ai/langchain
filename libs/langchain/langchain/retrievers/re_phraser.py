@@ -26,7 +26,9 @@ DEFAULT_QUERY_PROMPT = PromptTemplate.from_template(DEFAULT_TEMPLATE)
 
 class RePhraseQueryRetriever(BaseRetriever):
     """Given a query, use an LLM to re-phrase it.
-    Then, retrieve docs for the re-phrased query."""
+
+    Then, retrieve docs for the re-phrased query.
+    """
 
     retriever: BaseRetriever
     llm_chain: Runnable
@@ -66,18 +68,20 @@ class RePhraseQueryRetriever(BaseRetriever):
 
         Args:
             query: user question
+            run_manager: callback handler to use
 
         Returns:
             Relevant documents for re-phrased question
         """
         re_phrased_question = self.llm_chain.invoke(
-            query, {"callbacks": run_manager.get_child()}
+            query,
+            {"callbacks": run_manager.get_child()},
         )
-        logger.info(f"Re-phrased question: {re_phrased_question}")
-        docs = self.retriever.invoke(
-            re_phrased_question, config={"callbacks": run_manager.get_child()}
+        logger.info("Re-phrased question: %s", re_phrased_question)
+        return self.retriever.invoke(
+            re_phrased_question,
+            config={"callbacks": run_manager.get_child()},
         )
-        return docs
 
     async def _aget_relevant_documents(
         self,

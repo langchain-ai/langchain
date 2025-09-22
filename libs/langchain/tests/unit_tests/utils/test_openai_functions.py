@@ -63,7 +63,7 @@ def test_convert_pydantic_to_openai_function_nested() -> None:
                         },
                     },
                     "required": ["key"],
-                }
+                },
             },
             "required": ["data"],
         },

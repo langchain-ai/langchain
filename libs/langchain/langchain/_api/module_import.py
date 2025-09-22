@@ -60,20 +60,22 @@ def create_importer(
         if all_module_lookup and name in all_module_lookup:
             new_module = all_module_lookup[name]
             if new_module.split(".")[0] not in ALLOWED_TOP_LEVEL_PKGS:
-                raise AssertionError(
+                msg = (
                     f"Importing from {new_module} is not allowed. "
                     f"Allowed top-level packages are: {ALLOWED_TOP_LEVEL_PKGS}"
                 )
+                raise AssertionError(msg)
 
             try:
                 module = importlib.import_module(new_module)
             except ModuleNotFoundError as e:
                 if new_module.startswith("langchain_community"):
-                    raise ModuleNotFoundError(
+                    msg = (
                         f"Module {new_module} not found. "
                         "Please install langchain-community to access this module. "
                         "You can install it using `pip install -U langchain-community`"
-                    ) from e
+                    )
+                    raise ModuleNotFoundError(msg) from e
                 raise
 
             try:
@@ -82,67 +84,70 @@ def create_importer(
                     not is_interactive_env()
                     and deprecated_lookups
                     and name in deprecated_lookups
-                ):
                     # Depth 3:
-                    # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
-                    if not internal.is_caller_internal(depth=3):
-                        warn_deprecated(
-                            since="0.1",
-                            pending=False,
-                            removal="1.0",
-                            message=(
-                                f"Importing {name} from {package} is deprecated. "
-                                f"Please replace deprecated imports:\n\n"
-                                f">> from {package} import {name}\n\n"
-                                "with new imports of:\n\n"
-                                f">> from {new_module} import {name}\n"
-                                "You can use the langchain cli to **automatically** "
-                                "upgrade many imports. Please see documentation here "
-                                "<https://python.langchain.com/docs/versions/v0_2/>"
-                            ),
-                        )
-                return result
+                    # -> internal.py
+                    # |-> module_import.py
+                    #  |-> Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
+                    and not internal.is_caller_internal(depth=3)
+                ):
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="1.0",
+                        message=(
+                            f"Importing {name} from {package} is deprecated. "
+                            f"Please replace deprecated imports:\n\n"
+                            f">> from {package} import {name}\n\n"
+                            "with new imports of:\n\n"
+                            f">> from {new_module} import {name}\n"
+                            "You can use the langchain cli to **automatically** "
+                            "upgrade many imports. Please see documentation here "
+                            "<https://python.langchain.com/docs/versions/v0_2/>"
+                        ),
+                    )
             except Exception as e:
-                raise AttributeError(
-                    f"module {new_module} has no attribute {name}"
-                ) from e
+                msg = f"module {new_module} has no attribute {name}"
+                raise AttributeError(msg) from e
+
+            return result
 
         if fallback_module:
             try:
                 module = importlib.import_module(fallback_module)
                 result = getattr(module, name)
-                if not is_interactive_env():
+                if (
+                    not is_interactive_env()
                     # Depth 3:
                     # internal.py
-                    # module_import.py
-                    # Module in langchain that uses this function
-                    # [calling code] whose frame we want to inspect.
-                    if not internal.is_caller_internal(depth=3):
-                        warn_deprecated(
-                            since="0.1",
-                            pending=False,
-                            removal="1.0",
-                            message=(
-                                f"Importing {name} from {package} is deprecated. "
-                                f"Please replace deprecated imports:\n\n"
-                                f">> from {package} import {name}\n\n"
-                                "with new imports of:\n\n"
-                                f">> from {fallback_module} import {name}\n"
-                                "You can use the langchain cli to **automatically** "
-                                "upgrade many imports. Please see documentation here "
-                                "<https://python.langchain.com/docs/versions/v0_2/>"
-                            ),
-                        )
-                return result
+                    # |-> module_import.py
+                    #  |->Module in langchain that uses this function
+                    #   |-> [calling code] whose frame we want to inspect.
+                    and not internal.is_caller_internal(depth=3)
+                ):
+                    warn_deprecated(
+                        since="0.1",
+                        pending=False,
+                        removal="1.0",
+                        message=(
+                            f"Importing {name} from {package} is deprecated. "
+                            f"Please replace deprecated imports:\n\n"
+                            f">> from {package} import {name}\n\n"
+                            "with new imports of:\n\n"
+                            f">> from {fallback_module} import {name}\n"
+                            "You can use the langchain cli to **automatically** "
+                            "upgrade many imports. Please see documentation here "
+                            "<https://python.langchain.com/docs/versions/v0_2/>"
+                        ),
+                    )
 
             except Exception as e:
-                raise AttributeError(
-                    f"module {fallback_module} has no attribute {name}"
-                ) from e
+                msg = f"module {fallback_module} has no attribute {name}"
+                raise AttributeError(msg) from e
 
-        raise AttributeError(f"module {package} has no attribute {name}")
+            return result
+
+        msg = f"module {package} has no attribute {name}"
+        raise AttributeError(msg)
 
     return import_by_name

@@ -1,5 +1,4 @@
-"""
-Utilities for working with pydantic models.
+"""Utilities for working with pydantic models.
 
 :private:
 """
@@ -8,7 +7,7 @@ Utilities for working with pydantic models.
 def get_pydantic_major_version() -> int:
     """Get the major version of Pydantic."""
     try:
-        import pydantic
+        import pydantic  # noqa: PLC0415
 
         return int(pydantic.__version__.split(".")[0])
     except ImportError:

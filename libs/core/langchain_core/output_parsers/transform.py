@@ -32,7 +32,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     def _transform(
         self,
-        input: Iterator[Union[str, BaseMessage]],  # noqa: A002
+        input: Iterator[Union[str, BaseMessage]],
     ) -> Iterator[T]:
         for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -42,7 +42,7 @@ class BaseTransformOutputParser(BaseOutputParser[T]):
 
     async def _atransform(
         self,
-        input: AsyncIterator[Union[str, BaseMessage]],  # noqa: A002
+        input: AsyncIterator[Union[str, BaseMessage]],
     ) -> AsyncIterator[T]:
         async for chunk in input:
             if isinstance(chunk, BaseMessage):
@@ -134,7 +134,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)
@@ -161,7 +161,7 @@ class BaseCumulativeTransformOutputParser(BaseTransformOutputParser[T]):
                 chunk_gen = ChatGenerationChunk(message=chunk)
             elif isinstance(chunk, BaseMessage):
                 chunk_gen = ChatGenerationChunk(
-                    message=BaseMessageChunk(**chunk.dict())
+                    message=BaseMessageChunk(**chunk.model_dump())
                 )
             else:
                 chunk_gen = GenerationChunk(text=chunk)

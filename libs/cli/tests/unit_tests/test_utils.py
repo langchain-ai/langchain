@@ -1,4 +1,6 @@
-from typing import Dict, Optional
+from __future__ import annotations
+
+from typing import Any
 
 import pytest
 
@@ -13,22 +15,42 @@ from langchain_cli.utils.git import DependencySource, parse_dependency_string
 def _assert_dependency_equals(
     dep: DependencySource,
     *,
-    git: Optional[str] = None,
-    ref: Optional[str] = None,
-    subdirectory: Optional[str] = None,
-    event_metadata: Optional[Dict] = None,
+    git: str | None = None,
+    ref: str | None = None,
+    subdirectory: str | None = None,
+    event_metadata: dict[str, Any] | None = None,
 ) -> None:
-    assert dep["git"] == git
-    assert dep["ref"] == ref
-    assert dep["subdirectory"] == subdirectory
-    if event_metadata is not None:
-        assert dep["event_metadata"] == event_metadata
+    if dep["git"] != git:
+        msg = f"Expected git to be {git} but got {dep['git']}"
+        raise ValueError(msg)
+    if dep["ref"] != ref:
+        msg = f"Expected ref to be {ref} but got {dep['ref']}"
+        raise ValueError(msg)
+    if dep["subdirectory"] != subdirectory:
+        msg = (
+            f"Expected subdirectory to be {subdirectory} but got {dep['subdirectory']}"
+        )
+        raise ValueError(msg)
+    if dep["subdirectory"] != subdirectory:
+        msg = (
+            f"Expected subdirectory to be {subdirectory} but got {dep['subdirectory']}"
+        )
+        raise ValueError(msg)
+    if event_metadata is not None and dep["event_metadata"] != event_metadata:
+        msg = (
+            f"Expected event_metadata to be {event_metadata} "
+            f"but got {dep['event_metadata']}"
+        )
+        raise ValueError(msg)
 
 
 def test_dependency_string() -> None:
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com/efriis/myrepo.git", None, None, None
+            "git+ssh://git@github.com/efriis/myrepo.git",
+            None,
+            None,
+            None,
         ),
         git="ssh://git@github.com/efriis/myrepo.git",
         ref=None,
@@ -49,7 +71,10 @@ def test_dependency_string() -> None:
 
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com:efriis/myrepo.git#develop", None, None, None
+            "git+ssh://git@github.com:efriis/myrepo.git#develop",
+            None,
+            None,
+            None,
         ),
         git="ssh://git@github.com:efriis/myrepo.git",
         ref="develop",
@@ -59,7 +84,10 @@ def test_dependency_string() -> None:
     # also support a slash in ssh
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com/efriis/myrepo.git#develop", None, None, None
+            "git+ssh://git@github.com/efriis/myrepo.git#develop",
+            None,
+            None,
+            None,
         ),
         git="ssh://git@github.com/efriis/myrepo.git",
         ref="develop",
@@ -69,7 +97,10 @@ def test_dependency_string() -> None:
     # looks like poetry supports both an @ and a #
     _assert_dependency_equals(
         parse_dependency_string(
-            "git+ssh://git@github.com:efriis/myrepo.git@develop", None, None, None
+            "git+ssh://git@github.com:efriis/myrepo.git@develop",
+            None,
+            None,
+            None,
         ),
         git="ssh://git@github.com:efriis/myrepo.git",
         ref="develop",
@@ -100,7 +131,8 @@ def test_dependency_string_both() -> None:
 
 def test_dependency_string_invalids() -> None:
     # expect error for wrong order
-    with pytest.raises(ValueError):
+    # Bypassing validation since the ValueError message is dynamic
+    with pytest.raises(ValueError):  # noqa: PT011
         parse_dependency_string(
             "git+https://github.com/efriis/myrepo.git#subdirectory=src@branch",
             None,

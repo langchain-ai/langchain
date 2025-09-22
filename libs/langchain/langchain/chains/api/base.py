@@ -47,8 +47,8 @@ def _check_in_allowed_domain(url: str, limit_to_domains: Sequence[str]) -> bool:
     scheme, domain = _extract_scheme_and_domain(url)
 
     for allowed_domain in limit_to_domains:
-        allowed_scheme, allowed_domain = _extract_scheme_and_domain(allowed_domain)
-        if scheme == allowed_scheme and domain == allowed_domain:
+        allowed_scheme, allowed_domain_ = _extract_scheme_and_domain(allowed_domain)
+        if scheme == allowed_scheme and domain == allowed_domain_:
             return True
     return False
 
@@ -61,7 +61,7 @@ try:
         message=(
             "This class is deprecated and will be removed in langchain 1.0. "
             "See API reference for replacement: "
-            "https://api.python.langchain.com/en/latest/chains/langchain.chains.api.base.APIChain.html"  # noqa: E501
+            "https://api.python.langchain.com/en/latest/chains/langchain.chains.api.base.APIChain.html"
         ),
         removal="1.0",
     )
@@ -82,13 +82,15 @@ try:
 
             See https://python.langchain.com/docs/security for more information.
 
-        Note: this class is deprecated. See below for a replacement implementation
-        using LangGraph. The benefits of this implementation are:
+        .. note::
+            This class is deprecated. See below for a replacement implementation using
+            LangGraph. The benefits of this implementation are:
 
         - Uses LLM tool calling features to encourage properly-formatted API requests;
         - Support for both token-by-token and step-by-step streaming;
         - Support for checkpointing and memory of chat history;
-        - Easier to modify or extend (e.g., with additional tools, structured responses, etc.)
+        - Easier to modify or extend
+          (e.g., with additional tools, structured responses, etc.)
 
         Install LangGraph with:
 
@@ -191,6 +193,7 @@ try:
             )
             async for event in events:
                 event["messages"][-1].pretty_print()
+
         """  # noqa: E501
 
         api_request_chain: LLMChain
@@ -201,10 +204,10 @@ try:
         output_key: str = "output"  #: :meta private:
         limit_to_domains: Optional[Sequence[str]] = Field(default_factory=list)  # type: ignore[arg-type]
         """Use to limit the domains that can be accessed by the API chain.
-        
+
         * For example, to limit to just the domain `https://www.example.com`, set
             `limit_to_domains=["https://www.example.com"]`.
-            
+
         * The default value is an empty tuple, which means that no domains are
           allowed by default. By design this will raise an error on instantiation.
         * Use a None if you want to allow all domains by default -- this is not
@@ -235,9 +238,8 @@ try:
             input_vars = self.api_request_chain.prompt.input_variables
             expected_vars = {"question", "api_docs"}
             if set(input_vars) != expected_vars:
-                raise ValueError(
-                    f"Input variables should be {expected_vars}, got {input_vars}"
-                )
+                msg = f"Input variables should be {expected_vars}, got {input_vars}"
+                raise ValueError(msg)
             return self
 
         @model_validator(mode="before")
@@ -247,18 +249,20 @@ try:
             # This check must be a pre=True check, so that a default of None
             # won't be set to limit_to_domains if it's not provided.
             if "limit_to_domains" not in values:
-                raise ValueError(
+                msg = (
                     "You must specify a list of domains to limit access using "
                     "`limit_to_domains`"
                 )
+                raise ValueError(msg)
             if (
                 not values["limit_to_domains"]
                 and values["limit_to_domains"] is not None
             ):
-                raise ValueError(
+                msg = (
                     "Please provide a list of domains to limit access using "
                     "`limit_to_domains`."
                 )
+                raise ValueError(msg)
             return values
 
         @model_validator(mode="after")
@@ -267,9 +271,8 @@ try:
             input_vars = self.api_answer_chain.prompt.input_variables
             expected_vars = {"question", "api_docs", "api_url", "api_response"}
             if set(input_vars) != expected_vars:
-                raise ValueError(
-                    f"Input variables should be {expected_vars}, got {input_vars}"
-                )
+                msg = f"Input variables should be {expected_vars}, got {input_vars}"
+                raise ValueError(msg)
             return self
 
         def _call(
@@ -287,14 +290,19 @@ try:
             _run_manager.on_text(api_url, color="green", end="\n", verbose=self.verbose)
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
-                raise ValueError(
+                msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
                 )
+                raise ValueError(msg)
             api_response = self.requests_wrapper.get(api_url)
             _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = self.api_answer_chain.predict(
                 question=question,
@@ -320,18 +328,26 @@ try:
                 callbacks=_run_manager.get_child(),
             )
             await _run_manager.on_text(
-                api_url, color="green", end="\n", verbose=self.verbose
+                api_url,
+                color="green",
+                end="\n",
+                verbose=self.verbose,
             )
             api_url = api_url.strip()
             if self.limit_to_domains and not _check_in_allowed_domain(
-                api_url, self.limit_to_domains
+                api_url,
+                self.limit_to_domains,
             ):
-                raise ValueError(
+                msg = (
                     f"{api_url} is not in the allowed domains: {self.limit_to_domains}"
                 )
+                raise ValueError(msg)
             api_response = await self.requests_wrapper.aget(api_url)
             await _run_manager.on_text(
-                str(api_response), color="yellow", end="\n", verbose=self.verbose
+                str(api_response),
+                color="yellow",
+                end="\n",
+                verbose=self.verbose,
             )
             answer = await self.api_answer_chain.apredict(
                 question=question,
@@ -350,7 +366,7 @@ try:
             headers: Optional[dict] = None,
             api_url_prompt: BasePromptTemplate = API_URL_PROMPT,
             api_response_prompt: BasePromptTemplate = API_RESPONSE_PROMPT,
-            limit_to_domains: Optional[Sequence[str]] = tuple(),
+            limit_to_domains: Optional[Sequence[str]] = (),
             **kwargs: Any,
         ) -> APIChain:
             """Load chain from just an LLM and the api docs."""
@@ -373,8 +389,12 @@ try:
 except ImportError:
 
     class APIChain:  # type: ignore[no-redef]
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            raise ImportError(
+        """Raise an ImportError if APIChain is used without langchain_community."""
+
+        def __init__(self, *_: Any, **__: Any) -> None:
+            """Raise an ImportError if APIChain is used without langchain_community."""
+            msg = (
                 "To use the APIChain, you must install the langchain_community package."
                 "pip install langchain_community"
             )
+            raise ImportError(msg)

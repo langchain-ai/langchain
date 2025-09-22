@@ -28,7 +28,7 @@ T = TypeVar("T")
 OutputParserLike = Runnable[LanguageModelOutput, T]
 
 
-class BaseLLMOutputParser(Generic[T], ABC):
+class BaseLLMOutputParser(ABC, Generic[T]):
     """Abstract base class for parsing the outputs of a model."""
 
     @abstractmethod
@@ -144,7 +144,10 @@ class BaseOutputParser(
 
                 def parse(self, text: str) -> bool:
                     cleaned_text = text.strip().upper()
-                    if cleaned_text not in (self.true_val.upper(), self.false_val.upper()):
+                    if cleaned_text not in (
+                        self.true_val.upper(),
+                        self.false_val.upper(),
+                    ):
                         raise OutputParserException(
                             f"BooleanOutputParser expected output value to either be "
                             f"{self.true_val} or {self.false_val} (case-insensitive). "
@@ -155,7 +158,8 @@ class BaseOutputParser(
                 @property
                 def _type(self) -> str:
                     return "boolean_output_parser"
-    """  # noqa: E501
+
+    """
 
     @property
     @override
@@ -326,7 +330,7 @@ class BaseOutputParser(
 
     def dict(self, **kwargs: Any) -> dict:
         """Return dictionary representation of output parser."""
-        output_parser_dict = super().dict(**kwargs)
+        output_parser_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
             output_parser_dict["_type"] = self._type
         return output_parser_dict

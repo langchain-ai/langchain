@@ -15,7 +15,7 @@ from langchain_core.utils.aiter import abatch_iterate
     ],
 )
 async def test_abatch_iterate(
-    input_size: int, input_iterable: list[str], expected_output: list[str]
+    input_size: int, input_iterable: list[str], expected_output: list[list[str]]
 ) -> None:
     """Test batching function."""
 

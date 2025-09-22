@@ -1,23 +1,20 @@
-# flake8: noqa
+import logging
 import time
 from sys import platform
 from typing import (
     TYPE_CHECKING,
     Any,
-    Dict,
-    Iterable,
-    List,
     Optional,
-    Set,
-    Tuple,
     TypedDict,
     Union,
 )
 
 if TYPE_CHECKING:
-    from playwright.sync_api import Browser, CDPSession, Page, sync_playwright
+    from playwright.sync_api import Browser, CDPSession, Page
 
-black_listed_elements: Set[str] = {
+logger = logging.getLogger(__name__)
+
+black_listed_elements: set[str] = {
     "html",
     "head",
     "title",
@@ -40,7 +37,7 @@ class ElementInViewPort(TypedDict):
     backend_node_id: int
     node_name: Optional[str]
     node_value: Optional[str]
-    node_meta: List[str]
+    node_meta: list[str]
     is_clickable: bool
     origin_x: int
     origin_y: int
@@ -67,38 +64,60 @@ class Crawler:
     """
 
     def __init__(self) -> None:
+        """Initialize the crawler."""
         try:
             from playwright.sync_api import sync_playwright
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import playwright python package. "
                 "Please install it with `pip install playwright`."
             )
+            raise ImportError(msg) from e
         self.browser: Browser = (
             sync_playwright().start().chromium.launch(headless=False)
         )
         self.page: Page = self.browser.new_page()
         self.page.set_viewport_size({"width": 1280, "height": 1080})
-        self.page_element_buffer: Dict[int, ElementInViewPort]
+        self.page_element_buffer: dict[int, ElementInViewPort]
         self.client: CDPSession
 
     def go_to_page(self, url: str) -> None:
+        """Navigate to the given URL.
+
+        Args:
+            url: The URL to navigate to. If it does not contain a scheme, it will be
+                prefixed with "http://".
+        """
         self.page.goto(url=url if "://" in url else "http://" + url)
         self.client = self.page.context.new_cdp_session(self.page)
         self.page_element_buffer = {}
 
     def scroll(self, direction: str) -> None:
+        """Scroll the page in the given direction.
+
+        Args:
+            direction: The direction to scroll in, either "up" or "down".
+        """
         if direction == "up":
             self.page.evaluate(
-                "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop - window.innerHeight;"
+                "(document.scrollingElement || document.body).scrollTop = "
+                "(document.scrollingElement || document.body).scrollTop - "
+                "window.innerHeight;"
             )
         elif direction == "down":
             self.page.evaluate(
-                "(document.scrollingElement || document.body).scrollTop = (document.scrollingElement || document.body).scrollTop + window.innerHeight;"
+                "(document.scrollingElement || document.body).scrollTop = "
+                "(document.scrollingElement || document.body).scrollTop + "
+                "window.innerHeight;"
             )
 
-    def click(self, id: Union[str, int]) -> None:
-        # Inject javascript into the page which removes the target= attribute from all links
+    def click(self, id_: Union[str, int]) -> None:
+        """Click on an element with the given id.
+
+        Args:
+            id_: The id of the element to click on.
+        """
+        # Inject javascript into the page which removes the target= attribute from links
         js = """
 		links = document.getElementsByTagName("a");
 		for (var i = 0; i < links.length; i++) {
@@ -107,7 +126,7 @@ class Crawler:
 		"""
         self.page.evaluate(js)
 
-        element = self.page_element_buffer.get(int(id))
+        element = self.page_element_buffer.get(int(id_))
         if element:
             x: float = element["center_x"]
             y: float = element["center_y"]
@@ -116,14 +135,26 @@ class Crawler:
         else:
             print("Could not find element")  # noqa: T201
 
-    def type(self, id: Union[str, int], text: str) -> None:
-        self.click(id)
+    def type(self, id_: Union[str, int], text: str) -> None:
+        """Type text into an element with the given id.
+
+        Args:
+            id_: The id of the element to type into.
+            text: The text to type into the element.
+        """
+        self.click(id_)
         self.page.keyboard.type(text)
 
     def enter(self) -> None:
+        """Press the Enter key."""
         self.page.keyboard.press("Enter")
 
-    def crawl(self) -> List[str]:
+    def crawl(self) -> list[str]:
+        """Crawl the current page.
+
+        Returns:
+            A list of the elements in the viewport.
+        """
         page = self.page
         page_element_buffer = self.page_element_buffer
         start = time.time()
@@ -141,10 +172,10 @@ class Crawler:
         win_right_bound: float = win_left_bound + win_width
         win_lower_bound: float = win_upper_bound + win_height
 
-        # 		percentage_progress_start = (win_upper_bound / document_scroll_height) * 100
-        # 		percentage_progress_end = (
-        # 			(win_height + win_upper_bound) / document_scroll_height
-        # 		) * 100
+        # 	percentage_progress_start = (win_upper_bound / document_scroll_height) * 100
+        # 	percentage_progress_end = (
+        # 		(win_height + win_upper_bound) / document_scroll_height
+        # 	) * 100
         percentage_progress_start = 1
         percentage_progress_end = 2
 
@@ -152,9 +183,8 @@ class Crawler:
             {
                 "x": 0,
                 "y": 0,
-                "text": "[scrollbar {:0.2f}-{:0.2f}%]".format(
-                    round(percentage_progress_start, 2), round(percentage_progress_end)
-                ),
+                "text": f"[scrollbar {percentage_progress_start:0.2f}-"
+                f"{percentage_progress_end:0.2f}%]",
             }
         )
 
@@ -162,34 +192,35 @@ class Crawler:
             "DOMSnapshot.captureSnapshot",
             {"computedStyles": [], "includeDOMRects": True, "includePaintOrder": True},
         )
-        strings: Dict[int, str] = tree["strings"]
-        document: Dict[str, Any] = tree["documents"][0]
-        nodes: Dict[str, Any] = document["nodes"]
-        backend_node_id: Dict[int, int] = nodes["backendNodeId"]
-        attributes: Dict[int, Dict[int, Any]] = nodes["attributes"]
-        node_value: Dict[int, int] = nodes["nodeValue"]
-        parent: Dict[int, int] = nodes["parentIndex"]
-        node_names: Dict[int, int] = nodes["nodeName"]
-        is_clickable: Set[int] = set(nodes["isClickable"]["index"])
+        strings: dict[int, str] = tree["strings"]
+        document: dict[str, Any] = tree["documents"][0]
+        nodes: dict[str, Any] = document["nodes"]
+        backend_node_id: dict[int, int] = nodes["backendNodeId"]
+        attributes: dict[int, dict[int, Any]] = nodes["attributes"]
+        node_value: dict[int, int] = nodes["nodeValue"]
+        parent: dict[int, int] = nodes["parentIndex"]
+        node_names: dict[int, int] = nodes["nodeName"]
+        is_clickable: set[int] = set(nodes["isClickable"]["index"])
 
-        input_value: Dict[str, Any] = nodes["inputValue"]
-        input_value_index: List[int] = input_value["index"]
-        input_value_values: List[int] = input_value["value"]
+        input_value: dict[str, Any] = nodes["inputValue"]
+        input_value_index: list[int] = input_value["index"]
+        input_value_values: list[int] = input_value["value"]
 
-        layout: Dict[str, Any] = document["layout"]
-        layout_node_index: List[int] = layout["nodeIndex"]
-        bounds: Dict[int, List[float]] = layout["bounds"]
+        layout: dict[str, Any] = document["layout"]
+        layout_node_index: list[int] = layout["nodeIndex"]
+        bounds: dict[int, list[float]] = layout["bounds"]
 
         cursor: int = 0
 
-        child_nodes: Dict[str, List[Dict[str, Any]]] = {}
-        elements_in_view_port: List[ElementInViewPort] = []
+        child_nodes: dict[str, list[dict[str, Any]]] = {}
+        elements_in_view_port: list[ElementInViewPort] = []
 
-        anchor_ancestry: Dict[str, Tuple[bool, Optional[int]]] = {"-1": (False, None)}
-        button_ancestry: Dict[str, Tuple[bool, Optional[int]]] = {"-1": (False, None)}
+        anchor_ancestry: dict[str, tuple[bool, Optional[int]]] = {"-1": (False, None)}
+        button_ancestry: dict[str, tuple[bool, Optional[int]]] = {"-1": (False, None)}
 
         def convert_name(
-            node_name: Optional[str], has_click_handler: Optional[bool]
+            node_name: Optional[str],
+            has_click_handler: Optional[bool],  # noqa: FBT001
         ) -> str:
             if node_name == "a":
                 return "link"
@@ -201,12 +232,11 @@ class Crawler:
                 node_name == "button" or has_click_handler
             ):  # found pages that needed this quirk
                 return "button"
-            else:
-                return "text"
+            return "text"
 
         def find_attributes(
-            attributes: Dict[int, Any], keys: List[str]
-        ) -> Dict[str, str]:
+            attributes: dict[int, Any], keys: list[str]
+        ) -> dict[str, str]:
             values = {}
 
             for [key_index, value_index] in zip(*(iter(attributes),) * 2):
@@ -225,14 +255,14 @@ class Crawler:
             return values
 
         def add_to_hash_tree(
-            hash_tree: Dict[str, Tuple[bool, Optional[int]]],
+            hash_tree: dict[str, tuple[bool, Optional[int]]],
             tag: str,
             node_id: int,
             node_name: Optional[str],
             parent_id: int,
-        ) -> Tuple[bool, Optional[int]]:
+        ) -> tuple[bool, Optional[int]]:
             parent_id_str = str(parent_id)
-            if not parent_id_str in hash_tree:
+            if parent_id_str not in hash_tree:
                 parent_name = strings[node_names[parent_id]].lower()
                 grand_parent_id = parent[parent_id]
 
@@ -242,9 +272,10 @@ class Crawler:
 
             is_parent_desc_anchor, anchor_id = hash_tree[parent_id_str]
 
-            # even if the anchor is nested in another anchor, we set the "root" for all descendants to be ::Self
+            # even if the anchor is nested in another anchor, we set the "root" for all
+            # descendants to be ::Self
             if node_name == tag:
-                value: Tuple[bool, Optional[int]] = (True, node_id)
+                value: tuple[bool, Optional[int]] = (True, node_id)
             elif (
                 is_parent_desc_anchor
             ):  # reuse the parent's anchor_id (which could be much higher in the tree)
@@ -253,7 +284,9 @@ class Crawler:
                 value = (
                     False,
                     None,
-                )  # not a descendant of an anchor, most likely it will become text, an interactive element or discarded
+                )
+                # not a descendant of an anchor, most likely it will become text, an
+                # interactive element or discarded
 
             hash_tree[str(node_id)] = value
 
@@ -272,10 +305,10 @@ class Crawler:
             )
 
             try:
-                cursor = layout_node_index.index(
-                    index
-                )  # todo replace this with proper cursoring, ignoring the fact this is O(n^2) for the moment
-            except:
+                cursor = layout_node_index.index(index)
+                # TODO: replace this with proper cursoring, ignoring the fact this is
+                # O(n^2) for the moment
+            except ValueError:
                 continue
 
             if node_name in black_listed_elements:
@@ -302,9 +335,10 @@ class Crawler:
             if not partially_is_in_viewport:
                 continue
 
-            meta_data: List[str] = []
+            meta_data: list[str] = []
 
-            # inefficient to grab the same set of keys for kinds of objects, but it's fine for now
+            # inefficient to grab the same set of keys for kinds of objects, but it's
+            # fine for now
             element_attributes = find_attributes(
                 attributes[index], ["type", "placeholder", "aria-label", "title", "alt"]
             )
@@ -325,7 +359,7 @@ class Crawler:
 
             if node_name == "#text" and ancestor_exception and ancestor_node:
                 text = strings[node_value[index]]
-                if text == "|" or text == "•":
+                if text in {"|", "•"}:
                     continue
                 ancestor_node.append({"type": "type", "value": text})
             else:
@@ -355,7 +389,9 @@ class Crawler:
                 element_node_value = strings[node_value[index]]
                 if (
                     element_node_value == "|"
-                ):  # commonly used as a separator, does not add much context - lets save ourselves some token space
+                    # commonly used as a separator, does not add much context - lets
+                    # save ourselves some token space
+                ):
                     continue
             elif (
                 node_name == "input"
@@ -368,7 +404,7 @@ class Crawler:
                     element_node_value = strings[text_index]
 
             # remove redundant elements
-            if ancestor_exception and (node_name != "a" and node_name != "button"):
+            if ancestor_exception and (node_name not in {"a", "button"}):
                 continue
 
             elements_in_view_port.append(
@@ -386,7 +422,8 @@ class Crawler:
                 }
             )
 
-        # lets filter further to remove anything that does not hold any text nor has click handlers + merge text from leaf#text nodes with the parent
+        # lets filter further to remove anything that does not hold any text nor has
+        # click handlers + merge text from leaf#text nodes with the parent
         elements_of_interest = []
         id_counter = 0
 
@@ -395,7 +432,7 @@ class Crawler:
             node_name = element.get("node_name")
             element_node_value = element.get("node_value")
             node_is_clickable = element.get("is_clickable")
-            node_meta_data: Optional[List[str]] = element.get("node_meta")
+            node_meta_data: Optional[list[str]] = element.get("node_meta")
 
             inner_text = f"{element_node_value} " if element_node_value else ""
             meta = ""
@@ -423,10 +460,7 @@ class Crawler:
             # not very elegant, more like a placeholder
             if (
                 (converted_node_name != "button" or meta == "")
-                and converted_node_name != "link"
-                and converted_node_name != "input"
-                and converted_node_name != "img"
-                and converted_node_name != "textarea"
+                and converted_node_name not in {"link", "input", "img", "textarea"}
             ) and inner_text.strip() == "":
                 continue
 
@@ -434,7 +468,8 @@ class Crawler:
 
             if inner_text != "":
                 elements_of_interest.append(
-                    f"""<{converted_node_name} id={id_counter}{meta}>{inner_text}</{converted_node_name}>"""
+                    f"<{converted_node_name} id={id_counter}{meta}>{inner_text}"
+                    f"</{converted_node_name}>"
                 )
             else:
                 elements_of_interest.append(
@@ -442,5 +477,5 @@ class Crawler:
                 )
             id_counter += 1
 
-        print("Parsing time: {:0.2f} seconds".format(time.time() - start))  # noqa: T201
+        print(f"Parsing time: {time.time() - start:0.2f} seconds")  # noqa: T201
         return elements_of_interest

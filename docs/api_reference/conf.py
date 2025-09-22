@@ -97,7 +97,7 @@ def skip_private_members(app, what, name, obj, skip, options):
     if hasattr(obj, "__doc__") and obj.__doc__ and ":private:" in obj.__doc__:
         return True
     if name == "__init__" and obj.__objclass__ is object:
-        # dont document default init
+        # don't document default init
         return True
     return None
 
@@ -262,6 +262,8 @@ myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True
+# Don't fail on autosummary import warnings
+autosummary_ignore_module_all = False
 
 html_copy_source = False
 html_show_sourcelink = False

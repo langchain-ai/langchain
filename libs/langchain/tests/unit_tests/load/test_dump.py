@@ -1,4 +1,4 @@
-"""Test for Serializable base class"""
+"""Test for Serializable base class."""
 
 import json
 import os
@@ -54,9 +54,9 @@ class NotSerializable:
 
 
 def test_person(snapshot: Any) -> None:
-    p = Person(secret="hello")
+    p = Person(secret="parrot party")  # noqa: S106
     assert dumps(p, pretty=True) == snapshot
-    sp = SpecialPerson(another_secret="Wooo", secret="Hmm")
+    sp = SpecialPerson(another_secret="Wooo", secret="Hmm")  # noqa: S106
     assert dumps(sp, pretty=True) == snapshot
     assert Person.lc_id() == ["tests", "unit_tests", "load", "test_dump", "Person"]
     assert SpecialPerson.lc_id() == ["my", "special", "namespace", "SpecialPerson"]
@@ -64,18 +64,22 @@ def test_person(snapshot: Any) -> None:
 
 def test_typeerror() -> None:
     assert (
-        dumps({(1, 2): 3})
-        == """{"lc": 1, "type": "not_implemented", "id": ["builtins", "dict"], "repr": "{(1, 2): 3}"}"""  # noqa: E501
+        dumps({(1, 2): 3}) == "{"
+        '"lc": 1, '
+        '"type": "not_implemented", '
+        '"id": ["builtins", "dict"], '
+        '"repr": "{(1, 2): 3}"'
+        "}"
     )
 
 
 def test_person_with_kwargs(snapshot: Any) -> None:
-    person = Person(secret="hello")
+    person = Person(secret="parrot party")  # noqa: S106
     assert dumps(person, separators=(",", ":")) == snapshot
 
 
 def test_person_with_invalid_kwargs() -> None:
-    person = Person(secret="hello")
+    person = Person(secret="parrot party")  # noqa: S106
     with pytest.raises(TypeError):
         dumps(person, invalid_kwarg="hello")
 
@@ -115,7 +119,10 @@ class TestClass(Serializable):
 
 
 def test_aliases_hidden() -> None:
-    test_class = TestClass(my_favorite_secret="hello", my_other_secret="world")  # type: ignore[call-arg]
+    test_class = TestClass(
+        my_favorite_secret="hello",  # noqa: S106
+        my_other_secret="world",  # noqa: S106
+    )
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,
@@ -133,13 +140,17 @@ def test_aliases_hidden() -> None:
     assert dumped == expected_dump
     # Check while patching the os environment
     with patch.dict(
-        os.environ, {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"}
+        os.environ,
+        {"MY_FAVORITE_SECRET": "hello", "MY_OTHER_SECRET": "world"},
     ):
         test_class = TestClass()  # type: ignore[call-arg]
         dumped = json.loads(dumps(test_class, pretty=True))
 
     # Check by alias
-    test_class = TestClass(my_favorite_secret_alias="hello", my_other_secret="world")
+    test_class = TestClass(  # type: ignore[call-arg]
+        my_favorite_secret_alias="hello",  # noqa: S106
+        my_other_secret="parrot party",  # noqa: S106
+    )
     dumped = json.loads(dumps(test_class, pretty=True))
     expected_dump = {
         "lc": 1,

@@ -4,12 +4,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for your interest in LangChain! 🚀
-        
-        If you are not a LangChain maintainer or were not asked directly by a maintainer to create an issue, then please start the conversation in a [Question in GitHub Discussions](https://github.com/langchain-ai/langchain/discussions/categories/q-a) instead.
-        
-        You are a LangChain maintainer if you maintain any of the packages inside of the LangChain repository 
-        or are a regular contributor to LangChain with previous merged pull requests.
+        If you are not a LangChain maintainer, employee, or were not asked directly by a maintainer to create an issue, then please start the conversation on the [LangChain Forum](https://forum.langchain.com/) instead.
   - type: checkboxes
     id: privileged
     attributes:

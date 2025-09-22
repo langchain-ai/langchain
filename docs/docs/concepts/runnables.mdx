@@ -107,7 +107,7 @@ The Runnable interface provides methods to get the [JSON Schema](https://json-sc
 
 These APIs are mostly used internally for unit-testing and by [LangServe](/docs/concepts/architecture#langserve) which uses the APIs for input validation and generation of [OpenAPI documentation](https://www.openapis.org/).
 
-In addition, to the input and output types, some Runnables have been set up with additional run time configuration options. 
+In addition, to the input and output types, some Runnables have been set up with additional run time configuration options.
 There are corresponding APIs to get the Pydantic Schema and JSON Schema of the configuration options for the Runnable.
 Please see the [Configurable Runnables](#configurable-runnables) section for more information.
 
@@ -151,12 +151,12 @@ Passing `config` to the `invoke` method is done like so:
 
 ```python
 some_runnable.invoke(
-   some_input, 
+   some_input,
    config={
-      'run_name': 'my_run', 
-      'tags': ['tag1', 'tag2'], 
+      'run_name': 'my_run',
+      'tags': ['tag1', 'tag2'],
       'metadata': {'key': 'value'}
-      
+
    }
 )
 ```
@@ -185,13 +185,13 @@ There are two main patterns by which new `Runnables` are created:
     foo_runnable = RunnableLambda(foo)
     ```
 
-LangChain will try to propagate `RunnableConfig` automatically for both of the patterns. 
+LangChain will try to propagate `RunnableConfig` automatically for both of the patterns.
 
 For handling the second pattern, LangChain relies on Python's [contextvars](https://docs.python.org/3/library/contextvars.html).
 
 In Python 3.11 and above, this works out of the box, and you do not need to do anything special to propagate the `RunnableConfig` to the sub-calls.
 
-In Python 3.9 and 3.10, if you are using **async code**, you need to manually pass the `RunnableConfig` through to the `Runnable` when invoking it. 
+In Python 3.9 and 3.10, if you are using **async code**, you need to manually pass the `RunnableConfig` through to the `Runnable` when invoking it.
 
 This is due to a limitation in [asyncio's tasks](https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task)  in Python 3.9 and 3.10 which did
 not accept a `context` argument.
@@ -201,7 +201,7 @@ Propagating the `RunnableConfig` manually is done like so:
 ```python
 async def foo(input, config): # <-- Note the config argument
     return await bar_runnable.ainvoke(input, config=config)
-    
+
 foo_runnable = RunnableLambda(foo)
 ```
 
@@ -235,7 +235,7 @@ The attributes will also be propagated to [callbacks](/docs/concepts/callbacks),
 This is an advanced feature that is unnecessary for most users.
 :::
 
-You may need to set a custom `run_id` for a given run, in case you want 
+You may need to set a custom `run_id` for a given run, in case you want
 to reference it later or correlate it with other systems.
 
 The `run_id` MUST be a valid UUID string and **unique** for each run. It is used to identify
@@ -249,7 +249,7 @@ import uuid
 run_id = uuid.uuid4()
 
 some_runnable.invoke(
-   some_input, 
+   some_input,
    config={
       'run_id': run_id
    }
@@ -292,7 +292,7 @@ In addition, you can use it to specify any custom configuration options to pass 
 
 ### Setting callbacks
 
-Use this option to configure [callbacks](/docs/concepts/callbacks) for the runnable at 
+Use this option to configure [callbacks](/docs/concepts/callbacks) for the runnable at
 runtime. The callbacks will be passed to all sub-calls made by the runnable.
 
 ```python

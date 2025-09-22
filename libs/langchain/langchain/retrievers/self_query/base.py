@@ -15,6 +15,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.structured_query import StructuredQuery, Visitor
 from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
+from typing_extensions import override
 
 from langchain.chains.query_constructor.base import load_query_constructor_runnable
 from langchain.chains.query_constructor.schema import AttributeInfo
@@ -27,11 +28,12 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     """Get the translator class corresponding to the vector store class."""
     try:
         import langchain_community  # noqa: F401
-    except ImportError:
-        raise ImportError(
+    except ImportError as err:
+        msg = (
             "The langchain-community package must be installed to use this feature."
             " Please install it using `pip install langchain-community`."
         )
+        raise ImportError(msg) from err
 
     from langchain_community.query_constructors.astradb import AstraDBTranslator
     from langchain_community.query_constructors.chroma import ChromaTranslator
@@ -96,7 +98,7 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
         Pinecone as CommunityPinecone,
     )
 
-    BUILTIN_TRANSLATORS: dict[type[VectorStore], type[Visitor]] = {
+    builtin_translators: dict[type[VectorStore], type[Visitor]] = {
         AstraDB: AstraDBTranslator,
         PGVector: PGVectorTranslator,
         CommunityPinecone: PineconeTranslator,
@@ -118,119 +120,129 @@ def _get_builtin_translator(vectorstore: VectorStore) -> Visitor:
     }
     if isinstance(vectorstore, DatabricksVectorSearch):
         return DatabricksVectorSearchTranslator()
-    elif isinstance(vectorstore, MyScale):
+    if isinstance(vectorstore, MyScale):
         return MyScaleTranslator(metadata_key=vectorstore.metadata_column)
-    elif isinstance(vectorstore, Redis):
+    if isinstance(vectorstore, Redis):
         return RedisTranslator.from_vectorstore(vectorstore)
-    elif isinstance(vectorstore, TencentVectorDB):
+    if isinstance(vectorstore, TencentVectorDB):
         fields = [
             field.name for field in (vectorstore.meta_fields or []) if field.index
         ]
         return TencentVectorDBTranslator(fields)
-    elif vectorstore.__class__ in BUILTIN_TRANSLATORS:
-        return BUILTIN_TRANSLATORS[vectorstore.__class__]()
+    if vectorstore.__class__ in builtin_translators:
+        return builtin_translators[vectorstore.__class__]()
+    try:
+        from langchain_astradb.vectorstores import AstraDBVectorStore
+    except ImportError:
+        pass
     else:
-        try:
-            from langchain_astradb.vectorstores import AstraDBVectorStore
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, AstraDBVectorStore):
-                return AstraDBTranslator()
+        if isinstance(vectorstore, AstraDBVectorStore):
+            return AstraDBTranslator()
 
-        try:
-            from langchain_elasticsearch.vectorstores import ElasticsearchStore
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, ElasticsearchStore):
-                return ElasticsearchTranslator()
+    try:
+        from langchain_elasticsearch.vectorstores import ElasticsearchStore
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, ElasticsearchStore):
+            return ElasticsearchTranslator()
 
-        try:
-            from langchain_pinecone import PineconeVectorStore
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, PineconeVectorStore):
-                return PineconeTranslator()
+    try:
+        from langchain_pinecone import PineconeVectorStore
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, PineconeVectorStore):
+            return PineconeTranslator()
 
-        try:
-            from langchain_mongodb import MongoDBAtlasVectorSearch
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, MongoDBAtlasVectorSearch):
-                return MongoDBAtlasTranslator()
+    try:
+        from langchain_milvus import Milvus
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, Milvus):
+            return MilvusTranslator()
 
-        try:
-            from langchain_neo4j import Neo4jVector
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, Neo4jVector):
-                return Neo4jTranslator()
+    try:
+        from langchain_mongodb import MongoDBAtlasVectorSearch
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, MongoDBAtlasVectorSearch):
+            return MongoDBAtlasTranslator()
 
-        try:
-            # Trying langchain_chroma import if exists
-            from langchain_chroma import Chroma
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, Chroma):
-                return ChromaTranslator()
+    try:
+        from langchain_neo4j import Neo4jVector
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, Neo4jVector):
+            return Neo4jTranslator()
 
-        try:
-            from langchain_postgres import PGVector
-            from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, PGVector):
-                return NewPGVectorTranslator()
+    try:
+        # Trying langchain_chroma import if exists
+        from langchain_chroma import Chroma
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, Chroma):
+            return ChromaTranslator()
 
-        try:
-            from langchain_qdrant import QdrantVectorStore
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, QdrantVectorStore):
-                return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
+    try:
+        from langchain_postgres import PGVector
+        from langchain_postgres import PGVectorTranslator as NewPGVectorTranslator
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, PGVector):
+            return NewPGVectorTranslator()
 
-        try:
-            # Added in langchain-community==0.2.11
-            from langchain_community.query_constructors.hanavector import HanaTranslator
-            from langchain_community.vectorstores import HanaDB
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, HanaDB):
-                return HanaTranslator()
+    try:
+        from langchain_qdrant import QdrantVectorStore
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, QdrantVectorStore):
+            return QdrantTranslator(metadata_key=vectorstore.metadata_payload_key)
 
-        try:
-            # Trying langchain_weaviate (weaviate v4) import if exists
-            from langchain_weaviate.vectorstores import WeaviateVectorStore
+    try:
+        # Added in langchain-community==0.2.11
+        from langchain_community.query_constructors.hanavector import HanaTranslator
+        from langchain_community.vectorstores import HanaDB
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, HanaDB):
+            return HanaTranslator()
 
-        except ImportError:
-            pass
-        else:
-            if isinstance(vectorstore, WeaviateVectorStore):
-                return WeaviateTranslator()
+    try:
+        # Trying langchain_weaviate (weaviate v4) import if exists
+        from langchain_weaviate.vectorstores import WeaviateVectorStore
 
-        raise ValueError(
-            f"Self query retriever with Vector Store type {vectorstore.__class__}"
-            f" not supported."
-        )
+    except ImportError:
+        pass
+    else:
+        if isinstance(vectorstore, WeaviateVectorStore):
+            return WeaviateTranslator()
+
+    msg = (
+        f"Self query retriever with Vector Store type {vectorstore.__class__}"
+        f" not supported."
+    )
+    raise ValueError(msg)
 
 
 class SelfQueryRetriever(BaseRetriever):
-    """Retriever that uses a vector store and an LLM to generate
-    the vector store queries."""
+    """Self Query Retriever.
+
+    Retriever that uses a vector store and an LLM to generate the vector store queries.
+    """
 
     vectorstore: VectorStore
     """The underlying vector store from which documents will be retrieved."""
     query_constructor: Runnable[dict, StructuredQuery] = Field(alias="llm_chain")
     """The query constructor chain for generating the vector store queries.
-    
+
     llm_chain is legacy name kept for backwards compatibility."""
     search_type: str = "similarity"
     """The search type to perform on the vector store."""
@@ -254,7 +266,7 @@ class SelfQueryRetriever(BaseRetriever):
         """Validate translator."""
         if "structured_query_translator" not in values:
             values["structured_query_translator"] = _get_builtin_translator(
-                values["vectorstore"]
+                values["vectorstore"],
             )
         return values
 
@@ -264,10 +276,12 @@ class SelfQueryRetriever(BaseRetriever):
         return self.query_constructor
 
     def _prepare_query(
-        self, query: str, structured_query: StructuredQuery
+        self,
+        query: str,
+        structured_query: StructuredQuery,
     ) -> tuple[str, dict[str, Any]]:
         new_query, new_kwargs = self.structured_query_translator.visit_structured_query(
-            structured_query
+            structured_query,
         )
         if structured_query.limit is not None:
             new_kwargs["k"] = structured_query.limit
@@ -277,56 +291,50 @@ class SelfQueryRetriever(BaseRetriever):
         return new_query, search_kwargs
 
     def _get_docs_with_query(
-        self, query: str, search_kwargs: dict[str, Any]
+        self,
+        query: str,
+        search_kwargs: dict[str, Any],
     ) -> list[Document]:
-        docs = self.vectorstore.search(query, self.search_type, **search_kwargs)
-        return docs
+        return self.vectorstore.search(query, self.search_type, **search_kwargs)
 
     async def _aget_docs_with_query(
-        self, query: str, search_kwargs: dict[str, Any]
+        self,
+        query: str,
+        search_kwargs: dict[str, Any],
     ) -> list[Document]:
-        docs = await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
-        return docs
+        return await self.vectorstore.asearch(query, self.search_type, **search_kwargs)
 
+    @override
     def _get_relevant_documents(
-        self, query: str, *, run_manager: CallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = self.query_constructor.invoke(
-            {"query": query}, config={"callbacks": run_manager.get_child()}
+            {"query": query},
+            config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
-        docs = self._get_docs_with_query(new_query, search_kwargs)
-        return docs
+        return self._get_docs_with_query(new_query, search_kwargs)
 
+    @override
     async def _aget_relevant_documents(
-        self, query: str, *, run_manager: AsyncCallbackManagerForRetrieverRun
+        self,
+        query: str,
+        *,
+        run_manager: AsyncCallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        """Get documents relevant for a query.
-
-        Args:
-            query: string to find relevant documents for
-
-        Returns:
-            List of relevant documents
-        """
         structured_query = await self.query_constructor.ainvoke(
-            {"query": query}, config={"callbacks": run_manager.get_child()}
+            {"query": query},
+            config={"callbacks": run_manager.get_child()},
         )
         if self.verbose:
-            logger.info(f"Generated Query: {structured_query}")
+            logger.info("Generated Query: %s", structured_query)
         new_query, search_kwargs = self._prepare_query(query, structured_query)
-        docs = await self._aget_docs_with_query(new_query, search_kwargs)
-        return docs
+        return await self._aget_docs_with_query(new_query, search_kwargs)
 
     @classmethod
     def from_llm(
@@ -337,10 +345,29 @@ class SelfQueryRetriever(BaseRetriever):
         metadata_field_info: Sequence[Union[AttributeInfo, dict]],
         structured_query_translator: Optional[Visitor] = None,
         chain_kwargs: Optional[dict] = None,
-        enable_limit: bool = False,
-        use_original_query: bool = False,
+        enable_limit: bool = False,  # noqa: FBT001,FBT002
+        use_original_query: bool = False,  # noqa: FBT001,FBT002
         **kwargs: Any,
     ) -> "SelfQueryRetriever":
+        """Create a SelfQueryRetriever from an LLM and a vector store.
+
+        Args:
+            llm: The language model to use for generating queries.
+            vectorstore: The vector store to use for retrieving documents.
+            document_contents: Description of the page contents of the document to be
+                queried.
+            metadata_field_info: Metadata field information for the documents.
+            structured_query_translator: Optional translator for turning internal query
+                language into vectorstore search params.
+            chain_kwargs: Additional keyword arguments for the query constructor.
+            enable_limit: Whether to enable the limit operator.
+            use_original_query: Whether to use the original query instead of the revised
+                query from the LLM.
+            **kwargs: Additional keyword arguments for the SelfQueryRetriever.
+
+        Returns:
+            An instance of SelfQueryRetriever.
+        """
         if structured_query_translator is None:
             structured_query_translator = _get_builtin_translator(vectorstore)
         chain_kwargs = chain_kwargs or {}
@@ -367,9 +394,9 @@ class SelfQueryRetriever(BaseRetriever):
             **chain_kwargs,
         )
         query_constructor = query_constructor.with_config(
-            run_name=QUERY_CONSTRUCTOR_RUN_NAME
+            run_name=QUERY_CONSTRUCTOR_RUN_NAME,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             query_constructor=query_constructor,
             vectorstore=vectorstore,
             use_original_query=use_original_query,

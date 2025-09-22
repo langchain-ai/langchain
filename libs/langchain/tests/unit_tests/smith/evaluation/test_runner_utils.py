@@ -2,17 +2,15 @@
 
 import uuid
 from collections.abc import Iterator
-from datetime import datetime
-from typing import Any, Optional, Union
+from datetime import datetime, timezone
+from typing import Any
 from unittest import mock
 
 import pytest
 from freezegun import freeze_time
-from langchain_core.language_models import BaseLanguageModel
 from langsmith.client import Client
 from langsmith.schemas import Dataset, Example
 
-from langchain.chains.base import Chain
 from langchain.chains.transform import TransformChain
 from langchain.smith.evaluation.runner_utils import (
     InputFormatError,
@@ -27,7 +25,7 @@ from langchain.smith.evaluation.runner_utils import (
 from tests.unit_tests.llms.fake_chat_model import FakeChatModel
 from tests.unit_tests.llms.fake_llm import FakeLLM
 
-_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0)
+_CREATED_AT = datetime(2015, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 _TENANT_ID = "7a3d2b56-cd5b-44e5-846f-7eb6e8144ce4"
 _EXAMPLE_MESSAGE = {
     "data": {"content": "Foo", "example": False, "additional_kwargs": {}},
@@ -65,7 +63,6 @@ _INVALID_PROMPTS = (
     _VALID_MESSAGES,
 )
 def test__get_messages_valid(inputs: dict[str, Any]) -> None:
-    {"messages": []}
     _get_messages(inputs)
 
 
@@ -174,7 +171,7 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
         assert "the right input" in inputs
         return {"output": "2"}
 
-    mock_chain = TransformChain(  # type: ignore[call-arg]
+    mock_chain = TransformChain(
         input_variables=["the right input"],
         output_variables=["output"],
         transform=run_val,
@@ -192,7 +189,9 @@ def test_run_llm_or_chain_with_input_mapper() -> None:
     )
     assert result == {"output": "2", "the right input": "1"}
     bad_result = _run_llm_or_chain(
-        example, {"callbacks": [], "tags": []}, llm_or_chain_factory=lambda: mock_chain
+        example,
+        {"callbacks": [], "tags": []},
+        llm_or_chain_factory=lambda: mock_chain,
     )
     assert "Error" in bad_result
 
@@ -242,7 +241,7 @@ def test_run_chat_model_all_formats(inputs: dict[str, Any]) -> None:
 
 
 @freeze_time("2023-01-01")
-async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
+async def test_arun_on_dataset() -> None:
     dataset = Dataset(
         id=uuid.uuid4(),
         name="test",
@@ -297,22 +296,20 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         ),
     ]
 
-    def mock_read_dataset(*args: Any, **kwargs: Any) -> Dataset:
+    def mock_read_dataset(*_: Any, **__: Any) -> Dataset:
         return dataset
 
-    def mock_list_examples(*args: Any, **kwargs: Any) -> Iterator[Example]:
+    def mock_list_examples(*_: Any, **__: Any) -> Iterator[Example]:
         return iter(examples)
 
     async def mock_arun_chain(
         example: Example,
-        llm_or_chain: Union[BaseLanguageModel, Chain],
-        tags: Optional[list[str]] = None,
-        callbacks: Optional[Any] = None,
-        **kwargs: Any,
+        *_: Any,
+        **__: Any,
     ) -> dict[str, Any]:
         return {"result": f"Result for example {example.id}"}
 
-    def mock_create_project(*args: Any, **kwargs: Any) -> Any:
+    def mock_create_project(*_: Any, **__: Any) -> Any:
         proj = mock.MagicMock()
         proj.id = "123"
         return proj
@@ -339,13 +336,13 @@ async def test_arun_on_dataset(monkeypatch: pytest.MonkeyPatch) -> None:
         expected = {
             str(example.id): {
                 "output": {
-                    "result": f"Result for example {uuid.UUID(str(example.id))}"
+                    "result": f"Result for example {uuid.UUID(str(example.id))}",
                 },
                 "input": {"input": (example.inputs or {}).get("input")},
                 "reference": {
                     "output": example.outputs["output"]
                     if example.outputs is not None
-                    else None
+                    else None,
                 },
                 "feedback": [],
                 # No run since we mock the call to the llm above

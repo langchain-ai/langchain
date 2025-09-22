@@ -22,7 +22,7 @@ lint lint_diff lint_package lint_tests:
 
 format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff format $(PYTHON_FILES)
-	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff check --select I --fix $(PYTHON_FILES)
+	[ "$(PYTHON_FILES)" = "" ] || uv run --group typing --group lint ruff check --fix $(PYTHON_FILES)
 
 test tests: _test _e2e_test
 
@@ -38,15 +38,16 @@ _e2e_test:
 	mkdir .integration_test
 	cd .integration_test && \
 		python3 -m venv .venv && \
-		pip install --upgrade poetry && \
+		$(PYTHON) -m pip install --upgrade uv && \
 		$(PYTHON) -m pip install -e .. && \
 		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLink && \
 		$(PYTHON) -m langchain_cli.cli integration new --name parrot-link --name-class ParrotLinkB --src=integration_template/chat_models.py --dst=langchain-parrot-link/langchain_parrot_link/chat_models_b.py && \
 		$(PYTHON) -m langchain_cli.cli integration create-doc --name parrot-link --name-class ParrotLinkB --component-type ChatModel --destination-dir langchain-parrot-link/docs && \
 		cd langchain-parrot-link && \
-			poetry install --with lint,typing,test && \
-			poetry run pip install -e ../../../standard-tests && \
+			unset UV_FROZEN && \
+			unset VIRTUAL_ENV && \
+			uv sync && \
+			uv add --editable ../../../standard-tests && \
 			make format lint tests && \
-			poetry install --with test_integration && \
-			poetry run pip install -e ../../../core && \
+			uv add --editable ../../../core && \
 			make integration_test 

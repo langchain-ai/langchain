@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional, Union
 
 import pytest
 from packaging import version
-from pydantic import BaseModel
+from pydantic import BaseModel, RootModel
 from typing_extensions import override
 
 from langchain_core.callbacks import (
@@ -20,6 +20,11 @@ from langchain_core.runnables.config import RunnableConfig
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.runnables.utils import ConfigurableFieldSpec, Input, Output
 from langchain_core.tracers import Run
+from langchain_core.tracers.root_listeners import (
+    AsyncListener,
+    AsyncRootListenersTracer,
+    RootListenersTracer,
+)
 from langchain_core.utils.pydantic import PYDANTIC_VERSION
 from tests.unit_tests.pydantic_utils import _schema
 
@@ -499,8 +504,6 @@ def test_get_output_schema() -> None:
 
 
 def test_get_input_schema_input_messages() -> None:
-    from pydantic import RootModel
-
     runnable_with_message_history_input = RootModel[Sequence[BaseMessage]]
 
     runnable = RunnableLambda(
@@ -549,11 +552,11 @@ def test_using_custom_config_specs() -> None:
         user_id: str, conversation_id: str
     ) -> InMemoryChatMessageHistory:
         if (user_id, conversation_id) not in store:
-            store[(user_id, conversation_id)] = InMemoryChatMessageHistory()
-        return store[(user_id, conversation_id)]
+            store[user_id, conversation_id] = InMemoryChatMessageHistory()
+        return store[user_id, conversation_id]
 
     with_message_history = RunnableWithMessageHistory(
-        runnable,  # type: ignore[arg-type]
+        runnable,
         get_session_history=get_session_history,
         input_messages_key="messages",
         history_messages_key="history",
@@ -662,11 +665,11 @@ async def test_using_custom_config_specs_async() -> None:
         user_id: str, conversation_id: str
     ) -> InMemoryChatMessageHistory:
         if (user_id, conversation_id) not in store:
-            store[(user_id, conversation_id)] = InMemoryChatMessageHistory()
-        return store[(user_id, conversation_id)]
+            store[user_id, conversation_id] = InMemoryChatMessageHistory()
+        return store[user_id, conversation_id]
 
     with_message_history = RunnableWithMessageHistory(
-        runnable,  # type: ignore[arg-type]
+        runnable,
         get_session_history=get_session_history,
         input_messages_key="messages",
         history_messages_key="history",
@@ -769,15 +772,13 @@ def test_ignore_session_id() -> None:
 
     runnable = RunnableLambda(_fake_llm)
     history = InMemoryChatMessageHistory()
-    with_message_history = RunnableWithMessageHistory(runnable, lambda: history)  # type: ignore[arg-type]
+    with_message_history = RunnableWithMessageHistory(runnable, lambda: history)
     _ = with_message_history.invoke("hello")
     _ = with_message_history.invoke("hello again")
     assert len(history.messages) == 4
 
 
-class _RunnableLambdaWithRaiseError(RunnableLambda):
-    from langchain_core.tracers.root_listeners import AsyncListener
-
+class _RunnableLambdaWithRaiseError(RunnableLambda[Input, Output]):
     def with_listeners(
         self,
         *,
@@ -791,8 +792,6 @@ class _RunnableLambdaWithRaiseError(RunnableLambda):
             Union[Callable[[Run], None], Callable[[Run, RunnableConfig], None]]
         ] = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import RootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = RootListenersTracer(
                 config=config,
@@ -807,7 +806,7 @@ class _RunnableLambdaWithRaiseError(RunnableLambda):
 
         return RunnableBinding(
             bound=self,
-            config_factories=[lambda config: create_tracer(config)],
+            config_factories=[create_tracer],
         )
 
     def with_alisteners(
@@ -817,8 +816,6 @@ class _RunnableLambdaWithRaiseError(RunnableLambda):
         on_end: Optional[AsyncListener] = None,
         on_error: Optional[AsyncListener] = None,
     ) -> Runnable[Input, Output]:
-        from langchain_core.tracers.root_listeners import AsyncRootListenersTracer
-
         def create_tracer(config: RunnableConfig) -> RunnableConfig:
             tracer = AsyncRootListenersTracer(
                 config=config,
@@ -833,7 +830,7 @@ class _RunnableLambdaWithRaiseError(RunnableLambda):
 
         return RunnableBinding(
             bound=self,
-            config_factories=[lambda config: create_tracer(config)],
+            config_factories=[create_tracer],
         )
 
 
@@ -861,7 +858,7 @@ def test_get_output_messages_with_value_error() -> None:
     runnable = _RunnableLambdaWithRaiseError(lambda _: illegal_bool_message)
     store: dict = {}
     get_session_history = _get_get_session_history(store=store)
-    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    with_history = RunnableWithMessageHistory(runnable, get_session_history)  # type: ignore[arg-type]
     config: RunnableConfig = {
         "configurable": {"session_id": "1", "message_history": get_session_history("1")}
     }
@@ -876,8 +873,8 @@ def test_get_output_messages_with_value_error() -> None:
         with_history.bound.invoke([HumanMessage(content="hello")], config)
 
     illegal_int_message = 123
-    runnable = _RunnableLambdaWithRaiseError(lambda _: illegal_int_message)
-    with_history = RunnableWithMessageHistory(runnable, get_session_history)
+    runnable2 = _RunnableLambdaWithRaiseError(lambda _: illegal_int_message)
+    with_history = RunnableWithMessageHistory(runnable2, get_session_history)  # type: ignore[arg-type]
 
     with pytest.raises(
         ValueError,

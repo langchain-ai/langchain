@@ -27,7 +27,8 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
 
     Setup:
         # TODO: Replace with relevant packages, env vars.
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -61,6 +62,7 @@ class __ModuleName__Tool(BaseTool):  # type: ignore[override]
         .. code-block:: python
 
             # TODO: output of invocation
+
     """  # noqa: E501
 
     # TODO: Set tool name and description

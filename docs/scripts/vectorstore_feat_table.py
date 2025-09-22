@@ -10,6 +10,7 @@ from langchain_couchbase import CouchbaseSearchVectorStore
 from langchain_milvus import Milvus
 from langchain_mongodb import MongoDBAtlasVectorSearch
 from langchain_pinecone import PineconeVectorStore
+from langchain_postgres import PGVectorStore
 from langchain_qdrant import QdrantVectorStore
 
 vectorstore_list = [
@@ -22,6 +23,7 @@ vectorstore_list = [
 ]
 
 from_partners = [
+    ("PGVectorStore", PGVectorStore),
     ("Chroma", Chroma),
     ("AstraDBVectorStore", AstraDBVectorStore),
     ("QdrantVectorStore", QdrantVectorStore),
@@ -52,6 +54,17 @@ The table below lists the features for some of our most popular vector stores.
 
 def get_vectorstore_table():
     vectorstore_feat_table = {
+        "PGVectorStore": {
+            "Delete by ID": True,
+            "Filtering": True,
+            "similarity_search_by_vector": True,
+            "similarity_search_with_score": True,
+            "asearch": True,
+            "Passes Standard Tests": True,
+            "Multi Tenancy": False,
+            "Local/Cloud": "Local",
+            "IDs in add Documents": True,
+        },
         "FAISS": {
             "Delete by ID": True,
             "Filtering": True,
@@ -190,7 +203,7 @@ def get_vectorstore_table():
             "similarity_search_by_vector": True,
             "similarity_search_with_score": True,
             "asearch": True,
-            "Passes Standard Tests": False,
+            "Passes Standard Tests": True,
             "Multi Tenancy": False,
             "Local/Cloud": "Local",
             "IDs in add Documents": True,

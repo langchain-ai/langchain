@@ -1,6 +1,6 @@
 """Test text splitting functionality using NLTK and Spacy based sentence splitters."""
 
-from typing import Any
+import re
 
 import nltk
 import pytest
@@ -14,25 +14,42 @@ def setup_module() -> None:
     nltk.download("punkt_tab")
 
 
-@pytest.fixture()
-def spacy() -> Any:
+@pytest.fixture
+def spacy() -> None:
+    spacy = pytest.importorskip("spacy")
+
+    # Check if en_core_web_sm model is available
     try:
-        import spacy
-    except ImportError:
-        pytest.skip("Spacy not installed.")
-    spacy.cli.download("en_core_web_sm")  # type: ignore[attr-defined,operator,unused-ignore]
-    return spacy
+        spacy.load("en_core_web_sm")
+    except OSError:
+        pytest.skip(
+            "en_core_web_sm model not installed. Install with: "
+            "uv add --group test_integration "
+            "https://github.com/explosion/spacy-models/releases/download/"
+            "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"
+        )
 
 
 def test_nltk_text_splitting_args() -> None:
     """Test invalid arguments."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Got a larger chunk overlap (4) than chunk size (2), should be smaller."
+        ),
+    ):
         NLTKTextSplitter(chunk_size=2, chunk_overlap=4)
 
 
-def test_spacy_text_splitting_args(spacy: Any) -> None:
+@pytest.mark.usefixtures("spacy")
+def test_spacy_text_splitting_args() -> None:
     """Test invalid arguments."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Got a larger chunk overlap (4) than chunk size (2), should be smaller."
+        ),
+    ):
         SpacyTextSplitter(chunk_size=2, chunk_overlap=4)
 
 
@@ -46,8 +63,9 @@ def test_nltk_text_splitter() -> None:
     assert output == expected_output
 
 
+@pytest.mark.usefixtures("spacy")
 @pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
-def test_spacy_text_splitter(pipeline: str, spacy: Any) -> None:
+def test_spacy_text_splitter(pipeline: str) -> None:
     """Test splitting by sentence using Spacy."""
     text = "This is sentence one. And this is sentence two."
     separator = "|||"
@@ -57,8 +75,9 @@ def test_spacy_text_splitter(pipeline: str, spacy: Any) -> None:
     assert output == expected_output
 
 
+@pytest.mark.usefixtures("spacy")
 @pytest.mark.parametrize("pipeline", ["sentencizer", "en_core_web_sm"])
-def test_spacy_text_splitter_strip_whitespace(pipeline: str, spacy: Any) -> None:
+def test_spacy_text_splitter_strip_whitespace(pipeline: str) -> None:
     """Test splitting by sentence using Spacy."""
     text = "This is sentence one. And this is sentence two."
     separator = "|||"
@@ -72,7 +91,9 @@ def test_spacy_text_splitter_strip_whitespace(pipeline: str, spacy: Any) -> None
 
 def test_nltk_text_splitter_args() -> None:
     """Test invalid arguments for NLTKTextSplitter."""
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="When use_span_tokenize is True, separator should be ''"
+    ):
         NLTKTextSplitter(
             chunk_size=80,
             chunk_overlap=0,

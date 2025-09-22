@@ -1,4 +1,6 @@
-name: lint
+name: '🧹 Code Linting'
+# Runs code quality checks using ruff, mypy, and other linting tools
+# Checks both package code and test code for consistency
 
 on:
   workflow_call:
@@ -12,6 +14,9 @@ on:
         type: string
         description: "Python version to use"
 
+permissions:
+  contents: read
+
 env:
   WORKDIR: ${{ inputs.working-directory == '' && '.' || inputs.working-directory }}
 
@@ -21,19 +26,23 @@ env:
   UV_FROZEN: "true"
 
 jobs:
+  # Linting job - runs quality checks on package and test code
   build:
-    name: "make lint #${{ inputs.python-version }}"
+    name: 'Python ${{ inputs.python-version }}'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - name: '📋 Checkout Code'
+        uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: lint-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
-      - name: Install dependencies
+      - name: '📦 Install Lint & Typing Dependencies'
         # Also installs dev/lint/test/typing dependencies, to ensure we have
         # type hints for as many of our libraries as possible.
         # This helps catch errors that require dependencies to be spotted, for example:
@@ -46,12 +55,12 @@ jobs:
         run: |
           uv sync --group lint --group typing
 
-      - name: Analysing the code with our lint
+      - name: '🔍 Analyze Package Code with Linters'
         working-directory: ${{ inputs.working-directory }}
         run: |
           make lint_package
 
-      - name: Install unit test dependencies
+      - name: '📦 Install Unit Test Dependencies'
         # Also installs dev/lint/test/typing dependencies, to ensure we have
         # type hints for as many of our libraries as possible.
         # This helps catch errors that require dependencies to be spotted, for example:
@@ -64,13 +73,13 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
         run: |
           uv sync --inexact --group test
-      - name: Install unit+integration test dependencies
+      - name: '📦 Install Unit + Integration Test Dependencies'
         if: ${{ startsWith(inputs.working-directory, 'libs/partners/') }}
         working-directory: ${{ inputs.working-directory }}
         run: |
           uv sync --inexact --group test --group test_integration
 
-      - name: Analysing the code with our lint
+      - name: '🔍 Analyze Test Code with Linters'
         working-directory: ${{ inputs.working-directory }}
         run: |
           make lint_tests

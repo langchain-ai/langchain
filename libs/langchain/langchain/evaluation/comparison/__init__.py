@@ -1,4 +1,4 @@
-"""Comparison evaluators.
+r"""Comparison evaluators.
 
 This module contains evaluators for comparing the output of two models,
 be they LLMs, Chains, or otherwise. This can be used for scoring
@@ -24,7 +24,7 @@ Example:
     #    "comment": "Both responses accurately state"
     #       " that the chemical formula for water is H2O."
     #       " However, Response B provides additional information"
-    # .     " by explaining what the formula means.\\n[[B]]"
+    # .     " by explaining what the formula means.\n[[B]]"
     # }
 """
 
@@ -33,4 +33,4 @@ from langchain.evaluation.comparison.eval_chain import (
     PairwiseStringEvalChain,
 )
 
-__all__ = ["PairwiseStringEvalChain", "LabeledPairwiseStringEvalChain"]
+__all__ = ["LabeledPairwiseStringEvalChain", "PairwiseStringEvalChain"]

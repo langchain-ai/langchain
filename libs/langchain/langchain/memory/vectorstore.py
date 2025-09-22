@@ -21,7 +21,9 @@ from langchain.memory.utils import get_prompt_input_key
     ),
 )
 class VectorStoreRetrieverMemory(BaseMemory):
-    """Store the conversation history in a vector store and retrieves the relevant
+    """Vector Store Retriever Memory.
+
+    Store the conversation history in a vector store and retrieves the relevant
     parts of past conversation based on the input.
     """
 
@@ -52,7 +54,8 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self.input_key
 
     def _documents_to_memory_variables(
-        self, docs: list[Document]
+        self,
+        docs: list[Document],
     ) -> dict[str, Union[list[Document], str]]:
         result: Union[list[Document], str]
         if not self.return_docs:
@@ -62,7 +65,8 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return {self.memory_key: result}
 
     def load_memory_variables(
-        self, inputs: dict[str, Any]
+        self,
+        inputs: dict[str, Any],
     ) -> dict[str, Union[list[Document], str]]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
@@ -71,7 +75,8 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self._documents_to_memory_variables(docs)
 
     async def aload_memory_variables(
-        self, inputs: dict[str, Any]
+        self,
+        inputs: dict[str, Any],
     ) -> dict[str, Union[list[Document], str]]:
         """Return history buffer."""
         input_key = self._get_prompt_input_key(inputs)
@@ -80,7 +85,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
         return self._documents_to_memory_variables(docs)
 
     def _form_documents(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> list[Document]:
         """Format context from this conversation to buffer."""
         # Each document should only include the current turn, not the chat history
@@ -100,7 +107,9 @@ class VectorStoreRetrieverMemory(BaseMemory):
         self.retriever.add_documents(documents)
 
     async def asave_context(
-        self, inputs: dict[str, Any], outputs: dict[str, str]
+        self,
+        inputs: dict[str, Any],
+        outputs: dict[str, str],
     ) -> None:
         """Save context from this conversation to buffer."""
         documents = self._form_documents(inputs, outputs)

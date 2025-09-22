@@ -55,6 +55,9 @@ class InputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
+    May also hold extra provider-specific keys.
+
     """
 
     audio: int
@@ -87,6 +90,7 @@ class OutputTokenDetails(TypedDict, total=False):
             }
 
     .. versionadded:: 0.3.9
+
     """
 
     audio: int
@@ -120,12 +124,13 @@ class UsageMetadata(TypedDict):
                 "output_token_details": {
                     "audio": 10,
                     "reasoning": 200,
-                }
+                },
             }
 
     .. versionchanged:: 0.3.9
 
         Added ``input_token_details`` and ``output_token_details``.
+
     """
 
     input_tokens: int
@@ -305,14 +310,8 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
     def init_tool_calls(self) -> Self:
         """Initialize tool calls from tool call chunks.
 
-        Args:
-            values: The values to validate.
-
         Returns:
-            The values with tool calls initialized.
-
-        Raises:
-            ValueError: If the tool call chunks are malformed.
+            This ``AIMessageChunk``.
         """
         if not self.tool_call_chunks:
             if self.tool_calls:
@@ -353,7 +352,7 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 
         for chunk in self.tool_call_chunks:
             try:
-                args_ = parse_partial_json(chunk["args"]) if chunk["args"] != "" else {}  # type: ignore[arg-type]
+                args_ = parse_partial_json(chunk["args"]) if chunk["args"] else {}
                 if isinstance(args_, dict):
                     tool_calls.append(
                         create_tool_call(
@@ -384,7 +383,19 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
 def add_ai_message_chunks(
     left: AIMessageChunk, *others: AIMessageChunk
 ) -> AIMessageChunk:
-    """Add multiple AIMessageChunks together."""
+    """Add multiple ``AIMessageChunk``s together.
+
+    Args:
+        left: The first ``AIMessageChunk``.
+        *others: Other ``AIMessageChunk``s to add.
+
+    Raises:
+        ValueError: If the example values of the chunks are not the same.
+
+    Returns:
+        The resulting ``AIMessageChunk``.
+
+    """
     if any(left.example != o.example for o in others):
         msg = "Cannot concatenate AIMessageChunks with different example values."
         raise ValueError(msg)
@@ -460,13 +471,13 @@ def add_usage(
                 input_tokens=5,
                 output_tokens=0,
                 total_tokens=5,
-                input_token_details=InputTokenDetails(cache_read=3)
+                input_token_details=InputTokenDetails(cache_read=3),
             )
             right = UsageMetadata(
                 input_tokens=0,
                 output_tokens=10,
                 total_tokens=10,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             add_usage(left, right)
@@ -480,8 +491,15 @@ def add_usage(
                 output_tokens=10,
                 total_tokens=15,
                 input_token_details=InputTokenDetails(cache_read=3),
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
+
+    Args:
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
+
+    Returns:
+        The sum of the two ``UsageMetadata`` objects.
 
     """
     if not (left or right):
@@ -517,13 +535,13 @@ def subtract_usage(
                 input_tokens=5,
                 output_tokens=10,
                 total_tokens=15,
-                input_token_details=InputTokenDetails(cache_read=4)
+                input_token_details=InputTokenDetails(cache_read=4),
             )
             right = UsageMetadata(
                 input_tokens=3,
                 output_tokens=8,
                 total_tokens=11,
-                output_token_details=OutputTokenDetails(reasoning=4)
+                output_token_details=OutputTokenDetails(reasoning=4),
             )
 
             subtract_usage(left, right)
@@ -537,8 +555,15 @@ def subtract_usage(
                 output_tokens=2,
                 total_tokens=4,
                 input_token_details=InputTokenDetails(cache_read=4),
-                output_token_details=OutputTokenDetails(reasoning=0)
+                output_token_details=OutputTokenDetails(reasoning=0),
             )
+
+    Args:
+        left: The first ``UsageMetadata`` object.
+        right: The second ``UsageMetadata`` object.
+
+    Returns:
+        The resulting ``UsageMetadata`` after subtraction.
 
     """
     if not (left or right):

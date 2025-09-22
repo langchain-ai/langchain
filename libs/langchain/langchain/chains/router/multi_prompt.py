@@ -7,6 +7,7 @@ from typing import Any, Optional
 from langchain_core._api import deprecated
 from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import PromptTemplate
+from typing_extensions import override
 
 from langchain.chains import ConversationChain
 from langchain.chains.base import Chain
@@ -21,7 +22,7 @@ from langchain.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMP
     removal="1.0",
     message=(
         "Please see migration guide here for recommended implementation: "
-        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"  # noqa: E501
+        "https://python.langchain.com/docs/versions/migrating_chains/multi_prompt_chain/"
     ),
 )
 class MultiPromptChain(MultiRouteChain):
@@ -70,7 +71,8 @@ class MultiPromptChain(MultiRouteChain):
             # Next: define the chain that selects which branch to route to.
             # Here we will take advantage of tool-calling features to force
             # the output to select one of two desired branches.
-            route_system = "Route the user's query to either the animal or vegetable expert."
+            route_system = "Route the user's query to either the animal "
+            "or vegetable expert."
             route_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", route_system),
@@ -121,8 +123,8 @@ class MultiPromptChain(MultiRouteChain):
 
 
             # Finally, assemble the multi-prompt chain. This is a sequence of two steps:
-            # 1) Select "animal" or "vegetable" via the route_chain, and collect the answer
-            # alongside the input query.
+            # 1) Select "animal" or "vegetable" via the route_chain, and collect the
+            # answer alongside the input query.
             # 2) Route the input query to chain_1 or chain_2, based on the
             # selection.
             graph = StateGraph(State)
@@ -139,9 +141,11 @@ class MultiPromptChain(MultiRouteChain):
             result = await app.ainvoke({"query": "what color are carrots"})
             print(result["destination"])
             print(result["answer"])
-    """  # noqa: E501
+
+    """
 
     @property
+    @override
     def output_keys(self) -> list[str]:
         return ["text"]
 
@@ -157,7 +161,7 @@ class MultiPromptChain(MultiRouteChain):
         destinations = [f"{p['name']}: {p['description']}" for p in prompt_infos]
         destinations_str = "\n".join(destinations)
         router_template = MULTI_PROMPT_ROUTER_TEMPLATE.format(
-            destinations=destinations_str
+            destinations=destinations_str,
         )
         router_prompt = PromptTemplate(
             template=router_template,

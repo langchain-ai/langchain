@@ -1,5 +1,5 @@
-name: release
-run-name: Release ${{ inputs.working-directory }} by @${{ github.actor }}
+name: '🚀 Package Release'
+run-name: 'Release ${{ inputs.working-directory }} ${{ inputs.release-version }}'
 on:
   workflow_call:
     inputs:
@@ -14,11 +14,16 @@ on:
         type: string
         description: "From which folder this pipeline executes"
         default: 'libs/langchain'
+      release-version:
+        required: true
+        type: string
+        default: '0.1.0'
+        description: "New version of package being released"
       dangerous-nonmaster-release:
         required: false
         type: boolean
         default: false
-        description: "Release from a non-master branch (danger!)"
+        description: "Release from a non-master branch (danger!) - Only use for hotfixes"
 
 env:
   PYTHON_VERSION: "3.11"
@@ -26,6 +31,8 @@ env:
   UV_NO_SYNC: "true"
 
 jobs:
+  # Build the distribution package and extract version info
+  # Runs in isolated environment with minimal permissions for security
   build:
     if: github.ref == 'refs/heads/master' || inputs.dangerous-nonmaster-release
     environment: Scheduled testing
@@ -36,7 +43,7 @@ jobs:
       version: ${{ steps.check-version.outputs.version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
@@ -64,7 +71,7 @@ jobs:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
 
-      - name: Check Version
+      - name: Check version
         id: check-version
         shell: python
         working-directory: ${{ inputs.working-directory }}
@@ -85,7 +92,7 @@ jobs:
     outputs:
       release-body: ${{ steps.generate-release-body.outputs.release-body }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           repository: langchain-ai/langchain
           path: langchain
@@ -93,7 +100,7 @@ jobs:
             ${{ inputs.working-directory }}
           ref: ${{ github.ref }} # this scopes to just ref'd branch
           fetch-depth: 0 # this fetches entire commit history
-      - name: Check Tags
+      - name: Check tags
         id: check-tags
         shell: bash
         working-directory: langchain/${{ inputs.working-directory }}
@@ -109,7 +116,7 @@ jobs:
             # Look for the latest release of the same base version
             REGEX="^$PKG_NAME==$BASE_VERSION\$"
             PREV_TAG=$(git tag --sort=-creatordate | (grep -P "$REGEX" || true) | head -1)
-            
+
             # If no exact base version match, look for the latest release of any kind
             if [ -z "$PREV_TAG" ]; then
               REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
@@ -120,7 +127,7 @@ jobs:
             PREV_TAG="$PKG_NAME==${VERSION%.*}.$(( ${VERSION##*.} - 1 ))"; [[ "${VERSION##*.}" -eq 0 ]] && PREV_TAG=""
 
             # backup case if releasing e.g. 0.3.0, looks up last release
-            # note if last release (chronologically) was e.g. 0.1.47 it will get 
+            # note if last release (chronologically) was e.g. 0.1.47 it will get
             # that instead of the last 0.2 release
             if [ -z "$PREV_TAG" ]; then
               REGEX="^$PKG_NAME==\\d+\\.\\d+\\.\\d+\$"
@@ -176,13 +183,36 @@ jobs:
     needs:
       - build
       - release-notes
-    uses:
-      ./.github/workflows/_test_release.yml
-    permissions: write-all
-    with:
-      working-directory: ${{ inputs.working-directory }}
-      dangerous-nonmaster-release: ${{ inputs.dangerous-nonmaster-release }}
-    secrets: inherit
+    runs-on: ubuntu-latest
+    permissions:
+      # This permission is used for trusted publishing:
+      # https://blog.pypi.org/posts/2023-04-20-introducing-trusted-publishers/
+      #
+      # Trusted publishing has to also be configured on PyPI for each package:
+      # https://docs.pypi.org/trusted-publishers/adding-a-publisher/
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: ${{ inputs.working-directory }}/dist/
+
+      - name: Publish to test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ inputs.working-directory }}/dist/
+          verbose: true
+          print-hash: true
+          repository-url: https://test.pypi.org/legacy/
+          # We overwrite any existing distributions with the same name and version.
+          # This is *only for CI use* and is *extremely dangerous* otherwise!
+          # https://github.com/pypa/gh-action-pypi-publish#tolerating-release-package-file-duplicates
+          skip-existing: true
+          # Temp workaround since attestations are on by default as of gh-action-pypi-publish v1.11.0
+          attestations: false
 
   pre-release-checks:
     needs:
@@ -192,7 +222,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We explicitly *don't* set up caching here. This ensures our tests are
       # maximally sensitive to catching breakage.
@@ -213,7 +243,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -282,7 +312,8 @@ jobs:
         env:
           MIN_VERSIONS: ${{ steps.min-version.outputs.min-versions }}
         run: |
-          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall --editable .
+          VIRTUAL_ENV=.venv uv pip install --force-reinstall $MIN_VERSIONS
           make tests
         working-directory: ${{ inputs.working-directory }}
 
@@ -344,6 +375,8 @@ jobs:
       fail-fast: false  # Continue testing other partners if one fails
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+      ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
       AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
@@ -353,7 +386,7 @@ jobs:
       AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
       AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
@@ -370,7 +403,7 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         if: startsWith(inputs.working-directory, 'libs/core')
         with:
           name: dist
@@ -379,11 +412,12 @@ jobs:
       - name: Test against ${{ matrix.partner }}
         if: startsWith(inputs.working-directory, 'libs/core')
         run: |
-          # Identify latest tag
+          # Identify latest tag, excluding pre-releases
           LATEST_PACKAGE_TAG="$(
             git ls-remote --tags origin "langchain-${{ matrix.partner }}*" \
             | awk '{print $2}' \
             | sed 's|refs/tags/||' \
+            | grep -E '[0-9]+\.[0-9]+\.[0-9]+$' \
             | sort -Vr \
             | head -n 1
           )"
@@ -430,14 +464,14 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
@@ -469,18 +503,18 @@ jobs:
         working-directory: ${{ inputs.working-directory }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Set up Python + uv
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: dist
           path: ${{ inputs.working-directory }}/dist/
-          
+
       - name: Create Tag
         uses: ncipollo/release-action@v1
         with:

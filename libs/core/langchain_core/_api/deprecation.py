@@ -23,6 +23,8 @@ from typing import (
     cast,
 )
 
+from pydantic.fields import FieldInfo
+from pydantic.v1.fields import FieldInfo as FieldInfoV1
 from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
@@ -127,13 +129,17 @@ def deprecated(
         package: str, optional
             The package of the deprecated object.
 
+    Returns:
+        A decorator to mark a function or class as deprecated.
+
     Examples:
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
+
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -152,10 +158,6 @@ def deprecated(
         _package: str = package,
     ) -> T:
         """Implementation of the decorator returned by `deprecated`."""
-        from langchain_core.utils.pydantic import (  # type: ignore[attr-defined]
-            FieldInfoV1,
-            FieldInfoV2,
-        )
 
         def emit_warning() -> None:
             """Emit the warning."""
@@ -226,7 +228,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -249,7 +251,7 @@ def deprecated(
                     ),
                 )
 
-        elif isinstance(obj, FieldInfoV2):
+        elif isinstance(obj, FieldInfo):
             wrapped = None
             if not _obj_type:
                 _obj_type = "attribute"
@@ -261,7 +263,7 @@ def deprecated(
             def finalize(wrapper: Callable[..., Any], new_doc: str) -> T:  # noqa: ARG001
                 return cast(
                     "T",
-                    FieldInfoV2(
+                    FieldInfo(
                         default=obj.default,
                         default_factory=obj.default_factory,
                         description=new_doc,
@@ -359,7 +361,8 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative = f":meth:`~{_alternative}`"
         elif _alternative:
@@ -367,8 +370,8 @@ def deprecated(
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative_import = f":meth:`~{_alternative_import}`"
         elif _alternative_import:
@@ -471,8 +474,8 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        _package = (
-            package or name.split(".")[0].replace("_", "-")
+        package_ = (
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -485,14 +488,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {_package} {since}"
+            message += f" was deprecated in {package_} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == _package:
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
+            if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)
@@ -545,12 +548,22 @@ def rename_parameter(
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
 
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
+
     Example:
 
         .. code-block:: python
 
             @_api.rename_parameter("3.1", "bad_name", "good_name")
             def func(good_name): ...
+
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import logging
-import warnings
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, Optional, Union
 from uuid import UUID
 
-from langsmith import Client
+from langsmith import Client, get_tracing_context
 from langsmith import run_trees as rt
 from langsmith import utils as ls_utils
-from pydantic import PydanticDeprecationWarning
 from tenacity import (
     Retrying,
     retry_if_exception_type,
@@ -55,7 +53,11 @@ def wait_for_all_tracers() -> None:
 
 
 def get_client() -> Client:
-    """Get the client."""
+    """Get the client.
+
+    Returns:
+        The LangSmith client.
+    """
     return rt.get_cached_client()
 
 
@@ -65,21 +67,6 @@ def _get_executor() -> ThreadPoolExecutor:
     if _EXECUTOR is None:
         _EXECUTOR = ThreadPoolExecutor()
     return _EXECUTOR
-
-
-def _run_to_dict(run: Run, *, exclude_inputs: bool = False) -> dict:
-    # TODO: Update once langsmith moves to Pydantic V2 and we can swap run.dict for
-    # run.model_dump
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=PydanticDeprecationWarning)
-
-        res = {
-            **run.dict(exclude={"child_runs", "inputs", "outputs"}),
-            "outputs": run.outputs,
-        }
-        if not exclude_inputs:
-            res["inputs"] = run.inputs
-    return res
 
 
 class LangChainTracer(BaseTracer):
@@ -112,6 +99,7 @@ class LangChainTracer(BaseTracer):
         self.client = client or get_client()
         self.tags = tags or []
         self.latest_run: Optional[Run] = None
+        self.run_has_token_event_map: dict[str, bool] = {}
 
     def _start_trace(self, run: Run) -> None:
         if self.project_name:
@@ -125,6 +113,8 @@ class LangChainTracer(BaseTracer):
         super()._start_trace(run)
         if run.ls_client is None:
             run.ls_client = self.client
+        if get_tracing_context().get("enabled") is False:
+            run.extra["__disabled"] = True
 
     def on_chat_model_start(
         self,
@@ -217,19 +207,14 @@ class LangChainTracer(BaseTracer):
 
     def _persist_run_single(self, run: Run) -> None:
         """Persist a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
-            run_dict = _run_to_dict(run)
-            run_dict["tags"] = self._get_tags(run)
-            extra = run_dict.get("extra", {})
-            extra["runtime"] = get_runtime_environment()
-            run_dict["extra"] = extra
-            inputs_ = run_dict.get("inputs")
-            if inputs_ and (len(inputs_) > 1 or bool(next(iter(inputs_.values())))):
-                inputs_is_truthy = True
-            else:
-                inputs_is_truthy = False
-            run.extra["inputs_is_truthy"] = inputs_is_truthy
-            self.client.create_run(**run_dict, project_name=self.project_name)
+            run.extra["runtime"] = get_runtime_environment()
+            run.tags = self._get_tags(run)
+            if run.ls_client is not self.client:
+                run.ls_client = self.client
+            run.post()
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("post", e)
@@ -237,11 +222,10 @@ class LangChainTracer(BaseTracer):
 
     def _update_run_single(self, run: Run) -> None:
         """Update a run."""
+        if run.extra.get("__disabled"):
+            return
         try:
-            exclude_inputs = run.extra.get("inputs_is_truthy", False)
-            run_dict = _run_to_dict(run, exclude_inputs=exclude_inputs)
-            run_dict["tags"] = self._get_tags(run)
-            self.client.update_run(run.id, **run_dict)
+            run.patch(exclude_inputs=run.extra.get("inputs_is_truthy", False))
         except Exception as e:
             # Errors are swallowed by the thread executor so we need to log them here
             log_error_once("patch", e)
@@ -261,7 +245,11 @@ class LangChainTracer(BaseTracer):
         chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
         parent_run_id: Optional[UUID] = None,
     ) -> Run:
-        """Append token event to LLM run and return the run."""
+        run_id_str = str(run_id)
+        if run_id_str not in self.run_has_token_event_map:
+            self.run_has_token_event_map[run_id_str] = True
+        else:
+            return self._get_run(run_id, run_type={"llm", "chat_model"})
         return super()._llm_run_with_token_event(
             # Drop the chunk; we don't need to save it
             token,

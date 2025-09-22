@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from streamlit.delta_generator import DeltaGenerator
 
 
-def StreamlitCallbackHandler(
+def StreamlitCallbackHandler(  # noqa: N802
     parent_container: DeltaGenerator,
     *,
     max_thought_containers: int = 4,
@@ -42,7 +42,7 @@ def StreamlitCallbackHandler(
         An optional custom LLMThoughtLabeler instance. If unspecified, the handler
         will use the default thought labeling logic. Defaults to None.
 
-    Returns
+    Returns:
     -------
     A new StreamlitCallbackHandler instance.
 
@@ -70,11 +70,12 @@ def StreamlitCallbackHandler(
             from langchain_community.callbacks.streamlit.streamlit_callback_handler import (  # noqa: E501
                 StreamlitCallbackHandler as _InternalStreamlitCallbackHandler,
             )
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "To use the StreamlitCallbackHandler, please install "
                 "langchain-community with `pip install langchain-community`."
             )
+            raise ImportError(msg) from e
 
         return _InternalStreamlitCallbackHandler(
             parent_container,

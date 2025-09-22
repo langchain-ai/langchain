@@ -1,4 +1,3 @@
-# flake8: noqa
 from langchain_core.prompts import PromptTemplate
 
 SONG_DATA_SOURCE = """\
@@ -30,7 +29,7 @@ FULL_ANSWER = """\
     "filter": "and(or(eq(\\"artist\\", \\"Taylor Swift\\"), eq(\\"artist\\", \\"Katy Perry\\")), lt(\\"length\\", 180), eq(\\"genre\\", \\"pop\\"))"
 }}
 ```\
-"""
+"""  # noqa: E501
 
 NO_FILTER_ANSWER = """\
 ```json
@@ -55,7 +54,8 @@ DEFAULT_EXAMPLES = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",
+        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage "
+        "romance under 3 minutes long in the dance pop genre",
         "structured_request": FULL_ANSWER,
     },
     {
@@ -70,7 +70,8 @@ EXAMPLES_WITH_LIMIT = [
     {
         "i": 1,
         "data_source": SONG_DATA_SOURCE,
-        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage romance under 3 minutes long in the dance pop genre",
+        "user_query": "What are songs by Taylor Swift or Katy Perry about teenage "
+        "romance under 3 minutes long in the dance pop genre",
         "structured_request": FULL_ANSWER,
     },
     {
@@ -144,7 +145,7 @@ Make sure that filters only use the attributed names with its function names if 
 Make sure that filters only use format `YYYY-MM-DD` when handling date data typed values.
 Make sure that filters take into account the descriptions of attributes and only make comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be applied return "NO_FILTER" for the filter value.\
-"""
+"""  # noqa: E501
 DEFAULT_SCHEMA_PROMPT = PromptTemplate.from_template(DEFAULT_SCHEMA)
 
 SCHEMA_WITH_LIMIT = """\
@@ -179,7 +180,7 @@ Make sure that filters only use format `YYYY-MM-DD` when handling date data type
 Make sure that filters take into account the descriptions of attributes and only make comparisons that are feasible given the type of data being stored.
 Make sure that filters are only used as needed. If there are no filters that should be applied return "NO_FILTER" for the filter value.
 Make sure the `limit` is always an int value. It is an optional parameter so leave it blank if it does not make sense.
-"""
+"""  # noqa: E501
 SCHEMA_WITH_LIMIT_PROMPT = PromptTemplate.from_template(SCHEMA_WITH_LIMIT)
 
 DEFAULT_PREFIX = """\
