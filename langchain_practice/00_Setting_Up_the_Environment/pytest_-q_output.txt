@@ -1,0 +1,1168 @@
+
+==================================== ERRORS ====================================
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/integration_tests/test_retrievers.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_retrievers.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_retrievers.py:3: in <module>
+    from __module_name__.retrievers import __ModuleName__Retriever
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/integration_tests/test_tools.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_tools.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_tools.py:3: in <module>
+    from __module_name__.tools import __ModuleName__Tool
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/integration_tests/test_vectorstores.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_vectorstores.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_vectorstores.py:4: in <module>
+    from __module_name__.vectorstores import __ModuleName__VectorStore
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/cli/langchain_cli/integration_template/tests/unit_tests/test_tools.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/unit_tests/test_tools.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_tools.py:3: in <module>
+    from __module_name__.tools import __ModuleName__Tool
+E   ModuleNotFoundError: No module named '__module_name__'
+______ ERROR collecting libs/cli/tests/integration_tests/test_compile.py _______
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+__ ERROR collecting libs/cli/tests/unit_tests/migrate/cli_runner/test_cli.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/migrate/cli_runner/test_cli.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.migrate'
+_ ERROR collecting libs/cli/tests/unit_tests/migrate/generate/test_langchain_migration.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/migrate/generate/test_langchain_migration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.migrate'
+_ ERROR collecting libs/cli/tests/unit_tests/migrate/generate/test_partner_migrations.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/migrate/generate/test_partner_migrations.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.migrate'
+__ ERROR collecting libs/cli/tests/unit_tests/migrate/generate/test_utils.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/migrate/generate/test_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.migrate'
+__________ ERROR collecting libs/cli/tests/unit_tests/test_events.py ___________
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/test_events.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_events'
+___________ ERROR collecting libs/cli/tests/unit_tests/test_utils.py ___________
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/cli/tests/unit_tests/test_utils.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_utils'
+_____ ERROR collecting libs/core/tests/benchmarks/test_async_callbacks.py ______
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/core/tests/benchmarks/test_async_callbacks.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.benchmarks'
+_________ ERROR collecting libs/core/tests/benchmarks/test_imports.py __________
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/core/tests/benchmarks/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.benchmarks'
+______ ERROR collecting libs/core/tests/integration_tests/test_compile.py ______
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/core/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_________________ ERROR collecting libs/core/tests/unit_tests __________________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.unit_tests.conftest'
+___________ ERROR collecting libs/langchain/tests/integration_tests ____________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.integration_tests.conftest'
+_______________ ERROR collecting libs/langchain/tests/unit_tests _______________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.unit_tests.conftest'
+__________ ERROR collecting libs/langchain_v1/tests/integration_tests __________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.integration_tests.conftest'
+_____________ ERROR collecting libs/langchain_v1/tests/unit_tests ______________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.unit_tests.conftest'
+________________ ERROR collecting libs/partners/anthropic/tests ________________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.conftest'
+_ ERROR collecting libs/partners/chroma/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/chroma/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/chroma/tests/integration_tests/test_vectorstores.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/chroma/tests/integration_tests/test_vectorstores.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_vectorstores.py:4: in <module>
+    from __module_name__.vectorstores import __ModuleName__VectorStore
+E   ModuleNotFoundError: No module named '__module_name__'
+____ ERROR collecting libs/partners/chroma/tests/unit_tests/test_imports.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/chroma/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+___ ERROR collecting libs/partners/chroma/tests/unit_tests/test_standard.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/chroma/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/chroma/tests/unit_tests/test_vectorstores.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/chroma/tests/unit_tests/test_vectorstores.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_vectorstores'
+_ ERROR collecting libs/partners/deepseek/tests/integration_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/deepseek/tests/integration_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/deepseek/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/deepseek/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/deepseek/tests/unit_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/deepseek/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+__ ERROR collecting libs/partners/exa/tests/integration_tests/test_compile.py __
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/exa/tests/integration_tests/test_find_similar_tool.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/integration_tests/test_find_similar_tool.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_find_similar_tool'
+_ ERROR collecting libs/partners/exa/tests/integration_tests/test_retriever.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/integration_tests/test_retriever.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_retriever'
+_ ERROR collecting libs/partners/exa/tests/integration_tests/test_search_tool.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/integration_tests/test_search_tool.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_search_tool'
+_____ ERROR collecting libs/partners/exa/tests/unit_tests/test_imports.py ______
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+_____ ERROR collecting libs/partners/exa/tests/unit_tests/test_standard.py _____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/exa/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/fireworks/tests/integration_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/integration_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/fireworks/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/fireworks/tests/integration_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/integration_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/fireworks/tests/integration_tests/test_llms.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/integration_tests/test_llms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_llms'
+_ ERROR collecting libs/partners/fireworks/tests/integration_tests/test_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/integration_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_standard'
+_ ERROR collecting libs/partners/fireworks/tests/unit_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/fireworks/tests/unit_tests/test_embeddings_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/unit_tests/test_embeddings_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_embeddings_standard'
+__ ERROR collecting libs/partners/fireworks/tests/unit_tests/test_imports.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+____ ERROR collecting libs/partners/fireworks/tests/unit_tests/test_llms.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/unit_tests/test_llms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_llms'
+__ ERROR collecting libs/partners/fireworks/tests/unit_tests/test_standard.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/fireworks/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/groq/tests/integration_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/integration_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/groq/tests/integration_tests/test_compile.py __
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/groq/tests/integration_tests/test_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/integration_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_standard'
+___ ERROR collecting libs/partners/groq/tests/unit_tests/test_chat_models.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_____ ERROR collecting libs/partners/groq/tests/unit_tests/test_imports.py _____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+____ ERROR collecting libs/partners/groq/tests/unit_tests/test_standard.py _____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/groq/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/huggingface/tests/integration_tests/test_embeddings_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/integration_tests/test_embeddings_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/huggingface/tests/integration_tests/test_embeddings_standard.py:3: in <module>
+    from langchain_tests.integration_tests import EmbeddingsIntegrationTests
+E   ModuleNotFoundError: No module named 'langchain_tests'
+_ ERROR collecting libs/partners/huggingface/tests/integration_tests/test_llms.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/integration_tests/test_llms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/huggingface/tests/integration_tests/test_llms.py:3: in <module>
+    from langchain_huggingface.llms import HuggingFacePipeline
+E   ModuleNotFoundError: No module named 'langchain_huggingface'
+_ ERROR collecting libs/partners/huggingface/tests/integration_tests/test_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/integration_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/huggingface/tests/integration_tests/test_standard.py:8: in <module>
+    from langchain_tests.integration_tests import ChatModelIntegrationTests
+E   ModuleNotFoundError: No module named 'langchain_tests'
+_ ERROR collecting libs/partners/huggingface/tests/unit_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/huggingface/tests/unit_tests/test_chat_models.py:15: in <module>
+    from langchain_huggingface.chat_models import (  # type: ignore[import]
+E   ModuleNotFoundError: No module named 'langchain_huggingface'
+_ ERROR collecting libs/partners/huggingface/tests/unit_tests/test_huggingface_pipeline.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/unit_tests/test_huggingface_pipeline.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/huggingface/tests/unit_tests/test_huggingface_pipeline.py:3: in <module>
+    from langchain_huggingface import HuggingFacePipeline
+E   ModuleNotFoundError: No module named 'langchain_huggingface'
+_ ERROR collecting libs/partners/mistralai/tests/integration_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/integration_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/mistralai/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/mistralai/tests/integration_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/integration_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/mistralai/tests/integration_tests/test_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/integration_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_standard'
+_ ERROR collecting libs/partners/mistralai/tests/unit_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/mistralai/tests/unit_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+__ ERROR collecting libs/partners/mistralai/tests/unit_tests/test_imports.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+__ ERROR collecting libs/partners/mistralai/tests/unit_tests/test_standard.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/mistralai/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/nomic/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/nomic/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/nomic/tests/integration_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/nomic/tests/integration_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+___ ERROR collecting libs/partners/nomic/tests/unit_tests/test_embeddings.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/nomic/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+____ ERROR collecting libs/partners/nomic/tests/unit_tests/test_imports.py _____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/nomic/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+____ ERROR collecting libs/partners/nomic/tests/unit_tests/test_standard.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/nomic/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models.py:11: in <module>
+    from langchain_ollama import ChatOllama
+E   ModuleNotFoundError: No module named 'langchain_ollama'
+_ ERROR collecting libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_reasoning.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_reasoning.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_reasoning.py:6: in <module>
+    from langchain_ollama import ChatOllama
+E   ModuleNotFoundError: No module named 'langchain_ollama'
+_ ERROR collecting libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_standard.py:10: in <module>
+    from langchain_tests.integration_tests import ChatModelIntegrationTests
+E   ModuleNotFoundError: No module named 'langchain_tests'
+_ ERROR collecting libs/partners/ollama/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/ollama/tests/integration_tests/test_embeddings.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+__ ERROR collecting libs/partners/ollama/tests/integration_tests/test_llms.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/integration_tests/test_llms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_llms'
+__ ERROR collecting libs/partners/ollama/tests/unit_tests/test_chat_models.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+__ ERROR collecting libs/partners/ollama/tests/unit_tests/test_embeddings.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py:5: in <module>
+    from __module_name__.embeddings import __ModuleName__Embeddings
+E   ModuleNotFoundError: No module named '__module_name__'
+____ ERROR collecting libs/partners/ollama/tests/unit_tests/test_imports.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+_____ ERROR collecting libs/partners/ollama/tests/unit_tests/test_llms.py ______
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/ollama/tests/unit_tests/test_llms.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_llms'
+_________________ ERROR collecting libs/partners/openai/tests __________________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.conftest'
+_ ERROR collecting libs/partners/perplexity/tests/integration_tests/test_chat_models_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/integration_tests/test_chat_models_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_chat_models_standard'
+_ ERROR collecting libs/partners/perplexity/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/partners/perplexity/tests/unit_tests/test_chat_models.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/perplexity/tests/unit_tests/test_chat_models_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/unit_tests/test_chat_models_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_chat_models_standard'
+__ ERROR collecting libs/partners/perplexity/tests/unit_tests/test_imports.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+__ ERROR collecting libs/partners/perplexity/tests/unit_tests/test_secrets.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/perplexity/tests/unit_tests/test_secrets.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_secrets'
+_ ERROR collecting libs/partners/prompty/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/prompty/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+___ ERROR collecting libs/partners/prompty/tests/unit_tests/test_imports.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/prompty/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+_ ERROR collecting libs/partners/prompty/tests/unit_tests/test_prompty_serialization.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/prompty/tests/unit_tests/test_prompty_serialization.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_prompty_serialization'
+___ ERROR collecting libs/partners/prompty/tests/unit_tests/test_standard.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/prompty/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+__ ERROR collecting libs/partners/prompty/tests/unit_tests/test_templating.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/prompty/tests/unit_tests/test_templating.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_templating'
+________ ERROR collecting libs/partners/qdrant/tests/integration_tests _________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.integration_tests.conftest'
+____ ERROR collecting libs/partners/qdrant/tests/unit_tests/test_imports.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/qdrant/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+___ ERROR collecting libs/partners/qdrant/tests/unit_tests/test_standard.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/qdrant/tests/unit_tests/test_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_standard'
+_ ERROR collecting libs/partners/qdrant/tests/unit_tests/test_vectorstores.py __
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/qdrant/tests/unit_tests/test_vectorstores.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_vectorstores'
+_ ERROR collecting libs/partners/xai/tests/integration_tests/test_chat_models_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/integration_tests/test_chat_models_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_chat_models_standard'
+__ ERROR collecting libs/partners/xai/tests/integration_tests/test_compile.py __
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+___ ERROR collecting libs/partners/xai/tests/unit_tests/test_chat_models.py ____
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/unit_tests/test_chat_models.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py:5: in <module>
+    from __module_name__.chat_models import Chat__ModuleName__
+E   ModuleNotFoundError: No module named '__module_name__'
+_ ERROR collecting libs/partners/xai/tests/unit_tests/test_chat_models_standard.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/unit_tests/test_chat_models_standard.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_chat_models_standard'
+_____ ERROR collecting libs/partners/xai/tests/unit_tests/test_imports.py ______
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/unit_tests/test_imports.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_imports'
+_____ ERROR collecting libs/partners/xai/tests/unit_tests/test_secrets.py ______
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/partners/xai/tests/unit_tests/test_secrets.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.unit_tests.test_secrets'
+_____________ ERROR collecting libs/standard-tests/langchain_tests _____________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1331: in _find_and_load_unlocked
+    ???
+<frozen importlib._bootstrap>:935: in _load_unlocked
+    ???
+.venv/lib/python3.13/site-packages/_pytest/assertion/rewrite.py:186: in exec_module
+    exec(co, module.__dict__)
+libs/standard-tests/langchain_tests/conftest.py:10: in <module>
+    from vcr import VCR
+E   ModuleNotFoundError: No module named 'vcr'
+_ ERROR collecting libs/standard-tests/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_basic_retriever.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_basic_retriever.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_basic_retriever'
+___ ERROR collecting libs/standard-tests/tests/unit_tests/test_basic_tool.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_basic_tool.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_basic_tool'
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_custom_chat_model.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_custom_chat_model.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_custom_chat_model'
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_decorated_tool.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_decorated_tool.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_decorated_tool'
+___ ERROR collecting libs/standard-tests/tests/unit_tests/test_embeddings.py ___
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_embeddings.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_embeddings'
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_in_memory_base_store.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_in_memory_base_store.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_in_memory_base_store'
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_in_memory_cache.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_in_memory_cache.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_in_memory_cache'
+_ ERROR collecting libs/standard-tests/tests/unit_tests/test_in_memory_vectorstore.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/standard-tests/tests/unit_tests/test_in_memory_vectorstore.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'unit_tests.test_in_memory_vectorstore'
+_ ERROR collecting libs/text-splitters/tests/integration_tests/test_compile.py _
+import file mismatch:
+imported module 'tests.integration_tests.test_compile' has this __file__ attribute:
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py
+which is not the same as the test file we want to collect:
+  /Users/rohitsingh/Downloads/langchain/libs/text-splitters/tests/integration_tests/test_compile.py
+HINT: remove __pycache__ / .pyc files and/or use a unique basename for your test file modules
+_ ERROR collecting libs/text-splitters/tests/integration_tests/test_nlp_text_splitters.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/text-splitters/tests/integration_tests/test_nlp_text_splitters.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_nlp_text_splitters'
+_ ERROR collecting libs/text-splitters/tests/integration_tests/test_text_splitter.py _
+ImportError while importing test module '/Users/rohitsingh/Downloads/langchain/libs/text-splitters/tests/integration_tests/test_text_splitter.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   ModuleNotFoundError: No module named 'tests.integration_tests.test_text_splitter'
+____________ ERROR collecting libs/text-splitters/tests/unit_tests _____________
+/opt/homebrew/Cellar/python@3.13/3.13.7/Frameworks/Python.framework/Versions/3.13/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+<frozen importlib._bootstrap>:1387: in _gcd_import
+    ???
+<frozen importlib._bootstrap>:1360: in _find_and_load
+    ???
+<frozen importlib._bootstrap>:1324: in _find_and_load_unlocked
+    ???
+E   ModuleNotFoundError: No module named 'tests.unit_tests.conftest'
+=============================== warnings summary ===============================
+libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py:4
+  /Users/rohitsingh/Downloads/langchain/libs/cli/langchain_cli/integration_template/tests/integration_tests/test_compile.py:4: PytestUnknownMarkWarning: Unknown pytest.mark.compile - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.compile
+
+libs/partners/huggingface/tests/integration_tests/test_compile.py:4
+  /Users/rohitsingh/Downloads/langchain/libs/partners/huggingface/tests/integration_tests/test_compile.py:4: PytestUnknownMarkWarning: Unknown pytest.mark.compile - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.compile
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR libs/cli/langchain_cli/integration_template/tests/integration_tests/test_chat_models.py
+ERROR libs/cli/langchain_cli/integration_template/tests/integration_tests/test_embeddings.py
+ERROR libs/cli/langchain_cli/integration_template/tests/integration_tests/test_retrievers.py
+ERROR libs/cli/langchain_cli/integration_template/tests/integration_tests/test_tools.py
+ERROR libs/cli/langchain_cli/integration_template/tests/integration_tests/test_vectorstores.py
+ERROR libs/cli/langchain_cli/integration_template/tests/unit_tests/test_chat_models.py
+ERROR libs/cli/langchain_cli/integration_template/tests/unit_tests/test_embeddings.py
+ERROR libs/cli/langchain_cli/integration_template/tests/unit_tests/test_tools.py
+ERROR libs/cli/tests/integration_tests/test_compile.py
+ERROR libs/cli/tests/unit_tests/migrate/cli_runner/test_cli.py
+ERROR libs/cli/tests/unit_tests/migrate/generate/test_langchain_migration.py
+ERROR libs/cli/tests/unit_tests/migrate/generate/test_partner_migrations.py
+ERROR libs/cli/tests/unit_tests/migrate/generate/test_utils.py
+ERROR libs/cli/tests/unit_tests/test_events.py
+ERROR libs/cli/tests/unit_tests/test_utils.py
+ERROR libs/core/tests/benchmarks/test_async_callbacks.py
+ERROR libs/core/tests/benchmarks/test_imports.py
+ERROR libs/core/tests/integration_tests/test_compile.py
+ERROR libs/core/tests/unit_tests - ModuleNotFoundError: No module named 'test...
+ERROR libs/langchain/tests/integration_tests - ModuleNotFoundError: No module...
+ERROR libs/langchain/tests/unit_tests - ModuleNotFoundError: No module named ...
+ERROR libs/langchain_v1/tests/integration_tests - ModuleNotFoundError: No mod...
+ERROR libs/langchain_v1/tests/unit_tests - ModuleNotFoundError: No module nam...
+ERROR libs/partners/anthropic/tests - ModuleNotFoundError: No module named 't...
+ERROR libs/partners/chroma/tests/integration_tests/test_compile.py
+ERROR libs/partners/chroma/tests/integration_tests/test_vectorstores.py
+ERROR libs/partners/chroma/tests/unit_tests/test_imports.py
+ERROR libs/partners/chroma/tests/unit_tests/test_standard.py
+ERROR libs/partners/chroma/tests/unit_tests/test_vectorstores.py
+ERROR libs/partners/deepseek/tests/integration_tests/test_chat_models.py
+ERROR libs/partners/deepseek/tests/integration_tests/test_compile.py
+ERROR libs/partners/deepseek/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/exa/tests/integration_tests/test_compile.py
+ERROR libs/partners/exa/tests/integration_tests/test_find_similar_tool.py
+ERROR libs/partners/exa/tests/integration_tests/test_retriever.py
+ERROR libs/partners/exa/tests/integration_tests/test_search_tool.py
+ERROR libs/partners/exa/tests/unit_tests/test_imports.py
+ERROR libs/partners/exa/tests/unit_tests/test_standard.py
+ERROR libs/partners/fireworks/tests/integration_tests/test_chat_models.py
+ERROR libs/partners/fireworks/tests/integration_tests/test_compile.py
+ERROR libs/partners/fireworks/tests/integration_tests/test_embeddings.py
+ERROR libs/partners/fireworks/tests/integration_tests/test_llms.py
+ERROR libs/partners/fireworks/tests/integration_tests/test_standard.py
+ERROR libs/partners/fireworks/tests/unit_tests/test_embeddings.py
+ERROR libs/partners/fireworks/tests/unit_tests/test_embeddings_standard.py
+ERROR libs/partners/fireworks/tests/unit_tests/test_imports.py
+ERROR libs/partners/fireworks/tests/unit_tests/test_llms.py
+ERROR libs/partners/fireworks/tests/unit_tests/test_standard.py
+ERROR libs/partners/groq/tests/integration_tests/test_chat_models.py
+ERROR libs/partners/groq/tests/integration_tests/test_compile.py
+ERROR libs/partners/groq/tests/integration_tests/test_standard.py
+ERROR libs/partners/groq/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/groq/tests/unit_tests/test_imports.py
+ERROR libs/partners/groq/tests/unit_tests/test_standard.py
+ERROR libs/partners/huggingface/tests/integration_tests/test_embeddings_standard.py
+ERROR libs/partners/huggingface/tests/integration_tests/test_llms.py
+ERROR libs/partners/huggingface/tests/integration_tests/test_standard.py
+ERROR libs/partners/huggingface/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/huggingface/tests/unit_tests/test_huggingface_pipeline.py
+ERROR libs/partners/mistralai/tests/integration_tests/test_chat_models.py
+ERROR libs/partners/mistralai/tests/integration_tests/test_compile.py
+ERROR libs/partners/mistralai/tests/integration_tests/test_embeddings.py
+ERROR libs/partners/mistralai/tests/integration_tests/test_standard.py
+ERROR libs/partners/mistralai/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/mistralai/tests/unit_tests/test_embeddings.py
+ERROR libs/partners/mistralai/tests/unit_tests/test_imports.py
+ERROR libs/partners/mistralai/tests/unit_tests/test_standard.py
+ERROR libs/partners/nomic/tests/integration_tests/test_compile.py
+ERROR libs/partners/nomic/tests/integration_tests/test_embeddings.py
+ERROR libs/partners/nomic/tests/unit_tests/test_embeddings.py
+ERROR libs/partners/nomic/tests/unit_tests/test_imports.py
+ERROR libs/partners/nomic/tests/unit_tests/test_standard.py
+ERROR libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models.py
+ERROR libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_reasoning.py
+ERROR libs/partners/ollama/tests/integration_tests/chat_models/test_chat_models_standard.py
+ERROR libs/partners/ollama/tests/integration_tests/test_compile.py
+ERROR libs/partners/ollama/tests/integration_tests/test_embeddings.py
+ERROR libs/partners/ollama/tests/integration_tests/test_llms.py
+ERROR libs/partners/ollama/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/ollama/tests/unit_tests/test_embeddings.py
+ERROR libs/partners/ollama/tests/unit_tests/test_imports.py
+ERROR libs/partners/ollama/tests/unit_tests/test_llms.py
+ERROR libs/partners/openai/tests - ModuleNotFoundError: No module named 'test...
+ERROR libs/partners/perplexity/tests/integration_tests/test_chat_models_standard.py
+ERROR libs/partners/perplexity/tests/integration_tests/test_compile.py
+ERROR libs/partners/perplexity/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/perplexity/tests/unit_tests/test_chat_models_standard.py
+ERROR libs/partners/perplexity/tests/unit_tests/test_imports.py
+ERROR libs/partners/perplexity/tests/unit_tests/test_secrets.py
+ERROR libs/partners/prompty/tests/integration_tests/test_compile.py
+ERROR libs/partners/prompty/tests/unit_tests/test_imports.py
+ERROR libs/partners/prompty/tests/unit_tests/test_prompty_serialization.py
+ERROR libs/partners/prompty/tests/unit_tests/test_standard.py
+ERROR libs/partners/prompty/tests/unit_tests/test_templating.py
+ERROR libs/partners/qdrant/tests/integration_tests - ModuleNotFoundError: No ...
+ERROR libs/partners/qdrant/tests/unit_tests/test_imports.py
+ERROR libs/partners/qdrant/tests/unit_tests/test_standard.py
+ERROR libs/partners/qdrant/tests/unit_tests/test_vectorstores.py
+ERROR libs/partners/xai/tests/integration_tests/test_chat_models_standard.py
+ERROR libs/partners/xai/tests/integration_tests/test_compile.py
+ERROR libs/partners/xai/tests/unit_tests/test_chat_models.py
+ERROR libs/partners/xai/tests/unit_tests/test_chat_models_standard.py
+ERROR libs/partners/xai/tests/unit_tests/test_imports.py
+ERROR libs/partners/xai/tests/unit_tests/test_secrets.py
+ERROR libs/standard-tests/langchain_tests - ModuleNotFoundError: No module na...
+ERROR libs/standard-tests/tests/integration_tests/test_compile.py
+ERROR libs/standard-tests/tests/unit_tests/test_basic_retriever.py
+ERROR libs/standard-tests/tests/unit_tests/test_basic_tool.py
+ERROR libs/standard-tests/tests/unit_tests/test_custom_chat_model.py
+ERROR libs/standard-tests/tests/unit_tests/test_decorated_tool.py
+ERROR libs/standard-tests/tests/unit_tests/test_embeddings.py
+ERROR libs/standard-tests/tests/unit_tests/test_in_memory_base_store.py
+ERROR libs/standard-tests/tests/unit_tests/test_in_memory_cache.py
+ERROR libs/standard-tests/tests/unit_tests/test_in_memory_vectorstore.py
+ERROR libs/text-splitters/tests/integration_tests/test_compile.py
+ERROR libs/text-splitters/tests/integration_tests/test_nlp_text_splitters.py
+ERROR libs/text-splitters/tests/integration_tests/test_text_splitter.py
+ERROR libs/text-splitters/tests/unit_tests - ModuleNotFoundError: No module n...
+!!!!!!!!!!!!!!!!!! Interrupted: 118 errors during collection !!!!!!!!!!!!!!!!!!!
+2 warnings, 118 errors in 0.64s
