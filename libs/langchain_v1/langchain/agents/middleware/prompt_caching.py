@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
+from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
 
 
 class AnthropicPromptCachingMiddleware(AgentMiddleware):
@@ -32,7 +32,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         self.ttl = ttl
         self.min_messages_to_cache = min_messages_to_cache
 
-    def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:  # noqa: ARG002
+    def modify_model_request(  # type: ignore[override]
+        self,
+        request: ModelRequest,
+    ) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
         try:
             from langchain_anthropic import ChatAnthropic

@@ -1,0 +1,80 @@
+# GitHub PR Labeler Configuration for LangChain
+# Automatically applies labels based on changed files and branch patterns
+
+# Core packages
+core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/core/**/*"
+
+langchain:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/langchain/**/*"
+          - "libs/langchain_v1/**/*"
+
+v1:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/langchain_v1/**/*"
+
+cli:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/cli/**/*"
+
+standard-tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/standard-tests/**/*"
+
+# Partner integrations
+integration:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/partners/**/*"
+
+# Infrastructure and DevOps
+infra:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**/*"
+          - "Makefile"
+          - ".pre-commit-config.yaml"
+          - "scripts/**/*"
+          - "docker/**/*"
+          - "Dockerfile*"
+
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/workflows/**/*"
+          - ".github/actions/**/*"
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/pyproject.toml"
+          - "uv.lock"
+          - "**/requirements*.txt"
+          - "**/poetry.lock"
+
+# Documentation
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**/*"
+          - "**/*.md"
+          - "**/*.rst"
+          - "**/README*"
+
+# Security related changes
+security:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "**/*security*"
+          - "**/*auth*"
+          - "**/*credential*"
+          - "**/*secret*"
+          - "**/*token*"
+          - ".github/workflows/security*"

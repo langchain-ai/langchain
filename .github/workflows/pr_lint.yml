@@ -26,7 +26,7 @@
 #   • release    — prepare a new release
 #
 # Allowed Scopes (optional):
-#   core, cli, langchain, langchain_v1, langchain_legacy, standard-tests, 
+#   core, cli, langchain, langchain_v1, langchain_legacy, standard-tests,
 #   text-splitters, docs, anthropic, chroma, deepseek, exa, fireworks, groq,
 #   huggingface, mistralai, nomic, ollama, openai, perplexity, prompty, qdrant,
 #   xai, infra
@@ -59,7 +59,7 @@ on:
 jobs:
   # Validates that PR title follows Conventional Commits specification
   lint-pr-title:
-    name: 'Validate PR Title Format'
+    name: 'validate format'
     runs-on: ubuntu-latest
     steps:
       - name: '✅ Validate Conventional Commits Format'
