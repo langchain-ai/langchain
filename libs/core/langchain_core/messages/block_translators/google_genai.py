@@ -1,5 +1,6 @@
 """Derivations of standard content blocks from Google (GenAI) content."""
 
+import base64
 import re
 from collections.abc import Iterable
 from typing import Any, cast
@@ -7,6 +8,11 @@ from typing import Any, cast
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
 from langchain_core.messages.content import Citation, create_citation
+
+
+def _bytes_to_b64_str(bytes_: bytes) -> str:
+    """Convert bytes to base64 encoded string."""
+    return base64.b64encode(bytes_).decode("utf-8")
 
 
 def translate_grounding_metadata_to_citations(
@@ -152,7 +158,7 @@ def _convert_to_v1_from_genai_input(
                         "type": "file",
                         "base64": source["bytes"]
                         if isinstance(source["bytes"], str)
-                        else str(source["bytes"]),
+                        else _bytes_to_b64_str(source["bytes"]),
                         "mime_type": "application/pdf",
                     }
                     # Preserve extra fields
@@ -202,7 +208,7 @@ def _convert_to_v1_from_genai_input(
                         "type": "image",
                         "base64": source["bytes"]
                         if isinstance(source["bytes"], str)
-                        else str(source["bytes"]),
+                        else _bytes_to_b64_str(source["bytes"]),
                         "mime_type": f"image/{img_format}",
                     }
                     # Preserve extra fields

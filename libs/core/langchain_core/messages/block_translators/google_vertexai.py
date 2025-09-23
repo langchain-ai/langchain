@@ -34,8 +34,8 @@ def _convert_to_v1_from_vertex_input(
                 and isinstance(document, dict)
                 and "format" in document
             ):
-                # Probably a document of some kind
-                pass
+                # Probably a document of some kind - TODO
+                yield {"type": "non_standard", "value": block}
 
             elif (
                 num_keys == 1
@@ -43,8 +43,8 @@ def _convert_to_v1_from_vertex_input(
                 and isinstance(image, dict)
                 and "format" in image
             ):
-                # Probably an image of some kind
-                pass
+                # Probably an image of some kind - TODO
+                yield {"type": "non_standard", "value": block}
 
             elif block.get("type") in types.KNOWN_BLOCK_TYPES:
                 # We see a standard block type, so we just cast it, even if
