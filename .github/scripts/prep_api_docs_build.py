@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Script to sync libraries from various repositories into the main langchain repository."""
+"""Sync libraries from various repositories into this monorepo."""
 
 import os
 import shutil
