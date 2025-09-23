@@ -596,7 +596,7 @@ def _add_middleware_edge(
         model_destination: The destination for the edge to the model.
         jump_to: The conditionally jumpable destinations for the edge.
     """
-    if jump_to is not None:
+    if jump_to:
 
         def jump_edge(state: AgentState) -> str:
             return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
