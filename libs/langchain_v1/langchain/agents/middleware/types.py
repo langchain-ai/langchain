@@ -104,6 +104,7 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
 
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
+StateT_contra = TypeVar("StateT_contra", bound=AgentState, contravariant=True)
 
 
 class AgentMiddleware(Generic[StateT, ContextT]):
@@ -141,64 +142,67 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Logic to run after the model is called."""
 
 
-class _CallableWithState(Protocol):
+class _CallableWithState(Protocol[StateT_contra]):
     """Callable with AgentState as argument."""
 
-    def __call__(self, state: AgentState) -> dict[str, Any] | Command | None:
+    def __call__(self, state: StateT_contra) -> dict[str, Any] | Command | None:
         """Perform some logic with the state."""
         ...
 
 
-class _CallableWithStateAndRuntime(Protocol[ContextT]):
+class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with AgentState and Runtime as arguments."""
 
     def __call__(
-        self, state: AgentState, runtime: Runtime[ContextT]
+        self, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> dict[str, Any] | Command | None:
         """Perform some logic with the state and runtime."""
         ...
 
 
-class _CallableWithModelRequestAndState(Protocol):
+class _CallableWithModelRequestAndState(Protocol[StateT_contra]):
     """Callable with ModelRequest and AgentState as arguments."""
 
-    def __call__(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+    def __call__(self, request: ModelRequest, state: StateT_contra) -> ModelRequest:
         """Perform some logic with the model request and state."""
         ...
 
 
-class _CallableWithModelRequestAndStateAndRuntime(Protocol[ContextT]):
+class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):
     """Callable with ModelRequest, AgentState, and Runtime as arguments."""
 
     def __call__(
-        self, request: ModelRequest, state: AgentState, runtime: Runtime[ContextT]
+        self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
     ) -> ModelRequest:
         """Perform some logic with the model request, state, and runtime."""
         ...
 
 
-_NodeSignature: TypeAlias = _CallableWithState | _CallableWithStateAndRuntime[ContextT]
+_NodeSignature: TypeAlias = (
+    _CallableWithState[StateT] | _CallableWithStateAndRuntime[StateT, ContextT]
+)
 _ModelRequestSignature: TypeAlias = (
-    _CallableWithModelRequestAndState | _CallableWithModelRequestAndStateAndRuntime[ContextT]
+    _CallableWithModelRequestAndState[StateT]
+    | _CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]
 )
 
 
 def is_callable_with_runtime(
-    func: _NodeSignature[ContextT],
-) -> TypeGuard[_CallableWithStateAndRuntime[ContextT]]:
+    func: _NodeSignature[StateT, ContextT],
+) -> TypeGuard[_CallableWithStateAndRuntime[StateT, ContextT]]:
     return "runtime" in signature(func).parameters
 
 
 def is_callable_with_runtime_and_request(
-    func: _ModelRequestSignature[ContextT],
-) -> TypeGuard[_CallableWithModelRequestAndStateAndRuntime[ContextT]]:
+    func: _ModelRequestSignature[StateT, ContextT],
+) -> TypeGuard[_CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]]:
     return "runtime" in signature(func).parameters
 
 
 @overload
 def before_model(
-    func: _NodeSignature[ContextT],
-) -> AgentMiddleware[AgentState, ContextT]: ...
+    func: _NodeSignature[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
@@ -209,18 +213,18 @@ def before_model(
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
-) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
 def before_model(
-    func: _NodeSignature[ContextT] | None = None,
+    func: _NodeSignature[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
 ) -> (
-    Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
     """Decorator used to dynamically create a middleware with the before_model hook.
@@ -273,7 +277,7 @@ def before_model(
         ```
     """
 
-    def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
+    def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
 
             def wrapped_with_runtime(
@@ -312,8 +316,8 @@ def before_model(
 
 @overload
 def modify_model_request(
-    func: _ModelRequestSignature[ContextT],
-) -> AgentMiddleware[AgentState, ContextT]: ...
+    func: _ModelRequestSignature[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
@@ -323,17 +327,17 @@ def modify_model_request(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str = "ModifyModelRequestMiddleware",
-) -> Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+) -> Callable[[_ModelRequestSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
 def modify_model_request(
-    func: _ModelRequestSignature[ContextT] | None = None,
+    func: _ModelRequestSignature[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str = "ModifyModelRequestMiddleware",
 ) -> (
-    Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    Callable[[_ModelRequestSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
     r"""Decorator used to dynamically create a middleware with the modify_model_request hook.
@@ -384,7 +388,9 @@ def modify_model_request(
         ```
     """
 
-    def decorator(func: _ModelRequestSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
+    def decorator(
+        func: _ModelRequestSignature[StateT, ContextT],
+    ) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime_and_request(func):
 
             def wrapped_with_runtime(
@@ -424,8 +430,8 @@ def modify_model_request(
 
 @overload
 def after_model(
-    func: _NodeSignature[ContextT],
-) -> AgentMiddleware[AgentState, ContextT]: ...
+    func: _NodeSignature[StateT, ContextT],
+) -> AgentMiddleware[StateT, ContextT]: ...
 
 
 @overload
@@ -436,18 +442,18 @@ def after_model(
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
-) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
 def after_model(
-    func: _NodeSignature[ContextT] | None = None,
+    func: _NodeSignature[StateT, ContextT] | None = None,
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
 ) -> (
-    Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
     """Decorator used to dynamically create a middleware with the after_model hook.
@@ -489,7 +495,7 @@ def after_model(
         ```
     """
 
-    def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
+    def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
 
             def wrapped_with_runtime(
