@@ -2,7 +2,7 @@
 
 import re
 from collections.abc import Iterable
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -91,124 +91,35 @@ def translate_grounding_metadata_to_citations(
     return citations
 
 
-def translate_citations_to_grounding_metadata(
-    citations: list[Citation], web_search_queries: Optional[list[str]] = None
-) -> dict[str, Any]:
-    """Translate LangChain Citations to Google AI grounding metadata format.
-
-    Args:
-        citations: List of Citation content blocks.
-        web_search_queries: Optional list of search queries that generated
-            the grounding data.
-
-    Returns:
-        Google AI grounding metadata dictionary.
-
-    Example:
-        >>> citations = [
-        ...     create_citation(
-        ...         url="https://uefa.com/euro2024",
-        ...         title="UEFA Euro 2024 Results",
-        ...         start_index=0,
-        ...         end_index=47,
-        ...         cited_text="Spain won the UEFA Euro 2024 championship",
-        ...     )
-        ... ]
-        >>> metadata = translate_citations_to_grounding_metadata(citations)
-        >>> len(metadata["groundingChunks"])
-        1
-        >>> metadata["groundingChunks"][0]["web"]["uri"]
-        'https://uefa.com/euro2024'
-    """
-    if not citations:
-        return {}
-
-    # Group citations by text segment (start_index, end_index, cited_text)
-    segment_to_citations: dict[
-        tuple[Optional[int], Optional[int], Optional[str]], list[Citation]
-    ] = {}
-
-    for citation in citations:
-        key = (
-            citation.get("start_index"),
-            citation.get("end_index"),
-            citation.get("cited_text"),
-        )
-        if key not in segment_to_citations:
-            segment_to_citations[key] = []
-        segment_to_citations[key].append(citation)
-
-    # Build grounding chunks from unique URLs
-    url_to_chunk_index: dict[str, int] = {}
-    grounding_chunks: list[dict[str, Any]] = []
-
-    for citation in citations:
-        url = citation.get("url")
-        if url and url not in url_to_chunk_index:
-            url_to_chunk_index[url] = len(grounding_chunks)
-            grounding_chunks.append(
-                {"web": {"uri": url, "title": citation.get("title", "")}}
-            )
-
-    # Build grounding supports
-    grounding_supports: list[dict[str, Any]] = []
-
-    for (
-        start_index,
-        end_index,
-        cited_text,
-    ), citations_group in segment_to_citations.items():
-        if start_index is not None and end_index is not None and cited_text:
-            chunk_indices = []
-            confidence_scores = []
-
-            for citation in citations_group:
-                url = citation.get("url")
-                if url and url in url_to_chunk_index:
-                    chunk_indices.append(url_to_chunk_index[url])
-
-                    # Extract confidence scores from extras if available
-                    extras = citation.get("extras", {})
-                    google_metadata = extras.get("google_ai_metadata", {})
-                    scores = google_metadata.get("confidence_scores", [])
-                    confidence_scores.extend(scores)
-
-            support = {
-                "segment": {
-                    "startIndex": start_index,
-                    "endIndex": end_index,
-                    "text": cited_text,
-                },
-                "groundingChunkIndices": chunk_indices,
-            }
-
-            if confidence_scores:
-                support["confidenceScores"] = confidence_scores
-
-            grounding_supports.append(support)
-
-    # Extract search queries from extras if not provided
-    if web_search_queries is None:
-        web_search_queries = []
-        for citation in citations:
-            extras = citation.get("extras", {})
-            google_metadata = extras.get("google_ai_metadata", {})
-            queries = google_metadata.get("web_search_queries", [])
-            web_search_queries.extend(queries)
-        # Remove duplicates while preserving order
-        web_search_queries = list(dict.fromkeys(web_search_queries))
-
-    return {
-        "webSearchQueries": web_search_queries,
-        "groundingChunks": grounding_chunks,
-        "groundingSupports": grounding_supports,
-    }
-
-
 def _convert_to_v1_from_genai_input(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
-    """Attempt to unpack non-standard blocks."""
+    """Helper function for generic structural transformations of content blocks.
+
+    Handles format normalization and post-processing cleanup of content blocks that have
+    already been extracted from messages. It focuses on:
+
+    - Processing standard content types that could appear across providers
+    - Post-processing cleanup of non-standard blocks
+    - Generic structural transformations of already-extracted blocks
+    - Format normalization (e.g. base64 conversion, MIME type handling)
+
+    Non-standard blocks are unpacked and analyzed to determine if they represent
+    known content types like text, documents, or images that can be converted to
+    standard v1 format.
+
+    Args:
+        content: List of content blocks that may contain non-standard blocks to unpack.
+
+    Returns:
+        List of content blocks with non-standard blocks converted to standard types
+        where possible, or preserved as non-standard if conversion is not feasible.
+
+    Note:
+        This is a helper function for post-processing content blocks. For converting
+        full Google GenAI messages with provider-specific semantics, use
+        ``_convert_to_v1_from_genai`` instead.
+    """
 
     def _iter_blocks() -> Iterable[types.ContentBlock]:
         blocks: list[dict[str, Any]] = [
@@ -219,6 +130,7 @@ def _convert_to_v1_from_genai_input(
         ]
         for block in blocks:
             num_keys = len(block)
+            block_type = block.get("type")
 
             if num_keys == 1 and (text := block.get("text")):
                 # This is probably a TextContentBlock
@@ -230,8 +142,49 @@ def _convert_to_v1_from_genai_input(
                 and isinstance(document, dict)
                 and "format" in document
             ):
-                # Probably a document of some kind
-                pass
+                # Handle document format conversion
+                doc_format = document.get("format")
+                source = document.get("source", {})
+
+                if doc_format == "pdf" and "bytes" in source:
+                    # PDF document with byte data
+                    file_block: types.FileContentBlock = {
+                        "type": "file",
+                        "base64": source["bytes"]
+                        if isinstance(source["bytes"], str)
+                        else str(source["bytes"]),
+                        "mime_type": "application/pdf",
+                    }
+                    # Preserve extra fields
+                    extras = {
+                        key: value
+                        for key, value in document.items()
+                        if key not in {"format", "source"}
+                    }
+                    if extras:
+                        file_block["extras"] = extras
+                    yield file_block
+
+                elif doc_format == "txt" and "text" in source:
+                    # Text document
+                    plain_text_block: types.PlainTextContentBlock = {
+                        "type": "text-plain",
+                        "text": source["text"],
+                        "mime_type": "text/plain",
+                    }
+                    # Preserve extra fields
+                    extras = {
+                        key: value
+                        for key, value in document.items()
+                        if key not in {"format", "source"}
+                    }
+                    if extras:
+                        plain_text_block["extras"] = extras
+                    yield plain_text_block
+
+                else:
+                    # Unknown document format
+                    yield {"type": "non_standard", "value": block}
 
             elif (
                 num_keys == 1
@@ -239,8 +192,64 @@ def _convert_to_v1_from_genai_input(
                 and isinstance(image, dict)
                 and "format" in image
             ):
-                # Probably an image of some kind
-                pass
+                # Handle image format conversion
+                img_format = image.get("format")
+                source = image.get("source", {})
+
+                if "bytes" in source:
+                    # Image with byte data
+                    image_block: types.ImageContentBlock = {
+                        "type": "image",
+                        "base64": source["bytes"]
+                        if isinstance(source["bytes"], str)
+                        else str(source["bytes"]),
+                        "mime_type": f"image/{img_format}",
+                    }
+                    # Preserve extra fields
+                    extras = {}
+                    for key, value in image.items():
+                        if key not in {"format", "source"}:
+                            extras[key] = value
+                    if extras:
+                        image_block["extras"] = extras
+                    yield image_block
+
+                else:
+                    # Image without byte data
+                    yield {"type": "non_standard", "value": block}
+
+            elif block_type == "file_data" and "file_uri" in block:
+                # Handle FileData URI-based content
+                uri_file_block: types.FileContentBlock = {
+                    "type": "file",
+                    "url": block["file_uri"],
+                }
+                if mime_type := block.get("mime_type"):
+                    uri_file_block["mime_type"] = mime_type
+                yield uri_file_block
+
+            elif block_type == "function_call" and "name" in block:
+                # Handle function calls
+                tool_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "name": block["name"],
+                    "args": block.get("args", {}),
+                    "id": block.get("id", ""),
+                }
+                yield tool_call_block
+
+            elif block_type == "function_response" and "name" in block:
+                # Handle function responses - use NonStandardContentBlock for now
+                # TODO: Add proper ToolResult type to standard types
+                yield {
+                    "type": "non_standard",
+                    "value": {
+                        "type": "tool_result",
+                        "name": block["name"],
+                        "result": block.get("response", {}),
+                        "id": block.get("id", ""),
+                    },
+                }
 
             elif block.get("type") in types.KNOWN_BLOCK_TYPES:
                 # We see a standard block type, so we just cast it, even if
@@ -256,13 +265,36 @@ def _convert_to_v1_from_genai_input(
 
 
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
-    """Convert Google (GenAI) input message (generativelanguage_v1beta) to v1 format.
+    """Main function for converting GoogleGenAI messages with Google-specific semantics.
+
+    This function handles the complete conversion of Google GenAI messages to standard
+    v1 content blocks. It focuses on:
+
+    - Provider-specific message structure and semantic content types
+    - Processing content that requires message context (e.g. tool calls, streaming)
+    - Handling Google-specific block types that don't exist in other providers
+    - Managing metadata integration (citations, grounding, generation_info)
+
+    Converts messages from Google's generativelanguage_v1beta API format to LangChain's
+    standardized v1 format, handling various Google GenAI specific content types
+    including text, thinking (reasoning), executable code, code execution results, and
+    image content. Also processes grounding metadata to create citation annotations for
+    text blocks.
 
     Args:
-        message: The input message in Google (GenAI generativelanguage_v1beta) format.
+        message: The LangChain message to convert that has Google GenAI content. Can
+            contain string content, list content with various block types, or mixed
+            content structures.
 
     Returns:
-        List of content blocks in v1 format.
+        List of standardized v1 content blocks. Supported block types include text,
+        reasoning, image, and non-standard blocks for unrecognized content. Text
+        blocks may include citation annotations derived from grounding metadata.
+
+    Note:
+        This is the main entry point for converting complete Google GenAI messages.
+        For post-processing already-extracted content blocks, use
+        ``_convert_to_v1_from_genai_input`` instead.
     """
     if isinstance(message.content, str):
         # String content -> TextContentBlock
@@ -292,17 +324,26 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     standard_blocks.append({"type": "non_standard", "value": item})
 
             elif item_type == "thinking":
-                # Convert thinking to reasoning block
+                # DEPRECATED: Legacy handling for custom 'thinking' v0 LangChain type
+                # This maintains backwards compatibility with old LangChain installs
                 reasoning_block: types.ReasoningContentBlock = {
                     "type": "reasoning",
                     "reasoning": item.get("thinking", ""),
                 }
-                # Add signature if available in extras
-                if "signature" in item.get("extras", {}):
-                    reasoning_block["extras"] = {
-                        "signature": item["extras"]["signature"]
-                    }
+                # Signature was never available for 'thinking' blocks
                 standard_blocks.append(reasoning_block)
+
+            elif item_type == "thought":
+                thought_reasoning_block: types.ReasoningContentBlock = {
+                    "type": "reasoning",
+                    "reasoning": item.get("text", ""),
+                }
+                # Add thought signature if available; required to pass block back in
+                if "thought_signature" in item:
+                    thought_reasoning_block["extras"] = {
+                        "signature": item["thought_signature"]
+                    }
+                standard_blocks.append(thought_reasoning_block)
 
             elif item_type == "executable_code":
                 # Convert to non-standard block for code execution
@@ -353,8 +394,44 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     else:
                         standard_blocks.append({"type": "non_standard", "value": item})
                 else:
-                    # URL-based image, keep as non-standard for now? TODO
+                    # TODO: URL-based image, keep as non-standard for now?
                     standard_blocks.append({"type": "non_standard", "value": item})
+
+            elif item_type == "function_call":
+                # Handle Google GenAI function calls
+                tool_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "name": item.get("name", ""),
+                    "args": item.get("args", {}),
+                    "id": item.get("id", ""),
+                }
+                standard_blocks.append(tool_call_block)
+
+            elif item_type == "function_response":
+                # Handle Google GenAI function responses - use non-standard for now
+                # TODO: Add proper ToolResult type to standard types
+                standard_blocks.append(
+                    {
+                        "type": "non_standard",
+                        "value": {
+                            "type": "tool_result",
+                            "name": item.get("name", ""),
+                            "result": item.get("response", {}),
+                            "id": item.get("id", ""),
+                        },
+                    }
+                )
+
+            elif item_type == "file_data":
+                # Handle FileData URI-based content
+                file_block: types.FileContentBlock = {
+                    "type": "file",
+                    "url": item.get("file_uri", ""),
+                }
+                if mime_type := item.get("mime_type"):
+                    file_block["mime_type"] = mime_type
+                standard_blocks.append(file_block)
+
             else:
                 # Unknown type, preserve as non-standard
                 standard_blocks.append({"type": "non_standard", "value": item})
@@ -372,8 +449,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         # Add citations to text blocks
         for block in standard_blocks:
             if block["type"] == "text" and citations:
-                text_block = cast("types.TextContentBlock", block)
-                text_block["annotations"] = citations
+                block["annotations"] = list(citations)
                 break
 
     return standard_blocks

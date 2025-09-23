@@ -68,7 +68,7 @@ def _convert_to_v1_from_vertex(message: AIMessage) -> list[types.ContentBlock]:
     Returns:
         List of content blocks in v1 format.
     """
-    return message
+    return message  # type: ignore[return-value]
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
