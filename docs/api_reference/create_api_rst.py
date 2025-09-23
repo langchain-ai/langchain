@@ -1,4 +1,41 @@
-"""Auto-generate api_reference.rst."""
+"""Auto-generate API reference documentation (RST files) for LangChain packages.
+
+* Automatically discovers all packages in `libs/` and `libs/partners/`
+* For each package, recursively walks the filesystem to:
+    * Load Python modules using importlib
+    * Extract classes and functions using Python's inspect module
+    * Classify objects by type (Pydantic models, Runnables, TypedDicts, etc.)
+    * Filter out private members (names starting with '_') and deprecated items
+* Creates structured RST files with:
+    * Module-level documentation pages with autosummary tables
+    * Different Sphinx templates based on object type (see templates/ directory)
+    * Proper cross-references and navigation structure
+    * Separation of current vs deprecated APIs
+* Generates a directory tree like:
+    ```
+    docs/api_reference/
+    ├── index.md              # Main landing page with package gallery
+    ├── reference.md          # Package overview and navigation
+    ├── core/                 # langchain-core documentation
+    │   ├── index.rst
+    │   ├── callbacks.rst
+    │   └── ...
+    ├── langchain/            # langchain documentation
+    │   ├── index.rst
+    │   └── ...
+    └── partners/             # Integration packages
+        ├── openai/
+        ├── anthropic/
+        └── ...
+    ```
+
+## Key Features
+
+* Respects privacy markers:
+    * Modules with `:private:` in docstring are excluded entirely
+    * Objects with `:private:` in docstring are filtered out
+    * Names starting with '_' are treated as private
+"""
 
 import importlib
 import inspect
@@ -178,11 +215,12 @@ def _load_package_modules(
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
     Parameters:
-        package_directory (Union[str, Path]): Path to the package directory.
-        submodule (Optional[str]): Optional name of submodule to load.
+        package_directory: Path to the package directory.
+        submodule: Optional name of submodule to load.
 
     Returns:
-        Dict[str, ModuleMembers]: A dictionary where keys are module names and values are ModuleMembers objects.
+        A dictionary where keys are module names and values are `ModuleMembers`
+        objects.
     """
     package_path = (
         Path(package_directory)
@@ -199,12 +237,13 @@ def _load_package_modules(
         package_path = package_path / submodule
 
     for file_path in package_path.rglob("*.py"):
+        # Skip private modules
         if file_path.name.startswith("_"):
             continue
 
+        # Skip integration_template and project_template directories (for libs/cli)
         if "integration_template" in file_path.parts:
             continue
-
         if "project_template" in file_path.parts:
             continue
 
@@ -215,8 +254,13 @@ def _load_package_modules(
             continue
 
         # Get the full namespace of the module
+        # Example: langchain_core/schema/output_parsers.py ->
+        #          langchain_core.schema.output_parsers
         namespace = str(relative_module_name).replace(".py", "").replace("/", ".")
+
         # Keep only the top level namespace
+        # Example: langchain_core.schema.output_parsers ->
+        #          langchain_core
         top_namespace = namespace.split(".")[0]
 
         try:
@@ -253,16 +297,16 @@ def _construct_doc(
     members_by_namespace: Dict[str, ModuleMembers],
     package_version: str,
 ) -> List[typing.Tuple[str, str]]:
-    """Construct the contents of the reference.rst file for the given package.
+    """Construct the contents of the `reference.rst` for the given package.
 
     Args:
         package_namespace: The package top level namespace
-        members_by_namespace: The members of the package, dict organized by top level
-                              module contains a list of classes and functions
-                              inside of the top level namespace.
+        members_by_namespace: The members of the package dict organized by top level.
+            Module contains a list of classes and functions inside of the top level
+            namespace.
 
     Returns:
-        The contents of the reference.rst file.
+        The string contents of the reference.rst file.
     """
     docs = []
     index_doc = f"""\
@@ -465,10 +509,13 @@ def _construct_doc(
 
 
 def _build_rst_file(package_name: str = "langchain") -> None:
-    """Create a rst file for building of documentation.
+    """Create a rst file for a given package.
 
     Args:
-        package_name: Can be either "langchain" or "core"
+        package_name: Name of the package to create the rst file for.
+
+    Returns:
+        The rst file is created in the same directory as this script.
     """
     package_dir = _package_dir(package_name)
     package_members = _load_package_modules(package_dir)
@@ -500,7 +547,10 @@ def _package_namespace(package_name: str) -> str:
 
 
 def _package_dir(package_name: str = "langchain") -> Path:
-    """Return the path to the directory containing the documentation."""
+    """Return the path to the directory containing the documentation.
+
+    Attempts to find the package in `libs/` first, then `libs/partners/`.
+    """
     if (ROOT_DIR / "libs" / package_name).exists():
         return ROOT_DIR / "libs" / package_name / _package_namespace(package_name)
     else:
@@ -514,7 +564,7 @@ def _package_dir(package_name: str = "langchain") -> Path:
 
 
 def _get_package_version(package_dir: Path) -> str:
-    """Return the version of the package."""
+    """Return the version of the package by reading the `pyproject.toml`."""
     try:
         with open(package_dir.parent / "pyproject.toml", "r") as f:
             pyproject = toml.load(f)
@@ -540,6 +590,15 @@ def _out_file_path(package_name: str) -> Path:
 
 
 def _build_index(dirs: List[str]) -> None:
+    """Build the index.md file for the API reference.
+
+    Args:
+        dirs: List of package directories to include in the index.
+
+    Returns:
+        The index.md file is created in the same directory as this script.
+    """
+
     custom_names = {
         "aws": "AWS",
         "ai21": "AI21",
@@ -647,9 +706,14 @@ See the full list of integrations in the Section Navigation.
 {integration_tree}
 ```
 """
+    # Write the reference.md file
     with open(HERE / "reference.md", "w") as f:
         f.write(doc)
 
+    # Write a dummy index.md file that points to reference.md
+    # Sphinx requires an index file to exist in each doc directory
+    # TODO: investigate why we don't just put everything in index.md directly?
+    # if it works it works I guess
     dummy_index = """\
 # API reference
 
@@ -665,8 +729,11 @@ Reference<reference>
 
 
 def main(dirs: Optional[list] = None) -> None:
-    """Generate the api_reference.rst file for each package."""
-    print("Starting to build API reference files.")
+    """Generate the `api_reference.rst` file for each package.
+
+    If dirs is None, generate for all packages in `libs/` and `libs/partners/`.
+    Otherwise generate only for the specified package(s).
+    """
     if not dirs:
         dirs = [
             p.parent.name
@@ -675,18 +742,17 @@ def main(dirs: Optional[list] = None) -> None:
             if p.parent.parent.name in ("libs", "partners")
         ]
     for dir_ in sorted(dirs):
-        # Skip any hidden directories
+        # Skip any hidden directories prefixed with a dot
         # Some of these could be present by mistake in the code base
-        # e.g., .pytest_cache from running tests from the wrong location.
+        # (e.g., .pytest_cache from running tests from the wrong location)
         if dir_.startswith("."):
             print("Skipping dir:", dir_)
             continue
         else:
-            print("Building package:", dir_)
+            print("Building:", dir_)
             _build_rst_file(package_name=dir_)
 
     _build_index(sorted(dirs))
-    print("API reference files built.")
 
 
 if __name__ == "__main__":
