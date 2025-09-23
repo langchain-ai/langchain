@@ -372,13 +372,13 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         },
         description_prefix="Custom prefix",
     )
 
-    assert middleware.tool_configs == {
+    assert middleware.interrupt_on == {
         "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
     }
     assert middleware.description_prefix == "Custom prefix"
@@ -388,7 +388,7 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -417,7 +417,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -452,7 +452,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -487,7 +487,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -518,7 +518,7 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
             "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
@@ -565,7 +565,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
             "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
@@ -617,7 +617,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         }
     )
@@ -657,7 +657,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         }
     )
@@ -684,7 +684,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
 
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": False, "allow_accept": True}
         }
     )
@@ -721,7 +721,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "interrupt_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -755,7 +755,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         },
         description_prefix="Custom prefix",
@@ -796,7 +796,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
 
 def test_human_in_the_loop_middleware_boolean_configs() -> None:
     """Test HITL middleware with boolean tool configs."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": True})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -834,7 +834,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         assert len(result["messages"]) == 1
         assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": False})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
     result = middleware.after_model(state)
     # No interruption should occur
@@ -843,7 +843,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
 
 def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     """Test that sequence mismatch in resume raises an error."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": True})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
 
     ai_message = AIMessage(
         content="I'll help you",
