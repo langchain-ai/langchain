@@ -150,7 +150,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return None
 
         last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
-        if not last_ai_msg or len(last_ai_msg.tool_calls) == 0:
+        if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
         # Separate tool calls that need interrupts from those that don't
