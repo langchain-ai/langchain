@@ -127,6 +127,13 @@ jobs:
           python docs/api_reference/create_api_rst.py
 
           # Build the HTML documentation using Sphinx
+          # -T: show full traceback on exception
+          # -E: don't use cached environment (force rebuild, ignore cached doctrees)
+          # -b html: build HTML docs (vs PDS, etc.)
+          # -d: path for the cached environment (parsed document trees / doctrees)
+          #     - Separate from output dir for faster incremental builds
+          # -c: path to conf.py
+          # -j auto: parallel build using all available CPU cores
           python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
 
           # Post-process the generated HTML
