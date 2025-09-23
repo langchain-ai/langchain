@@ -138,7 +138,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                         allow_edit=True,
                         allow_respond=True,
                     )
-            else:
+            elif any(
+                [
+                    tool_config.get("allow_accept", False),
+                    tool_config.get("allow_edit", False),
+                    tool_config.get("allow_respond", False),
+                ]
+            ):
                 resolved_tool_configs[tool_name] = tool_config
         self.tool_configs = resolved_tool_configs
         self.description_prefix = description_prefix
