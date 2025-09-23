@@ -2622,6 +2622,7 @@ dev = [
 docs = [
     { name = "autodoc-pydantic" },
     { name = "beautifulsoup4" },
+    { name = "docutils" },
     { name = "myst-nb" },
     { name = "myst-parser" },
     { name = "pydata-sphinx-theme" },
@@ -2632,6 +2633,7 @@ docs = [
     { name = "sphinx-design" },
     { name = "sphinxcontrib-googleanalytics" },
     { name = "toml" },
+    { name = "types-docutils" },
     { name = "types-toml" },
 ]
 lint = [
@@ -2682,6 +2684,7 @@ dev = [
 docs = [
     { name = "autodoc-pydantic", specifier = ">=2.0.0,<3.0.0" },
     { name = "beautifulsoup4" },
+    { name = "docutils", specifier = ">=0.21.2" },
     { name = "myst-nb", specifier = ">=1.1.1" },
     { name = "myst-parser", specifier = ">=3.0.0,<4.0.0" },
     { name = "pydata-sphinx-theme", specifier = ">=0.15.0" },
@@ -2692,6 +2695,7 @@ docs = [
     { name = "sphinx-design" },
     { name = "sphinxcontrib-googleanalytics" },
     { name = "toml", specifier = ">=0.10.2,<0.11.0" },
+    { name = "types-docutils", specifier = ">=0.22.1.20250923" },
     { name = "types-toml", specifier = ">=0.10.8.20240310" },
 ]
 lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
@@ -6130,6 +6134,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/cb/ce/dca7b219718afd37a0068f4f2530a727c2b74a8b6e8e0c0080a4c0de4fcd/typer-0.15.1.tar.gz", hash = "sha256:a0588c0a7fa68a1978a069818657778f86abe6ff5ea6abf472f940a08bfe4f0a", size = 99789, upload-time = "2024-12-04T17:44:58.956Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d0/cc/0a838ba5ca64dc832aa43f727bd586309846b0ffb2ce52422543e6075e8a/typer-0.15.1-py3-none-any.whl", hash = "sha256:7994fb7b8155b64d3402518560648446072864beefd44aa2dc36972a5972e847", size = 44908, upload-time = "2024-12-04T17:44:57.291Z" },
+]
+
+[[package]]
+name = "types-docutils"
+version = "0.22.1.20250923"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/80/76/3b2b841d2ea3b59685c59cfcfeddd439146287319c1566099796507ee866/types_docutils-0.22.1.20250923.tar.gz", hash = "sha256:f7754c7eeab44144095e287bb3afcb96d6936dc3fa332cff4e5ef5533baa198f", size = 56652, upload-time = "2025-09-23T02:51:20.573Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/22/c762f76ace7de3c8d469f9f25a8b8870bff47fb31ecc15453ac96426f36a/types_docutils-0.22.1.20250923-py3-none-any.whl", hash = "sha256:a01a8036b373dd578ec1a170db04f4159be1282ca92f0a085e50f4afbeb8d0bc", size = 91872, upload-time = "2025-09-23T02:51:19.305Z" },
 ]
 
 [[package]]

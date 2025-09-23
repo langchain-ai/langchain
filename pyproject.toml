@@ -66,6 +66,8 @@ docs = [
     "sphinx-copybutton",
     "beautifulsoup4",
     "sphinxcontrib-googleanalytics",
+    "docutils>=0.21.2,<1.0.0",
+    "types-docutils>=0.22.1.20250923",
 ]
 
 [tool.uv.sources]
