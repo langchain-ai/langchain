@@ -299,7 +299,7 @@ def before_model(
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         # Use function name as default if no name provided
-        middleware_name = name or getattr(func, "__name__", "BeforeModelMiddleware")
+        middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
         return type(
             middleware_name,
@@ -417,7 +417,9 @@ def modify_model_request(
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         # Use function name as default if no name provided
-        middleware_name = name or getattr(func, "__name__", "ModifyModelRequestMiddleware")
+        middleware_name = name or cast(
+            "str", getattr(func, "__name__", "ModifyModelRequestMiddleware")
+        )
 
         return type(
             middleware_name,
@@ -523,7 +525,7 @@ def after_model(
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         # Use function name as default if no name provided
-        middleware_name = name or getattr(func, "__name__", "AfterModelMiddleware")
+        middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
         return type(
             middleware_name,
