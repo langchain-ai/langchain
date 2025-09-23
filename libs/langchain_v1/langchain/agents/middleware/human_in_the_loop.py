@@ -196,7 +196,9 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         responses: list[HumanInTheLoopResponse] = interrupt(interrupt_requests)
 
         # Validate that the number of responses matches the number of interrupt tool calls
-        if (responses_len := len(responses)) != (interrupt_tool_calls_len := len(interrupt_tool_calls)):
+        if (responses_len := len(responses)) != (
+            interrupt_tool_calls_len := len(interrupt_tool_calls)
+        ):
             msg = (
                 f"Number of human responses ({responses_len}) does not match "
                 f"number of hanging tool calls ({interrupt_tool_calls_len})."
