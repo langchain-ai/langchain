@@ -294,16 +294,16 @@ jobs:
         run: |
           VIRTUAL_ENV=.venv uv pip install dist/*.whl
 
-      - name: Run unit tests
-        run: make tests
-        working-directory: ${{ inputs.working-directory }}
-
       - name: Check for prerelease versions
         # Block release if any dependencies allow prerelease versions
         # (unless this is itself a prerelease version)
         working-directory: ${{ inputs.working-directory }}
         run: |
           uv run python $GITHUB_WORKSPACE/.github/scripts/check_prerelease_dependencies.py pyproject.toml
+
+      - name: Run unit tests
+        run: make tests
+        working-directory: ${{ inputs.working-directory }}
 
       - name: Get minimum versions
         # Find the minimum published versions that satisfies the given constraints
