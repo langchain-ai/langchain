@@ -1,12 +1,12 @@
-from typing_extensions import TypedDict
 import pytest
 from typing import Any
 from unittest.mock import patch
 
 from syrupy.assertion import SnapshotAssertion
 
+import warnings
 from langgraph.runtime import Runtime
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -893,6 +893,79 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     assert middleware.type == "ephemeral"
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
+
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    assert middleware.modify_model_request(fake_request).model_settings == {
+        "cache_control": {"type": "ephemeral", "ttl": "5m"}
+    }
+
+
+def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
+    """Test AnthropicPromptCachingMiddleware with unsupported model."""
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
+
+    # with patch("langchain_anthropic.ChatAnthropic", side_effect=ImportError()):
+    with pytest.raises(
+        ValueError,
+        match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
+    ):
+        middleware.modify_model_request(fake_request)
+
+    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+        with pytest.raises(
+            ValueError,
+            match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
+        ):
+            middleware.modify_model_request(fake_request)
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
+
+    with warnings.catch_warnings(record=True) as w:
+        result = middleware.modify_model_request(fake_request)
+        assert len(w) == 1
+        assert (
+            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
+            in str(w[-1].message)
+        )
+        assert result == fake_request
+
+    with warnings.catch_warnings(record=True) as w:
+        with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+            result = middleware.modify_model_request(fake_request)
+            assert result is fake_request
+            assert len(w) == 1
+            assert (
+                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
+                in str(w[-1].message)
+            )
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
+
+    result = middleware.modify_model_request(fake_request)
+    assert result is fake_request
+
+    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+        result = middleware.modify_model_request(fake_request)
+        assert result is fake_request
 
 
 # Tests for SummarizationMiddleware
