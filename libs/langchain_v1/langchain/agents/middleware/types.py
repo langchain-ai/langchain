@@ -212,7 +212,7 @@ def before_model(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
-    name: str = "BeforeModelMiddleware",
+    name: str | None = None,
 ) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
@@ -222,7 +222,7 @@ def before_model(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
-    name: str = "BeforeModelMiddleware",
+    name: str | None = None,
 ) -> (
     Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -238,8 +238,8 @@ def before_model(
         tools: Optional list of additional tools to register with this middleware.
         jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "__end__"
-        name: Optional name for the generated middleware class. Defaults to
-            "BeforeModelMiddleware".
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
 
     Returns:
         Either an AgentMiddleware instance (if func is provided directly) or a decorator function
@@ -298,8 +298,11 @@ def before_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
+        # Use function name as default if no name provided
+        middleware_name = name or getattr(func, "__name__", "BeforeModelMiddleware")
+
         return type(
-            name,
+            middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
@@ -326,7 +329,7 @@ def modify_model_request(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    name: str = "ModifyModelRequestMiddleware",
+    name: str | None = None,
 ) -> Callable[[_ModelRequestSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
@@ -335,7 +338,7 @@ def modify_model_request(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    name: str = "ModifyModelRequestMiddleware",
+    name: str | None = None,
 ) -> (
     Callable[[_ModelRequestSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -350,8 +353,8 @@ def modify_model_request(
         state_schema: Optional custom state schema type. If not provided, uses the default
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
-        name: Optional name for the generated middleware class. Defaults to
-            "ModifyModelRequestMiddleware".
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
 
     Returns:
         Either an AgentMiddleware instance (if func is provided) or a decorator function
@@ -413,8 +416,11 @@ def modify_model_request(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
+        # Use function name as default if no name provided
+        middleware_name = name or getattr(func, "__name__", "ModifyModelRequestMiddleware")
+
         return type(
-            name,
+            middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,
@@ -441,7 +447,7 @@ def after_model(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
-    name: str = "AfterModelMiddleware",
+    name: str | None = None,
 ) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
 
@@ -451,7 +457,7 @@ def after_model(
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
-    name: str = "AfterModelMiddleware",
+    name: str | None = None,
 ) -> (
     Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
@@ -467,8 +473,8 @@ def after_model(
         tools: Optional list of additional tools to register with this middleware.
         jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "__end__"
-        name: Optional name for the generated middleware class. Defaults to
-            "AfterModelMiddleware".
+        name: Optional name for the generated middleware class. If not provided,
+            uses the decorated function's name.
 
     Returns:
         Either an AgentMiddleware instance (if func is provided) or a decorator function
@@ -516,8 +522,11 @@ def after_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
+        # Use function name as default if no name provided
+        middleware_name = name or getattr(func, "__name__", "AfterModelMiddleware")
+
         return type(
-            name,
+            middleware_name,
             (AgentMiddleware,),
             {
                 "state_schema": state_schema or AgentState,

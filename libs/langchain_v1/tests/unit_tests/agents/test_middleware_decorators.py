@@ -129,3 +129,24 @@ def test_all_decorators_integration() -> None:
     agent.invoke({"messages": [HumanMessage("Hello")]})
 
     assert call_order == ["before", "modify", "after"]
+
+
+def test_decorators_use_function_names_as_default() -> None:
+    """Test that decorators use function names as default middleware names."""
+
+    @before_model
+    def my_before_hook(state: AgentState) -> None:
+        return None
+
+    @modify_model_request
+    def my_modify_hook(request: ModelRequest, state: AgentState) -> ModelRequest:
+        return request
+
+    @after_model
+    def my_after_hook(state: AgentState) -> None:
+        return None
+
+    # Verify that function names are used as middleware class names
+    assert my_before_hook.__class__.__name__ == "my_before_hook"
+    assert my_modify_hook.__class__.__name__ == "my_modify_hook"
+    assert my_after_hook.__class__.__name__ == "my_after_hook"
