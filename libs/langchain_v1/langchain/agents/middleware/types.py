@@ -8,6 +8,7 @@ from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
+    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -16,7 +17,6 @@ from typing import (
     cast,
     overload,
 )
-from collections import defaultdict
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
@@ -106,13 +106,6 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
 
 
-class JumpsMap(TypedDict):
-    """Valid jump configuration for a middleware."""
-
-    before_model: list[JumpTo]
-    after_model: list[JumpTo]
-
-
 class AgentMiddleware(Generic[StateT, ContextT]):
     """Base middleware class for an agent.
 
@@ -126,8 +119,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
-    jumps_map: JumpsMap = {"before_model": [], "after_model": []}
-    """Jumps associated with the middleware's hooks. Used to establish conditional edges."""
+    before_model_jump_to: ClassVar[list[JumpTo]] = []
+    """Valid jump destinations for before_model hook. Used to establish conditional edges."""
+
+    after_model_jump_to: ClassVar[list[JumpTo]] = []
+    """Valid jump destinations for after_model hook. Used to establish conditional edges."""
 
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
@@ -211,7 +207,7 @@ def before_model(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
+    jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
 ) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -221,7 +217,7 @@ def before_model(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
+    jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
 ) -> (
     Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -256,7 +252,7 @@ def before_model(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "jumps_map": {"before_model": jumps},
+                "before_model_jump_to": jump_to or [],
                 "before_model": wrapped,
             },
         )()
@@ -278,7 +274,7 @@ def modify_model_request(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
+    jump_to: list[JumpTo] | None = None,
     name: str = "ModifyModelRequestMiddleware",
 ) -> Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -288,7 +284,6 @@ def modify_model_request(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
     name: str = "ModifyModelRequestMiddleware",
 ) -> (
     Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -325,7 +320,6 @@ def modify_model_request(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "jumps_map": {"modify_model_request": jumps},
                 "modify_model_request": wrapped,
             },
         )()
@@ -347,7 +341,7 @@ def after_model(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
+    jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
 ) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -357,7 +351,7 @@ def after_model(
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    jumps: list[JumpTo] | None = None,
+    jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
 ) -> (
     Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -392,7 +386,7 @@ def after_model(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "jumps_map": {"after_model": jumps},
+                "after_model_jump_to": jump_to or [],
                 "after_model": wrapped,
             },
         )()
