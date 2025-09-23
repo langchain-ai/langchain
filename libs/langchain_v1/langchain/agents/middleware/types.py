@@ -205,7 +205,7 @@ def before_model(
 def before_model(
     func: None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
@@ -215,7 +215,7 @@ def before_model(
 def before_model(
     func: _NodeSignature[ContextT] | None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
@@ -242,15 +242,15 @@ def before_model(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
             ) -> dict[str, Any] | Command | None:
-                return func(state)
+                return func(state)  # type: ignore[call-arg]
 
-            wrapped = wrapped_without_runtime
+            wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         return type(
             name,
-            (AgentMiddleware[StateT, ContextT],),
+            (AgentMiddleware,),
             {
-                "state_schema": state_schema,
+                "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "before_model_jump_to": jump_to or [],
                 "before_model": wrapped,
@@ -272,9 +272,8 @@ def modify_model_request(
 def modify_model_request(
     func: None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
     name: str = "ModifyModelRequestMiddleware",
 ) -> Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -282,7 +281,7 @@ def modify_model_request(
 def modify_model_request(
     func: _ModelRequestSignature[ContextT] | None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     name: str = "ModifyModelRequestMiddleware",
 ) -> (
@@ -310,15 +309,15 @@ def modify_model_request(
                 request: ModelRequest,
                 state: StateT,
             ) -> ModelRequest:
-                return func(request, state)
+                return func(request, state)  # type: ignore[call-arg]
 
-            wrapped = wrapped_without_runtime
+            wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         return type(
             name,
             (AgentMiddleware,),
             {
-                "state_schema": state_schema,
+                "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "modify_model_request": wrapped,
             },
@@ -339,7 +338,7 @@ def after_model(
 def after_model(
     func: None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
@@ -349,7 +348,7 @@ def after_model(
 def after_model(
     func: _NodeSignature[ContextT] | None = None,
     *,
-    state_schema: type[StateT] = AgentState,
+    state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
     jump_to: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
@@ -376,15 +375,15 @@ def after_model(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
             ) -> dict[str, Any] | Command | None:
-                return func(state)
+                return func(state)  # type: ignore[call-arg]
 
-            wrapped = wrapped_without_runtime
+            wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
         return type(
             name,
             (AgentMiddleware,),
             {
-                "state_schema": state_schema,
+                "state_schema": state_schema or AgentState,
                 "tools": tools or [],
                 "after_model_jump_to": jump_to or [],
                 "after_model": wrapped,
