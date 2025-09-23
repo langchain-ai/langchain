@@ -331,6 +331,8 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
+        before_model_jump_to = [END]
+
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": END}

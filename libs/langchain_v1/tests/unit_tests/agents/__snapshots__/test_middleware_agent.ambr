@@ -304,7 +304,8 @@
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model -.-> __end__;
+  	NoopEight\2ebefore_model -.-> model_request;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
@@ -336,7 +337,8 @@
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model -.-> __end__;
+  	NoopEight\2ebefore_model -.-> model_request;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
@@ -368,7 +370,8 @@
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model -.-> __end__;
+  	NoopEight\2ebefore_model -.-> model_request;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
@@ -400,7 +403,8 @@
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model -.-> __end__;
+  	NoopEight\2ebefore_model -.-> model_request;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
@@ -432,7 +436,8 @@
   	NoopEight\2eafter_model(NoopEight.after_model)
   	__end__([<p>__end__</p>]):::last
   	NoopEight\2eafter_model --> NoopSeven\2eafter_model;
-  	NoopEight\2ebefore_model --> model_request;
+  	NoopEight\2ebefore_model -.-> __end__;
+  	NoopEight\2ebefore_model -.-> model_request;
   	NoopSeven\2eafter_model -.-> NoopSeven\2ebefore_model;
   	NoopSeven\2eafter_model -.-> __end__;
   	NoopSeven\2eafter_model -.-> tools;
