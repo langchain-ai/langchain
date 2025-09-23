@@ -138,9 +138,6 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/core":
         py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
-    elif dir_ == "libs/partners/milvus":
-        # milvus doesn't allow 3.12 because they declare deps in funny way
-        py_versions = ["3.9", "3.11"]
 
     elif dir_ in PY_312_MAX_PACKAGES:
         py_versions = ["3.9", "3.12"]
