@@ -34,7 +34,6 @@ from langchain.agents.middleware.types import (
     OmitFromOutput,
     PrivateStateAttr,
 )
-from langchain.agents.middleware.dynamic_system_prompt import DynamicSystemPromptMiddleware
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
@@ -332,6 +331,8 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
+        before_model_jump_to = [END]
+
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": END}
@@ -1219,74 +1220,6 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
     assert hasattr(result["response"], "temperature")
     assert result["response"].temperature == 72.0
     assert result["response"].condition == "sunny"
-
-
-# Tests for DynamicSystemPromptMiddleware
-def test_dynamic_system_prompt_middleware_basic() -> None:
-    """Test basic functionality of DynamicSystemPromptMiddleware."""
-
-    def dynamic_system_prompt(state: AgentState) -> str:
-        messages = state.get("messages", [])
-        if messages:
-            return f"You are a helpful assistant. Message count: {len(messages)}"
-        return "You are a helpful assistant. No messages yet."
-
-    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
-
-    # Test with empty state
-    empty_state = {"messages": []}
-    request = ModelRequest(
-        model=FakeToolCallingModel(),
-        system_prompt="Original prompt",
-        messages=[],
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-    )
-
-    modified_request = middleware.modify_model_request(request, empty_state, None)
-    assert modified_request.system_prompt == "You are a helpful assistant. No messages yet."
-
-    state_with_messages = {"messages": [HumanMessage("Hello"), AIMessage("Hi")]}
-    modified_request = middleware.modify_model_request(request, state_with_messages, None)
-    assert modified_request.system_prompt == "You are a helpful assistant. Message count: 2"
-
-
-def test_dynamic_system_prompt_middleware_with_context() -> None:
-    """Test DynamicSystemPromptMiddleware with runtime context."""
-
-    class MockContext(TypedDict):
-        user_role: str
-
-    def dynamic_system_prompt(state: AgentState, runtime: Runtime[MockContext]) -> str:
-        base_prompt = "You are a helpful assistant."
-        if runtime and hasattr(runtime, "context"):
-            user_role = runtime.context.get("user_role", "user")
-            return f"{base_prompt} User role: {user_role}"
-        return base_prompt
-
-    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
-
-    # Create a mock runtime with context
-    class MockRuntime:
-        def __init__(self, context):
-            self.context = context
-
-    mock_runtime = MockRuntime(context={"user_role": "admin"})
-
-    request = ModelRequest(
-        model=FakeToolCallingModel(),
-        system_prompt="Original prompt",
-        messages=[HumanMessage("Test")],
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-    )
-
-    state = {"messages": [HumanMessage("Test")]}
-    modified_request = middleware.modify_model_request(request, state, mock_runtime)
-
-    assert modified_request.system_prompt == "You are a helpful assistant. User role: admin"
 
 
 def test_public_private_state_for_custom_middleware() -> None:
