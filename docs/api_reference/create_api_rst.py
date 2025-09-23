@@ -1,4 +1,4 @@
-"""Script for auto-generating api_reference.rst."""
+"""Auto-generate api_reference.rst."""
 
 import importlib
 import inspect
