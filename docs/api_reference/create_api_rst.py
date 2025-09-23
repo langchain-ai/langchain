@@ -543,6 +543,8 @@ def _package_namespace(package_name: str) -> str:
         return "langchain"
     if package_name == "standard-tests":
         return "langchain_tests"
+    if package_name == "langgraph":
+        return "langgraph"
     return f"langchain_{package_name.replace('-', '_')}"
 
 
