@@ -304,7 +304,28 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
     """
     if isinstance(message.content, str):
         # String content -> TextContentBlock
-        return [{"type": "text", "text": message.content}]
+        string_blocks: list[types.ContentBlock] = [
+            {"type": "text", "text": message.content}
+        ]
+
+        # Add any missing tool calls from message.tool_calls field
+        content_tool_call_ids = {
+            block.get("id")
+            for block in string_blocks
+            if isinstance(block, dict) and block.get("type") == "tool_call"
+        }
+        for tool_call in message.tool_calls:
+            id_ = tool_call.get("id")
+            if id_ and id_ not in content_tool_call_ids:
+                string_tool_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "id": id_,
+                    "name": tool_call["name"],
+                    "args": tool_call["args"],
+                }
+                string_blocks.append(string_tool_call_block)
+
+        return string_blocks
 
     # TODO: handle dictionary content that is not a list? e.g. a text-dict style
 
@@ -312,11 +333,11 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         # Unexpected content type, return as is
         return [{"type": "text", "text": str(message.content)}]
 
-    standard_blocks: list[types.ContentBlock] = []
+    converted_blocks: list[types.ContentBlock] = []
 
     for item in message.content:
         if isinstance(item, str):
-            standard_blocks.append({"type": "text", "text": item})  # TextContentBlock
+            converted_blocks.append({"type": "text", "text": item})  # TextContentBlock
 
         elif isinstance(item, dict):
             item_type = item.get("type")
@@ -325,9 +346,9 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 # Ensure `text` key exists and is a string
                 text = item.get("text", "")
                 if isinstance(text, str):
-                    standard_blocks.append({"type": "text", "text": text})
+                    converted_blocks.append({"type": "text", "text": text})
                 else:  # Fallback
-                    standard_blocks.append({"type": "non_standard", "value": item})
+                    converted_blocks.append({"type": "non_standard", "value": item})
 
             elif item_type == "thinking":
                 # DEPRECATED: Legacy handling for custom 'thinking' v0 LangChain type
@@ -337,7 +358,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "reasoning": item.get("thinking", ""),
                 }
                 # Signature was never available for 'thinking' blocks
-                standard_blocks.append(reasoning_block)
+                converted_blocks.append(reasoning_block)
 
             elif item_type == "thought":
                 thought_reasoning_block: types.ReasoningContentBlock = {
@@ -349,12 +370,12 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     thought_reasoning_block["extras"] = {
                         "signature": item["thought_signature"]
                     }
-                standard_blocks.append(thought_reasoning_block)
+                converted_blocks.append(thought_reasoning_block)
 
             elif item_type == "executable_code":
                 # Convert to non-standard block for code execution
                 # TODO: migrate to std server tool block
-                standard_blocks.append(
+                converted_blocks.append(
                     {
                         "type": "non_standard",
                         "value": {
@@ -368,7 +389,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             elif item_type == "code_execution_result":
                 # Convert to non-standard block for execution result
                 # TODO: migrate to std server tool block
-                standard_blocks.append(
+                converted_blocks.append(
                     {
                         "type": "non_standard",
                         "value": {
@@ -390,7 +411,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     match = re.match(r"data:([^;]+);base64,(.+)", url)
                     if match:
                         mime_type, base64_data = match.groups()
-                        standard_blocks.append(
+                        converted_blocks.append(
                             {
                                 "type": "image",
                                 "base64": base64_data,
@@ -398,25 +419,25 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                             }
                         )
                     else:
-                        standard_blocks.append({"type": "non_standard", "value": item})
+                        converted_blocks.append({"type": "non_standard", "value": item})
                 else:
                     # TODO: URL-based image, keep as non-standard for now?
-                    standard_blocks.append({"type": "non_standard", "value": item})
+                    converted_blocks.append({"type": "non_standard", "value": item})
 
             elif item_type == "function_call":
                 # Handle Google GenAI function calls
-                tool_call_block: types.ToolCall = {
+                function_call_block: types.ToolCall = {
                     "type": "tool_call",
                     "name": item.get("name", ""),
                     "args": item.get("args", {}),
                     "id": item.get("id", ""),
                 }
-                standard_blocks.append(tool_call_block)
+                converted_blocks.append(function_call_block)
 
             elif item_type == "function_response":
                 # Handle Google GenAI function responses - use non-standard for now
                 # TODO: Add proper ToolResult type to standard types
-                standard_blocks.append(
+                converted_blocks.append(
                     {
                         "type": "non_standard",
                         "value": {
@@ -436,14 +457,14 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 }
                 if mime_type := item.get("mime_type"):
                     file_block["mime_type"] = mime_type
-                standard_blocks.append(file_block)
+                converted_blocks.append(file_block)
 
             else:
                 # Unknown type, preserve as non-standard
-                standard_blocks.append({"type": "non_standard", "value": item})
+                converted_blocks.append({"type": "non_standard", "value": item})
         else:
             # Non-dict, non-string content
-            standard_blocks.append({"type": "non_standard", "value": item})
+            converted_blocks.append({"type": "non_standard", "value": item})
 
     # Handle grounding metadata from generation_info if present
     generation_info = getattr(message, "generation_info", {})
@@ -453,12 +474,29 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         citations = translate_grounding_metadata_to_citations(grounding_metadata)
 
         # Add citations to text blocks
-        for block in standard_blocks:
+        for block in converted_blocks:
             if block["type"] == "text" and citations:
-                block["annotations"] = list(citations)
+                block["annotations"] = cast("list[types.Annotation]", citations)
                 break
 
-    return standard_blocks
+    # Add any missing tool calls from message.tool_calls field
+    content_tool_call_ids = {
+        block.get("id")
+        for block in converted_blocks
+        if isinstance(block, dict) and block.get("type") == "tool_call"
+    }
+    for tool_call in message.tool_calls:
+        id_ = tool_call.get("id")
+        if id_ and id_ not in content_tool_call_ids:
+            missing_tool_call_block: types.ToolCall = {
+                "type": "tool_call",
+                "id": id_,
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+            }
+            converted_blocks.append(missing_tool_call_block)
+
+    return converted_blocks
 
 
 def translate_content(message: AIMessage) -> list[types.ContentBlock]:
