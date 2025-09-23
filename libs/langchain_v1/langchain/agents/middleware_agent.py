@@ -529,7 +529,7 @@ def _fetch_last_ai_and_tool_messages(
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
 ) -> Callable[[AgentState], str | list[Send] | None]:
-    def model_to_tools(state: AgentState) -> str | list[Send] | None:
+    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
