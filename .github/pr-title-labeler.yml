@@ -1,5 +1,7 @@
-# PR Title Labeler Configuration
+# PR title labeler config
+#
 # Labels PRs based on conventional commit patterns in titles
+#
 # Format: type(scope): description or type!: description (breaking)
 
 add-missing-labels: true

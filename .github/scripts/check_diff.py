@@ -1,3 +1,18 @@
+"""Analyze git diffs to determine which directories need to be tested.
+
+Intelligently determines which LangChain packages and directories need to be tested,
+linted, or built based on the changes. Handles dependency relationships between
+packages, maps file changes to appropriate CI job configurations, and outputs JSON
+configurations for GitHub Actions.
+
+- Maps changed files to affected package directories (libs/core, libs/partners/*, etc.)
+- Builds dependency graph to include dependent packages when core components change
+- Generates test matrix configurations with appropriate Python versions
+- Handles special cases for Pydantic version testing and performance benchmarks
+
+Used as part of the check_diffs workflow.
+"""
+
 import glob
 import json
 import os
@@ -17,7 +32,7 @@ LANGCHAIN_DIRS = [
     "libs/langchain_v1",
 ]
 
-# when set to True, we are ignoring core dependents
+# When set to True, we are ignoring core dependents
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
@@ -49,9 +64,9 @@ def all_package_dirs() -> Set[str]:
 
 
 def dependents_graph() -> dict:
-    """
-    Construct a mapping of package -> dependents, such that we can
-    run tests on all dependents of a package when a change is made.
+    """Construct a mapping of package -> dependents
+
+    Done such that we can run tests on all dependents of a package when a change is made.
     """
     dependents = defaultdict(set)
 
