@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-"""Sync libraries from various repositories into this monorepo."""
+"""Sync libraries from various repositories into this monorepo.
+
+Moves cloned partner packages into libs/partners structure.
+"""
 
 import os
 import shutil
@@ -10,7 +13,7 @@ import yaml
 
 
 def load_packages_yaml() -> Dict[str, Any]:
-    """Load and parse the packages.yml file."""
+    """Load and parse packages.yml."""
     with open("langchain/libs/packages.yml", "r") as f:
         return yaml.safe_load(f)
 
@@ -61,12 +64,15 @@ def move_libraries(packages: list) -> None:
 
 
 def main():
-    """Main function to orchestrate the library sync process."""
+    """Orchestrate the library sync process."""
     try:
         # Load packages configuration
         package_yaml = load_packages_yaml()
 
-        # Clean target directories
+        # Clean/empty target directories in preparation for moving new ones
+        #
+        # Only for packages in the langchain-ai org or explicitly included via
+        # include_in_api_ref, excluding 'langchain' itself and 'langchain-ai21'
         clean_target_directories(
             [
                 p
@@ -80,7 +86,9 @@ def main():
             ]
         )
 
-        # Move libraries to their new locations
+        # Move cloned libraries to their new locations, only for packages in the
+        # langchain-ai org or explicitly included via include_in_api_ref,
+        # excluding 'langchain' itself and 'langchain-ai21'
         move_libraries(
             [
                 p
@@ -95,7 +103,7 @@ def main():
             ]
         )
 
-        # Delete ones without a pyproject.toml
+        # Delete partner packages without a pyproject.toml
         for partner in Path("langchain/libs/partners").iterdir():
             if partner.is_dir() and not (partner / "pyproject.toml").exists():
                 print(f"Removing {partner} as it does not have a pyproject.toml")

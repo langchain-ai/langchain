@@ -1,6 +1,11 @@
 # Build the API reference documentation.
 #
 # Runs daily. Can also be triggered manually for immediate updates.
+#
+# Built HTML pushed to langchain-ai/langchain-api-docs-html.
+#
+# Looks for langchain-ai org repos in packages.yml and checks them out.
+# Calls prep_api_docs_build.py.
 
 name: '📚 API Docs'
 run-name: 'Build & Deploy API Reference'
@@ -34,6 +39,8 @@ jobs:
         uses: mikefarah/yq@master
         with:
           cmd: |
+            # Extract repos from packages.yml that are in the langchain-ai org
+            # (excluding 'langchain' itself)
             yq '
               .packages[]
               | select(
@@ -80,24 +87,31 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      - name: '📦 Install Initial Python Dependencies'
+      - name: '📦 Install Initial Python Dependencies using uv'
         working-directory: langchain
         run: |
           python -m pip install -U uv
           python -m uv pip install --upgrade --no-cache-dir pip setuptools pyyaml
 
       - name: '📦 Organize Library Directories'
+        # Places cloned partner packages into libs/partners structure
         run: python langchain/.github/scripts/prep_api_docs_build.py
 
-      - name: '🧹 Remove Old HTML Files'
+      - name: '🧹 Clear Prior Build'
         run:
+          # Remove artifacts from prior docs build
           rm -rf langchain-api-docs-html/api_reference_build/html
 
-      - name: '📦 Install Documentation Dependencies'
+      - name: '📦 Install Documentation Dependencies using uv'
         working-directory: langchain
         run: |
+          # Install all partner packages in editable mode with overrides
           python -m uv pip install $(ls ./libs/partners | xargs -I {} echo "./libs/partners/{}") --overrides ./docs/vercel_overrides.txt
+
+          # Install core langchain and other main packages
           python -m uv pip install libs/core libs/langchain libs/text-splitters libs/community libs/experimental libs/standard-tests
+
+          # Install Sphinx and related packages for building docs
           python -m uv pip install -r docs/api_reference/requirements.txt
 
       - name: '🔧 Configure Git Settings'
@@ -109,14 +123,29 @@ jobs:
       - name: '📚 Build API Documentation'
         working-directory: langchain
         run: |
+          # Generate the API reference RST files
           python docs/api_reference/create_api_rst.py
+
+          # Build the HTML documentation using Sphinx
+          # -T: show full traceback on exception
+          # -E: don't use cached environment (force rebuild, ignore cached doctrees)
+          # -b html: build HTML docs (vs PDS, etc.)
+          # -d: path for the cached environment (parsed document trees / doctrees)
+          #     - Separate from output dir for faster incremental builds
+          # -c: path to conf.py
+          # -j auto: parallel build using all available CPU cores
           python -m sphinx -T -E -b html -d ../langchain-api-docs-html/_build/doctrees -c docs/api_reference docs/api_reference ../langchain-api-docs-html/api_reference_build/html -j auto
+
+          # Post-process the generated HTML
           python docs/api_reference/scripts/custom_formatter.py ../langchain-api-docs-html/api_reference_build/html
+
           # Default index page is blank so we copy in the actual home page.
           cp ../langchain-api-docs-html/api_reference_build/html/{reference,index}.html
+
+          # Removes Sphinx's intermediate build artifacts after the build is complete.
           rm -rf ../langchain-api-docs-html/_build/
 
-      # https://github.com/marketplace/actions/add-commit
+      # Commit and push changes to langchain-api-docs-html repo
       - uses: EndBug/add-and-commit@v9
         with:
           cwd: langchain-api-docs-html

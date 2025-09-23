@@ -1,3 +1,10 @@
+"""Post-process generated HTML files to clean up table-of-contents headers.
+
+Runs after Sphinx generates the API reference HTML. It finds TOC entries like
+"ClassName.method_name()" and shortens them to just "method_name()" for better
+readability in the sidebar navigation.
+"""
+
 import sys
 from glob import glob
 from pathlib import Path
