@@ -223,7 +223,55 @@ def before_model(
     Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the before_model hook."""
+    """Decorator used to dynamically create a middleware with the before_model hook.
+
+    Args:
+        func: The function to be decorated. Can accept either:
+            - `state: StateT` - Just the agent state
+            - `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
+        state_schema: Optional custom state schema type. If not provided, uses the default
+            AgentState schema.
+        tools: Optional list of additional tools to register with this middleware.
+        jump_to: Optional list of valid jump destinations for conditional edges.
+            Valid values are: "tools", "model", "__end__"
+        name: Optional name for the generated middleware class. Defaults to
+            "BeforeModelMiddleware".
+
+    Returns:
+        Either an AgentMiddleware instance (if func is provided directly) or a decorator function
+        that can be applied to a function its wrapping.
+
+    The decorated function should return:
+        - `dict[str, Any]` - State updates to merge into the agent state
+        - `Command` - A command to control flow (e.g., jump to different node)
+        - `None` - No state updates or flow control
+
+    Examples:
+        Basic usage with state only:
+        ```python
+        @before_model
+        def log_before_model(state: AgentState) -> None:
+            print(f"About to call model with {len(state['messages'])} messages")
+        ```
+
+        Advanced usage with runtime and conditional jumping:
+        ```python
+        @before_model(jump_to=["__end__"])
+        def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+            if some_condition(state):
+                return {"jump_to": "__end__"}
+            return None
+        ```
+
+        With custom state schema:
+        ```python
+        @before_model(
+            state_schema=MyCustomState,
+        )
+        def custom_before_model(state: MyCustomState) -> dict[str, Any]:
+            return {"custom_field": "updated_value"}
+        ```
+    """
 
     def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
@@ -288,7 +336,53 @@ def modify_model_request(
     Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the modify_model_request hook."""
+    r"""Decorator used to dynamically create a middleware with the modify_model_request hook.
+
+    Args:
+        func: The function to be decorated. Can accept either:
+            - `request: ModelRequest, state: StateT` - Model request and agent state
+            - `request: ModelRequest, state: StateT, runtime: Runtime[ContextT]` -
+              Model request, state, and runtime context
+        state_schema: Optional custom state schema type. If not provided, uses the default
+            AgentState schema.
+        tools: Optional list of additional tools to register with this middleware.
+        name: Optional name for the generated middleware class. Defaults to
+            "ModifyModelRequestMiddleware".
+
+    Returns:
+        Either an AgentMiddleware instance (if func is provided) or a decorator function
+        that can be applied to a function.
+
+    The decorated function should return:
+        - `ModelRequest` - The modified model request to be sent to the language model
+
+    Examples:
+        Basic usage to modify system prompt:
+        ```python
+        @modify_model_request
+        def add_context_to_prompt(request: ModelRequest, state: AgentState) -> ModelRequest:
+            if request.system_prompt:
+                request.system_prompt += "\n\nAdditional context: ..."
+            else:
+                request.system_prompt = "Additional context: ..."
+            return request
+        ```
+
+        Advanced usage with runtime and custom model settings:
+        ```python
+        @modify_model_request
+        def dynamic_model_settings(
+            request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
+            # Use a different model based on user subscription tier
+            if runtime.context.get("subscription_tier") == "premium":
+                request.model = "gpt-4o"
+            else:
+                request.model = "gpt-4o-mini"
+
+            return request
+        ```
+    """
 
     def decorator(func: _ModelRequestSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime_and_request(func):
@@ -356,7 +450,44 @@ def after_model(
     Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
     | AgentMiddleware[StateT, ContextT]
 ):
-    """Decorator used to dynamically create a middleware with the after_model hook."""
+    """Decorator used to dynamically create a middleware with the after_model hook.
+
+    Args:
+        func: The function to be decorated. Can accept either:
+            - `state: StateT` - Just the agent state (includes model response)
+            - `state: StateT, runtime: Runtime[ContextT]` - State and runtime context
+        state_schema: Optional custom state schema type. If not provided, uses the default
+            AgentState schema.
+        tools: Optional list of additional tools to register with this middleware.
+        jump_to: Optional list of valid jump destinations for conditional edges.
+            Valid values are: "tools", "model", "__end__"
+        name: Optional name for the generated middleware class. Defaults to
+            "AfterModelMiddleware".
+
+    Returns:
+        Either an AgentMiddleware instance (if func is provided) or a decorator function
+        that can be applied to a function.
+
+    The decorated function should return:
+        - `dict[str, Any]` - State updates to merge into the agent state
+        - `Command` - A command to control flow (e.g., jump to different node)
+        - `None` - No state updates or flow control
+
+    Examples:
+        Basic usage for logging model responses:
+        ```python
+        @after_model
+        def log_latest_message(state: AgentState) -> None:
+            print(state["messages"][-1].content)
+        ```
+
+        With custom state schema:
+        ```python
+        @after_model(state_schema=MyCustomState, name="MyAfterModelMiddleware")
+        def custom_after_model(state: MyCustomState) -> dict[str, Any]:
+            return {"custom_field": "updated_after_model"}
+        ```
+    """
 
     def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
