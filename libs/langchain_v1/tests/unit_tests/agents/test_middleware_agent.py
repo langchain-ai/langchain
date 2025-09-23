@@ -438,6 +438,15 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
         assert result["messages"][0] == ai_message
         assert result["messages"][0].tool_calls == ai_message.tool_calls
 
+    state["messages"].append(
+        ToolMessage(content="Tool message", name="test_tool", tool_call_id="1")
+    )
+    state["messages"].append(AIMessage(content="test_tool called with result: Tool message"))
+
+    result = middleware.after_model(state)
+    # No interrupts needed
+    assert result is None
+
 
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
