@@ -464,7 +464,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            tools_available=tool_node is not None,
+            jumps=middleware_w_after[0].jumps_map["after_model"],
         )
 
     # Add middleware edges (same as before)
@@ -475,7 +475,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jumps=m1.jumps_map["before_model"],
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -483,7 +483,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            tools_available=tool_node is not None,
+            jumps=middleware_w_before[-1].jumps_map["before_model"],
         )
 
     if middleware_w_after:
@@ -496,7 +496,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jumps=m1.jumps_map["after_model"],
             )
 
     return graph
@@ -584,7 +584,7 @@ def _add_middleware_edge(
     name: str,
     default_destination: str,
     model_destination: str,
-    tools_available: bool,  # noqa: FBT001
+    jumps: list[JumpTo] | None,
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -594,18 +594,23 @@ def _add_middleware_edge(
         name: The name of the middleware node.
         default_destination: The default destination for the edge.
         model_destination: The destination for the edge to the model.
-        tools_available: Whether tools are available for the edge to potentially route to.
+        jumps: The conditionally jumpable destinations for the edge.
     """
+    if jumps is not None:
 
-    def jump_edge(state: AgentState) -> str:
-        return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
+        def jump_edge(state: AgentState) -> str:
+            return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
-    destinations = [default_destination]
-    if default_destination != END:
-        destinations.append(END)
-    if tools_available:
-        destinations.append("tools")
-    if name != model_destination:
-        destinations.append(model_destination)
+        destinations = [default_destination]
 
-    graph.add_conditional_edges(name, jump_edge, destinations)
+        if "__end__" in jumps:
+            destinations.append(END)
+        if "tools" in jumps:
+            destinations.append("tools")
+        if "model" in jumps and name != model_destination:
+            destinations.append(model_destination)
+
+        graph.add_conditional_edges(name, jump_edge, destinations)
+
+    else:
+        graph.add_edge(name, default_destination)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from inspect import signature
 from typing import (
@@ -15,21 +14,25 @@ from typing import (
     TypeAlias,
     TypeGuard,
     cast,
+    overload,
 )
+from collections import defaultdict
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
-from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
+    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -103,7 +106,7 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
 
 
-class ValidJumps(TypedDict):
+class JumpsMap(TypedDict):
     """Valid jump configuration for a middleware."""
 
     before_model: list[JumpTo]
@@ -123,7 +126,7 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
-    valid_jumps: ValidJumps | None
+    jumps_map: JumpsMap = {"before_model": [], "after_model": []}
     """Jumps associated with the middleware's hooks. Used to establish conditional edges."""
 
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
@@ -196,26 +199,56 @@ def is_callable_with_runtime_and_request(
     return "runtime" in signature(func).parameters
 
 
+@overload
 def before_model(
+    func: _NodeSignature[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
+
+
+@overload
+def before_model(
+    func: None = None,
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    valid_jumps: list[JumpTo] | None = None,
+    jumps: list[JumpTo] | None = None,
     name: str = "BeforeModelMiddleware",
-) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]:
+) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+
+
+def before_model(
+    func: _NodeSignature[ContextT] | None = None,
+    *,
+    state_schema: type[StateT] = AgentState,
+    tools: list[BaseTool] | None = None,
+    jumps: list[JumpTo] | None = None,
+    name: str = "BeforeModelMiddleware",
+) -> (
+    Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    | AgentMiddleware[StateT, ContextT]
+):
     """Decorator used to dynamically create a middleware with the before_model hook."""
 
     def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
 
-            def wrapped(
-                self, state: StateT, runtime: Runtime[ContextT]
+            def wrapped_with_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+                runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
                 return func(state, runtime)
+
+            wrapped = wrapped_with_runtime
         else:
 
-            def wrapped(self, state: StateT) -> dict[str, Any] | Command | None:
+            def wrapped_without_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+            ) -> dict[str, Any] | Command | None:
                 return func(state)
+
+            wrapped = wrapped_without_runtime
 
         return type(
             name,
@@ -223,34 +256,68 @@ def before_model(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "valid_jumps": {"before_model": valid_jumps},
+                "jumps_map": {"before_model": jumps},
                 "before_model": wrapped,
             },
         )()
 
+    if func is not None:
+        return decorator(func)
     return decorator
 
 
+@overload
 def modify_model_request(
+    func: _ModelRequestSignature[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
+
+
+@overload
+def modify_model_request(
+    func: None = None,
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    valid_jumps: list[JumpTo] | None = None,
+    jumps: list[JumpTo] | None = None,
     name: str = "ModifyModelRequestMiddleware",
-) -> Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]:
+) -> Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+
+
+def modify_model_request(
+    func: _ModelRequestSignature[ContextT] | None = None,
+    *,
+    state_schema: type[StateT] = AgentState,
+    tools: list[BaseTool] | None = None,
+    jumps: list[JumpTo] | None = None,
+    name: str = "ModifyModelRequestMiddleware",
+) -> (
+    Callable[[_ModelRequestSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    | AgentMiddleware[StateT, ContextT]
+):
     """Decorator used to dynamically create a middleware with the modify_model_request hook."""
 
     def decorator(func: _ModelRequestSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime_and_request(func):
 
-            def wrapped(
-                self, request: ModelRequest, state: StateT, runtime: Runtime[ContextT]
+            def wrapped_with_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                request: ModelRequest,
+                state: StateT,
+                runtime: Runtime[ContextT],
             ) -> ModelRequest:
                 return func(request, state, runtime)
+
+            wrapped = wrapped_with_runtime
         else:
 
-            def wrapped(self, request: ModelRequest, state: StateT) -> ModelRequest:
+            def wrapped_without_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                request: ModelRequest,
+                state: StateT,
+            ) -> ModelRequest:
                 return func(request, state)
+
+            wrapped = wrapped_without_runtime
 
         return type(
             name,
@@ -258,34 +325,66 @@ def modify_model_request(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "valid_jumps": {"modify_model_request": valid_jumps},
+                "jumps_map": {"modify_model_request": jumps},
                 "modify_model_request": wrapped,
             },
         )()
 
+    if func is not None:
+        return decorator(func)
     return decorator
 
 
+@overload
 def after_model(
+    func: _NodeSignature[ContextT],
+) -> AgentMiddleware[AgentState, ContextT]: ...
+
+
+@overload
+def after_model(
+    func: None = None,
     *,
     state_schema: type[StateT] = AgentState,
     tools: list[BaseTool] | None = None,
-    valid_jumps: list[JumpTo] | None = None,
+    jumps: list[JumpTo] | None = None,
     name: str = "AfterModelMiddleware",
-) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]:
+) -> Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]: ...
+
+
+def after_model(
+    func: _NodeSignature[ContextT] | None = None,
+    *,
+    state_schema: type[StateT] = AgentState,
+    tools: list[BaseTool] | None = None,
+    jumps: list[JumpTo] | None = None,
+    name: str = "AfterModelMiddleware",
+) -> (
+    Callable[[_NodeSignature[ContextT]], AgentMiddleware[StateT, ContextT]]
+    | AgentMiddleware[StateT, ContextT]
+):
     """Decorator used to dynamically create a middleware with the after_model hook."""
 
     def decorator(func: _NodeSignature[ContextT]) -> AgentMiddleware[StateT, ContextT]:
         if is_callable_with_runtime(func):
 
-            def wrapped(
-                self, state: StateT, runtime: Runtime[ContextT]
+            def wrapped_with_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+                runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
                 return func(state, runtime)
+
+            wrapped = wrapped_with_runtime
         else:
 
-            def wrapped(self, state: StateT) -> dict[str, Any] | Command | None:
+            def wrapped_without_runtime(
+                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                state: StateT,
+            ) -> dict[str, Any] | Command | None:
                 return func(state)
+
+            wrapped = wrapped_without_runtime
 
         return type(
             name,
@@ -293,9 +392,11 @@ def after_model(
             {
                 "state_schema": state_schema,
                 "tools": tools or [],
-                "valid_jumps": {"after_model": valid_jumps},
+                "jumps_map": {"after_model": jumps},
                 "after_model": wrapped,
             },
         )()
 
+    if func is not None:
+        return decorator(func)
     return decorator
