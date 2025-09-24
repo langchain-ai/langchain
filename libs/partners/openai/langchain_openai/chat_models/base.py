@@ -456,8 +456,7 @@ class BaseChatOpenAI(BaseChatModel):
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     openai_api_key: Optional[Union[SecretStr, Callable[[], str]]] = Field(
-        alias="api_key",
-        default_factory=secret_from_env("OPENAI_API_KEY", default=None),
+        alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
     """Base URL path for API requests, leave blank if not using a proxy or service emulator."""  # noqa: E501

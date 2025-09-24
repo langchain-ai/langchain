@@ -97,8 +97,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
     Key init args — client params:
         api_key: Optional[Union[str, Callable[[], str]]] = None
-            OpenAI API key. Can be a string or a callable that returns a string (useful for dynamic tokens
-            like Azure AD bearer tokens).
+            OpenAI API key. Can be a string or a callable that returns a string
+            (useful for dynamic tokens like Azure AD bearer tokens).
         organization: Optional[str] = None
             OpenAI organization ID. If not passed in will be read
             from env var ``OPENAI_ORG_ID``.
