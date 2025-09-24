@@ -1,6 +1,8 @@
+# Ensures version numbers in pyproject.toml and version.py stay in sync.
+#
+# (Prevents releases with mismatched version numbers)
+
 name: '🔍 Check `core` Version Equality'
-# Ensures version numbers in pyproject.toml and version.py stay in sync
-# Prevents releases with mismatched version numbers
 
 on:
   pull_request:
