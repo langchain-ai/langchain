@@ -17,9 +17,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 
 from langchain.agents.middleware_agent import create_agent
+from langchain.agents.tool_node import InjectedState
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     ActionRequest,
@@ -39,6 +40,7 @@ from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.types import Command
 from langchain.agents.structured_output import ToolStrategy
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
@@ -1277,3 +1279,57 @@ def test_runtime_injected_into_middleware() -> None:
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent = agent.compile()
     agent.invoke({"messages": [HumanMessage("Hello")]})
+
+
+def test_injected_state_in_middleware_agent() -> None:
+    """Test that custom state is properly injected into tools when using middleware."""
+
+    class TestState(AgentState):
+        test_state: str
+
+    @tool(description="Test the state")
+    def test_state(
+        state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> Command:
+        """Test tool that accesses injected state."""
+        assert "test_state" in state
+        val = state["test_state"]
+        return Command(
+            update={
+                "messages": [ToolMessage(f"Tested the state: {val}", tool_call_id=tool_call_id)]
+            }
+        )
+
+    class TestMiddleware(AgentMiddleware):
+        state_schema = TestState
+
+    # Create agent with middleware and test tool
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {}, "id": "test_call_1", "name": "test_state"}],
+                [],
+            ]
+        ),
+        tools=[test_state],
+        system_prompt="You are a helpful assistant.",
+        middleware=[TestMiddleware()],
+    ).compile()
+
+    # Invoke agent with custom state
+    result = agent.invoke(
+        {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+    )
+
+    # Verify the tool was called and returned the expected message
+    messages = result["messages"]
+    assert len(messages) == 4  # Human message, AI message with tool call, tool message
+
+    # Find the tool message
+    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+
+    tool_message = tool_messages[0]
+    assert tool_message.name == "test_state"
+    assert "Tested the state: I love pizza" in tool_message.content
+    assert tool_message.tool_call_id == "test_call_1"
