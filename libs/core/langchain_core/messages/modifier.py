@@ -24,6 +24,7 @@ class RemoveMessage(BaseMessage):
 
         Raises:
             ValueError: If the 'content' field is passed in kwargs.
+
         """
         if kwargs.pop("content", None):
             msg = "RemoveMessage does not support 'content' field."
