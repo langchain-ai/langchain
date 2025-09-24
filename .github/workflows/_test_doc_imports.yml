@@ -1,3 +1,10 @@
+# Validates that all import statements in `.ipynb` notebooks are correct and functional.
+#
+# Called as part of check_diffs.yml.
+#
+# Installs test dependencies and LangChain packages in editable mode and
+# runs check_imports.py.
+
 name: '📑 Documentation Import Testing'
 
 on:

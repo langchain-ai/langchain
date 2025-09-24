@@ -1,3 +1,5 @@
+# Integration tests for documentation notebooks.
+
 name: '📓 Validate Documentation Notebooks'
 run-name: 'Test notebooks in ${{ inputs.working-directory  }}'
 on:

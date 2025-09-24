@@ -21,7 +21,7 @@ class TestParrotMultiplyToolIntegration(ToolsIntegrationTests):
         """
         Returns a dictionary representing the "args" of an example tool call.
 
-        This should NOT be a ToolCall dict - i.e. it should not
-        have {"name", "id", "args"} keys.
+        This should NOT be a ToolCall dict - i.e. it should not have
+        `{"name", "id", "args"}` keys.
         """
         return {"a": 2, "b": 3}

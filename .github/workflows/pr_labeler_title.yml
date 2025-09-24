@@ -1,3 +1,7 @@
+# Label PRs based on their titles.
+#
+# See `.github/pr-title-labeler.yml` to see rules for each label/title pattern.
+
 name: "🏷️ PR Title Labeler"
 
 on:

@@ -18,7 +18,5 @@ class Test__ModuleName__Retriever(RetrieversIntegrationTests):
 
     @property
     def retriever_query_example(self) -> str:
-        """
-        Returns a str representing the "query" of an example retriever call.
-        """
+        """Returns a str representing the "query" of an example retriever call."""
         return "example query"

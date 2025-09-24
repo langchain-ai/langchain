@@ -19,7 +19,7 @@ def add_dependencies_to_pyproject_toml(
     pyproject_toml: Path,
     local_editable_dependencies: Iterable[tuple[str, Path]],
 ) -> None:
-    """Add dependencies to pyproject.toml."""
+    """Add dependencies to `pyproject.toml`."""
     with pyproject_toml.open(encoding="utf-8") as f:
         # tomlkit types aren't amazing - treat as Dict instead
         pyproject: dict[str, Any] = load(f)
@@ -37,7 +37,7 @@ def remove_dependencies_from_pyproject_toml(
     pyproject_toml: Path,
     local_editable_dependencies: Iterable[str],
 ) -> None:
-    """Remove dependencies from pyproject.toml."""
+    """Remove dependencies from `pyproject.toml`."""
     with pyproject_toml.open(encoding="utf-8") as f:
         pyproject: dict[str, Any] = load(f)
         # tomlkit types aren't amazing - treat as Dict instead

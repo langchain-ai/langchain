@@ -1,3 +1,5 @@
+# Helper to set up Python and uv with caching
+
 name: uv-install
 description: Set up Python and uv with caching
 
@@ -8,15 +10,15 @@ inputs:
   enable-cache:
     description: Enable caching for uv dependencies
     required: false
-    default: 'true'
+    default: "true"
   cache-suffix:
     description: Custom cache key suffix for cache invalidation
     required: false
-    default: ''
+    default: ""
   working-directory:
     description: Working directory for cache glob scoping
     required: false
-    default: '**'
+    default: "**"
 
 env:
   UV_VERSION: "0.5.25"

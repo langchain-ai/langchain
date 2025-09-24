@@ -1,4 +1,4 @@
-# GitHub PR Labeler Configuration for LangChain
+# Label PRs (config)
 # Automatically applies labels based on changed files and branch patterns
 
 # Core packages

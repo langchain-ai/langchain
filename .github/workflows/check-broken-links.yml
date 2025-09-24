@@ -1,9 +1,11 @@
+# Runs broken link checker in /docs on a daily schedule.
+
 name: '🔗 Check Broken Links'
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 13 * * *'
+    - cron:  '0 13 * * *'  # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
 permissions:
   contents: read

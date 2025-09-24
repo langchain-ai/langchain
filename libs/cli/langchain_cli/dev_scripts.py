@@ -18,7 +18,7 @@ def create_demo_server(
 
     Args:
         config_keys: Optional sequence of config keys to expose in the playground.
-        playground_type: The type of playground to use. Can be `'default'` or `'chat'`.
+        playground_type: The type of playground to use.
 
     Returns:
         The demo server.

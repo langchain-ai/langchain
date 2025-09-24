@@ -1,3 +1,18 @@
+# Primary CI workflow.
+#
+# Only runs against packages that have changed files.
+#
+# Runs:
+# - Linting (_lint.yml)
+# - Unit Tests (_test.yml)
+# - Pydantic compatibility tests (_test_pydantic.yml)
+# - Documentation import tests (_test_doc_imports.yml)
+# - Integration test compilation checks (_compile_integration_test.yml)
+# - Extended test suites that require additional dependencies
+# - Codspeed benchmarks (if not labeled 'codspeed-ignore')
+#
+# Reports status to GitHub checks and PR status.
+
 name: '🔧 CI'
 
 on:
@@ -11,8 +26,8 @@ on:
 # cancel the earlier run in favor of the next run.
 #
 # There's no point in testing an outdated version of the code. GitHub only allows
-# a limited number of job runners to be active at the same time, so it's better to cancel
-# pointless jobs early so that more useful jobs can run sooner.
+# a limited number of job runners to be active at the same time, so it's better to
+# cancel pointless jobs early so that more useful jobs can run sooner.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

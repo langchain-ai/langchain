@@ -1,4 +1,6 @@
 # Adapted from https://github.com/tiangolo/fastapi/blob/master/.github/actions/people/action.yml
+# TODO: fix this, migrate to new docs repo?
+
 name: "Generate LangChain People"
 description: "Generate the data for the LangChain People page"
 author: "Jacob Lee <jacob@langchain.dev>"

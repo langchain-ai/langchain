@@ -1,4 +1,20 @@
-"""This script checks documentation for broken import statements."""
+"""Check documentation for broken import statements.
+
+Validates that all import statements in Jupyter notebooks within the documentation
+directory are functional and can be successfully imported.
+
+- Scans all `.ipynb` files in `docs/`
+- Extracts import statements from code cells
+- Tests each import to ensure it works
+- Reports any broken imports that would fail for users
+
+Usage:
+    python docs/scripts/check_imports.py
+
+Exit codes:
+    0: All imports are valid
+    1: Found broken imports (ImportError raised)
+"""
 
 import importlib
 import json
