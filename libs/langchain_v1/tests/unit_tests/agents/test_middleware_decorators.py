@@ -35,19 +35,19 @@ def test_before_model_decorator() -> None:
     """Test before_model decorator with all configuration options."""
 
     @before_model(
-        state_schema=CustomState, tools=[test_tool], jump_to=["__end__"], name="CustomBeforeModel"
+        state_schema=CustomState, tools=[test_tool], jump_to=["end"], name="CustomBeforeModel"
     )
     def custom_before_model(state: CustomState) -> dict[str, Any]:
-        return {"jump_to": "__end__"}
+        return {"jump_to": "end"}
 
     assert isinstance(custom_before_model, AgentMiddleware)
     assert custom_before_model.state_schema == CustomState
     assert custom_before_model.tools == [test_tool]
-    assert custom_before_model.before_model_jump_to == ["__end__"]
+    assert custom_before_model.before_model_jump_to == ["end"]
     assert custom_before_model.__class__.__name__ == "CustomBeforeModel"
 
     result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]})
-    assert result == {"jump_to": "__end__"}
+    assert result == {"jump_to": "end"}
 
 
 def test_after_model_decorator() -> None:
@@ -56,7 +56,7 @@ def test_after_model_decorator() -> None:
     @after_model(
         state_schema=CustomState,
         tools=[test_tool],
-        jump_to=["model", "__end__"],
+        jump_to=["model", "end"],
         name="CustomAfterModel",
     )
     def custom_after_model(state: CustomState) -> dict[str, Any]:
@@ -66,7 +66,7 @@ def test_after_model_decorator() -> None:
     assert isinstance(custom_after_model, AgentMiddleware)
     assert custom_after_model.state_schema == CustomState
     assert custom_after_model.tools == [test_tool]
-    assert custom_after_model.after_model_jump_to == ["model", "__end__"]
+    assert custom_after_model.after_model_jump_to == ["model", "end"]
     assert custom_after_model.__class__.__name__ == "CustomAfterModel"
 
     # Verify it works
