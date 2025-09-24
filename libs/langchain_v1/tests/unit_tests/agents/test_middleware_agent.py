@@ -1,6 +1,7 @@
 import pytest
 from typing import Any
 from unittest.mock import patch
+from types import ModuleType
 
 from syrupy.assertion import SnapshotAssertion
 
@@ -923,14 +924,20 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
 
-    # with patch("langchain_anthropic.ChatAnthropic", side_effect=ImportError()):
     with pytest.raises(
         ValueError,
         match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
     ):
         middleware.modify_model_request(fake_request)
 
-    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+    langchain_anthropic = ModuleType("langchain_anthropic")
+
+    class MockChatAnthropic:
+        pass
+
+    langchain_anthropic.ChatAnthropic = MockChatAnthropic
+
+    with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
         with pytest.raises(
             ValueError,
             match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
@@ -949,7 +956,7 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         assert result == fake_request
 
     with warnings.catch_warnings(record=True) as w:
-        with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+        with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
             result = middleware.modify_model_request(fake_request)
             assert result is fake_request
             assert len(w) == 1
