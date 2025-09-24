@@ -2,7 +2,7 @@
 #
 # (Prevents releases with mismatched version numbers)
 
-name: '🔍 Check `core` Version Equality'
+name: '🔍 Check Version Equality'
 
 on:
   pull_request:
