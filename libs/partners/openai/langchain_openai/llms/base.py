@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import sys
 from collections.abc import AsyncIterator, Collection, Iterator, Mapping
-from typing import Any, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 
 import openai
 import tiktoken
@@ -186,7 +186,7 @@ class BaseOpenAI(BaseLLM):
     """Generates best_of completions server-side and returns the "best"."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: Optional[Union[SecretStr, Callable[[], str]]] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
@@ -274,10 +274,16 @@ class BaseOpenAI(BaseLLM):
         if self.streaming and self.best_of > 1:
             raise ValueError("Cannot stream results when best_of > 1.")
 
+        # Handle both SecretStr and Callable[[], str] for api_key
+        api_key_value = None
+        if self.openai_api_key:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            elif callable(self.openai_api_key):
+                api_key_value = self.openai_api_key()
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -722,8 +728,10 @@ class OpenAI(BaseOpenAI):
             Timeout for requests.
         max_retries: int
             Max number of retries.
-        api_key: Optional[str]
+        api_key: Optional[Union[str, Callable[[], str]]]
             OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
+            Can be a string or a callable that returns a string (useful for dynamic tokens
+            like Azure AD bearer tokens).
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.
