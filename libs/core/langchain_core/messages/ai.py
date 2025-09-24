@@ -188,7 +188,7 @@ class AIMessage(BaseMessage):
         content: Union[str, list[Union[str, dict]]],
         **kwargs: Any,
     ) -> None:
-        """Initialize AIMessage.
+        """Initialize ``AIMessage``.
 
         Args:
             content: The content of the message.
