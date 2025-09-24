@@ -1,12 +1,13 @@
-from typing_extensions import TypedDict
 import pytest
 from typing import Any
 from unittest.mock import patch
+from types import ModuleType
 
 from syrupy.assertion import SnapshotAssertion
 
+import warnings
 from langgraph.runtime import Runtime
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -17,9 +18,10 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 
 from langchain.agents.middleware_agent import create_agent
+from langchain.agents.tool_node import InjectedState
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     ActionRequest,
@@ -34,12 +36,12 @@ from langchain.agents.middleware.types import (
     OmitFromOutput,
     PrivateStateAttr,
 )
-from langchain.agents.middleware.dynamic_system_prompt import DynamicSystemPromptMiddleware
 
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.constants import END
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.types import Command
 from langchain.agents.structured_output import ToolStrategy
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
@@ -332,6 +334,8 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
+        before_model_jump_to = [END]
+
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": END}
@@ -371,13 +375,13 @@ def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         },
         description_prefix="Custom prefix",
     )
 
-    assert middleware.tool_configs == {
+    assert middleware.interrupt_on == {
         "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
     }
     assert middleware.description_prefix == "Custom prefix"
@@ -387,7 +391,7 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -416,7 +420,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -451,7 +455,7 @@ def test_human_in_the_loop_middleware_single_tool_accept() -> None:
 def test_human_in_the_loop_middleware_single_tool_edit() -> None:
     """Test HumanInTheLoopMiddleware with single tool edit response."""
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -486,7 +490,7 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -517,7 +521,7 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
             "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
@@ -564,7 +568,7 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
             "get_temperature": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
         }
@@ -616,7 +620,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         }
     )
@@ -656,7 +660,7 @@ def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
 def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     """Test HumanInTheLoopMiddleware with unknown response type."""
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         }
     )
@@ -683,7 +687,7 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
 
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": False, "allow_accept": True}
         }
     )
@@ -720,7 +724,7 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "interrupt_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
         }
     )
@@ -754,7 +758,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
 
     middleware = HumanInTheLoopMiddleware(
-        tool_configs={
+        interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
         },
         description_prefix="Custom prefix",
@@ -795,7 +799,7 @@ def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
 
 def test_human_in_the_loop_middleware_boolean_configs() -> None:
     """Test HITL middleware with boolean tool configs."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": True})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -833,7 +837,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
         assert len(result["messages"]) == 1
         assert result["messages"][0].tool_calls[0]["args"] == {"input": "edited"}
 
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": False})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": False})
 
     result = middleware.after_model(state)
     # No interruption should occur
@@ -842,7 +846,7 @@ def test_human_in_the_loop_middleware_boolean_configs() -> None:
 
 def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     """Test that sequence mismatch in resume raises an error."""
-    middleware = HumanInTheLoopMiddleware(tool_configs={"test_tool": True})
+    middleware = HumanInTheLoopMiddleware(interrupt_on={"test_tool": True})
 
     ai_message = AIMessage(
         content="I'll help you",
@@ -892,6 +896,85 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     assert middleware.type == "ephemeral"
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
+
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    assert middleware.modify_model_request(fake_request).model_settings == {
+        "cache_control": {"type": "ephemeral", "ttl": "5m"}
+    }
+
+
+def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
+    """Test AnthropicPromptCachingMiddleware with unsupported model."""
+    fake_request = ModelRequest(
+        model=FakeToolCallingModel(),
+        messages=[HumanMessage("Hello")],
+        system_prompt=None,
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="raise")
+
+    with pytest.raises(
+        ValueError,
+        match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
+    ):
+        middleware.modify_model_request(fake_request)
+
+    langchain_anthropic = ModuleType("langchain_anthropic")
+
+    class MockChatAnthropic:
+        pass
+
+    langchain_anthropic.ChatAnthropic = MockChatAnthropic
+
+    with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
+        with pytest.raises(
+            ValueError,
+            match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
+        ):
+            middleware.modify_model_request(fake_request)
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
+
+    with warnings.catch_warnings(record=True) as w:
+        result = middleware.modify_model_request(fake_request)
+        assert len(w) == 1
+        assert (
+            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
+            in str(w[-1].message)
+        )
+        assert result == fake_request
+
+    with warnings.catch_warnings(record=True) as w:
+        with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
+            result = middleware.modify_model_request(fake_request)
+            assert result is fake_request
+            assert len(w) == 1
+            assert (
+                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
+                in str(w[-1].message)
+            )
+
+    middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
+
+    result = middleware.modify_model_request(fake_request)
+    assert result is fake_request
+
+    with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
+        result = middleware.modify_model_request(fake_request)
+        assert result is fake_request
 
 
 # Tests for SummarizationMiddleware
@@ -1221,74 +1304,6 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
     assert result["response"].condition == "sunny"
 
 
-# Tests for DynamicSystemPromptMiddleware
-def test_dynamic_system_prompt_middleware_basic() -> None:
-    """Test basic functionality of DynamicSystemPromptMiddleware."""
-
-    def dynamic_system_prompt(state: AgentState) -> str:
-        messages = state.get("messages", [])
-        if messages:
-            return f"You are a helpful assistant. Message count: {len(messages)}"
-        return "You are a helpful assistant. No messages yet."
-
-    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
-
-    # Test with empty state
-    empty_state = {"messages": []}
-    request = ModelRequest(
-        model=FakeToolCallingModel(),
-        system_prompt="Original prompt",
-        messages=[],
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-    )
-
-    modified_request = middleware.modify_model_request(request, empty_state, None)
-    assert modified_request.system_prompt == "You are a helpful assistant. No messages yet."
-
-    state_with_messages = {"messages": [HumanMessage("Hello"), AIMessage("Hi")]}
-    modified_request = middleware.modify_model_request(request, state_with_messages, None)
-    assert modified_request.system_prompt == "You are a helpful assistant. Message count: 2"
-
-
-def test_dynamic_system_prompt_middleware_with_context() -> None:
-    """Test DynamicSystemPromptMiddleware with runtime context."""
-
-    class MockContext(TypedDict):
-        user_role: str
-
-    def dynamic_system_prompt(state: AgentState, runtime: Runtime[MockContext]) -> str:
-        base_prompt = "You are a helpful assistant."
-        if runtime and hasattr(runtime, "context"):
-            user_role = runtime.context.get("user_role", "user")
-            return f"{base_prompt} User role: {user_role}"
-        return base_prompt
-
-    middleware = DynamicSystemPromptMiddleware(dynamic_system_prompt)
-
-    # Create a mock runtime with context
-    class MockRuntime:
-        def __init__(self, context):
-            self.context = context
-
-    mock_runtime = MockRuntime(context={"user_role": "admin"})
-
-    request = ModelRequest(
-        model=FakeToolCallingModel(),
-        system_prompt="Original prompt",
-        messages=[HumanMessage("Test")],
-        tool_choice=None,
-        tools=[],
-        response_format=None,
-    )
-
-    state = {"messages": [HumanMessage("Test")]}
-    modified_request = middleware.modify_model_request(request, state, mock_runtime)
-
-    assert modified_request.system_prompt == "You are a helpful assistant. User role: admin"
-
-
 def test_public_private_state_for_custom_middleware() -> None:
     """Test public and private state for custom middleware."""
 
@@ -1344,3 +1359,49 @@ def test_runtime_injected_into_middleware() -> None:
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent = agent.compile()
     agent.invoke({"messages": [HumanMessage("Hello")]})
+
+
+def test_injected_state_in_middleware_agent() -> None:
+    """Test that custom state is properly injected into tools when using middleware."""
+
+    class TestState(AgentState):
+        test_state: str
+
+    @tool(description="Test the state")
+    def test_state(
+        state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
+    ) -> str:
+        """Test tool that accesses injected state."""
+        assert "test_state" in state
+        return "success"
+
+    class TestMiddleware(AgentMiddleware):
+        state_schema = TestState
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {}, "id": "test_call_1", "name": "test_state"}],
+                [],
+            ]
+        ),
+        tools=[test_state],
+        system_prompt="You are a helpful assistant.",
+        middleware=[TestMiddleware()],
+    ).compile()
+
+    result = agent.invoke(
+        {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+    )
+
+    messages = result["messages"]
+    assert len(messages) == 4  # Human message, AI message with tool call, tool message, AI message
+
+    # Find the tool message
+    tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
+    assert len(tool_messages) == 1
+
+    tool_message = tool_messages[0]
+    assert tool_message.name == "test_state"
+    assert "success" in tool_message.content
+    assert tool_message.tool_call_id == "test_call_1"
