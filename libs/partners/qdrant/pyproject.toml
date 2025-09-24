@@ -52,6 +52,9 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins
