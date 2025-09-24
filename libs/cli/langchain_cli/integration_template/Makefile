@@ -41,12 +41,6 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run ruff check --fix $(PYTHON_FILES)
 
-spell_check:
-	uv run codespell --toml pyproject.toml
-
-spell_fix:
-	uv run codespell --toml pyproject.toml -w
-
 check_imports: $(shell find __module_name__ -name '*.py')
 	uv run python ./scripts/check_imports.py $^
 

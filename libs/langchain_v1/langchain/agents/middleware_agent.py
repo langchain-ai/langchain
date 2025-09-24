@@ -2,7 +2,8 @@
 
 import itertools
 from collections.abc import Callable, Sequence
-from typing import Any, cast
+from inspect import signature
+from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -10,19 +11,19 @@ from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
 from langgraph.graph.state import StateGraph
+from langgraph.runtime import Runtime
 from langgraph.types import Send
 from langgraph.typing import ContextT
-from typing_extensions import TypedDict, TypeVar
+from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     JumpTo,
     ModelRequest,
+    OmitFromSchema,
     PublicAgentState,
 )
-
-# Import structured output classes from the old implementation
 from langchain.agents.structured_output import (
     MultipleStructuredOutputsError,
     OutputToolBinding,
@@ -38,26 +39,49 @@ from langchain.chat_models import init_chat_model
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 
-def _merge_state_schemas(schemas: list[type]) -> type:
-    """Merge multiple TypedDict schemas into a single schema with all fields."""
-    if not schemas:
-        return AgentState
+def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
+    """Resolve schema by merging schemas and optionally respecting OmitFromSchema annotations.
 
+    Args:
+        schemas: List of schema types to merge
+        schema_name: Name for the generated TypedDict
+        omit_flag: If specified, omit fields with this flag set ('input' or 'output')
+    """
     all_annotations = {}
 
     for schema in schemas:
-        all_annotations.update(schema.__annotations__)
+        hints = get_type_hints(schema, include_extras=True)
 
-    return TypedDict("MergedState", all_annotations)  # type: ignore[operator]
+        for field_name, field_type in hints.items():
+            should_omit = False
+
+            if omit_flag:
+                # Check for omission in the annotation metadata
+                metadata = _extract_metadata(field_type)
+                for meta in metadata:
+                    if isinstance(meta, OmitFromSchema) and getattr(meta, omit_flag) is True:
+                        should_omit = True
+                        break
+
+            if not should_omit:
+                all_annotations[field_name] = field_type
+
+    return TypedDict(schema_name, all_annotations)  # type: ignore[operator]
 
 
-def _filter_state_for_schema(state: dict[str, Any], schema: type) -> dict[str, Any]:
-    """Filter state to only include fields defined in the given schema."""
-    if not hasattr(schema, "__annotations__"):
-        return state
+def _extract_metadata(type_: type) -> list:
+    """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
+    # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
+    if get_origin(type_) in (Required, NotRequired):
+        inner_type = get_args(type_)[0]
+        if get_origin(inner_type) is Annotated:
+            return list(get_args(inner_type)[1:])
 
-    schema_fields = set(schema.__annotations__.keys())
-    return {k: v for k, v in state.items() if k in schema_fields}
+    # Handle direct Annotated[...]
+    elif get_origin(type_) is Annotated:
+        return list(get_args(type_)[1:])
+
+    return []
 
 
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
@@ -114,7 +138,7 @@ def create_agent(  # noqa: PLR0915
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
     system_prompt: str | None = None,
-    middleware: Sequence[AgentMiddleware] = (),
+    middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     context_schema: type[ContextT] | None = None,
 ) -> StateGraph[
@@ -220,16 +244,20 @@ def create_agent(  # noqa: PLR0915
         m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
     ]
 
-    # Collect all middleware state schemas and create merged schema
-    merged_state_schema: type[AgentState] = _merge_state_schemas(
-        [m.state_schema for m in middleware]
-    )
+    state_schemas = {m.state_schema for m in middleware}
+    state_schemas.add(AgentState)
+
+    state_schema = _resolve_schema(state_schemas, "StateSchema", None)
+    input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
+    output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
 
     # create graph, add nodes
-    graph = StateGraph(
-        merged_state_schema,
-        input_schema=PublicAgentState,
-        output_schema=PublicAgentState,
+    graph: StateGraph[
+        AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
+    ] = StateGraph(
+        state_schema=state_schema,
+        input_schema=input_schema,
+        output_schema=output_schema,
         context_schema=context_schema,
     )
 
@@ -339,7 +367,14 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
-    def model_request(state: dict[str, Any]) -> dict[str, Any]:
+    model_request_signatures: list[
+        tuple[bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
+    ] = [
+        ("runtime" in signature(m.modify_model_request).parameters, m)
+        for m in middleware_w_modify_model_request
+    ]
+
+    def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
@@ -351,10 +386,11 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            # Filter state to only include fields defined in this middleware's schema
-            filtered_state = _filter_state_for_schema(state, m.state_schema)
-            request = m.modify_model_request(request, filtered_state)
+        for use_runtime, m in model_request_signatures:
+            if use_runtime:
+                m.modify_model_request(request, state, runtime)
+            else:
+                m.modify_model_request(request, state)  # type: ignore[call-arg]
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -365,7 +401,7 @@ def create_agent(  # noqa: PLR0915
         output = model_.invoke(messages)
         return _handle_model_output(output)
 
-    async def amodel_request(state: dict[str, Any]) -> dict[str, Any]:
+    async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         # Start with the base model request
         request = ModelRequest(
@@ -378,10 +414,11 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for m in middleware_w_modify_model_request:
-            # Filter state to only include fields defined in this middleware's schema
-            filtered_state = _filter_state_for_schema(state, m.state_schema)
-            request = m.modify_model_request(request, filtered_state)
+        for use_runtime, m in model_request_signatures:
+            if use_runtime:
+                m.modify_model_request(request, state, runtime)
+            else:
+                m.modify_model_request(request, state)  # type: ignore[call-arg]
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -405,16 +442,12 @@ def create_agent(  # noqa: PLR0915
     for m in middleware:
         if m.__class__.before_model is not AgentMiddleware.before_model:
             graph.add_node(
-                f"{m.__class__.__name__}.before_model",
-                m.before_model,
-                input_schema=m.state_schema,
+                f"{m.__class__.__name__}.before_model", m.before_model, input_schema=state_schema
             )
 
         if m.__class__.after_model is not AgentMiddleware.after_model:
             graph.add_node(
-                f"{m.__class__.__name__}.after_model",
-                m.after_model,
-                input_schema=m.state_schema,
+                f"{m.__class__.__name__}.after_model", m.after_model, input_schema=state_schema
             )
 
     # add start edge
@@ -452,7 +485,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            tools_available=tool_node is not None,
+            jump_to=middleware_w_after[0].after_model_jump_to,
         )
 
     # Add middleware edges (same as before)
@@ -463,7 +496,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jump_to=m1.before_model_jump_to,
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -471,7 +504,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            tools_available=tool_node is not None,
+            jump_to=middleware_w_before[-1].before_model_jump_to,
         )
 
     if middleware_w_after:
@@ -484,7 +517,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jump_to=m1.after_model_jump_to,
             )
 
     return graph
@@ -516,8 +549,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[AgentState], str | list[Send] | None]:
-    def model_to_tools(state: AgentState) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
@@ -536,8 +569,7 @@ def _make_model_to_tools_edge(
             # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
             # largely internal so can be fixed later
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
-                for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
@@ -548,8 +580,8 @@ def _make_model_to_tools_edge(
 
 def _make_tools_to_model_edge(
     tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
-) -> Callable[[AgentState], str | None]:
-    def tools_to_model(state: AgentState) -> str | None:
+) -> Callable[[dict[str, Any]], str | None]:
+    def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         if all(
@@ -572,7 +604,7 @@ def _add_middleware_edge(
     name: str,
     default_destination: str,
     model_destination: str,
-    tools_available: bool,  # noqa: FBT001
+    jump_to: list[JumpTo] | None,
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -582,18 +614,23 @@ def _add_middleware_edge(
         name: The name of the middleware node.
         default_destination: The default destination for the edge.
         model_destination: The destination for the edge to the model.
-        tools_available: Whether tools are available for the edge to potentially route to.
+        jump_to: The conditionally jumpable destinations for the edge.
     """
+    if jump_to:
 
-    def jump_edge(state: AgentState) -> str:
-        return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
+        def jump_edge(state: dict[str, Any]) -> str:
+            return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
-    destinations = [default_destination]
-    if default_destination != END:
-        destinations.append(END)
-    if tools_available:
-        destinations.append("tools")
-    if name != model_destination:
-        destinations.append(model_destination)
+        destinations = [default_destination]
 
-    graph.add_conditional_edges(name, jump_edge, destinations)
+        if "__end__" in jump_to:
+            destinations.append(END)
+        if "tools" in jump_to:
+            destinations.append("tools")
+        if "model" in jump_to and name != model_destination:
+            destinations.append(model_destination)
+
+        graph.add_conditional_edges(name, jump_edge, destinations)
+
+    else:
+        graph.add_edge(name, default_destination)
