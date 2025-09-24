@@ -752,3 +752,6 @@ packages:
 - name: langchain-scraperapi
   path: .
   repo: scraperapi/langchain-scraperapi
+- name: langchain-teradata
+  path: .
+  repo: Teradata/langchain-teradata
