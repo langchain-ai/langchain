@@ -47,6 +47,10 @@ disallow_untyped_defs = "True"
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
+
 [tool.ruff.lint]
 select = [
     "A",      # flake8-builtins

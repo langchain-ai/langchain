@@ -326,7 +326,8 @@ class ChatHuggingFace(BaseChatModel):
         .. code-block:: python
 
             from huggingface_hub import login
-            login() # You will be prompted for your HF key, which will then be saved locally
+
+            login()  # You will be prompted for your HF key, which will then be saved locally
 
     Key init args — completion params:
         llm: `HuggingFaceTextGenInference`, `HuggingFaceEndpoint`, `HuggingFaceHub`, or
@@ -447,9 +448,13 @@ class ChatHuggingFace(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetPopulation',
-              'args': {'location': 'Los Angeles, CA'},
-              'id': '0'}]
+            [
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "0",
+                }
+            ]
 
     Response metadata
         .. code-block:: python
@@ -458,10 +463,13 @@ class ChatHuggingFace(BaseChatModel):
             ai_msg.response_metadata
 
         .. code-block:: python
-            {'token_usage': ChatCompletionOutputUsage(completion_tokens=100,
-            prompt_tokens=8, total_tokens=108),
-             'model': '',
-             'finish_reason': 'length'}
+            {
+                "token_usage": ChatCompletionOutputUsage(
+                    completion_tokens=100, prompt_tokens=8, total_tokens=108
+                ),
+                "model": "",
+                "finish_reason": "length",
+            }
 
     """  # noqa: E501
 
