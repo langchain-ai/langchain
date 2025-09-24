@@ -9,7 +9,7 @@ from langchain_cli.namespaces.migrate.generate.generic import (
 
 @pytest.mark.xfail(reason="Unknown reason")
 def test_create_json_agent_migration() -> None:
-    """Test the migration of create_json_agent from langchain to langchain_community."""
+    """Test migration of `create_json_agent` from langchain to `langchain_community`."""
     with sup1(), sup2():
         raw_migrations = generate_simplified_migrations(
             from_package="langchain",
@@ -40,7 +40,7 @@ def test_create_json_agent_migration() -> None:
 
 @pytest.mark.xfail(reason="Unknown reason")
 def test_create_single_store_retriever_db() -> None:
-    """Test migration from langchain to langchain_core."""
+    """Test migration from `langchain` to `langchain_core`."""
     with sup1(), sup2():
         raw_migrations = generate_simplified_migrations(
             from_package="langchain",
