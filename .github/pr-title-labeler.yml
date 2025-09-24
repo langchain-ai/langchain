@@ -1,5 +1,7 @@
-# PR Title Labeler Configuration
+# PR title labeler config
+#
 # Labels PRs based on conventional commit patterns in titles
+#
 # Format: type(scope): description or type!: description (breaking)
 
 add-missing-labels: true
@@ -9,19 +11,13 @@ include-title: true
 label-for-breaking-changes: breaking
 
 label-mapping:
-  # Features and enhancements
   feature: ["feat"]
-
-  # Bug fixes
   fix: ["fix"]
-
-  # Documentation
   documentation: ["docs"]
-
-  # Infrastructure and tooling
-  infra: ["chore", "ci", "build", "infra"]
-
-  # Integration partners - detected by scope
+  linting: ["style"]
+  refactor: ["refactor"]
+  performance: ["perf"]
+  infra: ["build", "ci", "chore"]
   integration:
     [
       "anthropic",
@@ -40,6 +36,5 @@ label-mapping:
       "qdrant",
       "xai",
     ]
-
-  # Releases
+  revert: ["revert"]
   release: ["release"]
