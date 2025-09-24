@@ -79,6 +79,7 @@ class TestCase:
         - MiddlewareB has no jumps before model, jumps to "model" after model
         - Agent has tools available
     """
+
     a_before: list[JumpTo]
     a_after: list[JumpTo]
     b_before: list[JumpTo]
@@ -192,7 +193,9 @@ def test_tool_registration_with_middleware(
         middleware=[middleware_with_tools],
     )
 
-    diagram_middleware_tools = agent_middleware_tools.compile().get_graph().draw_mermaid(with_styles=False)
+    diagram_middleware_tools = (
+        agent_middleware_tools.compile().get_graph().draw_mermaid(with_styles=False)
+    )
     assert diagram_middleware_tools == snapshot(name="middleware_tools_only")
 
     # Test case 3: Tools only via agent
