@@ -519,7 +519,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
         **kwargs: Any,
     ) -> Iterator[AIMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
-            # model doesn't implement streaming, so use default implementation
+            # Model doesn't implement streaming, so use default implementation
             yield cast(
                 "AIMessageChunk",
                 self.invoke(input, config=config, stop=stop, **kwargs),

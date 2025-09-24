@@ -1,11 +1,12 @@
 """Main entrypoint into LangChain.
 
 AKA `version.py` in CI's `check_version_equality`.
+`langchain_v1 versions in pyproject.toml and __init__.py do not match!`
 """
 
 from typing import Any
 
-__version__ = "1.0.0a7"
+__version__ = "1.0.0a8"
 
 
 def __getattr__(name: str) -> Any:  # noqa: ANN401
