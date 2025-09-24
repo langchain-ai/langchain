@@ -1310,14 +1310,12 @@ def test_injected_state_in_middleware_agent() -> None:
         middleware=[TestMiddleware()],
     ).compile()
 
-    # Invoke agent with custom state
     result = agent.invoke(
         {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
     )
 
-    # Verify the tool was called and returned the expected message
     messages = result["messages"]
-    assert len(messages) == 4  # Human message, AI message with tool call, tool message
+    assert len(messages) == 4  # Human message, AI message with tool call, tool message, AI message
 
     # Find the tool message
     tool_messages = [msg for msg in messages if isinstance(msg, ToolMessage)]
