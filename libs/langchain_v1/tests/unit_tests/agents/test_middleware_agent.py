@@ -1297,7 +1297,6 @@ def test_injected_state_in_middleware_agent() -> None:
     class TestMiddleware(AgentMiddleware):
         state_schema = TestState
 
-    # Create agent with middleware and test tool
     agent = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[

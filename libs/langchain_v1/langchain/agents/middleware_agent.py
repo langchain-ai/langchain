@@ -548,8 +548,7 @@ def _make_model_to_tools_edge(
             # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
             # largely internal so can be fixed later
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
-                for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
