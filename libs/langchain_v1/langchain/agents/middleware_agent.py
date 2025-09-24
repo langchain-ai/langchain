@@ -602,7 +602,7 @@ def _add_middleware_edge(
 
         destinations = [default_destination]
 
-        if "__end__" in jump_to:
+        if "end" in jump_to:
             destinations.append(END)
         if "tools" in jump_to:
             destinations.append("tools")
