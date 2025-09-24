@@ -97,8 +97,9 @@ def get_buffer_string(
     Args:
         messages: Messages to be converted to strings.
         human_prefix: The prefix to prepend to contents of ``HumanMessage``s.
-            Default is "Human".
-        ai_prefix: The prefix to prepend to contents of AIMessages. Default is ``'AI'``.
+            Default is ``'Human'``.
+        ai_prefix: The prefix to prepend to contents of ``AIMessage``. Default is
+            ``'AI'``.
 
     Returns:
         A single string concatenation of all input messages.

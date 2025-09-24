@@ -40,7 +40,7 @@ class FunctionMessageChunk(FunctionMessage, BaseMessageChunk):
     type: Literal["FunctionMessageChunk"] = "FunctionMessageChunk"  # type: ignore[assignment]
     """The type of the message (used for serialization).
 
-    Defaults to ``FunctionMessageChunk``.
+    Defaults to ``'FunctionMessageChunk'``.
 
     """
 

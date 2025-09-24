@@ -181,7 +181,7 @@ class AIMessage(BaseMessage):
     """
 
     type: Literal["ai"] = "ai"
-    """The type of the message (used for deserialization). Defaults to "ai"."""
+    """The type of the message (used for deserialization). Defaults to ``'ai'``."""
 
     def __init__(
         self,
