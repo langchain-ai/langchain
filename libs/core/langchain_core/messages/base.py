@@ -71,7 +71,7 @@ class BaseMessage(Serializable):
         content: Union[str, list[Union[str, dict]]],
         **kwargs: Any,
     ) -> None:
-        """Initialize BaseMessage.
+        """Initialize ``BaseMessage``.
 
         Args:
             content: The string contents of the message.

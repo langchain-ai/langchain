@@ -147,7 +147,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
         content: Union[str, list[Union[str, dict]]],
         **kwargs: Any,
     ) -> None:
-        """Initialize ToolMessage.
+        """Initialize ``ToolMessage``.
 
         Args:
             content: The string contents of the message.

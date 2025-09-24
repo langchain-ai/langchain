@@ -47,7 +47,7 @@ class HumanMessage(BaseMessage):
         content: Union[str, list[Union[str, dict]]],
         **kwargs: Any,
     ) -> None:
-        """Initialize HumanMessage.
+        """Initialize ``HumanMessage``.
 
         Args:
             content: The string contents of the message.
