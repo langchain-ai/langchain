@@ -102,10 +102,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, model_validator
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self
 
-from langchain_openai.chat_models._client_utils import (
-    _get_default_async_httpx_client,
-    _get_default_httpx_client,
-)
+from langchain_openai.chat_models._client_utils import _get_http_client_for_aiohttp_env
 from langchain_openai.chat_models._compat import (
     _convert_from_v03_ai_message,
     _convert_to_v03_ai_message,
@@ -555,13 +552,23 @@ class BaseChatOpenAI(BaseChatModel):
     # Configure a custom httpx client. See the
     # [httpx documentation](https://www.python-httpx.org/api/#client) for more details.
     http_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.Client``. Only used for sync invocations. Must specify
+    """Optional HTTP client. Only used for sync invocations. Must specify
         ``http_async_client`` as well if you'd like a custom client for async
         invocations.
+
+        Supports ``httpx.Client`` or ``openai.DefaultAioHttpClient`` for improved
+        concurrency. To use the aiohttp backend, install with
+        ``pip install "openai[aiohttp]"`` and pass ``DefaultAioHttpClient()`` or
+        set the environment variable ``LC_OPENAI_USE_AIOHTTP=1``.
     """
     http_async_client: Union[Any, None] = Field(default=None, exclude=True)
-    """Optional ``httpx.AsyncClient``. Only used for async invocations. Must specify
-        ``http_client`` as well if you'd like a custom client for sync invocations."""
+    """Optional HTTP client. Only used for async invocations. Must specify
+        ``http_client`` as well if you'd like a custom client for sync invocations.
+
+        Supports ``httpx.AsyncClient`` or ``openai.DefaultAioHttpClient`` for improved
+        concurrency. To use the aiohttp backend, install with
+        ``pip install "openai[aiohttp]"`` and pass ``DefaultAioHttpClient()`` or
+        set the environment variable ``LC_OPENAI_USE_AIOHTTP=1``."""
     stop: Optional[Union[list[str], str]] = Field(default=None, alias="stop_sequences")
     """Default stop sequences."""
     extra_body: Optional[Mapping[str, Any]] = None
@@ -787,8 +794,12 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
             sync_specific = {
-                "http_client": self.http_client
-                or _get_default_httpx_client(self.openai_api_base, self.request_timeout)
+                "http_client": _get_http_client_for_aiohttp_env(
+                    self.http_client,
+                    self.openai_api_base,
+                    self.request_timeout,
+                    is_async=False,
+                )
             }
             self.root_client = openai.OpenAI(**client_params, **sync_specific)  # type: ignore[arg-type]
             self.client = self.root_client.chat.completions
@@ -805,9 +816,11 @@ class BaseChatOpenAI(BaseChatModel):
                     proxy=self.openai_proxy, verify=global_ssl_context
                 )
             async_specific = {
-                "http_client": self.http_async_client
-                or _get_default_async_httpx_client(
-                    self.openai_api_base, self.request_timeout
+                "http_client": _get_http_client_for_aiohttp_env(
+                    self.http_async_client,
+                    self.openai_api_base,
+                    self.request_timeout,
+                    is_async=True,
                 )
             }
             self.root_async_client = openai.AsyncOpenAI(

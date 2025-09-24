@@ -20,6 +20,33 @@ See a [usage example](https://python.langchain.com/docs/integrations/chat/openai
 from langchain_openai import ChatOpenAI
 ```
 
+### High concurrency - optional OpenAI aiohttp backend
+
+For improved throughput in high-concurrency scenarios (parallel chains, graphs, and agents), you can enable the OpenAI aiohttp backend which removes concurrency limits seen with the default httpx client.
+
+**Installation:**
+```bash
+pip install "openai[aiohttp]"
+```
+
+**Usage:**
+```python
+from openai import DefaultAioHttpClient
+from langchain_openai import ChatOpenAI
+
+# Option 1: Pass explicitly
+llm = ChatOpenAI(
+    http_client=DefaultAioHttpClient(),
+    http_async_client=DefaultAioHttpClient()
+)
+
+# Option 2: Use environment variable
+# Set LC_OPENAI_USE_AIOHTTP=1 in your environment
+llm = ChatOpenAI()  # Will automatically use aiohttp if available
+```
+
+For more details, see the [OpenAI Python library documentation](https://github.com/openai/openai-python#httpx-client).
+
 If you are using a model hosted on `Azure`, you should use different wrapper for that:
 
 ```python
