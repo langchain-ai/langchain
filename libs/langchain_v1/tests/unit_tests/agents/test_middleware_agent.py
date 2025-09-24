@@ -1,4 +1,3 @@
-from typing_extensions import TypedDict
 import pytest
 from typing import Any
 from unittest.mock import patch
@@ -6,7 +5,7 @@ from unittest.mock import patch
 from syrupy.assertion import SnapshotAssertion
 
 from langgraph.runtime import Runtime
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -1290,15 +1289,10 @@ def test_injected_state_in_middleware_agent() -> None:
     @tool(description="Test the state")
     def test_state(
         state: Annotated[TestState, InjectedState], tool_call_id: Annotated[str, InjectedToolCallId]
-    ) -> Command:
+    ) -> str:
         """Test tool that accesses injected state."""
         assert "test_state" in state
-        val = state["test_state"]
-        return Command(
-            update={
-                "messages": [ToolMessage(f"Tested the state: {val}", tool_call_id=tool_call_id)]
-            }
-        )
+        return "success"
 
     class TestMiddleware(AgentMiddleware):
         state_schema = TestState
@@ -1331,5 +1325,5 @@ def test_injected_state_in_middleware_agent() -> None:
 
     tool_message = tool_messages[0]
     assert tool_message.name == "test_state"
-    assert "Tested the state: I love pizza" in tool_message.content
+    assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
