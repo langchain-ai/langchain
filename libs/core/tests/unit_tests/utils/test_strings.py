@@ -48,6 +48,7 @@ def test_existing_string_functions() -> None:
     assert "key: value" in result
     assert "number: 123" in result
 
+
 def test_stringify_value_nested_structures() -> None:
     """Test stringifying nested structures."""
     # Test nested dict in list
@@ -56,10 +57,7 @@ def test_stringify_value_nested_structures() -> None:
             {"name": "Alice", "age": 25},
             {"name": "Bob", "age": 30},
         ],
-        "metadata": {
-            "total_users": 2,
-            "active": True
-        }
+        "metadata": {"total_users": 2, "active": True},
     }
 
     result = stringify_value(nested_data)
