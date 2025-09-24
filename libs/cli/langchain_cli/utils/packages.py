@@ -37,13 +37,12 @@ def get_package_root(cwd: Path | None = None) -> Path:
 
 
 class LangServeExport(TypedDict):
-    """Fields from pyproject.toml that are relevant to LangServe.
+    """Fields from `pyproject.toml` that are relevant to LangServe.
 
     Attributes:
-        module: The module to import from, tool.langserve.export_module
-        attr: The attribute to import from the module, tool.langserve.export_attr
-        package_name: The name of the package, tool.poetry.name
-
+        module: The module to import from, `tool.langserve.export_module`
+        attr: The attribute to import from the module, `tool.langserve.export_attr`
+        package_name: The name of the package, `tool.poetry.name`
     """
 
     module: str

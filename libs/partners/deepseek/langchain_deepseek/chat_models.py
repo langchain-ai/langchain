@@ -110,15 +110,18 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             from pydantic import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
+
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
             ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
@@ -133,12 +136,14 @@ class ChatDeepSeek(BaseChatOpenAI):
 
             from pydantic import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
                 setup: str = Field(description="The setup of the joke")
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
+
 
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
@@ -153,7 +158,7 @@ class ChatDeepSeek(BaseChatOpenAI):
 
         .. code-block:: python
 
-            {'input_tokens': 28, 'output_tokens': 5, 'total_tokens': 33}
+            {"input_tokens": 28, "output_tokens": 5, "total_tokens": 33}
 
     Response metadata
         .. code-block:: python

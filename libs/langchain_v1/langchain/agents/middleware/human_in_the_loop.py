@@ -112,14 +112,14 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        tool_configs: dict[str, bool | ToolConfig],
+        interrupt_on: dict[str, bool | ToolConfig],
         *,
         description_prefix: str = "Tool execution requires approval",
     ) -> None:
         """Initialize the human in the loop middleware.
 
         Args:
-            tool_configs: Mapping of tool name to allowed actions.
+            interrupt_on: Mapping of tool name to allowed actions.
                 If a tool doesn't have an entry, it's auto-approved by default.
                 * `True` indicates all actions are allowed: accept, edit, and respond.
                 * `False` indicates that the tool is auto-approved.
@@ -130,7 +130,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         """
         super().__init__()
         resolved_tool_configs: dict[str, ToolConfig] = {}
-        for tool_name, tool_config in tool_configs.items():
+        for tool_name, tool_config in interrupt_on.items():
             if isinstance(tool_config, bool):
                 if tool_config is True:
                     resolved_tool_configs[tool_name] = ToolConfig(
@@ -138,32 +138,34 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                         allow_edit=True,
                         allow_respond=True,
                     )
-            else:
+            elif any(
+                tool_config.get(x, False) for x in ["allow_accept", "allow_edit", "allow_respond"]
+            ):
                 resolved_tool_configs[tool_name] = tool_config
-        self.tool_configs = resolved_tool_configs
+        self.interrupt_on = resolved_tool_configs
         self.description_prefix = description_prefix
 
     def after_model(self, state: AgentState) -> dict[str, Any] | None:  # type: ignore[override]
-        """Trigger HITL flows for relevant tool calls after an AIMessage."""
+        """Trigger interrupt flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:
             return None
 
-        last_ai_msg = next((msg for msg in messages if isinstance(msg, AIMessage)), None)
+        last_ai_msg = next((msg for msg in reversed(messages) if isinstance(msg, AIMessage)), None)
         if not last_ai_msg or not last_ai_msg.tool_calls:
             return None
 
         # Separate tool calls that need interrupts from those that don't
-        hitl_tool_calls: list[ToolCall] = []
+        interrupt_tool_calls: list[ToolCall] = []
         auto_approved_tool_calls = []
 
         for tool_call in last_ai_msg.tool_calls:
-            hitl_tool_calls.append(tool_call) if tool_call[
+            interrupt_tool_calls.append(tool_call) if tool_call[
                 "name"
-            ] in self.tool_configs else auto_approved_tool_calls.append(tool_call)
+            ] in self.interrupt_on else auto_approved_tool_calls.append(tool_call)
 
         # If no interrupts needed, return early
-        if not hitl_tool_calls:
+        if not interrupt_tool_calls:
             return None
 
         # Process all tool calls that require interrupts
@@ -171,11 +173,11 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create interrupt requests for all tools that need approval
-        hitl_requests: list[HumanInTheLoopRequest] = []
-        for tool_call in hitl_tool_calls:
+        interrupt_requests: list[HumanInTheLoopRequest] = []
+        for tool_call in interrupt_tool_calls:
             tool_name = tool_call["name"]
             tool_args = tool_call["args"]
-            config = self.tool_configs[tool_name]
+            config = self.interrupt_on[tool_name]
             description = (
                 config.get("description")
                 or f"{self.description_prefix}\n\nTool: {tool_name}\nArgs: {tool_args}"
@@ -189,21 +191,23 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 "config": config,
                 "description": description,
             }
-            hitl_requests.append(request)
+            interrupt_requests.append(request)
 
-        responses: list[HumanInTheLoopResponse] = interrupt(hitl_requests)
+        responses: list[HumanInTheLoopResponse] = interrupt(interrupt_requests)
 
         # Validate that the number of responses matches the number of interrupt tool calls
-        if (responses_len := len(responses)) != (hitl_tool_calls_len := len(hitl_tool_calls)):
+        if (responses_len := len(responses)) != (
+            interrupt_tool_calls_len := len(interrupt_tool_calls)
+        ):
             msg = (
                 f"Number of human responses ({responses_len}) does not match "
-                f"number of hanging tool calls ({hitl_tool_calls_len})."
+                f"number of hanging tool calls ({interrupt_tool_calls_len})."
             )
             raise ValueError(msg)
 
         for i, response in enumerate(responses):
-            tool_call = hitl_tool_calls[i]
-            config = self.tool_configs[tool_call["name"]]
+            tool_call = interrupt_tool_calls[i]
+            config = self.interrupt_on[tool_call["name"]]
 
             if response["type"] == "accept" and config.get("allow_accept"):
                 approved_tool_calls.append(tool_call)

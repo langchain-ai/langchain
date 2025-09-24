@@ -1,3 +1,6 @@
+# For integrations, we run check_templates.py to ensure that new docs use the correct
+# templates based on their type. See the script for more details.
+
 name: '📑 Integration Docs Lint'
 
 on:

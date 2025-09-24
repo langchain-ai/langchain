@@ -1,9 +1,11 @@
+# Updates the LangChain People data by fetching the latest info from the LangChain Git.
+# TODO: broken/not used
+
 name: '👥 LangChain People'
 run-name: 'Update People Data'
-# This workflow updates the LangChain People data by fetching the latest information from the LangChain Git
 on:
   schedule:
-    - cron: "0 14 1 * *"
+    - cron: "0 14 1 * *"  # Runs at 14:00 UTC on the 1st of every month (10AM EDT/7AM PDT)
   push:
     branches: [jacob/people]
   workflow_dispatch:

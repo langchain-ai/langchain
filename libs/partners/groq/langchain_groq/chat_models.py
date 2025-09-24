@@ -220,15 +220,18 @@ class ChatGroq(BaseChatModel):
 
             from pydantic import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
+
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
             model_with_tools = llm.bind_tools([GetWeather, GetPopulation])
             ai_msg = model_with_tools.invoke("What is the population of NY?")
@@ -236,9 +239,13 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetPopulation',
-            'args': {'location': 'NY'},
-            'id': 'call_bb8d'}]
+            [
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "NY"},
+                    "id": "call_bb8d",
+                }
+            ]
 
         See ``ChatGroq.bind_tools()`` method for more.
 
@@ -249,6 +256,7 @@ class ChatGroq(BaseChatModel):
 
             from pydantic import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
@@ -256,12 +264,17 @@ class ChatGroq(BaseChatModel):
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
 
+
             structured_model = llm.with_structured_output(Joke)
             structured_model.invoke("Tell me a joke about cats")
 
         .. code-block:: python
 
-            Joke(setup="Why don't cats play poker in the jungle?", punchline='Too many cheetahs!', rating=None)
+            Joke(
+                setup="Why don't cats play poker in the jungle?",
+                punchline="Too many cheetahs!",
+                rating=None,
+            )
 
         See ``ChatGroq.with_structured_output()`` for more.
 
@@ -273,17 +286,21 @@ class ChatGroq(BaseChatModel):
 
         .. code-block:: python
 
-            {'token_usage': {'completion_tokens': 70,
-            'prompt_tokens': 28,
-            'total_tokens': 98,
-            'completion_time': 0.111956391,
-            'prompt_time': 0.007518279,
-            'queue_time': None,
-            'total_time': 0.11947467},
-            'model_name': 'llama-3.1-8b-instant',
-            'system_fingerprint': 'fp_c5f20b5bb1',
-            'finish_reason': 'stop',
-            'logprobs': None}
+            {
+                "token_usage": {
+                    "completion_tokens": 70,
+                    "prompt_tokens": 28,
+                    "total_tokens": 98,
+                    "completion_time": 0.111956391,
+                    "prompt_time": 0.007518279,
+                    "queue_time": None,
+                    "total_time": 0.11947467,
+                },
+                "model_name": "llama-3.1-8b-instant",
+                "system_fingerprint": "fp_c5f20b5bb1",
+                "finish_reason": "stop",
+                "logprobs": None,
+            }
 
     """  # noqa: E501
 
@@ -971,9 +988,7 @@ class ChatGroq(BaseChatModel):
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -996,12 +1011,11 @@ class ChatGroq(BaseChatModel):
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
+                    AnswerWithJustification,
+                    include_raw=True,
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1022,17 +1036,13 @@ class ChatGroq(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Annotated[
-                        Optional[str], None, "A justification for the answer."
-                    ]
+                    justification: Annotated[Optional[str], None, "A justification for the answer."]
 
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -1090,12 +1100,11 @@ class ChatGroq(BaseChatModel):
 
                 llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="json_schema"
+                    AnswerWithJustification,
+                    method="json_schema",
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',

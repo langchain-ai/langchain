@@ -1,8 +1,14 @@
+# Label PRs based on changed files.
+#
+# See `.github/pr-file-labeler.yml` to see rules for each label/directory.
+
 name: "🏷️ Pull Request Labeler"
 
 on:
+  # Safe since we're not checking out or running the PR's code
+  # Never check out the PR's head in a pull_request_target job
   pull_request_target:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, edited]
 
 jobs:
   labeler:
@@ -18,5 +24,5 @@ jobs:
       uses: actions/labeler@v6
       with:
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
-        configuration-path: .github/labeler.yml
+        configuration-path: .github/pr-file-labeler.yml
         sync-labels: false

@@ -577,14 +577,32 @@ class ChatAnthropic(BaseChatModel):
         .. code-block:: python
 
             messages = [
-                ("system", "You are a helpful translator. Translate the user sentence to French."),
+                (
+                    "system",
+                    "You are a helpful translator. Translate the user sentence to French.",
+                ),
                 ("human", "I love programming."),
             ]
             llm.invoke(messages)
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(
+                content="J'aime la programmation.",
+                response_metadata={
+                    "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                    "model": "claude-3-7-sonnet-20250219",
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 25, "output_tokens": 11},
+                },
+                id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+                usage_metadata={
+                    "input_tokens": 25,
+                    "output_tokens": 11,
+                    "total_tokens": 36,
+                },
+            )
 
     Stream:
         .. code-block:: python
@@ -594,14 +612,14 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content='J', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content="'", id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='a', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ime', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' la', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content=' programm', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='ation', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
-            AIMessageChunk(content='.', id='run-272ff5f9-8485-402c-b90d-eac8babc5b25')
+            AIMessageChunk(content="J", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="'", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="a", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="ime", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=" la", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=" programm", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content="ation", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
+            AIMessageChunk(content=".", id="run-272ff5f9-8485-402c-b90d-eac8babc5b25")
 
         .. code-block:: python
 
@@ -613,7 +631,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content="J'aime la programmation.", id='run-b34faef0-882f-4869-a19c-ed2b856e6361')
+            AIMessageChunk(content="J'aime la programmation.", id="run-b34faef0-882f-4869-a19c-ed2b856e6361")
 
     Async:
         .. code-block:: python
@@ -628,22 +646,40 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="J'aime la programmation.", response_metadata={'id': 'msg_01Trik66aiQ9Z1higrD5XFx3', 'model': 'claude-3-7-sonnet-20250219', 'stop_reason': 'end_turn', 'stop_sequence': None, 'usage': {'input_tokens': 25, 'output_tokens': 11}}, id='run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0', usage_metadata={'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36})
+            AIMessage(
+                content="J'aime la programmation.",
+                response_metadata={
+                    "id": "msg_01Trik66aiQ9Z1higrD5XFx3",
+                    "model": "claude-3-7-sonnet-20250219",
+                    "stop_reason": "end_turn",
+                    "stop_sequence": None,
+                    "usage": {"input_tokens": 25, "output_tokens": 11},
+                },
+                id="run-5886ac5f-3c2e-49f5-8a44-b1e92808c929-0",
+                usage_metadata={
+                    "input_tokens": 25,
+                    "output_tokens": 11,
+                    "total_tokens": 36,
+                },
+            )
 
     Tool calling:
         .. code-block:: python
 
             from pydantic import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
+
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
                 location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
             ai_msg = llm_with_tools.invoke("Which city is hotter today and which is bigger: LA or NY?")
@@ -651,18 +687,28 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            [{'name': 'GetWeather',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'toolu_01KzpPEAgzura7hpBqwHbWdo'},
-             {'name': 'GetWeather',
-                 'args': {'location': 'New York, NY'},
-                 'id': 'toolu_01JtgbVGVJbiSwtZk3Uycezx'},
-             {'name': 'GetPopulation',
-                'args': {'location': 'Los Angeles, CA'},
-                'id': 'toolu_01429aygngesudV9nTbCKGuw'},
-             {'name': 'GetPopulation',
-                'args': {'location': 'New York, NY'},
-                'id': 'toolu_01JPktyd44tVMeBcPPnFSEJG'}]
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "toolu_01KzpPEAgzura7hpBqwHbWdo",
+                },
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "New York, NY"},
+                    "id": "toolu_01JtgbVGVJbiSwtZk3Uycezx",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "toolu_01429aygngesudV9nTbCKGuw",
+                },
+                {
+                    "name": "GetPopulation",
+                    "args": {"location": "New York, NY"},
+                    "id": "toolu_01JPktyd44tVMeBcPPnFSEJG",
+                },
+            ]
 
         See ``ChatAnthropic.bind_tools()`` method for more.
 
@@ -673,6 +719,7 @@ class ChatAnthropic(BaseChatModel):
 
             from pydantic import BaseModel, Field
 
+
             class Joke(BaseModel):
                 '''Joke to tell user.'''
 
@@ -680,12 +727,17 @@ class ChatAnthropic(BaseChatModel):
                 punchline: str = Field(description="The punchline to the joke")
                 rating: Optional[int] = Field(description="How funny the joke is, from 1 to 10")
 
+
             structured_llm = llm.with_structured_output(Joke)
             structured_llm.invoke("Tell me a joke about cats")
 
         .. code-block:: python
 
-            Joke(setup='Why was the cat sitting on the computer?', punchline='To keep an eye on the mouse!', rating=None)
+            Joke(
+                setup="Why was the cat sitting on the computer?",
+                punchline="To keep an eye on the mouse!",
+                rating=None,
+            )
 
         See ``ChatAnthropic.with_structured_output()`` for more.
 
@@ -851,7 +903,14 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            [{'signature': '...', 'thinking': "To find the cube root of 50.653...", 'type': 'thinking'}, {'text': 'The cube root of 50.653 is ...', 'type': 'text'}]
+            [
+                {
+                    "signature": "...",
+                    "thinking": "To find the cube root of 50.653...",
+                    "type": "thinking",
+                },
+                {"text": "The cube root of 50.653 is ...", "type": "text"},
+            ]
 
     Citations:
         Anthropic supports a
@@ -892,25 +951,39 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            [{'text': 'Based on the document, ', 'type': 'text'},
-            {'text': 'the grass is green',
-            'type': 'text',
-            'citations': [{'type': 'char_location',
-                'cited_text': 'The grass is green. ',
-                'document_index': 0,
-                'document_title': 'My Document',
-                'start_char_index': 0,
-                'end_char_index': 20}]},
-            {'text': ', and ', 'type': 'text'},
-            {'text': 'the sky is blue',
-            'type': 'text',
-            'citations': [{'type': 'char_location',
-                'cited_text': 'The sky is blue.',
-                'document_index': 0,
-                'document_title': 'My Document',
-                'start_char_index': 20,
-                'end_char_index': 36}]},
-            {'text': '.', 'type': 'text'}]
+            [
+                {"text": "Based on the document, ", "type": "text"},
+                {
+                    "text": "the grass is green",
+                    "type": "text",
+                    "citations": [
+                        {
+                            "type": "char_location",
+                            "cited_text": "The grass is green. ",
+                            "document_index": 0,
+                            "document_title": "My Document",
+                            "start_char_index": 0,
+                            "end_char_index": 20,
+                        }
+                    ],
+                },
+                {"text": ", and ", "type": "text"},
+                {
+                    "text": "the sky is blue",
+                    "type": "text",
+                    "citations": [
+                        {
+                            "type": "char_location",
+                            "cited_text": "The sky is blue.",
+                            "document_index": 0,
+                            "document_title": "My Document",
+                            "start_char_index": 20,
+                            "end_char_index": 36,
+                        }
+                    ],
+                },
+                {"text": ".", "type": "text"},
+            ]
 
     Token usage:
         .. code-block:: python
@@ -920,7 +993,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+            {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
 
         Message chunks containing token usage will be included during streaming by
         default:
@@ -935,7 +1008,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'input_tokens': 25, 'output_tokens': 11, 'total_tokens': 36}
+            {"input_tokens": 25, "output_tokens": 11, "total_tokens": 36}
 
         These can be disabled by setting ``stream_usage=False`` in the stream method,
         or by setting ``stream_usage=False`` when initializing ChatAnthropic.
@@ -981,7 +1054,7 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'cache_read': 0, 'cache_creation': 1458}
+            {"cache_read": 0, "cache_creation": 1458}
 
         Alternatively, you may enable prompt caching at invocation time. You may want to
         conditionally cache based on runtime conditions, such as the length of the
@@ -1006,7 +1079,8 @@ class ChatAnthropic(BaseChatModel):
                     model="claude-3-7-sonnet-20250219",
                 )
 
-                messages = [{
+                messages = [
+                    {
                         "role": "user",
                         "content": [
                             {
@@ -1015,7 +1089,8 @@ class ChatAnthropic(BaseChatModel):
                                 "cache_control": {"type": "ephemeral", "ttl": "1h"},
                             },
                         ],
-                }]
+                    }
+                ]
 
                 response = llm.invoke(messages)
 
@@ -1038,7 +1113,7 @@ class ChatAnthropic(BaseChatModel):
                         "cache_creation": 1000,
                         "ephemeral_1h_input_tokens": 750,
                         "ephemeral_5m_input_tokens": 250,
-                    }
+                    },
                 }
 
             See `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#1-hour-cache-duration-beta>`__
@@ -1128,12 +1203,14 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 
-                tool = {"type": "web_search_20250305", "name": "web_search", "max_uses": 3}
+                tool = {
+                    "type": "web_search_20250305",
+                    "name": "web_search",
+                    "max_uses": 3,
+                }
                 llm_with_tools = llm.bind_tools([tool])
 
-                response = llm_with_tools.invoke(
-                    "How do I update a web app to TypeScript 5.5?"
-                )
+                response = llm_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
 
         .. dropdown::  Web fetch (beta)
 
@@ -1146,12 +1223,14 @@ class ChatAnthropic(BaseChatModel):
                     betas=["web-fetch-2025-09-10"],  # Enable web fetch beta
                 )
 
-                tool = {"type": "web_fetch_20250910", "name": "web_fetch", "max_uses": 3}
+                tool = {
+                    "type": "web_fetch_20250910",
+                    "name": "web_fetch",
+                    "max_uses": 3,
+                }
                 llm_with_tools = llm.bind_tools([tool])
 
-                response = llm_with_tools.invoke(
-                    "Please analyze the content at https://example.com/article"
-                )
+                response = llm_with_tools.invoke("Please analyze the content at https://example.com/article")
 
         .. dropdown::  Code execution
 
@@ -1233,11 +1312,13 @@ class ChatAnthropic(BaseChatModel):
 
         .. code-block:: python
 
-            {'id': 'msg_013xU6FHEGEq76aP4RgFerVT',
-             'model': 'claude-3-7-sonnet-20250219',
-             'stop_reason': 'end_turn',
-             'stop_sequence': None,
-             'usage': {'input_tokens': 25, 'output_tokens': 11}}
+            {
+                "id": "msg_013xU6FHEGEq76aP4RgFerVT",
+                "model": "claude-3-7-sonnet-20250219",
+                "stop_reason": "end_turn",
+                "stop_sequence": None,
+                "usage": {"input_tokens": 25, "output_tokens": 11},
+            }
 
     """  # noqa: E501
 
@@ -1722,10 +1803,12 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from pydantic import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
                     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -1735,7 +1818,9 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice])
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke(
+                    "What is the weather like in San Francisco",
+                )
                 # -> AIMessage(
                 #     content=[
                 #         {'text': '<thinking>\nBased on the user\'s question, the relevant function to call is GetWeather, which requires the "location" parameter.\n\nThe user has directly specified the location as "San Francisco". Since San Francisco is a well known city, I can reasonably infer they mean San Francisco, CA without needing the state specified.\n\nAll the required parameters are provided, so I can proceed with the API call.\n</thinking>', 'type': 'text'},
@@ -1752,10 +1837,12 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from pydantic import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
                     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -1765,7 +1852,9 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="any")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke(
+                    "what is the weather like in San Francisco",
+                )
 
 
         Example — force specific tool call with tool_choice ``'<name_of_tool>'``:
@@ -1775,10 +1864,12 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from pydantic import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
                     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
@@ -1788,7 +1879,7 @@ class ChatAnthropic(BaseChatModel):
 
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 llm_with_tools = llm.bind_tools([GetWeather, GetPrice], tool_choice="GetWeather")
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke("What is the weather like in San Francisco")
 
         Example — cache specific tools:
 
@@ -1797,15 +1888,18 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic, convert_to_anthropic_tool
                 from pydantic import BaseModel, Field
 
+
                 class GetWeather(BaseModel):
                     '''Get the current weather in a given location'''
 
                     location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
 
+
                 class GetPrice(BaseModel):
                     '''Get the price of a specific product.'''
 
                     product: str = Field(..., description="The product to look up.")
+
 
                 # We'll convert our pydantic class to the anthropic tool format
                 # before passing to bind_tools so that we can set the 'cache_control'
@@ -1822,19 +1916,97 @@ class ChatAnthropic(BaseChatModel):
                     temperature=0,
                 )
                 llm_with_tools = llm.bind_tools([GetWeather, cached_price_tool])
-                llm_with_tools.invoke("what is the weather like in San Francisco",)
+                llm_with_tools.invoke("What is the weather like in San Francisco")
 
             This outputs:
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.", 'type': 'text'}, {'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_01Xg7Wr5inFWgBxE5jH9rpRo', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 96, 'cache_creation_input_tokens': 1470, 'cache_read_input_tokens': 0}}, id='run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01TS5h8LNo7p5imcG7yRiaUM', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 96, 'total_tokens': 267})
+                AIMessage(
+                    content=[
+                        {
+                            "text": "Certainly! I can help you find out the current weather in San Francisco. To get this information, I'll use the GetWeather function. Let me fetch that data for you right away.",
+                            "type": "text",
+                        },
+                        {
+                            "id": "toolu_01TS5h8LNo7p5imcG7yRiaUM",
+                            "input": {"location": "San Francisco, CA"},
+                            "name": "GetWeather",
+                            "type": "tool_use",
+                        },
+                    ],
+                    response_metadata={
+                        "id": "msg_01Xg7Wr5inFWgBxE5jH9rpRo",
+                        "model": "claude-3-5-sonnet-latest",
+                        "stop_reason": "tool_use",
+                        "stop_sequence": None,
+                        "usage": {
+                            "input_tokens": 171,
+                            "output_tokens": 96,
+                            "cache_creation_input_tokens": 1470,
+                            "cache_read_input_tokens": 0,
+                        },
+                    },
+                    id="run-b36a5b54-5d69-470e-a1b0-b932d00b089e-0",
+                    tool_calls=[
+                        {
+                            "name": "GetWeather",
+                            "args": {"location": "San Francisco, CA"},
+                            "id": "toolu_01TS5h8LNo7p5imcG7yRiaUM",
+                            "type": "tool_call",
+                        }
+                    ],
+                    usage_metadata={
+                        "input_tokens": 171,
+                        "output_tokens": 96,
+                        "total_tokens": 267,
+                    },
+                )
 
             If we invoke the tool again, we can see that the "usage" information in the AIMessage.response_metadata shows that we had a cache hit:
 
             .. code-block:: python
 
-                AIMessage(content=[{'text': 'To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.', 'type': 'text'}, {'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'input': {'location': 'San Francisco, CA'}, 'name': 'GetWeather', 'type': 'tool_use'}], response_metadata={'id': 'msg_016RfWHrRvW6DAGCdwB6Ac64', 'model': 'claude-3-5-sonnet-latest', 'stop_reason': 'tool_use', 'stop_sequence': None, 'usage': {'input_tokens': 171, 'output_tokens': 82, 'cache_creation_input_tokens': 0, 'cache_read_input_tokens': 1470}}, id='run-88b1f825-dcb7-4277-ac27-53df55d22001-0', tool_calls=[{'name': 'GetWeather', 'args': {'location': 'San Francisco, CA'}, 'id': 'toolu_01HtVtY1qhMFdPprx42qU2eA', 'type': 'tool_call'}], usage_metadata={'input_tokens': 171, 'output_tokens': 82, 'total_tokens': 253})
+                AIMessage(
+                    content=[
+                        {
+                            "text": "To get the current weather in San Francisco, I can use the GetWeather function. Let me check that for you.",
+                            "type": "text",
+                        },
+                        {
+                            "id": "toolu_01HtVtY1qhMFdPprx42qU2eA",
+                            "input": {"location": "San Francisco, CA"},
+                            "name": "GetWeather",
+                            "type": "tool_use",
+                        },
+                    ],
+                    response_metadata={
+                        "id": "msg_016RfWHrRvW6DAGCdwB6Ac64",
+                        "model": "claude-3-5-sonnet-latest",
+                        "stop_reason": "tool_use",
+                        "stop_sequence": None,
+                        "usage": {
+                            "input_tokens": 171,
+                            "output_tokens": 82,
+                            "cache_creation_input_tokens": 0,
+                            "cache_read_input_tokens": 1470,
+                        },
+                    },
+                    id="run-88b1f825-dcb7-4277-ac27-53df55d22001-0",
+                    tool_calls=[
+                        {
+                            "name": "GetWeather",
+                            "args": {"location": "San Francisco, CA"},
+                            "id": "toolu_01HtVtY1qhMFdPprx42qU2eA",
+                            "type": "tool_call",
+                        }
+                    ],
+                    usage_metadata={
+                        "input_tokens": 171,
+                        "output_tokens": 82,
+                        "total_tokens": 253,
+                    },
+                )
 
         """  # noqa: E501
         formatted_tools = [
@@ -1926,10 +2098,13 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
@@ -1948,10 +2123,13 @@ class ChatAnthropic(BaseChatModel):
                 from langchain_anthropic import ChatAnthropic
                 from pydantic import BaseModel
 
+
                 class AnswerWithJustification(BaseModel):
                     '''An answer to the user question along with justification for the answer.'''
+
                     answer: str
                     justification: str
+
 
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification, include_raw=True)
@@ -1978,8 +2156,8 @@ class ChatAnthropic(BaseChatModel):
                             "answer": {"type": "string"},
                             "justification": {"type": "string"},
                         },
-                        "required": ["answer", "justification"]
-                    }
+                        "required": ["answer", "justification"],
+                    },
                 }
                 llm = ChatAnthropic(model="claude-3-5-sonnet-latest", temperature=0)
                 structured_llm = llm.with_structured_output(schema)

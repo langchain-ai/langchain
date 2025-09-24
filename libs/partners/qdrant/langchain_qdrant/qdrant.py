@@ -99,32 +99,58 @@ class QdrantVectorStore(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(
+                query="thud",
+                k=1,
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+            *thud[
+                {
+                    "bar": "baz",
+                    "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                    "_collection_name": "demo_collection",
+                }
+            ]
 
     Search with filter:
         .. code-block:: python
 
             from qdrant_client.http import models
 
-            results = vector_store.similarity_search(query="thud",k=1,filter=models.Filter(must=[models.FieldCondition(key="metadata.bar", match=models.MatchValue(value="baz"),)]))
+            results = vector_store.similarity_search(
+                query="thud",
+                k=1,
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="metadata.bar",
+                            match=models.MatchValue(value="baz"),
+                        )
+                    ]
+                ),
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+            *thud[
+                {
+                    "bar": "baz",
+                    "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                    "_collection_name": "demo_collection",
+                }
+            ]
 
 
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -145,8 +171,8 @@ class QdrantVectorStore(VectorStore):
             # results = vector_store.asimilarity_search(query="thud",k=1)
 
             # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
-            for doc,score in results:
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
@@ -164,7 +190,16 @@ class QdrantVectorStore(VectorStore):
 
         .. code-block:: python
 
-            [Document(metadata={'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}, page_content='thud')]
+            [
+                Document(
+                    metadata={
+                        "bar": "baz",
+                        "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                        "_collection_name": "demo_collection",
+                    },
+                    page_content="thud",
+                )
+            ]
 
     """  # noqa: E501
 

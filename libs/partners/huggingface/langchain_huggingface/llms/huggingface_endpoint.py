@@ -45,7 +45,7 @@ class HuggingFaceEndpoint(LLM):
                 typical_p=0.95,
                 temperature=0.01,
                 repetition_penalty=1.03,
-                huggingfacehub_api_token="my-api-key"
+                huggingfacehub_api_token="my-api-key",
             )
             print(llm.invoke("What is Deep Learning?"))
 
@@ -63,7 +63,7 @@ class HuggingFaceEndpoint(LLM):
                 repetition_penalty=1.03,
                 callbacks=callbacks,
                 streaming=True,
-                huggingfacehub_api_token="my-api-key"
+                huggingfacehub_api_token="my-api-key",
             )
             print(llm.invoke("What is Deep Learning?"))
 
@@ -73,7 +73,7 @@ class HuggingFaceEndpoint(LLM):
                 provider="novita",
                 max_new_tokens=100,
                 do_sample=False,
-                huggingfacehub_api_token="my-api-key"
+                huggingfacehub_api_token="my-api-key",
             )
             print(llm.invoke("What is Deep Learning?"))
 
