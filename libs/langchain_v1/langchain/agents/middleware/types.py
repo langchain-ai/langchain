@@ -45,7 +45,7 @@ __all__ = [
     "PublicAgentState",
 ]
 
-JumpTo = Literal["tools", "model", "__end__"]
+JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
 ResponseT = TypeVar("ResponseT")
@@ -237,7 +237,7 @@ def before_model(
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
         jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "__end__"
+            Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
@@ -260,10 +260,10 @@ def before_model(
 
         Advanced usage with runtime and conditional jumping:
         ```python
-        @before_model(jump_to=["__end__"])
+        @before_model(jump_to=["end"])
         def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
-                return {"jump_to": "__end__"}
+                return {"jump_to": "end"}
             return None
         ```
 
@@ -474,7 +474,7 @@ def after_model(
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
         jump_to: Optional list of valid jump destinations for conditional edges.
-            Valid values are: "tools", "model", "__end__"
+            Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
 
