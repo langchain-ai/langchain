@@ -853,7 +853,7 @@ class ToolNode(RunnableCallable):
 def tools_condition(
     state: list[AnyMessage] | dict[str, Any] | BaseModel,
     messages_key: str = "messages",
-) -> Literal["tools", "end"]:
+) -> Literal["tools", "__end__"]:
     """Conditional routing function for tool-calling workflows.
 
     This utility function implements the standard conditional logic for ReAct-style
@@ -873,7 +873,7 @@ def tools_condition(
             Defaults to "messages".
 
     Returns:
-        Either "tools" if tool calls are present in the last AI message, or "end"
+        Either "tools" if tool calls are present in the last AI message, or "__end__"
         to terminate the workflow. These are the standard routing destinations for
         tool-calling conditional edges.
 
@@ -898,8 +898,8 @@ def tools_condition(
         graph.add_node("tools", ToolNode([my_tool]))
         graph.add_conditional_edges(
             "llm",
-            tools_condition,  # Routes to "tools" or "end"
-            {"tools": "tools", "end": "end"},
+            tools_condition,  # Routes to "tools" or "__end__"
+            {"tools": "tools", "__end__": "__end__"},
         )
         ```
 
@@ -927,7 +927,7 @@ def tools_condition(
         raise ValueError(msg)
     if hasattr(ai_message, "tool_calls") and len(ai_message.tool_calls) > 0:
         return "tools"
-    return "end"
+    return "__end__"
 
 
 class InjectedState(InjectedToolArg):
