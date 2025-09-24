@@ -721,7 +721,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
@@ -2139,7 +2139,7 @@
         'description': '''
           Allowance for errors made by LLM.
           
-          Here we add an `error` key to surface errors made during generation
+          Here we add an ``error`` key to surface errors made during generation
           (e.g., invalid JSON arguments.)
         ''',
         'properties': dict({
