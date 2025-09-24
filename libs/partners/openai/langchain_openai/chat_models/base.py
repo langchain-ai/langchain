@@ -754,11 +754,11 @@ class BaseChatOpenAI(BaseChatModel):
         self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
         # Handle both SecretStr and Callable[[], str] for api_key
         api_key_value = None
-        if self.openai_api_key:
+        if self.openai_api_key is not None:
             if isinstance(self.openai_api_key, SecretStr):
                 api_key_value = self.openai_api_key.get_secret_value()
-            elif callable(self.openai_api_key):
-                api_key_value = self.openai_api_key()
+            else:
+                api_key_value = self.openai_api_key
 
         client_params: dict = {
             "api_key": api_key_value,
