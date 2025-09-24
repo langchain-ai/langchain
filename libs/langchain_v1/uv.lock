@@ -1543,7 +1543,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.0a7"
+version = "1.0.0a8"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1975,7 +1975,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../core" },
-    { name = "openai", specifier = ">=1.104.2,<1.108.0" },
+    { name = "openai", specifier = ">=1.104.2,<2.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0,<1.0.0" },
 ]
 

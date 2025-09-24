@@ -214,10 +214,10 @@ class Chroma(VectorStore):
 
             updated_document = Document(
                 page_content="qux",
-                metadata={"bar": "baz"}
+                metadata={"bar": "baz"},
             )
 
-            vector_store.update_documents(ids=["1"],documents=[updated_document])
+            vector_store.update_documents(ids=["1"], documents=[updated_document])
 
     Delete Documents:
         .. code-block:: python
@@ -227,29 +227,31 @@ class Chroma(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(query="thud", k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'baz': 'bar'}]
+            *thud[{"baz": "bar"}]
 
     Search with filter:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1,filter={"baz": "bar"})
+            results = vector_store.similarity_search(
+                query="thud", k=1, filter={"baz": "bar"}
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * foo [{'baz': 'bar'}]
+            *foo[{"baz": "bar"}]
 
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -270,8 +272,8 @@ class Chroma(VectorStore):
             # results = vector_store.asimilarity_search(query="thud",k=1)
 
             # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
-            for doc,score in results:
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
@@ -289,7 +291,7 @@ class Chroma(VectorStore):
 
         .. code-block:: python
 
-            [Document(metadata={'baz': 'bar'}, page_content='thud')]
+            [Document(metadata={"baz": "bar"}, page_content="thud")]
 
     """  # noqa: E501
 

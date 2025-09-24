@@ -528,8 +528,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[AgentState], str | list[Send] | None]:
-    def model_to_tools(state: AgentState) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
@@ -548,8 +548,7 @@ def _make_model_to_tools_edge(
             # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
             # largely internal so can be fixed later
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
-                for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
@@ -560,8 +559,8 @@ def _make_model_to_tools_edge(
 
 def _make_tools_to_model_edge(
     tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
-) -> Callable[[AgentState], str | None]:
-    def tools_to_model(state: AgentState) -> str | None:
+) -> Callable[[dict[str, Any]], str | None]:
+    def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         if all(
@@ -598,7 +597,7 @@ def _add_middleware_edge(
     """
     if jump_to:
 
-        def jump_edge(state: AgentState) -> str:
+        def jump_edge(state: dict[str, Any]) -> str:
             return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
         destinations = [default_destination]

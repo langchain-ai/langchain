@@ -92,14 +92,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             AIMessage(
                 content="J'adore la programmation.",
                 response_metadata={
-                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
-                    'model_name': 'grok-4',
-                    'system_fingerprint': None,
-                    'finish_reason': 'stop',
-                    'logprobs': None
+                    "token_usage": {
+                        "completion_tokens": 9,
+                        "prompt_tokens": 32,
+                        "total_tokens": 41,
+                    },
+                    "model_name": "grok-4",
+                    "system_fingerprint": None,
+                    "finish_reason": "stop",
+                    "logprobs": None,
                 },
-                id='run-168dceca-3b8b-4283-94e3-4c739dbc1525-0',
-                usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
+                id="run-168dceca-3b8b-4283-94e3-4c739dbc1525-0",
+                usage_metadata={
+                    "input_tokens": 32,
+                    "output_tokens": 9,
+                    "total_tokens": 41,
+                },
+            )
 
     Stream:
         .. code-block:: python
@@ -136,14 +145,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
             AIMessage(
                 content="J'adore la programmation.",
                 response_metadata={
-                    'token_usage': {'completion_tokens': 9, 'prompt_tokens': 32, 'total_tokens': 41},
-                    'model_name': 'grok-4',
-                    'system_fingerprint': None,
-                    'finish_reason': 'stop',
-                    'logprobs': None
+                    "token_usage": {
+                        "completion_tokens": 9,
+                        "prompt_tokens": 32,
+                        "total_tokens": 41,
+                    },
+                    "model_name": "grok-4",
+                    "system_fingerprint": None,
+                    "finish_reason": "stop",
+                    "logprobs": None,
                 },
-                id='run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0',
-                usage_metadata={'input_tokens': 32, 'output_tokens': 9, 'total_tokens': 41})
+                id="run-09371a11-7f72-4c53-8e7c-9de5c238b34c-0",
+                usage_metadata={
+                    "input_tokens": 32,
+                    "output_tokens": 9,
+                    "total_tokens": 41,
+                },
+            )
 
     Reasoning:
         `Certain xAI models <https://docs.x.ai/docs/models#model-pricing>`__ support reasoning,
@@ -179,41 +197,38 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatXAI(model="grok-4")
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(
-                    ..., description="The city and state, e.g. San Francisco, CA"
-                )
+                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+
 
             llm_with_tools = llm.bind_tools([GetWeather, GetPopulation])
-            ai_msg = llm_with_tools.invoke(
-                "Which city is bigger: LA or NY?"
-            )
+            ai_msg = llm_with_tools.invoke("Which city is bigger: LA or NY?")
             ai_msg.tool_calls
 
         .. code-block:: python
 
             [
                 {
-                    'name': 'GetPopulation',
-                    'args': {'location': 'NY'},
-                    'id': 'call_m5tstyn2004pre9bfuxvom8x',
-                    'type': 'tool_call'
+                    "name": "GetPopulation",
+                    "args": {"location": "NY"},
+                    "id": "call_m5tstyn2004pre9bfuxvom8x",
+                    "type": "tool_call",
                 },
                 {
-                    'name': 'GetPopulation',
-                    'args': {'location': 'LA'},
-                    'id': 'call_0vjgq455gq1av5sp9eb1pw6a',
-                    'type': 'tool_call'
-                }
+                    "name": "GetPopulation",
+                    "args": {"location": "LA"},
+                    "id": "call_0vjgq455gq1av5sp9eb1pw6a",
+                    "type": "tool_call",
+                },
             ]
 
         .. note::
@@ -267,10 +282,14 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            [{'name': 'GetWeather',
-            'args': {'location': 'Los Angeles, CA'},
-            'id': 'call_81668711',
-            'type': 'tool_call'}]
+            [
+                {
+                    "name": "GetWeather",
+                    "args": {"location": "Los Angeles, CA"},
+                    "id": "call_81668711",
+                    "type": "tool_call",
+                }
+            ]
 
     Parallel tool calling / parallel function calling:
         By default, parallel tool / function calling is enabled, so you can process
@@ -299,9 +318,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             Joke(
-                setup='Why was the cat sitting on the computer?',
-                punchline='To keep an eye on the mouse!',
-                rating=7
+                setup="Why was the cat sitting on the computer?",
+                punchline="To keep an eye on the mouse!",
+                rating=7,
             )
 
     Live Search:
@@ -320,7 +339,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                     "max_search_results": 3,
                     "from_date": "2025-05-26",
                     "to_date": "2025-05-27",
-                }
+                },
             )
 
             llm.invoke("Provide me a digest of world news in the last 24 hours.")
@@ -337,23 +356,23 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
         .. code-block:: python
 
-            {'input_tokens': 37, 'output_tokens': 6, 'total_tokens': 43}
+            {"input_tokens": 37, "output_tokens": 6, "total_tokens": 43}
 
     Logprobs:
         .. code-block:: python
 
             logprobs_llm = llm.bind(logprobs=True)
-            messages=[("human","Say Hello World! Do not return anything else.")]
+            messages = [("human", "Say Hello World! Do not return anything else.")]
             ai_msg = logprobs_llm.invoke(messages)
             ai_msg.response_metadata["logprobs"]
 
         .. code-block:: python
 
             {
-                'content': None,
-                'token_ids': [22557, 3304, 28808, 2],
-                'tokens': [' Hello', ' World', '!', '</s>'],
-                'token_logprobs': [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047]
+                "content": None,
+                "token_ids": [22557, 3304, 28808, 2],
+                "tokens": [" Hello", " World", "!", "</s>"],
+                "token_logprobs": [-4.7683716e-06, -5.9604645e-07, 0, -0.057373047],
             }
 
     Response metadata
@@ -365,15 +384,15 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         .. code-block:: python
 
             {
-                'token_usage': {
-                    'completion_tokens': 4,
-                    'prompt_tokens': 19,
-                    'total_tokens': 23
-                    },
-                'model_name': 'grok-4',
-                'system_fingerprint': None,
-                'finish_reason': 'stop',
-                'logprobs': None
+                "token_usage": {
+                    "completion_tokens": 4,
+                    "prompt_tokens": 19,
+                    "total_tokens": 23,
+                },
+                "model_name": "grok-4",
+                "system_fingerprint": None,
+                "finish_reason": "stop",
+                "logprobs": None,
             }
 
     """  # noqa: E501
