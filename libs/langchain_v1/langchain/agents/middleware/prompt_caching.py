@@ -1,6 +1,6 @@
 """Anthropic prompt caching middleware."""
 
-from typing import Literal, Any
+from typing import Any, Literal
 from warnings import warn
 
 from langchain.agents.middleware.types import AgentMiddleware, ModelRequest
@@ -48,7 +48,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         try:
             from langchain_anthropic import ChatAnthropic
         except ImportError:
-            ChatAnthropic = None  # noqa: N806
+            ChatAnthropic = None  # type: ignore[assignment, misc]  # noqa: N806
 
         msg: str | None = None
 
