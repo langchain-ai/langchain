@@ -2,110 +2,104 @@ repos:
   - repo: local
     hooks:
       - id: core
-        name: format core
+        name: format and lint core
         language: system
-        entry: make -C libs/core format
+        entry: make -C libs/core format lint
         files: ^libs/core/
         pass_filenames: false
       - id: langchain
-        name: format langchain
+        name: format and lint langchain
         language: system
-        entry: make -C libs/langchain format
+        entry: make -C libs/langchain format lint
         files: ^libs/langchain/
         pass_filenames: false
       - id: standard-tests
-        name: format standard-tests
+        name: format and lint standard-tests
         language: system
-        entry: make -C libs/standard-tests format
+        entry: make -C libs/standard-tests format lint
         files: ^libs/standard-tests/
         pass_filenames: false
       - id: text-splitters
-        name: format text-splitters
+        name: format and lint text-splitters
         language: system
-        entry: make -C libs/text-splitters format
+        entry: make -C libs/text-splitters format lint
         files: ^libs/text-splitters/
         pass_filenames: false
       - id: anthropic
-        name: format partners/anthropic
+        name: format and lint partners/anthropic
         language: system
-        entry: make -C libs/partners/anthropic format
+        entry: make -C libs/partners/anthropic format lint
         files: ^libs/partners/anthropic/
         pass_filenames: false
       - id: chroma
-        name: format partners/chroma
+        name: format and lint partners/chroma
         language: system
-        entry: make -C libs/partners/chroma format
+        entry: make -C libs/partners/chroma format lint
         files: ^libs/partners/chroma/
         pass_filenames: false
-      - id: couchbase
-        name: format partners/couchbase
-        language: system
-        entry: make -C libs/partners/couchbase format
-        files: ^libs/partners/couchbase/
-        pass_filenames: false
       - id: exa
-        name: format partners/exa
+        name: format and lint partners/exa
         language: system
-        entry: make -C libs/partners/exa format
+        entry: make -C libs/partners/exa format lint
         files: ^libs/partners/exa/
         pass_filenames: false
       - id: fireworks
-        name: format partners/fireworks
+        name: format and lint partners/fireworks
         language: system
-        entry: make -C libs/partners/fireworks format
+        entry: make -C libs/partners/fireworks format lint
         files: ^libs/partners/fireworks/
         pass_filenames: false
       - id: groq
-        name: format partners/groq
+        name: format and lint partners/groq
         language: system
-        entry: make -C libs/partners/groq format
+        entry: make -C libs/partners/groq format lint
         files: ^libs/partners/groq/
         pass_filenames: false
       - id: huggingface
-        name: format partners/huggingface
+        name: format and lint partners/huggingface
         language: system
-        entry: make -C libs/partners/huggingface format
+        entry: make -C libs/partners/huggingface format lint
         files: ^libs/partners/huggingface/
         pass_filenames: false
       - id: mistralai
-        name: format partners/mistralai
+        name: format and lint partners/mistralai
         language: system
-        entry: make -C libs/partners/mistralai format
+        entry: make -C libs/partners/mistralai format lint
         files: ^libs/partners/mistralai/
         pass_filenames: false
       - id: nomic
-        name: format partners/nomic
+        name: format and lint partners/nomic
         language: system
-        entry: make -C libs/partners/nomic format
+        entry: make -C libs/partners/nomic format lint
         files: ^libs/partners/nomic/
         pass_filenames: false
       - id: ollama
-        name: format partners/ollama
+        name: format and lint partners/ollama
         language: system
-        entry: make -C libs/partners/ollama format
+        entry: make -C libs/partners/ollama format lint
         files: ^libs/partners/ollama/
         pass_filenames: false
       - id: openai
-        name: format partners/openai
+        name: format and lint partners/openai
         language: system
-        entry: make -C libs/partners/openai format
+        entry: make -C libs/partners/openai format lint
         files: ^libs/partners/openai/
         pass_filenames: false
       - id: prompty
-        name: format partners/prompty
+        name: format and lint partners/prompty
         language: system
-        entry: make -C libs/partners/prompty format
+        entry: make -C libs/partners/prompty format lint
         files: ^libs/partners/prompty/
         pass_filenames: false
       - id: qdrant
-        name: format partners/qdrant
+        name: format and lint partners/qdrant
         language: system
-        entry: make -C libs/partners/qdrant format
+        entry: make -C libs/partners/qdrant format lint
         files: ^libs/partners/qdrant/
         pass_filenames: false
       - id: root
-        name: format docs, cookbook
+        name: format and lint docs, cookbook
         language: system
-        entry: make format
+        entry: make format lint
         files: ^(docs|cookbook)/
         pass_filenames: false

@@ -75,7 +75,7 @@ def generate_raw_migrations(
 def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
     """Look at all the top level modules in langchain_community.
 
-    Attempt to import everything from each ``__init__`` file. For example,
+    Attempt to import everything from each `__init__` file. For example,
 
     langchain_community/
         chat_models/
@@ -83,16 +83,15 @@ def generate_top_level_imports(pkg: str) -> list[tuple[str, str]]:
         llm/
             __init__.py # <-- import everything from here
 
-
     It'll collect all the imports, import the classes / functions it can find
     there. It'll return a list of 2-tuples
 
     Each tuple will contain the fully qualified path of the class / function to where
-    its logic is defined
-    (e.g., ``langchain_community.chat_models.xyz_implementation.ver2.XYZ``)
+    its logic is defined.
+    (e.g., `langchain_community.chat_models.xyz_implementation.ver2.XYZ`)
     and the second tuple will contain the path
     to importing it from the top level namespaces
-    (e.g., ``langchain_community.chat_models.XYZ``)
+    (e.g., `langchain_community.chat_models.XYZ`)
 
     Args:
         pkg: The package to scan.

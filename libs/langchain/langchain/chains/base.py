@@ -750,7 +750,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
         Example:
             .. code-block:: python
 
-                chain.dict(exclude_unset=True)
+                chain.model_dump(exclude_unset=True)
                 # -> {"_type": "foo", "verbose": False, ...}
 
         """
@@ -779,7 +779,7 @@ class Chain(RunnableSerializable[dict[str, Any], dict[str, Any]], ABC):
             raise ValueError(msg)
 
         # Fetch dictionary to save
-        chain_dict = self.dict()
+        chain_dict = self.model_dump()
         if "_type" not in chain_dict:
             msg = f"Chain {self} does not support saving."
             raise NotImplementedError(msg)

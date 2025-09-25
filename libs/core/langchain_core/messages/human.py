@@ -9,7 +9,7 @@ from langchain_core.messages.base import BaseMessage, BaseMessageChunk
 class HumanMessage(BaseMessage):
     """Message from a human.
 
-    HumanMessages are messages that are passed in from a human to the model.
+    ``HumanMessage``s are messages that are passed in from a human to the model.
 
     Example:
 
@@ -29,7 +29,11 @@ class HumanMessage(BaseMessage):
     """
 
     type: Literal["human"] = "human"
-    """The type of the message (used for serialization). Defaults to "human"."""
+    """The type of the message (used for serialization).
+
+    Defaults to ``'human'``.
+
+    """
 
     @overload
     def __init__(
