@@ -380,12 +380,7 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
 
                     yield server_tool_call
 
-            elif block_type in (
-                "code_execution_tool_result",
-                "web_fetch_tool_result",
-                "web_search_tool_result",
-                "mcp_tool_result",
-            ):
+            elif block_type and block_type.endswith("_tool_result"):
                 server_tool_result: types.ServerToolResult = {
                     "type": "server_tool_result",
                     "tool_call_id": block.get("tool_use_id", ""),
