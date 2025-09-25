@@ -2365,7 +2365,6 @@ def test_haskell_code_splitter() -> None:
 
 
 @pytest.fixture
-@pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
