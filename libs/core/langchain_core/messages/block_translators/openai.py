@@ -713,21 +713,27 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     yield tool_call_block
 
             elif block_type == "web_search_call":
-                web_search_call = {"type": "web_search_call", "id": block["id"]}
+                web_search_call = {
+                    "type": "server_tool_call",
+                    "name": "web_search",
+                    "args": {},
+                    "id": block["id"],
+                }
                 if "index" in block:
                     web_search_call["index"] = f"lc_wsc_{block['index']}"
-                if (
-                    "action" in block
-                    and isinstance(block["action"], dict)
-                    and block["action"].get("type") == "search"
-                    and "query" in block["action"]
-                ):
-                    web_search_call["query"] = block["action"]["query"]
+
+                sources: Optional[dict[str, Any]] = None
+                if "action" in block and isinstance(block["action"], dict):
+                    if "sources" in block["action"]:
+                        sources = block["action"]["sources"]
+                    web_search_call["args"] = {
+                        k: v for k, v in block["action"].items() if k != "sources"
+                    }
                 for key in block:
-                    if key not in ("type", "id", "index"):
+                    if key not in ("type", "id", "action", "status", "index"):
                         web_search_call[key] = block[key]
 
-                yield cast("types.WebSearchCall", web_search_call)
+                yield cast("types.ServerToolCall", web_search_call)
 
                 # If .content already has web_search_result, don't add
                 if not any(
@@ -736,21 +742,88 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                     and other_block.get("id") == block["id"]
                     for other_block in message.content
                 ):
-                    web_search_result = {"type": "web_search_result", "id": block["id"]}
+                    web_search_result = {
+                        "type": "server_tool_result",
+                        "tool_call_id": block["id"],
+                    }
+                    if sources:
+                        web_search_result["output"] = {"sources": sources}
+
+                    status = block.get("status")
+                    if status == "failed":
+                        web_search_result["status"] = "error"
+                    elif status == "completed":
+                        web_search_result["status"] = "success"
+                    elif status:
+                        web_search_result["extras"] = {"status": status}
+                    else:
+                        pass
                     if "index" in block and isinstance(block["index"], int):
                         web_search_result["index"] = f"lc_wsr_{block['index'] + 1}"
-                    yield cast("types.WebSearchResult", web_search_result)
+                    yield cast("types.ServerToolResult", web_search_result)
+
+            elif block_type == "file_search_call":
+                file_search_call = {
+                    "type": "server_tool_call",
+                    "name": "file_search",
+                    "id": block["id"],
+                    "args": {"queries": block.get("queries", [])},
+                }
+                if "index" in block:
+                    file_search_call["index"] = f"lc_fsc_{block['index']}"
+
+                for key in block:
+                    if key not in (
+                        "type",
+                        "id",
+                        "queries",
+                        "results",
+                        "status",
+                        "index",
+                    ):
+                        file_search_call[key] = block[key]
+
+                yield cast("types.ServerToolCall", file_search_call)
+
+                file_search_result = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                }
+                if file_search_output := block.get("results"):
+                    file_search_result["output"] = file_search_output
+
+                status = block.get("status")
+                if status == "failed":
+                    file_search_result["status"] = "error"
+                elif status == "completed":
+                    file_search_result["status"] = "success"
+                elif status:
+                    file_search_result["extras"] = {"status": status}
+                else:
+                    pass
+                if "index" in block and isinstance(block["index"], int):
+                    file_search_result["index"] = f"lc_fsr_{block['index'] + 1}"
+                yield cast("types.ServerToolResult", file_search_result)
 
             elif block_type == "code_interpreter_call":
                 code_interpreter_call = {
-                    "type": "code_interpreter_call",
+                    "type": "server_tool_call",
+                    "name": "code_interpreter",
                     "id": block["id"],
                 }
                 if "code" in block:
-                    code_interpreter_call["code"] = block["code"]
+                    code_interpreter_call["args"] = {"code": block["code"]}
                 if "index" in block:
                     code_interpreter_call["index"] = f"lc_cic_{block['index']}"
-                known_fields = {"type", "id", "language", "code", "extras", "index"}
+                known_fields = {
+                    "type",
+                    "id",
+                    "outputs",
+                    "status",
+                    "code",
+                    "extras",
+                    "index",
+                }
                 for key in block:
                     if key not in known_fields:
                         if "extras" not in code_interpreter_call:
@@ -758,33 +831,138 @@ def _convert_to_v1_from_responses(message: AIMessage) -> list[types.ContentBlock
                         code_interpreter_call["extras"][key] = block[key]
 
                 code_interpreter_result = {
-                    "type": "code_interpreter_result",
-                    "id": block["id"],
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
                 }
                 if "outputs" in block:
-                    code_interpreter_result["outputs"] = block["outputs"]
-                    for output in block["outputs"]:
-                        if (
-                            isinstance(output, dict)
-                            and (output_type := output.get("type"))
-                            and output_type == "logs"
-                        ):
-                            if "output" not in code_interpreter_result:
-                                code_interpreter_result["output"] = []
-                            code_interpreter_result["output"].append(
-                                {
-                                    "type": "code_interpreter_output",
-                                    "stdout": output.get("logs", ""),
-                                }
-                            )
+                    code_interpreter_result["output"] = block["outputs"]
 
-                if "status" in block:
-                    code_interpreter_result["status"] = block["status"]
+                status = block.get("status")
+                if status == "failed":
+                    code_interpreter_result["status"] = "error"
+                elif status == "completed":
+                    code_interpreter_result["status"] = "success"
+                elif status:
+                    code_interpreter_result["extras"] = {"status": status}
+                else:
+                    pass
                 if "index" in block and isinstance(block["index"], int):
                     code_interpreter_result["index"] = f"lc_cir_{block['index'] + 1}"
 
-                yield cast("types.CodeInterpreterCall", code_interpreter_call)
-                yield cast("types.CodeInterpreterResult", code_interpreter_result)
+                yield cast("types.ServerToolCall", code_interpreter_call)
+                yield cast("types.ServerToolResult", code_interpreter_result)
+
+            elif block_type == "mcp_call":
+                mcp_call = {
+                    "type": "server_tool_call",
+                    "name": "remote_mcp",
+                    "id": block["id"],
+                }
+                if (arguments := block.get("arguments")) and isinstance(arguments, str):
+                    try:
+                        mcp_call["args"] = json.loads(block["arguments"])
+                    except json.JSONDecodeError:
+                        mcp_call["extras"] = {"arguments": arguments}
+                if "name" in block:
+                    if "extras" not in mcp_call:
+                        mcp_call["extras"] = {}
+                    mcp_call["extras"]["tool_name"] = block["name"]
+                if "server_label" in block:
+                    if "extras" not in mcp_call:
+                        mcp_call["extras"] = {}
+                    mcp_call["extras"]["server_label"] = block["server_label"]
+                if "index" in block:
+                    mcp_call["index"] = f"lc_mcp_{block['index']}"
+                known_fields = {
+                    "type",
+                    "id",
+                    "arguments",
+                    "name",
+                    "server_label",
+                    "output",
+                    "error",
+                    "extras",
+                    "index",
+                }
+                for key in block:
+                    if key not in known_fields:
+                        if "extras" not in mcp_call:
+                            mcp_call["extras"] = {}
+                        mcp_call["extras"][key] = block[key]
+
+                yield cast("types.ServerToolCall", mcp_call)
+
+                mcp_result = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                }
+                if mcp_output := block.get("output"):
+                    mcp_result["output"] = mcp_output
+
+                error = block.get("error")
+                if error:
+                    if "extras" not in mcp_result:
+                        mcp_result["extras"] = {}
+                    mcp_result["extras"]["error"] = error
+                    mcp_result["status"] = "error"
+                else:
+                    mcp_result["status"] = "success"
+
+                if "index" in block and isinstance(block["index"], int):
+                    mcp_result["index"] = f"lc_mcpr_{block['index'] + 1}"
+                yield cast("types.ServerToolResult", mcp_result)
+
+            elif block_type == "mcp_list_tools":
+                mcp_list_tools_call = {
+                    "type": "server_tool_call",
+                    "name": "mcp_list_tools",
+                    "args": {},
+                    "id": block["id"],
+                }
+                if "server_label" in block:
+                    mcp_list_tools_call["extras"] = {}
+                    mcp_list_tools_call["extras"]["server_label"] = block[
+                        "server_label"
+                    ]
+                if "index" in block:
+                    mcp_list_tools_call["index"] = f"lc_mlt_{block['index']}"
+                known_fields = {
+                    "type",
+                    "id",
+                    "name",
+                    "server_label",
+                    "tools",
+                    "error",
+                    "extras",
+                    "index",
+                }
+                for key in block:
+                    if key not in known_fields:
+                        if "extras" not in mcp_list_tools_call:
+                            mcp_list_tools_call["extras"] = {}
+                        mcp_list_tools_call["extras"][key] = block[key]
+
+                yield cast("types.ServerToolCall", mcp_list_tools_call)
+
+                mcp_list_tools_result = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block["id"],
+                }
+                if mcp_output := block.get("tools"):
+                    mcp_list_tools_result["output"] = mcp_output
+
+                error = block.get("error")
+                if error:
+                    if "extras" not in mcp_list_tools_result:
+                        mcp_list_tools_result["extras"] = {}
+                    mcp_list_tools_result["extras"]["error"] = error
+                    mcp_list_tools_result["status"] = "error"
+                else:
+                    mcp_list_tools_result["status"] = "success"
+
+                if "index" in block and isinstance(block["index"], int):
+                    mcp_list_tools_result["index"] = f"lc_mltr_{block['index'] + 1}"
+                yield cast("types.ServerToolResult", mcp_list_tools_result)
 
             elif block_type in types.KNOWN_BLOCK_TYPES:
                 yield cast("types.ContentBlock", block)
