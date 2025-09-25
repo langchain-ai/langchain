@@ -1,25 +1,44 @@
 import concurrent.futures
 import importlib
 import subprocess
+import warnings
 from pathlib import Path
 
 
 def test_importable_all() -> None:
-    for path in Path("../core/langchain_core/").glob("*"):
-        module_name = path.stem
-        if not module_name.startswith(".") and path.suffix != ".typed":
-            module = importlib.import_module("langchain_core." + module_name)
-            all_ = getattr(module, "__all__", [])
-            for cls_ in all_:
-                getattr(module, cls_)
+    with warnings.catch_warnings():
+        # Suppress pydantic_v1 deprecation warnings during import testing
+        # These warnings are expected as modules transition from pydantic v1 to v2
+        # and are not relevant to testing importability
+        warnings.filterwarnings(
+            "ignore",
+            message=".*langchain_core.pydantic_v1.*",
+            category=DeprecationWarning,
+        )
+        for path in Path("../core/langchain_core/").glob("*"):
+            module_name = path.stem
+            if not module_name.startswith(".") and path.suffix != ".typed":
+                module = importlib.import_module("langchain_core." + module_name)
+                all_ = getattr(module, "__all__", [])
+                for cls_ in all_:
+                    getattr(module, cls_)
 
 
 def try_to_import(module_name: str) -> tuple[int, str]:
     """Try to import a module via subprocess."""
-    module = importlib.import_module("langchain_core." + module_name)
-    all_ = getattr(module, "__all__", [])
-    for cls_ in all_:
-        getattr(module, cls_)
+    with warnings.catch_warnings():
+        # Suppress pydantic_v1 deprecation warnings during import testing
+        # These warnings are expected as modules transition from pydantic v1 to v2
+        # and are not relevant to testing importability
+        warnings.filterwarnings(
+            "ignore",
+            message=".*langchain_core.pydantic_v1.*",
+            category=DeprecationWarning,
+        )
+        module = importlib.import_module("langchain_core." + module_name)
+        all_ = getattr(module, "__all__", [])
+        for cls_ in all_:
+            getattr(module, cls_)
 
     result = subprocess.run(
         ["python", "-c", f"import langchain_core.{module_name}"], check=True
