@@ -1,3 +1,11 @@
+# Validates that a package's integration tests compile without syntax or import errors.
+#
+# (If an integration test fails to compile, it won't run.)
+#
+# Called as part of check_diffs.yml workflow
+#
+# Runs pytest with compile marker to check syntax/imports.
+
 name: '🔗 Compile Integration Tests'
 
 on:

@@ -159,8 +159,8 @@ def add(
     """Add the specified template to the current LangServe app.
 
     e.g.:
-    langchain app add extraction-openai-functions
-    langchain app add git+ssh://git@github.com/efriis/simple-pirate.git
+    `langchain app add extraction-openai-functions`
+    `langchain app add git+ssh://git@github.com/efriis/simple-pirate.git`
     """
     if branch is None:
         branch = []
