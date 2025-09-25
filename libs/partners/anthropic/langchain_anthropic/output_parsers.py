@@ -38,7 +38,7 @@ class ToolsOutputParser(BaseGenerationOutputParser):
         """
         if not result or not isinstance(result[0], ChatGeneration):
             return None if self.first_tool_only else []
-        message = cast(AIMessage, result[0].message)
+        message = cast("AIMessage", result[0].message)
         tool_calls: list = [
             dict(tc) for tc in _extract_tool_calls_from_message(message)
         ]

@@ -222,10 +222,9 @@ class AnthropicLLM(LLM, _AnthropicCommon):
                         messages.append(
                             {"role": "assistant", "content": assistant_part.strip()}
                         )
-                else:
-                    # Just human content
-                    if part.strip():
-                        messages.append({"role": "user", "content": part.strip()})
+                # Just human content
+                elif part.strip():
+                    messages.append({"role": "user", "content": part.strip()})
         else:
             # Handle modern format or plain text
             # Clean prompt for Messages API
