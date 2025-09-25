@@ -2491,7 +2491,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     for summary in block["summary"]:
                         print(summary["text"])
 
-        .. code-block:: none
+        .. code-block::
 
             Output: 3³ = 27
             Reasoning: The user wants to know...
@@ -2787,7 +2787,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
 
         .. important::
-
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 

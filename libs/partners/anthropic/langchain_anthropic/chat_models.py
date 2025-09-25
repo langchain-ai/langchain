@@ -1185,7 +1185,7 @@ class ChatAnthropic(BaseChatModel):
             print(response.tool_calls)
             print(f'Total tokens: {response.usage_metadata["total_tokens"]}')
 
-        .. code-block:: none
+        .. code-block::
 
             [{'name': 'get_weather', 'args': {'location': 'San Francisco'}, 'id': 'toolu_01HLjQMSb1nWmgevQUtEyz17', 'type': 'tool_call'}]
 
@@ -1295,7 +1295,7 @@ class ChatAnthropic(BaseChatModel):
                 print(response.text())
                 response.tool_calls
 
-            .. code-block:: none
+            .. code-block::
 
                 I'd be happy to help you fix the syntax error in your primes.py file. First, let's look at the current content of the file to identify the error.
 
@@ -2247,7 +2247,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 llm.get_num_tokens_from_messages(messages)
 
-            .. code-block:: none
+            .. code-block::
 
                 14
 
@@ -2275,7 +2275,7 @@ class ChatAnthropic(BaseChatModel):
                 ]
                 llm.get_num_tokens_from_messages(messages, tools=[get_weather])
 
-            .. code-block:: none
+            .. code-block::
 
                 403
 
