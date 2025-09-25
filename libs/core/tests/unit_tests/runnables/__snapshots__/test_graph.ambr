@@ -501,6 +501,17 @@
                   'default': None,
                   'title': 'Name',
                 }),
+                'raw_response': dict({
+                  'anyOf': list([
+                    dict({
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Raw Response',
+                }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
                   'type': 'object',
@@ -604,6 +615,17 @@
                   ]),
                   'default': None,
                   'title': 'Name',
+                }),
+                'raw_response': dict({
+                  'anyOf': list([
+                    dict({
+                    }),
+                    dict({
+                      'type': 'null',
+                    }),
+                  ]),
+                  'default': None,
+                  'title': 'Raw Response',
                 }),
                 'response_metadata': dict({
                   'title': 'Response Metadata',
