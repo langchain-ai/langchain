@@ -1324,7 +1324,6 @@ def get_all_basemodel_annotations(
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
-        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
         fields = get_fields(cls)
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
@@ -1402,7 +1401,7 @@ def _replace_type_vars(
         if type_ in generic_map:
             return generic_map[type_]
         if default_to_bound:
-            return type_.__bound__ or Any
+            return type_.__bound__ if type_.__bound__ is not None else Any
         return type_
     if (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(

@@ -66,7 +66,7 @@ formats. The functions are used internally by ChatOpenAI.
 
 import json
 from collections.abc import Iterable, Iterator
-from typing import Any, Literal, Union, cast
+from typing import Any, Union, cast
 
 from langchain_core.messages import AIMessage, is_data_content_block
 from langchain_core.messages import content as types
@@ -254,20 +254,16 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
         yield merged
 
 
-def _consolidate_calls(
-    items: Iterable[dict[str, Any]],
-    call_name: Literal["web_search_call", "code_interpreter_call"],
-    result_name: Literal["web_search_result", "code_interpreter_result"],
-) -> Iterator[dict[str, Any]]:
+def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, Any]]:
     """Generator that walks through *items* and, whenever it meets the pair
 
-        {"type": "web_search_call",    "id": X, ...}
-        {"type": "web_search_result",  "id": X}
+        {"type": "server_tool_call", "name": "web_search", "id": X, ...}
+        {"type": "server_tool_result", "id": X}
 
     merges them into
 
         {"id": X,
-         "action": ...,
+         "output": ...,
          "status": ...,
          "type": "web_search_call"}
 
@@ -276,7 +272,7 @@ def _consolidate_calls(
     items = iter(items)  # make sure we have a true iterator
     for current in items:
         # Only a call can start a pair worth collapsing
-        if current.get("type") != call_name:
+        if current.get("type") != "server_tool_call":
             yield current
             continue
 
@@ -287,17 +283,50 @@ def _consolidate_calls(
             break
 
         # If this really is the matching “result” – collapse
-        if nxt.get("type") == result_name and nxt.get("id") == current.get("id"):
-            if call_name == "web_search_call":
+        if nxt.get("type") == "server_tool_result" and nxt.get(
+            "tool_call_id"
+        ) == current.get("id"):
+            if current.get("name") == "web_search":
                 collapsed = {"id": current["id"]}
-                if "action" in current:
-                    collapsed["action"] = current["action"]
-                collapsed["status"] = current["status"]
+                if "args" in current:
+                    # N.B. as of 2025-09-17 OpenAI raises BadRequestError if sources
+                    # are passed back in
+                    collapsed["action"] = current["args"]
+
+                if status := nxt.get("status"):
+                    if status == "success":
+                        collapsed["status"] = "completed"
+                    elif status == "error":
+                        collapsed["status"] = "failed"
+                elif nxt.get("extras", {}).get("status"):
+                    collapsed["status"] = nxt["extras"]["status"]
+                else:
+                    pass
                 collapsed["type"] = "web_search_call"
 
-            if call_name == "code_interpreter_call":
+            if current.get("name") == "file_search":
                 collapsed = {"id": current["id"]}
-                for key in ("code", "container_id"):
+                if "args" in current and "queries" in current["args"]:
+                    collapsed["queries"] = current["args"]["queries"]
+
+                if "output" in nxt:
+                    collapsed["results"] = nxt["output"]
+                if status := nxt.get("status"):
+                    if status == "success":
+                        collapsed["status"] = "completed"
+                    elif status == "error":
+                        collapsed["status"] = "failed"
+                elif nxt.get("extras", {}).get("status"):
+                    collapsed["status"] = nxt["extras"]["status"]
+                else:
+                    pass
+                collapsed["type"] = "file_search_call"
+
+            elif current.get("name") == "code_interpreter":
+                collapsed = {"id": current["id"]}
+                if "args" in current and "code" in current["args"]:
+                    collapsed["code"] = current["args"]["code"]
+                for key in ("container_id",):
                     if key in current:
                         collapsed[key] = current[key]
                     elif key in current.get("extras", {}):
@@ -305,14 +334,56 @@ def _consolidate_calls(
                     else:
                         pass
 
-                for key in ("outputs", "status"):
-                    if key in nxt:
-                        collapsed[key] = nxt[key]
-                    elif key in nxt.get("extras", {}):
-                        collapsed[key] = nxt["extras"][key]
-                    else:
-                        pass
+                if "output" in nxt:
+                    collapsed["outputs"] = nxt["output"]
+                if status := nxt.get("status"):
+                    if status == "success":
+                        collapsed["status"] = "completed"
+                    elif status == "error":
+                        collapsed["status"] = "failed"
+                elif nxt.get("extras", {}).get("status"):
+                    collapsed["status"] = nxt["extras"]["status"]
                 collapsed["type"] = "code_interpreter_call"
+
+            elif current.get("name") == "remote_mcp":
+                collapsed = {"id": current["id"]}
+                if "args" in current:
+                    collapsed["arguments"] = json.dumps(
+                        current["args"], separators=(",", ":")
+                    )
+                elif "arguments" in current.get("extras", {}):
+                    collapsed["arguments"] = current["extras"]["arguments"]
+                else:
+                    pass
+
+                if tool_name := current.get("extras", {}).get("tool_name"):
+                    collapsed["name"] = tool_name
+                if server_label := current.get("extras", {}).get("server_label"):
+                    collapsed["server_label"] = server_label
+                collapsed["type"] = "mcp_call"
+
+                if error := nxt.get("extras", {}).get("error"):
+                    collapsed["error"] = error
+                if "output" in nxt:
+                    collapsed["output"] = nxt["output"]
+                for k, v in current.get("extras", {}).items():
+                    if k not in ("server_label", "arguments", "tool_name", "error"):
+                        collapsed[k] = v
+
+            elif current.get("name") == "mcp_list_tools":
+                collapsed = {"id": current["id"]}
+                if server_label := current.get("extras", {}).get("server_label"):
+                    collapsed["server_label"] = server_label
+                if "output" in nxt:
+                    collapsed["tools"] = nxt["output"]
+                collapsed["type"] = "mcp_list_tools"
+                if error := nxt.get("extras", {}).get("error"):
+                    collapsed["error"] = error
+                for k, v in current.get("extras", {}).items():
+                    if k not in ("server_label", "error"):
+                        collapsed[k] = v
+            else:
+                pass
 
             yield collapsed
 
@@ -373,13 +444,6 @@ def _convert_from_v1_to_responses(
             new_content.append(block)
 
     new_content = list(_implode_reasoning_blocks(new_content))
-    new_content = list(
-        _consolidate_calls(new_content, "web_search_call", "web_search_result")
-    )
-    new_content = list(
-        _consolidate_calls(
-            new_content, "code_interpreter_call", "code_interpreter_result"
-        )
-    )
+    new_content = list(_consolidate_calls(new_content))
 
     return new_content
