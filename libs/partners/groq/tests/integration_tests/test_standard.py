@@ -30,6 +30,13 @@ class TestGroq(ChatModelIntegrationTests):
     ) -> None:
         super().test_tool_message_histories_list_content(model, my_adder_tool)
 
+    @pytest.mark.xfail(
+        reason="Groq models have inconsistent tool calling performance. See: "
+        "https://github.com/langchain-ai/langchain/discussions/19990"
+    )
+    def test_bind_runnables_as_tools(self, model: BaseChatModel) -> None:
+        super().test_bind_runnables_as_tools(model)
+
     @property
     def supports_json_mode(self) -> bool:
         return True

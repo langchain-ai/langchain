@@ -1,4 +1,4 @@
-.PHONY: all clean help docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck spell_check spell_fix lint lint_package lint_tests format format_diff
+.PHONY: all clean help docs_build docs_clean docs_linkcheck api_docs_build api_docs_clean api_docs_linkcheck lint lint_package lint_tests format format_diff
 
 .EXPORT_ALL_VARIABLES:
 UV_FROZEN = true
@@ -78,18 +78,6 @@ api_docs_linkcheck:
 	fi
 	@echo "✅ API link check complete"
 
-## spell_check: Run codespell on the project.
-spell_check:
-	@echo "✏️ Checking spelling across project..."
-	uv run --group codespell codespell --toml pyproject.toml
-	@echo "✅ Spell check complete"
-
-## spell_fix: Run codespell on the project and fix the errors.
-spell_fix:
-	@echo "✏️ Fixing spelling errors across project..."
-	uv run --group codespell codespell --toml pyproject.toml -w
-	@echo "✅ Spelling errors fixed"
-
 ######################
 # LINTING AND FORMATTING
 ######################
@@ -100,7 +88,7 @@ lint lint_package lint_tests:
 	uv run --group lint ruff check docs cookbook
 	uv run --group lint ruff format docs cookbook cookbook --diff
 	git --no-pager grep 'from langchain import' docs cookbook | grep -vE 'from langchain import (hub)' && echo "Error: no importing langchain from root in docs, except for hub" && exit 1 || exit 0
-	
+
 	git --no-pager grep 'api.python.langchain.com' -- docs/docs ':!docs/docs/additional_resources/arxiv_references.mdx' ':!docs/docs/integrations/document_loaders/sitemap.ipynb' || exit 0 && \
 	echo "Error: you should link python.langchain.com/api_reference, not api.python.langchain.com in the docs" && \
 	exit 1

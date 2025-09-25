@@ -8,6 +8,7 @@ from .types import AgentMiddleware, AgentState, ModelRequest
 __all__ = [
     "AgentMiddleware",
     "AgentState",
+    # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",

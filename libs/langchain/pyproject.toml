@@ -5,16 +5,16 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.72",
-    "langchain-text-splitters<1.0.0,>=0.3.9",
-    "langsmith>=0.1.17",
-    "pydantic<3.0.0,>=2.7.4",
-    "SQLAlchemy<3,>=1.4",
-    "requests<3,>=2",
-    "PyYAML>=5.3",
-    "async-timeout<5.0.0,>=4.0.0; python_version < \"3.11\"",
+    "langchain-core>=0.3.72,<1.0.0",
+    "langchain-text-splitters>=0.3.9,<1.0.0",
+    "langsmith>=0.1.17,<1.0.0",
+    "pydantic>=2.7.4,<3.0.0",
+    "SQLAlchemy>=1.4.0,<3.0.0",
+    "requests>=2.0.0,<3.0.0",
+    "PyYAML>=5.3.0,<7.0.0",
+    "async-timeout>=4.0.0,<5.0.0; python_version < \"3.11\"",
 ]
 name = "langchain"
 version = "0.3.27"
@@ -25,9 +25,9 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-# azure-ai = ["langchain-azure-ai"]
-# cohere = ["langchain-cohere"]
-# google-vertexai = ["langchain-google-vertexai"]
+azure-ai = ["langchain-azure-ai"]
+cohere = ["langchain-cohere"]
+google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
 ollama = ["langchain-ollama"]
@@ -35,9 +35,9 @@ together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
 huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
-# aws = ["langchain-aws"]
+aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
-# xai = ["langchain-xai"]
+xai = ["langchain-xai"]
 perplexity = ["langchain-perplexity"]
 
 [project.urls]
@@ -47,67 +47,66 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<9,>=8",
-    "pytest-cov<5.0.0,>=4.0.0",
-    "pytest-dotenv<1.0.0,>=0.5.2",
-    "duckdb-engine<1.0.0,>=0.9.2",
-    "pytest-watcher<1.0.0,>=0.2.6",
-    "freezegun<2.0.0,>=1.2.2",
-    "responses<1.0.0,>=0.22.0",
-    "pytest-asyncio<1.0.0,>=0.23.2",
-    "lark<2.0.0,>=1.1.5",
-    "pandas<3.0.0,>=2.0.0",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-socket<1.0.0,>=0.6.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "requests-mock<2.0.0,>=1.11.0",
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-dotenv>=0.5.2,<1.0.0",
+    "duckdb-engine>=0.9.2,<1.0.0",
+    "pytest-watcher>=0.2.6,<1.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "responses>=0.22.0,<1.0.0",
+    "pytest-asyncio>=0.23.2,<1.0.0",
+    "lark>=1.1.5,<2.0.0",
+    "pandas>=2.0.0,<3.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-socket>=0.6.0,<1.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "requests-mock>=1.11.0,<2.0.0",
     "pytest-xdist<4.0.0,>=3.6.1",
-    "blockbuster<1.6,>=1.5.18",
+    "blockbuster>=1.5.18,<1.6.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
     "langchain-tests",
     "langchain-core",
     "langchain-text-splitters",
     "langchain-openai",
-    "toml>=0.10.2",
-    "packaging>=24.2",
+    "toml>=0.10.2,<1.0.0",
+    "packaging>=24.2.0,<26.0.0",
     "numpy>=1.26.4; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = [
-    "vcrpy>=7.0",
-    "urllib3<2; python_version < \"3.10\"",
-    "wrapt<2.0.0,>=1.15.0",
-    "python-dotenv<2.0.0,>=1.0.0",
-    "cassio<1.0.0,>=0.1.0",
-    "langchainhub<1.0.0,>=0.1.16",
+    "vcrpy>=7.0.0,<8.0.0",
+    "urllib3<2.0.0; python_version < \"3.10\"",
+    "wrapt>=1.15.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "cassio>=0.1.0,<1.0.0",
+    "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff<0.13,>=0.12.2",
+    "ruff>=0.12.2,<0.13.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
 typing = [
-    "mypy<1.16,>=1.15",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
-    "types-requests<3.0.0.0,>=2.28.11.5",
-    "types-toml<1.0.0.0,>=0.10.8.1",
-    "types-redis<5.0.0.0,>=4.3.21.6",
-    "types-pytz<2024.0.0.0,>=2023.3.0.0",
-    "types-chardet<6.0.0.0,>=5.0.4.6",
-    "mypy-protobuf<4.0.0,>=3.0.0",
+    "mypy>=1.15.0,<1.16.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
+    "types-requests>=2.28.11.5,<3.0.0.0",
+    "types-toml>=0.10.8.1,<1.0.0.0",
+    "types-redis>=4.3.21.6,<5.0.0.0",
+    "types-pytz>=2023.3.0.0,<2024.0.0.0",
+    "types-chardet>=5.0.4.6,<6.0.0.0",
+    "mypy-protobuf>=3.0.0,<4.0.0",
     "langchain-core",
     "langchain-text-splitters",
     "numpy>=1.26.4; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
 ]
 dev = [
-    "jupyter<2.0.0,>=1.0.0",
-    "playwright<2.0.0,>=1.28.0",
-    "setuptools<68.0.0,>=67.6.1",
+    "jupyter>=1.0.0,<2.0.0",
+    "playwright>=1.28.0,<2.0.0",
+    "setuptools>=67.6.1,<68.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]
@@ -138,11 +137,6 @@ disallow_any_generics = "False"
 disallow_untyped_decorators = "False"
 warn_return_any = "False"
 strict_equality = "False"
-
-[tool.codespell]
-skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
-ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
-ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
 
 [tool.ruff.format]
 docstring-code-format = true

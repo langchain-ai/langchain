@@ -578,6 +578,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
     ``'parallel_tools_calls'`` will be disabled.
     """
 
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")  # type: ignore[assignment]
+    """Maximum number of tokens to generate."""
+
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
@@ -698,6 +701,15 @@ class AzureChatOpenAI(BaseChatOpenAI):
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    @property
+    def _default_params(self) -> dict[str, Any]:
+        """Get the default parameters for calling Azure OpenAI API."""
+        params = super()._default_params
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+
+        return params
 
     def _get_ls_params(
         self, stop: Optional[list[str]] = None, **kwargs: Any

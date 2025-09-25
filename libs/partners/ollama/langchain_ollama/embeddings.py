@@ -81,9 +81,7 @@ class OllamaEmbeddings(BaseModel, Embeddings):
 
             from langchain_ollama import OllamaEmbeddings
 
-            embed = OllamaEmbeddings(
-                model="llama3"
-            )
+            embed = OllamaEmbeddings(model="llama3")
 
     Embed single text:
         .. code-block:: python

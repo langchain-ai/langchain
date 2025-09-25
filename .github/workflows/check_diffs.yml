@@ -1,3 +1,18 @@
+# Primary CI workflow.
+#
+# Only runs against packages that have changed files.
+#
+# Runs:
+# - Linting (_lint.yml)
+# - Unit Tests (_test.yml)
+# - Pydantic compatibility tests (_test_pydantic.yml)
+# - Documentation import tests (_test_doc_imports.yml)
+# - Integration test compilation checks (_compile_integration_test.yml)
+# - Extended test suites that require additional dependencies
+# - Codspeed benchmarks (if not labeled 'codspeed-ignore')
+#
+# Reports status to GitHub checks and PR status.
+
 name: '🔧 CI'
 
 on:
@@ -11,8 +26,8 @@ on:
 # cancel the earlier run in favor of the next run.
 #
 # There's no point in testing an outdated version of the code. GitHub only allows
-# a limited number of job runners to be active at the same time, so it's better to cancel
-# pointless jobs early so that more useful jobs can run sooner.
+# a limited number of job runners to be active at the same time, so it's better to
+# cancel pointless jobs early so that more useful jobs can run sooner.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -111,6 +126,7 @@ jobs:
 
   # Verify integration tests compile without actually running them (faster feedback)
   compile-integration-tests:
+    name: 'Compile Integration Tests'
     needs: [ build ]
     if: ${{ needs.build.outputs.compile-integration-tests != '[]' }}
     strategy:
@@ -197,7 +213,29 @@ jobs:
         working-directory: ${{ matrix.job-configs.working-directory }}
 
       - name: '⚡ Run Benchmarks: ${{ matrix.job-configs.working-directory }}'
-        uses: CodSpeedHQ/action@v3
+        uses: CodSpeedHQ/action@v4
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ANTHROPIC_FILES_API_IMAGE_ID: ${{ secrets.ANTHROPIC_FILES_API_IMAGE_ID }}
+          ANTHROPIC_FILES_API_PDF_ID: ${{ secrets.ANTHROPIC_FILES_API_PDF_ID }}
+          AZURE_OPENAI_API_VERSION: ${{ secrets.AZURE_OPENAI_API_VERSION }}
+          AZURE_OPENAI_API_BASE: ${{ secrets.AZURE_OPENAI_API_BASE }}
+          AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+          AZURE_OPENAI_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LEGACY_CHAT_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_LLM_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_LLM_DEPLOYMENT_NAME }}
+          AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT_NAME }}
+          COHERE_API_KEY: ${{ secrets.COHERE_API_KEY }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+          FIREWORKS_API_KEY: ${{ secrets.FIREWORKS_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          HUGGINGFACEHUB_API_TOKEN: ${{ secrets.HUGGINGFACEHUB_API_TOKEN }}
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          NOMIC_API_KEY: ${{ secrets.NOMIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PPLX_API_KEY: ${{ secrets.PPLX_API_KEY }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
         with:
           token: ${{ secrets.CODSPEED_TOKEN }}
           run: |
