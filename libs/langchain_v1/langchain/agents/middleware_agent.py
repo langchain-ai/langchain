@@ -505,8 +505,10 @@ def create_agent(  # noqa: PLR0915
 def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
     if jump_to == "model":
         return first_node
-    if jump_to:
-        return jump_to
+    if jump_to == "end":
+        return "__end__"
+    if jump_to == "tools":
+        return "tools"
     return None
 
 
@@ -602,7 +604,7 @@ def _add_middleware_edge(
 
         destinations = [default_destination]
 
-        if "__end__" in jump_to:
+        if "end" in jump_to:
             destinations.append(END)
         if "tools" in jump_to:
             destinations.append("tools")
