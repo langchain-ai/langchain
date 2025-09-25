@@ -1,3 +1,5 @@
+"""Anthropic chat models."""
+
 from __future__ import annotations
 
 import copy
@@ -1418,6 +1420,7 @@ class ChatAnthropic(BaseChatModel):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Return a mapping of secret keys to environment variables."""
         return {
             "anthropic_api_key": "ANTHROPIC_API_KEY",
             "mcp_servers": "ANTHROPIC_MCP_SERVERS",
@@ -1425,6 +1428,7 @@ class ChatAnthropic(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Whether the class is serializable in langchain."""
         return True
 
     @classmethod
@@ -1470,6 +1474,7 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: dict) -> Any:
+        """Build model kwargs."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
@@ -2265,7 +2270,7 @@ class ChatAnthropic(BaseChatModel):
                 def get_weather(location: str) -> str:
                     \"\"\"Get the current weather in a given location
 
-                    Args:
+        Args:
                         location: The city and state, e.g. San Francisco, CA
                     \"\"\"
                     return "Sunny"

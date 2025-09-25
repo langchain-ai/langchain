@@ -65,16 +65,6 @@ docstring-code-line-length = 100
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
-    "D203",
-    "D213",
-    "D214",    # Section over-indented, doesn't play well with reStructuredText
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -125,4 +115,5 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
     "SLF001", # Private member access in tests
+    "D",     # Docstring checks in tests
 ]
