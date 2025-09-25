@@ -174,6 +174,7 @@ def beta(
             def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
                 return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
+
         else:
             _name = _name or obj.__qualname__
             if not _obj_type:

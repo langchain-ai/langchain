@@ -208,7 +208,10 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
                         tool_outputs.append(
-                            {"output": tool_output, "tool_call_id": action.tool_call_id}
+                            {
+                                "output": tool_output,
+                                "tool_call_id": action.tool_call_id,
+                            }
                         )
                     response = agent.invoke(
                         {
@@ -525,7 +528,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         self,
         intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
-        last_action, last_output = intermediate_steps[-1]
+        last_action, _ = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:
@@ -682,7 +685,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         self,
         intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
-        last_action, last_output = intermediate_steps[-1]
+        last_action, _ = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:

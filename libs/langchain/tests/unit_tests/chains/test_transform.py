@@ -1,5 +1,7 @@
 """Test transform chain."""
 
+import re
+
 import pytest
 
 from langchain.chains.transform import TransformChain
@@ -35,5 +37,7 @@ def test_transform_chain_bad_inputs() -> None:
         transform=dummy_transform,
     )
     input_dict = {"name": "Leroy", "last_name": "Jenkins"}
-    with pytest.raises(ValueError, match="Missing some input keys: {'first_name'}"):
+    with pytest.raises(
+        ValueError, match=re.escape("Missing some input keys: {'first_name'}")
+    ):
         _ = transform_chain(input_dict)
