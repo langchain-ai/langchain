@@ -1017,10 +1017,12 @@ async def test_astream_response_format() -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize("use_max_completion_tokens", [True, False])
 def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
+    # o1 models need higher token limits for reasoning
+    o1_token_limit = 1000
     if use_max_completion_tokens:
-        kwargs: dict = {"max_completion_tokens": MAX_TOKEN_COUNT}
+        kwargs: dict = {"max_completion_tokens": o1_token_limit}
     else:
-        kwargs = {"max_tokens": MAX_TOKEN_COUNT}
+        kwargs = {"max_tokens": o1_token_limit}
     response = ChatOpenAI(
         model="o1",
         reasoning_effort="low",
