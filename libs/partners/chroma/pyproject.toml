@@ -39,7 +39,7 @@ test = [
 ]
 test_integration = []
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.13.1,<0.14.0",
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
 ]
