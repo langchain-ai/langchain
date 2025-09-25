@@ -126,7 +126,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinxcontrib.autodoc_pydantic",
     "IPython.sphinxext.ipython_console_highlighting",
-    "myst_parser",
+    "myst_parser",  # For generated index.md and reference.md
     "_extensions.gallery_directive",
     "sphinx_design",
     "sphinx_copybutton",
@@ -259,20 +259,8 @@ html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 html_use_index = False
 
-myst_enable_extensions = [
-    "colon_fence",  # ::: directive blocks (existing prior to LangGraph support)
-    # LangGraph compatibility extensions added for consolidation
-    # TODO: check for presence of each in LangGraph and only enable if needed
-    # "deflist",  # Definition lists
-    # "tasklist",  # - [ ] checkboxes (common in examples)
-    # "attrs_inline",  # {.class} inline attributes (MkDocs style)
-    # "attrs_block",  # Block-level attributes
-    # "substitution",  # Variable substitution
-    # "linkify",  # Auto-link URLs in text
-    # Math extensions (uncomment if LangGraph uses mathematical notation)
-    # "dollarmath",     # $ math $ inline math
-    # "amsmath",        # Advanced math environments
-]
+# Only used on the generated index.md and reference.md files
+myst_enable_extensions = ["colon_fence"]
 
 # generate autosummary even if no references
 autosummary_generate = True

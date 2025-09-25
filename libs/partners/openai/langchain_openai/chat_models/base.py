@@ -2491,7 +2491,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                     for summary in block["summary"]:
                         print(summary["text"])
 
-        .. code-block:: none
+        .. code-block::
 
             Output: 3³ = 27
             Reasoning: The user wants to know...
