@@ -2787,7 +2787,6 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
 
         .. important::
-
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 

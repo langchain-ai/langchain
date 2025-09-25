@@ -985,10 +985,10 @@ def create_agent(  # noqa: D417
               of the list of messages in state["messages"].
             - SystemMessage: this is added to the beginning of the list of messages
               in state["messages"].
-            - Callable: This function should take in full graph state and the output is then passed
-              to the language model.
-            - Runnable: This runnable should take in full graph state and the output is then passed
-              to the language model.
+            - Callable: This function should take in full graph state and the output is
+              then passed to the language model.
+            - Runnable: This runnable should take in full graph state and the output is
+              then passed to the language model.
 
         response_format: An optional UsingToolStrategy configuration for structured responses.
 
@@ -1002,7 +1002,8 @@ def create_agent(  # noqa: D417
 
                 - schemas: A sequence of ResponseSchema objects that define
                   the structured output format
-                - tool_choice: Either "required" or "auto" to control when structured output is used
+                - tool_choice: Either "required" or "auto" to control when structured
+                  output is used
 
             Each ResponseSchema contains:
 
@@ -1015,8 +1016,8 @@ def create_agent(  # noqa: D417
                 `response_format` requires the model to support tool calling
 
             .. note::
-                Structured responses are handled directly in the model call node via tool calls,
-                eliminating the need for separate structured response nodes.
+                Structured responses are handled directly in the model call node via
+                tool calls, eliminating the need for separate structured response nodes.
 
         pre_model_hook: An optional node to add before the `agent` node
             (i.e., the node that calls the LLM).

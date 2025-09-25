@@ -299,7 +299,8 @@ def index(
     .. versionchanged:: 0.3.25
         Added ``scoped_full`` cleanup mode.
 
-    Important:
+    .. important::
+
         * In full mode, the loader should be returning
           the entire dataset, and not just a subset of the dataset.
           Otherwise, the auto_cleanup will remove documents that it is not
@@ -640,24 +641,25 @@ async def aindex(
     .. versionchanged:: 0.3.25
         Added ``scoped_full`` cleanup mode.
 
-    Important:
-       * In full mode, the loader should be returning
-         the entire dataset, and not just a subset of the dataset.
-         Otherwise, the auto_cleanup will remove documents that it is not
-         supposed to.
-       * In incremental mode, if documents associated with a particular
-         source id appear across different batches, the indexing API
-         will do some redundant work. This will still result in the
-         correct end state of the index, but will unfortunately not be
-         100% efficient. For example, if a given document is split into 15
-         chunks, and we index them using a batch size of 5, we'll have 3 batches
-         all with the same source id. In general, to avoid doing too much
-         redundant work select as big a batch size as possible.
-       * The ``scoped_full`` mode is suitable if determining an appropriate batch size
-         is challenging or if your data loader cannot return the entire dataset at
-         once. This mode keeps track of source IDs in memory, which should be fine
-         for most use cases. If your dataset is large (10M+ docs), you will likely
-         need to parallelize the indexing process regardless.
+    .. important::
+
+        * In full mode, the loader should be returning
+          the entire dataset, and not just a subset of the dataset.
+          Otherwise, the auto_cleanup will remove documents that it is not
+          supposed to.
+        * In incremental mode, if documents associated with a particular
+          source id appear across different batches, the indexing API
+          will do some redundant work. This will still result in the
+          correct end state of the index, but will unfortunately not be
+          100% efficient. For example, if a given document is split into 15
+          chunks, and we index them using a batch size of 5, we'll have 3 batches
+          all with the same source id. In general, to avoid doing too much
+          redundant work select as big a batch size as possible.
+        * The ``scoped_full`` mode is suitable if determining an appropriate batch size
+          is challenging or if your data loader cannot return the entire dataset at
+          once. This mode keeps track of source IDs in memory, which should be fine
+          for most use cases. If your dataset is large (10M+ docs), you will likely
+          need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
