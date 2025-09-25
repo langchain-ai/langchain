@@ -2984,6 +2984,7 @@ def _make_message_chunk_from_anthropic_event(
         elif event.delta.type == "input_json_delta":
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
+            content_block["type"] = "tool_use"
             start_event_block = (
                 getattr(block_start_event, "content_block", None)
                 if block_start_event

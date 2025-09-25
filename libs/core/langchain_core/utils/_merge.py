@@ -118,22 +118,10 @@ def merge_lists(left: list | None, *others: list | None) -> list | None:
                         ):
                             if left_type != "non_standard":
                                 # standard + non_standard
-                                new_e: dict[str, Any] = {
-                                    "extras": {
-                                        k: v
-                                        for k, v in e["value"].items()
-                                        if k != "type"
-                                    }
-                                }
+                                new_e: dict[str, Any] = {"extras": e["value"]}
                             else:
                                 # non_standard + non_standard
-                                new_e = {
-                                    "value": {
-                                        k: v
-                                        for k, v in e["value"].items()
-                                        if k != "type"
-                                    }
-                                }
+                                new_e = {"value": e["value"]}
                                 if "index" in e:
                                     new_e["index"] = e["index"]
                         else:
