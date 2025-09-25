@@ -10,6 +10,7 @@ from typing import Any
 
 import pytest
 from bs4 import Tag
+from langchain_core._api import suppress_langchain_beta_warning
 from langchain_core.documents import Document
 
 from langchain_text_splitters import (
@@ -2366,7 +2367,6 @@ def test_haskell_code_splitter() -> None:
 
 
 @pytest.fixture
-@pytest.mark.requires("bs4")
 def html_header_splitter_splitter_factory() -> Callable[
     [list[tuple[str, str]]], HTMLHeaderTextSplitter
 ]:
@@ -3288,11 +3288,12 @@ def test_html_splitter_with_custom_extractor() -> None:
     <p>This is an iframe:</p>
     <iframe src="http://example.com"></iframe>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        custom_handlers={"iframe": custom_iframe_extractor},
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            custom_handlers={"iframe": custom_iframe_extractor},
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3313,11 +3314,12 @@ def test_html_splitter_with_href_links() -> None:
     <h1>Section 1</h1>
     <p>This is a link to <a href="http://example.com">example.com</a></p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        preserve_links=True,
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_links=True,
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3342,9 +3344,10 @@ def test_html_splitter_with_nested_elements() -> None:
         </div>
     </div>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3375,11 +3378,12 @@ def test_html_splitter_with_preserved_elements() -> None:
         <li>Item 2</li>
     </ul>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        elements_to_preserve=["table", "ul"],
-        max_chunk_size=50,  # Deliberately low to test preservation
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table", "ul"],
+            max_chunk_size=50,  # Deliberately low to test preservation
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3401,9 +3405,10 @@ def test_html_splitter_with_no_further_splits() -> None:
     <h1>Section 2</h1>
     <p>More content here.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")], max_chunk_size=1000
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3422,9 +3427,10 @@ def test_html_splitter_with_small_chunk_size() -> None:
     <p>This is some long text that should be split into multiple chunks due to the
     small chunk size.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=20, chunk_overlap=5
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")], max_chunk_size=20, chunk_overlap=5
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3449,11 +3455,12 @@ def test_html_splitter_with_denylist_tags() -> None:
     <p>This paragraph should be kept.</p>
     <span>This span should be removed.</span>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        denylist_tags=["span"],
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            denylist_tags=["span"],
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3473,11 +3480,12 @@ def test_html_splitter_with_external_metadata() -> None:
     <h1>Section 1</h1>
     <p>This is some content.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        external_metadata={"source": "example.com"},
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            external_metadata={"source": "example.com"},
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3497,11 +3505,12 @@ def test_html_splitter_with_text_normalization() -> None:
     <h1>Section 1</h1>
     <p>This is some TEXT that should be normalized!</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        normalize_text=True,
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            normalize_text=True,
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3523,11 +3532,12 @@ def test_html_splitter_with_allowlist_tags() -> None:
     <span>This span should be kept.</span>
     <div>This div should be removed.</div>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        allowlist_tags=["p", "span"],
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            allowlist_tags=["p", "span"],
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3556,12 +3566,13 @@ def test_html_splitter_with_mixed_preserve_and_filter() -> None:
     <p>This paragraph should be kept.</p>
     <span>This span should be removed.</span>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        elements_to_preserve=["table"],
-        denylist_tags=["span"],
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            elements_to_preserve=["table"],
+            denylist_tags=["span"],
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3582,10 +3593,11 @@ def test_html_splitter_with_no_headers() -> None:
     <p>This is content without any headers.</p>
     <p>It should still produce a valid document.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[],
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[],
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3615,13 +3627,14 @@ def test_html_splitter_with_media_preservation() -> None:
     <p>This is audio:</p>
     <audio src="http://example.com/audio.mp3"></audio>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        preserve_images=True,
-        preserve_videos=True,
-        preserve_audio=True,
-        max_chunk_size=1000,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            preserve_images=True,
+            preserve_videos=True,
+            preserve_audio=True,
+            max_chunk_size=1000,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3646,12 +3659,13 @@ def test_html_splitter_keep_separator_true() -> None:
     <h1>Section 1</h1>
     <p>This is some text. This is some other text.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator=True,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=10,
+            separators=[". "],
+            keep_separator=True,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3675,12 +3689,13 @@ def test_html_splitter_keep_separator_false() -> None:
     <h1>Section 1</h1>
     <p>This is some text. This is some other text.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator=False,
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=10,
+            separators=[". "],
+            keep_separator=False,
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3704,12 +3719,13 @@ def test_html_splitter_keep_separator_start() -> None:
     <h1>Section 1</h1>
     <p>This is some text. This is some other text.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator="start",
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=10,
+            separators=[". "],
+            keep_separator="start",
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3733,12 +3749,13 @@ def test_html_splitter_keep_separator_end() -> None:
     <h1>Section 1</h1>
     <p>This is some text. This is some other text.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")],
-        max_chunk_size=10,
-        separators=[". "],
-        keep_separator="end",
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=10,
+            separators=[". "],
+            keep_separator="end",
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
@@ -3762,9 +3779,12 @@ def test_html_splitter_keep_separator_default() -> None:
     <h1>Section 1</h1>
     <p>This is some text. This is some other text.</p>
     """
-    splitter = HTMLSemanticPreservingSplitter(
-        headers_to_split_on=[("h1", "Header 1")], max_chunk_size=10, separators=[". "]
-    )
+    with suppress_langchain_beta_warning():
+        splitter = HTMLSemanticPreservingSplitter(
+            headers_to_split_on=[("h1", "Header 1")],
+            max_chunk_size=10,
+            separators=[". "],
+        )
     documents = splitter.split_text(html_content)
 
     expected = [
