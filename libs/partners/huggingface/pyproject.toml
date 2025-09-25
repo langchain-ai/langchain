@@ -42,7 +42,7 @@ test = [
     "langchain-tests",
     "langchain-community",
 ]
-lint = ["ruff>=0.12.2,<0.13.0"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["ipykernel>=6.29.2,<7.0.0", "langchain-core"]
 test_integration = []
 typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
