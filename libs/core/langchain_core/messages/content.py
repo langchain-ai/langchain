@@ -390,14 +390,14 @@ class ServerToolCall(TypedDict):
     type: Literal["server_tool_call"]
     """Used for discrimination."""
 
+    id: str
+    """An identifier associated with the tool call."""
+
     name: str
     """The name of the tool to be called."""
 
     args: dict[str, Any]
     """The arguments to the tool call."""
-
-    id: str
-    """An identifier associated with the tool call."""
 
     index: NotRequired[Union[int, str]]
     """Index of block in aggregate response. Used during streaming."""
@@ -434,14 +434,14 @@ class ServerToolResult(TypedDict):
     type: Literal["server_tool_result"]
     """Used for discrimination."""
 
-    tool_call_id: str
-    """ID of the corresponding server tool call."""
-
     id: NotRequired[str]
     """An identifier associated with the server tool result."""
 
+    tool_call_id: str
+    """ID of the corresponding server tool call."""
+
     status: Literal["success", "error"]
-    """Status associated with the execution of the server-side tool."""
+    """Execution status of the server-side tool."""
 
     output: NotRequired[Any]
     """Output of the executed tool."""
