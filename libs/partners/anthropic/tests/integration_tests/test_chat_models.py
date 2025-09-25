@@ -28,7 +28,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
@@ -38,7 +38,7 @@ IMAGE_MODEL_NAME = "claude-3-5-haiku-latest"
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
@@ -84,7 +84,7 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
@@ -162,8 +162,8 @@ async def test_stream_usage_override() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test streaming tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -171,8 +171,8 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test batch tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"],
@@ -232,8 +232,8 @@ async def test_async_tool_use() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test batch tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -241,8 +241,8 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test invoke tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -250,8 +250,8 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test invoke tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -259,7 +259,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -376,7 +376,7 @@ def test_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
         callback_manager=callback_manager,
@@ -392,7 +392,7 @@ async def test_astreaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
         callback_manager=callback_manager,

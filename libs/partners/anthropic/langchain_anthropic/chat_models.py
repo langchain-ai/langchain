@@ -10,7 +10,7 @@ from operator import itemgetter
 from typing import Any, Callable, Final, Literal, Optional, Union, cast
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import beta
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -2626,11 +2626,6 @@ def _make_message_chunk_from_anthropic_event(
     if message_chunk:
         message_chunk.response_metadata["model_provider"] = "anthropic"
     return message_chunk, block_start_event
-
-
-@deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
-class ChatAnthropicMessages(ChatAnthropic):
-    pass
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

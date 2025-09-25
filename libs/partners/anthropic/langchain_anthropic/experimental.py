@@ -6,11 +6,6 @@ from typing import (
     Union,
 )
 
-from langchain_core._api import deprecated
-from pydantic import PrivateAttr
-
-from langchain_anthropic.chat_models import ChatAnthropic
-
 SYSTEM_PROMPT_FORMAT = """In this environment you have access to a set of tools you can use to answer the user's question.
 
 You may call them like this:
@@ -142,18 +137,3 @@ def _xml_to_tool_calls(elem: Any, tools: list[dict]) -> list[dict[str, Any]]:
     invokes = elem.findall("invoke")
 
     return [_xml_to_function_call(invoke, tools) for invoke in invokes]
-
-
-@deprecated(
-    "0.1.5",
-    removal="1.0.0",
-    alternative="ChatAnthropic",
-    message=(
-        "Tool-calling is now officially supported by the Anthropic API so this "
-        "workaround is no longer needed."
-    ),
-)
-class ChatAnthropicTools(ChatAnthropic):
-    """Chat model for interacting with Anthropic functions."""
-
-    _xmllib: Any = PrivateAttr(default=None)

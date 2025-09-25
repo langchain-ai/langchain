@@ -6,9 +6,8 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, TypedDict, Union, cast
+from typing import Any, Callable, Literal, Optional, Union, cast
 
-from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -52,7 +51,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
-    convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -758,68 +756,6 @@ class ChatGroq(BaseChatModel):
             combined["service_tier"] = self.service_tier
         return combined
 
-    @deprecated(
-        since="0.2.1",
-        alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
-        removal="1.0.0",
-    )
-    def bind_functions(
-        self,
-        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model.
-
-        Model is compatible with OpenAI function-calling API.
-
-        NOTE: Using bind_tools is recommended instead, as the `functions` and
-            `function_call` request parameters are officially deprecated.
-
-        Args:
-            functions: A list of function definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, or callable. Pydantic
-                models and callables will be automatically converted to
-                their schema dictionary representation.
-            function_call: Which function to require the model to call.
-                Must be the name of the single provided function or
-                ``'auto'`` to automatically determine which function to call
-                (if any).
-            **kwargs: Any additional parameters to pass to
-                :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
-
-        """
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                msg = (
-                    "When specifying `function_call`, you must provide exactly one "
-                    "function."
-                )
-                raise ValueError(msg)
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                msg = (
-                    f"Function call {function_call} was specified, but the only "
-                    f"provided function was {formatted_functions[0]['name']}."
-                )
-                raise ValueError(msg)
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
-
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
@@ -1234,10 +1170,6 @@ class ChatGroq(BaseChatModel):
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
-
-
-class _FunctionCall(TypedDict):
-    name: str
 
 
 #
