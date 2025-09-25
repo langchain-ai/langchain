@@ -15,6 +15,7 @@ from langchain_openai import (
 )
 
 AZURE_AD_TOKEN = "secret-api-key"  # noqa: S105
+TEST_TOKEN_VALUE = "dynamic-token-value"  # noqa: S105
 
 
 def test_chat_openai_secrets() -> None:
@@ -185,6 +186,34 @@ def test_openai_uses_actual_secret_value_from_secretstr(model_class: type) -> No
     """Test that the actual secret value is correctly retrieved."""
     model = model_class(openai_api_key="secret-api-key")
     assert cast(SecretStr, model.openai_api_key).get_secret_value() == "secret-api-key"
+
+
+@pytest.mark.parametrize("model_class", [ChatOpenAI, OpenAI, OpenAIEmbeddings])
+def test_openai_api_key_callable_support(model_class: type) -> None:
+    """Test that the API key can be a callable that returns a string."""
+
+    def token_provider() -> str:
+        return TEST_TOKEN_VALUE
+
+    model = model_class(openai_api_key=token_provider)
+
+    # The api_key should be stored as the callable
+    assert callable(model.openai_api_key)
+    assert model.openai_api_key() == TEST_TOKEN_VALUE
+
+
+@pytest.mark.parametrize("model_class", [OpenAI, OpenAIEmbeddings])
+def test_openai_llm_embeddings_callable_support(model_class: type) -> None:
+    """Test that the LLM and embeddings classes can accept callable api_key."""
+
+    def token_provider() -> str:
+        return TEST_TOKEN_VALUE
+
+    model = model_class(openai_api_key=token_provider)
+
+    # The api_key should be stored as the callable
+    assert callable(model.openai_api_key)
+    assert model.openai_api_key() == TEST_TOKEN_VALUE
 
 
 @pytest.mark.parametrize("model_class", [AzureChatOpenAI, AzureOpenAI])

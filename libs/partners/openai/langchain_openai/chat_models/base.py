@@ -455,7 +455,7 @@ class BaseChatOpenAI(BaseChatModel):
     """What sampling temperature to use."""
     model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: Optional[Union[SecretStr, Callable[[], str]]] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     openai_api_base: Optional[str] = Field(default=None, alias="base_url")
@@ -752,10 +752,16 @@ class BaseChatOpenAI(BaseChatModel):
             or os.getenv("OPENAI_ORGANIZATION")
         )
         self.openai_api_base = self.openai_api_base or os.getenv("OPENAI_API_BASE")
+        # Handle both SecretStr and Callable[[], str] for api_key
+        api_key_value = None
+        if self.openai_api_key is not None:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            else:
+                api_key_value = self.openai_api_key
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
@@ -2106,8 +2112,10 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Timeout for requests.
         max_retries: Optional[int]
             Max number of retries.
-        api_key: Optional[str]
+        api_key: Optional[Union[str, Callable[[], str]]]
             OpenAI API key. If not passed in will be read from env var ``OPENAI_API_KEY``.
+            Can be a string or a callable that returns a string (useful for dynamic tokens
+            like Azure AD bearer tokens).
         base_url: Optional[str]
             Base URL for API requests. Only specify if using a proxy or service
             emulator.

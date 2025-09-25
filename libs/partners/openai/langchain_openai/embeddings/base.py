@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Literal, Optional, Union, cast
+from typing import Any, Callable, Literal, Optional, Union, cast
 
 import openai
 import tiktoken
@@ -96,8 +96,9 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             Only supported in ``'text-embedding-3'`` and later models.
 
     Key init args — client params:
-        api_key: Optional[SecretStr] = None
-            OpenAI API key.
+        api_key: Optional[Union[str, Callable[[], str]]] = None
+            OpenAI API key. Can be a string or a callable that returns a string
+            (useful for dynamic tokens like Azure AD bearer tokens).
         organization: Optional[str] = None
             OpenAI organization ID. If not passed in will be read
             from env var ``OPENAI_ORG_ID``.
@@ -192,7 +193,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     )
     embedding_ctx_length: int = 8191
     """The maximum number of tokens to embed at once."""
-    openai_api_key: Optional[SecretStr] = Field(
+    openai_api_key: Optional[Union[SecretStr, Callable[[], str]]] = Field(
         alias="api_key", default_factory=secret_from_env("OPENAI_API_KEY", default=None)
     )
     """Automatically inferred from env var ``OPENAI_API_KEY`` if not provided."""
@@ -293,10 +294,16 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             raise ValueError(
                 "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
+        # Handle both SecretStr and Callable[[], str] for api_key
+        api_key_value = None
+        if self.openai_api_key:
+            if isinstance(self.openai_api_key, SecretStr):
+                api_key_value = self.openai_api_key.get_secret_value()
+            elif callable(self.openai_api_key):
+                api_key_value = self.openai_api_key()
+
         client_params: dict = {
-            "api_key": (
-                self.openai_api_key.get_secret_value() if self.openai_api_key else None
-            ),
+            "api_key": api_key_value,
             "organization": self.openai_organization,
             "base_url": self.openai_api_base,
             "timeout": self.request_timeout,
