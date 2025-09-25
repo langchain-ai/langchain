@@ -2445,14 +2445,26 @@ async def test_aindex_into_document_index(
         ),
     ]
 
-    assert await aindex(docs, arecord_manager, document_index, cleanup="full") == {
+    assert await aindex(
+        docs,
+        arecord_manager,
+        document_index,
+        cleanup="full",
+        key_encoder="sha256",
+    ) == {
         "num_added": 2,
         "num_deleted": 0,
         "num_skipped": 0,
         "num_updated": 0,
     }
 
-    assert await aindex(docs, arecord_manager, document_index, cleanup="full") == {
+    assert await aindex(
+        docs,
+        arecord_manager,
+        document_index,
+        cleanup="full",
+        key_encoder="sha256",
+    ) == {
         "num_added": 0,
         "num_deleted": 0,
         "num_skipped": 2,
@@ -2460,7 +2472,12 @@ async def test_aindex_into_document_index(
     }
 
     assert await aindex(
-        docs, arecord_manager, document_index, cleanup="full", force_update=True
+        docs,
+        arecord_manager,
+        document_index,
+        cleanup="full",
+        force_update=True,
+        key_encoder="sha256",
     ) == {
         "num_added": 0,
         "num_deleted": 0,
@@ -2468,7 +2485,13 @@ async def test_aindex_into_document_index(
         "num_updated": 2,
     }
 
-    assert await aindex([], arecord_manager, document_index, cleanup="full") == {
+    assert await aindex(
+        [],
+        arecord_manager,
+        document_index,
+        cleanup="full",
+        key_encoder="sha256",
+    ) == {
         "num_added": 0,
         "num_deleted": 2,
         "num_skipped": 0,
