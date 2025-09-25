@@ -11,19 +11,10 @@ include-title: true
 label-for-breaking-changes: breaking
 
 label-mapping:
-  # Features and enhancements
-  feature: ["feat"]
-
-  # Bug fixes
-  fix: ["fix"]
-
-  # Documentation
   documentation: ["docs"]
-
-  # Infrastructure and tooling
-  infra: ["chore", "ci", "build", "infra"]
-
-  # Integration partners - detected by scope
+  feature: ["feat"]
+  fix: ["fix"]
+  infra: ["build", "ci", "chore"]
   integration:
     [
       "anthropic",
@@ -42,6 +33,9 @@ label-mapping:
       "qdrant",
       "xai",
     ]
-
-  # Releases
+  linting: ["style"]
+  performance: ["perf"]
+  refactor: ["refactor"]
   release: ["release"]
+  revert: ["revert"]
+  tests: ["test"]
