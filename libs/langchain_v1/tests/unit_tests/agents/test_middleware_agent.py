@@ -334,11 +334,11 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
-        before_model_jump_to = [END]
+        before_model_jump_to = ["end"]
 
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
-            return {"jump_to": END}
+            return {"jump_to": "end"}
 
         def modify_model_request(self, request, state) -> ModelRequest:
             calls.append("NoopEight.modify_model_request")
@@ -907,7 +907,7 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
         model_settings={},
     )
 
-    assert middleware.modify_model_request(fake_request).model_settings == {
+    assert middleware.modify_model_request(fake_request, {}).model_settings == {
         "cache_control": {"type": "ephemeral", "ttl": "5m"}
     }
 
@@ -930,7 +930,7 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         ValueError,
         match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
     ):
-        middleware.modify_model_request(fake_request)
+        middleware.modify_model_request(fake_request, {})
 
     langchain_anthropic = ModuleType("langchain_anthropic")
 
@@ -944,12 +944,12 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
             ValueError,
             match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
         ):
-            middleware.modify_model_request(fake_request)
+            middleware.modify_model_request(fake_request, {})
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
 
     with warnings.catch_warnings(record=True) as w:
-        result = middleware.modify_model_request(fake_request)
+        result = middleware.modify_model_request(fake_request, {})
         assert len(w) == 1
         assert (
             "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
@@ -959,7 +959,7 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     with warnings.catch_warnings(record=True) as w:
         with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.modify_model_request(fake_request)
+            result = middleware.modify_model_request(fake_request, {})
             assert result is fake_request
             assert len(w) == 1
             assert (
@@ -969,11 +969,11 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
-    result = middleware.modify_model_request(fake_request)
+    result = middleware.modify_model_request(fake_request, {})
     assert result is fake_request
 
     with patch.dict("sys.modules", {"langchain_anthropic": {"ChatAnthropic": object()}}):
-        result = middleware.modify_model_request(fake_request)
+        result = middleware.modify_model_request(fake_request, {})
         assert result is fake_request
 
 

@@ -8,7 +8,7 @@ license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "typer>=0.17.0,<1.0.0",
-    "gitpython>=3,<4.0.0",
+    "gitpython>=3.0.0,<4.0.0",
     "langserve[all]>=0.0.51,<1.0.0",
     "uvicorn>=0.23.0,<1.0.0",
     "tomlkit>=0.12.0,<1.0.0",
