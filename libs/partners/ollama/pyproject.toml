@@ -109,6 +109,7 @@ unfixable = ["B028"] # People should intentionally tune the stacklevel
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"] # ignore docstring checks for tests

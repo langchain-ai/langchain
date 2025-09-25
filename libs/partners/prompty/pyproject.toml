@@ -60,6 +60,10 @@ docstring-code-format = true
 select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", "UP045" ]
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
 [tool.mypy]
 disallow_untyped_defs = "True"
 

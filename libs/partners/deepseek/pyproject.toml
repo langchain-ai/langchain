@@ -115,6 +115,7 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
