@@ -163,7 +163,7 @@ def test_convert_to_v1_from_bedrock_chunk() -> None:
             response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
-            content=[{"type": "input_json_delta", "partial_json": "", "index": 1}],
+            content=[{"type": "tool_use", "partial_json": "", "index": 1}],
             tool_call_chunks=[
                 {
                     "name": None,
@@ -176,9 +176,7 @@ def test_convert_to_v1_from_bedrock_chunk() -> None:
             response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
-            content=[
-                {"type": "input_json_delta", "partial_json": '{"loca', "index": 1}
-            ],
+            content=[{"type": "tool_use", "partial_json": '{"loca', "index": 1}],
             tool_call_chunks=[
                 {
                     "name": None,
@@ -191,9 +189,7 @@ def test_convert_to_v1_from_bedrock_chunk() -> None:
             response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
-            content=[
-                {"type": "input_json_delta", "partial_json": 'tion": "San ', "index": 1}
-            ],
+            content=[{"type": "tool_use", "partial_json": 'tion": "San ', "index": 1}],
             tool_call_chunks=[
                 {
                     "name": None,
@@ -206,9 +202,7 @@ def test_convert_to_v1_from_bedrock_chunk() -> None:
             response_metadata={"model_provider": "bedrock"},
         ),
         AIMessageChunk(
-            content=[
-                {"type": "input_json_delta", "partial_json": 'Francisco"}', "index": 1}
-            ],
+            content=[{"type": "tool_use", "partial_json": 'Francisco"}', "index": 1}],
             tool_call_chunks=[
                 {
                     "name": None,
