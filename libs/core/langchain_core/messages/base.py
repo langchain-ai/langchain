@@ -20,6 +20,31 @@ if TYPE_CHECKING:
     from langchain_core.prompts.chat import ChatPromptTemplate
 
 
+def _extract_reasoning_from_additional_kwargs(
+    message: BaseMessage,
+) -> Optional[types.ReasoningContentBlock]:
+    """Extract `reasoning_content` from `additional_kwargs`.
+
+    Handles reasoning content stored in various formats:
+    - `additional_kwargs["reasoning_content"]` (string) - Ollama, DeepSeek, XAI, Groq
+
+    Args:
+        message: The message to extract reasoning from.
+
+    Returns:
+        A `ReasoningContentBlock` if reasoning content is found, None otherwise.
+    """
+    from langchain_core.messages.content import create_reasoning_block  # noqa: PLC0415
+
+    additional_kwargs = getattr(message, "additional_kwargs", {})
+
+    reasoning_content = additional_kwargs.get("reasoning_content")
+    if reasoning_content is not None and isinstance(reasoning_content, str):
+        return create_reasoning_block(reasoning=reasoning_content)
+
+    return None
+
+
 class TextAccessor(str):
     """String-like object that supports both property and method access patterns.
 
