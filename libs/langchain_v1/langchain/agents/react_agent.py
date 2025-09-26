@@ -35,6 +35,7 @@ from langchain_core.runnables import (
 )
 from langgraph._internal._runnable import RunnableCallable, RunnableLike
 from langgraph._internal._typing import MISSING
+from langgraph._internal._runnable import RunnableWithFallbacks
 from langgraph.errors import ErrorCode, create_error_message
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
@@ -1143,7 +1144,7 @@ def create_agent(  # noqa: D417
         ```
     """
     if middleware:
-        assert isinstance(model, str | BaseChatModel)  # noqa: S101
+        assert isinstance(model, (str, BaseChatModel, RunnableWithFallbacks))  # noqa: S101
         assert isinstance(prompt, str | None)  # noqa: S101
         assert not isinstance(response_format, tuple)  # noqa: S101
         assert pre_model_hook is None  # noqa: S101
