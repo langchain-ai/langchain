@@ -22,7 +22,7 @@ from typing import (
 from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from pydantic.v1 import Field, create_model
-from typing_extensions import TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import NotRequired, TypedDict, get_args, get_origin, is_typeddict
 
 import langchain_core
 from langchain_core._api import beta, deprecated
@@ -48,7 +48,7 @@ class FunctionDescription(TypedDict):
 
     name: str
     """The name of the function."""
-    description: str
+    description: NotRequired[str]
     """A description of the function."""
     parameters: dict
     """The parameters of the function."""
