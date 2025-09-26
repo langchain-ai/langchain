@@ -346,11 +346,12 @@ class ChatModelUnitTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. If a model does not
-           support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``. Otherwise, models should accept values of ``'any'`` or
-           the name of a tool in ``tool_choice``.
+        .. warning::
+            Deprecated since version 0.3.15.
+            This property will be removed in version 0.3.20. If a model does not
+            support forcing tool calling, override the ``has_tool_choice`` property to
+            return ``False``. Otherwise, models should accept values of ``'any'`` or
+            the name of a tool in ``tool_choice``.
 
         Example:
 

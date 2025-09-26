@@ -868,9 +868,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                .. note:
-                    ``strict`` can only be non-null if ``method`` is
-                    ``'json_schema'`` or ``'function_calling'``.
+                .. note::
+                    ``strict`` can only be non-null if ``method`` is ``'json_schema'``
+                    or ``'function_calling'``.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 

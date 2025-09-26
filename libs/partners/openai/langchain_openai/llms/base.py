@@ -129,7 +129,7 @@ class BaseOpenAI(BaseLLM):
             response = llm.invoke(input_text)
             print(response)
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been debated by thinkers and
             scholars for centuries."
@@ -140,7 +140,7 @@ class BaseOpenAI(BaseLLM):
             for chunk in llm.stream(input_text):
                 print(chunk, end="")
 
-        .. code-block:: none
+        .. code-block::
 
             a philosophical question that has been debated by thinkers and
             scholars for centuries.
@@ -157,7 +157,7 @@ class BaseOpenAI(BaseLLM):
             # batch:
             # await llm.abatch([input_text])
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been debated by thinkers and
             scholars for centuries."
@@ -754,7 +754,7 @@ class OpenAI(BaseOpenAI):
             input_text = "The meaning of life is "
             llm.invoke(input_text)
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been debated by thinkers and scholars for centuries."
 
@@ -764,7 +764,7 @@ class OpenAI(BaseOpenAI):
             for chunk in llm.stream(input_text):
                 print(chunk, end="|")
 
-        .. code-block:: none
+        .. code-block::
 
             a| philosophical| question| that| has| been| debated| by| thinkers| and| scholars| for| centuries|.
 
@@ -772,7 +772,7 @@ class OpenAI(BaseOpenAI):
 
             "".join(llm.stream(input_text))
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been debated by thinkers and scholars for centuries."
 
@@ -788,7 +788,7 @@ class OpenAI(BaseOpenAI):
             # batch:
             # await llm.abatch([input_text])
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been debated by thinkers and scholars for centuries."
 

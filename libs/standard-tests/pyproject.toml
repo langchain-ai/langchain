@@ -32,7 +32,7 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff>=0.12.10,<0.13.0"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
     "mypy>=1.18.1,<1.19.0",
     "types-pyyaml>=6.0.12.2,<7.0.0.0",

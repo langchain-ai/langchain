@@ -37,7 +37,7 @@ test = [
     "langchain-core",
     "langchain-tests",
 ]
-lint = ["ruff>=0.12.9,<0.13.0"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = ["requests>=2.32.3,<3.0.0", "langchain-core"]
 typing = [

@@ -101,7 +101,7 @@ class Tee(Generic[T]):
     A ``tee`` works lazily and can handle an infinite ``iterable``, provided
     that all iterators advance.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         async def derivative(sensor_data):
             previous, current = a.tee(sensor_data, n=2)
