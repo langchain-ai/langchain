@@ -38,6 +38,7 @@ from langchain_core.messages import (
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
+    BaseOutputParser,
     JsonOutputKeyToolsParser,
     JsonOutputParser,
     PydanticOutputParser,
@@ -217,6 +218,94 @@ def _get_image_from_data_content_block(block: dict) -> str:
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
+
+
+class LenientJsonExtractor(BaseOutputParser[Any]):
+    """A lenient JSON parser that can extract JSON from text with reasoning prefixes.
+
+    This parser is designed to handle Ollama model outputs that may include
+    reasoning content (like <think>...</think> tags) before the actual JSON response.
+    It can extract JSON from:
+    1. ```json fenced code blocks
+    2. The first top-level JSON object in the text
+    3. Text with reasoning prefixes stripped out
+    """
+
+    pydantic_object: Optional[Any] = None
+    """Optional Pydantic model class to validate against."""
+
+    def __init__(self, pydantic_object: Optional[Any] = None, **kwargs: Any):
+        """Initialize the lenient JSON extractor.
+
+        Args:
+            pydantic_object: Optional Pydantic model class to validate against
+            **kwargs: Additional arguments passed to BaseOutputParser
+        """
+        super().__init__(pydantic_object=pydantic_object, **kwargs)
+
+    def parse(self, text: str) -> Any:
+        """Parse JSON from text, handling reasoning prefixes and fenced blocks.
+
+        Args:
+            text: The text to parse JSON from
+
+        Returns:
+            The parsed JSON object
+
+        Raises:
+            OutputParserException: If no valid JSON is found
+        """
+        import re
+        import json
+        from langchain_core.exceptions import OutputParserException
+
+        # Remove <think>...</think> blocks (case-insensitive)
+        text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL | re.IGNORECASE)
+
+        # First try to find a ```json fenced block
+        fence_match = re.search(r"```json\s*(\{.*?\})\s*```", text, flags=re.DOTALL | re.IGNORECASE)
+        if fence_match:
+            try:
+                return self._parse_json_content(fence_match.group(1))
+            except OutputParserException:
+                pass
+
+        # Then try to find the first top-level JSON object
+        json_match = re.search(r"\{.*\}", text, flags=re.DOTALL)
+        if json_match:
+            try:
+                return self._parse_json_content(json_match.group(0))
+            except OutputParserException:
+                pass
+
+        # If no JSON found, raise an error
+        raise OutputParserException("No JSON object found in model output.", llm_output=text)
+
+    def _parse_json_content(self, json_str: str) -> Any:
+        """Parse JSON string and optionally validate with Pydantic."""
+        import json
+
+        try:
+            parsed_json = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise OutputParserException(f"Invalid JSON: {e}", llm_output=json_str)
+
+        # If we have a Pydantic object, validate and return it
+        if self.pydantic_object is not None:
+            try:
+                # Try Pydantic v2 first
+                if hasattr(self.pydantic_object, 'model_validate'):
+                    return self.pydantic_object.model_validate(parsed_json)
+                # Fall back to Pydantic v1
+                elif hasattr(self.pydantic_object, 'parse_obj'):
+                    return self.pydantic_object.parse_obj(parsed_json)
+                else:
+                    # If neither method exists, just return the dict
+                    return parsed_json
+            except Exception as e:
+                raise OutputParserException(f"Pydantic validation failed: {e}", llm_output=json_str)
+
+        return parsed_json
 
 
 class ChatOllama(BaseChatModel):
@@ -1082,6 +1171,13 @@ class ChatOllama(BaseChatModel):
                 will be caught and returned as well. The final output is always a dict
                 with keys ``'raw'``, ``'parsed'``, and ``'parsing_error'``.
 
+            strict:
+                If True (default), use strict JSON parsing that expects clean JSON output.
+                If False, use lenient parsing that can extract JSON from text with reasoning
+                prefixes (like <think>...</think> tags) or other non-JSON content.
+                This is useful when using models with reasoning=True that may prepend
+                non-JSON content to their responses.
+
             kwargs: Additional keyword args aren't supported.
 
         Returns:
@@ -1289,7 +1385,9 @@ class ChatOllama(BaseChatModel):
                 # }
 
         """  # noqa: E501, D301
-        _ = kwargs.pop("strict", None)
+        # Extract strict parameter from kwargs
+        strict = kwargs.pop("strict", True)
+
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
             raise ValueError(msg)
@@ -1328,11 +1426,14 @@ class ChatOllama(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = (
-                PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
-                if is_pydantic_schema
-                else JsonOutputParser()
-            )
+            if strict:
+                output_parser = (
+                    PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                    if is_pydantic_schema
+                    else JsonOutputParser()
+                )
+            else:
+                output_parser = LenientJsonExtractor(pydantic_object=schema if is_pydantic_schema else None)
         elif method == "json_schema":
             if schema is None:
                 msg = (
@@ -1353,7 +1454,10 @@ class ChatOllama(BaseChatModel):
                         "schema": schema,
                     },
                 )
-                output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                if strict:
+                    output_parser = PydanticOutputParser(pydantic_object=schema)  # type: ignore[arg-type]
+                else:
+                    output_parser = LenientJsonExtractor(pydantic_object=schema)
             else:
                 if is_typeddict(schema):
                     response_format = convert_to_json_schema(schema)
@@ -1371,13 +1475,23 @@ class ChatOllama(BaseChatModel):
                         "schema": response_format,
                     },
                 )
-                output_parser = JsonOutputParser()
+                if strict:
+                    output_parser = JsonOutputParser()
+                else:
+                    output_parser = LenientJsonExtractor()
         else:
             msg = (
                 f"Unrecognized method argument. Expected one of 'function_calling', "
                 f"'json_schema', or 'json_mode'. Received: '{method}'"
             )
             raise ValueError(msg)
+
+        if getattr(self, "reasoning", False):
+            import warnings
+            warnings.warn(
+                "Ollama reasoning is enabled; models may prepend non-JSON content. "
+                "Use strict=False or disable reasoning for structured outputs."
+           )
 
         if include_raw:
             parser_assign = RunnablePassthrough.assign(

@@ -15,6 +15,7 @@ from langchain_tests.unit_tests import ChatModelUnitTests
 
 from langchain_ollama.chat_models import (
     ChatOllama,
+    LenientJsonExtractor,
     _parse_arguments_from_tool_call,
     _parse_json_string,
 )
@@ -311,3 +312,101 @@ def test_load_response_with_actual_content_is_not_skipped(
         assert result.content == "This is actual content"
         assert result.response_metadata.get("done_reason") == "load"
         assert not caplog.text
+
+
+class TestLenientJsonExtractor:
+    """Test the LenientJsonExtractor class for handling reasoning-prefixed outputs."""
+
+    def test_parse_clean_json(self) -> None:
+        """Test parsing clean JSON without any prefixes."""
+        parser = LenientJsonExtractor()
+        result = parser.parse('{"answer": "They weigh the same", "justification": "Both weigh one pound"}')
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_json_with_reasoning_prefix(self) -> None:
+        """Test parsing JSON that has <think>...</think> reasoning prefix."""
+        parser = LenientJsonExtractor()
+        text = '''<think>Let me think about this. A pound of bricks vs a pound of feathers. Both are one pound, so they should weigh the same.</think>
+{"answer": "They weigh the same", "justification": "Both weigh one pound"}'''
+        result = parser.parse(text)
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_json_with_fenced_block(self) -> None:
+        """Test parsing JSON from a ```json fenced code block."""
+        parser = LenientJsonExtractor()
+        text = '''Here's the answer:
+```json
+{"answer": "They weigh the same", "justification": "Both weigh one pound"}
+```
+This should be the correct response.'''
+        result = parser.parse(text)
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_json_with_reasoning_and_fenced_block(self) -> None:
+        """Test parsing JSON from fenced block with reasoning prefix."""
+        parser = LenientJsonExtractor()
+        text = '''<think>This is a classic riddle. Let me work through it step by step.</think>
+Here's my analysis:
+```json
+{"answer": "They weigh the same", "justification": "Both weigh one pound"}
+```
+Hope this helps!'''
+        result = parser.parse(text)
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_json_with_case_insensitive_reasoning(self) -> None:
+        """Test parsing JSON with case-insensitive reasoning tags."""
+        parser = LenientJsonExtractor()
+        text = '''<THINK>Let me think about this carefully.</THINK>
+{"answer": "They weigh the same", "justification": "Both weigh one pound"}'''
+        result = parser.parse(text)
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_json_multiline_reasoning(self) -> None:
+        """Test parsing JSON with multiline reasoning content."""
+        parser = LenientJsonExtractor()
+        text = '''<think>
+This is a classic physics question.
+Let me think step by step:
+1. A pound is a unit of weight
+2. Both items are one pound
+3. Therefore they weigh the same
+</think>
+{"answer": "They weigh the same", "justification": "Both weigh one pound"}'''
+        result = parser.parse(text)
+        assert result == {"answer": "They weigh the same", "justification": "Both weigh one pound"}
+
+    def test_parse_no_json_raises_exception(self) -> None:
+        """Test that parsing text without JSON raises OutputParserException."""
+        parser = LenientJsonExtractor()
+        text = "This is just plain text with no JSON content at all."
+
+        with pytest.raises(OutputParserException) as exc_info:
+            parser.parse(text)
+
+        assert "No JSON object found in model output." in str(exc_info.value)
+        assert exc_info.value.llm_output == text
+
+    def test_parse_invalid_json_raises_exception(self) -> None:
+        """Test that parsing text with invalid JSON raises OutputParserException."""
+        parser = LenientJsonExtractor()
+        text = '{"invalid": json, "missing": quotes}'
+
+        with pytest.raises(OutputParserException) as exc_info:
+            parser.parse(text)
+
+        assert "No JSON object found in model output." in str(exc_info.value)
+        assert exc_info.value.llm_output == text
+
+    def test_parse_json_with_nested_objects(self) -> None:
+        """Test parsing complex JSON with nested objects."""
+        parser = LenientJsonExtractor()
+        text = '''<think>This requires careful analysis.</think>
+{"question": {"type": "riddle", "category": "physics"}, "answer": {"value": "same", "unit": "pound"}, "explanation": {"reasoning": "weight is identical"}}'''
+        result = parser.parse(text)
+        expected = {
+            "question": {"type": "riddle", "category": "physics"},
+            "answer": {"value": "same", "unit": "pound"},
+            "explanation": {"reasoning": "weight is identical"}
+        }
+        assert result == expected
