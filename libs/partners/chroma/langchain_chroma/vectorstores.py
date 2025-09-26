@@ -28,6 +28,7 @@ from langchain_core.utils import xor_args
 from langchain_core.vectorstores import VectorStore
 
 if TYPE_CHECKING:
+    from chromadb.api import AsyncClientAPI, ClientAPI
     from chromadb.api.types import Where, WhereDocument
 
 logger = logging.getLogger()
@@ -311,11 +312,12 @@ class Chroma(VectorStore):
         client_settings: Optional[chromadb.config.Settings] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
-        client: Optional[chromadb.ClientAPI] = None,
+        client: Optional[ClientAPI] = None,
         relevance_score_fn: Optional[Callable[[float], float]] = None,
         create_collection_if_not_exists: Optional[bool] = True,  # noqa: FBT001, FBT002
         *,
         ssl: bool = False,
+        async_client: Optional[AsyncClientAPI] = None,
     ) -> None:
         """Initialize with a Chroma client.
 
@@ -343,10 +345,16 @@ class Chroma(VectorStore):
                     Used only in `similarity_search_with_relevance_scores`
             create_collection_if_not_exists: Whether to create collection
                     if it doesn't exist. Defaults to True.
+            async_client: Async Chroma client for async operations.
+                    If provided, async methods will use this client.
         """
         _tenant = tenant or chromadb.DEFAULT_TENANT
         _database = database or chromadb.DEFAULT_DATABASE
         _settings = client_settings or Settings()
+
+        # Store async client if provided
+        self._async_client = async_client
+        self._async_initialized = False
 
         client_args = {
             "persist_directory": persist_directory,
@@ -366,7 +374,9 @@ class Chroma(VectorStore):
 
         if client is not None:
             self._client = client
-
+        elif async_client is not None:
+            # If only async_client is provided, we don't create a sync client
+            self._client = None  # type: ignore[assignment]
         # PersistentClient
         elif persist_directory is not None:
             self._client = chromadb.PersistentClient(
@@ -411,20 +421,81 @@ class Chroma(VectorStore):
         self._collection_name = collection_name
         self._collection_metadata = collection_metadata
         self._collection_configuration = collection_configuration
+
+        # Only initialize collection synchronously if we have a sync client
+        # and not using async
         if create_collection_if_not_exists:
-            self.__ensure_collection()
+            if self._async_client is None and self._client is not None:
+                self.__ensure_collection()
+            elif self._client is not None:
+                # If both sync and async clients exist, initialize sync collection
+                self.__ensure_collection()
         else:
-            self._chroma_collection = self._client.get_collection(name=collection_name)
+            if self._client is not None:
+                self._chroma_collection = self._client.get_collection(
+                    name=collection_name
+                )
+
         self.override_relevance_score_fn = relevance_score_fn
 
     def __ensure_collection(self) -> None:
         """Ensure that the collection exists or create it."""
+        if self._client is None:
+            msg = (
+                "Cannot ensure collection synchronously when only async_client "
+                "is provided. Use async methods or provide a sync client."
+            )
+            raise ValueError(msg)
         self._chroma_collection = self._client.get_or_create_collection(
             name=self._collection_name,
             embedding_function=None,
             metadata=self._collection_metadata,
             configuration=self._collection_configuration,
         )
+
+    async def _aensure_collection(self) -> None:
+        """Ensure that the async collection exists or create it."""
+        if self._async_client is None:
+            msg = (
+                "Cannot ensure collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        # Get or create the collection asynchronously
+        self._async_chroma_collection = (
+            await self._async_client.get_or_create_collection(
+                name=self._collection_name,
+                embedding_function=None,
+                metadata=self._collection_metadata,
+                configuration=self._collection_configuration,
+            )
+        )
+        self._async_initialized = True
+
+    async def _aget_collection(self) -> Any:
+        """Get the async collection, initializing if necessary."""
+        if self._async_client is None:
+            msg = (
+                "Cannot get async collection without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        if not self._async_initialized:
+            await self._aensure_collection()
+
+        if (
+            not hasattr(self, "_async_chroma_collection")
+            or self._async_chroma_collection is None
+        ):
+            msg = (
+                "Async Chroma collection not initialized. "
+                "Call _aensure_collection() first."
+            )
+            raise ValueError(msg)
+
+        return self._async_chroma_collection
 
     @property
     def _collection(self) -> chromadb.Collection:
@@ -473,6 +544,43 @@ class Chroma(VectorStore):
         See more: https://docs.trychroma.com/reference/py-collection#query
         """
         return self._collection.query(
+            query_texts=query_texts,
+            query_embeddings=query_embeddings,  # type: ignore[arg-type]
+            n_results=n_results,
+            where=where,  # type: ignore[arg-type]
+            where_document=where_document,  # type: ignore[arg-type]
+            **kwargs,
+        )
+
+    async def __aquery_collection(
+        self,
+        query_texts: Optional[list[str]] = None,
+        query_embeddings: Optional[list[list[float]]] = None,
+        n_results: int = 4,
+        where: Optional[dict[str, str]] = None,
+        where_document: Optional[dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> Union[list[Document], Any]:
+        """Query the chroma collection asynchronously.
+
+        Args:
+            query_texts: List of query texts.
+            query_embeddings: List of query embeddings.
+            n_results: Number of results to return. Defaults to 4.
+            where: dict used to filter results by metadata.
+                    E.g. {"color" : "red"}.
+            where_document: dict used to filter by the document contents.
+                    E.g. {"$contains": "hello"}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of `n_results` nearest neighbor embeddings for provided
+            query_embeddings or query_texts.
+
+        See more: https://docs.trychroma.com/reference/py-collection#query
+        """
+        collection = await self._aget_collection()
+        return await collection.query(
             query_texts=query_texts,
             query_embeddings=query_embeddings,  # type: ignore[arg-type]
             n_results=n_results,
@@ -679,6 +787,102 @@ class Chroma(VectorStore):
             )
         return ids
 
+    async def aadd_texts(
+        self,
+        texts: Iterable[str],
+        metadatas: Optional[list[dict]] = None,
+        ids: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> list[str]:
+        """Async version of add_texts - add texts to the vectorstore.
+
+        Args:
+            texts: Texts to add to the vectorstore.
+            metadatas: Optional list of metadatas.
+                    When querying, you can filter on this metadata.
+            ids: Optional list of IDs. (Items without IDs will be assigned UUIDs)
+            kwargs: Additional keyword arguments.
+
+        Returns:
+            List of IDs of the added texts.
+
+        Raises:
+            ValueError: When metadata is incorrect or async_client is not available.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot add texts asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        collection = await self._aget_collection()
+
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in texts]
+        else:
+            ids = [id_ if id_ is not None else str(uuid.uuid4()) for id_ in ids]
+
+        embeddings = None
+        texts = list(texts)
+        if self._embedding_function is not None:
+            embeddings = await self._embedding_function.aembed_documents(texts)
+        if metadatas:
+            # fill metadatas with empty dicts if somebody
+            # did not specify metadata for all texts
+            length_diff = len(texts) - len(metadatas)
+            if length_diff:
+                metadatas = metadatas + [{}] * length_diff
+            empty_ids = []
+            non_empty_ids = []
+            for idx, m in enumerate(metadatas):
+                if m:
+                    non_empty_ids.append(idx)
+                else:
+                    empty_ids.append(idx)
+            if non_empty_ids:
+                metadatas = [metadatas[idx] for idx in non_empty_ids]
+                texts_with_metadatas = [texts[idx] for idx in non_empty_ids]
+                embeddings_with_metadatas = (
+                    [embeddings[idx] for idx in non_empty_ids]
+                    if embeddings is not None and len(embeddings) > 0
+                    else None
+                )
+                ids_with_metadata = [ids[idx] for idx in non_empty_ids]
+                try:
+                    await collection.upsert(
+                        metadatas=metadatas,  # type: ignore[arg-type]
+                        embeddings=embeddings_with_metadatas,  # type: ignore[arg-type]
+                        documents=texts_with_metadatas,
+                        ids=ids_with_metadata,
+                    )
+                except ValueError as e:
+                    if "Expected metadata value to be" in str(e):
+                        msg = (
+                            "Try filtering complex metadata from the document using "
+                            "langchain_community.vectorstores.utils.filter_complex_metadata."
+                        )
+                        raise ValueError(e.args[0] + "\n\n" + msg) from e
+                    raise e
+            if empty_ids:
+                texts_without_metadatas = [texts[j] for j in empty_ids]
+                embeddings_without_metadatas = (
+                    [embeddings[j] for j in empty_ids] if embeddings else None
+                )
+                ids_without_metadatas = [ids[j] for j in empty_ids]
+                await collection.upsert(
+                    embeddings=embeddings_without_metadatas,  # type: ignore[arg-type]
+                    documents=texts_without_metadatas,
+                    ids=ids_without_metadatas,
+                )
+        else:
+            await collection.upsert(
+                embeddings=embeddings,  # type: ignore[arg-type]
+                documents=texts,
+                ids=ids,
+            )
+        return ids
+
     def similarity_search(
         self,
         query: str,
@@ -698,6 +902,32 @@ class Chroma(VectorStore):
             List of documents most similar to the query text.
         """
         docs_and_scores = self.similarity_search_with_score(
+            query,
+            k,
+            filter=filter,
+            **kwargs,
+        )
+        return [doc for doc, _ in docs_and_scores]
+
+    async def asimilarity_search(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
+        **kwargs: Any,
+    ) -> list[Document]:
+        """Run similarity search with Chroma asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text.
+        """
+        docs_and_scores = await self.asimilarity_search_with_score(
             query,
             k,
             filter=filter,
@@ -806,6 +1036,55 @@ class Chroma(VectorStore):
                 **kwargs,
             )
 
+        return _results_to_docs_and_scores(results)
+
+    async def asimilarity_search_with_score(
+        self,
+        query: str,
+        k: int = DEFAULT_K,
+        filter: Optional[dict[str, str]] = None,  # noqa: A002
+        where_document: Optional[dict[str, str]] = None,
+        **kwargs: Any,
+    ) -> list[tuple[Document, float]]:
+        """Run similarity search with Chroma with distance asynchronously.
+
+        Args:
+            query: Query text to search for.
+            k: Number of results to return. Defaults to 4.
+            filter: Filter by metadata. Defaults to None.
+            where_document: dict used to filter by document contents.
+                    E.g. {"$contains": "hello"}.
+            kwargs: Additional keyword arguments to pass to Chroma collection query.
+
+        Returns:
+            List of documents most similar to the query text and
+            distance in float for each. Lower score represents more similarity.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot perform similarity search asynchronously without an "
+                "async_client. Provide an async_client when initializing the "
+                "Chroma instance."
+            )
+            raise ValueError(msg)
+
+        if self._embedding_function is None:
+            results = await self.__aquery_collection(
+                query_texts=[query],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                **kwargs,
+            )
+        else:
+            query_embedding = await self._embedding_function.aembed_query(query)
+            results = await self.__aquery_collection(
+                query_embeddings=[query_embedding],
+                n_results=k,
+                where=filter,
+                where_document=where_document,
+                **kwargs,
+            )
         return _results_to_docs_and_scores(results)
 
     def similarity_search_with_vectors(
@@ -1086,6 +1365,21 @@ class Chroma(VectorStore):
         self._client.delete_collection(self._collection.name)
         self._chroma_collection = None
 
+    async def adelete_collection(self) -> None:
+        """Delete the collection asynchronously."""
+        if self._async_client is None:
+            msg = (
+                "Cannot delete collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        if self._async_initialized:
+            collection = await self._aget_collection()
+            await self._async_client.delete_collection(collection.name)
+            self._async_chroma_collection = None  # type: ignore[assignment]
+            self._async_initialized = False
+
     def reset_collection(self) -> None:
         """Resets the collection.
 
@@ -1093,6 +1387,21 @@ class Chroma(VectorStore):
         """
         self.delete_collection()
         self.__ensure_collection()
+
+    async def areset_collection(self) -> None:
+        """Resets the collection asynchronously.
+
+        Resets the collection by deleting the collection and recreating an empty one.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot reset collection asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        await self.adelete_collection()
+        await self._aensure_collection()
 
     def get(
         self,
@@ -1243,7 +1552,7 @@ class Chroma(VectorStore):
         tenant: Optional[str] = None,
         database: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.ClientAPI] = None,
+        client: Optional[ClientAPI] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
         *,
@@ -1344,7 +1653,7 @@ class Chroma(VectorStore):
         tenant: Optional[str] = None,
         database: Optional[str] = None,
         client_settings: Optional[chromadb.config.Settings] = None,
-        client: Optional[chromadb.ClientAPI] = None,  # Add this line
+        client: Optional[ClientAPI] = None,
         collection_metadata: Optional[dict] = None,
         collection_configuration: Optional[CreateCollectionConfiguration] = None,
         *,
@@ -1416,3 +1725,38 @@ class Chroma(VectorStore):
             kwargs: Additional keyword arguments.
         """
         self._collection.delete(ids=ids, **kwargs)
+
+    async def adelete(self, ids: Optional[list[str]] = None, **kwargs: Any) -> None:
+        """Delete by vector IDs asynchronously.
+
+        Args:
+            ids: List of ids to delete.
+            kwargs: Additional keyword arguments.
+        """
+        if self._async_client is None:
+            msg = (
+                "Cannot delete asynchronously without an async_client. "
+                "Provide an async_client when initializing the Chroma instance."
+            )
+            raise ValueError(msg)
+
+        collection = await self._aget_collection()
+        await collection.delete(ids=ids, **kwargs)
+
+    async def aadd_documents(
+        self,
+        documents: list[Document],
+        **kwargs: Any,
+    ) -> list[str]:
+        """Add documents to the vectorstore asynchronously.
+
+        Args:
+            documents: List of documents to add to the vectorstore.
+            kwargs: Additional keyword arguments to pass to aadd_texts.
+
+        Returns:
+            List of IDs of the added documents.
+        """
+        texts = [doc.page_content for doc in documents]
+        metadatas = [doc.metadata for doc in documents]
+        return await self.aadd_texts(texts, metadatas=metadatas, **kwargs)
