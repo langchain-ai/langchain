@@ -128,6 +128,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",  # For generated index.md and reference.md
     "_extensions.gallery_directive",
+    "_extensions.docstring_preprocessor",  # Convert markdown code blocks in docstrings
     "sphinx_design",
     "sphinx_copybutton",
     "sphinxcontrib.googleanalytics",
