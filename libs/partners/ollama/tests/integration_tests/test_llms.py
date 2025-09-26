@@ -61,7 +61,8 @@ def test__stream_with_reasoning(model: str) -> None:
     assert "reasoning_content" in result_chunk.generation_info  # type: ignore[operator]
     assert len(result_chunk.generation_info["reasoning_content"]) > 0  # type: ignore[index]
     # And neither the visible nor the hidden portion contains <think> tags
-    assert "<think>" not in result_chunk.text and "</think>" not in result_chunk.text
+    assert "<think>" not in result_chunk.text
+    assert "</think>" not in result_chunk.text
     assert "<think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
     assert "</think>" not in result_chunk.generation_info["reasoning_content"]  # type: ignore[index]
 

@@ -5,6 +5,7 @@ from typing import Optional
 import numpy as np
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
+from qdrant_client.http import models as rest
 
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import (
@@ -215,8 +216,6 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters(
     vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and search."""
-    from qdrant_client.http import models as rest
-
     texts = ["foo", "bar", "baz"]
     metadatas = [
         {"page": i, "details": {"page": i + 1, "pages": [i + 2, -1]}}

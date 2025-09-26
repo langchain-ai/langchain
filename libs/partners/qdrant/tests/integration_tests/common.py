@@ -15,7 +15,7 @@ def qdrant_running_locally() -> bool:
         return False
 
 
-def assert_documents_equals(actual: list[Document], expected: list[Document]):  # type: ignore[no-untyped-def]
+def assert_documents_equals(actual: list[Document], expected: list[Document]) -> None:  # type: ignore[no-untyped-def]
     assert len(actual) == len(expected)
 
     for actual_doc, expected_doc in zip(actual, expected):
@@ -65,7 +65,7 @@ class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
 
     def __init__(self, dimensionality: int = 25) -> None:
         self.known_texts: list[str] = []
-        self.dimensionality = 25
+        self.dimensionality = dimensionality
 
     def embed_documents(self, texts: list[str]) -> list[SparseVector]:
         """Return consistent embeddings for each text seen so far."""
