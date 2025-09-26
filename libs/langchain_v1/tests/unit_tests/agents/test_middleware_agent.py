@@ -1,16 +1,11 @@
-import pytest
-from typing import Any
-from unittest.mock import patch
-from types import ModuleType
-
-from syrupy.assertion import SnapshotAssertion
-
+import re
 import warnings
-from langgraph.runtime import Runtime
-from typing_extensions import Annotated
-from pydantic import BaseModel, Field
+from types import ModuleType
+from typing import Annotated, Any
+from unittest.mock import patch
+
+import pytest
 from langchain_core.language_models import BaseChatModel
-from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
@@ -18,31 +13,32 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import tool, InjectedToolCallId
+from langchain_core.tools import InjectedToolCallId, tool
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import Runtime
+from pydantic import BaseModel, Field
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import override
 
-from langchain.agents.middleware_agent import create_agent
-from langchain.agents.tool_node import InjectedState
 from langchain.agents.middleware.human_in_the_loop import (
-    HumanInTheLoopMiddleware,
     ActionRequest,
+    HumanInTheLoopMiddleware,
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    ModelRequest,
     AgentState,
+    ModelRequest,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
 )
-
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.constants import END
-from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.types import Command
+from langchain.agents.middleware_agent import create_agent
 from langchain.agents.structured_output import ToolStrategy
+from langchain.agents.tool_node import InjectedState
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
@@ -253,16 +249,16 @@ def test_create_agent_invoke(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
             tool_calls=[
                 [
-                    {"args": {"input": "yo"}, "id": "1", "name": "my_tool"},
+                    {"args": {"value": "yo"}, "id": "1", "name": "my_tool"},
                 ],
                 [],
             ]
@@ -284,7 +280,7 @@ def test_create_agent_invoke(
                 tool_calls=[
                     {
                         "name": "my_tool",
-                        "args": {"input": "yo"},
+                        "args": {"value": "yo"},
                         "id": "1",
                         "type": "tool_call",
                     }
@@ -348,14 +344,14 @@ def test_create_agent_jump(
             calls.append("NoopEight.after_model")
 
     @tool
-    def my_tool(input: str) -> str:
-        """A great tool"""
+    def my_tool(value: str) -> str:
+        """A great tool."""
         calls.append("my_tool")
-        return input.upper()
+        return value.upper()
 
     agent_one = create_agent(
         model=FakeToolCallingModel(
-            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"value": "yo"})]],
         ),
         tools=[my_tool],
         system_prompt="You are a helpful assistant.",
@@ -373,7 +369,6 @@ def test_create_agent_jump(
 # Tests for HumanInTheLoopMiddleware
 def test_human_in_the_loop_middleware_initialization() -> None:
     """Test HumanInTheLoopMiddleware initialization."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
@@ -389,7 +384,6 @@ def test_human_in_the_loop_middleware_initialization() -> None:
 
 def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
     """Test HumanInTheLoopMiddleware when no interrupts are needed."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
@@ -418,7 +412,6 @@ def test_human_in_the_loop_middleware_no_interrupts_needed() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_accept() -> None:
     """Test HumanInTheLoopMiddleware with single tool accept response."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
@@ -488,7 +481,6 @@ def test_human_in_the_loop_middleware_single_tool_edit() -> None:
 
 def test_human_in_the_loop_middleware_single_tool_response() -> None:
     """Test HumanInTheLoopMiddleware with single tool response with custom message."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
@@ -519,7 +511,6 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and mixed response types."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
@@ -566,7 +557,6 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
 
 def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
     """Test HumanInTheLoopMiddleware with multiple tools and edit responses."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "get_forecast": {"allow_accept": True, "allow_edit": True, "allow_respond": True},
@@ -618,7 +608,6 @@ def test_human_in_the_loop_middleware_multiple_tools_edit_responses() -> None:
 
 def test_human_in_the_loop_middleware_edit_with_modified_args() -> None:
     """Test HumanInTheLoopMiddleware with edit action that includes modified args."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
@@ -674,17 +663,22 @@ def test_human_in_the_loop_middleware_unknown_response_type() -> None:
     def mock_unknown(requests):
         return [{"type": "unknown", "args": None}]
 
-    with patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown):
-        with pytest.raises(
+    with (
+        patch("langchain.agents.middleware.human_in_the_loop.interrupt", side_effect=mock_unknown),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human response: {'type': 'unknown', 'args': None}. Response action 'unknown' is not allowed for tool 'test_tool'. Expected one of \['accept', 'edit', 'response'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state)
+            match=re.escape(
+                "Unexpected human response: {'type': 'unknown', 'args': None}. "
+                "Response action 'unknown' is not allowed for tool 'test_tool'. "
+                "Expected one of ['accept', 'edit', 'response'] based on the tool's configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state)
 
 
 def test_human_in_the_loop_middleware_disallowed_action() -> None:
     """Test HumanInTheLoopMiddleware with action not allowed by tool config."""
-
     # edit is not allowed by tool config
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
@@ -709,20 +703,27 @@ def test_human_in_the_loop_middleware_disallowed_action() -> None:
             }
         ]
 
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        side_effect=mock_disallowed_action,
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            side_effect=mock_disallowed_action,
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Unexpected human response: {'type': 'edit', 'args': {'action': 'test_tool', 'args': {'input': 'modified'}}}. Response action 'edit' is not allowed for tool 'test_tool'. Expected one of \['accept', 'response'\] based on the tool's configuration.",
-        ):
-            middleware.after_model(state)
+            match=re.escape(
+                "Unexpected human response: {"
+                "'type': 'edit', "
+                "'args': {'action': 'test_tool', 'args': {'input': 'modified'}}}. "
+                "Response action 'edit' is not allowed for tool 'test_tool'. "
+                "Expected one of ['accept', 'response'] based on the tool's configuration."
+            ),
+        ),
+    ):
+        middleware.after_model(state)
 
 
 def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> None:
     """Test HumanInTheLoopMiddleware with mix of auto-approved and interrupt tools."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "interrupt_tool": {"allow_respond": True, "allow_edit": True, "allow_accept": True}
@@ -756,7 +757,6 @@ def test_human_in_the_loop_middleware_mixed_auto_approved_and_interrupt() -> Non
 
 def test_human_in_the_loop_middleware_interrupt_request_structure() -> None:
     """Test that interrupt requests are structured correctly."""
-
     middleware = HumanInTheLoopMiddleware(
         interrupt_on={
             "test_tool": {"allow_accept": True, "allow_edit": True, "allow_respond": True}
@@ -855,29 +855,37 @@ def test_human_in_the_loop_middleware_sequence_mismatch() -> None:
     state = {"messages": [HumanMessage(content="Hello"), ai_message]}
 
     # Test with too few responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[],  # No responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value=[],  # No responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human responses \(0\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state)
+            match=re.escape(
+                "Number of human responses (0) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state)
 
     # Test with too many responses
-    with patch(
-        "langchain.agents.middleware.human_in_the_loop.interrupt",
-        return_value=[
-            {"type": "accept", "args": None},
-            {"type": "accept", "args": None},
-        ],  # 2 responses for 1 tool call
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "langchain.agents.middleware.human_in_the_loop.interrupt",
+            return_value=[
+                {"type": "accept", "args": None},
+                {"type": "accept", "args": None},
+            ],  # 2 responses for 1 tool call
+        ),
+        pytest.raises(
             ValueError,
-            match=r"Number of human responses \(2\) does not match number of hanging tool calls \(1\)\.",
-        ):
-            middleware.after_model(state)
+            match=re.escape(
+                "Number of human responses (2) does not match number of hanging tool calls (1)."
+            ),
+        ),
+    ):
+        middleware.after_model(state)
 
 
 # Tests for AnthropicPromptCachingMiddleware
@@ -885,15 +893,15 @@ def test_anthropic_prompt_caching_middleware_initialization() -> None:
     """Test AnthropicPromptCachingMiddleware initialization."""
     # Test with custom values
     middleware = AnthropicPromptCachingMiddleware(
-        type="ephemeral", ttl="1h", min_messages_to_cache=5
+        cache_type="ephemeral", ttl="1h", min_messages_to_cache=5
     )
-    assert middleware.type == "ephemeral"
+    assert middleware.cache_type == "ephemeral"
     assert middleware.ttl == "1h"
     assert middleware.min_messages_to_cache == 5
 
     # Test with default values
     middleware = AnthropicPromptCachingMiddleware()
-    assert middleware.type == "ephemeral"
+    assert middleware.cache_type == "ephemeral"
     assert middleware.ttl == "5m"
     assert middleware.min_messages_to_cache == 0
 
@@ -928,7 +936,10 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     with pytest.raises(
         ValueError,
-        match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic.",
+        match=re.escape(
+            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. "
+            "Please install langchain-anthropic."
+        ),
     ):
         middleware.modify_model_request(fake_request, {})
 
@@ -939,12 +950,15 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
 
     langchain_anthropic.ChatAnthropic = MockChatAnthropic
 
-    with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-        with pytest.raises(
+    with (
+        patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}),
+        pytest.raises(
             ValueError,
-            match="AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of",
-        ):
-            middleware.modify_model_request(fake_request, {})
+            match="AnthropicPromptCachingMiddleware caching middleware only supports "
+            "Anthropic models, not instances of",
+        ),
+    ):
+        middleware.modify_model_request(fake_request, {})
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="warn")
 
@@ -952,20 +966,22 @@ def test_anthropic_prompt_caching_middleware_unsupported_model() -> None:
         result = middleware.modify_model_request(fake_request, {})
         assert len(w) == 1
         assert (
-            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. Please install langchain-anthropic."
-            in str(w[-1].message)
+            "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models. "
+            "Please install langchain-anthropic." in str(w[-1].message)
         )
         assert result == fake_request
 
-    with warnings.catch_warnings(record=True) as w:
-        with patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}):
-            result = middleware.modify_model_request(fake_request, {})
-            assert result is fake_request
-            assert len(w) == 1
-            assert (
-                "AnthropicPromptCachingMiddleware caching middleware only supports Anthropic models, not instances of"
-                in str(w[-1].message)
-            )
+    with (
+        warnings.catch_warnings(record=True) as w,
+        patch.dict("sys.modules", {"langchain_anthropic": langchain_anthropic}),
+    ):
+        result = middleware.modify_model_request(fake_request, {})
+        assert result is fake_request
+        assert len(w) == 1
+        assert (
+            "AnthropicPromptCachingMiddleware caching middleware only supports "
+            "Anthropic models, not instances of" in str(w[-1].message)
+        )
 
     middleware = AnthropicPromptCachingMiddleware(unsupported_model_behavior="ignore")
 
@@ -1102,14 +1118,14 @@ def test_summarization_middleware_summary_creation() -> None:
     """Test SummarizationMiddleware summary creation."""
 
     class MockModel(BaseChatModel):
-        def invoke(self, prompt):
+        def invoke(self, prompt, **kwargs):
             from langchain_core.messages import AIMessage
 
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1130,12 +1146,14 @@ def test_summarization_middleware_summary_creation() -> None:
 
     # Test error handling
     class ErrorModel(BaseChatModel):
-        def invoke(self, prompt):
-            raise Exception("Model error")
+        @override
+        def invoke(self, input, **kwargs):
+            msg = "Model error"
+            raise ValueError(msg)
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1158,8 +1176,8 @@ def test_summarization_middleware_full_workflow() -> None:
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
             from langchain_core.messages import AIMessage
+            from langchain_core.outputs import ChatGeneration, ChatResult
 
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
@@ -1230,7 +1248,11 @@ def test_modify_model_request() -> None:
 
 
 def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
-    """Test that when there are both structured and regular tool calls, we execute regular and jump to END."""
+    """Test tools to model edge with structured and regular tool calls.
+
+    Test that when there are both structured and regular tool calls,
+    we execute regular and jump to END.
+    """
 
     class WeatherResponse(BaseModel):
         """Weather response."""
@@ -1342,7 +1364,6 @@ def test_runtime_injected_into_middleware() -> None:
     class CustomMiddleware(AgentMiddleware):
         def before_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
 
         def modify_model_request(
             self, request: ModelRequest, state: AgentState, runtime: Runtime
@@ -1352,9 +1373,6 @@ def test_runtime_injected_into_middleware() -> None:
 
         def after_model(self, state: AgentState, runtime: Runtime) -> None:
             assert runtime is not None
-            return None
-
-    middleware = CustomMiddleware()
 
     agent = create_agent(model=FakeToolCallingModel(), middleware=[CustomMiddleware()])
     agent = agent.compile()
@@ -1391,7 +1409,10 @@ def test_injected_state_in_middleware_agent() -> None:
     ).compile()
 
     result = agent.invoke(
-        {"test_state": "I love pizza", "messages": [HumanMessage("Call the test state tool")]}
+        {
+            "test_state": "I love pizza",
+            "messages": [HumanMessage("Call the test state tool")],
+        }
     )
 
     messages = result["messages"]

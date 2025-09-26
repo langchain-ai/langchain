@@ -17,7 +17,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
 
     def __init__(
         self,
-        type: Literal["ephemeral"] = "ephemeral",
+        cache_type: Literal["ephemeral"] = "ephemeral",
         ttl: Literal["5m", "1h"] = "5m",
         min_messages_to_cache: int = 0,
         unsupported_model_behavior: Literal["ignore", "warn", "raise"] = "warn",
@@ -25,7 +25,7 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         """Initialize the middleware with cache control settings.
 
         Args:
-            type: The type of cache to use, only "ephemeral" is supported.
+            cache_type: The type of cache to use, only "ephemeral" is supported.
             ttl: The time to live for the cache, only "5m" and "1h" are supported.
             min_messages_to_cache: The minimum number of messages until the cache is used,
                 default is 0.
@@ -34,16 +34,12 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
                 "warn" will warn the user and continue without caching.
                 "raise" will raise an error and stop the agent.
         """
-        self.type = type
+        self.cache_type = cache_type
         self.ttl = ttl
         self.min_messages_to_cache = min_messages_to_cache
         self.unsupported_model_behavior = unsupported_model_behavior
 
-    def modify_model_request(  # type: ignore[override]
-        self,
-        request: ModelRequest,
-        state: dict[str, Any],  # noqa: ARG002
-    ) -> ModelRequest:
+    def modify_model_request(self, request: ModelRequest, *_arg: Any) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
         try:
             from langchain_anthropic import ChatAnthropic
@@ -78,6 +74,6 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
         if messages_count < self.min_messages_to_cache:
             return request
 
-        request.model_settings["cache_control"] = {"type": self.type, "ttl": self.ttl}
+        request.model_settings["cache_control"] = {"type": self.cache_type, "ttl": self.ttl}
 
         return request
