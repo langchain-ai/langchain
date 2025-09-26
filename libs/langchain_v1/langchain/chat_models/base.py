@@ -27,39 +27,6 @@ if TYPE_CHECKING:
     from pydantic import BaseModel
 
 
-@overload
-def init_chat_model(
-    model: str,
-    *,
-    model_provider: str | None = None,
-    configurable_fields: Literal[None] = None,
-    config_prefix: str | None = None,
-    **kwargs: Any,
-) -> BaseChatModel: ...
-
-
-@overload
-def init_chat_model(
-    model: Literal[None] = None,
-    *,
-    model_provider: str | None = None,
-    configurable_fields: Literal[None] = None,
-    config_prefix: str | None = None,
-    **kwargs: Any,
-) -> _ConfigurableModel: ...
-
-
-@overload
-def init_chat_model(
-    model: str | None = None,
-    *,
-    model_provider: str | None = None,
-    configurable_fields: Literal["any"] | list[str] | tuple[str, ...] = ...,
-    config_prefix: str | None = None,
-    **kwargs: Any,
-) -> _ConfigurableModel: ...
-
-
 # FOR CONTRIBUTORS: If adding support for a new provider, please append the provider
 # name to the supported list in the docstring below. Do *not* change the order of the
 # existing providers.
@@ -70,7 +37,7 @@ def init_chat_model(
     configurable_fields: Literal["any"] | list[str] | tuple[str, ...] | None = None,
     config_prefix: str | None = None,
     **kwargs: Any,
-) -> BaseChatModel | _ConfigurableModel:
+) -> BaseChatModel:
     """Initialize a ChatModel from the model name and provider.
 
     **Note:** Must have the integration package corresponding to the model provider
@@ -315,10 +282,16 @@ def init_chat_model(
         kwargs["model"] = model
     if model_provider:
         kwargs["model_provider"] = model_provider
-    return _ConfigurableModel(
-        default_config=kwargs,
-        config_prefix=config_prefix,
-        configurable_fields=configurable_fields,
+
+    # _ConfigurableModel is made to look like a BaseChatModel in functionality.
+    # From a user perspective, they shouldn't have to care about the difference.
+    return cast(
+        "BaseChatModel",
+        _ConfigurableModel(
+            default_config=kwargs,
+            config_prefix=config_prefix,
+            configurable_fields=configurable_fields,
+        ),
     )
 
 
@@ -579,6 +552,15 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
 
     def _model(self, config: RunnableConfig | None = None) -> Runnable:
         params = {**self._default_config, **self._model_params(config)}
+        if "model" not in params:
+            msg = (
+                "No model was specified. Please either specify a model name when "
+                "initializing the model via `init_chat_model(model=...)` or configure "
+                "the model at runtime via the `config` argument. "
+                "For example: model.with_config("
+                "{'configurable': {'model': 'gpt-4o'}}).invoke('hello')",
+            )
+            raise ValueError(msg)
         model = _init_chat_model_helper(**params)
         for name, args, kwargs in self._queued_declarative_operations:
             model = getattr(model, name)(*args, **kwargs)
