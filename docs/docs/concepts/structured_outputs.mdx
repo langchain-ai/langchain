@@ -152,3 +152,20 @@ ResponseFormatter(answer="The powerhouse of the cell is the mitochondrion. Mitoc
 For more details on usage, see our [how-to guide](/docs/how_to/structured_output/#the-with_structured_output-method).
 
 :::
+
+## Handling parsing errors
+
+In production, LLMs may return malformed outputs. While `with_structured_output()` doesn't provide automatic retry on parsing errors, you can use `OutputFixingParser` for this:
+
+```python
+from langchain.output_parsers import OutputFixingParser
+
+# Create a robust parser with automatic retry
+base_parser = PydanticOutputParser(pydantic_object=ResponseFormatter)
+robust_parser = OutputFixingParser.from_llm(parser=base_parser, llm=model)
+
+# Automatically fixes parsing errors by asking the LLM to correct malformed outputs
+structured_output = robust_parser.parse(llm_output)
+```
+
+This works with both `PydanticOutputParser` and `JsonOutputParser`. For cases requiring the original prompt context, see the [RetryOutputParser guide](/docs/how_to/output_parser_retry).
