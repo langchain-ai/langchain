@@ -150,6 +150,29 @@ autoclass_content = "both"
 autodoc_typehints_format = "short"
 autodoc_typehints = "both"
 
+# -- Napoleon Configuration for Mixed Docstring Formats --------------------
+# Napoleon is a docstring parser - it does not process syntax within docstrings
+# It only converts Google/NumPy-style docstrings to reStructuredText, and expects
+# reStructuredText markup within the content.
+
+# Configure to handle both LangChain (RST) and LangGraph (Markdown) styles
+napoleon_google_docstring = (
+    True  # Support Google-style docstrings (both projects use this)
+)
+napoleon_numpy_docstring = True  # Also support NumPy-style (broader compatibility)
+napoleon_include_init_with_doc = False  # Don't duplicate __init__ docstrings
+napoleon_include_private_with_doc = False  # Don't document private members
+napoleon_include_special_with_doc = True  # Document special methods like __call__
+napoleon_use_admonition_for_examples = False  # Let MyST handle admonitions
+napoleon_use_admonition_for_notes = False  # Let MyST handle admonitions
+napoleon_use_admonition_for_references = False  # Let MyST handle admonitions
+napoleon_use_ivar = False  # Use standard parameter documentation
+napoleon_use_param = True  # Use :param: for parameters
+napoleon_use_rtype = True  # Use :rtype: for return types
+napoleon_preprocess_types = False  # Don't preprocess type annotations
+napoleon_type_aliases = None  # No custom type aliases
+napoleon_attr_annotations = True  # Include attribute type annotations
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["templates"]
 
