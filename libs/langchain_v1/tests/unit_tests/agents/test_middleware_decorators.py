@@ -1,21 +1,24 @@
-"""Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request."""
+"""Test middleware decorators.
+
+Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request.
+"""
 
 from typing import Any
-from typing_extensions import NotRequired
 
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
-from langgraph.types import Command
+from typing_extensions import NotRequired
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
-    before_model,
     after_model,
+    before_model,
     modify_model_request,
 )
 from langchain.agents.middleware_agent import create_agent
+
 from .model import FakeToolCallingModel
 
 
@@ -26,9 +29,9 @@ class CustomState(AgentState):
 
 
 @tool
-def test_tool(input: str) -> str:
+def test_tool(value: str) -> str:
     """A test tool for middleware testing."""
-    return f"Tool result: {input}"
+    return f"Tool result: {value}"
 
 
 def test_before_model_decorator() -> None:
@@ -110,7 +113,6 @@ def test_all_decorators_integration() -> None:
     @before_model
     def track_before(state: AgentState) -> None:
         call_order.append("before")
-        return None
 
     @modify_model_request
     def track_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
@@ -120,7 +122,6 @@ def test_all_decorators_integration() -> None:
     @after_model
     def track_after(state: AgentState) -> None:
         call_order.append("after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(), middleware=[track_before, track_modify, track_after]

@@ -72,7 +72,7 @@ def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None 
 def _extract_metadata(type_: type) -> list:
     """Extract metadata from a field type, handling Required/NotRequired and Annotated wrappers."""
     # Handle Required[Annotated[...]] or NotRequired[Annotated[...]]
-    if get_origin(type_) in (Required, NotRequired):
+    if get_origin(type_) in {Required, NotRequired}:
         inner_type = get_args(type_)[0]
         if get_origin(inner_type) is Annotated:
             return list(get_args(inner_type)[1:])
@@ -133,7 +133,7 @@ def _handle_structured_output_error(
 ResponseT = TypeVar("ResponseT")
 
 
-def create_agent(  # noqa: PLR0915
+def create_agent(
     *,
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
@@ -208,9 +208,10 @@ def create_agent(  # noqa: PLR0915
         ) + middleware_tools
 
     # validate middleware
-    assert len({m.__class__.__name__ for m in middleware}) == len(middleware), (  # noqa: S101
-        "Please remove duplicate middleware instances."
-    )
+    if len({m.__class__.__name__ for m in middleware}) != len(middleware):
+        msg = "Duplicate middleware instances detected. Please remove duplicates."
+        raise ValueError(msg)
+
     middleware_w_before = [
         m for m in middleware if m.__class__.before_model is not AgentMiddleware.before_model
     ]
@@ -290,8 +291,7 @@ def create_agent(  # noqa: PLR0915
 
                     tool_message_content = (
                         response_format.tool_message_content
-                        if response_format.tool_message_content
-                        else f"Returning structured response: {structured_response}"
+                        or f"Returning structured response: {structured_response}"
                     )
 
                     return {
@@ -305,13 +305,13 @@ def create_agent(  # noqa: PLR0915
                         ],
                         "response": structured_response,
                     }
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
                     should_retry, error_message = _handle_structured_output_error(
                         exception, response_format
                     )
                     if not should_retry:
-                        raise exception
+                        raise exception from exc
 
                     return {
                         "messages": [
