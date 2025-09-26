@@ -1,5 +1,7 @@
 """Test AzureChatOpenAI wrapper."""
 
+from __future__ import annotations
+
 import json
 import os
 from typing import Any, Optional
@@ -224,7 +226,7 @@ async def test_openai_ainvoke(llm: AzureChatOpenAI) -> None:
 def test_openai_invoke(llm: AzureChatOpenAI) -> None:
     """Test invoke tokens from AzureChatOpenAI."""
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
     assert result.response_metadata.get("model_name") is not None
 

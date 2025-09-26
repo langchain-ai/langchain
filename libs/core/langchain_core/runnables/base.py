@@ -1399,7 +1399,10 @@ class Runnable(ABC, Generic[Input, Output]):
         .. code-block:: python
 
             template = ChatPromptTemplate.from_messages(
-                [("system", "You are Cat Agent 007"), ("human", "{question}")]
+                [
+                    ("system", "You are Cat Agent 007"),
+                    ("human", "{question}"),
+                ]
             ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
 

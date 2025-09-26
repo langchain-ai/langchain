@@ -28,7 +28,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 
-from langchain_anthropic import ChatAnthropic, ChatAnthropicMessages
+from langchain_anthropic import ChatAnthropic
 from langchain_anthropic._compat import _convert_from_v1_to_anthropic
 from tests.unit_tests._utils import FakeCallbackHandler
 
@@ -38,7 +38,7 @@ IMAGE_MODEL_NAME = "claude-3-5-haiku-latest"
 
 def test_stream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
@@ -46,7 +46,7 @@ def test_stream() -> None:
     chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = cast(BaseMessageChunk, token) if full is None else full + token
+        full = cast("BaseMessageChunk", token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -84,14 +84,14 @@ def test_stream() -> None:
 
 async def test_astream() -> None:
     """Test streaming tokens from Anthropic."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_input_token_counts = 0
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = cast(BaseMessageChunk, token) if full is None else full + token
+        full = cast("BaseMessageChunk", token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -162,8 +162,8 @@ async def test_stream_usage_override() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test streaming tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -171,8 +171,8 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test batch tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.abatch(
         ["I'm Pickle Rick", "I'm not Pickle Rick"],
@@ -232,8 +232,8 @@ async def test_async_tool_use() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test batch tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
     for token in result:
@@ -241,8 +241,8 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test invoke tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -250,8 +250,8 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatAnthropicMessages."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    """Test invoke tokens from ChatAnthropic."""
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
@@ -259,7 +259,7 @@ def test_invoke() -> None:
 
 def test_system_invoke() -> None:
     """Test invoke tokens with a system message."""
-    llm = ChatAnthropicMessages(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(model_name=MODEL_NAME)  # type: ignore[call-arg, call-arg]
 
     prompt = ChatPromptTemplate.from_messages(
         [
@@ -376,7 +376,7 @@ def test_streaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
         callback_manager=callback_manager,
@@ -392,7 +392,7 @@ async def test_astreaming() -> None:
     callback_handler = FakeCallbackHandler()
     callback_manager = CallbackManager([callback_handler])
 
-    llm = ChatAnthropicMessages(  # type: ignore[call-arg, call-arg]
+    llm = ChatAnthropic(  # type: ignore[call-arg, call-arg]
         model_name=MODEL_NAME,
         streaming=True,
         callback_manager=callback_manager,
@@ -812,7 +812,7 @@ def test_citations(output_version: Literal["v0", "v1"]) -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(messages):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert not any("citation" in block for block in full.content)
@@ -844,13 +844,15 @@ def test_thinking() -> None:
         assert isinstance(block, dict)
         if block["type"] == "thinking":
             assert set(block.keys()) == {"type", "thinking", "signature"}
-            assert block["thinking"] and isinstance(block["thinking"], str)
-            assert block["signature"] and isinstance(block["signature"], str)
+            assert block["thinking"]
+            assert isinstance(block["thinking"], str)
+            assert block["signature"]
+            assert isinstance(block["signature"], str)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("thinking" in block for block in full.content)
@@ -858,8 +860,10 @@ def test_thinking() -> None:
         assert isinstance(block, dict)
         if block["type"] == "thinking":
             assert set(block.keys()) == {"type", "thinking", "signature", "index"}
-            assert block["thinking"] and isinstance(block["thinking"], str)
-            assert block["signature"] and isinstance(block["signature"], str)
+            assert block["thinking"]
+            assert isinstance(block["thinking"], str)
+            assert block["signature"]
+            assert isinstance(block["signature"], str)
 
     # Test pass back in
     next_message = {"role": "user", "content": "How are you?"}
@@ -883,9 +887,11 @@ def test_thinking_v1() -> None:
         assert isinstance(block, dict)
         if block["type"] == "reasoning":
             assert set(block.keys()) == {"type", "reasoning", "extras"}
-            assert block["reasoning"] and isinstance(block["reasoning"], str)
+            assert block["reasoning"]
+            assert isinstance(block["reasoning"], str)
             signature = block["extras"]["signature"]
-            assert signature and isinstance(signature, str)
+            assert signature
+            assert isinstance(signature, str)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
@@ -898,9 +904,11 @@ def test_thinking_v1() -> None:
         assert isinstance(block, dict)
         if block["type"] == "reasoning":
             assert set(block.keys()) == {"type", "reasoning", "extras", "index"}
-            assert block["reasoning"] and isinstance(block["reasoning"], str)
+            assert block["reasoning"]
+            assert isinstance(block["reasoning"], str)
             signature = block["extras"]["signature"]
-            assert signature and isinstance(signature, str)
+            assert signature
+            assert isinstance(signature, str)
 
     # Test pass back in
     next_message = {"role": "user", "content": "How are you?"}
@@ -935,13 +943,14 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
             pass
         if value:
             assert set(value.keys()) == {"type", "data"}
-            assert value["data"] and isinstance(value["data"], str)
+            assert value["data"]
+            assert isinstance(value["data"], str)
     assert value is not None
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     value = None
@@ -962,7 +971,8 @@ def test_redacted_thinking(output_version: Literal["v0", "v1"]) -> None:
         else:
             pass
         if value:
-            assert value["data"] and isinstance(value["data"], str)
+            assert value["data"]
+            assert isinstance(value["data"], str)
     assert value is not None
 
     # Test pass back in
@@ -1009,7 +1019,7 @@ def test_structured_output_thinking_force_tool_use() -> None:
 def test_image_tool_calling() -> None:
     """Test tool calling with image inputs."""
 
-    class color_picker(BaseModel):
+    class color_picker(BaseModel):  # noqa: N801
         """Input your fav color and get a random fact about it."""
 
         fav_color: str

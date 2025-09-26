@@ -27,7 +27,7 @@ class TestOpenAIResponses(TestOpenAIStandard):
         super().test_stop_sequence(model)
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -78,5 +78,4 @@ def _invoke(llm: ChatOpenAI, input_: str, stream: bool) -> AIMessage:
         for chunk in llm.stream(input_):
             full = full + chunk if full else chunk  # type: ignore[operator]
         return cast(AIMessage, full)
-    else:
-        return cast(AIMessage, llm.invoke(input_))
+    return cast(AIMessage, llm.invoke(input_))

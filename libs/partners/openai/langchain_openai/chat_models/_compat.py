@@ -1,7 +1,8 @@
-"""
-This module converts between AIMessage output formats, which are governed by the
-``output_version`` attribute on ChatOpenAI. Supported values are ``None``, ``'v0'``, and
-``'responses/v1'``.
+"""Converts between AIMessage output formats, governed by ``output_version``.
+
+``output_version`` is an attribute on ChatOpenAI.
+
+Supported values are ``None``, ``'v0'``, and ``'responses/v1'``.
 
 ``'v0'`` corresponds to the format as of ``ChatOpenAI`` v0.3. For the Responses API, it
 stores reasoning and tool outputs in ``AIMessage.additional_kwargs``:
@@ -62,7 +63,9 @@ content blocks, rather than on the AIMessage.id, which now stores the response I
 
 For backwards compatibility, this module provides functions to convert between the
 formats. The functions are used internally by ChatOpenAI.
-"""  # noqa: E501
+"""
+
+from __future__ import annotations
 
 import json
 from collections.abc import Iterable, Iterator
@@ -191,16 +194,14 @@ def _convert_annotation_from_v1(annotation: types.Annotation) -> dict[str, Any]:
                 new_ann["filename"] = annotation["title"]
 
         if extra_fields := annotation.get("extras"):
-            for field, value in extra_fields.items():
-                new_ann[field] = value
+            new_ann.update(dict(extra_fields.items()))
 
         return new_ann
 
-    elif annotation["type"] == "non_standard_annotation":
+    if annotation["type"] == "non_standard_annotation":
         return annotation["value"]
 
-    else:
-        return dict(annotation)
+    return dict(annotation)
 
 
 def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str, Any]]:
@@ -255,7 +256,7 @@ def _implode_reasoning_blocks(blocks: list[dict[str, Any]]) -> Iterable[dict[str
 
 
 def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, Any]]:
-    """Generator that walks through *items* and, whenever it meets the pair
+    """Generator that walks through *items* and, whenever it meets the pair.
 
         {"type": "server_tool_call", "name": "web_search", "id": X, ...}
         {"type": "server_tool_result", "id": X}
@@ -278,11 +279,11 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
 
         try:
             nxt = next(items)  # look-ahead one element
-        except StopIteration:  # no “result” – just yield the call back
+        except StopIteration:  # no “result” - just yield the call back
             yield current
             break
 
-        # If this really is the matching “result” – collapse
+        # If this really is the matching “result” - collapse
         if nxt.get("type") == "server_tool_result" and nxt.get(
             "tool_call_id"
         ) == current.get("id"):
@@ -388,7 +389,7 @@ def _consolidate_calls(items: Iterable[dict[str, Any]]) -> Iterator[dict[str, An
             yield collapsed
 
         else:
-            # Not a matching pair – emit both, in original order
+            # Not a matching pair - emit both, in original order
             yield current
             yield nxt
 
@@ -399,7 +400,7 @@ def _convert_from_v1_to_responses(
     new_content: list = []
     for block in content:
         if block["type"] == "text" and "annotations" in block:
-            # Need a copy because we’re changing the annotations list
+            # Need a copy because we're changing the annotations list
             new_block = dict(block)
             new_block["annotations"] = [
                 _convert_annotation_from_v1(a) for a in block["annotations"]
@@ -444,6 +445,4 @@ def _convert_from_v1_to_responses(
             new_content.append(block)
 
     new_content = list(_implode_reasoning_blocks(new_content))
-    new_content = list(_consolidate_calls(new_content))
-
-    return new_content
+    return list(_consolidate_calls(new_content))

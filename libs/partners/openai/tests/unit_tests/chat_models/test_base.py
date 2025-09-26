@@ -1,5 +1,7 @@
 """Test OpenAI Chat API wrapper."""
 
+from __future__ import annotations
+
 import json
 from functools import partial
 from types import TracebackType
@@ -51,7 +53,7 @@ from openai.types.responses.response_usage import (
     ResponseUsage,
 )
 from pydantic import BaseModel, Field, SecretStr
-from typing_extensions import TypedDict
+from typing_extensions import Self, TypedDict
 
 from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models._compat import (
@@ -236,7 +238,7 @@ def test__convert_dict_to_message_tool_call() -> None:
             "type": "function",
         },
     ]
-    raw_tool_calls = list(sorted(raw_tool_calls, key=lambda x: x["id"]))
+    raw_tool_calls = sorted(raw_tool_calls, key=lambda x: x["id"])
     message = {"role": "assistant", "content": None, "tool_calls": raw_tool_calls}
     result = _convert_dict_to_message(message)
     expected_output = AIMessage(
@@ -266,19 +268,19 @@ def test__convert_dict_to_message_tool_call() -> None:
     )
     assert result == expected_output
     reverted_message_dict = _convert_message_to_dict(expected_output)
-    reverted_message_dict["tool_calls"] = list(
-        sorted(reverted_message_dict["tool_calls"], key=lambda x: x["id"])
+    reverted_message_dict["tool_calls"] = sorted(
+        reverted_message_dict["tool_calls"], key=lambda x: x["id"]
     )
     assert reverted_message_dict == message
 
 
 class MockAsyncContextManager:
-    def __init__(self, chunk_list: list):
+    def __init__(self, chunk_list: list) -> None:
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    async def __aenter__(self) -> "MockAsyncContextManager":
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(
@@ -289,7 +291,7 @@ class MockAsyncContextManager:
     ) -> None:
         pass
 
-    def __aiter__(self) -> "MockAsyncContextManager":
+    def __aiter__(self) -> MockAsyncContextManager:
         return self
 
     async def __anext__(self) -> dict:
@@ -297,17 +299,16 @@ class MockAsyncContextManager:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
             return chunk
-        else:
-            raise StopAsyncIteration
+        raise StopAsyncIteration
 
 
 class MockSyncContextManager:
-    def __init__(self, chunk_list: list):
+    def __init__(self, chunk_list: list) -> None:
         self.current_chunk = 0
         self.chunk_list = chunk_list
         self.chunk_num = len(chunk_list)
 
-    def __enter__(self) -> "MockSyncContextManager":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
@@ -318,7 +319,7 @@ class MockSyncContextManager:
     ) -> None:
         pass
 
-    def __iter__(self) -> "MockSyncContextManager":
+    def __iter__(self) -> MockSyncContextManager:
         return self
 
     def __next__(self) -> dict:
@@ -326,8 +327,7 @@ class MockSyncContextManager:
             chunk = self.chunk_list[self.current_chunk]
             self.current_chunk += 1
             return chunk
-        else:
-            raise StopIteration
+        raise StopIteration
 
 
 GLM4_STREAM_META = """{"id":"20240722102053e7277a4f94e848248ff9588ed37fb6e6","created":1721614853,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"\u4eba\u5de5\u667a\u80fd"}}]}
@@ -634,7 +634,6 @@ async def test_openai_ainvoke(mock_async_client: AsyncMock) -> None:
 )
 def test__get_encoding_model(model: str) -> None:
     ChatOpenAI(model=model)._get_encoding_model()
-    return
 
 
 def test_openai_invoke_name(mock_client: MagicMock) -> None:
@@ -733,7 +732,7 @@ def test_format_message_content() -> None:
             "input": {"location": "San Francisco, CA", "unit": "celsius"},
         },
     ]
-    assert [{"type": "text", "text": "hello"}] == _format_message_content(content)
+    assert _format_message_content(content) == [{"type": "text", "text": "hello"}]
 
     # Standard multi-modal inputs
     contents = [
@@ -936,9 +935,10 @@ def test_get_num_tokens_from_messages() -> None:
             ]
         )
     ]
+    actual = 0
     with pytest.warns(match="file inputs are not supported"):
         actual = llm.get_num_tokens_from_messages(messages)
-        assert actual == 13
+    assert actual == 13
 
 
 class Foo(BaseModel):
@@ -1618,7 +1618,7 @@ def test__construct_lc_result_from_responses_api_complex_response() -> None:
                 arguments='{"location": "New York"}',
             ),
         ],
-        metadata=dict(key1="value1", key2="value2"),
+        metadata={"key1": "value1", "key2": "value2"},
         incomplete_details=IncompleteDetails(reason="max_output_tokens"),
         status="completed",
         user="user_123",
@@ -2326,7 +2326,6 @@ class FakeTracer(BaseTracer):
 
     def _persist_run(self, run: Run) -> None:
         """Persist a run."""
-        pass
 
     def on_chat_model_start(self, *args: Any, **kwargs: Any) -> Run:
         self.chat_model_start_inputs.append({"args": args, "kwargs": kwargs})
@@ -2459,7 +2458,7 @@ def test_compat_responses_v03() -> None:
 
 
 @pytest.mark.parametrize(
-    "message_v1, expected",
+    ("message_v1", "expected"),
     [
         (
             AIMessage(
@@ -2502,7 +2501,7 @@ def test_convert_from_v1_to_chat_completions(
 
 
 @pytest.mark.parametrize(
-    "message_v1, expected",
+    ("message_v1", "expected"),
     [
         (
             AIMessage(

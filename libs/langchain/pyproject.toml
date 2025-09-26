@@ -85,7 +85,7 @@ test_integration = [
     "langchain-text-splitters",
 ]
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.13.1,<0.14.0",
     "cffi<1.17.1; python_version < \"3.10\"",
     "cffi; python_version >= \"3.10\"",
 ]
@@ -158,7 +158,6 @@ ignore = [
     # TODO rules
     "ANN401",  # No type Any
     "D100",    # pydocstyle: missing docstring in public module
-    "D104",    # pydocstyle: missing docstring in public package
     "PLC0415", # pylint: import-outside-top-level
     "TRY301",  # tryceratops: raise-within-try
 ]
@@ -171,8 +170,11 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
@@ -196,6 +198,9 @@ pyupgrade.keep-runtime-typing = true
     "DTZ001", # Use of non timezone-aware datetime
     "DTZ005", # Use of non timezone-aware datetime
     "DTZ006", # Use of non timezone-aware datetime
+]
+"**/__init__.py" = [
+    "D104",    # Missing docstring in public package
 ]
 
 [tool.coverage.run]

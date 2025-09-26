@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Optional
 from unittest.mock import MagicMock, patch
 
@@ -616,14 +618,13 @@ def _strip_none(obj: Any) -> Any:
     """Recursively strip None values from dictionaries and lists."""
     if isinstance(obj, dict):
         return {k: _strip_none(v) for k, v in obj.items() if v is not None}
-    elif isinstance(obj, list):
+    if isinstance(obj, list):
         return [_strip_none(v) for v in obj]
-    else:
-        return obj
+    return obj
 
 
 @pytest.mark.parametrize(
-    "output_version, expected_content",
+    ("output_version", "expected_content"),
     [
         (
             "responses/v1",

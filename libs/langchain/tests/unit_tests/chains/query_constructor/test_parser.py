@@ -71,13 +71,13 @@ def test_parse_nested_operation() -> None:
 
 def test_parse_disallowed_comparator() -> None:
     parser = get_parser(allowed_comparators=[Comparator.EQ])
-    with pytest.raises(ValueError, match="Received disallowed comparator gt."):
+    with pytest.raises(ValueError, match="Received disallowed comparator gt"):
         parser.parse('gt("a", 2)')
 
 
 def test_parse_disallowed_operator() -> None:
     parser = get_parser(allowed_operators=[Operator.AND])
-    with pytest.raises(ValueError, match="Received disallowed operator not."):
+    with pytest.raises(ValueError, match="Received disallowed operator not"):
         parser.parse('not(gt("a", 2))')
 
 

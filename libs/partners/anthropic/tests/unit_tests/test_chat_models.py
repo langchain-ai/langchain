@@ -41,7 +41,7 @@ def test_initialization() -> None:
         ),
     ]:
         assert model.model == "claude-instant-1.2"
-        assert cast(SecretStr, model.anthropic_api_key).get_secret_value() == "xyz"
+        assert cast("SecretStr", model.anthropic_api_key).get_secret_value() == "xyz"
         assert model.default_request_timeout == 2.0
         assert model.anthropic_api_url == "https://api.anthropic.com"
 
@@ -416,9 +416,9 @@ def test__format_image() -> None:
         _format_image(url)
 
 
-@pytest.fixture()
+@pytest.fixture
 def pydantic() -> type[BaseModel]:
-    class dummy_function(BaseModel):
+    class dummy_function(BaseModel):  # noqa: N801
         """Dummy function."""
 
         arg1: int = Field(..., description="foo")
@@ -427,7 +427,7 @@ def pydantic() -> type[BaseModel]:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def function() -> Callable:
     def dummy_function(arg1: int, arg2: Literal["bar", "baz"]) -> None:
         """Dummy function.
@@ -441,7 +441,7 @@ def function() -> Callable:
     return dummy_function
 
 
-@pytest.fixture()
+@pytest.fixture
 def dummy_tool() -> BaseTool:
     class Schema(BaseModel):
         arg1: int = Field(..., description="foo")
@@ -458,7 +458,7 @@ def dummy_tool() -> BaseTool:
     return DummyFunction()
 
 
-@pytest.fixture()
+@pytest.fixture
 def json_schema() -> dict:
     return {
         "title": "dummy_function",
@@ -476,7 +476,7 @@ def json_schema() -> dict:
     }
 
 
-@pytest.fixture()
+@pytest.fixture
 def openai_function() -> dict:
     return {
         "name": "dummy_function",
@@ -1225,7 +1225,7 @@ def test_anthropic_uses_actual_secret_value_from_secretstr() -> None:
         anthropic_api_key="secret-api-key",
     )
     assert (
-        cast(SecretStr, chat_model.anthropic_api_key).get_secret_value()
+        cast("SecretStr", chat_model.anthropic_api_key).get_secret_value()
         == "secret-api-key"
     )
 
@@ -1245,7 +1245,7 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         [GetWeather],
         tool_choice={"type": "tool", "name": "GetWeather"},
     )
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
@@ -1253,16 +1253,16 @@ def test_anthropic_bind_tools_tool_choice() -> None:
         [GetWeather],
         tool_choice="GetWeather",
     )
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "tool",
         "name": "GetWeather",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="auto")
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "auto",
     }
     chat_model_with_tools = chat_model.bind_tools([GetWeather], tool_choice="any")
-    assert cast(RunnableBinding, chat_model_with_tools).kwargs["tool_choice"] == {
+    assert cast("RunnableBinding", chat_model_with_tools).kwargs["tool_choice"] == {
         "type": "any",
     }
 
@@ -1280,11 +1280,11 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     """Test that get_num_tokens_from_messages passes kwargs to the model."""
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 
-    with patch.object(anthropic, "Client") as _Client:
+    with patch.object(anthropic, "Client") as _client:
         llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
 
     assert (
-        _Client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+        _client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
     )
 
 
@@ -1328,6 +1328,8 @@ def test_usage_metadata_standardization() -> None:
 
 
 class FakeTracer(BaseTracer):
+    """Fake tracer to capture inputs to `chat_model_start`."""
+
     def __init__(self) -> None:
         super().__init__()
         self.chat_model_start_inputs: list = []
