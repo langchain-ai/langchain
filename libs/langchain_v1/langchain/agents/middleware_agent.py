@@ -33,7 +33,7 @@ from langchain.agents.structured_output import (
     StructuredOutputValidationError,
     ToolStrategy,
 )
-from langchain.agents.tool_node import ToolNode
+from langchain.tools import ToolNode
 from langchain.chat_models import init_chat_model
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
