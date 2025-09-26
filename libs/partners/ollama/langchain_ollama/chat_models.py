@@ -1120,7 +1120,7 @@ class ChatOllama(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -1354,7 +1354,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        """  # noqa: E501, D301
+        """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"

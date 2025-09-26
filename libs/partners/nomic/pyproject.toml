@@ -100,3 +100,6 @@ asyncio_mode = "auto"
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
     "PLR2004",
 ]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

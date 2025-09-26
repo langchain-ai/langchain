@@ -58,16 +58,6 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D100",    # pydocstyle: Missing docstring in public module
-    "D101",    # pydocstyle: Missing docstring in public class
-    "D102",    # pydocstyle: Missing docstring in public method
-    "D103",    # pydocstyle: Missing docstring in public function
-    "D104",    # pydocstyle: Missing docstring in public package
-    "D105",    # pydocstyle: Missing docstring in magic method
-    "D107",    # pydocstyle: Missing docstring in __init__
-    "D203",    # Messes with the formatter
-    "D213",    # pydocstyle: Multi-line docstring summary should start at the second line (incompatible with D212)
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -82,6 +72,9 @@ ignore = [
     # TODO"
     "ANN401",
     "ARG002",
+    "D100",
+    "D102",
+    "D104",
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
@@ -113,4 +106,8 @@ asyncio_mode = "auto"
     # TODO
     "PLC0415",
     "PT012",
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]

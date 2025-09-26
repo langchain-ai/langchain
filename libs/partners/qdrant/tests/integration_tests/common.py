@@ -33,7 +33,7 @@ def assert_documents_equals(actual: list[Document], expected: list[Document]) ->
 class ConsistentFakeEmbeddings(Embeddings):
     """Fake embeddings which remember all the texts seen so far to return consistent
     vectors for the same texts.
-    """  # noqa: D205
+    """
 
     def __init__(self, dimensionality: int = 10) -> None:
         self.known_texts: list[str] = []
@@ -54,14 +54,14 @@ class ConsistentFakeEmbeddings(Embeddings):
     def embed_query(self, text: str) -> list[float]:
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown.
-        """  # noqa: D205
+        """
         return self.embed_documents([text])[0]
 
 
 class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
     """Fake sparse embeddings which remembers all the texts seen so far
     "to return consistent vectors for the same texts.
-    """  # noqa: D205
+    """
 
     def __init__(self, dimensionality: int = 25) -> None:
         self.known_texts: list[str] = []
@@ -82,5 +82,5 @@ class ConsistentFakeSparseEmbeddings(SparseEmbeddings):
     def embed_query(self, text: str) -> SparseVector:
         """Return consistent embeddings for the text, if seen before, or a constant
         one if the text is unknown.
-        """  # noqa: D205
+        """
         return self.embed_documents([text])[0]

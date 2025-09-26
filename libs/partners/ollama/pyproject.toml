@@ -102,3 +102,6 @@ asyncio_mode = "auto"
     "FIX",
     "TD",
 ]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

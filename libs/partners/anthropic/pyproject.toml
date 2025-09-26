@@ -117,3 +117,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "SLF001", # Private member access in tests
     "D",     # Docstring checks in tests
 ]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

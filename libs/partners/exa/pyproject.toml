@@ -96,8 +96,6 @@ ignore = [
     "D104",    # Missing docstring in public package
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
-    "D203",    # Incompatible with D211 (blank line before class)
-    "D213",    # Incompatible with D212 (multi-line summary)
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful

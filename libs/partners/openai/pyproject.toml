@@ -141,3 +141,6 @@ filterwarnings = [
     "RUF012",
     "B017",
 ]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

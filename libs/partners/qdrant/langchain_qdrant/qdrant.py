@@ -31,6 +31,8 @@ class QdrantVectorStoreError(Exception):
 
 
 class RetrievalMode(str, Enum):
+    """Modes for retrieving vectors from Qdrant."""
+
     DENSE = "dense"
     SPARSE = "sparse"
     HYBRID = "hybrid"
@@ -463,13 +465,11 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of ``QdrantVectorStore`` from an existing collection
-        without adding any data.
+        """Construct ``QdrantVectorStore`` from existing collection without adding data.
 
         Returns:
             QdrantVectorStore: A new instance of ``QdrantVectorStore``.
-
-        """  # noqa: D205
+        """
         client = QdrantClient(
             location=location,
             url=url,
