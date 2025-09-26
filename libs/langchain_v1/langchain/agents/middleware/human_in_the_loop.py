@@ -171,6 +171,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Process all tool calls that require interrupts
         revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage] = []
+        are_pending_tool_calls = False
 
         # Create interrupt requests for all tools that need approval
         interrupt_requests: list[HumanInTheLoopRequest] = []
@@ -211,6 +212,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
 
             if response["type"] == "accept" and config.get("allow_accept"):
                 revised_tool_calls.append(tool_call)
+                are_pending_tool_calls = True
             elif response["type"] == "edit" and config.get("allow_edit"):
                 edited_action = response["args"]
                 revised_tool_calls.append(
@@ -221,6 +223,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                         id=tool_call["id"],
                     )
                 )
+                are_pending_tool_calls = True
             elif response["type"] == "response" and config.get("allow_respond"):
                 # Create a tool message with the human's text response
                 content = response.get("args") or (
@@ -252,7 +255,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         # Update the AI message to only include approved tool calls
         last_ai_msg.tool_calls = revised_tool_calls
 
-        if len(revised_tool_calls) > 0:
+        if are_pending_tool_calls:
             return {"messages": [last_ai_msg, *artificial_tool_messages]}
 
         return {"jump_to": "model", "messages": artificial_tool_messages}
