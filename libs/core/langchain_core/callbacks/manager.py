@@ -92,7 +92,7 @@ def trace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    .. note:
+    .. note::
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -179,7 +179,7 @@ async def atrace_as_chain_group(
     Yields:
         The async callback manager for the chain group.
 
-    .. note:
+    .. note::
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 

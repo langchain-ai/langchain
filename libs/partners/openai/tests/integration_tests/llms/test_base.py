@@ -67,7 +67,7 @@ def test_invoke() -> None:
     """Test invoke tokens from OpenAI."""
     llm = OpenAI()
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
 
 
@@ -164,7 +164,7 @@ def test_openai_invoke() -> None:
     """Test streaming tokens from OpenAI."""
     llm = OpenAI(max_tokens=10)
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result, str)
 
 

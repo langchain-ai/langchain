@@ -31,7 +31,7 @@ class LangSmithLoader(BaseLoader):
             for doc in loader.lazy_load():
                 docs.append(doc)
 
-        .. code-block:: pycon
+        .. code-block:: python
 
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 

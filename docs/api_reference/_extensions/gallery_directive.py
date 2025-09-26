@@ -50,7 +50,7 @@ class GalleryGridDirective(SphinxDirective):
     individual cards + ["image", "header", "content", "title"].
 
     Danger:
-        This directive can only be used in the context of a Myst documentation page as
+        This directive can only be used in the context of a MyST documentation page as
         the templates use Markdown flavored formatting.
     """
 

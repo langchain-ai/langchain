@@ -262,7 +262,7 @@ def test_reasoning_output_stream() -> None:
             full_response = token
         else:
             # Casting since adding results in a type error
-            full_response = cast(AIMessageChunk, full_response + token)
+            full_response = cast("AIMessageChunk", full_response + token)
 
     assert full_response is not None
     assert isinstance(full_response, AIMessageChunk)
@@ -281,7 +281,8 @@ def test_reasoning_effort_none() -> None:
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert "reasoning_content" not in response.additional_kwargs
-    assert "<think>" not in response.content and "<think/>" not in response.content
+    assert "<think>" not in response.content
+    assert "<think/>" not in response.content
 
 
 @pytest.mark.parametrize("effort", ["low", "medium", "high"])

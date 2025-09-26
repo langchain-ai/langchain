@@ -37,7 +37,7 @@ def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -45,10 +45,10 @@ def init_chat_model(
 
 @overload
 def init_chat_model(
-    model: Literal[None] = None,
+    model: None = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -273,7 +273,10 @@ def init_chat_model(
             )
 
             configurable_model_with_tools = configurable_model.bind_tools(
-                [GetWeather, GetPopulation]
+                [
+                    GetWeather,
+                    GetPopulation,
+                ]
             )
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"

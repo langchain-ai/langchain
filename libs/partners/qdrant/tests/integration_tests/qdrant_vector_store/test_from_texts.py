@@ -191,7 +191,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 
 @pytest.mark.parametrize("location", qdrant_locations(use_in_memory=False))
 @pytest.mark.parametrize(
-    ["first_vector_name", "second_vector_name"],
+    ("first_vector_name", "second_vector_name"),
     [
         ("", "custom-vector"),
         ("custom-vector", ""),

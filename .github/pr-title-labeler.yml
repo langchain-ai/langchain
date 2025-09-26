@@ -11,12 +11,9 @@ include-title: true
 label-for-breaking-changes: breaking
 
 label-mapping:
+  documentation: ["docs"]
   feature: ["feat"]
   fix: ["fix"]
-  documentation: ["docs"]
-  linting: ["style"]
-  refactor: ["refactor"]
-  performance: ["perf"]
   infra: ["build", "ci", "chore"]
   integration:
     [
@@ -36,5 +33,9 @@ label-mapping:
       "qdrant",
       "xai",
     ]
-  revert: ["revert"]
+  linting: ["style"]
+  performance: ["perf"]
+  refactor: ["refactor"]
   release: ["release"]
+  revert: ["revert"]
+  tests: ["test"]

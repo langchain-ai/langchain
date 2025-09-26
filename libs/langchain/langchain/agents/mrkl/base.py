@@ -26,7 +26,7 @@ from langchain.chains import LLMChain
 class ChainConfig(NamedTuple):
     """Configuration for a chain to use in MRKL system.
 
-    Parameters:
+    Args:
         action_name: Name of the action.
         action: Action function to call.
         action_description: Description of the action.
@@ -45,7 +45,7 @@ class ChainConfig(NamedTuple):
 class ZeroShotAgent(Agent):
     """Agent for the MRKL chain.
 
-    Parameters:
+    Args:
         output_parser: Output parser for the agent.
     """
 

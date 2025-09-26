@@ -1020,7 +1020,7 @@ class InjectedStore(InjectedToolArg):
     for maintaining context, user preferences, or any other data that needs to
     persist beyond individual workflow executions.
 
-    !!! Warning
+    .. warning::
         `InjectedStore` annotation requires `langchain-core >= 0.3.8`
 
     Example:

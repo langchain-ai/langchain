@@ -1,5 +1,6 @@
 """Standard LangChain interface tests."""
 
+import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.integration_tests import (  # type: ignore[import-not-found]
     ChatModelIntegrationTests,  # type: ignore[import-not-found]
@@ -20,3 +21,7 @@ class TestMistralStandard(ChatModelIntegrationTests):
     @property
     def supports_json_mode(self) -> bool:
         return True
+
+    @pytest.mark.xfail(reason=("MistralAI inconsistently fails to return valid fields"))
+    def test_structured_output_pydantic_2_v1(self, model: BaseChatModel) -> None:
+        super().test_structured_output_pydantic_2_v1(model)
