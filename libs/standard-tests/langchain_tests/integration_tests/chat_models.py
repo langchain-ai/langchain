@@ -219,12 +219,13 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. If a model supports
-           ``tool_choice``, it should accept ``tool_choice="any"`` and
-           ``tool_choice=<string name of tool>``. If a model does not
-           support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``.
+        .. warning::
+            Deprecated since version 0.3.15.
+            This property will be removed in version 0.3.20. If a model supports
+            ``tool_choice``, it should accept ``tool_choice="any"`` and
+            ``tool_choice=<string name of tool>``. If a model does not
+            support forcing tool calling, override the ``has_tool_choice`` property to
+            return ``False``.
 
         Example:
 
@@ -2990,7 +2991,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     return False
 
             .. important::
-
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. See ``enable_vcr_tests`` dropdown
                 :class:`above <ChatModelIntegrationTests>` for how to configure what

@@ -268,7 +268,7 @@ def get_openapi_chain(
     params: Optional[dict] = None,
     **kwargs: Any,
 ) -> SequentialChain:
-    """Create a chain for querying an API from a OpenAPI spec.
+    r"""Create a chain for querying an API from a OpenAPI spec.
 
     Note: this class is deprecated. See below for a replacement implementation.
         The benefits of this implementation are:
@@ -359,7 +359,7 @@ def get_openapi_chain(
         llm_chain_kwargs: LLM chain additional keyword arguments.
         **kwargs: Additional keyword arguments to pass to the chain.
 
-    """  # noqa: E501,D301
+    """  # noqa: E501
     try:
         from langchain_community.utilities.openapi import OpenAPISpec
     except ImportError as e:

@@ -45,7 +45,7 @@ def test_stream() -> None:
     chunks_with_model_name = 0
     for token in llm.stream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = cast(BaseMessageChunk, token) if full is None else full + token
+        full = cast("BaseMessageChunk", token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -87,7 +87,7 @@ async def test_astream() -> None:
     chunks_with_output_token_counts = 0
     async for token in llm.astream("I'm Pickle Rick"):
         assert isinstance(token.content, str)
-        full = cast(BaseMessageChunk, token) if full is None else full + token
+        full = cast("BaseMessageChunk", token) if full is None else full + token
         assert isinstance(token, AIMessageChunk)
         if token.usage_metadata is not None:
             if token.usage_metadata.get("input_tokens"):
@@ -711,7 +711,7 @@ def test_citations() -> None:
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream(messages):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("citations" in block for block in full.content)
@@ -740,13 +740,15 @@ def test_thinking() -> None:
         assert isinstance(block, dict)
         if block["type"] == "thinking":
             assert set(block.keys()) == {"type", "thinking", "signature"}
-            assert block["thinking"] and isinstance(block["thinking"], str)
-            assert block["signature"] and isinstance(block["signature"], str)
+            assert block["thinking"]
+            assert isinstance(block["thinking"], str)
+            assert block["signature"]
+            assert isinstance(block["signature"], str)
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     assert any("thinking" in block for block in full.content)
@@ -754,8 +756,10 @@ def test_thinking() -> None:
         assert isinstance(block, dict)
         if block["type"] == "thinking":
             assert set(block.keys()) == {"type", "thinking", "signature", "index"}
-            assert block["thinking"] and isinstance(block["thinking"], str)
-            assert block["signature"] and isinstance(block["signature"], str)
+            assert block["thinking"]
+            assert isinstance(block["thinking"], str)
+            assert block["signature"]
+            assert isinstance(block["signature"], str)
 
     # Test pass back in
     next_message = {"role": "user", "content": "How are you?"}
@@ -779,13 +783,14 @@ def test_redacted_thinking() -> None:
         if block["type"] == "redacted_thinking":
             has_reasoning = True
             assert set(block.keys()) == {"type", "data"}
-            assert block["data"] and isinstance(block["data"], str)
+            assert block["data"]
+            assert isinstance(block["data"], str)
     assert has_reasoning
 
     # Test streaming
     full: Optional[BaseMessageChunk] = None
     for chunk in llm.stream([input_message]):
-        full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
+        full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
     assert isinstance(full, AIMessageChunk)
     assert isinstance(full.content, list)
     stream_has_reasoning = False
@@ -794,7 +799,8 @@ def test_redacted_thinking() -> None:
         if block["type"] == "redacted_thinking":
             stream_has_reasoning = True
             assert set(block.keys()) == {"type", "data", "index"}
-            assert block["data"] and isinstance(block["data"], str)
+            assert block["data"]
+            assert isinstance(block["data"], str)
     assert stream_has_reasoning
 
     # Test pass back in
@@ -841,7 +847,7 @@ def test_structured_output_thinking_force_tool_use() -> None:
 def test_image_tool_calling() -> None:
     """Test tool calling with image inputs."""
 
-    class color_picker(BaseModel):
+    class color_picker(BaseModel):  # noqa: N801
         """Input your fav color and get a random fact about it."""
 
         fav_color: str

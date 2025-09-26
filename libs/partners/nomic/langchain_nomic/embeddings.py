@@ -1,3 +1,5 @@
+"""Nomic partner integration for LangChain."""
+
 from __future__ import annotations
 
 import os
@@ -29,7 +31,7 @@ class NomicEmbeddings(Embeddings):
         nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["remote"] = ...,
-    ): ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -40,7 +42,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["local", "dynamic"],
         device: Optional[str] = ...,
-    ): ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -51,7 +53,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: str,
         device: Optional[str] = ...,
-    ): ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -133,6 +135,11 @@ class NomicEmbeddings(Embeddings):
         )[0]
 
     def embed_image(self, uris: list[str]) -> list[list[float]]:
+        """Embed images.
+
+        Args:
+            uris: list of image URIs to embed
+        """
         return embed.image(
             images=uris,
             model=self.vision_model,

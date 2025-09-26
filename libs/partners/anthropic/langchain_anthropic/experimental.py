@@ -1,3 +1,5 @@
+"""Experimental tool-calling support for Anthropic chat models."""
+
 from __future__ import annotations
 
 import json
