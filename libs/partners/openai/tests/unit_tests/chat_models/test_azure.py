@@ -40,8 +40,8 @@ def test_initialize_more() -> None:
     assert llm.temperature == 0
 
     ls_params = llm._get_ls_params()
-    assert ls_params["ls_provider"] == "azure"
-    assert ls_params["ls_model_name"] == "gpt-35-turbo-0125"
+    assert ls_params.get("ls_provider") == "azure"
+    assert ls_params.get("ls_model_name") == "gpt-35-turbo-0125"
 
 
 def test_initialize_azure_openai_with_openai_api_base_set() -> None:

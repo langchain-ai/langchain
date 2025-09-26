@@ -749,3 +749,6 @@ packages:
 - name: langchain-zeusdb
   repo: zeusdb/langchain-zeusdb
   path: libs/zeusdb
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi

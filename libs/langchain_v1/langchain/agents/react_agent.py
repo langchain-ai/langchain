@@ -971,7 +971,7 @@ def create_agent(  # noqa: D417
                 return model.bind_tools(tools)
             ```
 
-            !!! note "Dynamic Model Requirements"
+            .. note::
                 Ensure returned models have appropriate tools bound via
                 `.bind_tools()` and support required functionality. Bound tools
                 must be a subset of those specified in the `tools` parameter.
@@ -985,10 +985,10 @@ def create_agent(  # noqa: D417
               of the list of messages in state["messages"].
             - SystemMessage: this is added to the beginning of the list of messages
               in state["messages"].
-            - Callable: This function should take in full graph state and the output is then passed
-              to the language model.
-            - Runnable: This runnable should take in full graph state and the output is then passed
-              to the language model.
+            - Callable: This function should take in full graph state and the output is
+              then passed to the language model.
+            - Runnable: This runnable should take in full graph state and the output is
+              then passed to the language model.
 
         response_format: An optional UsingToolStrategy configuration for structured responses.
 
@@ -1002,7 +1002,8 @@ def create_agent(  # noqa: D417
 
                 - schemas: A sequence of ResponseSchema objects that define
                   the structured output format
-                - tool_choice: Either "required" or "auto" to control when structured output is used
+                - tool_choice: Either "required" or "auto" to control when structured
+                  output is used
 
             Each ResponseSchema contains:
 
@@ -1011,12 +1012,12 @@ def create_agent(  # noqa: D417
                 - description: Optional custom description (defaults to model docstring)
                 - strict: Whether to enforce strict validation
 
-            !!! Important
+            .. important::
                 `response_format` requires the model to support tool calling
 
-            !!! Note
-                Structured responses are handled directly in the model call node via tool calls,
-                eliminating the need for separate structured response nodes.
+            .. note::
+                Structured responses are handled directly in the model call node via
+                tool calls, eliminating the need for separate structured response nodes.
 
         pre_model_hook: An optional node to add before the `agent` node
             (i.e., the node that calls the LLM).
@@ -1037,12 +1038,12 @@ def create_agent(  # noqa: D417
                 }
                 ```
 
-            !!! Important
+            .. important::
                 At least one of `messages` or `llm_input_messages` MUST be provided
                 and will be used as an input to the `agent` node.
                 The rest of the keys will be added to the graph state.
 
-            !!! Warning
+            .. warning::
                 If you are returning `messages` in the pre-model hook,
                 you should OVERWRITE the `messages` key by doing the following:
 
@@ -1059,7 +1060,7 @@ def create_agent(  # noqa: D417
             Post-model hook must be a callable or a runnable that takes in
             current graph state and returns a state update.
 
-            !!! Note
+            .. note::
                 Only available with `version="v2"`.
         state_schema: An optional state schema that defines graph state.
             Must have `messages` and `remaining_steps` keys.
@@ -1092,7 +1093,7 @@ def create_agent(  # noqa: D417
             another graph as a subgraph node -
             particularly useful for building multi-agent systems.
 
-    !!! warning "`config_schema` Deprecated"
+    .. warning::
         The `config_schema` parameter is deprecated in v0.6.0 and support will be removed in v2.0.0.
         Please use `context_schema` instead to specify the schema for run-scoped context.
 

@@ -32,7 +32,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
             result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
             callback.usage_metadata
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
@@ -119,7 +119,7 @@ def get_usage_metadata_callback(
                 llm_2.invoke("Hello")
                 print(cb.usage_metadata)
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
