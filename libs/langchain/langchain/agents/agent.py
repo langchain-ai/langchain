@@ -1338,6 +1338,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> Iterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1408,6 +1409,7 @@ class AgentExecutor(Chain):
                 color_mapping,
                 agent_action,
                 run_manager,
+                config,
             )
 
     def _perform_agent_action(
@@ -1416,6 +1418,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: Optional[CallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AgentStep:
         if run_manager:
             run_manager.on_agent_action(agent_action, color="green")
@@ -1433,6 +1436,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1477,6 +1481,7 @@ class AgentExecutor(Chain):
         inputs: dict[str, str],
         intermediate_steps: list[tuple[AgentAction, str]],
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AsyncIterator[Union[AgentFinish, AgentAction, AgentStep]]:
         """Take a single step in the thought-action-observation loop.
 
@@ -1548,6 +1553,7 @@ class AgentExecutor(Chain):
                     color_mapping,
                     agent_action,
                     run_manager,
+                    config,
                 )
                 for agent_action in actions
             ],
@@ -1563,6 +1569,7 @@ class AgentExecutor(Chain):
         color_mapping: dict[str, str],
         agent_action: AgentAction,
         run_manager: Optional[AsyncCallbackManagerForChainRun] = None,
+        config: Optional[RunnableConfig] = None,
     ) -> AgentStep:
         if run_manager:
             await run_manager.on_agent_action(
@@ -1584,6 +1591,7 @@ class AgentExecutor(Chain):
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                config=config,
                 **tool_run_kwargs,
             )
         else:
@@ -1788,6 +1796,7 @@ class AgentExecutor(Chain):
             run_name=config.get("run_name"),
             run_id=config.get("run_id"),
             yield_actions=True,
+            config=config,
             **kwargs,
         )
         yield from iterator
@@ -1819,6 +1828,7 @@ class AgentExecutor(Chain):
             run_name=config.get("run_name"),
             run_id=config.get("run_id"),
             yield_actions=True,
+            config=config,
             **kwargs,
         )
         async for step in iterator:
