@@ -1344,7 +1344,7 @@ def test_tool_invalid_docstrings() -> None:
         Args:
             bar: The bar.
             baz: The baz.
-        """  # noqa: D205,D411
+        """  # noqa: D205,D411  # We're intentionally testing bad formatting.
         return bar
 
     for func in {foo3, foo4}:

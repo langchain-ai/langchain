@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Generator, Iterable, Sequence
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Optional,
@@ -19,7 +19,11 @@ from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
 
 from langchain_qdrant._utils import maximal_marginal_relevance
-from langchain_qdrant.sparse_embeddings import SparseEmbeddings
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable, Sequence
+
+    from langchain_qdrant.sparse_embeddings import SparseEmbeddings
 
 
 class QdrantVectorStoreError(Exception):
@@ -27,6 +31,8 @@ class QdrantVectorStoreError(Exception):
 
 
 class RetrievalMode(str, Enum):
+    """Modes for retrieving vectors from Qdrant."""
+
     DENSE = "dense"
     SPARSE = "sparse"
     HYBRID = "hybrid"
@@ -222,7 +228,7 @@ class QdrantVectorStore(VectorStore):
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         validate_embeddings: bool = True,  # noqa: FBT001, FBT002
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
-    ):
+    ) -> None:
         """Initialize a new instance of `QdrantVectorStore`.
 
         Example:
@@ -295,10 +301,9 @@ class QdrantVectorStore(VectorStore):
         if self.retrieval_mode == RetrievalMode.SPARSE:
             # SPARSE mode: no dense embeddings, so no embeddings class name in tags
             pass
-        else:
-            # DENSE/HYBRID modes: include embeddings class name if available
-            if self.embeddings is not None:
-                tags.append(self.embeddings.__class__.__name__)
+        # DENSE/HYBRID modes: include embeddings class name if available
+        elif self.embeddings is not None:
+            tags.append(self.embeddings.__class__.__name__)
 
         return tags
 
@@ -460,13 +465,11 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of ``QdrantVectorStore`` from an existing collection
-        without adding any data.
+        """Construct ``QdrantVectorStore`` from existing collection without adding data.
 
         Returns:
             QdrantVectorStore: A new instance of ``QdrantVectorStore``.
-
-        """  # noqa: D205
+        """
         client = QdrantClient(
             location=location,
             url=url,
@@ -1236,7 +1239,7 @@ class QdrantVectorStore(VectorStore):
             vector_size = len(dense_embeddings)
         else:
             msg = "Invalid `embeddings` type."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         if vector_config.size != vector_size:
             msg = (

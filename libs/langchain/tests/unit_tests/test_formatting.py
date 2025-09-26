@@ -18,7 +18,7 @@ def test_does_not_allow_args() -> None:
     with pytest.raises(
         ValueError,
         match="No arguments should be provided, "
-        "everything should be passed as keyword arguments.",
+        "everything should be passed as keyword arguments",
     ):
         formatter.format(template, "good")
 

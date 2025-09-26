@@ -142,7 +142,7 @@ dummy_raw_tool_call = {
 
 
 @pytest.mark.parametrize(
-    "input_string, expected_output",
+    ("input_string", "expected_output"),
     [
         # Case 1: Standard double-quoted JSON
         ('{"key": "value", "number": 123}', {"key": "value", "number": 123}),

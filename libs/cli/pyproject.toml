@@ -30,7 +30,7 @@ langchain-cli = "langchain_cli.cli:app"
 
 [dependency-groups]
 dev = ["pytest>=7.4.2,<9.0.0", "pytest-watcher>=0.3.4,<1.0.0"]
-lint = ["ruff>=0.12.2,<0.13", "mypy>=1.18.1,<1.19"]
+lint = ["ruff>=0.13.1,<0.14", "mypy>=1.18.1,<1.19"]
 test = ["langchain-core", "langchain"]
 typing = ["langchain"]
 test_integration = []
@@ -70,11 +70,14 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = [ "D1", "DOC", "S", "SLF",]
+"tests/**" = [ "D1", "S", "SLF",]
 "scripts/**" = [ "INP", "S",]
 
 [tool.pytest.ini_options]

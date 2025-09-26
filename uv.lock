@@ -2218,7 +2218,7 @@ dev = [
 lint = [
     { name = "cffi", marker = "python_full_version < '3.10'", specifier = "<1.17.1" },
     { name = "cffi", marker = "python_full_version >= '3.10'" },
-    { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
+    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
 ]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
@@ -2292,7 +2292,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "libs/core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.9,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "defusedxml", specifier = ">=0.7.1,<1.0.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2354,7 +2354,7 @@ dev = [{ name = "langchain-core", editable = "libs/core" }]
 lint = [
     { name = "onnxruntime", marker = "python_full_version < '3.10'", specifier = "<1.20" },
     { name = "onnxruntime", marker = "python_full_version >= '3.10'" },
-    { name = "ruff", specifier = ">=0.12.2,<0.13.0" },
+    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2432,7 +2432,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -2491,7 +2491,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "libs/core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "libs/core" },
@@ -2552,7 +2552,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "libs/core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "langchain-core", editable = "libs/core" },
     { name = "langchain-tests", editable = "libs/standard-tests" },
@@ -2591,7 +2591,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "libs/core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "langchain-core", editable = "libs/core" },
     { name = "langchain-tests", editable = "libs/standard-tests" },
@@ -2750,7 +2750,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "libs/core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.8,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "libs/core" },
@@ -2814,7 +2814,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "libs/core" },
-    { name = "ruff", specifier = ">=0.12.8,<0.13.0" },
+    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },

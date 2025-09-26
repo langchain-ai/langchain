@@ -15,6 +15,8 @@ MODEL = "claude-3-5-haiku-latest"
 
 
 class TestAnthropicStandard(ChatModelIntegrationTests):
+    """Use the standard ChatModel integration tests against the ChatAnthropic class."""
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic
@@ -71,7 +73,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         llm = ChatAnthropic(
             model=MODEL,  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -99,7 +101,7 @@ class TestAnthropicStandard(ChatModelIntegrationTests):
         llm = ChatAnthropic(
             model=MODEL,  # type: ignore[call-arg]
         )
-        with open(REPO_ROOT_DIR / "README.md") as f:
+        with Path.open(REPO_ROOT_DIR / "README.md") as f:
             readme = f.read()
 
         input_ = f"""What's langchain? Here's the langchain README:
@@ -146,6 +148,6 @@ def _invoke(llm: ChatAnthropic, input_: list, stream: bool) -> AIMessage:  # noq
     if stream:
         full = None
         for chunk in llm.stream(input_):
-            full = cast(BaseMessageChunk, chunk) if full is None else full + chunk
-        return cast(AIMessage, full)
-    return cast(AIMessage, llm.invoke(input_))
+            full = cast("BaseMessageChunk", chunk) if full is None else full + chunk
+        return cast("AIMessage", full)
+    return cast("AIMessage", llm.invoke(input_))

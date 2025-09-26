@@ -1119,7 +1119,7 @@ class Chroma(VectorStore):
                      Ids are always included.
                      Defaults to `["metadatas", "documents"]`. Optional.
 
-        Return:
+        Returns:
             A dict with the keys `"ids"`, `"embeddings"`, `"metadatas"`, `"documents"`.
         """
         kwargs = {
