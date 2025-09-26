@@ -1,3 +1,5 @@
+"""Unit tests for standard tests in Nomic partner integration."""
+
 import pytest
 from pytest_benchmark.fixture import BenchmarkFixture  # type: ignore[import]
 

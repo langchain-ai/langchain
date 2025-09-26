@@ -111,7 +111,7 @@ class Serializable(BaseModel, ABC):
 
     # Remove default BaseModel init docstring.
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        """"""  # noqa: D419
+        """"""  # noqa: D419  # Intentional blank docstring
         super().__init__(*args, **kwargs)
 
     @classmethod

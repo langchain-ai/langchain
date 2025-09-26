@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from langchain_qdrant.sparse_embeddings import SparseEmbeddings, SparseVector
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 class FastEmbedSparse(SparseEmbeddings):
@@ -45,7 +47,7 @@ class FastEmbedSparse(SparseEmbeddings):
 
         """
         try:
-            from fastembed import (  # type: ignore[import-not-found]
+            from fastembed import (  # type: ignore[import-not-found] # noqa: PLC0415
                 SparseTextEmbedding,
             )
         except ImportError as err:

@@ -813,7 +813,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
 
             prompt_value = template.invoke(
-                {"name": "Bob", "user_input": "What is your name?"}
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?",
+                }
             )
             # Output:
             # ChatPromptValue(

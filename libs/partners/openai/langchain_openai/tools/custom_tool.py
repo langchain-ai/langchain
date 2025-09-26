@@ -1,3 +1,5 @@
+"""Custom tool decorator for OpenAI custom tools."""
+
 import inspect
 from collections.abc import Awaitable
 from typing import Any, Callable
