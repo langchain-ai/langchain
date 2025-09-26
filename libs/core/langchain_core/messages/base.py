@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of ChatModels.
+    Messages are the inputs and outputs of ``ChatModel``s.
     """
 
     content: Union[str, list[Union[str, dict]]]
@@ -31,17 +31,18 @@ class BaseMessage(Serializable):
 
     For example, for a message from an AI, this could include tool calls as
     encoded by the model provider.
+
     """
 
     response_metadata: dict = Field(default_factory=dict)
-    """Response metadata. For example: response headers, logprobs, token counts, model
-    name."""
+    """Examples: response headers, logprobs, token counts, model name."""
 
     type: str
     """The type of the message. Must be a string that is unique to the message type.
 
     The purpose of this field is to allow for easy identification of the message type
     when deserializing messages.
+
     """
 
     name: Optional[str] = None
@@ -51,20 +52,26 @@ class BaseMessage(Serializable):
 
     Usage of this field is optional, and whether it's used or not is up to the
     model implementation.
+
     """
 
     id: Optional[str] = Field(default=None, coerce_numbers_to_str=True)
-    """An optional unique identifier for the message. This should ideally be
-    provided by the provider/model which created the message."""
+    """An optional unique identifier for the message.
+
+    This should ideally be provided by the provider/model which created the message.
+
+    """
 
     model_config = ConfigDict(
         extra="allow",
     )
 
     def __init__(
-        self, content: Union[str, list[Union[str, dict]]], **kwargs: Any
+        self,
+        content: Union[str, list[Union[str, dict]]],
+        **kwargs: Any,
     ) -> None:
-        """Pass in content as positional arg.
+        """Initialize ``BaseMessage``.
 
         Args:
             content: The string contents of the message.
@@ -73,7 +80,7 @@ class BaseMessage(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """BaseMessage is serializable.
+        """``BaseMessage`` is serializable.
 
         Returns:
             True
@@ -90,10 +97,11 @@ class BaseMessage(Serializable):
         return ["langchain", "schema", "messages"]
 
     def text(self) -> str:
-        """Get the text content of the message.
+        """Get the text ``content`` of the message.
 
         Returns:
             The text content of the message.
+
         """
         if isinstance(self.content, str):
             return self.content
@@ -136,6 +144,7 @@ class BaseMessage(Serializable):
 
         Returns:
             A pretty representation of the message.
+
         """
         title = get_msg_title_repr(self.type.title() + " Message", bold=html)
         # TODO: handle non-string content.
@@ -155,11 +164,12 @@ def merge_content(
     """Merge multiple message contents.
 
     Args:
-        first_content: The first content. Can be a string or a list.
-        contents: The other contents. Can be a string or a list.
+        first_content: The first ``content``. Can be a string or a list.
+        contents: The other ``content``s. Can be a string or a list.
 
     Returns:
         The merged content.
+
     """
     merged = first_content
     for content in contents:
@@ -207,9 +217,10 @@ class BaseMessageChunk(BaseMessage):
 
         For example,
 
-        `AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")`
+        ``AIMessageChunk(content="Hello") + AIMessageChunk(content=" World")``
 
-        will give `AIMessageChunk(content="Hello World")`
+        will give ``AIMessageChunk(content="Hello World")``
+
         """
         if isinstance(other, BaseMessageChunk):
             # If both are (subclasses of) BaseMessageChunk,
@@ -257,8 +268,9 @@ def message_to_dict(message: BaseMessage) -> dict:
         message: Message to convert.
 
     Returns:
-        Message as a dict. The dict will have a "type" key with the message type
-        and a "data" key with the message data as a dict.
+        Message as a dict. The dict will have a ``type`` key with the message type
+        and a ``data`` key with the message data as a dict.
+
     """
     return {"type": message.type, "data": message.model_dump()}
 
@@ -267,10 +279,11 @@ def messages_to_dict(messages: Sequence[BaseMessage]) -> list[dict]:
     """Convert a sequence of Messages to a list of dictionaries.
 
     Args:
-        messages: Sequence of messages (as BaseMessages) to convert.
+        messages: Sequence of messages (as ``BaseMessage``s) to convert.
 
     Returns:
         List of messages as dicts.
+
     """
     return [message_to_dict(m) for m in messages]
 
@@ -284,6 +297,7 @@ def get_msg_title_repr(title: str, *, bold: bool = False) -> str:
 
     Returns:
         The title representation.
+
     """
     padded = " " + title + " "
     sep_len = (80 - len(padded)) // 2

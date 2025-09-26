@@ -464,7 +464,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            tools_available=tool_node is not None,
+            jump_to=middleware_w_after[0].after_model_jump_to,
         )
 
     # Add middleware edges (same as before)
@@ -475,7 +475,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jump_to=m1.before_model_jump_to,
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -483,7 +483,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            tools_available=tool_node is not None,
+            jump_to=middleware_w_before[-1].before_model_jump_to,
         )
 
     if middleware_w_after:
@@ -496,7 +496,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                tools_available=tool_node is not None,
+                jump_to=m1.after_model_jump_to,
             )
 
     return graph
@@ -505,8 +505,10 @@ def create_agent(  # noqa: PLR0915
 def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
     if jump_to == "model":
         return first_node
-    if jump_to:
-        return jump_to
+    if jump_to == "end":
+        return "__end__"
+    if jump_to == "tools":
+        return "tools"
     return None
 
 
@@ -528,8 +530,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[AgentState], str | list[Send] | None]:
-    def model_to_tools(state: AgentState) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any]], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
@@ -548,8 +550,7 @@ def _make_model_to_tools_edge(
             # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
             # largely internal so can be fixed later
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None)  # type: ignore[arg-type]
-                for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
@@ -560,8 +561,8 @@ def _make_model_to_tools_edge(
 
 def _make_tools_to_model_edge(
     tool_node: ToolNode, next_node: str, structured_output_tools: dict[str, OutputToolBinding]
-) -> Callable[[AgentState], str | None]:
-    def tools_to_model(state: AgentState) -> str | None:
+) -> Callable[[dict[str, Any]], str | None]:
+    def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
         if all(
@@ -584,7 +585,7 @@ def _add_middleware_edge(
     name: str,
     default_destination: str,
     model_destination: str,
-    tools_available: bool,  # noqa: FBT001
+    jump_to: list[JumpTo] | None,
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -594,18 +595,23 @@ def _add_middleware_edge(
         name: The name of the middleware node.
         default_destination: The default destination for the edge.
         model_destination: The destination for the edge to the model.
-        tools_available: Whether tools are available for the edge to potentially route to.
+        jump_to: The conditionally jumpable destinations for the edge.
     """
+    if jump_to:
 
-    def jump_edge(state: AgentState) -> str:
-        return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
+        def jump_edge(state: dict[str, Any]) -> str:
+            return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
-    destinations = [default_destination]
-    if default_destination != END:
-        destinations.append(END)
-    if tools_available:
-        destinations.append("tools")
-    if name != model_destination:
-        destinations.append(model_destination)
+        destinations = [default_destination]
 
-    graph.add_conditional_edges(name, jump_edge, destinations)
+        if "end" in jump_to:
+            destinations.append(END)
+        if "tools" in jump_to:
+            destinations.append("tools")
+        if "model" in jump_to and name != model_destination:
+            destinations.append(model_destination)
+
+        graph.add_conditional_edges(name, jump_edge, destinations)
+
+    else:
+        graph.add_edge(name, default_destination)

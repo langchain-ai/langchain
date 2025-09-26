@@ -1,6 +1,5 @@
 """Middleware plugins for agents."""
 
-from .dynamic_system_prompt import DynamicSystemPromptMiddleware
 from .human_in_the_loop import HumanInTheLoopMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
@@ -11,7 +10,6 @@ __all__ = [
     "AgentState",
     # should move to langchain-anthropic if we decide to keep it
     "AnthropicPromptCachingMiddleware",
-    "DynamicSystemPromptMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",
     "SummarizationMiddleware",
