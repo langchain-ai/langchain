@@ -89,7 +89,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
     """State schema for the agent."""
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
-    jump_to: NotRequired[Annotated[JumpTo, EphemeralValue]]
+    jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     response: NotRequired[ResponseT]
 
 
