@@ -1,5 +1,7 @@
 """Test Responses API usage."""
 
+from __future__ import annotations
+
 import json
 import os
 from typing import Annotated, Any, Literal, Optional, cast
@@ -230,7 +232,8 @@ def test_parsed_dict_schema(schema: Any) -> None:
     response = llm.invoke("how are ya", response_format=schema)
     parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
     # Test stream
     full: Optional[BaseMessageChunk] = None
@@ -240,7 +243,8 @@ def test_parsed_dict_schema(schema: Any) -> None:
     assert isinstance(full, AIMessageChunk)
     parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
 
 def test_parsed_strict() -> None:
@@ -275,7 +279,8 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     response = await llm.ainvoke("how are ya", response_format=schema)
     parsed = json.loads(response.text)
     assert parsed == response.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
     # Test stream
     full: Optional[BaseMessageChunk] = None
@@ -285,7 +290,8 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     assert isinstance(full, AIMessageChunk)
     parsed = json.loads(full.text)
     assert parsed == full.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
 
 def test_function_calling_and_structured_output() -> None:
@@ -447,9 +453,8 @@ def test_stream_reasoning_summary(
         for block in response_1.content_blocks:
             if block["type"] == "reasoning":
                 total_reasoning_blocks += 1
-                assert isinstance(block.get("id"), str) and block.get(
-                    "id", ""
-                ).startswith("rs_")
+                assert isinstance(block.get("id"), str)
+                assert block.get("id", "").startswith("rs_")
                 assert isinstance(block.get("reasoning"), str)
                 assert isinstance(block.get("index"), str)
         assert (

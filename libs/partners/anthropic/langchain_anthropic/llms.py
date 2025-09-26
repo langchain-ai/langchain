@@ -1,3 +1,5 @@
+"""Anthropic LLM wrapper. Chat models are in chat_models.py."""
+
 from __future__ import annotations
 
 import re
@@ -163,10 +165,12 @@ class AnthropicLLM(LLM, _AnthropicCommon):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Return a mapping of secret keys to environment variables."""
         return {"anthropic_api_key": "ANTHROPIC_API_KEY"}
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Whether this class can be serialized by langchain."""
         return True
 
     @property
@@ -221,10 +225,9 @@ class AnthropicLLM(LLM, _AnthropicCommon):
                         messages.append(
                             {"role": "assistant", "content": assistant_part.strip()}
                         )
-                else:
-                    # Just human content
-                    if part.strip():
-                        messages.append({"role": "user", "content": part.strip()})
+                # Just human content
+                elif part.strip():
+                    messages.append({"role": "user", "content": part.strip()})
         else:
             # Handle modern format or plain text
             # Clean prompt for Messages API
@@ -290,6 +293,7 @@ class AnthropicLLM(LLM, _AnthropicCommon):
         return response.content[0].text
 
     def convert_prompt(self, prompt: PromptValue) -> str:
+        """Convert a ``PromptValue`` to a string."""
         return prompt.to_string()
 
     async def _acall(

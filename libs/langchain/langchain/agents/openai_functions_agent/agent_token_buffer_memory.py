@@ -16,7 +16,7 @@ from langchain.memory.chat_memory import BaseChatMemory
 class AgentTokenBufferMemory(BaseChatMemory):
     """Memory used to save agent output AND intermediate steps.
 
-    Parameters:
+    Args:
         human_prefix: Prefix for human messages. Default is "Human".
         ai_prefix: Prefix for AI messages. Default is "AI".
         llm: Language model.

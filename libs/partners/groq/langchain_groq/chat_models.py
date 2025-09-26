@@ -448,7 +448,7 @@ class ChatGroq(BaseChatModel):
         }
 
         try:
-            import groq
+            import groq  # noqa: PLC0415
 
             sync_specific: dict[str, Any] = {"http_client": self.http_client}
             if not self.client:
@@ -473,6 +473,7 @@ class ChatGroq(BaseChatModel):
     #
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Mapping of secret environment variables."""
         return {"groq_api_key": "GROQ_API_KEY"}
 
     @classmethod
@@ -583,7 +584,7 @@ class ChatGroq(BaseChatModel):
         default_chunk_class: type[BaseMessageChunk] = AIMessageChunk
         for chunk in self.client.create(messages=message_dicts, **params):
             if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
+                chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -631,7 +632,7 @@ class ChatGroq(BaseChatModel):
             messages=message_dicts, **params
         ):
             if not isinstance(chunk, dict):
-                chunk = chunk.model_dump()
+                chunk = chunk.model_dump()  # noqa: PLW2901
             if len(chunk["choices"]) == 0:
                 continue
             choice = chunk["choices"][0]
@@ -1236,8 +1237,8 @@ def _convert_chunk_to_message_chunk(
 ) -> BaseMessageChunk:
     choice = chunk["choices"][0]
     _dict = choice["delta"]
-    role = cast(str, _dict.get("role"))
-    content = cast(str, _dict.get("content") or "")
+    role = cast("str", _dict.get("role"))
+    content = cast("str", _dict.get("content") or "")
     additional_kwargs: dict = {}
     if _dict.get("function_call"):
         function_call = dict(_dict["function_call"])

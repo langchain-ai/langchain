@@ -227,17 +227,17 @@ def warn_beta(
 ) -> None:
     """Display a standardized beta annotation.
 
-    Arguments:
-        message : str, optional
+    Args:
+        message:
             Override the default beta message. The
             %(name)s, %(obj_type)s, %(addendum)s
             format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the annotated object.
-        obj_type : str, optional
+        obj_type:
             The object type being annotated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
     """
     if not message:

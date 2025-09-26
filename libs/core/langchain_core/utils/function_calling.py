@@ -670,14 +670,13 @@ def tool_example_to_messages(
     The ``ToolMessage`` is required because some chat models are hyper-optimized for
     agents rather than for an extraction use case.
 
-    Arguments:
-        input: string, the user input
-        tool_calls: list[BaseModel], a list of tool calls represented as Pydantic
-            BaseModels
-        tool_outputs: Optional[list[str]], a list of tool call outputs.
+    Args:
+        input: The user input
+        tool_calls: Tool calls represented as Pydantic BaseModels
+        tool_outputs: Tool call outputs.
             Does not need to be provided. If not provided, a placeholder value
             will be inserted. Defaults to None.
-        ai_response: Optional[str], if provided, content for a final ``AIMessage``.
+        ai_response: If provided, content for a final ``AIMessage``.
 
     Returns:
         A list of messages

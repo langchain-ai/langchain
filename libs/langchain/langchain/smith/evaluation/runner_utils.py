@@ -299,7 +299,7 @@ def _get_prompt(inputs: dict[str, Any]) -> str:
 class ChatModelInput(TypedDict):
     """Input for a chat model.
 
-    Parameters:
+    Args:
         messages: List of chat messages.
     """
 
