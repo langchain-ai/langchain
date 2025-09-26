@@ -230,6 +230,7 @@ def create_agent(  # noqa: PLR0915
     input_schema = _resolve_schema(state_schemas, "InputSchema", "input")
     output_schema = _resolve_schema(state_schemas, "OutputSchema", "output")
 
+
     # create graph, add nodes
     graph: StateGraph[
         AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
@@ -538,6 +539,10 @@ def _make_model_to_tools_edge(
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
         tool_message_ids = [m.tool_call_id for m in tool_messages]
 
+        # classic exit condition for agent loop, agent hasn't called any tools
+        if len(last_ai_message.tool_calls) == 0:
+            return END
+
         pending_tool_calls = [
             c
             for c in last_ai_message.tool_calls
@@ -554,7 +559,8 @@ def _make_model_to_tools_edge(
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        return END
+        # this should only happen when we have artificial tool messages
+        return first_node
 
     return model_to_tools
 
