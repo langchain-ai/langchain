@@ -256,6 +256,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         last_ai_msg.tool_calls = revised_tool_calls
 
         if are_pending_tool_calls:
-            return {"messages": [last_ai_msg, *artificial_tool_messages]}
+            # Clear jump_to and return messages to continue to tools
+            return {"jump_to": None, "messages": [last_ai_msg, *artificial_tool_messages]}
 
         return {"jump_to": "model", "messages": artificial_tool_messages}
