@@ -43,6 +43,7 @@ __all__ = [
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
+    "modify_model_request",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
