@@ -39,11 +39,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -122,6 +117,19 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -142,11 +150,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -560,11 +563,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -634,11 +632,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -747,6 +740,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -757,6 +754,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -776,9 +784,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',
@@ -1457,11 +1466,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -1540,6 +1544,19 @@
             'title': 'Additional Kwargs',
             'type': 'object',
           }),
+          'chunk_position': dict({
+            'anyOf': list([
+              dict({
+                'const': 'last',
+                'type': 'string',
+              }),
+              dict({
+                'type': 'null',
+              }),
+            ]),
+            'default': None,
+            'title': 'Chunk Position',
+          }),
           'content': dict({
             'anyOf': list([
               dict({
@@ -1560,11 +1577,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -1978,11 +1990,6 @@
             ]),
             'title': 'Content',
           }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
-          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2052,11 +2059,6 @@
               }),
             ]),
             'title': 'Content',
-          }),
-          'example': dict({
-            'default': False,
-            'title': 'Example',
-            'type': 'boolean',
           }),
           'id': dict({
             'anyOf': list([
@@ -2165,6 +2167,10 @@
             ]),
             'title': 'Error',
           }),
+          'extras': dict({
+            'title': 'Extras',
+            'type': 'object',
+          }),
           'id': dict({
             'anyOf': list([
               dict({
@@ -2175,6 +2181,17 @@
               }),
             ]),
             'title': 'Id',
+          }),
+          'index': dict({
+            'anyOf': list([
+              dict({
+                'type': 'integer',
+              }),
+              dict({
+                'type': 'string',
+              }),
+            ]),
+            'title': 'Index',
           }),
           'name': dict({
             'anyOf': list([
@@ -2194,9 +2211,10 @@
           }),
         }),
         'required': list([
+          'type',
+          'id',
           'name',
           'args',
-          'id',
           'error',
         ]),
         'title': 'InvalidToolCall',

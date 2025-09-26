@@ -699,7 +699,7 @@ class ChatMistralAI(BaseChatModel):
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,  # noqa: PYI051
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.

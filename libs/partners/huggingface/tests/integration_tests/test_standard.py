@@ -48,7 +48,7 @@ class TestHuggingFaceEndpoint(ChatModelIntegrationTests):
         self,
         model: BaseChatModel,
         schema_type: Literal["pydantic", "typeddict", "json_schema"],
-    ) -> None:  # type: ignore[override]
+    ) -> None:
         super().test_structured_output(model, schema_type)
 
     @pytest.mark.xfail(reason=("Pydantic structured output is not supported"))

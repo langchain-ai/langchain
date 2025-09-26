@@ -5,7 +5,7 @@
 # Runs daily. Can also be triggered manually for immediate updates.
 
 name: '⏰ Scheduled Integration Tests'
-run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.9, 3.11' }})"
+run-name: "Run Integration Tests - ${{ inputs.working-directory-force || 'all libs' }} (Python ${{ inputs.python-version-force || '3.10, 3.13' }})"
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ on:
         description: "From which folder this pipeline executes - defaults to all in matrix - example value: libs/partners/anthropic"
       python-version-force:
         type: string
-        description: "Python version to use - defaults to 3.9 and 3.11 in matrix - example value: 3.9"
+        description: "Python version to use - defaults to 3.10 and 3.13 in matrix - example value: 3.11"
   schedule:
     - cron:  '0 13 * * *'  # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
 
@@ -46,9 +46,9 @@ jobs:
           PYTHON_VERSION_FORCE: ${{ github.event.inputs.python-version-force || '' }}
         run: |
           # echo "matrix=..." where matrix is a json formatted str with keys python-version and working-directory
-          # python-version should default to 3.9 and 3.11, but is overridden to [PYTHON_VERSION_FORCE] if set
+          # python-version should default to 3.10 and 3.13, but is overridden to [PYTHON_VERSION_FORCE] if set
           # working-directory should default to DEFAULT_LIBS, but is overridden to [WORKING_DIRECTORY_FORCE] if set
-          python_version='["3.9", "3.11"]'
+          python_version='["3.10", "3.13"]'
           working_directory="$DEFAULT_LIBS"
           if [ -n "$PYTHON_VERSION_FORCE" ]; then
             python_version="[\"$PYTHON_VERSION_FORCE\"]"

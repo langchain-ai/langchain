@@ -1,9 +1,11 @@
 """Integration tests for chat models."""
 
+from __future__ import annotations
+
 import base64
 import inspect
 import json
-from typing import Annotated, Any, Literal, Optional, cast
+from typing import Annotated, Any, Literal
 from unittest.mock import MagicMock
 
 import httpx
@@ -69,7 +71,7 @@ def _get_joke_class(  # noqa: RET503
 
 
 class _TestCallbackHandler(BaseCallbackHandler):
-    options: list[Optional[dict]]
+    options: list[dict | None]
 
     def __init__(self) -> None:
         super().__init__()
@@ -81,7 +83,7 @@ class _TestCallbackHandler(BaseCallbackHandler):
         serialized: Any,
         messages: Any,
         *,
-        options: Optional[dict[str, Any]] = None,
+        options: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> None:
         self.options.append(options)
@@ -314,8 +316,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -350,7 +351,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "https://...",
             }
 
@@ -376,8 +376,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "file",
-                "source_type": "base64",
-                "data": "<base64 file data>",
+                "base64": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 
@@ -403,8 +402,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -499,8 +497,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -722,7 +719,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     async def test_ainvoke(self, model: BaseChatModel) -> None:
@@ -755,7 +752,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = await model.ainvoke("Hello")
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_stream(self, model: BaseChatModel) -> None:
@@ -786,7 +783,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for chunk in model.stream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
         assert num_chunks > 0
 
@@ -821,7 +818,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         async for chunk in model.astream("Hello"):
             assert chunk is not None
             assert isinstance(chunk, AIMessageChunk)
-            assert isinstance(chunk.content, (str, list))
+            assert isinstance(chunk.content, str | list)
             num_chunks += 1
         assert num_chunks > 0
 
@@ -850,7 +847,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     async def test_abatch(self, model: BaseChatModel) -> None:
@@ -880,7 +877,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         for result in batch_results:
             assert result is not None
             assert isinstance(result, AIMessage)
-            assert isinstance(result.text(), str)
+            assert isinstance(result.text, str)
             assert len(result.content) > 0
 
     def test_conversation(self, model: BaseChatModel) -> None:
@@ -911,7 +908,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_double_messages_conversation(self, model: BaseChatModel) -> None:
@@ -950,7 +947,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke(messages)
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_usage_metadata(self, model: BaseChatModel) -> None:
@@ -1232,7 +1229,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         if not self.returns_usage_metadata:
             pytest.skip("Not implemented.")
 
-        full: Optional[AIMessageChunk] = None
+        full: AIMessageChunk | None = None
         for chunk in model.stream("Write me 2 haikus. Only include the haikus."):
             assert isinstance(chunk, AIMessageChunk)
             # only one chunk is allowed to set usage_metadata.input_tokens
@@ -1246,7 +1243,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                     "Only one chunk should set input_tokens,"
                     " the rest should be 0 or None"
                 )
-            full = chunk if full is None else cast("AIMessageChunk", full + chunk)
+            full = chunk if full is None else full + chunk
 
         assert isinstance(full, AIMessageChunk)
         assert full.usage_metadata is not None
@@ -1401,7 +1398,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test stream
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1463,7 +1460,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         _validate_tool_call_message(result)
 
         # Test astream
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         async for chunk in model_with_tools.astream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -1525,7 +1522,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             description="Generate a greeting in a particular style of speaking.",
         )
         if self.has_tool_choice:
-            tool_choice: Optional[str] = "any"
+            tool_choice: str | None = "any"
         else:
             tool_choice = None
         model_with_tools = model.bind_tools([tool_], tool_choice=tool_choice)
@@ -1821,7 +1818,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model_with_tools.invoke(query)
         _validate_tool_call_message_no_args(result)
 
-        full: Optional[BaseMessage] = None
+        full: BaseMessage | None = None
         for chunk in model_with_tools.stream(query):
             full = chunk if full is None else full + chunk  # type: ignore[assignment]
         assert isinstance(full, AIMessage)
@@ -2238,7 +2235,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: str = Field(description="question to set up a joke")
-            punchline: Optional[str] = Field(
+            punchline: str | None = Field(
                 default=None, description="answer to resolve the joke"
             )
 
@@ -2263,7 +2260,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             """Joke to tell user."""
 
             setup: Annotated[str, ..., "question to set up a joke"]
-            punchline: Annotated[Optional[str], None, "answer to resolve the joke"]
+            punchline: Annotated[str | None, None, "answer to resolve the joke"]
 
         chat = model.with_structured_output(JokeDict, **self.structured_output_kwargs)
         result = chat.invoke("Tell me a joke about cats.")
@@ -2339,8 +2336,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "application/pdf",
             }
 
@@ -2379,9 +2375,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                 },
             ]
         )
@@ -2415,8 +2410,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -2455,9 +2449,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "audio",
-                    "source_type": "base64",
                     "mime_type": "audio/wav",
-                    "data": audio_data,
+                    "base64": audio_data,
                 },
             ]
         )
@@ -2488,8 +2481,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -2515,7 +2507,6 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "<url>",
             }
 
@@ -2567,9 +2558,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {"type": "text", "text": "describe the weather in this image"},
                 {
                     "type": "image",
-                    "source_type": "base64",
                     "mime_type": "image/jpeg",
-                    "data": image_data,
+                    "base64": image_data,
                 },
             ],
         )
@@ -2582,7 +2572,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                     {"type": "text", "text": "describe the weather in this image"},
                     {
                         "type": "image",
-                        "source_type": "url",
                         "url": image_url,
                     },
                 ],
@@ -2617,8 +2606,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -2673,8 +2661,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             content=[
                 {
                     "type": "image",
-                    "source_type": "base64",
-                    "data": image_data,
+                    "base64": image_data,
                     "mime_type": "image/jpeg",
                 },
             ],
@@ -2899,7 +2886,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         result = model.invoke([HumanMessage("hello", name="example_user")])
         assert result is not None
         assert isinstance(result, AIMessage)
-        assert isinstance(result.text(), str)
+        assert isinstance(result.text, str)
         assert len(result.content) > 0
 
     def test_agent_loop(self, model: BaseChatModel) -> None:
@@ -2955,6 +2942,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         input_message = HumanMessage("What is the weather in San Francisco, CA?")
         tool_call_message = llm_with_tools.invoke([input_message])
         assert isinstance(tool_call_message, AIMessage)
+        content_blocks = tool_call_message.content_blocks
+        assert any(block["type"] == "tool_call" for block in content_blocks)
         tool_calls = tool_call_message.tool_calls
         assert len(tool_calls) == 1
         tool_call = tool_calls[0]
@@ -3048,7 +3037,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         self,
         model: BaseChatModel,
         *,
-        tool_choice: Optional[str] = None,
+        tool_choice: str | None = None,
         force_tool_call: bool = True,
     ) -> None:
         r"""Generic integration test for Unicode characters in tool calls.

@@ -1,4 +1,3 @@
-import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
@@ -1051,12 +1050,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
         _convert_typed_dict_to_openai_function(Tool)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
-)
-def test_convert_union_type_py_39() -> None:
+def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
+    def magic_function(value: int | str) -> str:  # noqa: ARG001,FA102
         """Compute a magic function."""
         return ""
 

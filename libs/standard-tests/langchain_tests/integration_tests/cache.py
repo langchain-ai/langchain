@@ -44,7 +44,8 @@ class SyncCacheTestSuite(BaseStandardTests):
     def get_sample_generation(self) -> Generation:
         """Return a sample Generation object for testing."""
         return Generation(
-            text="Sample generated text.", generation_info={"reason": "test"}
+            text="Sample generated text.",
+            generation_info={"reason": "test"},
         )
 
     def test_cache_is_empty(self, cache: BaseCache) -> None:
@@ -136,7 +137,8 @@ class AsyncCacheTestSuite(BaseStandardTests):
     def get_sample_generation(self) -> Generation:
         """Return a sample Generation object for testing."""
         return Generation(
-            text="Sample generated text.", generation_info={"reason": "test"}
+            text="Sample generated text.",
+            generation_info={"reason": "test"},
         )
 
     async def test_cache_is_empty(self, cache: BaseCache) -> None:
@@ -192,7 +194,8 @@ class AsyncCacheTestSuite(BaseStandardTests):
         assert await cache.alookup(prompt, llm_string) == [generation]
 
     async def test_update_cache_with_multiple_generations(
-        self, cache: BaseCache
+        self,
+        cache: BaseCache,
     ) -> None:
         """Test updating the cache with multiple Generation objects."""
         prompt = self.get_sample_prompt()

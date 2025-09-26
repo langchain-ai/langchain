@@ -1,8 +1,9 @@
 """Tools unit tests."""
 
+from __future__ import annotations
+
 import os
 from abc import abstractmethod
-from typing import Union
 from unittest import mock
 
 import pytest
@@ -22,7 +23,7 @@ class ToolsTests(BaseStandardTests):
 
     @property
     @abstractmethod
-    def tool_constructor(self) -> Union[type[BaseTool], BaseTool]:
+    def tool_constructor(self) -> type[BaseTool] | BaseTool:
         """Returns a class or instance of a tool to be tested."""
         ...
 

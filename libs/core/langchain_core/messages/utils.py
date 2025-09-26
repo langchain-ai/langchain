@@ -32,10 +32,15 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
-from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
+)
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content import (
+    is_data_content_block,
+)
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -137,7 +142,7 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
-        message = f"{role}: {m.text()}"
+        message = f"{role}: {m.text}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
@@ -204,7 +209,7 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.append("tool_call_chunks")
+        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
@@ -1617,11 +1622,15 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_position"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(
+                **chunk.model_dump(
+                    exclude={"type", "tool_call_chunks", "chunk_position"}
+                )
+            )
 
     msg = (
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "

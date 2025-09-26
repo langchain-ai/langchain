@@ -1271,7 +1271,7 @@ class InjectedToolCallId(InjectedToolArg):
 
     .. code-block:: python
 
-        from typing_extensions import Annotated
+        from typing import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
 
