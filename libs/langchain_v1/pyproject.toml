@@ -113,9 +113,12 @@ ignore = [
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 flake8-annotations.allow-star-arg-any = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [

@@ -227,7 +227,7 @@ def tool(
                 \"\"\"
                 return bar
 
-    """  # noqa: D214, D410, D411
+    """  # noqa: D214, D410, D411  # We're intentionally showing bad formatting in examples
 
     def _create_tool_factory(
         tool_name: str,

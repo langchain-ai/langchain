@@ -1,3 +1,5 @@
+"""Anthropic chat models."""
+
 from __future__ import annotations
 
 import copy
@@ -172,12 +174,12 @@ def _merge_messages(
             all(isinstance(m, c) for m in (curr, last))
             for c in (SystemMessage, HumanMessage)
         ):
-            if isinstance(cast(BaseMessage, last).content, str):
+            if isinstance(cast("BaseMessage", last).content, str):
                 new_content: list = [
-                    {"type": "text", "text": cast(BaseMessage, last).content},
+                    {"type": "text", "text": cast("BaseMessage", last).content},
                 ]
             else:
-                new_content = copy.copy(cast(list, cast(BaseMessage, last).content))
+                new_content = copy.copy(cast("list", cast("BaseMessage", last).content))
             if isinstance(curr.content, str):
                 new_content.append({"type": "text", "text": curr.content})
             else:
@@ -475,14 +477,14 @@ def _format_messages(
                 else content
             )
             tool_use_ids = [
-                cast(dict, block)["id"]
+                cast("dict", block)["id"]
                 for block in content
-                if cast(dict, block)["type"] == "tool_use"
+                if cast("dict", block)["type"] == "tool_use"
             ]
             missing_tool_calls = [
                 tc for tc in message.tool_calls if tc["id"] not in tool_use_ids
             ]
-            cast(list, content).extend(
+            cast("list", content).extend(
                 _lc_tool_calls_to_anthropic_tool_use_blocks(missing_tool_calls),
             )
 
@@ -1418,6 +1420,7 @@ class ChatAnthropic(BaseChatModel):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Return a mapping of secret keys to environment variables."""
         return {
             "anthropic_api_key": "ANTHROPIC_API_KEY",
             "mcp_servers": "ANTHROPIC_MCP_SERVERS",
@@ -1425,6 +1428,7 @@ class ChatAnthropic(BaseChatModel):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Whether the class is serializable in langchain."""
         return True
 
     @classmethod
@@ -1470,6 +1474,7 @@ class ChatAnthropic(BaseChatModel):
     @model_validator(mode="before")
     @classmethod
     def build_extra(cls, values: dict) -> Any:
+        """Build model kwargs."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
 
@@ -2265,7 +2270,7 @@ class ChatAnthropic(BaseChatModel):
                 def get_weather(location: str) -> str:
                     \"\"\"Get the current weather in a given location
 
-                    Args:
+        Args:
                         location: The city and state, e.g. San Francisco, CA
                     \"\"\"
                     return "Sunny"
@@ -2359,7 +2364,7 @@ def _lc_tool_calls_to_anthropic_tool_use_blocks(
             type="tool_use",
             name=tool_call["name"],
             input=tool_call["args"],
-            id=cast(str, tool_call["id"]),
+            id=cast("str", tool_call["id"]),
         )
         for tool_call in tool_calls
     ]
@@ -2469,10 +2474,7 @@ def _make_message_chunk_from_anthropic_event(
                 message_chunk = AIMessageChunk(content=[content_block])
 
         # Reasoning
-        elif (
-            event.delta.type == "thinking_delta"
-            or event.delta.type == "signature_delta"
-        ):
+        elif event.delta.type in {"thinking_delta", "signature_delta"}:
             content_block = event.delta.model_dump()
             content_block["index"] = event.index
             content_block["type"] = "thinking"
@@ -2526,7 +2528,7 @@ def _make_message_chunk_from_anthropic_event(
 
 @deprecated(since="0.1.0", removal="1.0.0", alternative="ChatAnthropic")
 class ChatAnthropicMessages(ChatAnthropic):
-    pass
+    """Deprecated class, use `ChatAnthropic` instead."""
 
 
 def _create_usage_metadata(anthropic_usage: BaseModel) -> UsageMetadata:

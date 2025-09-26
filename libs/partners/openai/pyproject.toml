@@ -66,8 +66,50 @@ target-version = "py39"
 docstring-code-format = true
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", "UP045" ]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "UP007",   # non-pep604-annotation-union
+    "UP045",   # non-pep604-annotation-optional
+    "SIM105",  # Rarely useful
+    "FIX",     # TODOs
+    "TD",      # TODOs
+    "C901",    # Complex functions
+    "PLR0912", # Too many branches
+    "PLR0913", # Too many arguments
+    "PLR0914", # Too many local variables
+    "PLR0915", # Too many statements
+    "ARG001",
+    "RUF001",
+    "ERA001",
+    "PLR0911",
+
+    # TODO
+    "PLR2004", # Comparison to magic number
+    "ANN401",
+    "ARG002",
+    "BLE001",
+    "TC",
+    "PLC0415",
+    "PT011",
+    "PT013",
+    "TRY",
+    "PLW",
+    "PLE",
+    "FBT",
+    "A001",
+    "B028",
+    "YTT203",
+    "RUF012",
+    "B904",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -88,4 +130,17 @@ filterwarnings = [
 "tests/**/*.py" = [
     "S101", # Tests need assertions
     "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "SLF001", # Private member access in tests
+    "D",     # Docstring checks in tests
+
+    # TODO
+    "B018",
+    "PGH003",
+    "PERF401",
+    "PT017",
+    "RUF012",
+    "B017",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
 ]
