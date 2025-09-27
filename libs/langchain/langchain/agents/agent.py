@@ -18,6 +18,7 @@ from typing import (
     Union,
     cast,
 )
+from uuid import uuid4
 
 import yaml
 from langchain_core._api import deprecated
@@ -1428,11 +1429,14 @@ class AgentExecutor(Chain):
             if return_direct:
                 tool_run_kwargs["llm_prefix"] = ""
             # We then call the tool on the tool input to get an observation
+            # Get tool_call_id if exists for content_and_artifact
+            tool_call_id = agent_action.tool_call_id if hasattr(agent_action, "tool_call_id") else None
             observation = tool.run(
                 agent_action.tool_input,
                 verbose=self.verbose,
                 color=color,
                 callbacks=run_manager.get_child() if run_manager else None,
+                tool_call_id=tool_call_id,
                 **tool_run_kwargs,
             )
         else:
