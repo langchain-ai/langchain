@@ -269,6 +269,17 @@ const FEATURE_TABLES = {
                 "multimodal": true,
                 "local": false,
                 "apiLink": "https://github.com/oracle/langchain-oracle"
+            },
+            {
+                "name": "ChatZeroG",
+                "package": "langchain-zerog",
+                "link": "zerog/",
+                "structured_output": true,
+                "tool_calling": true,
+                "json_mode": false,
+                "multimodal": false,
+                "local": false,
+                "apiLink": "https://python.langchain.com/api_reference/zerog/chat_models/langchain_zerog.chat_models.ChatZeroG.html"
             }
         ],
     },
