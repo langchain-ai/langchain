@@ -4,7 +4,6 @@ import functools
 import os
 import uuid
 import warnings
-from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
 from itertools import islice
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
@@ -22,11 +21,13 @@ from qdrant_client.local.async_qdrant_local import AsyncQdrantLocal
 from langchain_qdrant._utils import maximal_marginal_relevance
 
 if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Generator, Iterable, Sequence
+
     DictFilter = dict[str, Union[str, int, bool, dict, list]]
     MetadataFilter = Union[DictFilter, models.Filter]
 
 
-class QdrantException(Exception):
+class QdrantException(Exception):  # noqa: N818
     """`Qdrant` related exceptions."""
 
 
@@ -85,14 +86,14 @@ class Qdrant(VectorStore):
         vector_name: Optional[str] = VECTOR_NAME,
         async_client: Optional[Any] = None,
         embedding_function: Optional[Callable] = None,  # deprecated
-    ):
+    ) -> None:
         """Initialize with necessary components."""
         if not isinstance(client, QdrantClient):
             msg = (
                 f"client should be an instance of qdrant_client.QdrantClient, "
                 f"got {type(client)}"
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         if async_client is not None and not isinstance(async_client, AsyncQdrantClient):
             msg = (

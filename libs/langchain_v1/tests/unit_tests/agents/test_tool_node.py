@@ -35,13 +35,11 @@ from typing_extensions import TypedDict
 from langchain.agents import (
     ToolNode,
 )
-from langchain.agents.tool_node import (
-    TOOL_CALL_ERROR_TEMPLATE,
+from langchain.tools import (
     InjectedState,
     InjectedStore,
-    ToolInvocationError,
-    tools_condition,
 )
+from langchain.tools.tool_node import TOOL_CALL_ERROR_TEMPLATE, ToolInvocationError, tools_condition
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel

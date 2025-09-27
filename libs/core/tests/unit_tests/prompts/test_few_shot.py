@@ -27,7 +27,6 @@ EXAMPLE_PROMPT = PromptTemplate(
 
 
 @pytest.fixture
-@pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
 

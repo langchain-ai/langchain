@@ -35,6 +35,6 @@ class TestWithoutGetByIdVectorStore(VectorStoreIntegrationTests):
     def test_get_by_ids_fails(self, vectorstore: VectorStore) -> None:
         with pytest.raises(
             NotImplementedError,
-            match="WithoutGetByIdsVectorStore does not yet support get_by_ids.",
+            match="WithoutGetByIdsVectorStore does not yet support get_by_ids",
         ):
             vectorstore.get_by_ids(["id1", "id2"])

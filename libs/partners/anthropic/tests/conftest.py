@@ -2,7 +2,9 @@ from typing import Any
 
 import pytest
 from langchain_tests.conftest import CustomPersister, CustomSerializer
-from langchain_tests.conftest import _base_vcr_config as _base_vcr_config
+from langchain_tests.conftest import (
+    _base_vcr_config as _base_vcr_config,  # noqa: PLC0414
+)
 from vcr import VCR  # type: ignore[import-untyped]
 
 

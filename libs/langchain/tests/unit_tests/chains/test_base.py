@@ -1,5 +1,6 @@
 """Test logic on base chain class."""
 
+import re
 import uuid
 from typing import Any, Optional
 
@@ -68,14 +69,16 @@ class FakeChain(Chain):
 def test_bad_inputs() -> None:
     """Test errors are raised if input keys are not found."""
     chain = FakeChain()
-    with pytest.raises(ValueError, match="Missing some input keys: {'foo'}"):
+    with pytest.raises(ValueError, match=re.escape("Missing some input keys: {'foo'}")):
         chain({"foobar": "baz"})
 
 
 def test_bad_outputs() -> None:
     """Test errors are raised if outputs keys are not found."""
     chain = FakeChain(be_correct=False)
-    with pytest.raises(ValueError, match="Missing some output keys: {'bar'}"):
+    with pytest.raises(
+        ValueError, match=re.escape("Missing some output keys: {'bar'}")
+    ):
         chain({"foo": "baz"})
 
 
@@ -119,9 +122,7 @@ def test_run_single_arg() -> None:
 def test_run_multiple_args_error() -> None:
     """Test run method with multiple args errors as expected."""
     chain = FakeChain()
-    with pytest.raises(
-        ValueError, match="`run` supports only one positional argument."
-    ):
+    with pytest.raises(ValueError, match="`run` supports only one positional argument"):
         chain.run("bar", "foo")
 
 
@@ -135,7 +136,7 @@ def test_run_kwargs() -> None:
 def test_run_kwargs_error() -> None:
     """Test run method with kwargs errors as expected."""
     chain = FakeChain(the_input_keys=["foo", "bar"])
-    with pytest.raises(ValueError, match="Missing some input keys: {'bar'}"):
+    with pytest.raises(ValueError, match=re.escape("Missing some input keys: {'bar'}")):
         chain.run(foo="bar", baz="foo")
 
 
@@ -145,7 +146,7 @@ def test_run_args_and_kwargs_error() -> None:
     with pytest.raises(
         ValueError,
         match="`run` supported with either positional arguments "
-        "or keyword arguments but not both.",
+        "or keyword arguments but not both",
     ):
         chain.run("bar", foo="bar")
 
@@ -155,7 +156,7 @@ def test_multiple_output_keys_error() -> None:
     chain = FakeChain(the_output_keys=["foo", "bar"])
     with pytest.raises(
         ValueError,
-        match="`run` not supported when there is not exactly one output key.",
+        match="`run` not supported when there is not exactly one output key",
     ):
         chain.run("bar")
 
@@ -187,7 +188,7 @@ def test_run_with_callback_and_input_error() -> None:
         callbacks=[handler],
     )
 
-    with pytest.raises(ValueError, match="Missing some input keys: {'foo'}"):
+    with pytest.raises(ValueError, match=re.escape("Missing some input keys: {'foo'}")):
         chain({"bar": "foo"})
 
     assert handler.starts == 1
@@ -234,7 +235,9 @@ def test_run_with_callback_and_output_error() -> None:
         callbacks=[handler],
     )
 
-    with pytest.raises(ValueError, match="Missing some output keys: {'foo'}"):
+    with pytest.raises(
+        ValueError, match=re.escape("Missing some output keys: {'foo'}")
+    ):
         chain("foo")
 
     assert handler.starts == 1

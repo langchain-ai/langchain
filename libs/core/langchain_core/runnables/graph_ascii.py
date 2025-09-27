@@ -269,7 +269,7 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
             print(draw_ascii(vertices, edges))
 
-        .. code-block:: none
+        .. code-block::
 
                  +---+
                  | 1 |

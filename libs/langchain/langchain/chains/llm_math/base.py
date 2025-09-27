@@ -123,7 +123,7 @@ class LLMMathChain(Chain):
             async for event in events:
                 event["messages"][-1].pretty_print()
 
-        .. code-block:: none
+        .. code-block::
 
             ================================ Human Message =================================
 

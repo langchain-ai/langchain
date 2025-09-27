@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import uuid
-from typing import Callable, Optional
+from typing import TYPE_CHECKING, Callable, Optional
 
 import pytest  # type: ignore[import-not-found]
-from langchain_core.embeddings import Embeddings
 
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import ConsistentFakeEmbeddings
 
+if TYPE_CHECKING:
+    from langchain_core.embeddings import Embeddings
+
 
 @pytest.mark.parametrize(
-    ["embeddings", "embedding_function"],
+    ("embeddings", "embedding_function"),
     [
         (ConsistentFakeEmbeddings(), None),
         (ConsistentFakeEmbeddings().embed_query, None),
@@ -36,7 +38,7 @@ def test_qdrant_embedding_interface(
 
 
 @pytest.mark.parametrize(
-    ["embeddings", "embedding_function"],
+    ("embeddings", "embedding_function"),
     [
         (ConsistentFakeEmbeddings(), ConsistentFakeEmbeddings().embed_query),
         (None, None),

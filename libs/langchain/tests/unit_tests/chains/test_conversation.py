@@ -80,7 +80,7 @@ def test_conversation_chain_errors_bad_prompt() -> None:
     llm = FakeLLM()
     prompt = PromptTemplate(input_variables=[], template="nothing here")
     with pytest.raises(
-        ValueError, match="Value error, Got unexpected prompt input variables."
+        ValueError, match="Value error, Got unexpected prompt input variables"
     ):
         ConversationChain(llm=llm, prompt=prompt)
 

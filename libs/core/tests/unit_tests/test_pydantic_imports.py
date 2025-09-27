@@ -7,7 +7,11 @@ from pydantic import BaseModel
 def test_all_models_built() -> None:
     for path in Path("../core/langchain_core/").glob("*"):
         module_name = path.stem
-        if not module_name.startswith(".") and path.suffix != ".typed":
+        if (
+            not module_name.startswith(".")
+            and path.suffix != ".typed"
+            and module_name != "pydantic_v1"
+        ):
             module = importlib.import_module("langchain_core." + module_name)
             all_ = getattr(module, "__all__", [])
             for attr_name in all_:

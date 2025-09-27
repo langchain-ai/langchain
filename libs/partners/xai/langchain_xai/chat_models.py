@@ -456,7 +456,9 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         return "xai-chat"
 
     def _get_ls_params(
-        self, stop: Optional[list[str]] = None, **kwargs: Any
+        self,
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,  # noqa: ANN401
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = super()._get_ls_params(stop=stop, **kwargs)
@@ -581,7 +583,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
         ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ANN401
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
         """Model wrapper that returns outputs formatted to match the given schema.
 

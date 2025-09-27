@@ -20,7 +20,7 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         To access AzureOpenAI embedding models you'll need to create an Azure account,
         get an API key, and install the `langchain-openai` integration package.
 
-        You’ll need to have an Azure OpenAI instance deployed.
+        You'll need to have an Azure OpenAI instance deployed.
         You can deploy a version on Azure Portal following this
         [guide](https://learn.microsoft.com/en-us/azure/ai-services/openai/how-to/create-resource?pivots=web-portal).
 
@@ -174,22 +174,23 @@ class AzureOpenAIEmbeddings(OpenAIEmbeddings):  # type: ignore[override]
         openai_api_base = self.openai_api_base
         if openai_api_base and self.validate_base_url:
             # Only validate openai_api_base if azure_endpoint is not provided
-            if not self.azure_endpoint:
-                if "/openai" not in openai_api_base:
-                    self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
-                    raise ValueError(
-                        "As of openai>=1.0.0, Azure endpoints should be specified via "
-                        "the `azure_endpoint` param not `openai_api_base` "
-                        "(or alias `base_url`). "
-                    )
+            if not self.azure_endpoint and "/openai" not in openai_api_base:
+                self.openai_api_base = cast(str, self.openai_api_base) + "/openai"
+                msg = (
+                    "As of openai>=1.0.0, Azure endpoints should be specified via "
+                    "the `azure_endpoint` param not `openai_api_base` "
+                    "(or alias `base_url`). "
+                )
+                raise ValueError(msg)
             if self.deployment:
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, if `deployment` (or alias "
                     "`azure_deployment`) is specified then "
                     "`openai_api_base` (or alias `base_url`) should not be. "
                     "Instead use `deployment` (or alias `azure_deployment`) "
                     "and `azure_endpoint`."
                 )
+                raise ValueError(msg)
         client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,

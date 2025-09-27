@@ -21,7 +21,7 @@ Key Components:
 Typical Usage:
     ```python
     from langchain_core.tools import tool
-    from langchain.agents import ToolNode
+    from langchain.tools import ToolNode
 
 
     @tool
@@ -344,7 +344,7 @@ class ToolNode(RunnableCallable):
         Basic usage:
 
         ```python
-        from langchain.agents import ToolNode
+        from langchain.tools import ToolNode
         from langchain_core.tools import tool
 
         @tool
@@ -359,7 +359,7 @@ class ToolNode(RunnableCallable):
 
         ```python
         from typing_extensions import Annotated
-        from langgraph.agents.tool_node import InjectedState
+        from langchain.tools import InjectedState
 
         @tool
         def context_tool(query: str, state: Annotated[dict, InjectedState]) -> str:
@@ -885,7 +885,8 @@ def tools_condition(
 
         ```python
         from langgraph.graph import StateGraph
-        from langgraph.agents.tool_node import ToolNode, tools_condition
+        from langchain.tools import ToolNode
+        from langchain.tools.tool_node import tools_condition
         from typing_extensions import TypedDict
 
 
@@ -950,9 +951,7 @@ class InjectedState(InjectedToolArg):
         from typing_extensions import Annotated, TypedDict
 
         from langchain_core.messages import BaseMessage, AIMessage
-        from langchain_core.tools import tool
-
-        from langgraph.agents.tool_node import InjectedState, ToolNode
+        from langchain.tools import InjectedState, ToolNode, tool
 
 
         class AgentState(TypedDict):
@@ -1020,15 +1019,14 @@ class InjectedStore(InjectedToolArg):
     for maintaining context, user preferences, or any other data that needs to
     persist beyond individual workflow executions.
 
-    !!! Warning
+    .. warning::
         `InjectedStore` annotation requires `langchain-core >= 0.3.8`
 
     Example:
         ```python
         from typing_extensions import Annotated
-        from langchain_core.tools import tool
         from langgraph.store.memory import InMemoryStore
-        from langgraph.agents.tool_node import InjectedStore, ToolNode
+        from langchain.tools import InjectedStore, ToolNode, tool
 
         @tool
         def save_preference(

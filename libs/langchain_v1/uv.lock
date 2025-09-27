@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -1543,7 +1543,7 @@ wheels = [
 
 [[package]]
 name = "langchain"
-version = "1.0.0a8"
+version = "1.0.0a9"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -1814,7 +1814,7 @@ dev = [
     { name = "jupyter", specifier = ">=1.0.0,<2.0.0" },
     { name = "setuptools", specifier = ">=67.6.1,<68.0.0" },
 ]
-lint = [{ name = "ruff", specifier = ">=0.12.2,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "blockbuster", specifier = ">=1.5.18,<1.6.0" },
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
@@ -1981,7 +1981,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "langchain-core", editable = "../core" }]
-lint = [{ name = "ruff", specifier = ">=0.12.8,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },
     { name = "langchain-core", editable = "../core" },
@@ -2060,7 +2060,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-lint = [{ name = "ruff", specifier = ">=0.12.10,<0.13.0" }]
+lint = [{ name = "ruff", specifier = ">=0.13.1,<0.14.0" }]
 test = [{ name = "langchain-core", editable = "../core" }]
 test-integration = []
 typing = [
@@ -2087,7 +2087,7 @@ dev = [
 ]
 lint = [
     { name = "langchain-core", editable = "../core" },
-    { name = "ruff", specifier = ">=0.12.8,<0.13.0" },
+    { name = "ruff", specifier = ">=0.13.1,<0.14.0" },
 ]
 test = [
     { name = "freezegun", specifier = ">=1.2.2,<2.0.0" },

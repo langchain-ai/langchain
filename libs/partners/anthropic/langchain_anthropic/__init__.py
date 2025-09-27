@@ -1,3 +1,5 @@
+"""Anthropic partner package for LangChain."""
+
 from langchain_anthropic.chat_models import (
     ChatAnthropic,
     ChatAnthropicMessages,

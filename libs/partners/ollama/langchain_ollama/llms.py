@@ -87,7 +87,7 @@ class OllamaLLM(BaseLLM):
             response = llm.invoke(input_text)
             print(response)
 
-        .. code-block:: none
+        .. code-block::
 
             "a philosophical question that has been contemplated by humans for
             centuries..."
@@ -98,7 +98,7 @@ class OllamaLLM(BaseLLM):
             for chunk in llm.stream(input_text):
                 print(chunk, end="")
 
-        .. code-block:: none
+        .. code-block::
 
             a philosophical question that has been contemplated by humans for
             centuries...

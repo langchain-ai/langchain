@@ -1,3 +1,5 @@
+"""Test compilation of integration tests for Nomic partner integration."""
+
 import pytest
 
 

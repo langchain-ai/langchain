@@ -33,7 +33,7 @@ test = [
 ]
 test_integration = []
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.13.1,<0.14.0",
     "types-urllib3>=1.26.25.14,<2.0.0.0",
 ]
 dev = ["types-pyyaml>=6.0.12.20240311,<7.0.0.0", "langchain-core"]
@@ -59,6 +59,10 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
 ignore = [ "UP007", "UP045" ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.mypy]
 disallow_untyped_defs = "True"
