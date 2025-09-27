@@ -1434,6 +1434,7 @@ class AgentExecutor(Chain):
                 if hasattr(agent_action, "tool_call_id")
                 else None
             )
+
             observation = tool.run(
                 agent_action.tool_input,
                 verbose=self.verbose,
