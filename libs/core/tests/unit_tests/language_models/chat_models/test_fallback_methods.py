@@ -2,14 +2,12 @@
 
 from typing import Any, Optional
 
-import pytest
 from typing_extensions import override
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_core.outputs import ChatGeneration, ChatResult
-from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 
 
 class FakeChatModelForFallbackTesting(BaseChatModel):
@@ -17,14 +15,6 @@ class FakeChatModelForFallbackTesting(BaseChatModel):
 
     responses: list[str]
     error_on_invoke: bool = False
-
-    def __init__(
-        self,
-        responses: list[str],
-        error_on_invoke: bool = False,
-        **kwargs: Any,
-    ) -> None:
-        super().__init__(responses=responses, error_on_invoke=error_on_invoke, **kwargs)
 
     @override
     def _generate(
@@ -135,10 +125,14 @@ class TestBaseChatModelFallbackMethods:
     def test_fallback_integration_with_invoke(self) -> None:
         """Test that fallback is used correctly in invoke method."""
         # Create a working fallback model
-        fallback_model = FakeChatModelForFallbackTesting(responses=["fallback response"])
+        fallback_model = FakeChatModelForFallbackTesting(
+            responses=["fallback response"]
+        )
 
         # Create a primary model that will error
-        primary_model = FakeChatModelForFallbackTesting(responses=["primary"], error_on_invoke=True)
+        primary_model = FakeChatModelForFallbackTesting(
+            responses=["primary"], error_on_invoke=True
+        )
 
         # Create fallback runnable using the working fallback model
         fallback_runnable = fallback_model.with_fallbacks([])
@@ -158,10 +152,14 @@ class TestBaseChatModelFallbackMethods:
     async def test_fallback_integration_with_ainvoke(self) -> None:
         """Test that fallback is used correctly in ainvoke method."""
         # Create a working fallback model
-        fallback_model = FakeChatModelForFallbackTesting(responses=["async fallback response"])
+        fallback_model = FakeChatModelForFallbackTesting(
+            responses=["async fallback response"]
+        )
 
         # Create a primary model that will error
-        primary_model = FakeChatModelForFallbackTesting(responses=["primary"], error_on_invoke=True)
+        primary_model = FakeChatModelForFallbackTesting(
+            responses=["primary"], error_on_invoke=True
+        )
 
         # Create fallback runnable using the working fallback model
         fallback_runnable = fallback_model.with_fallbacks([])
@@ -181,10 +179,14 @@ class TestBaseChatModelFallbackMethods:
     def test_fallback_integration_with_stream(self) -> None:
         """Test that fallback is used correctly in stream method."""
         # Create a working fallback model
-        fallback_model = FakeChatModelForFallbackTesting(responses=["stream fallback response"])
+        fallback_model = FakeChatModelForFallbackTesting(
+            responses=["stream fallback response"]
+        )
 
         # Create a primary model that will error
-        primary_model = FakeChatModelForFallbackTesting(responses=["primary"], error_on_invoke=True)
+        primary_model = FakeChatModelForFallbackTesting(
+            responses=["primary"], error_on_invoke=True
+        )
 
         # Create fallback runnable using the working fallback model
         fallback_runnable = fallback_model.with_fallbacks([])
@@ -205,10 +207,14 @@ class TestBaseChatModelFallbackMethods:
     async def test_fallback_integration_with_astream(self) -> None:
         """Test that fallback is used correctly in astream method."""
         # Create a working fallback model
-        fallback_model = FakeChatModelForFallbackTesting(responses=["async stream fallback response"])
+        fallback_model = FakeChatModelForFallbackTesting(
+            responses=["async stream fallback response"]
+        )
 
         # Create a primary model that will error
-        primary_model = FakeChatModelForFallbackTesting(responses=["primary"], error_on_invoke=True)
+        primary_model = FakeChatModelForFallbackTesting(
+            responses=["primary"], error_on_invoke=True
+        )
 
         # Create fallback runnable using the working fallback model
         fallback_runnable = fallback_model.with_fallbacks([])
@@ -246,7 +252,9 @@ class TestBaseChatModelFallbackMethods:
         primary_model = FakeChatModelForFallbackTesting(responses=["primary success"])
 
         # Create a fallback model
-        fallback_model = FakeChatModelForFallbackTesting(responses=["fallback response"])
+        fallback_model = FakeChatModelForFallbackTesting(
+            responses=["fallback response"]
+        )
 
         # Create and set fallback
         fallback_runnable = fallback_model.with_fallbacks([])
@@ -255,7 +263,6 @@ class TestBaseChatModelFallbackMethods:
         # Call invoke - should use fallback since it's set
         result = primary_model.invoke("test message")
 
-        # Verify fallback response is used (current implementation always uses fallback when set)
         assert result.content == "fallback response"
 
         # Verify fallback was reset after use
@@ -300,7 +307,9 @@ class TestBaseChatModelFallbackMethods:
         fallback_model = FakeChatModelForFallbackTesting(responses=["fallback used"])
 
         # Create a primary model that will error
-        primary_model = FakeChatModelForFallbackTesting(responses=["primary"], error_on_invoke=True)
+        primary_model = FakeChatModelForFallbackTesting(
+            responses=["primary"], error_on_invoke=True
+        )
 
         # Create and set fallback
         fallback_runnable = fallback_model.with_fallbacks([])
