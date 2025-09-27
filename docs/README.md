@@ -118,18 +118,13 @@ def example_function(param1: str, param2: int = 5) -> bool:
 
     .. warning::
         This function is experimental and may change.
-
-    .. deprecated:: 0.2.0
-        Use :func:`new_function` instead.
     """
 ```
 
 **Special Markers:**
 
 - `:private:` in docstrings excludes members from documentation
-- `.. deprecated::` creates deprecation notices
 - `.. warning::` adds warning admonitions
-- `.. beta::` (custom directive) marks beta features
 
 #### Site Styling and Assets
 

@@ -725,7 +725,7 @@ class ChatOllama(BaseChatModel):
                 tool_call_id = message.tool_call_id
             else:
                 msg = "Received unsupported message type for Ollama."
-                raise ValueError(msg)
+                raise TypeError(msg)
 
             content = ""
             images = []
@@ -814,9 +814,8 @@ class ChatOllama(BaseChatModel):
         if chat_params["stream"]:
             if self._client:
                 yield from self._client.chat(**chat_params)
-        else:
-            if self._client:
-                yield self._client.chat(**chat_params)
+        elif self._client:
+            yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
@@ -899,8 +898,10 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(
+                    "AIMessageChunk", final_chunk.message
+                ).usage_metadata,
+                tool_calls=cast("AIMessageChunk", final_chunk.message).tool_calls,
                 additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
@@ -1073,8 +1074,10 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(
+                    "AIMessageChunk", final_chunk.message
+                ).usage_metadata,
+                tool_calls=cast("AIMessageChunk", final_chunk.message).tool_calls,
                 additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
@@ -1090,7 +1093,7 @@ class ChatOllama(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051, ARG002
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -1117,7 +1120,7 @@ class ChatOllama(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -1351,7 +1354,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        """  # noqa: E501, D301
+        """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
@@ -1404,7 +1407,7 @@ class ChatOllama(BaseChatModel):
                 )
                 raise ValueError(msg)
             if is_pydantic_schema:
-                schema = cast(TypeBaseModel, schema)
+                schema = cast("TypeBaseModel", schema)
                 if issubclass(schema, BaseModelV1):
                     response_format = schema.schema()
                 else:
@@ -1426,7 +1429,7 @@ class ChatOllama(BaseChatModel):
                         )
                 else:
                     # is JSON schema
-                    response_format = cast(dict, schema)
+                    response_format = cast("dict", schema)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={

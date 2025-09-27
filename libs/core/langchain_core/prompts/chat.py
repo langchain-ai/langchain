@@ -262,7 +262,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: list[str],
+        input_variables: list[str],  # noqa: ARG003  # Deprecated
         **kwargs: Any,
     ) -> Self:
         """Create a class from a template file.
@@ -275,7 +275,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_file(template_file, input_variables)
+        prompt = PromptTemplate.from_file(template_file)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -813,7 +813,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
 
             prompt_value = template.invoke(
-                {"name": "Bob", "user_input": "What is your name?"}
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?",
+                }
             )
             # Output:
             # ChatPromptValue(

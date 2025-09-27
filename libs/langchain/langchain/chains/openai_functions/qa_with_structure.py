@@ -79,10 +79,7 @@ def create_qa_with_structure_chain(
         )
         raise ValueError(msg)
     if isinstance(schema, type) and is_basemodel_subclass(schema):
-        if hasattr(schema, "model_json_schema"):
-            schema_dict = cast("dict", schema.model_json_schema())
-        else:
-            schema_dict = cast("dict", schema.schema())
+        schema_dict = cast("dict", schema.model_json_schema())
     else:
         schema_dict = cast("dict", schema)
     function = {
