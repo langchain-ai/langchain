@@ -214,7 +214,7 @@ def _load_package_modules(
     Traversal based on the file system makes it easy to determine which
     of the modules/packages are part of the package vs. 3rd party or built-in.
 
-    Parameters:
+    Args:
         package_directory: Path to the package directory.
         submodule: Optional name of submodule to load.
 

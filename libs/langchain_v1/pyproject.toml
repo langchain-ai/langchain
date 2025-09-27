@@ -113,9 +113,12 @@ ignore = [
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 flake8-annotations.allow-star-arg-any = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
@@ -166,6 +169,16 @@ flake8-annotations.allow-star-arg-any = true
     "ARG002", # Unused argument
     "BLE001", # Do not catch blind exception
     "N801", # class name should use CapWords convention
+]
+
+"langchain/tools/tool_node.py" = [
+    "ANN401", # we use Any right now, need to narrow
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
 ]
 
 [tool.coverage.run]

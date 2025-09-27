@@ -12,7 +12,7 @@ class MockEmbeddings(Embeddings):
         """Mock embed_documents method."""
         return [[1.0, 2.0, 3.0] for _ in texts]
 
-    def embed_query(self, text: str) -> list[float]:
+    def embed_query(self) -> list[float]:  # type: ignore[override]
         """Mock embed_query method."""
         return [1.0, 2.0, 3.0]
 

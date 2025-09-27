@@ -7,10 +7,9 @@ import os
 import re
 import ssl
 import uuid
-from collections.abc import AsyncIterator, Iterator, Sequence
-from contextlib import AbstractAsyncContextManager
 from operator import itemgetter
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
@@ -77,6 +76,10 @@ from pydantic import (
 )
 from typing_extensions import Self
 
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator, Iterator, Sequence
+    from contextlib import AbstractAsyncContextManager
+
 logger = logging.getLogger(__name__)
 
 # Mistral enforces a specific pattern for tool call IDs
@@ -139,7 +142,7 @@ def _convert_mistral_chat_message_to_message(
     if role != "assistant":
         msg = f"Expected role to be 'assistant', got {role}"
         raise ValueError(msg)
-    content = cast(str, _message["content"])
+    content = cast("str", _message["content"])
 
     additional_kwargs: dict = {}
     tool_calls = []
@@ -149,7 +152,7 @@ def _convert_mistral_chat_message_to_message(
         for raw_tool_call in raw_tool_calls:
             try:
                 parsed: dict = cast(
-                    dict, parse_tool_call(raw_tool_call, return_id=True)
+                    "dict", parse_tool_call(raw_tool_call, return_id=True)
                 )
                 if not parsed["id"]:
                     parsed["id"] = uuid.uuid4().hex[:]
@@ -516,7 +519,7 @@ class ChatMistralAI(BaseChatModel):
         else:
             api_key_str = self.mistral_api_key
 
-        # todo: handle retries
+        # TODO: handle retries
         base_url_str = (
             self.endpoint
             or os.environ.get("MISTRAL_BASE_URL")
@@ -534,7 +537,7 @@ class ChatMistralAI(BaseChatModel):
                 timeout=self.timeout,
                 verify=global_ssl_context,
             )
-        # todo: handle retries and max_concurrency
+        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=base_url_str,
@@ -639,7 +642,7 @@ class ChatMistralAI(BaseChatModel):
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 run_manager.on_llm_new_token(
-                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                    token=cast("str", new_chunk.content), chunk=gen_chunk
                 )
             yield gen_chunk
 
@@ -665,7 +668,7 @@ class ChatMistralAI(BaseChatModel):
             gen_chunk = ChatGenerationChunk(message=new_chunk)
             if run_manager:
                 await run_manager.on_llm_new_token(
-                    token=cast(str, new_chunk.content), chunk=gen_chunk
+                    token=cast("str", new_chunk.content), chunk=gen_chunk
                 )
             yield gen_chunk
 

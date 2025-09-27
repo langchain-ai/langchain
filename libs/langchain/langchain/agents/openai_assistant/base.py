@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class OpenAIAssistantFinish(AgentFinish):
     """AgentFinish with run and thread metadata.
 
-    Parameters:
+    Args:
         run_id: Run id.
         thread_id: Thread id.
     """
@@ -54,7 +54,7 @@ class OpenAIAssistantFinish(AgentFinish):
 class OpenAIAssistantAction(AgentAction):
     """AgentAction with info needed to submit custom tool output to existing run.
 
-    Parameters:
+    Args:
         tool_call_id: Tool call id.
         run_id: Run id.
         thread_id: Thread id
@@ -322,7 +322,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             config: Runnable config. Defaults to None.
             **kwargs: Additional arguments.
 
-        Return:
+        Returns:
             If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
                 Otherwise, will return OpenAI types
@@ -456,7 +456,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             config: Runnable config. Defaults to None.
             kwargs: Additional arguments.
 
-        Return:
+        Returns:
             If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
                 Otherwise, will return OpenAI types
