@@ -440,6 +440,13 @@ packages:
   provider_page: graph_rag
   downloads: 73000
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
+- name: langchain-zerog
+  path: libs/partners/zerog
+  repo: langchain-ai/langchain
+  provider_page: zerog
+  name_title: 0G Compute Network
+  downloads: 0
+  downloads_updated_at: '2025-01-27T00:00:00.000000+00:00'
 - name: langchain-xai
   path: libs/partners/xai
   repo: langchain-ai/langchain
