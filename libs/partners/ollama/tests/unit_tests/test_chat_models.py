@@ -258,7 +258,7 @@ def test_structured_output_with_empty_responses() -> None:
             assert isinstance(result, TestSchema)
             assert result.sentiment == "happy"
             assert result.language == "spanish"
-        except Exception as e:
+        except (OutputParserException, ValueError) as e:
             pytest.fail(f"Failed to handle empty content with tool calls: {e}")
 
 
@@ -305,7 +305,7 @@ def test_structured_output_with_completely_empty_response() -> None:
                     )
                     pytest.fail(error_msg)
                 # Other parsing errors might be acceptable
-            except Exception:
+            except (OutputParserException, ValueError):
                 # Non-parsing errors might be acceptable
                 pass
 
@@ -612,7 +612,7 @@ def test_structured_output_parsing() -> None:
                     assert result.sentiment == "happy"
                     assert result.language == "spanish"
 
-            except Exception:
+            except (OutputParserException, ValueError, TypeError):
                 # Allow exceptions during testing
                 pass
 
@@ -661,7 +661,7 @@ def test_structured_output_parsing() -> None:
                 assert result.sentiment == "happy"
                 assert result.language == "spanish"
 
-        except Exception:
+        except (OutputParserException, ValueError, TypeError):
             # Allow exceptions during testing
             pass
 
