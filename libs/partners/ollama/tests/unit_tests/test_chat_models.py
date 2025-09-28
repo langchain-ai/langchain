@@ -23,6 +23,9 @@ from langchain_ollama.chat_models import (
     _parse_json_string,
 )
 
+# Type for structured output methods
+StructuredOutputMethod = Literal["function_calling", "json_mode", "json_schema"]
+
 MODEL_NAME = "llama3.1"
 
 
@@ -280,7 +283,8 @@ def test_structured_output_with_completely_empty_response() -> None:
         llm = ChatOllama(model="test-model")
 
         # This should handle empty responses gracefully
-        for method in ["json_mode", "json_schema", "function_calling"]:
+        methods: list[StructuredOutputMethod] = ["json_mode", "json_schema", "function_calling"]
+        for method in methods:
             mock_client.reset_mock()
             mock_client.chat.return_value = iter(empty_response)
 
@@ -574,7 +578,8 @@ def test_structured_output_parsing() -> None:
         llm = ChatOllama(model="test-model")
 
         # Test each method individually
-        for method in ["json_mode", "json_schema"]:
+        json_methods: list[StructuredOutputMethod] = ["json_mode", "json_schema"]
+        for method in json_methods:
             # Reset the mock for each test
             mock_client.reset_mock()
             mock_client.chat.return_value = iter(streaming_response)
@@ -668,7 +673,8 @@ def test_structured_output_parsing() -> None:
             }
         ]
 
-        for method in ["json_mode", "json_schema"]:
+        json_methods_for_empty: list[StructuredOutputMethod] = ["json_mode", "json_schema"]
+        for method in json_methods_for_empty:
             mock_client.reset_mock()
             mock_client.chat.return_value = iter(empty_response)
 
