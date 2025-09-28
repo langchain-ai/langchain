@@ -39,7 +39,7 @@ from langchain_core.messages import (
 )
 from langchain_core.messages.tool import ToolCallChunk
 from langchain_core.messages.tool import tool_call_chunk as create_tool_call_chunk
-from langchain_core.output_parsers import JsonOutputParser
+from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     make_invalid_tool_call,
@@ -1077,7 +1077,14 @@ class ChatHuggingFace(BaseChatModel):
                     "schema": schema,
                 },
             )
-            output_parser = JsonOutputParser()  # type: ignore[arg-type]
+
+            if is_pydantic_schema:
+                output_parser: Union[  # type: ignore[no-redef]
+                    JsonOutputKeyToolsParser, JsonOutputParser, PydanticOutputParser
+                ] = JsonOutputParser()  # type: ignore[arg-type]
+            else:
+                output_parser = JsonOutputParser()
+
         elif method == "json_mode":
             llm = self.bind(
                 response_format={"type": "json_object"},
