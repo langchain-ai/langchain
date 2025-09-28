@@ -953,7 +953,11 @@ class ChatOllama(BaseChatModel):
             )
 
             # Skip empty content chunks unless they have tool calls or are final chunks
-            if not content.strip() and not has_tool_calls and not stream_resp.get("done"):
+            if (
+                not content.strip()
+                and not has_tool_calls
+                and not stream_resp.get("done")
+            ):
                 continue
 
             if stream_resp.get("done") is True:
