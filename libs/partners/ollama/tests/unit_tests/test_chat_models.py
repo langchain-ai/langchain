@@ -162,9 +162,7 @@ def test_parse_json_string_empty_string_cases() -> None:
     assert result == {}, f"Expected empty dict for empty string, got {result}"
 
     # Test whitespace-only string with skip=False should return empty dict
-    result = _parse_json_string(
-        "   \n  \t  ", raw_tool_call=raw_tool_call, skip=False
-    )
+    result = _parse_json_string("   \n  \t  ", raw_tool_call=raw_tool_call, skip=False)
     assert result == {}, f"Expected empty dict for whitespace string, got {result}"
 
     # Test empty string with skip=True should return original string
@@ -173,9 +171,7 @@ def test_parse_json_string_empty_string_cases() -> None:
 
     # Test whitespace-only string with skip=True should return original string
     whitespace_str = "   \n  \t  "
-    result = _parse_json_string(
-        whitespace_str, raw_tool_call=raw_tool_call, skip=True
-    )
+    result = _parse_json_string(whitespace_str, raw_tool_call=raw_tool_call, skip=True)
     expected_msg = f"Expected original whitespace string, got {result}"
     assert result == whitespace_str, expected_msg
 
@@ -183,9 +179,7 @@ def test_parse_json_string_empty_string_cases() -> None:
 def test_parse_arguments_from_tool_call_empty_arguments() -> None:
     """Test _parse_arguments_from_tool_call with empty arguments."""
     # Test with empty string arguments
-    raw_tool_call_empty = {
-        "function": {"name": "test_function", "arguments": ""}
-    }
+    raw_tool_call_empty = {"function": {"name": "test_function", "arguments": ""}}
     result = _parse_arguments_from_tool_call(raw_tool_call_empty)
     assert result == {}, f"Expected empty dict for empty arguments, got {result}"
 
@@ -198,9 +192,7 @@ def test_parse_arguments_from_tool_call_empty_arguments() -> None:
     assert result == {}, expected_msg
 
     # Test with empty dict arguments
-    raw_tool_call_empty_dict = {
-        "function": {"name": "test_function", "arguments": {}}
-    }
+    raw_tool_call_empty_dict = {"function": {"name": "test_function", "arguments": {}}}
     result = _parse_arguments_from_tool_call(raw_tool_call_empty_dict)
     expected_msg = f"Expected empty dict for empty dict arguments, got {result}"
     assert result == {}, expected_msg
@@ -258,7 +250,7 @@ def test_structured_output_with_empty_responses() -> None:
             assert isinstance(result, TestSchema)
             assert result.sentiment == "happy"
             assert result.language == "spanish"
-        except (ValueError) as e:
+        except ValueError as e:
             pytest.fail(f"Failed to handle empty content with tool calls: {e}")
 
 
@@ -305,7 +297,7 @@ def test_structured_output_with_completely_empty_response() -> None:
                     )
                     pytest.fail(error_msg)
                 # Other parsing errors might be acceptable
-            except (ValueError):
+            except ValueError:
                 # Non-parsing errors might be acceptable
                 pass
 
