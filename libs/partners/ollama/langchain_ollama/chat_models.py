@@ -78,6 +78,7 @@ def _get_usage_metadata_from_generation_info(
         )
     return None
 
+
 def _parse_json_string(
     json_string: str,
     *,
@@ -915,80 +916,79 @@ class ChatOllama(BaseChatModel):
         return ChatResult(generations=[chat_generation])
 
     def _iterate_over_stream(
-    self,
-    messages: list[BaseMessage],
-    stop: Optional[list[str]] = None,
-    **kwargs: Any,
-) -> Iterator[ChatGenerationChunk]:
-       reasoning = kwargs.get("reasoning", self.reasoning)
-       for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
-        if not isinstance(stream_resp, str):
-            content = (
-                stream_resp["message"]["content"]
-                if "message" in stream_resp and "content" in stream_resp["message"]
-                else ""
-            )
-
-            # Warn and skip responses with done_reason: 'load' and empty content
-            # These indicate the model was loaded but no actual generation occurred
-            is_load_response_with_empty_content = (
-                stream_resp.get("done") is True
-                and stream_resp.get("done_reason") == "load"
-                and not content.strip()
-            )
-
-            if is_load_response_with_empty_content:
-                log.warning(
-                    "Ollama returned empty response with done_reason='load'."
-                    "This typically indicates the model was loaded but no content "
-                    "was generated. Skipping this response."
+        self,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> Iterator[ChatGenerationChunk]:
+        reasoning = kwargs.get("reasoning", self.reasoning)
+        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
+            if not isinstance(stream_resp, str):
+                content = (
+                    stream_resp["message"]["content"]
+                    if "message" in stream_resp and "content" in stream_resp["message"]
+                    else ""
                 )
-                continue
 
-            # Handle structured output scenarios where content might be empty
-            # but tool_calls are present
-            has_tool_calls = (
-                "message" in stream_resp
-                and stream_resp["message"].get("tool_calls")
-            )
+                # Warn and skip responses with done_reason: 'load' and empty content
+                # These indicate the model was loaded but no actual generation occurred
+                is_load_response_with_empty_content = (
+                    stream_resp.get("done") is True
+                    and stream_resp.get("done_reason") == "load"
+                    and not content.strip()
+                )
 
-            # Skip empty content chunks unless they have tool calls or are final chunks
-            if (
-                not content.strip()
-                and not has_tool_calls
-                and not stream_resp.get("done")
-            ):
-                continue
+                if is_load_response_with_empty_content:
+                    log.warning(
+                        "Ollama returned empty response with done_reason='load'."
+                        "This typically indicates the model was loaded but no content "
+                        "was generated. Skipping this response."
+                    )
+                    continue
 
-            if stream_resp.get("done") is True:
-                generation_info = dict(stream_resp)
-                if "model" in generation_info:
-                    generation_info["model_name"] = generation_info["model"]
-                _ = generation_info.pop("message", None)
-            else:
-                generation_info = None
+                # Handle structured output scenarios where content might be empty
+                # but tool_calls are present
+                has_tool_calls = "message" in stream_resp and stream_resp[
+                    "message"
+                ].get("tool_calls")
 
-            additional_kwargs = {}
-            if (
-                reasoning
-                and "message" in stream_resp
-                and (thinking_content := stream_resp["message"].get("thinking"))
-            ):
-                additional_kwargs["reasoning_content"] = thinking_content
+                # Skip empty content chunks unless they have tool calls or are final chunks
+                if (
+                    not content.strip()
+                    and not has_tool_calls
+                    and not stream_resp.get("done")
+                ):
+                    continue
 
-            chunk = ChatGenerationChunk(
-                message=AIMessageChunk(
-                    content=content,
-                    additional_kwargs=additional_kwargs,
-                    usage_metadata=_get_usage_metadata_from_generation_info(
-                        stream_resp
+                if stream_resp.get("done") is True:
+                    generation_info = dict(stream_resp)
+                    if "model" in generation_info:
+                        generation_info["model_name"] = generation_info["model"]
+                    _ = generation_info.pop("message", None)
+                else:
+                    generation_info = None
+
+                additional_kwargs = {}
+                if (
+                    reasoning
+                    and "message" in stream_resp
+                    and (thinking_content := stream_resp["message"].get("thinking"))
+                ):
+                    additional_kwargs["reasoning_content"] = thinking_content
+
+                chunk = ChatGenerationChunk(
+                    message=AIMessageChunk(
+                        content=content,
+                        additional_kwargs=additional_kwargs,
+                        usage_metadata=_get_usage_metadata_from_generation_info(
+                            stream_resp
+                        ),
+                        tool_calls=_get_tool_calls_from_response(stream_resp),
                     ),
-                    tool_calls=_get_tool_calls_from_response(stream_resp),
-                ),
-                generation_info=generation_info,
-            )
+                    generation_info=generation_info,
+                )
 
-            yield chunk
+                yield chunk
 
     def _stream(
         self,
