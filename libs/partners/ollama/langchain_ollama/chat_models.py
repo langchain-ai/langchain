@@ -952,7 +952,8 @@ class ChatOllama(BaseChatModel):
                     "message"
                 ].get("tool_calls")
 
-                # Skip empty content chunks unless they have tool calls or are final chunks
+                # Skip empty content chunks unless they have tool
+                #  calls or are final chunks
                 if (
                     not content.strip()
                     and not has_tool_calls
