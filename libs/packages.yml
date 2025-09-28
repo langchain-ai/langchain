@@ -752,3 +752,6 @@ packages:
 - name: langchain-scraperapi
   path: .
   repo: scraperapi/langchain-scraperapi
+- name: langchain-cloudsway
+  repo: Cloudsway-AI/langchain-cloudsway
+  path: .
