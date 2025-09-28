@@ -915,11 +915,11 @@ class ChatOllama(BaseChatModel):
         return ChatResult(generations=[chat_generation])
 
     def _iterate_over_stream(
-        self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        **kwargs: Any,
-      ) -> Iterator[ChatGenerationChunk]:
+    self,
+    messages: list[BaseMessage],
+    stop: Optional[list[str]] = None,
+    **kwargs: Any,
+) -> Iterator[ChatGenerationChunk]:
        reasoning = kwargs.get("reasoning", self.reasoning)
        for stream_resp in self._create_chat_stream(messages, stop, **kwargs):
         if not isinstance(stream_resp, str):
