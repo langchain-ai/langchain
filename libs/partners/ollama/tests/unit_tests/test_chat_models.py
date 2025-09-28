@@ -12,6 +12,8 @@ from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage, HumanMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
+from pydantic import BaseModel
+from typing_extensions import Literal
 
 from langchain_ollama.chat_models import (
     ChatOllama,
@@ -36,14 +38,20 @@ def test__parse_arguments_from_tool_call() -> None:
     """Test that string arguments are preserved as strings in tool call parsing.
 
     This test verifies the fix for PR #30154 which addressed an issue where
-    string-typed tool arguments (like IDs or long strings) were being incorrectly
-    processed. The parser should preserve string values as strings rather than
-    attempting to parse them as JSON when they're already valid string arguments.
+    string-typed tool arguments (like IDs or long strings) were being
+    incorrectly processed. The parser should preserve string values as strings
+    rather than attempting to parse them as JSON when they're already valid
+    string arguments.
 
     The test uses a long string ID to ensure string arguments maintain their
-    original type after parsing, which is critical for tools expecting string inputs.
+    original type after parsing, which is critical for tools expecting string
+    inputs.
     """
-    raw_response = '{"model":"sample-model","message":{"role":"assistant","content":"","tool_calls":[{"function":{"name":"get_profile_details","arguments":{"arg_1":"12345678901234567890123456"}}}]},"done":false}'  # noqa: E501
+    raw_response = (
+        '{"model":"sample-model","message":{"role":"assistant","content":"",'
+        '"tool_calls":[{"function":{"name":"get_profile_details",'
+        '"arguments":{"arg_1":"12345678901234567890123456"}}}]},"done":false}'
+    )
     raw_tool_calls = json.loads(raw_response)["message"]["tool_calls"]
     response = _parse_arguments_from_tool_call(raw_tool_calls[0])
     assert response is not None
@@ -79,7 +87,10 @@ def test__parse_arguments_from_tool_call_with_function_name_metadata() -> None:
 
     # Test case where functionName has different value (should be preserved)
     raw_tool_call_different = {
-        "function": {"name": "function_a", "arguments": {"functionName": "function_b"}}
+        "function": {
+            "name": "function_a",
+            "arguments": {"functionName": "function_b"},
+        }
     }
     response_different = _parse_arguments_from_tool_call(raw_tool_call_different)
     assert response_different == {"functionName": "function_b"}
@@ -140,8 +151,6 @@ dummy_raw_tool_call = {
 }
 
 
-# Add these test cases to your test_chat_models.py file
-
 def test_parse_json_string_empty_string_cases() -> None:
     """Test _parse_json_string handling of empty strings."""
     raw_tool_call = {"function": {"name": "test_func", "arguments": ""}}
@@ -151,7 +160,9 @@ def test_parse_json_string_empty_string_cases() -> None:
     assert result == {}, f"Expected empty dict for empty string, got {result}"
 
     # Test whitespace-only string with skip=False should return empty dict
-    result = _parse_json_string("   \n  \t  ", raw_tool_call=raw_tool_call, skip=False)
+    result = _parse_json_string(
+        "   \n  \t  ", raw_tool_call=raw_tool_call, skip=False
+    )
     assert result == {}, f"Expected empty dict for whitespace string, got {result}"
 
     # Test empty string with skip=True should return original string
@@ -160,50 +171,41 @@ def test_parse_json_string_empty_string_cases() -> None:
 
     # Test whitespace-only string with skip=True should return original string
     whitespace_str = "   \n  \t  "
-    result = _parse_json_string(whitespace_str, raw_tool_call=raw_tool_call, skip=True)
-    assert result == whitespace_str, f"Expected original whitespace string, got {result}"
+    result = _parse_json_string(
+        whitespace_str, raw_tool_call=raw_tool_call, skip=True
+    )
+    expected_msg = f"Expected original whitespace string, got {result}"
+    assert result == whitespace_str, expected_msg
 
 
 def test_parse_arguments_from_tool_call_empty_arguments() -> None:
     """Test _parse_arguments_from_tool_call with empty arguments."""
-    from langchain_ollama.chat_models import _parse_arguments_from_tool_call
-
     # Test with empty string arguments
     raw_tool_call_empty = {
-        "function": {
-            "name": "test_function",
-            "arguments": ""
-        }
+        "function": {"name": "test_function", "arguments": ""}
     }
     result = _parse_arguments_from_tool_call(raw_tool_call_empty)
     assert result == {}, f"Expected empty dict for empty arguments, got {result}"
 
     # Test with whitespace-only arguments
     raw_tool_call_whitespace = {
-        "function": {
-            "name": "test_function",
-            "arguments": "   \n\t   "
-        }
+        "function": {"name": "test_function", "arguments": "   \n\t   "}
     }
     result = _parse_arguments_from_tool_call(raw_tool_call_whitespace)
-    assert result == {}, f"Expected empty dict for whitespace arguments, got {result}"
+    expected_msg = f"Expected empty dict for whitespace arguments, got {result}"
+    assert result == {}, expected_msg
 
     # Test with empty dict arguments
     raw_tool_call_empty_dict = {
-        "function": {
-            "name": "test_function",
-            "arguments": {}
-        }
+        "function": {"name": "test_function", "arguments": {}}
     }
     result = _parse_arguments_from_tool_call(raw_tool_call_empty_dict)
-    assert result == {}, f"Expected empty dict for empty dict arguments, got {result}"
+    expected_msg = f"Expected empty dict for empty dict arguments, got {result}"
+    assert result == {}, expected_msg
 
 
 def test_structured_output_with_empty_responses() -> None:
     """Test structured output handling when Ollama returns empty responses."""
-    from typing_extensions import Literal
-    from pydantic import BaseModel
-    from unittest.mock import patch, MagicMock
 
     class TestSchema(BaseModel):
         sentiment: Literal["happy", "neutral", "sad"]
@@ -217,25 +219,24 @@ def test_structured_output_with_empty_responses() -> None:
             "message": {
                 "role": "assistant",
                 "content": "",  # Empty content
-                "tool_calls": [{
-                    "function": {
-                        "name": "TestSchema",
-                        "arguments": '{"sentiment": "happy", "language": "spanish"}'
+                "tool_calls": [
+                    {
+                        "function": {
+                            "name": "TestSchema",
+                            "arguments": '{"sentiment": "happy", "language": "spanish"}',  # noqa: E501
+                        }
                     }
-                }]
+                ],
             },
             "done": False,
         },
         {
             "model": "test-model",
             "created_at": "2025-01-01T00:00:00.000000000Z",
-            "message": {
-                "role": "assistant",
-                "content": ""
-            },
+            "message": {"role": "assistant", "content": ""},
             "done": True,
             "done_reason": "stop",
-        }
+        },
     ]
 
     with patch("langchain_ollama.chat_models.Client") as mock_client_class:
@@ -243,25 +244,22 @@ def test_structured_output_with_empty_responses() -> None:
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(empty_content_response)
 
-        from langchain_ollama.chat_models import ChatOllama
         llm = ChatOllama(model="test-model")
-        structured_llm = llm.with_structured_output(TestSchema, method="function_calling")
+        structured_llm = llm.with_structured_output(
+            TestSchema, method="function_calling"
+        )
 
         try:
             result = structured_llm.invoke("Test input")
             assert isinstance(result, TestSchema)
             assert result.sentiment == "happy"
             assert result.language == "spanish"
-            print("✅ Empty content with valid tool calls handled correctly")
         except Exception as e:
             pytest.fail(f"Failed to handle empty content with tool calls: {e}")
 
 
 def test_structured_output_with_completely_empty_response() -> None:
     """Test structured output when Ollama returns completely empty response."""
-    from typing_extensions import Literal
-    from pydantic import BaseModel
-    from unittest.mock import patch, MagicMock
 
     class TestSchema(BaseModel):
         sentiment: Literal["happy", "neutral", "sad"]
@@ -272,10 +270,7 @@ def test_structured_output_with_completely_empty_response() -> None:
         {
             "model": "test-model",
             "created_at": "2025-01-01T00:00:00.000000000Z",
-            "message": {
-                "role": "assistant",
-                "content": ""
-            },
+            "message": {"role": "assistant", "content": ""},
             "done": True,
             "done_reason": "stop",
         }
@@ -286,7 +281,6 @@ def test_structured_output_with_completely_empty_response() -> None:
         mock_client_class.return_value = mock_client
         mock_client.chat.return_value = iter(empty_response)
 
-        from langchain_ollama.chat_models import ChatOllama
         llm = ChatOllama(model="test-model")
 
         # This should handle empty responses gracefully
@@ -297,23 +291,22 @@ def test_structured_output_with_completely_empty_response() -> None:
             structured_llm = llm.with_structured_output(TestSchema, method=method)
 
             try:
-                result = structured_llm.invoke("Test input")
+                structured_llm.invoke("Test input")
                 # The behavior here depends on the method and parser implementation
                 # At minimum, it shouldn't crash with OutputParserException
-                print(f"✅ {method} handled empty response: {result}")
             except OutputParserException as e:
                 if "Unexpected end of JSON input" in str(e):
-                    pytest.fail(f"{method} still throwing original empty string error: {e}")
-                else:
-                    # Other parsing errors might be acceptable depending on implementation
-                    print(f"⚠️ {method} threw different parsing error: {e}")
-            except Exception as e:
-                print(f"ℹ️ {method} threw non-parsing error: {e}")
+                    error_msg = f"{method} still throwing original empty string error: {e}"  # noqa: E501
+                    pytest.fail(error_msg)
+                # Other parsing errors might be acceptable depending on implementation
+            except Exception:
+                # Non-parsing errors might be acceptable
+                pass
 
 
 # Updated version of existing test to verify the fix
 @pytest.mark.parametrize(
-    "input_string, expected_output",
+    ("input_string", "expected_output"),
     [
         # Existing test cases
         ('{"key": "value", "number": 123}', {"key": "value", "number": 123}),
@@ -345,8 +338,12 @@ def test_parse_json_string_skip_behavior_with_empty_strings() -> None:
 
     # Malformed JSON with skip=True should return original string
     malformed = "{'not': valid,,,}"
-    raw_tool_call_malformed = {"function": {"name": "test_func", "arguments": malformed}}
-    result = _parse_json_string(malformed, raw_tool_call=raw_tool_call_malformed, skip=True)
+    raw_tool_call_malformed = {
+        "function": {"name": "test_func", "arguments": malformed}
+    }
+    result = _parse_json_string(
+        malformed, raw_tool_call=raw_tool_call_malformed, skip=True
+    )
     assert result == malformed, f"Expected original malformed string, got {result}"
 
 
@@ -521,31 +518,29 @@ def test_load_response_with_actual_content_is_not_skipped(
         assert result.content == "This is actual content"
         assert result.response_metadata.get("done_reason") == "load"
         assert not caplog.text
+
+
+##Break Out
 def test_structured_output_parsing() -> None:
     """Test that structured output parsing works correctly with different methods."""
-    from typing_extensions import Literal
-    from pydantic import BaseModel
-    from unittest.mock import patch, MagicMock
+    from langchain_core.output_parsers import PydanticOutputParser
+    from unittest.mock import MagicMock, patch
 
     class TestSchema(BaseModel):
         sentiment: Literal["happy", "neutral", "sad"]
         language: Literal["english", "spanish"]
 
     # Test the parsers work correctly first
-    from langchain_core.output_parsers import PydanticOutputParser
     json_content = '{"sentiment": "happy", "language": "spanish"}'
     pydantic_parser = PydanticOutputParser(pydantic_object=TestSchema)
     parsed_result = pydantic_parser.parse(json_content)
-    print(f"Direct parser test: {parsed_result}, Type: {type(parsed_result)}")
     assert isinstance(parsed_result, TestSchema)
-    print("✓ Direct parser test passed")
 
-    # Now test with ChatOllama - let's patch the streaming methods directly
-    with patch("langchain_ollama.chat_models.Client") as mock_client_class, \
-         patch("langchain_ollama.chat_models.AsyncClient") as mock_async_client_class:
-
-        print("\n--- Testing ChatOllama structured output ---")
-
+    # Now test with ChatOllama - patch the streaming methods directly
+    with (
+        patch("langchain_ollama.chat_models.Client") as mock_client_class,
+        patch("langchain_ollama.chat_models.AsyncClient") as mock_async_client_class,
+    ):
         # Set up mocks
         mock_client = MagicMock()
         mock_async_client = MagicMock()
@@ -553,26 +548,19 @@ def test_structured_output_parsing() -> None:
         mock_async_client_class.return_value = mock_async_client
 
         # Create a proper streaming response that matches Ollama's actual format
-        # Looking at the _iterate_over_stream method, it expects specific fields
         streaming_response = [
             # First chunk with content
             {
                 "model": "test-model",
                 "created_at": "2025-01-01T00:00:00.000000000Z",
-                "message": {
-                    "role": "assistant",
-                    "content": json_content
-                },
+                "message": {"role": "assistant", "content": json_content},
                 "done": False,
             },
             # Final chunk with done=True and metadata
             {
                 "model": "test-model",
                 "created_at": "2025-01-01T00:00:00.000000000Z",
-                "message": {
-                    "role": "assistant",
-                    "content": ""
-                },
+                "message": {"role": "assistant", "content": ""},
                 "done": True,
                 "done_reason": "stop",
                 "total_duration": 1000000,
@@ -581,7 +569,7 @@ def test_structured_output_parsing() -> None:
                 "prompt_eval_duration": 50000,
                 "eval_count": 20,
                 "eval_duration": 500000,
-            }
+            },
         ]
 
         # The mock needs to return an iterator
@@ -592,8 +580,6 @@ def test_structured_output_parsing() -> None:
 
         # Test each method individually
         for method in ["json_mode", "json_schema"]:
-            print(f"\n--- Testing {method} ---")
-
             # Reset the mock for each test
             mock_client.reset_mock()
             mock_client.chat.return_value = iter(streaming_response)
@@ -604,44 +590,31 @@ def test_structured_output_parsing() -> None:
             # Test the invoke
             try:
                 result = structured_llm.invoke("Test input")
-                print(f"{method} Result: {result}, Type: {type(result)}")
-
-                # Debug info
-                print(f"Mock called {mock_client.chat.call_count} times")
-                if mock_client.chat.call_count > 0:
-                    print(f"Mock args: {mock_client.chat.call_args}")
 
                 if result is None:
-                    print(f"❌ {method} returned None")
-                    # Let's try to understand why by testing the chain components
-
                     # Test if we can manually invoke the base LLM
                     mock_client.chat.return_value = iter(streaming_response)
                     base_result = llm.invoke("Test input")
-                    print(f"Base LLM result: {base_result}")
-                    print(f"Base LLM content: '{base_result.content}'")
 
                     # Test if we can parse that content directly
                     if base_result.content.strip():
                         try:
-                            manual_parse = pydantic_parser.parse(base_result.content)
-                            print(f"Manual parse of base content: {manual_parse}")
-                        except Exception as parse_error:
-                            print(f"Manual parse failed: {parse_error}")
-
+                            pydantic_parser.parse(base_result.content)
+                        except Exception:
+                            pass
                 else:
-                    assert isinstance(result, TestSchema), f"Expected TestSchema for {method}, got {type(result)}: {result}"
+                    expected_msg = (
+                        f"Expected TestSchema for {method}, got {type(result)}: {result}"
+                    )
+                    assert isinstance(result, TestSchema), expected_msg
                     assert result.sentiment == "happy"
                     assert result.language == "spanish"
-                    print(f"✓ {method} test passed")
 
-            except Exception as e:
-                print(f"❌ {method} failed with exception: {e}")
-                import traceback
-                traceback.print_exc()
+            except Exception:
+                # Allow exceptions during testing
+                pass
 
         # Test function_calling separately since it has different response format
-        print(f"\n--- Testing function_calling ---")
         function_calling_response = [
             # Tool call chunk
             {
@@ -650,12 +623,9 @@ def test_structured_output_parsing() -> None:
                 "message": {
                     "role": "assistant",
                     "content": "",
-                    "tool_calls": [{
-                        "function": {
-                            "name": "TestSchema",
-                            "arguments": json_content
-                        }
-                    }]
+                    "tool_calls": [
+                        {"function": {"name": "TestSchema", "arguments": json_content}}
+                    ],
                 },
                 "done": False,
             },
@@ -663,14 +633,11 @@ def test_structured_output_parsing() -> None:
             {
                 "model": "test-model",
                 "created_at": "2025-01-01T00:00:00.000000000Z",
-                "message": {
-                    "role": "assistant",
-                    "content": ""
-                },
+                "message": {"role": "assistant", "content": ""},
                 "done": True,
                 "done_reason": "stop",
                 "total_duration": 1000000,
-            }
+            },
         ]
 
         mock_client.reset_mock()
@@ -680,57 +647,45 @@ def test_structured_output_parsing() -> None:
 
         try:
             result = structured_llm.invoke("Test input")
-            print(f"function_calling Result: {result}, Type: {type(result)}")
 
-            if result is None:
-                print("❌ function_calling returned None")
-            else:
-                assert isinstance(result, TestSchema), f"Expected TestSchema for function_calling, got {type(result)}: {result}"
+            if result is not None:
+                expected_msg = (
+                    f"Expected TestSchema for function_calling, got {type(result)}: {result}"
+                )
+                assert isinstance(result, TestSchema), expected_msg
                 assert result.sentiment == "happy"
                 assert result.language == "spanish"
-                print("✓ function_calling test passed")
 
-        except Exception as e:
-            print(f"❌ function_calling failed with exception: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            # Allow exceptions during testing
+            pass
 
-        # NEW: Test empty response handling
-        print(f"\n--- Testing empty response handling ---")
+        # Test empty response handling
         empty_response = [
             {
                 "model": "test-model",
                 "created_at": "2025-01-01T00:00:00.000000000Z",
-                "message": {
-                    "role": "assistant",
-                    "content": ""  # Empty content
-                },
+                "message": {"role": "assistant", "content": ""},  # Empty content
                 "done": True,
                 "done_reason": "stop",
             }
         ]
 
         for method in ["json_mode", "json_schema"]:
-            print(f"\n--- Testing {method} with empty response ---")
             mock_client.reset_mock()
             mock_client.chat.return_value = iter(empty_response)
 
             structured_llm = llm.with_structured_output(TestSchema, method=method)
 
             try:
-                result = structured_llm.invoke("Test input")
-                print(f"{method} with empty response: {result}")
+                structured_llm.invoke("Test input")
                 # The key test: it shouldn't crash with "Unexpected end of JSON input"
-                print(f"✓ {method} handled empty response without crashing")
             except Exception as e:
                 if "Unexpected end of JSON input" in str(e):
-                    print(f"❌ {method} still has the original empty string bug: {e}")
-                    raise AssertionError(f"{method} should handle empty strings gracefully")
-                else:
-                    print(f"ℹ️ {method} threw different error (may be expected): {e}")
+                    error_msg = f"{method} should handle empty strings gracefully"
+                    raise AssertionError(error_msg) from e
 
-        # NEW: Test function_calling with empty arguments
-        print(f"\n--- Testing function_calling with empty arguments ---")
+        # Test function_calling with empty arguments
         empty_args_response = [
             {
                 "model": "test-model",
@@ -738,12 +693,9 @@ def test_structured_output_parsing() -> None:
                 "message": {
                     "role": "assistant",
                     "content": "",
-                    "tool_calls": [{
-                        "function": {
-                            "name": "TestSchema",
-                            "arguments": ""  # Empty arguments
-                        }
-                    }]
+                    "tool_calls": [
+                        {"function": {"name": "TestSchema", "arguments": ""}}  # Empty args
+                    ],
                 },
                 "done": True,
                 "done_reason": "stop",
@@ -755,12 +707,8 @@ def test_structured_output_parsing() -> None:
         structured_llm = llm.with_structured_output(TestSchema, method="function_calling")
 
         try:
-            result = structured_llm.invoke("Test input")
-            print(f"function_calling with empty args: {result}")
-            print("✓ function_calling handled empty arguments without crashing")
+            structured_llm.invoke("Test input")
         except Exception as e:
             if "Unexpected end of JSON input" in str(e):
-                print(f"❌ function_calling still has the original empty string bug: {e}")
-                raise AssertionError("function_calling should handle empty arguments gracefully")
-            else:
-                print(f"ℹ️ function_calling threw different error (may be expected): {e}")
+                error_msg = "function_calling should handle empty arguments gracefully"
+                raise AssertionError(error_msg) from e
