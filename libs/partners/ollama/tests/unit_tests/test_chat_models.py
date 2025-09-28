@@ -1,5 +1,6 @@
 """Unit tests for ChatOllama."""
 
+import contextlib
 import json
 import logging
 from collections.abc import Generator
@@ -11,6 +12,7 @@ import pytest
 from httpx import Client, Request, Response
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import ChatMessage, HumanMessage
+from langchain_core.output_parsers import PydanticOutputParser
 from langchain_tests.unit_tests import ChatModelUnitTests
 from pydantic import BaseModel
 from typing_extensions import Literal
@@ -223,7 +225,9 @@ def test_structured_output_with_empty_responses() -> None:
                     {
                         "function": {
                             "name": "TestSchema",
-                            "arguments": '{"sentiment": "happy", "language": "spanish"}',  # noqa: E501
+                            "arguments": (
+                                '{"sentiment": "happy", "language": "spanish"}'
+                            ),
                         }
                     }
                 ],
@@ -296,9 +300,11 @@ def test_structured_output_with_completely_empty_response() -> None:
                 # At minimum, it shouldn't crash with OutputParserException
             except OutputParserException as e:
                 if "Unexpected end of JSON input" in str(e):
-                    error_msg = f"{method} still throwing original empty string error: {e}"  # noqa: E501
+                    error_msg = (
+                        f"{method} still throwing original empty string error: {e}"
+                    )
                     pytest.fail(error_msg)
-                # Other parsing errors might be acceptable depending on implementation
+                # Other parsing errors might be acceptable
             except Exception:
                 # Non-parsing errors might be acceptable
                 pass
@@ -520,11 +526,8 @@ def test_load_response_with_actual_content_is_not_skipped(
         assert not caplog.text
 
 
-##Break Out
 def test_structured_output_parsing() -> None:
     """Test that structured output parsing works correctly with different methods."""
-    from langchain_core.output_parsers import PydanticOutputParser
-    from unittest.mock import MagicMock, patch
 
     class TestSchema(BaseModel):
         sentiment: Literal["happy", "neutral", "sad"]
@@ -598,13 +601,12 @@ def test_structured_output_parsing() -> None:
 
                     # Test if we can parse that content directly
                     if base_result.content.strip():
-                        try:
+                        with contextlib.suppress(Exception):
                             pydantic_parser.parse(base_result.content)
-                        except Exception:
-                            pass
                 else:
                     expected_msg = (
-                        f"Expected TestSchema for {method}, got {type(result)}: {result}"
+                        f"Expected TestSchema for {method}, "
+                        f"got {type(result)}: {result}"
                     )
                     assert isinstance(result, TestSchema), expected_msg
                     assert result.sentiment == "happy"
@@ -643,14 +645,17 @@ def test_structured_output_parsing() -> None:
         mock_client.reset_mock()
         mock_client.chat.return_value = iter(function_calling_response)
 
-        structured_llm = llm.with_structured_output(TestSchema, method="function_calling")
+        structured_llm = llm.with_structured_output(
+            TestSchema, method="function_calling"
+        )
 
         try:
             result = structured_llm.invoke("Test input")
 
             if result is not None:
                 expected_msg = (
-                    f"Expected TestSchema for function_calling, got {type(result)}: {result}"
+                    f"Expected TestSchema for function_calling, "
+                    f"got {type(result)}: {result}"
                 )
                 assert isinstance(result, TestSchema), expected_msg
                 assert result.sentiment == "happy"
@@ -694,7 +699,7 @@ def test_structured_output_parsing() -> None:
                     "role": "assistant",
                     "content": "",
                     "tool_calls": [
-                        {"function": {"name": "TestSchema", "arguments": ""}}  # Empty args
+                        {"function": {"name": "TestSchema", "arguments": ""}}  # Empty
                     ],
                 },
                 "done": True,
@@ -704,7 +709,9 @@ def test_structured_output_parsing() -> None:
 
         mock_client.reset_mock()
         mock_client.chat.return_value = iter(empty_args_response)
-        structured_llm = llm.with_structured_output(TestSchema, method="function_calling")
+        structured_llm = llm.with_structured_output(
+            TestSchema, method="function_calling"
+        )
 
         try:
             structured_llm.invoke("Test input")
