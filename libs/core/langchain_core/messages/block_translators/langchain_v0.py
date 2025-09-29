@@ -6,7 +6,7 @@ from langchain_core.messages import content as types
 
 
 def _convert_v0_multimodal_input_to_v1(
-    blocks: list[types.ContentBlock],
+    content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
     """Convert v0 multimodal blocks to v1 format.
 
@@ -18,7 +18,7 @@ def _convert_v0_multimodal_input_to_v1(
     If conversion fails, the block is left as a ``'non_standard'`` block.
 
     Args:
-        blocks: List of content blocks to process.
+        content: List of content blocks to process.
 
     Returns:
         v1 content blocks.
@@ -28,7 +28,7 @@ def _convert_v0_multimodal_input_to_v1(
         cast("dict[str, Any]", block)
         if block.get("type") != "non_standard"
         else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
-        for block in blocks
+        for block in content
     ]
     for block in unpacked_blocks:
         if block.get("type") in {"image", "audio", "file"} and "source_type" in block:

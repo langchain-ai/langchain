@@ -151,7 +151,7 @@ def _convert_to_v1_from_chat_completions(
 
 
 def _convert_to_v1_from_chat_completions_input(
-    blocks: list[types.ContentBlock],
+    content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
     """Convert OpenAI Chat Completions format blocks to v1 format.
 
@@ -163,7 +163,7 @@ def _convert_to_v1_from_chat_completions_input(
     If conversion fails, the block is left as a ``'non_standard'`` block.
 
     Args:
-        blocks: List of content blocks to process.
+        content: List of content blocks to process.
 
     Returns:
         Updated list with OpenAI blocks converted to v1 format.
@@ -175,7 +175,7 @@ def _convert_to_v1_from_chat_completions_input(
         cast("dict[str, Any]", block)
         if block.get("type") != "non_standard"
         else block["value"]  # type: ignore[typeddict-item]  # this is only non-standard blocks
-        for block in blocks
+        for block in content
     ]
     for block in unpacked_blocks:
         if block.get("type") in {
