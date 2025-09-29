@@ -91,6 +91,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_search_",
         "web_fetch_",
         "code_execution_",
+        "memory_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
