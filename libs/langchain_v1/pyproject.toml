@@ -9,12 +9,12 @@ requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
     "langchain-core>=0.3.75,<2.0.0",
     "langchain-text-splitters>=0.3.11,<2.0.0",
-    "langgraph>=0.6.7,<2.0.0",
+    "langgraph==1.0.0a4",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
 name = "langchain"
-version = "1.0.0a9"
+version = "1.0.0a10"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -74,6 +74,9 @@ test_integration = [
     "langchain-core",
     "langchain-text-splitters",
 ]
+
+[tool.uv]
+prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }

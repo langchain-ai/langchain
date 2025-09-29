@@ -510,11 +510,12 @@ def test_human_in_the_loop_middleware_single_tool_response() -> None:
         result = middleware.after_model(state)
         assert result is not None
         assert "messages" in result
-        assert len(result["messages"]) == 1  # Only tool message when no approved tool calls
-        assert isinstance(result["messages"][0], ToolMessage)
-        assert result["messages"][0].content == "Custom response message"
-        assert result["messages"][0].name == "test_tool"
-        assert result["messages"][0].tool_call_id == "1"
+        assert len(result["messages"]) == 2
+        assert isinstance(result["messages"][0], AIMessage)
+        assert isinstance(result["messages"][1], ToolMessage)
+        assert result["messages"][1].content == "Custom response message"
+        assert result["messages"][1].name == "test_tool"
+        assert result["messages"][1].tool_call_id == "1"
 
 
 def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
@@ -552,10 +553,11 @@ def test_human_in_the_loop_middleware_multiple_tools_mixed_responses() -> None:
             len(result["messages"]) == 2
         )  # AI message with accepted tool call + tool message for rejected
 
-        # First message should be the AI message with updated tool calls
+        # First message should be the AI message with both tool calls
         updated_ai_message = result["messages"][0]
-        assert len(updated_ai_message.tool_calls) == 1  # Only accepted tool call
+        assert len(updated_ai_message.tool_calls) == 2  # Both tool calls remain
         assert updated_ai_message.tool_calls[0]["name"] == "get_forecast"  # Accepted
+        assert updated_ai_message.tool_calls[1]["name"] == "get_temperature"  # Got response
 
         # Second message should be the tool message for the rejected tool call
         tool_message = result["messages"][1]
@@ -1405,3 +1407,19 @@ def test_injected_state_in_middleware_agent() -> None:
     assert tool_message.name == "test_state"
     assert "success" in tool_message.content
     assert tool_message.tool_call_id == "test_call_1"
+
+
+def test_jump_to_is_ephemeral() -> None:
+    class MyMiddleware(AgentMiddleware):
+        def before_model(self, state: AgentState) -> dict[str, Any]:
+            assert "jump_to" not in state
+            return {"jump_to": "model"}
+
+        def after_model(self, state: AgentState) -> dict[str, Any]:
+            assert "jump_to" not in state
+            return {"jump_to": "model"}
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[MyMiddleware()])
+    agent = agent.compile()
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert "jump_to" not in result
