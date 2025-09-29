@@ -418,7 +418,9 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "type": "reasoning",
                     "reasoning": item.get("thinking", ""),
                 }
-                # Signature was never available for 'thinking' blocks
+                if signature := item.get("signature"):
+                    reasoning_block["extras"] = {"signature": signature}
+
                 converted_blocks.append(reasoning_block)
             elif item_type == "executable_code":
                 # Convert to non-standard block for code execution
