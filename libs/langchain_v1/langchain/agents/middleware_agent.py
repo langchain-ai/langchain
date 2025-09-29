@@ -360,18 +360,24 @@ def create_agent(  # noqa: PLR0915
         return request.model.bind(**request.model_settings)
 
     # Helper functions for middleware processing
-    def _has_sync_hook(middleware: AgentMiddleware, hook_name: str) -> bool:
+    def _has_sync_hook(
+        middleware: AgentMiddleware[AgentState[ResponseT], ContextT], hook_name: str
+    ) -> bool:
         """Check if middleware has a sync implementation of the given hook."""
         return getattr(middleware.__class__, hook_name) is not getattr(AgentMiddleware, hook_name)
 
-    def _has_async_hook(middleware: AgentMiddleware, hook_name: str) -> bool:
+    def _has_async_hook(
+        middleware: AgentMiddleware[AgentState[ResponseT], ContextT], hook_name: str
+    ) -> bool:
         """Check if middleware has an async implementation of the given hook."""
         async_hook_name = f"a{hook_name}"
         return getattr(middleware.__class__, async_hook_name) is not getattr(
             AgentMiddleware, async_hook_name
         )
 
-    def _uses_runtime(middleware: AgentMiddleware, hook_name: str) -> bool:
+    def _uses_runtime(
+        middleware: AgentMiddleware[AgentState[ResponseT], ContextT], hook_name: str
+    ) -> bool:
         """Check if the hook uses runtime parameter."""
         hook_method = getattr(middleware, hook_name)
         return "runtime" in signature(hook_method).parameters
@@ -464,7 +470,9 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_node("tools", tool_node)
 
-    def _add_middleware_node(middleware: AgentMiddleware, hook_name: str, node_name: str) -> None:
+    def _add_middleware_node(
+        middleware: AgentMiddleware[AgentState[ResponseT], ContextT], hook_name: str, node_name: str
+    ) -> None:
         """Add a middleware node to the graph with proper sync/async handling."""
         has_sync = _has_sync_hook(middleware, hook_name)
         has_async = _has_async_hook(middleware, hook_name)
