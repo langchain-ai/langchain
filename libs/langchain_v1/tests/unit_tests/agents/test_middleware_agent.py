@@ -1,14 +1,9 @@
-import pytest
+import warnings
+from types import ModuleType
 from typing import Any
 from unittest.mock import patch
-from types import ModuleType
 
-from syrupy.assertion import SnapshotAssertion
-
-import warnings
-from langgraph.runtime import Runtime
-from typing_extensions import Annotated
-from pydantic import BaseModel, Field
+import pytest
 from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import (
@@ -18,31 +13,43 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import tool, InjectedToolCallId
+from langchain_core.outputs import ChatGeneration, ChatResult
+from langchain_core.tools import InjectedToolCallId, tool
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.constants import END
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
+from langgraph.runtime import Runtime
+from langgraph.types import Command
+from pydantic import BaseModel, Field
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import Annotated
 
-from langchain.agents.middleware_agent import create_agent
-from langchain.tools import InjectedState
 from langchain.agents.middleware.human_in_the_loop import (
-    HumanInTheLoopMiddleware,
     ActionRequest,
+    HumanInTheLoopMiddleware,
+)
+from langchain.agents.middleware.planning import (
+    PlanningMiddleware,
+    PlanningState,
+    SYSTEM_PROMPT,
+    Todo,
+    write_todos,
+    WRITE_TODOS_TOOL_DESCRIPTION,
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
-    ModelRequest,
     AgentState,
+    ModelRequest,
     OmitFromInput,
     OmitFromOutput,
     PrivateStateAttr,
 )
-
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.constants import END
-from langgraph.graph.message import REMOVE_ALL_MESSAGES
-from langgraph.types import Command
+from langchain.agents.middleware_agent import create_agent
 from langchain.agents.structured_output import ToolStrategy
+from langchain.tools import InjectedState
 
 from .messages import _AnyIdHumanMessage, _AnyIdToolMessage
 from .model import FakeToolCallingModel
@@ -1105,14 +1112,9 @@ def test_summarization_middleware_summary_creation() -> None:
 
     class MockModel(BaseChatModel):
         def invoke(self, prompt):
-            from langchain_core.messages import AIMessage
-
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
-            from langchain_core.messages import AIMessage
-
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1136,9 +1138,6 @@ def test_summarization_middleware_summary_creation() -> None:
             raise Exception("Model error")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
-            from langchain_core.messages import AIMessage
-
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1155,14 +1154,9 @@ def test_summarization_middleware_full_workflow() -> None:
 
     class MockModel(BaseChatModel):
         def invoke(self, prompt):
-            from langchain_core.messages import AIMessage
-
             return AIMessage(content="Generated summary")
 
         def _generate(self, messages, **kwargs):
-            from langchain_core.outputs import ChatResult, ChatGeneration
-            from langchain_core.messages import AIMessage
-
             return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Summary"))])
 
         @property
@@ -1423,3 +1417,145 @@ def test_jump_to_is_ephemeral() -> None:
     agent = agent.compile()
     result = agent.invoke({"messages": [HumanMessage("Hello")]})
     assert "jump_to" not in result
+
+
+# Tests for PlanningMiddleware
+def test_planning_middleware_initialization() -> None:
+    """Test that PlanningMiddleware initializes correctly."""
+    middleware = PlanningMiddleware()
+    assert middleware.state_schema == PlanningState
+    assert len(middleware.tools) == 1
+    assert middleware.tools[0].name == "write_todos"
+
+
+@pytest.mark.parametrize(
+    "original_prompt,expected_prompt_prefix",
+    [
+        ("Original prompt", "Original prompt\n\n## `write_todos`"),
+        (None, "## `write_todos`"),
+    ],
+)
+def test_planning_middleware_modify_model_request(original_prompt, expected_prompt_prefix) -> None:
+    """Test that modify_model_request handles system prompts correctly."""
+    middleware = PlanningMiddleware()
+    model = FakeToolCallingModel()
+
+    request = ModelRequest(
+        model=model,
+        system_prompt=original_prompt,
+        messages=[HumanMessage(content="Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
+    modified_request = middleware.modify_model_request(request, state)
+    assert modified_request.system_prompt.startswith(expected_prompt_prefix)
+
+
+@pytest.mark.parametrize(
+    "todos,expected_message",
+    [
+        ([], "Updated todo list to []"),
+        (
+            [{"content": "Task 1", "status": "pending"}],
+            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}]",
+        ),
+        (
+            [
+                {"content": "Task 1", "status": "pending"},
+                {"content": "Task 2", "status": "in_progress"},
+            ],
+            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}]",
+        ),
+        (
+            [
+                {"content": "Task 1", "status": "pending"},
+                {"content": "Task 2", "status": "in_progress"},
+                {"content": "Task 3", "status": "completed"},
+            ],
+            "Updated todo list to [{'content': 'Task 1', 'status': 'pending'}, {'content': 'Task 2', 'status': 'in_progress'}, {'content': 'Task 3', 'status': 'completed'}]",
+        ),
+    ],
+)
+def test_planning_middleware_write_todos_tool_execution(todos, expected_message) -> None:
+    """Test that the write_todos tool executes correctly."""
+    tool_call = {
+        "args": {"todos": todos},
+        "name": "write_todos",
+        "type": "tool_call",
+        "id": "test_call",
+    }
+    result = write_todos.invoke(tool_call)
+    assert result.update["todos"] == todos
+    assert result.update["messages"][0].content == expected_message
+
+
+@pytest.mark.parametrize(
+    "invalid_todos",
+    [
+        [{"content": "Task 1", "status": "invalid_status"}],
+        [{"status": "pending"}],
+    ],
+)
+def test_planning_middleware_write_todos_tool_validation_errors(invalid_todos) -> None:
+    """Test that the write_todos tool rejects invalid input."""
+    tool_call = {
+        "args": {"todos": invalid_todos},
+        "name": "write_todos",
+        "type": "tool_call",
+        "id": "test_call",
+    }
+    with pytest.raises(Exception):
+        write_todos.invoke(tool_call)
+
+
+def test_planning_middleware_agent_creation_with_middleware() -> None:
+    """Test that an agent can be created with the planning middleware."""
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "pending"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "in_progress"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [
+                {
+                    "args": {"todos": [{"content": "Task 1", "status": "completed"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [],
+        ]
+    )
+    middleware = PlanningMiddleware()
+    agent = create_agent(model=model, middleware=[middleware])
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["todos"] == [{"content": "Task 1", "status": "completed"}]
+
+    # human message (1)
+    # ai message (2) - initial todo
+    # tool message (3)
+    # ai message (4) - updated todo
+    # tool message (5)
+    # ai message (6) - complete todo
+    # tool message (7)
+    # ai message (8) - no tool calls
+    assert len(result["messages"]) == 8
