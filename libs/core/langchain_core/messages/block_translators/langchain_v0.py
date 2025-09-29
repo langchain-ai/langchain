@@ -66,7 +66,8 @@ def _convert_legacy_v0_content_block_to_v1(
     if block.get("type") == "image":
         source_type = block.get("source_type")
         if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
+            # image-url
+            known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
                 return types.create_image_block(
@@ -77,17 +78,18 @@ def _convert_legacy_v0_content_block_to_v1(
                 )
 
             # Don't construct with an ID if not present in original block
-            v1_block = types.ImageContentBlock(type="image", url=block["url"])
+            v1_image_url = types.ImageContentBlock(type="image", url=block["url"])
             if block.get("mime_type"):
-                v1_block["mime_type"] = block["mime_type"]
+                v1_image_url["mime_type"] = block["mime_type"]
 
             for key, value in extras.items():
                 if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
-            return v1_block
+                    v1_image_url["extras"] = {}
+                    v1_image_url["extras"][key] = value
+            return v1_image_url
         if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
+            # image-base64
+            known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
             if "id" in block:
                 return types.create_image_block(
@@ -97,71 +99,170 @@ def _convert_legacy_v0_content_block_to_v1(
                     **extras,
                 )
 
-            v1_block = types.ImageContentBlock(type="image", base64=block["data"])
+            v1_image_base64 = types.ImageContentBlock(
+                type="image", base64=block["data"]
+            )
             if block.get("mime_type"):
-                v1_block["mime_type"] = block["mime_type"]
+                v1_image_base64["mime_type"] = block["mime_type"]
 
             for key, value in extras.items():
                 if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
-            return v1_block
+                    v1_image_base64["extras"] = {}
+                    v1_image_base64["extras"][key] = value
+            return v1_image_base64
         if source_type == "id":
+            # image-id
             known_keys = {"type", "source_type", "id"}
             extras = _extract_v0_extras(block, known_keys)
             # For id `source_type`, `id` is the file reference, not block ID
-            v1_block = types.ImageContentBlock(type="image", file_id=block["id"])
+            v1_image_id = types.ImageContentBlock(type="image", file_id=block["id"])
 
             for key, value in extras.items():
                 if value is not None:
-                    v1_block["extras"] = {}
-                    v1_block["extras"][key] = value
+                    v1_image_id["extras"] = {}
+                    v1_image_id["extras"][key] = value
 
-            return v1_block
+            return v1_image_id
     elif block.get("type") == "audio":
         source_type = block.get("source_type")
         if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
+            # audio-url
+            known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_audio_block(
-                url=block["url"], mime_type=block.get("mime_type"), **extras
+            if "id" in block:
+                return types.create_audio_block(
+                    url=block["url"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            # Don't construct with an ID if not present in original block
+            v1_audio_url: types.AudioContentBlock = types.AudioContentBlock(
+                type="audio", url=block["url"]
             )
+            if block.get("mime_type"):
+                v1_audio_url["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_audio_url["extras"] = {}
+                    v1_audio_url["extras"][key] = value
+            return v1_audio_url
         if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
+            # audio-base64
+            known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_audio_block(
-                base64=block["data"], mime_type=block.get("mime_type"), **extras
+            if "id" in block:
+                return types.create_audio_block(
+                    base64=block["data"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            v1_audio_base64: types.AudioContentBlock = types.AudioContentBlock(
+                type="audio", base64=block["data"]
             )
+            if block.get("mime_type"):
+                v1_audio_base64["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_audio_base64["extras"] = {}
+                    v1_audio_base64["extras"][key] = value
+            return v1_audio_base64
         if source_type == "id":
+            # audio-id
             known_keys = {"type", "source_type", "id"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_audio_block(file_id=block["id"], **extras)
+            v1_audio_id: types.AudioContentBlock = types.AudioContentBlock(
+                type="audio", file_id=block["id"]
+            )
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_audio_id["extras"] = {}
+                    v1_audio_id["extras"][key] = value
+
+            return v1_audio_id
     elif block.get("type") == "file":
         source_type = block.get("source_type")
         if source_type == "url":
-            known_keys = {"type", "source_type", "url", "mime_type"}
+            # file-url
+            known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_file_block(
-                url=block["url"], mime_type=block.get("mime_type"), **extras
+            if "id" in block:
+                return types.create_file_block(
+                    url=block["url"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            v1_file_url: types.FileContentBlock = types.FileContentBlock(
+                type="file", url=block["url"]
             )
+            if block.get("mime_type"):
+                v1_file_url["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_file_url["extras"] = {}
+                    v1_file_url["extras"][key] = value
+            return v1_file_url
         if source_type == "base64":
-            known_keys = {"type", "source_type", "data", "mime_type"}
+            # file-base64
+            known_keys = {"mime_type", "type", "source_type", "data"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_file_block(
-                base64=block["data"], mime_type=block.get("mime_type"), **extras
+            if "id" in block:
+                return types.create_file_block(
+                    base64=block["data"],
+                    mime_type=block.get("mime_type"),
+                    id=block["id"],
+                    **extras,
+                )
+
+            v1_file_base64: types.FileContentBlock = types.FileContentBlock(
+                type="file", base64=block["data"]
             )
+            if block.get("mime_type"):
+                v1_file_base64["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_file_base64["extras"] = {}
+                    v1_file_base64["extras"][key] = value
+            return v1_file_base64
         if source_type == "id":
+            # file-id
             known_keys = {"type", "source_type", "id"}
             extras = _extract_v0_extras(block, known_keys)
             return types.create_file_block(file_id=block["id"], **extras)
         if source_type == "text":
-            known_keys = {"type", "source_type", "url", "mime_type"}
+            # file-text
+            known_keys = {"mime_type", "type", "source_type", "url"}
             extras = _extract_v0_extras(block, known_keys)
-            return types.create_plaintext_block(
-                # In v0, URL points to the text file content
-                text=block["url"],
-                **extras,
+            if "id" in block:
+                return types.create_plaintext_block(
+                    # In v0, URL points to the text file content
+                    # TODO: attribute this claim
+                    text=block["url"],
+                    id=block["id"],
+                    **extras,
+                )
+
+            v1_file_text: types.PlainTextContentBlock = types.PlainTextContentBlock(
+                type="text-plain", text=block["url"], mime_type="text/plain"
             )
+            if block.get("mime_type"):
+                v1_file_text["mime_type"] = block["mime_type"]
+
+            for key, value in extras.items():
+                if value is not None:
+                    v1_file_text["extras"] = {}
+                    v1_file_text["extras"][key] = value
+            return v1_file_text
 
     # If we can't convert, return the block unchanged
     return block
