@@ -43,7 +43,7 @@ def _convert_to_v1_from_converse_input(
     If conversion fails, the block is left as a ``'non_standard'`` block.
 
     Args:
-        blocks: List of content blocks to process.
+        content: List of content blocks to process.
 
     Returns:
         Updated list with Converse blocks converted to v1 format.
