@@ -10,15 +10,18 @@ def _convert_v0_multimodal_input_to_v1(
 ) -> list[types.ContentBlock]:
     """Convert v0 multimodal blocks to v1 format.
 
-    Processes ``'non_standard'`` blocks that might be v0 format and converts them
-    to proper v1 ``ContentBlock``.
+    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
+    block as a ``'non_standard'`` block with the original block stored in the ``value``
+    field. This function attempts to unpack those blocks and convert any v0 format
+    blocks to v1 format.
+
+    If conversion fails, the block is left as a ``'non_standard'`` block.
 
     Args:
         blocks: List of content blocks to process.
 
     Returns:
-        Updated list with v0 blocks converted to v1 format.
-
+        v1 content blocks.
     """
     converted_blocks = []
     unpacked_blocks: list[dict[str, Any]] = [
@@ -32,6 +35,7 @@ def _convert_v0_multimodal_input_to_v1(
             converted_block = _convert_legacy_v0_content_block_to_v1(block)
             converted_blocks.append(cast("types.ContentBlock", converted_block))
         elif block.get("type") in types.KNOWN_BLOCK_TYPES:
+            # Guard in case this function is used outside of the .content_blocks flow
             converted_blocks.append(cast("types.ContentBlock", block))
         else:
             converted_blocks.append({"type": "non_standard", "value": block})
@@ -47,7 +51,6 @@ def _convert_legacy_v0_content_block_to_v1(
     Preserves unknown keys as extras to avoid data loss.
 
     Returns the original block unchanged if it's not in v0 format.
-
     """
 
     def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
