@@ -212,15 +212,28 @@ def create_agent(  # noqa: PLR0915
         "Please remove duplicate middleware instances."
     )
     middleware_w_before = [
-        m for m in middleware if m.__class__.before_model is not AgentMiddleware.before_model
+        m
+        for m in middleware
+        if (
+            m.__class__.before_model is not AgentMiddleware.before_model
+            or m.__class__.abefore_model is not AgentMiddleware.abefore_model
+        )
     ]
     middleware_w_modify_model_request = [
         m
         for m in middleware
-        if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
+        if (
+            m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
+            or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
+        )
     ]
     middleware_w_after = [
-        m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
+        m
+        for m in middleware
+        if (
+            m.__class__.after_model is not AgentMiddleware.after_model
+            or m.__class__.aafter_model is not AgentMiddleware.aafter_model
+        )
     ]
 
     state_schemas = {m.state_schema for m in middleware}
@@ -346,16 +359,26 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
-    model_request_signatures: list[
-        tuple[bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
-    ] = [
-        ("runtime" in signature(m.modify_model_request).parameters, m)
-        for m in middleware_w_modify_model_request
-    ]
+    # Helper functions for middleware processing
+    def _has_sync_hook(middleware: AgentMiddleware, hook_name: str) -> bool:
+        """Check if middleware has a sync implementation of the given hook."""
+        return getattr(middleware.__class__, hook_name) is not getattr(AgentMiddleware, hook_name)
 
-    def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
-        """Sync model request handler with sequential middleware processing."""
-        request = ModelRequest(
+    def _has_async_hook(middleware: AgentMiddleware, hook_name: str) -> bool:
+        """Check if middleware has an async implementation of the given hook."""
+        async_hook_name = f"a{hook_name}"
+        return getattr(middleware.__class__, async_hook_name) is not getattr(
+            AgentMiddleware, async_hook_name
+        )
+
+    def _uses_runtime(middleware: AgentMiddleware, hook_name: str) -> bool:
+        """Check if the hook uses runtime parameter."""
+        hook_method = getattr(middleware, hook_name)
+        return "runtime" in signature(hook_method).parameters
+
+    def _create_base_model_request(state: AgentState) -> ModelRequest:
+        """Create the base model request from state."""
+        return ModelRequest(
             model=model,
             tools=default_tools,
             system_prompt=system_prompt,
@@ -364,47 +387,71 @@ def create_agent(  # noqa: PLR0915
             tool_choice=None,
         )
 
-        # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
-            if use_runtime:
-                m.modify_model_request(request, state, runtime)
-            else:
-                m.modify_model_request(request, state)  # type: ignore[call-arg]
+    def _apply_sync_modify_middleware(
+        request: ModelRequest, state: AgentState, runtime: Runtime[ContextT]
+    ) -> ModelRequest:
+        """Apply sync modify_model_request middleware in sequence."""
+        for m in middleware_w_modify_model_request:
+            if not _has_sync_hook(m, "modify_model_request"):
+                msg = (
+                    f"Middleware {m.__class__.__name__} only has async modify_model_request hook. "
+                    "Cannot use in sync context. Either provide a sync version "
+                    "or use async execution."
+                )
+                raise ValueError(msg)
 
-        # Get the final model and messages
+            if _uses_runtime(m, "modify_model_request"):
+                request = m.modify_model_request(request, state, runtime)
+            else:
+                request = m.modify_model_request(request, state)  # type: ignore[call-arg]
+        return request
+
+    async def _apply_async_modify_middleware(
+        request: ModelRequest, state: AgentState, runtime: Runtime[ContextT]
+    ) -> ModelRequest:
+        """Apply async modify_model_request middleware in sequence."""
+        for m in middleware_w_modify_model_request:
+            # Prefer async version if available
+            if _has_async_hook(m, "modify_model_request"):
+                if _uses_runtime(m, "amodify_model_request"):
+                    request = await m.amodify_model_request(request, state, runtime)
+                else:
+                    request = await m.amodify_model_request(request, state)  # type: ignore[call-arg]
+            elif _has_sync_hook(m, "modify_model_request"):
+                # Fall back to sync version
+                if _uses_runtime(m, "modify_model_request"):
+                    request = m.modify_model_request(request, state, runtime)
+                else:
+                    request = m.modify_model_request(request, state)  # type: ignore[call-arg]
+            else:
+                msg = (
+                    f"Middleware {m.__class__.__name__} has no modify_model_request "
+                    "implementation. This should not happen - middleware validation failed."
+                )
+                raise ValueError(msg)
+        return request
+
+    def _finalize_model_request(request: ModelRequest) -> tuple[Runnable, list[AnyMessage]]:
+        """Finalize the model request and return the bound model and messages."""
         model_ = _get_bound_model(request)
         messages = request.messages
         if request.system_prompt:
             messages = [SystemMessage(request.system_prompt), *messages]
+        return model_, messages
 
+    def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
+        """Sync model request handler with sequential middleware processing."""
+        request = _create_base_model_request(state)
+        request = _apply_sync_modify_middleware(request, state, runtime)
+        model_, messages = _finalize_model_request(request)
         output = model_.invoke(messages)
         return _handle_model_output(output)
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
-        # Start with the base model request
-        request = ModelRequest(
-            model=model,
-            tools=default_tools,
-            system_prompt=system_prompt,
-            response_format=response_format,
-            messages=state["messages"],
-            tool_choice=None,
-        )
-
-        # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
-            if use_runtime:
-                m.modify_model_request(request, state, runtime)
-            else:
-                m.modify_model_request(request, state)  # type: ignore[call-arg]
-
-        # Get the final model and messages
-        model_ = _get_bound_model(request)
-        messages = request.messages
-        if request.system_prompt:
-            messages = [SystemMessage(request.system_prompt), *messages]
-
+        request = _create_base_model_request(state)
+        request = await _apply_async_modify_middleware(request, state, runtime)
+        model_, messages = _finalize_model_request(request)
         output = await model_.ainvoke(messages)
         return _handle_model_output(output)
 
@@ -417,17 +464,34 @@ def create_agent(  # noqa: PLR0915
     if tool_node is not None:
         graph.add_node("tools", tool_node)
 
+    def _add_middleware_node(middleware: AgentMiddleware, hook_name: str, node_name: str) -> None:
+        """Add a middleware node to the graph with proper sync/async handling."""
+        has_sync = _has_sync_hook(middleware, hook_name)
+        has_async = _has_async_hook(middleware, hook_name)
+
+        if has_sync and has_async:
+            # Both sync and async available - use RunnableCallable
+            sync_method = getattr(middleware, hook_name)
+            async_method = getattr(middleware, f"a{hook_name}")
+            graph.add_node(
+                node_name, RunnableCallable(sync_method, async_method), input_schema=state_schema
+            )
+        elif has_async:
+            # Only async available
+            async_method = getattr(middleware, f"a{hook_name}")
+            graph.add_node(node_name, async_method, input_schema=state_schema)
+        elif has_sync:
+            # Only sync available
+            sync_method = getattr(middleware, hook_name)
+            graph.add_node(node_name, sync_method, input_schema=state_schema)
+
     # Add middleware nodes
     for m in middleware:
-        if m.__class__.before_model is not AgentMiddleware.before_model:
-            graph.add_node(
-                f"{m.__class__.__name__}.before_model", m.before_model, input_schema=state_schema
-            )
+        if _has_sync_hook(m, "before_model") or _has_async_hook(m, "before_model"):
+            _add_middleware_node(m, "before_model", f"{m.__class__.__name__}.before_model")
 
-        if m.__class__.after_model is not AgentMiddleware.after_model:
-            graph.add_node(
-                f"{m.__class__.__name__}.after_model", m.after_model, input_schema=state_schema
-            )
+        if _has_sync_hook(m, "after_model") or _has_async_hook(m, "after_model"):
+            _add_middleware_node(m, "after_model", f"{m.__class__.__name__}.after_model")
 
     # add start edge
     first_node = (
