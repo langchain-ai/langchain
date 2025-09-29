@@ -14,6 +14,7 @@ dependencies = [
     "typing-extensions>=4.7.0,<5.0.0",
     "packaging>=23.2.0,<26.0.0",
     "pydantic>=2.7.4,<3.0.0",
+    "filetype>=1.2.0,<2.0.0",
 ]
 name = "langchain-core"
 version = "1.0.0a4"

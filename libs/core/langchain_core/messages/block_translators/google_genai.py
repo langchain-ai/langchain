@@ -1,9 +1,12 @@
 """Derivations of standard content blocks from Google (GenAI) content."""
 
 import base64
+import mimetypes
 import re
 from collections.abc import Iterable
 from typing import Any, cast
+
+import filetype  # type: ignore[import-untyped]
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
@@ -352,13 +355,25 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         try:
                             # Validate base64
                             _ = base64.b64decode(url, validate=True)
+
+                            image_url_b64_block = {
+                                "type": "image",
+                                "base64": url,
+                            }
+
+                            # Guess mime type based on data field if not provided
+                            mime_type, _ = mimetypes.guess_type(url)
+                            if not mime_type:
+                                # Last resort - try to guess based on file bytes
+                                kind = filetype.guess(url)
+                                if kind:
+                                    mime_type = kind.mime
+                            if mime_type:
+                                image_url_b64_block["mime_type"] = mime_type
+
                             converted_blocks.append(
-                                {
-                                    "type": "image",
-                                    "base64": url,
-                                }
+                                cast("types.ImageContentBlock", image_url_b64_block)
                             )
-                            # TODO: we could try to infer mime_type from content
                         except Exception:
                             # Not valid base64, treat as non-standard
                             converted_blocks.append(
