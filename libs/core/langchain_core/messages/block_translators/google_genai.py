@@ -287,10 +287,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
         ``_convert_to_v1_from_genai_input`` instead.
     """
     if isinstance(message.content, str):
-        # String content -> TextContentBlock
-        string_blocks: list[types.ContentBlock] = [
-            {"type": "text", "text": message.content}
-        ]
+        # String content -> TextContentBlock (only add if non-empty in case of audio)
+        string_blocks: list[types.ContentBlock] = []
+        if message.content:
+            string_blocks.append({"type": "text", "text": message.content})
 
         # Add any missing tool calls from message.tool_calls field
         content_tool_call_ids = {
@@ -308,6 +308,16 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "args": tool_call["args"],
                 }
                 string_blocks.append(string_tool_call_block)
+
+        # Handle audio from additional_kwargs if present (for empty content cases)
+        audio_data = message.additional_kwargs.get("audio")
+        if audio_data and isinstance(audio_data, bytes):
+            audio_block: types.AudioContentBlock = {
+                "type": "audio",
+                "base64": _bytes_to_b64_str(audio_data),
+                "mime_type": "audio/wav",  # Default to WAV for Google GenAI
+            }
+            string_blocks.append(audio_block)
 
         # TODO: Handle citations from grounding metadata if present
         # (in response_metadata.grounding_metadata)
@@ -330,8 +340,79 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
         elif isinstance(item, dict):
             item_type = item.get("type")
-
-            if item_type == "thinking":
+            if item_type == "image_url":
+                # Convert image_url to standard image block (base64)
+                # (since the original implementation returned as url-base64 CC style)
+                image_url = item.get("image_url", {})
+                url = image_url.get("url", "")
+                if url:
+                    # Extract base64 data
+                    match = re.match(r"data:([^;]+);base64,(.+)", url)
+                    if match:
+                        # Data URI provided
+                        mime_type, base64_data = match.groups()
+                        converted_blocks.append(
+                            {
+                                "type": "image",
+                                "base64": base64_data,
+                                "mime_type": mime_type,
+                            }
+                        )
+                    else:
+                        # Assume it's raw base64 without data URI
+                        try:
+                            # Validate base64
+                            _ = base64.b64decode(url, validate=True)
+                            converted_blocks.append(
+                                {
+                                    "type": "image",
+                                    "base64": url,
+                                }
+                            )
+                            # TODO: we could try to infer mime_type from content
+                        except Exception:
+                            # Not valid base64, treat as non-standard
+                            converted_blocks.append(
+                                {"type": "non_standard", "value": item}
+                            )
+                else:
+                    # This shouldn't be reached according to previous implementations
+                    converted_blocks.append({"type": "non_standard", "value": item})
+                    msg = "Image URL not a data URI; appending as non-standard block."
+                    raise ValueError(msg)
+            elif item_type == "function_call":
+                # Handle Google GenAI function calls
+                function_call_block: types.ToolCall = {
+                    "type": "tool_call",
+                    "name": item.get("name", ""),
+                    "args": item.get("args", {}),
+                    "id": item.get("id", ""),
+                }
+                converted_blocks.append(function_call_block)
+            elif item_type == "function_response":
+                # Handle Google GenAI function responses - use non-standard for now
+                # TODO: Add proper ToolResult type to standard types
+                converted_blocks.append(
+                    {
+                        "type": "non_standard",
+                        "value": {
+                            "type": "tool_result",
+                            "name": item.get("name", ""),
+                            "result": item.get("response", {}),
+                            "id": item.get("id", ""),
+                        },
+                    }
+                )
+            elif item_type == "file_data":
+                # Handle FileData URI-based content
+                file_block: types.FileContentBlock = {
+                    "type": "file",
+                    "url": item.get("file_uri", ""),
+                }
+                if mime_type := item.get("mime_type"):
+                    file_block["mime_type"] = mime_type
+                converted_blocks.append(file_block)
+            elif item_type == "thinking":
                 # Handling for the 'thinking' type we package thoughts as
                 reasoning_block: types.ReasoningContentBlock = {
                     "type": "reasoning",
@@ -339,7 +420,6 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 }
                 # Signature was never available for 'thinking' blocks
                 converted_blocks.append(reasoning_block)
-
             elif item_type == "executable_code":
                 # Convert to non-standard block for code execution
                 # TODO: migrate to std server tool block
@@ -353,7 +433,6 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         },
                     }
                 )
-
             elif item_type == "code_execution_result":
                 # Convert to non-standard block for execution result
                 # TODO: migrate to std server tool block
@@ -369,64 +448,6 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                         },
                     }
                 )
-
-            elif item_type == "image_url":
-                # Convert image_url to standard image block
-                image_url = item.get("image_url", {})
-                url = image_url.get("url", "")
-                if url.startswith("data:"):
-                    # Extract base64 data
-                    match = re.match(r"data:([^;]+);base64,(.+)", url)
-                    if match:
-                        mime_type, base64_data = match.groups()
-                        converted_blocks.append(
-                            {
-                                "type": "image",
-                                "base64": base64_data,
-                                "mime_type": mime_type,
-                            }
-                        )
-                    else:
-                        converted_blocks.append({"type": "non_standard", "value": item})
-                else:
-                    # TODO: URL-based image, keep as non-standard for now?
-                    converted_blocks.append({"type": "non_standard", "value": item})
-
-            elif item_type == "function_call":
-                # Handle Google GenAI function calls
-                function_call_block: types.ToolCall = {
-                    "type": "tool_call",
-                    "name": item.get("name", ""),
-                    "args": item.get("args", {}),
-                    "id": item.get("id", ""),
-                }
-                converted_blocks.append(function_call_block)
-
-            elif item_type == "function_response":
-                # Handle Google GenAI function responses - use non-standard for now
-                # TODO: Add proper ToolResult type to standard types
-                converted_blocks.append(
-                    {
-                        "type": "non_standard",
-                        "value": {
-                            "type": "tool_result",
-                            "name": item.get("name", ""),
-                            "result": item.get("response", {}),
-                            "id": item.get("id", ""),
-                        },
-                    }
-                )
-
-            elif item_type == "file_data":
-                # Handle FileData URI-based content
-                file_block: types.FileContentBlock = {
-                    "type": "file",
-                    "url": item.get("file_uri", ""),
-                }
-                if mime_type := item.get("mime_type"):
-                    file_block["mime_type"] = mime_type
-                converted_blocks.append(file_block)
-
             else:
                 # Unknown type, preserve as non-standard
                 converted_blocks.append({"type": "non_standard", "value": item})
@@ -446,6 +467,16 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             if block["type"] == "text" and citations:
                 block["annotations"] = cast("list[types.Annotation]", citations)
                 break
+
+    # Audio is stored on the message.additional_kwargs
+    audio_data = message.additional_kwargs.get("audio")
+    if audio_data and isinstance(audio_data, bytes):
+        audio_block_kwargs: types.AudioContentBlock = {
+            "type": "audio",
+            "base64": _bytes_to_b64_str(audio_data),
+            "mime_type": "audio/wav",  # Default to WAV for Google GenAI
+        }
+        converted_blocks.append(audio_block_kwargs)
 
     # Add any missing tool calls from message.tool_calls field
     content_tool_call_ids = {
