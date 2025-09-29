@@ -142,7 +142,7 @@ class PlanningMiddleware(AgentMiddleware):
 
     Args:
         system_prompt: Custom system prompt to guide the agent on using the todo tool.
-            If not provided, uses the default ``SYSTEM_PROMPT``.
+            If not provided, uses the default ``WRITE_TODOS_SYSTEM_PROMPT``.
         tool_description: Custom description for the write_todos tool.
             If not provided, uses the default ``WRITE_TODOS_TOOL_DESCRIPTION``.
     """
