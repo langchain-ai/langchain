@@ -13,6 +13,7 @@ from langchain_core.messages import content as types
 from langchain_core.messages.base import (
     BaseMessage,
     BaseMessageChunk,
+    _extract_reasoning_from_additional_kwargs,
     merge_content,
 )
 from langchain_core.messages.content import InvalidToolCall
@@ -266,6 +267,15 @@ class AIMessage(BaseMessage):
                         tool_call_block["extras"] = tool_call["extras"]  # type: ignore[typeddict-item]
                     blocks.append(tool_call_block)
 
+        # Best-effort reasoning extraction from additional_kwargs
+        # Only add reasoning if not already present
+        # Insert before all other blocks to keep reasoning at the start
+        has_reasoning = any(block.get("type") == "reasoning" for block in blocks)
+        if not has_reasoning and (
+            reasoning_block := _extract_reasoning_from_additional_kwargs(self)
+        ):
+            blocks.insert(0, reasoning_block)
+
         return blocks
 
     # TODO: remove this logic if possible, reducing breaking nature of changes
@@ -430,6 +440,15 @@ class AIMessageChunk(AIMessage, BaseMessageChunk):
                 if (idx := tool_call_chunk.get("index")) is not None:
                     tc["index"] = idx
                 blocks.append(tc)
+
+        # Best-effort reasoning extraction from additional_kwargs
+        # Only add reasoning if not already present
+        # Insert before all other blocks to keep reasoning at the start
+        has_reasoning = any(block.get("type") == "reasoning" for block in blocks)
+        if not has_reasoning and (
+            reasoning_block := _extract_reasoning_from_additional_kwargs(self)
+        ):
+            blocks.insert(0, reasoning_block)
 
         return blocks
 

@@ -171,6 +171,16 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "N801", # class name should use CapWords convention
 ]
 
+"langchain/tools/tool_node.py" = [
+    "ANN401", # we use Any right now, need to narrow
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
+]
+
 [tool.coverage.run]
 omit = ["tests/*"]
 
