@@ -1065,9 +1065,21 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     with patch.object(anthropic, "Client") as _client:
         llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
 
-    assert (
-        _client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    assert _client.return_value.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")])
+
+    call_args = _client.return_value.beta.messages.count_tokens.call_args.kwargs
+    assert call_args["betas"] == ["context-management-2025-06-27"]
+    assert call_args["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
 
 
 def test_usage_metadata_standardization() -> None:

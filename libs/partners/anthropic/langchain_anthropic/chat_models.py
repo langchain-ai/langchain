@@ -12,7 +12,7 @@ from operator import itemgetter
 from typing import Any, Callable, Literal, Optional, Union, cast
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -2245,7 +2245,6 @@ class ChatAnthropic(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
 
-    @beta()
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
@@ -2260,8 +2259,8 @@ class ChatAnthropic(BaseChatModel):
             messages: The message inputs to tokenize.
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
-            kwargs: Additional keyword arguments are passed to the
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind` method.
+            kwargs: Additional keyword arguments are passed to the Anthropic
+                ``messages.count_tokens`` method.
 
         Basic usage:
 
@@ -2296,7 +2295,7 @@ class ChatAnthropic(BaseChatModel):
                 def get_weather(location: str) -> str:
                     \"\"\"Get the current weather in a given location
 
-        Args:
+                    Args:
                         location: The city and state, e.g. San Francisco, CA
                     \"\"\"
                     return "Sunny"
@@ -2314,15 +2313,24 @@ class ChatAnthropic(BaseChatModel):
 
                 Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
 
-        """  # noqa: E501
+        """  # noqa: D214,E501
         formatted_system, formatted_messages = _format_messages(messages)
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
             kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+        if self.context_management is not None:
+            kwargs["context_management"] = self.context_management
 
-        response = self._client.beta.messages.count_tokens(
-            betas=["token-counting-2024-11-01"],
+        if self.betas is not None:
+            beta_response = self._client.beta.messages.count_tokens(
+                betas=self.betas,
+                model=self.model,
+                messages=formatted_messages,  # type: ignore[arg-type]
+                **kwargs,
+            )
+            return beta_response.input_tokens
+        response = self._client.messages.count_tokens(
             model=self.model,
             messages=formatted_messages,  # type: ignore[arg-type]
             **kwargs,
