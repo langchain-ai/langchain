@@ -195,29 +195,12 @@ class BaseMessage(Serializable):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        r"""Return ``content`` as a list of standardized :class:`~langchain_core.messages.content.ContentBlock`\s.
-
-        .. important::
-
-            To use this property correctly, the corresponding ``ChatModel`` must support
-            ``message_version='v1'`` or higher (and it must be set):
-
-            .. code-block:: python
-
-                from langchain.chat_models import init_chat_model
-                llm = init_chat_model("...", message_version="v1")
-
-                # or
-
-                from langchain-openai import ChatOpenAI
-                llm = ChatOpenAI(model="gpt-4o", message_version="v1")
-
-            Otherwise, the property will perform best-effort parsing to standard types,
-            though some content may be misinterpreted.
+        r"""Load content blocks from the message content.
 
         .. versionadded:: 1.0.0
 
-        """  # noqa: E501
+        """
+        # Needed here to avoid circular import, as these classes import BaseMessages
         from langchain_core.messages import content as types  # noqa: PLC0415
         from langchain_core.messages.block_translators.anthropic import (  # noqa: PLC0415
             _convert_to_v1_from_anthropic_input,
@@ -233,24 +216,33 @@ class BaseMessage(Serializable):
         )
 
         blocks: list[types.ContentBlock] = []
-
-        # First pass: convert to standard blocks
         content = (
+            # Transpose string content to list, otherwise assumed to be list
             [self.content]
             if isinstance(self.content, str) and self.content
             else self.content
         )
         for item in content:
             if isinstance(item, str):
+                # Plain string content is treated as a text block
                 blocks.append({"type": "text", "text": item})
             elif isinstance(item, dict):
                 item_type = item.get("type")
                 if item_type not in types.KNOWN_BLOCK_TYPES:
+                    # Handle all provider-specific or None type blocks as non-standard -
+                    # we'll come back to these later
                     blocks.append({"type": "non_standard", "value": item})
                 else:
+                    # Guard against v0 blocks that share the same `type` keys
+                    if "source_type" in item:
+                        blocks.append({"type": "non_standard", "value": item})
+
+                    # This can't be a v0 block (since they require `source_type`),
+                    # so it's a known v1 block type
                     blocks.append(cast("types.ContentBlock", item))
 
-        # Subsequent passes: attempt to unpack non-standard blocks
+        # Subsequent passes: attempt to unpack non-standard blocks.
+        # The block is left as non-standard if conversion fails.
         for parsing_step in [
             _convert_v0_multimodal_input_to_v1,
             _convert_to_v1_from_chat_completions_input,
