@@ -21,7 +21,7 @@ from langchain_core.messages import (
 from langchain_core.tools import tool, InjectedToolCallId
 
 from langchain.agents.middleware_agent import create_agent
-from langchain.agents.tool_node import InjectedState
+from langchain.tools import InjectedState
 from langchain.agents.middleware.human_in_the_loop import (
     HumanInTheLoopMiddleware,
     ActionRequest,
