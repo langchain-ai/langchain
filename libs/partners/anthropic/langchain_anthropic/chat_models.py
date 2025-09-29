@@ -1326,6 +1326,19 @@ class ChatAnthropic(BaseChatModel):
                 'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
                 'type': 'tool_call'}]
 
+        .. dropdown::  Memory tool
+
+            .. code-block:: python
+
+                from langchain_anthropic import ChatAnthropic
+
+                llm = ChatAnthropic(
+                    model="claude-sonnet-4-5-20250929",
+                    betas=["context-management-2025-06-27"],
+                )
+                llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
+                response = llm_with_tools.invoke("What are my interests?")
+
     Response metadata
         .. code-block:: python
 
