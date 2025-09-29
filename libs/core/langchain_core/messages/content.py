@@ -639,6 +639,12 @@ class PlainTextContentBlock(TypedDict):
     """Plaintext data (e.g., from a document).
 
     .. note::
+        A ``PlainTextContentBlock`` existed in ``langchain-core<1.0.0``. Although the
+        name has carried over, the structure has changed significantly. The only shared
+        keys between the old and new versions are ``type`` and ``text``, though the
+        ``type`` value has changed from ``'text'`` to ``'text-plain'``.
+
+    .. note::
         Title and context are optional fields that may be passed to the model. See
         Anthropic `example <https://docs.anthropic.com/en/docs/build-with-claude/citations#citable-vs-non-citable-content>`__.
 
@@ -883,10 +889,18 @@ def is_data_content_block(block: dict) -> bool:
     if any(key in block for key in ("url", "base64", "file_id", "text")):
         # Type is valid and at least one data field is present
         # (Accepts old-style image and audio URLContentBlock)
+
+        # 'text' is checked to support v0 PlainTextContentBlock types
+        # We must guard against new style TextContentBlock which also has 'text' `type`
+        # by ensuring the presense of `source_type`
+        if block["type"] == "text" and "source_type" not in block:  # noqa: SIM103  # This is more readable
+            return False
+
         return True
 
-    # Verify data presence based on source type
     if "source_type" in block:
+        # Old-style content blocks had possible types of 'image', 'audio', and 'file'
+        # which is not captured in the prior check
         source_type = block["source_type"]
         if (source_type == "url" and "url" in block) or (
             source_type == "base64" and "data" in block
@@ -897,8 +911,6 @@ def is_data_content_block(block: dict) -> bool:
         ):
             return True
 
-    # Type may be valid, but no data fields are present
-    # (required case since each is optional and we have no validation)
     return False
 
 
