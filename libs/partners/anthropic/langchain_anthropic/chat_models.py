@@ -12,7 +12,7 @@ from operator import itemgetter
 from typing import Any, Callable, Literal, Optional, Union, cast
 
 import anthropic
-from langchain_core._api import beta, deprecated
+from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -91,6 +91,7 @@ def _is_builtin_tool(tool: Any) -> bool:
         "web_search_",
         "web_fetch_",
         "code_execution_",
+        "memory_",
     ]
     return any(tool_type.startswith(prefix) for prefix in _builtin_tool_prefixes)
 
@@ -1193,6 +1194,25 @@ class ChatAnthropic(BaseChatModel):
 
             Total tokens: 408
 
+    Context management:
+        Anthropic supports a context editing feature that will automatically manage the
+        model's context window (e.g., by clearing tool results).
+
+        See `Anthropic documentation <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__
+        for details and configuration options.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["context-management-2025-06-27"],
+                context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+            )
+            llm_with_tools = llm.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
+            response = llm_with_tools.invoke("Search for recent developments in AI")
+
     Built-in tools:
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
@@ -1413,6 +1433,11 @@ class ChatAnthropic(BaseChatModel):
     "name": "example-mcp"}]``
     """
 
+    context_management: Optional[dict[str, Any]] = None
+    """Configuration for
+    `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__.
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -1565,6 +1590,7 @@ class ChatAnthropic(BaseChatModel):
             "top_p": self.top_p,
             "stop_sequences": stop or self.stop_sequences,
             "betas": self.betas,
+            "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
             "system": system,
             **self.model_kwargs,
@@ -2219,7 +2245,6 @@ class ChatAnthropic(BaseChatModel):
             return RunnableMap(raw=llm) | parser_with_fallback
         return llm | output_parser
 
-    @beta()
     def get_num_tokens_from_messages(
         self,
         messages: list[BaseMessage],
@@ -2234,8 +2259,8 @@ class ChatAnthropic(BaseChatModel):
             messages: The message inputs to tokenize.
             tools: If provided, sequence of dict, BaseModel, function, or BaseTools
                 to be converted to tool schemas.
-            kwargs: Additional keyword arguments are passed to the
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind` method.
+            kwargs: Additional keyword arguments are passed to the Anthropic
+                ``messages.count_tokens`` method.
 
         Basic usage:
 
@@ -2270,7 +2295,7 @@ class ChatAnthropic(BaseChatModel):
                 def get_weather(location: str) -> str:
                     \"\"\"Get the current weather in a given location
 
-        Args:
+                    Args:
                         location: The city and state, e.g. San Francisco, CA
                     \"\"\"
                     return "Sunny"
@@ -2288,15 +2313,24 @@ class ChatAnthropic(BaseChatModel):
 
                 Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
 
-        """  # noqa: E501
+        """  # noqa: D214,E501
         formatted_system, formatted_messages = _format_messages(messages)
         if isinstance(formatted_system, str):
             kwargs["system"] = formatted_system
         if tools:
             kwargs["tools"] = [convert_to_anthropic_tool(tool) for tool in tools]
+        if self.context_management is not None:
+            kwargs["context_management"] = self.context_management
 
-        response = self._client.beta.messages.count_tokens(
-            betas=["token-counting-2024-11-01"],
+        if self.betas is not None:
+            beta_response = self._client.beta.messages.count_tokens(
+                betas=self.betas,
+                model=self.model,
+                messages=formatted_messages,  # type: ignore[arg-type]
+                **kwargs,
+            )
+            return beta_response.input_tokens
+        response = self._client.messages.count_tokens(
             model=self.model,
             messages=formatted_messages,  # type: ignore[arg-type]
             **kwargs,
@@ -2409,7 +2443,7 @@ def _make_message_chunk_from_anthropic_event(
         # Capture model name, but don't include usage_metadata yet
         # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
-            response_metadata = {"model_name": event.message.model}
+            response_metadata: dict[str, Any] = {"model_name": event.message.model}
         else:
             response_metadata = {}
 
@@ -2510,13 +2544,16 @@ def _make_message_chunk_from_anthropic_event(
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
+        response_metadata = {
+            "stop_reason": event.delta.stop_reason,
+            "stop_sequence": event.delta.stop_sequence,
+        }
+        if context_management := getattr(event, "context_management", None):
+            response_metadata["context_management"] = context_management.model_dump()
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
-            response_metadata={
-                "stop_reason": event.delta.stop_reason,
-                "stop_sequence": event.delta.stop_sequence,
-            },
+            response_metadata=response_metadata,
         )
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
