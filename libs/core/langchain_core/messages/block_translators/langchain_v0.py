@@ -54,7 +54,15 @@ def _convert_legacy_v0_content_block_to_v1(
     """
 
     def _extract_v0_extras(block_dict: dict, known_keys: set[str]) -> dict[str, Any]:
-        """Extract unknown keys from v0 block to preserve as extras."""
+        """Extract unknown keys from v0 block to preserve as extras.
+
+        Args:
+            block_dict: The original v0 block dictionary.
+            known_keys: Set of keys known to be part of the v0 format for this block.
+
+        Returns:
+            A dictionary of extra keys not part of the known v0 format.
+        """
         return {k: v for k, v in block_dict.items() if k not in known_keys}
 
     # Check if this is actually a v0 format block
@@ -82,10 +90,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_image_url["mime_type"] = block["mime_type"]
 
+            v1_image_url["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_image_url["extras"] = {}
                     v1_image_url["extras"][key] = value
+            if v1_image_url["extras"] == {}:
+                del v1_image_url["extras"]
+
             return v1_image_url
         if source_type == "base64":
             # image-base64
@@ -105,10 +116,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_image_base64["mime_type"] = block["mime_type"]
 
+            v1_image_base64["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_image_base64["extras"] = {}
                     v1_image_base64["extras"][key] = value
+            if v1_image_base64["extras"] == {}:
+                del v1_image_base64["extras"]
+
             return v1_image_base64
         if source_type == "id":
             # image-id
@@ -117,10 +131,12 @@ def _convert_legacy_v0_content_block_to_v1(
             # For id `source_type`, `id` is the file reference, not block ID
             v1_image_id = types.ImageContentBlock(type="image", file_id=block["id"])
 
+            v1_image_id["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_image_id["extras"] = {}
                     v1_image_id["extras"][key] = value
+            if v1_image_id["extras"] == {}:
+                del v1_image_id["extras"]
 
             return v1_image_id
     elif block.get("type") == "audio":
@@ -144,10 +160,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_audio_url["mime_type"] = block["mime_type"]
 
+            v1_audio_url["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_audio_url["extras"] = {}
                     v1_audio_url["extras"][key] = value
+            if v1_audio_url["extras"] == {}:
+                del v1_audio_url["extras"]
+
             return v1_audio_url
         if source_type == "base64":
             # audio-base64
@@ -167,10 +186,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_audio_base64["mime_type"] = block["mime_type"]
 
+            v1_audio_base64["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_audio_base64["extras"] = {}
                     v1_audio_base64["extras"][key] = value
+            if v1_audio_base64["extras"] == {}:
+                del v1_audio_base64["extras"]
+
             return v1_audio_base64
         if source_type == "id":
             # audio-id
@@ -180,10 +202,12 @@ def _convert_legacy_v0_content_block_to_v1(
                 type="audio", file_id=block["id"]
             )
 
+            v1_audio_id["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_audio_id["extras"] = {}
                     v1_audio_id["extras"][key] = value
+            if v1_audio_id["extras"] == {}:
+                del v1_audio_id["extras"]
 
             return v1_audio_id
     elif block.get("type") == "file":
@@ -206,10 +230,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_file_url["mime_type"] = block["mime_type"]
 
+            v1_file_url["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_file_url["extras"] = {}
                     v1_file_url["extras"][key] = value
+            if v1_file_url["extras"] == {}:
+                del v1_file_url["extras"]
+
             return v1_file_url
         if source_type == "base64":
             # file-base64
@@ -229,10 +256,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_file_base64["mime_type"] = block["mime_type"]
 
+            v1_file_base64["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_file_base64["extras"] = {}
                     v1_file_base64["extras"][key] = value
+            if v1_file_base64["extras"] == {}:
+                del v1_file_base64["extras"]
+
             return v1_file_base64
         if source_type == "id":
             # file-id
@@ -258,10 +288,13 @@ def _convert_legacy_v0_content_block_to_v1(
             if block.get("mime_type"):
                 v1_file_text["mime_type"] = block["mime_type"]
 
+            v1_file_text["extras"] = {}
             for key, value in extras.items():
                 if value is not None:
-                    v1_file_text["extras"] = {}
                     v1_file_text["extras"][key] = value
+            if v1_file_text["extras"] == {}:
+                del v1_file_text["extras"]
+
             return v1_file_text
 
     # If we can't convert, return the block unchanged
