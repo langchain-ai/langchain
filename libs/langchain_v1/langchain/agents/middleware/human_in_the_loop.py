@@ -149,7 +149,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             return None
 
         # Process all tool calls that require interrupts
-        approved_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
+        revised_tool_calls: list[ToolCall] = auto_approved_tool_calls.copy()
         artificial_tool_messages: list[ToolMessage] = []
 
         # Create interrupt requests for all tools that need approval
@@ -193,13 +193,13 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
             config = self.interrupt_on[tool_call["name"]]
 
             if decision["type"] == "approve" and "approve" in config["allowed_responses"]:
-                approved_tool_calls.append(tool_call)
+                revised_tool_calls.append(tool_call)
             elif (
                 decision["type"] == "approve_with_edits"
                 and "approve_with_edits" in config["allowed_responses"]
             ):
                 edited_action = decision["arguments"]
-                approved_tool_calls.append(
+                revised_tool_calls.append(
                     ToolCall(
                         type="tool_call",
                         name=edited_action["name"],
@@ -219,6 +219,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                     tool_call_id=tool_call["id"],
                     status="error",
                 )
+                revised_tool_calls.append(tool_call)
                 artificial_tool_messages.append(tool_message)
             else:
                 msg = (
@@ -231,9 +232,6 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
                 raise ValueError(msg)
 
         # Update the AI message to only include approved tool calls
-        last_ai_msg.tool_calls = approved_tool_calls
+        last_ai_msg.tool_calls = revised_tool_calls
 
-        if len(approved_tool_calls) > 0:
-            return {"messages": [last_ai_msg, *artificial_tool_messages]}
-
-        return {"jump_to": "model", "messages": artificial_tool_messages}
+        return {"messages": [last_ai_msg, *artificial_tool_messages]}
