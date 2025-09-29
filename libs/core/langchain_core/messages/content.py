@@ -844,7 +844,12 @@ KNOWN_BLOCK_TYPES = {
     "server_tool_result",
     # Catch-all
     "non_standard",
+    # citation and non_standard_annotation intentionally omitted
 }
+"""These are block types known to ``langchain-core>=1.0.0``.
+
+If a block has a type not in this set, it is considered to be provider-specific.
+"""
 
 
 def _get_data_content_block_types() -> tuple[str, ...]:
