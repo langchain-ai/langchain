@@ -239,19 +239,6 @@ def _convert_to_v1_from_genai_input(
                 }
                 yield tool_call_block
 
-            elif block_type == "function_response" and "name" in block:
-                # Handle function responses - use NonStandardContentBlock for now
-                # TODO: Add proper ToolResult type to standard types
-                yield {
-                    "type": "non_standard",
-                    "value": {
-                        "type": "tool_result",
-                        "name": block["name"],
-                        "result": block.get("response", {}),
-                        "id": block.get("id", ""),
-                    },
-                }
-
             elif block.get("type") in types.KNOWN_BLOCK_TYPES:
                 # We see a standard block type, so we just cast it, even if
                 # we don't fully understand it. This may be dangerous, but
@@ -393,20 +380,6 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     "id": item.get("id", ""),
                 }
                 converted_blocks.append(function_call_block)
-            elif item_type == "function_response":
-                # Handle Google GenAI function responses - use non-standard for now
-                # TODO: Add proper ToolResult type to standard types
-                converted_blocks.append(
-                    {
-                        "type": "non_standard",
-                        "value": {
-                            "type": "tool_result",
-                            "name": item.get("name", ""),
-                            "result": item.get("response", {}),
-                            "id": item.get("id", ""),
-                        },
-                    }
-                )
             elif item_type == "file_data":
                 # Handle FileData URI-based content
                 file_block: types.FileContentBlock = {
