@@ -1435,7 +1435,7 @@ class ChatAnthropic(BaseChatModel):
 
     context_management: Optional[dict[str, Any]] = None
     """Configuration for
-    `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`_.
+    `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__.
     """
 
     @property
