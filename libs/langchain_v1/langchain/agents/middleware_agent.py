@@ -532,7 +532,6 @@ def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
-
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
@@ -559,8 +558,7 @@ def _make_model_to_tools_edge(
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
         # 4. AIMessage has tool calls, but there are no pending tool calls
-        # which suggests the injection of artificial tool messages. jump to the first
-        # node (model, effectively)
+        # which suggests the injection of artificial tool messages. jump to the first node
         return first_node
 
     return model_to_tools
