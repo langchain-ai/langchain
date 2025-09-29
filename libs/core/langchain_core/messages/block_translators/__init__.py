@@ -1,4 +1,14 @@
-"""Derivations of standard content blocks from provider content."""
+"""Derivations of standard content blocks from provider content.
+
+``AIMessage`` will first attempt to use a provider-specific translator if
+``model_provider`` is set in ``response_metadata`` on the message. Consequently, each
+provider translator must handle all possible content response types from the provider,
+including text.
+
+If no provider is set, or if the provider does not have a registered translator,
+``AIMessage`` will fall back to best-effort parsing of the content into blocks using
+the implementation in ``BaseMessage``.
+"""
 
 from __future__ import annotations
 

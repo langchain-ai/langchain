@@ -226,7 +226,12 @@ class AIMessage(BaseMessage):
 
     @property
     def content_blocks(self) -> list[types.ContentBlock]:
-        """Return content blocks of the message."""
+        """Return content blocks of the message.
+
+        If the message has a known model provider, use the provider-specific translator
+        first before falling back to best-effort parsing. For details, see the property
+        on ``BaseMessage``.
+        """
         if self.response_metadata.get("output_version") == "v1":
             return cast("list[types.ContentBlock]", self.content)
 
