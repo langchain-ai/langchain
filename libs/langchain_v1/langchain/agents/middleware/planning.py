@@ -129,10 +129,10 @@ class PlanningMiddleware(AgentMiddleware):
 
     Example:
         ```python
-        from langchain.agents.middleware.todo import TodoMiddleware
+        from langchain.agents.middleware.planning import PlanningMiddleware
         from langchain.agents import create_agent
 
-        agent = create_agent("openai:gpt-4o", middleware=[TodoMiddleware()])
+        agent = create_agent("openai:gpt-4o", middleware=[PlanningMiddleware()])
 
         # Agent now has access to write_todos tool and todo state tracking
         result = await agent.invoke({"messages": [HumanMessage("Help me refactor my codebase")]})
