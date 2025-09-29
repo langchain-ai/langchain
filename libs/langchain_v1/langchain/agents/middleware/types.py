@@ -13,7 +13,6 @@ from typing import (
     Literal,
     Protocol,
     TypeAlias,
-    TypeGuard,
     cast,
     overload,
 )
@@ -23,16 +22,16 @@ from langchain_core.messages import AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
+from langgraph.types import Command
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import Awaitable, Callable
 
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
-    from langgraph.types import Command
 
     from langchain.agents.structured_output import ResponseFormat
 
@@ -41,17 +40,24 @@ __all__ = [
     "AgentState",
     "ContextT",
     "ModelRequest",
+    "NodeReturn",
     "OmitFromSchema",
     "PublicAgentState",
     "aafter_model",
     "abefore_model",
+    "after_model",
     "amodify_model_request",
+    "before_model",
+    "modify_model_request",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
 """Destination to jump to when a middleware node returns."""
 
 ResponseT = TypeVar("ResponseT")
+
+NodeReturn: TypeAlias = dict[str, Any] | Command | None
+"""Return type for middleware node hooks."""
 
 
 @dataclass
@@ -129,12 +135,10 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     after_model_jump_to: ClassVar[list[JumpTo]] = []
     """Valid jump destinations for after_model hook. Used to establish conditional edges."""
 
-    def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> NodeReturn:
         """Logic to run before the model is called."""
 
-    async def abefore_model(
-        self, state: StateT, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | None:
+    async def abefore_model(self, state: StateT, runtime: Runtime[ContextT]) -> NodeReturn:
         """Async logic to run before the model is called."""
 
     def modify_model_request(
@@ -155,124 +159,71 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Async logic to modify request kwargs before the model is called."""
         return request
 
-    def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> NodeReturn:
         """Logic to run after the model is called."""
 
-    async def aafter_model(
-        self, state: StateT, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | None:
+    async def aafter_model(self, state: StateT, runtime: Runtime[ContextT]) -> NodeReturn:
         """Async logic to run after the model is called."""
 
 
-class _CallableWithState(Protocol[StateT_contra]):
-    """Callable with AgentState as argument."""
+class _NodeCallableWithState(Protocol[StateT_contra]):
+    """Callable for before/after model hooks with just state (sync or async)."""
 
-    def __call__(self, state: StateT_contra) -> dict[str, Any] | Command | None:
-        """Perform some logic with the state."""
+    def __call__(self, state: StateT_contra) -> NodeReturn | Awaitable[NodeReturn]:
+        """Perform logic with the state."""
         ...
 
 
-class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with AgentState and Runtime as arguments."""
+class _NodeCallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
+    """Callable for before/after model hooks with state and runtime (sync or async)."""
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | Command | None:
-        """Perform some logic with the state and runtime."""
+    ) -> NodeReturn | Awaitable[NodeReturn]:
+        """Perform logic with the state and runtime."""
         ...
 
 
-class _AsyncCallableWithState(Protocol[StateT_contra]):
-    """Async callable with AgentState as argument."""
+class _ModelRequestCallableWithState(Protocol[StateT_contra]):
+    """Callable for modify_model_request hook with state (sync or async)."""
 
-    async def __call__(self, state: StateT_contra) -> dict[str, Any] | Command | None:
-        """Perform some async logic with the state."""
+    def __call__(
+        self, request: ModelRequest, state: StateT_contra
+    ) -> ModelRequest | Awaitable[ModelRequest]:
+        """Perform logic with the model request and state."""
         ...
 
 
-class _AsyncCallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Async callable with AgentState and Runtime as arguments."""
-
-    async def __call__(
-        self, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | Command | None:
-        """Perform some async logic with the state and runtime."""
-        ...
-
-
-class _CallableWithModelRequestAndState(Protocol[StateT_contra]):
-    """Callable with ModelRequest and AgentState as arguments."""
-
-    def __call__(self, request: ModelRequest, state: StateT_contra) -> ModelRequest:
-        """Perform some logic with the model request and state."""
-        ...
-
-
-class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Callable with ModelRequest, AgentState, and Runtime as arguments."""
+class _ModelRequestCallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
+    """Callable for modify_model_request hook with state and runtime (sync or async)."""
 
     def __call__(
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> ModelRequest:
-        """Perform some logic with the model request, state, and runtime."""
-        ...
-
-
-class _AsyncCallableWithModelRequestAndState(Protocol[StateT_contra]):
-    """Async callable with ModelRequest and AgentState as arguments."""
-
-    async def __call__(self, request: ModelRequest, state: StateT_contra) -> ModelRequest:
-        """Perform some async logic with the model request and state."""
-        ...
-
-
-class _AsyncCallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, ContextT]):
-    """Async callable with ModelRequest, AgentState, and Runtime as arguments."""
-
-    async def __call__(
-        self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> ModelRequest:
-        """Perform some async logic with the model request, state, and runtime."""
+    ) -> ModelRequest | Awaitable[ModelRequest]:
+        """Perform logic with the model request, state, and runtime."""
         ...
 
 
 _NodeSignature: TypeAlias = (
-    _CallableWithState[StateT] | _CallableWithStateAndRuntime[StateT, ContextT]
+    _NodeCallableWithState[StateT] | _NodeCallableWithStateAndRuntime[StateT, ContextT]
 )
 _AsyncNodeSignature: TypeAlias = (
-    _AsyncCallableWithState[StateT] | _AsyncCallableWithStateAndRuntime[StateT, ContextT]
+    _NodeCallableWithState[StateT] | _NodeCallableWithStateAndRuntime[StateT, ContextT]
 )
 _ModelRequestSignature: TypeAlias = (
-    _CallableWithModelRequestAndState[StateT]
-    | _CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]
+    _ModelRequestCallableWithState[StateT]
+    | _ModelRequestCallableWithStateAndRuntime[StateT, ContextT]
 )
 _AsyncModelRequestSignature: TypeAlias = (
-    _AsyncCallableWithModelRequestAndState[StateT]
-    | _AsyncCallableWithModelRequestAndStateAndRuntime[StateT, ContextT]
+    _ModelRequestCallableWithState[StateT]
+    | _ModelRequestCallableWithStateAndRuntime[StateT, ContextT]
 )
 
 
 def is_callable_with_runtime(
-    func: _NodeSignature[StateT, ContextT],
-) -> TypeGuard[_CallableWithStateAndRuntime[StateT, ContextT]]:
-    return "runtime" in signature(func).parameters
-
-
-def is_async_callable_with_runtime(
-    func: _AsyncNodeSignature[StateT, ContextT],
-) -> TypeGuard[_AsyncCallableWithStateAndRuntime[StateT, ContextT]]:
-    return "runtime" in signature(func).parameters
-
-
-def is_callable_with_runtime_and_request(
-    func: _ModelRequestSignature[StateT, ContextT],
-) -> TypeGuard[_CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]]:
-    return "runtime" in signature(func).parameters
-
-
-def is_async_callable_with_runtime_and_request(
-    func: _AsyncModelRequestSignature[StateT, ContextT],
-) -> TypeGuard[_AsyncCallableWithModelRequestAndStateAndRuntime[StateT, ContextT]]:
+    func: _NodeSignature[StateT, ContextT] | _ModelRequestSignature[StateT, ContextT],
+) -> bool:
+    """Check if callable accepts runtime parameter."""
     return "runtime" in signature(func).parameters
 
 
@@ -361,8 +312,8 @@ def before_model(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
-                return func(state, runtime)
+            ) -> NodeReturn:
+                return func(state, runtime)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -370,8 +321,8 @@ def before_model(
             def wrapped_without_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
-            ) -> dict[str, Any] | Command | None:
-                return func(state)  # type: ignore[call-arg]
+            ) -> NodeReturn:
+                return func(state)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
@@ -471,7 +422,7 @@ def modify_model_request(
     def decorator(
         func: _ModelRequestSignature[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
-        if is_callable_with_runtime_and_request(func):
+        if is_callable_with_runtime(func):
 
             def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
@@ -479,7 +430,7 @@ def modify_model_request(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> ModelRequest:
-                return func(request, state, runtime)
+                return func(request, state, runtime)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -489,7 +440,7 @@ def modify_model_request(
                 request: ModelRequest,
                 state: StateT,
             ) -> ModelRequest:
-                return func(request, state)  # type: ignore[call-arg]
+                return func(request, state)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
@@ -587,8 +538,8 @@ def after_model(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
-                return func(state, runtime)
+            ) -> NodeReturn:
+                return func(state, runtime)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -596,8 +547,8 @@ def after_model(
             def wrapped_without_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
-            ) -> dict[str, Any] | Command | None:
-                return func(state)  # type: ignore[call-arg]
+            ) -> NodeReturn:
+                return func(state)  # type: ignore[call-arg,return-value]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
@@ -692,14 +643,15 @@ def abefore_model(
     """
 
     def decorator(func: _AsyncNodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        if is_async_callable_with_runtime(func):
+        if is_callable_with_runtime(func):
 
             async def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)
+            ) -> NodeReturn:
+                result = func(state, runtime)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_with_runtime
         else:
@@ -707,8 +659,9 @@ def abefore_model(
             async def wrapped_without_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
-            ) -> dict[str, Any] | Command | None:
-                return await func(state)  # type: ignore[call-arg]
+            ) -> NodeReturn:
+                result = func(state)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
@@ -798,7 +751,7 @@ def amodify_model_request(
     def decorator(
         func: _AsyncModelRequestSignature[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
-        if is_async_callable_with_runtime_and_request(func):
+        if is_callable_with_runtime(func):
 
             async def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
@@ -806,7 +759,8 @@ def amodify_model_request(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> ModelRequest:
-                return await func(request, state, runtime)
+                result = func(request, state, runtime)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_with_runtime
         else:
@@ -816,7 +770,8 @@ def amodify_model_request(
                 request: ModelRequest,
                 state: StateT,
             ) -> ModelRequest:
-                return await func(request, state)  # type: ignore[call-arg]
+                result = func(request, state)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
@@ -909,14 +864,15 @@ def aafter_model(
     """
 
     def decorator(func: _AsyncNodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        if is_async_callable_with_runtime(func):
+        if is_callable_with_runtime(func):
 
             async def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
-            ) -> dict[str, Any] | Command | None:
-                return await func(state, runtime)
+            ) -> NodeReturn:
+                result = func(state, runtime)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_with_runtime
         else:
@@ -924,8 +880,9 @@ def aafter_model(
             async def wrapped_without_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
-            ) -> dict[str, Any] | Command | None:
-                return await func(state)  # type: ignore[call-arg]
+            ) -> NodeReturn:
+                result = func(state)  # type: ignore[call-arg]
+                return await result  # type: ignore[misc]
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
