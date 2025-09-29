@@ -100,31 +100,20 @@ def translate_grounding_metadata_to_citations(
 def _convert_to_v1_from_genai_input(
     content: list[types.ContentBlock],
 ) -> list[types.ContentBlock]:
-    """Helper function for generic structural transformations of content blocks.
+    """Convert Google GenAI format blocks to v1 format.
 
-    Handles format normalization and post-processing cleanup of content blocks that have
-    already been extracted from messages. It focuses on:
+    During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
+    block as a ``'non_standard'`` block with the original block stored in the ``value``
+    field. This function attempts to unpack those blocks and convert any blocks that
+    might be GenAI format to v1 ContentBlocks.
 
-    - Processing standard content types that could appear across providers
-    - Post-processing cleanup of non-standard blocks
-    - Generic structural transformations of already-extracted blocks
-    - Format normalization (e.g. base64 conversion, MIME type handling)
-
-    Non-standard blocks are unpacked and analyzed to determine if they represent
-    known content types like text, documents, or images that can be converted to
-    standard v1 format.
+    If conversion fails, the block is left as a ``'non_standard'`` block.
 
     Args:
-        content: List of content blocks that may contain non-standard blocks to unpack.
+        content: List of content blocks to process.
 
     Returns:
-        List of content blocks with non-standard blocks converted to standard types
-        where possible, or preserved as non-standard if conversion is not feasible.
-
-    Note:
-        This is a helper function for post-processing content blocks. For converting
-        full Google GenAI messages with provider-specific semantics, use
-        ``_convert_to_v1_from_genai`` instead.
+        Updated list with GenAI blocks converted to v1 format.
     """
 
     def _iter_blocks() -> Iterable[types.ContentBlock]:
@@ -271,21 +260,7 @@ def _convert_to_v1_from_genai_input(
 
 
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
-    """Convert Google GenAI AIMessage object content to v1 format.
-
-    Args:
-        message: Message for whom the content will be converted.
-
-    Returns:
-        List of standardized v1 content blocks. Supported block types include text,
-        reasoning, image, and non-standard blocks for unrecognized content. Text
-        blocks may include citation annotations derived from grounding metadata.
-
-    Note:
-        This is the main entry point for converting complete Google GenAI messages.
-        For post-processing already-extracted content blocks, use
-        ``_convert_to_v1_from_genai_input`` instead.
-    """
+    """Convert Google GenAI message content to v1 format."""
     if isinstance(message.content, str):
         # String content -> TextContentBlock (only add if non-empty in case of audio)
         string_blocks: list[types.ContentBlock] = []
