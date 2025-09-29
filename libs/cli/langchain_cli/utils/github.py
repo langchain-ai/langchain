@@ -1,11 +1,12 @@
 """GitHub utilities."""
 
+from __future__ import annotations
+
 import http.client
 import json
-from typing import Optional
 
 
-def list_packages(*, contains: Optional[str] = None) -> list[str]:
+def list_packages(*, contains: str | None = None) -> list[str]:
     """List all packages in the langchain repository templates directory.
 
     Args:

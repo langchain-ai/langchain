@@ -354,8 +354,7 @@ def test_prompt_invalid_template_format() -> None:
 def test_prompt_from_file() -> None:
     """Test prompt can be successfully constructed from a file."""
     template_file = "tests/unit_tests/data/prompt_file.txt"
-    input_variables = ["question"]
-    prompt = PromptTemplate.from_file(template_file, input_variables)
+    prompt = PromptTemplate.from_file(template_file)
     assert prompt.template == "Question: {question}\nAnswer:"
 
 

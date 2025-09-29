@@ -50,12 +50,12 @@ def compare_versions(
 ) -> bool:
     """Compare a library version to some requirement using a given operation.
 
-    Arguments:
-        library_or_version (`str` or `packaging.version.Version`):
+    Args:
+        library_or_version:
             A library name or a version to check.
-        operation (`str`):
+        operation:
             A string representation of an operator, such as `">"` or `"<="`.
-        requirement_version (`str`):
+        requirement_version:
             The version to compare the library version against
 
     """

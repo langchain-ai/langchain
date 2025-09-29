@@ -94,7 +94,7 @@ class InMemoryVectorStore(VectorStore):
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * thud [{'bar': 'baz'}]
 
@@ -111,7 +111,7 @@ class InMemoryVectorStore(VectorStore):
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * thud [{'bar': 'baz'}]
 
@@ -123,7 +123,7 @@ class InMemoryVectorStore(VectorStore):
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * [SIM=0.832268] foo [{'baz': 'bar'}]
 
@@ -144,7 +144,7 @@ class InMemoryVectorStore(VectorStore):
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * [SIM=0.832268] foo [{'baz': 'bar'}]
 
@@ -157,7 +157,7 @@ class InMemoryVectorStore(VectorStore):
             )
             retriever.invoke("thud")
 
-        .. code-block:: none
+        .. code-block::
 
             [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
 
