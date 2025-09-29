@@ -271,26 +271,10 @@ def _convert_to_v1_from_genai_input(
 
 
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
-    """Main function for converting GoogleGenAI messages with Google-specific semantics.
-
-    This function handles the complete conversion of Google GenAI messages to standard
-    v1 content blocks. It focuses on:
-
-    - Provider-specific message structure and semantic content types
-    - Processing content that requires message context (e.g. tool calls, streaming)
-    - Handling Google-specific block types that don't exist in other providers
-    - Managing metadata integration (citations, grounding, generation_info)
-
-    Converts messages from Google's generativelanguage_v1beta API format to LangChain's
-    standardized v1 format, handling various Google GenAI specific content types
-    including text, thinking (reasoning), executable code, code execution results, and
-    image content. Also processes grounding metadata to create citation annotations for
-    text blocks.
+    """Convert Google GenAI AIMessage object content to v1 format.
 
     Args:
-        message: The LangChain message to convert that has Google GenAI content. Can
-            contain string content, list content with various block types, or mixed
-            content structures.
+        message: Message for whom the content will be converted.
 
     Returns:
         List of standardized v1 content blocks. Supported block types include text,
@@ -325,52 +309,36 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                 }
                 string_blocks.append(string_tool_call_block)
 
+        # TODO: Handle citations from grounding metadata if present
+        # (in response_metadata.grounding_metadata)
+
         return string_blocks
 
-    # TODO: handle dictionary content that is not a list? e.g. a text-dict style
-
     if not isinstance(message.content, list):
-        # Unexpected content type, return as is
+        # Unexpected content type, attempt to represent as text
         return [{"type": "text", "text": str(message.content)}]
 
     converted_blocks: list[types.ContentBlock] = []
 
     for item in message.content:
         if isinstance(item, str):
+            # Case for conversation history strings
             converted_blocks.append({"type": "text", "text": item})  # TextContentBlock
+
+            # TODO: Handle citations from grounding metadata if present
+            # (in response_metadata.grounding_metadata)
 
         elif isinstance(item, dict):
             item_type = item.get("type")
 
-            if item_type == "text":
-                # Ensure `text` key exists and is a string
-                text = item.get("text", "")
-                if isinstance(text, str):
-                    converted_blocks.append({"type": "text", "text": text})
-                else:  # Fallback
-                    converted_blocks.append({"type": "non_standard", "value": item})
-
-            elif item_type == "thinking":
-                # DEPRECATED: Legacy handling for custom 'thinking' v0 LangChain type
-                # This maintains backwards compatibility with old LangChain installs
+            if item_type == "thinking":
+                # Handling for the 'thinking' type we package thoughts as
                 reasoning_block: types.ReasoningContentBlock = {
                     "type": "reasoning",
                     "reasoning": item.get("thinking", ""),
                 }
                 # Signature was never available for 'thinking' blocks
                 converted_blocks.append(reasoning_block)
-
-            elif item_type == "thought":
-                thought_reasoning_block: types.ReasoningContentBlock = {
-                    "type": "reasoning",
-                    "reasoning": item.get("text", ""),
-                }
-                # Add thought signature if available; required to pass block back in
-                if "thought_signature" in item:
-                    thought_reasoning_block["extras"] = {
-                        "signature": item["thought_signature"]
-                    }
-                converted_blocks.append(thought_reasoning_block)
 
             elif item_type == "executable_code":
                 # Convert to non-standard block for code execution
