@@ -236,6 +236,7 @@ class BaseMessage(Serializable):
                     # Guard against v0 blocks that share the same `type` keys
                     if "source_type" in item:
                         blocks.append({"type": "non_standard", "value": item})
+                        continue
 
                     # This can't be a v0 block (since they require `source_type`),
                     # so it's a known v1 block type
