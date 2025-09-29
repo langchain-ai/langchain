@@ -32,8 +32,7 @@ from langchain.agents.middleware.human_in_the_loop import (
 from langchain.agents.middleware.planning import (
     PlanningMiddleware,
     PlanningState,
-    SYSTEM_PROMPT,
-    Todo,
+    WRITE_TODOS_SYSTEM_PROMPT,
     write_todos,
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
@@ -1559,3 +1558,106 @@ def test_planning_middleware_agent_creation_with_middleware() -> None:
     # tool message (7)
     # ai message (8) - no tool calls
     assert len(result["messages"]) == 8
+
+
+def test_planning_middleware_custom_system_prompt() -> None:
+    """Test that PlanningMiddleware can be initialized with custom system prompt."""
+    custom_system_prompt = "Custom todo system prompt for testing"
+    middleware = PlanningMiddleware(system_prompt=custom_system_prompt)
+    model = FakeToolCallingModel()
+
+    request = ModelRequest(
+        model=model,
+        system_prompt="Original prompt",
+        messages=[HumanMessage(content="Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
+    modified_request = middleware.modify_model_request(request, state)
+    assert modified_request.system_prompt == f"Original prompt\n\n{custom_system_prompt}"
+
+
+def test_planning_middleware_custom_tool_description() -> None:
+    """Test that PlanningMiddleware can be initialized with custom tool description."""
+    custom_tool_description = "Custom tool description for testing"
+    middleware = PlanningMiddleware(tool_description=custom_tool_description)
+
+    assert len(middleware.tools) == 1
+    tool = middleware.tools[0]
+    assert tool.description == custom_tool_description
+
+
+def test_planning_middleware_custom_system_prompt_and_tool_description() -> None:
+    """Test that PlanningMiddleware can be initialized with both custom prompts."""
+    custom_system_prompt = "Custom system prompt"
+    custom_tool_description = "Custom tool description"
+    middleware = PlanningMiddleware(
+        system_prompt=custom_system_prompt,
+        tool_description=custom_tool_description,
+    )
+
+    # Verify system prompt
+    model = FakeToolCallingModel()
+    request = ModelRequest(
+        model=model,
+        system_prompt=None,
+        messages=[HumanMessage(content="Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+        model_settings={},
+    )
+
+    state: PlanningState = {"messages": [HumanMessage(content="Hello")]}
+    modified_request = middleware.modify_model_request(request, state)
+    assert modified_request.system_prompt == custom_system_prompt
+
+    # Verify tool description
+    assert len(middleware.tools) == 1
+    tool = middleware.tools[0]
+    assert tool.description == custom_tool_description
+
+
+def test_planning_middleware_default_prompts() -> None:
+    """Test that PlanningMiddleware uses default prompts when none provided."""
+    middleware = PlanningMiddleware()
+
+    # Verify default system prompt
+    assert middleware.system_prompt == WRITE_TODOS_SYSTEM_PROMPT
+
+    # Verify default tool description
+    assert middleware.tool_description == WRITE_TODOS_TOOL_DESCRIPTION
+    assert len(middleware.tools) == 1
+    tool = middleware.tools[0]
+    assert tool.description == WRITE_TODOS_TOOL_DESCRIPTION
+
+
+def test_planning_middleware_custom_system_prompt() -> None:
+    """Test that custom tool executes correctly in an agent."""
+    middleware = PlanningMiddleware(system_prompt="call the write_todos tool")
+
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [
+                {
+                    "args": {"todos": [{"content": "Custom task", "status": "pending"}]},
+                    "name": "write_todos",
+                    "type": "tool_call",
+                    "id": "test_call",
+                }
+            ],
+            [],
+        ]
+    )
+
+    agent = create_agent(model=model, middleware=[middleware])
+    agent = agent.compile()
+
+    result = agent.invoke({"messages": [HumanMessage("Hello")]})
+    assert result["todos"] == [{"content": "Custom task", "status": "pending"}]
+    # assert custom system prompt is in the first AI message
+    assert "call the write_todos tool" in result["messages"][1].content

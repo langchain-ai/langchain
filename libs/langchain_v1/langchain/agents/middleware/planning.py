@@ -90,7 +90,7 @@ It is important to skip using this tool when:
 Being proactive with task management demonstrates attentiveness and ensures you complete all requirements successfully
 Remember: If you only need to make a few tool calls to complete a task, and it is clear what you need to do, it is better to just do the task directly and NOT call this tool at all."""
 
-SYSTEM_PROMPT = """## `write_todos`
+WRITE_TODOS_SYSTEM_PROMPT = """## `write_todos`
 
 You have access to the `write_todos` tool to help you manage and plan complex objectives.
 Use this tool for complex objectives to ensure that you are tracking each necessary step and giving the user visibility into your progress.
@@ -139,16 +139,54 @@ class PlanningMiddleware(AgentMiddleware):
 
         print(result["todos"])  # Array of todo items with status tracking
         ```
+
+    Args:
+        system_prompt: Custom system prompt to guide the agent on using the todo tool.
+            If not provided, uses the default ``SYSTEM_PROMPT``.
+        tool_description: Custom description for the write_todos tool.
+            If not provided, uses the default ``WRITE_TODOS_TOOL_DESCRIPTION``.
     """
 
     state_schema = PlanningState
-    tools = [write_todos]  # noqa: RUF012
+
+    def __init__(
+        self,
+        *,
+        system_prompt: str = WRITE_TODOS_SYSTEM_PROMPT,
+        tool_description: str = WRITE_TODOS_TOOL_DESCRIPTION,
+    ) -> None:
+        """Initialize the PlanningMiddleware with optional custom prompts.
+
+        Args:
+            system_prompt: Custom system prompt to guide the agent on using the todo tool.
+            tool_description: Custom description for the write_todos tool.
+        """
+        super().__init__()
+        self.system_prompt = system_prompt
+        self.tool_description = tool_description
+
+        # Dynamically create the write_todos tool with the custom description
+        @tool(description=self.tool_description)
+        def write_todos(
+            todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
+        ) -> Command:
+            """Create and manage a structured task list for your current work session."""
+            return Command(
+                update={
+                    "todos": todos,
+                    "messages": [
+                        ToolMessage(f"Updated todo list to {todos}", tool_call_id=tool_call_id)
+                    ],
+                }
+            )
+
+        self.tools = [write_todos]
 
     def modify_model_request(self, request: ModelRequest, state: PlanningState) -> ModelRequest:  # noqa: ARG002
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (
-            request.system_prompt + "\n\n" + SYSTEM_PROMPT
+            request.system_prompt + "\n\n" + self.system_prompt
             if request.system_prompt
-            else SYSTEM_PROMPT
+            else self.system_prompt
         )
         return request
