@@ -20,6 +20,18 @@ if TYPE_CHECKING:
 
 # Provider to translator mapping
 PROVIDER_TRANSLATORS: dict[str, dict[str, Callable[..., list[types.ContentBlock]]]] = {}
+"""Map model provider names to translator functions.
+
+The dictionary maps provider names (e.g. ``'openai'``, ``'anthropic'``) to another
+dictionary with two keys:
+- ``'translate_content'``: Function to translate ``AIMessage`` content.
+- ``'translate_content_chunk'``: Function to translate ``AIMessageChunk`` content.
+
+When calling `.content_blocks` on an ``AIMessage`` or ``AIMessageChunk``, if
+``model_provider`` is set in ``response_metadata``, the corresponding translator
+functions will be used to parse the content into blocks. Otherwise, best-effort parsing
+in ``BaseMessage`` will be used.
+"""
 
 
 def register_translator(
@@ -27,7 +39,7 @@ def register_translator(
     translate_content: Callable[[AIMessage], list[types.ContentBlock]],
     translate_content_chunk: Callable[[AIMessageChunk], list[types.ContentBlock]],
 ) -> None:
-    """Register content translators for a provider.
+    """Register content translators for a provider in `PROVIDER_TRANSLATORS`.
 
     Args:
         provider: The model provider name (e.g. ``'openai'``, ``'anthropic'``).
@@ -50,7 +62,8 @@ def get_translator(
 
     Returns:
         Dictionary with ``'translate_content'`` and ``'translate_content_chunk'``
-        functions, or None if no translator is registered for the provider.
+        functions, or None if no translator is registered for the provider. In such
+        case, best-effort parsing in ``BaseMessage`` will be used.
     """
     return PROVIDER_TRANSLATORS.get(provider)
 

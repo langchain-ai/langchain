@@ -102,6 +102,9 @@ def _convert_to_v1_from_genai_input(
 ) -> list[types.ContentBlock]:
     """Convert Google GenAI format blocks to v1 format.
 
+    Called when message isn't an `AIMessage` or `model_provider` isn't set on
+    `response_metadata`.
+
     During the `.content_blocks` parsing process, we wrap blocks not recognized as a v1
     block as a ``'non_standard'`` block with the original block stored in the ``value``
     field. This function attempts to unpack those blocks and convert any blocks that
@@ -260,7 +263,18 @@ def _convert_to_v1_from_genai_input(
 
 
 def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
-    """Convert Google GenAI message content to v1 format."""
+    """Convert Google GenAI message content to v1 format.
+
+    Calling `.content_blocks` on an `AIMessage` where `response_metadata.model_provider`
+    is set to `'google_genai'` will invoke this function to parse the content into
+    standard content blocks for returning.
+
+    Args:
+        message: The AIMessage or AIMessageChunk to convert.
+
+    Returns:
+        List of standard content blocks derived from the message content.
+    """
     if isinstance(message.content, str):
         # String content -> TextContentBlock (only add if non-empty in case of audio)
         string_blocks: list[types.ContentBlock] = []
@@ -351,7 +365,7 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                                 {"type": "non_standard", "value": item}
                             )
                 else:
-                    # This shouldn't be reached according to previous implementations
+                    # This likely won't be reached according to previous implementations
                     converted_blocks.append({"type": "non_standard", "value": item})
                     msg = "Image URL not a data URI; appending as non-standard block."
                     raise ValueError(msg)

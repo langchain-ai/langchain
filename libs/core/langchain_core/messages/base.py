@@ -249,7 +249,7 @@ class BaseMessage(Serializable):
                     blocks.append(cast("types.ContentBlock", item))
 
         # Subsequent passes: attempt to unpack non-standard blocks.
-        # The block is left as non-standard if conversion fails.
+        # This is the last stop - if we can't parse it here, it is left as non-standard
         for parsing_step in [
             _convert_v0_multimodal_input_to_v1,
             _convert_to_v1_from_chat_completions_input,
