@@ -1217,6 +1217,22 @@ def test_cache_control_kwarg() -> None:
     ]
 
 
+def test_context_management_in_payload() -> None:
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+    )
+    llm_with_tools = llm.bind_tools(
+        [{"type": "web_search_20250305", "name": "web_search"}]
+    )
+    input_message = HumanMessage("Search for recent developments in AI")
+    payload = llm_with_tools._get_request_payload([input_message])  # type: ignore[attr-defined]
+    assert payload["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
+
+
 def test_anthropic_model_params() -> None:
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")
 

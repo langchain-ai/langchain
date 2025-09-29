@@ -1194,6 +1194,25 @@ class ChatAnthropic(BaseChatModel):
 
             Total tokens: 408
 
+    Context management:
+        Anthropic supports a context editing feature that will automatically manage the
+        model's context window (e.g., by clearing tool results).
+
+        See `Anthropic documentation <https://docs.claude.com/en/docs/build-with-claude/context-editing>`__
+        for details and configuration options.
+
+        .. code-block:: python
+
+            from langchain_anthropic import ChatAnthropic
+
+            llm = ChatAnthropic(
+                model="claude-sonnet-4-5-20250929",
+                betas=["context-management-2025-06-27"],
+                context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+            )
+            llm_with_tools = llm.bind_tools([{"type": "web_search_20250305", "name": "web_search"}])
+            response = llm_with_tools.invoke("Search for recent developments in AI")
+
     Built-in tools:
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
@@ -1414,6 +1433,11 @@ class ChatAnthropic(BaseChatModel):
     "name": "example-mcp"}]``
     """
 
+    context_management: Optional[dict[str, Any]] = None
+    """Configuration for
+    `context management <https://docs.claude.com/en/docs/build-with-claude/context-editing>`_.
+    """
+
     @property
     def _llm_type(self) -> str:
         """Return type of chat model."""
@@ -1566,6 +1590,7 @@ class ChatAnthropic(BaseChatModel):
             "top_p": self.top_p,
             "stop_sequences": stop or self.stop_sequences,
             "betas": self.betas,
+            "context_management": self.context_management,
             "mcp_servers": self.mcp_servers,
             "system": system,
             **self.model_kwargs,
@@ -2410,7 +2435,7 @@ def _make_message_chunk_from_anthropic_event(
         # Capture model name, but don't include usage_metadata yet
         # as it will be properly reported in message_delta with complete info
         if hasattr(event.message, "model"):
-            response_metadata = {"model_name": event.message.model}
+            response_metadata: dict[str, Any] = {"model_name": event.message.model}
         else:
             response_metadata = {}
 
@@ -2511,13 +2536,16 @@ def _make_message_chunk_from_anthropic_event(
     # Process final usage metadata and completion info
     elif event.type == "message_delta" and stream_usage:
         usage_metadata = _create_usage_metadata(event.usage)
+        response_metadata = {
+            "stop_reason": event.delta.stop_reason,
+            "stop_sequence": event.delta.stop_sequence,
+        }
+        if context_management := getattr(event, "context_management", None):
+            response_metadata["context_management"] = context_management.model_dump()
         message_chunk = AIMessageChunk(
             content="",
             usage_metadata=usage_metadata,
-            response_metadata={
-                "stop_reason": event.delta.stop_reason,
-                "stop_sequence": event.delta.stop_sequence,
-            },
+            response_metadata=response_metadata,
         )
     # Unhandled event types (e.g., `content_block_stop`, `ping` events)
     # https://docs.anthropic.com/en/docs/build-with-claude/streaming#other-events
