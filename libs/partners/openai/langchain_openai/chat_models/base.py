@@ -3611,6 +3611,55 @@ def _construct_responses_api_payload(
     return payload
 
 
+def _convert_chat_completions_blocks_to_responses(
+    block: dict[str, Any],
+) -> dict[str, Any]:
+    """Convert chat completions content blocks to responses API format.
+
+    Only handles text, image, file blocks. Others pass through.
+    """
+    if block["type"] == "text":
+        # chat api: {"type": "text", "text": "..."}
+        # responses api: {"type": "input_text", "text": "..."}
+        return {"type": "input_text", "text": block["text"]}
+    if block["type"] == "image_url":
+        # chat api: {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}  # noqa: E501
+        # responses api: {"type": "image_url", "image_url": "...", "detail": "...", "file_id": "..."}  # noqa: E501
+        new_block = {
+            "type": "input_image",
+            "image_url": block["image_url"]["url"],
+        }
+        if block["image_url"].get("detail"):
+            new_block["detail"] = block["image_url"]["detail"]
+        return new_block
+    if block["type"] == "file":
+        return {"type": "input_file", **block["file"]}
+    return block
+
+
+def _ensure_valid_tool_message_content(tool_output: Any) -> Union[str, list[dict]]:
+    if isinstance(tool_output, str):
+        return tool_output
+    if isinstance(tool_output, list) and all(
+        isinstance(block, dict)
+        and block.get("type")
+        in (
+            "input_text",
+            "input_image",
+            "input_file",
+            "text",
+            "image_url",
+            "file",
+        )
+        for block in tool_output
+    ):
+        return [
+            _convert_chat_completions_blocks_to_responses(block)
+            for block in tool_output
+        ]
+    return _stringify(tool_output)
+
+
 def _make_computer_call_output_from_message(message: ToolMessage) -> dict:
     computer_call_output: dict = {
         "call_id": message.tool_call_id,
@@ -3684,8 +3733,7 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 )
                 input_.append(computer_call_output)
             else:
-                if not isinstance(tool_output, str):
-                    tool_output = _stringify(tool_output)
+                tool_output = _ensure_valid_tool_message_content(tool_output)
                 function_call_output = {
                     "type": "function_call_output",
                     "output": tool_output,
@@ -3785,23 +3833,10 @@ def _construct_responses_api_input(messages: Sequence[BaseMessage]) -> list:
                 new_blocks = []
                 non_message_item_types = ("mcp_approval_response",)
                 for block in msg["content"]:
-                    # chat api: {"type": "text", "text": "..."}
-                    # responses api: {"type": "input_text", "text": "..."}
-                    if block["type"] == "text":
-                        new_blocks.append({"type": "input_text", "text": block["text"]})
-                    # chat api: {"type": "image_url", "image_url": {"url": "...", "detail": "..."}}  # noqa: E501
-                    # responses api: {"type": "image_url", "image_url": "...", "detail": "...", "file_id": "..."}  # noqa: E501
-                    elif block["type"] == "image_url":
-                        new_block = {
-                            "type": "input_image",
-                            "image_url": block["image_url"]["url"],
-                        }
-                        if block["image_url"].get("detail"):
-                            new_block["detail"] = block["image_url"]["detail"]
-                        new_blocks.append(new_block)
-                    elif block["type"] == "file":
-                        new_block = {"type": "input_file", **block["file"]}
-                        new_blocks.append(new_block)
+                    if block["type"] in ("text", "image_url", "file"):
+                        new_blocks.append(
+                            _convert_chat_completions_blocks_to_responses(block)
+                        )
                     elif block["type"] in ("input_text", "input_image", "input_file"):
                         new_blocks.append(block)
                     elif block["type"] in non_message_item_types:
