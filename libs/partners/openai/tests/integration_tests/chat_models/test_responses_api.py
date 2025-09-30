@@ -217,7 +217,8 @@ def test_parsed_dict_schema(schema: Any) -> None:
     response = llm.invoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
     # Test stream
     full: Optional[BaseMessageChunk] = None
@@ -227,7 +228,8 @@ def test_parsed_dict_schema(schema: Any) -> None:
     assert isinstance(full, AIMessageChunk)
     parsed = json.loads(full.text())
     assert parsed == full.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
 
 def test_parsed_strict() -> None:
@@ -262,7 +264,8 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     response = await llm.ainvoke("how are ya", response_format=schema)
     parsed = json.loads(response.text())
     assert parsed == response.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
     # Test stream
     full: Optional[BaseMessageChunk] = None
@@ -272,7 +275,8 @@ async def test_parsed_dict_schema_async(schema: Any) -> None:
     assert isinstance(full, AIMessageChunk)
     parsed = json.loads(full.text())
     assert parsed == full.additional_kwargs["parsed"]
-    assert parsed["response"] and isinstance(parsed["response"], str)
+    assert parsed["response"]
+    assert isinstance(parsed["response"], str)
 
 
 def test_function_calling_and_structured_output() -> None:
@@ -548,7 +552,7 @@ def test_mcp_builtin_zdr() -> None:
     _ = llm_with_tools.invoke([input_message, full, approval_message])
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_image_generation_streaming() -> None:
     """Test image generation streaming."""
     llm = ChatOpenAI(model="gpt-4.1", use_responses_api=True)
@@ -602,7 +606,7 @@ def test_image_generation_streaming() -> None:
     assert set(tool_output.keys()).issubset(expected_keys)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_image_generation_multi_turn() -> None:
     """Test multi-turn editing of image generation by passing in history."""
     # Test multi-turn
@@ -689,7 +693,7 @@ def test_verbosity_parameter() -> None:
     assert response.content
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_custom_tool() -> None:
     @custom_tool
     def execute_code(code: str) -> str:

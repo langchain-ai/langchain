@@ -224,7 +224,7 @@ def test_openai_invoke() -> None:
         max_retries=3,  # Add retries for 503 capacity errors
     )
 
-    result = llm.invoke("Hello", config=dict(tags=["foo"]))
+    result = llm.invoke("Hello", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
     # assert no response headers if include_response_headers is not set
@@ -256,11 +256,12 @@ def test_stream() -> None:
         if chunk.response_metadata:
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with metadata. "
             "AIMessageChunk aggregation can add these metadata. Check that "
             "this is behaving properly."
         )
+        raise AssertionError(msg)
     assert isinstance(aggregate, AIMessageChunk)
     assert aggregate.usage_metadata is not None
     assert aggregate.usage_metadata["input_tokens"] > 0
@@ -285,20 +286,22 @@ async def test_astream() -> None:
                 chunks_with_response_metadata += 1
         assert isinstance(full, AIMessageChunk)
         if chunks_with_response_metadata != 1:
-            raise AssertionError(
+            msg = (
                 "Expected exactly one chunk with metadata. "
                 "AIMessageChunk aggregation can add these metadata. Check that "
                 "this is behaving properly."
             )
+            raise AssertionError(msg)
         assert full.response_metadata.get("finish_reason") is not None
         assert full.response_metadata.get("model_name") is not None
         if expect_usage:
             if chunks_with_token_counts != 1:
-                raise AssertionError(
+                msg = (
                     "Expected exactly one chunk with token counts. "
                     "AIMessageChunk aggregation adds counts. Check that "
                     "this is behaving properly."
                 )
+                raise AssertionError(msg)
             assert full.usage_metadata is not None
             assert full.usage_metadata["input_tokens"] > 0
             assert full.usage_metadata["output_tokens"] > 0
@@ -483,7 +486,8 @@ def test_manual_tool_call_msg(use_responses_api: bool) -> None:
     output: AIMessage = cast(AIMessage, llm_with_tool.invoke(msgs))
     assert output.content
     # Should not have called the tool again.
-    assert not output.tool_calls and not output.invalid_tool_calls
+    assert not output.tool_calls
+    assert not output.invalid_tool_calls
 
     # OpenAI should error when tool call id doesn't match across AIMessage and
     # ToolMessage
@@ -556,7 +560,7 @@ def test_openai_proxy() -> None:
     chat_openai = ChatOpenAI(openai_proxy="http://localhost:8080")
     mounts = chat_openai.client._client._client._mounts
     assert len(mounts) == 1
-    for key, value in mounts.items():
+    for value in mounts.values():
         proxy = value._pool._proxy_url.origin
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
@@ -564,7 +568,7 @@ def test_openai_proxy() -> None:
 
     async_client_mounts = chat_openai.async_client._client._client._mounts
     assert len(async_client_mounts) == 1
-    for key, value in async_client_mounts.items():
+    for value in async_client_mounts.values():
         proxy = value._pool._proxy_url.origin
         assert proxy.scheme == b"http"
         assert proxy.host == b"localhost"
@@ -690,7 +694,7 @@ def test_tool_calling_strict(use_responses_api: bool) -> None:
     Responses API appears to have fewer constraints on schema when strict=True.
     """
 
-    class magic_function_notrequired_arg(BaseModel):
+    class magic_function_notrequired_arg(BaseModel):  # noqa: N801
         """Applies a magic function to an input."""
 
         input: Optional[int] = Field(default=None)
@@ -1017,10 +1021,12 @@ async def test_astream_response_format() -> None:
 @pytest.mark.parametrize("use_responses_api", [False, True])
 @pytest.mark.parametrize("use_max_completion_tokens", [True, False])
 def test_o1(use_max_completion_tokens: bool, use_responses_api: bool) -> None:
+    # o1 models need higher token limits for reasoning
+    o1_token_limit = 1000
     if use_max_completion_tokens:
-        kwargs: dict = {"max_completion_tokens": MAX_TOKEN_COUNT}
+        kwargs: dict = {"max_completion_tokens": o1_token_limit}
     else:
-        kwargs = {"max_tokens": MAX_TOKEN_COUNT}
+        kwargs = {"max_tokens": o1_token_limit}
     response = ChatOpenAI(
         model="o1",
         reasoning_effort="low",
@@ -1164,12 +1170,13 @@ class BadModel(BaseModel):
     @classmethod
     def validate_response(cls, v: str) -> str:
         if v != "bad":
-            raise ValueError('response must be exactly "bad"')
+            msg = 'response must be exactly "bad"'
+            raise ValueError(msg)
         return v
 
 
 # VCR can't handle parameterized tests
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_schema_parsing_failures() -> None:
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
     try:
@@ -1177,11 +1184,11 @@ def test_schema_parsing_failures() -> None:
     except Exception as e:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
-        assert False
+        raise AssertionError
 
 
 # VCR can't handle parameterized tests
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_schema_parsing_failures_responses_api() -> None:
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
     try:
@@ -1189,11 +1196,11 @@ def test_schema_parsing_failures_responses_api() -> None:
     except Exception as e:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
-        assert False
+        raise AssertionError
 
 
 # VCR can't handle parameterized tests
-@pytest.mark.vcr()
+@pytest.mark.vcr
 async def test_schema_parsing_failures_async() -> None:
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=False)
     try:
@@ -1201,11 +1208,11 @@ async def test_schema_parsing_failures_async() -> None:
     except Exception as e:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
-        assert False
+        raise AssertionError
 
 
 # VCR can't handle parameterized tests
-@pytest.mark.vcr()
+@pytest.mark.vcr
 async def test_schema_parsing_failures_responses_api_async() -> None:
     llm = ChatOpenAI(model="gpt-5-nano", use_responses_api=True)
     try:
@@ -1213,4 +1220,4 @@ async def test_schema_parsing_failures_responses_api_async() -> None:
     except Exception as e:
         assert e.response is not None  # type: ignore[attr-defined]
     else:
-        assert False
+        raise AssertionError

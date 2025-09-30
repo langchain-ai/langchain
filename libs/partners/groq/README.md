@@ -67,5 +67,5 @@ make integration_tests
 Run additional tests and linters to ensure your code is up to standard.
 
 ```bash
-make lint spell_check check_imports
+make lint check_imports
 ```
