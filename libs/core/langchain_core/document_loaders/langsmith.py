@@ -35,7 +35,7 @@ class LangSmithLoader(BaseLoader):
 
             # -> [Document("...", metadata={"inputs": {...}, "outputs": {...}, ...}), ...]
 
-    .. versionadded:: 0.2.34
+    !!! version-added "Added in version 0.2.34"
 
     """  # noqa: E501
 

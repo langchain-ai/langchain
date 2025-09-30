@@ -369,7 +369,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
     new content formats in a backward-compatible way.
 
-    .. versionadded:: 1.0
+    !!! version-added "Added in version 1.0"
 
     """
 

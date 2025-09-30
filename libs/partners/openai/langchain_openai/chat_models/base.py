@@ -483,7 +483,7 @@ class BaseChatOpenAI(BaseChatModel):
     """Whether to include usage metadata in streaming output. If True, an additional
     message chunk will be generated during the stream including usage metadata.
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
     """
     max_retries: Optional[int] = None
     """Maximum number of retries to make when generating."""
@@ -519,7 +519,7 @@ class BaseChatOpenAI(BaseChatModel):
     ``'high'``. Reducing reasoning effort can result in faster responses and fewer
     tokens used on reasoning in a response.
 
-    .. versionadded:: 0.2.14
+    !!! version-added "Added in version 0.2.14"
     """
     reasoning: Optional[dict[str, Any]] = None
     """Reasoning parameters for reasoning models, i.e., OpenAI o-series models (o1, o3,
@@ -534,7 +534,7 @@ class BaseChatOpenAI(BaseChatModel):
             "summary": "auto",  # can be "auto", "concise", or "detailed"
         }
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
 
     """
     verbosity: Optional[str] = None
@@ -545,7 +545,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     Controls how detailed the model's responses are.
 
-    .. versionadded:: 0.3.28
+    !!! version-added "Added in version 0.3.28"
 
     """
     tiktoken_model_name: Optional[str] = None
@@ -623,7 +623,7 @@ class BaseChatOpenAI(BaseChatModel):
     - ``'reasoning.encrypted_content'``
     - ``'code_interpreter_call.outputs'``
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     service_tier: Optional[str] = None
@@ -635,7 +635,7 @@ class BaseChatOpenAI(BaseChatModel):
     """If True, OpenAI may store response data for future use. Defaults to True
     for the Responses API and False for the Chat Completions API.
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     truncation: Optional[str] = None
@@ -643,7 +643,7 @@ class BaseChatOpenAI(BaseChatModel):
     (default). If ``'auto'``, model may drop input items from the middle of the
     message sequence to fit the context window.
 
-    .. versionadded:: 0.3.24
+    !!! version-added "Added in version 0.3.24"
     """
 
     use_previous_response_id: bool = False
@@ -674,7 +674,7 @@ class BaseChatOpenAI(BaseChatModel):
         llm = ChatOpenAI(model="o4-mini", use_responses_api=True)
         llm.invoke([HumanMessage("How are you?")], previous_response_id="resp_123")
 
-    .. versionadded:: 0.3.26
+    !!! version-added "Added in version 0.3.26"
 
     """
 
@@ -683,7 +683,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     If not specified then will be inferred based on invocation params.
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
     """
 
     output_version: Optional[str] = Field(
@@ -701,7 +701,7 @@ class BaseChatOpenAI(BaseChatModel):
       items into AIMessage content blocks (Responses API only)
     - ``"v1"``: v1 of LangChain cross-provider standard.
 
-    .. versionadded:: 0.3.25
+    !!! version-added "Added in version 0.3.25"
 
     .. versionchanged:: 1.0.0
 
@@ -2301,7 +2301,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     .. dropdown:: Built-in tools
 
-        .. versionadded:: 0.3.9
+        !!! version-added "Added in version 0.3.9"
 
         You can access `built-in tools <https://platform.openai.com/docs/guides/tools?api-mode=responses>`_
         supported by the OpenAI Responses API. See LangChain
@@ -2354,7 +2354,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
     .. dropdown:: Managing conversation state
 
-        .. versionadded:: 0.3.9
+        !!! version-added "Added in version 0.3.9"
 
         OpenAI's Responses API supports management of
         `conversation state <https://platform.openai.com/docs/guides/conversation-state?api-mode=responses>`_.
@@ -2391,7 +2391,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "Your name is Bob. How can I help you today, Bob?"
 
-        .. versionadded:: 0.3.26
+        !!! version-added "Added in version 0.3.26"
 
         You can also initialize ChatOpenAI with :attr:`use_previous_response_id`.
         Input messages up to the most recent response will then be dropped from request
@@ -3387,7 +3387,7 @@ class OpenAIRefusalError(Exception):
     See here for more on refusals:
     https://platform.openai.com/docs/guides/structured-outputs/refusals
 
-    .. versionadded:: 0.1.21
+    !!! version-added "Added in version 0.1.21"
     """
 
 

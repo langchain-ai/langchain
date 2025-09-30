@@ -1934,7 +1934,7 @@ class ChatAnthropic(BaseChatModel):
             parallel_tool_calls: Set to ``False`` to disable parallel tool use.
                 Defaults to ``None`` (no specification, which allows parallel tool use).
 
-                .. versionadded:: 0.3.2
+                !!! version-added "Added in version 0.3.2"
             kwargs: Any additional parameters are passed directly to
                 :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
 

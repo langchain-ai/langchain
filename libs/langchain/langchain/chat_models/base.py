@@ -289,7 +289,7 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with tools
 
-    .. versionadded:: 0.2.7
+    !!! version-added "Added in version 0.2.7"
 
     .. versionchanged:: 0.2.8
 

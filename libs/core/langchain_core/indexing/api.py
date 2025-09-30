@@ -350,7 +350,7 @@ def index(
             metadata. Default is "sha1".
             Other options include "blake2b", "sha256", and "sha512".
 
-            .. versionadded:: 0.3.66
+            !!! version-added "Added in version 0.3.66"
 
         key_encoder: Hashing algorithm to use for hashing the document.
             If not provided, a default encoder using SHA-1 will be used.
@@ -367,7 +367,7 @@ def index(
             method of the VectorStore or the upsert method of the DocumentIndex.
             For example, you can use this to specify a custom vector_field:
             upsert_kwargs={"vector_field": "embedding"}
-            .. versionadded:: 0.3.10
+            !!! version-added "Added in version 0.3.10"
 
     Returns:
         Indexing result which contains information about how many documents
@@ -692,7 +692,7 @@ async def aindex(
             metadata. Default is "sha1".
             Other options include "blake2b", "sha256", and "sha512".
 
-            .. versionadded:: 0.3.66
+            !!! version-added "Added in version 0.3.66"
 
         key_encoder: Hashing algorithm to use for hashing the document.
             If not provided, a default encoder using SHA-1 will be used.
@@ -709,7 +709,7 @@ async def aindex(
             method of the VectorStore or the upsert method of the DocumentIndex.
             For example, you can use this to specify a custom vector_field:
             upsert_kwargs={"vector_field": "embedding"}
-            .. versionadded:: 0.3.10
+            !!! version-added "Added in version 0.3.10"
 
     Returns:
         Indexing result which contains information about how many documents

@@ -1594,7 +1594,7 @@ class CallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
 
         """
         if not self.handlers:
@@ -2088,7 +2088,7 @@ class AsyncCallbackManager(BaseCallbackManager):
         Raises:
             ValueError: If additional keyword arguments are passed.
 
-        .. versionadded:: 0.2.14
+        !!! version-added "Added in version 0.2.14"
         """
         if not self.handlers:
             return
@@ -2621,7 +2621,7 @@ async def adispatch_custom_event(
         LangChain from automatically propagating the config object on the user's
         behalf.
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.
@@ -2697,7 +2697,7 @@ def dispatch_custom_event(
             foo_ = RunnableLambda(foo)
             foo_.invoke({"a": "1"}, {"callbacks": [CustomCallbackManager()]})
 
-    .. versionadded:: 0.2.15
+    !!! version-added "Added in version 0.2.15"
 
     """
     # Import locally to prevent circular imports.

@@ -48,7 +48,7 @@ class InputTokenDetails(TypedDict, total=False):
                 "cache_read": 100,
             }
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
 
     May also hold extra provider-specific keys.
 
@@ -83,7 +83,7 @@ class OutputTokenDetails(TypedDict, total=False):
                 "reasoning": 200,
             }
 
-    .. versionadded:: 0.3.9
+    !!! version-added "Added in version 0.3.9"
 
     """
 

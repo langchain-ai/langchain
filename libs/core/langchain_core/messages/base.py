@@ -197,7 +197,7 @@ class BaseMessage(Serializable):
     def content_blocks(self) -> list[types.ContentBlock]:
         r"""Load content blocks from the message content.
 
-        .. versionadded:: 1.0.0
+        !!! version-added "Added in version 1.0.0"
 
         """
         # Needed here to avoid circular import, as these classes import BaseMessages

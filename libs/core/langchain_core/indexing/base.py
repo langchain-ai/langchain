@@ -509,7 +509,7 @@ class DocumentIndex(BaseRetriever):
     2. Fetching document by ID.
     3. Searching for document using a query.
 
-    .. versionadded:: 0.2.29
+    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod
