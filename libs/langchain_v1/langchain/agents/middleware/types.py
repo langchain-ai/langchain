@@ -3,20 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from inspect import signature
-from typing import (
-    TYPE_CHECKING,
-    Annotated,
-    Any,
-    ClassVar,
-    Generic,
-    Literal,
-    Protocol,
-    TypeAlias,
-    TypeGuard,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Annotated, Any, Generic, Literal, cast
+from collections.abc import Sequence
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
@@ -120,13 +108,12 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
-    before_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for before_model hook. Used to establish conditional edges."""
+    # Nested middleware that should run before this middleware.
+    # These will be expanded into the main agent's middleware list
+    # and executed in order prior to this middleware.
+    middleware: Sequence["AgentMiddleware"] = ()
 
-    after_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for after_model hook. Used to establish conditional edges."""
-
-    def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
+    def before_model(self, state: StateT) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
     def modify_model_request(
