@@ -181,11 +181,11 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 extra_body={"reasoning_effort": "high"},
             )
 
-        .. note::
+        !!! note
             As of 2025-07-10, ``reasoning_content`` is only returned in Grok 3 models, such as
             `Grok 3 Mini <https://docs.x.ai/docs/models/grok-3-mini>`__.
 
-        .. note::
+        !!! note
             Note that in `Grok 4 <https://docs.x.ai/docs/models/grok-4-0709>`__, as of 2025-07-10,
             reasoning is not exposed in ``reasoning_content`` (other than initial ``'Thinking...'`` text),
             reasoning cannot be disabled, and the ``reasoning_effort`` cannot be specified.
@@ -231,7 +231,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             ]
 
-        .. note::
+        !!! note
             With stream response, the tool / function call will be returned in whole in a
             single chunk, instead of being streamed across chunks.
 
@@ -344,7 +344,7 @@ class ChatXAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm.invoke("Provide me a digest of world news in the last 24 hours.")
 
-        .. note::
+        !!! note
             `Citations <https://docs.x.ai/docs/guides/live-search#returning-citations>`__
             are only available in `Grok 3 <https://docs.x.ai/docs/models/grok-3>`__.
 

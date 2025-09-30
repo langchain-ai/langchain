@@ -1321,7 +1321,7 @@ class Runnable(ABC, Generic[Input, Output]):
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
-        .. note::
+        !!! note
             This reference table is for the v2 version of the schema.
 
         +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
@@ -2884,7 +2884,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     streaming will only begin after this component is run. If there are
     multiple blocking components, streaming begins after the last one.
 
-    .. note::
+    !!! note
         ``RunnableLambdas`` do not support ``transform`` by default! So if you need to
         use a ``RunnableLambdas`` be careful about where you place them in a
         ``RunnableSequence`` (if you need to use the ``stream``/``astream`` methods).
@@ -4144,7 +4144,7 @@ class RunnableGenerator(Runnable[Input, Output]):
     ``RunnableGenerator`` allows it to emit output chunks as soon as they are streamed
     in from the previous step.
 
-    .. note::
+    !!! note
         If a generator function has a ``signature A -> Iterator[B]``, such that it
         requires its input from the previous step to be completed before emitting chunks
         (e.g., most LLMs need the entire prompt available to start generating), it can

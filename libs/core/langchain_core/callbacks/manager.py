@@ -92,7 +92,7 @@ def trace_as_chain_group(
         metadata (dict[str, Any], optional): The metadata to apply to all runs.
             Defaults to None.
 
-    .. note::
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -179,7 +179,7 @@ async def atrace_as_chain_group(
     Yields:
         The async callback manager for the chain group.
 
-    .. note::
+    !!! note
         Must have ``LANGCHAIN_TRACING_V2`` env var set to true to see the trace in
         LangSmith.
 
@@ -257,7 +257,7 @@ def handle_event(
 ) -> None:
     """Generic event handler for CallbackManager.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -424,7 +424,7 @@ async def ahandle_event(
 ) -> None:
     """Async generic event handler for ``AsyncCallbackManager``.
 
-    .. note::
+    !!! note
         This function is used by ``LangServe`` to handle events.
 
     Args:
@@ -2614,7 +2614,7 @@ async def adispatch_custom_event(
             ):
                 print(event)
 
-    .. warning::
+    !!! warning
         If using python <= 3.10 and async, you MUST
         specify the `config` parameter or the function will raise an error.
         This is due to a limitation in asyncio for python <= 3.10 that prevents

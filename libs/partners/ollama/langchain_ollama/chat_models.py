@@ -457,7 +457,7 @@ class ChatOllama(BaseChatModel):
         ``reasoning_content`` key, but will be present within the main response content
         as think tags (``<think>`` and ``</think>``).
 
-        .. note::
+        !!! note
             This feature is only available for `models that support reasoning <https://ollama.com/search?c=thinking>`__.
 
         .. code-block:: python

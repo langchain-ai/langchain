@@ -245,7 +245,7 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running.
 
-        .. warning::
+        !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -273,7 +273,7 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when a chat model starts running.
 
-        .. warning::
+        !!! warning
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use ``on_llm_start`` instead.
 
@@ -494,7 +494,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> None:
         """Run when the model starts running.
 
-        .. warning::
+        !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -522,7 +522,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when a chat model starts running.
 
-        .. warning::
+        !!! warning
             This method is called for chat models. If you're implementing a handler for
             a non-chat model, you should use ``on_llm_start`` instead.
 

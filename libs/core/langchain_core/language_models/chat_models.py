@@ -1799,7 +1799,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 class SimpleChatModel(BaseChatModel):
     """Simplified implementation for a chat model to inherit from.
 
-    .. note::
+    !!! note
         This implementation is primarily here for backwards compatibility. For new
         implementations, please use ``BaseChatModel`` directly.
 

@@ -569,7 +569,7 @@ def merge_message_runs(
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    .. note::
+    !!! note
         ToolMessages are not merged, as each has a distinct tool call id that can't be
         merged.
 
@@ -739,7 +739,7 @@ def trim_messages(
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
-    .. note::
+    !!! note
         The examples below show how to configure ``trim_messages`` to achieve a behavior
         consistent with the above properties.
 
@@ -751,7 +751,7 @@ def trim_messages(
             ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
             Set to ``len`` to count the number of **messages** in the chat history.
 
-            .. note::
+            !!! note
                 Use ``count_tokens_approximately`` to get fast, approximate token
                 counts.
                 This is recommended for using ``trim_messages`` on the hot path, where
@@ -1720,7 +1720,7 @@ def count_tokens_approximately(
     Returns:
         Approximate number of tokens in the messages.
 
-    .. note::
+    !!! note
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 

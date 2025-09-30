@@ -96,7 +96,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 # other params...
             )
 
-    .. note::
+    !!! note
         Any param which is not explicitly supported will be passed directly to the
         ``openai.AzureOpenAI.chat.completions.create(...)`` API every time to the model is
         invoked.
@@ -476,7 +476,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
         If given sets the base client URL to include ``/deployments/{azure_deployment}``
 
-        .. note::
+        !!! note
             This means you won't be able to use non-deployment endpoints.
     """
     openai_api_version: Optional[str] = Field(
@@ -545,7 +545,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     Distinct from the Azure deployment name, which is set by the Azure user.
     Used for tracing and token counting.
 
-    .. warning::
+    !!! warning
         Does NOT affect completion.
     """
 
@@ -868,7 +868,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                .. note::
+                !!! note
                     ``strict`` can only be non-null if ``method`` is ``'json_schema'``
                     or ``'function_calling'``.
             tools:

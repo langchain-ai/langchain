@@ -54,7 +54,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         By default, the parameter tested is named ``k``, but it can be overridden by
         setting the ``num_results_arg_name`` property.
 
-        .. note::
+        !!! note
             If the retriever doesn't support configuring the number of results returned
             via the constructor, this test can be skipped using a pytest ``xfail`` on
             the test class:
@@ -110,7 +110,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         By default, the parameter is named ``, but it can be overridden by
         setting the ``num_results_arg_name`` property.
 
-        .. note::
+        !!! note
             If the retriever doesn't support configuring the number of results returned
             via the invoke method, this test can be skipped using a pytest ``xfail`` on
             the test class:

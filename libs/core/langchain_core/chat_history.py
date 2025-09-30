@@ -129,7 +129,7 @@ class BaseChatMessageHistory(ABC):
     def add_user_message(self, message: Union[HumanMessage, str]) -> None:
         """Convenience method for adding a human message string to the store.
 
-        .. note::
+        !!! note
             This is a convenience method. Code should favor the bulk ``add_messages``
             interface instead to save on round-trips to the persistence layer.
 
@@ -146,7 +146,7 @@ class BaseChatMessageHistory(ABC):
     def add_ai_message(self, message: Union[AIMessage, str]) -> None:
         """Convenience method for adding an AI message string to the store.
 
-        .. note::
+        !!! note
             This is a convenience method. Code should favor the bulk ``add_messages``
             interface instead to save on round-trips to the persistence layer.
 

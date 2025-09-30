@@ -1077,7 +1077,7 @@ class ChatAnthropic(BaseChatModel):
         Prompt caching reduces processing time and costs for repetitive tasks or prompts
         with consistent elements
 
-        .. note::
+        !!! note
             Only certain models support prompt caching.
             See the `Claude documentation <https://docs.anthropic.com/en/docs/build-with-claude/prompt-caching#supported-models>`__
             for a full list.

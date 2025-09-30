@@ -299,7 +299,7 @@ def index(
     .. versionchanged:: 0.3.25
         Added ``scoped_full`` cleanup mode.
 
-    .. important::
+    !!! important
 
         * In full mode, the loader should be returning
           the entire dataset, and not just a subset of the dataset.
@@ -641,7 +641,7 @@ async def aindex(
     .. versionchanged:: 0.3.25
         Added ``scoped_full`` cleanup mode.
 
-    .. important::
+    !!! important
 
         * In full mode, the loader should be returning
           the entire dataset, and not just a subset of the dataset.

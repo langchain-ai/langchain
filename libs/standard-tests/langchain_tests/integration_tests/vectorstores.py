@@ -95,7 +95,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
            def has_async(self) -> bool:
                return False
 
-    .. note::
+    !!! note
           API references for individual test methods include troubleshooting tips.
 
     """  # noqa: E501
@@ -338,7 +338,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -378,7 +378,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``get_by_ids`` is implemented and does not
             raise an exception when given IDs that do not exist.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -412,7 +412,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Check also that ``add_documents`` will correctly generate string IDs if
             none are provided.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -458,7 +458,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             2. If some documents include IDs and others don't string IDs are generated
                for the latter.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -697,7 +697,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -737,7 +737,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             If this test fails, check that ``get_by_ids`` is implemented and does not
             raise an exception when given IDs that do not exist.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -772,7 +772,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             Check also that ``aadd_documents`` will correctly generate string IDs if
             none are provided.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to
@@ -820,7 +820,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
             2. If some documents include IDs and others don't string IDs are generated
                for the latter.
 
-            .. note::
+            !!! note
                 ``get_by_ids`` was added to the ``VectorStore`` interface in
                 ``langchain-core`` version 0.2.11. If difficult to implement, this
                 test can be skipped by setting the ``has_get_by_ids`` property to

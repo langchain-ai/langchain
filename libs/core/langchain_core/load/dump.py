@@ -72,7 +72,7 @@ def dumps(obj: Any, *, pretty: bool = False, **kwargs: Any) -> str:
 def dumpd(obj: Any) -> Any:
     """Return a dict representation of an object.
 
-    .. note::
+    !!! note
         Unfortunately this function is not as efficient as it could be because it first
         dumps the object to a json string and then loads it back into a dictionary.
 

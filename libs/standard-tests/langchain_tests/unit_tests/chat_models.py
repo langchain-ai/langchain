@@ -237,7 +237,7 @@ class ChatModelTests(BaseStandardTests):
     def enable_vcr_tests(self) -> bool:
         """(bool) whether to enable VCR tests for the chat model.
 
-        .. important::
+        !!! important
             See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
             information.
 
@@ -295,7 +295,7 @@ class ChatModelUnitTests(ChatModelTests):
                 # Return initialization parameters for the model.
                 return {"model": "model-001", "temperature": 0}
 
-    .. note::
+    !!! note
           API references for individual test methods include troubleshooting tips.
 
 
@@ -346,7 +346,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        .. warning::
+        !!! warning
             Deprecated since version 0.3.15.
             This property will be removed in version 0.3.20. If a model does not
             support forcing tool calling, override the ``has_tool_choice`` property to
@@ -681,7 +681,7 @@ class ChatModelUnitTests(ChatModelTests):
         2. Configure VCR to exclude sensitive headers and other information from
            cassettes.
 
-            .. important::
+            !!! important
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. Read below for how to configure what
                 information is recorded in cassettes.
@@ -806,7 +806,7 @@ class ChatModelUnitTests(ChatModelTests):
             This will generate a VCR cassette for the test in
             ``tests/integration_tests/cassettes/``.
 
-            .. important::
+            !!! important
                 You should inspect the generated cassette to ensure that it does not
                 contain sensitive information. If it does, you can modify the
                 ``vcr_config`` fixture to exclude headers or modify the response

@@ -80,7 +80,7 @@ def init_chat_model(
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel in a single line using the model's name and provider.
 
-    .. note::
+    !!! note
         Must have the integration package corresponding to the model provider installed.
         You should look at the `provider integration's API reference <https://docs.langchain.com/oss/python/integrations/providers>`__
         to see what parameters are supported by the model.

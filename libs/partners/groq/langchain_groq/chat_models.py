@@ -866,12 +866,12 @@ class ChatGroq(BaseChatModel):
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If ``'json_mode'`` then JSON mode will be used.
 
-                .. note::
+                !!! note
                     If using ``'json_mode'`` then you must include instructions for formatting
                     the output into the desired schema into the model call. (either via the
                     prompt itself or in the system message/prompt/instructions).
 
-                .. warning::
+                !!! warning
                     ``'json_mode'`` does not support streaming responses stop sequences.
 
             include_raw:

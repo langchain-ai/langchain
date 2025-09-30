@@ -33,7 +33,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
                 # Return initialization parameters for the model.
                 return {"model": "model-001"}
 
-    .. note::
+    !!! note
         API references for individual test methods include troubleshooting tips.
 
     """

@@ -585,7 +585,7 @@ class BaseChatOpenAI(BaseChatModel):
         - vLLM custom parameters: ``extra_body={"use_beam_search": True}``
         - Any other provider-specific parameters
 
-    .. note::
+    !!! note
 
         Do NOT use ``model_kwargs`` for custom parameters that are not part of the
         standard OpenAI API, as this will cause errors when making API calls. Use
@@ -2086,7 +2086,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 # other params...
             )
 
-        .. note::
+        !!! note
             Any param which is not explicitly supported will be passed directly to the
             ``openai.OpenAI.chat.completions.create(...)`` API every time to the model is
             invoked. For example:
@@ -2271,7 +2271,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             ]
 
-        .. note::
+        !!! note
             ``openai >= 1.32`` supports a ``parallel_tool_calls`` parameter
             that defaults to ``True``. This parameter can be set to ``False`` to
             disable parallel tool calls:
@@ -2308,7 +2308,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         `docs <https://python.langchain.com/docs/integrations/chat/openai/>`__ for more
         detail.
 
-        .. note::
+        !!! note
             ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
             AIMessage format when using the Responses API. Setting
 
@@ -2407,7 +2407,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
 
-        .. note::
+        !!! note
             ``langchain-openai >= 0.3.26`` allows users to opt-in to an updated
             AIMessage format when using the Responses API. Setting
 
@@ -2737,7 +2737,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         - ``model_kwargs``: Parameters are **merged into top-level** request payload
         - ``extra_body``: Parameters are **nested under ``extra_body``** key in request
 
-        .. important::
+        !!! important
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 
@@ -2912,7 +2912,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                .. note::
+                !!! note
                     ``strict`` can only be non-null if ``method`` is ``'json_schema'`` or ``'function_calling'``.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:

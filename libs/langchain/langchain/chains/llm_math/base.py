@@ -33,7 +33,7 @@ from langchain.chains.llm_math.prompt import PROMPT
 class LLMMathChain(Chain):
     """Chain that interprets a prompt and executes python code to do math.
 
-    .. note::
+    !!! note
         This class is deprecated. See below for a replacement implementation using
         LangGraph. The benefits of this implementation are:
 
