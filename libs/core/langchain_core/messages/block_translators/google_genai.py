@@ -238,6 +238,31 @@ def _convert_to_v1_from_genai_input(
                 }
                 yield tool_call_block
 
+            elif block_type == "executable_code":
+                server_tool_call_input: types.ServerToolCall = {
+                    "type": "server_tool_call",
+                    "name": "code_interpreter",
+                    "args": {
+                        "code": block.get("executable_code", ""),
+                        "language": block.get("language", "python"),
+                    },
+                    "id": block.get("id", ""),
+                }
+                yield server_tool_call_input
+
+            elif block_type == "code_execution_result":
+                outcome = block.get("outcome", 1)
+                status = "success" if outcome == 1 else "error"
+                server_tool_result_input: types.ServerToolResult = {
+                    "type": "server_tool_result",
+                    "tool_call_id": block.get("tool_call_id", ""),
+                    "status": status,  # type: ignore[typeddict-item]
+                    "output": block.get("code_execution_result", ""),
+                }
+                if outcome is not None:
+                    server_tool_result_input["extras"] = {"outcome": outcome}
+                yield server_tool_result_input
+
             elif block.get("type") in types.KNOWN_BLOCK_TYPES:
                 # We see a standard block type, so we just cast it, even if
                 # we don't fully understand it. This may be dangerous, but
@@ -403,33 +428,31 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
                 converted_blocks.append(reasoning_block)
             elif item_type == "executable_code":
-                # Convert to non-standard block for code execution
-                # TODO: migrate to std server tool block
-                converted_blocks.append(
-                    {
-                        "type": "non_standard",
-                        "value": {
-                            "type": "executable_code",
-                            "executable_code": item.get("executable_code", ""),
-                            "language": item.get("language", ""),
-                        },
-                    }
-                )
+                # Convert to standard server tool call block at the moment
+                server_tool_call_block: types.ServerToolCall = {
+                    "type": "server_tool_call",
+                    "name": "code_interpreter",
+                    "args": {
+                        "code": item.get("executable_code", ""),
+                        "language": item.get("language", "python"),  # Default to python
+                    },
+                    "id": item.get("id", ""),
+                }
+                converted_blocks.append(server_tool_call_block)
             elif item_type == "code_execution_result":
-                # Convert to non-standard block for execution result
-                # TODO: migrate to std server tool block
-                converted_blocks.append(
-                    {
-                        "type": "non_standard",
-                        "value": {
-                            "type": "code_execution_result",
-                            "code_execution_result": item.get(
-                                "code_execution_result", ""
-                            ),
-                            "outcome": item.get("outcome", ""),
-                        },
-                    }
-                )
+                # Map outcome to status: OUTCOME_OK (1) → success, else → error
+                outcome = item.get("outcome", 1)
+                status = "success" if outcome == 1 else "error"
+                server_tool_result_block: types.ServerToolResult = {
+                    "type": "server_tool_result",
+                    "tool_call_id": item.get("tool_call_id", ""),
+                    "status": status,  # type: ignore[typeddict-item]
+                    "output": item.get("code_execution_result", ""),
+                }
+                # Preserve original outcome in extras
+                if outcome is not None:
+                    server_tool_result_block["extras"] = {"outcome": outcome}
+                converted_blocks.append(server_tool_result_block)
             else:
                 # Unknown type, preserve as non-standard
                 converted_blocks.append({"type": "non_standard", "value": item})
