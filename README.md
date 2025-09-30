@@ -73,10 +73,8 @@ teams — and iterate quickly with visual prototyping in
 
 - [Tutorials](https://python.langchain.com/docs/tutorials/): Simple walkthroughs with
 guided examples on getting started with LangChain.
-- [How-to Guides](https://python.langchain.com/docs/how_to/): Quick, actionable code
-snippets for topics such as tool calling, RAG use cases, and more.
-- [Conceptual Guides](https://python.langchain.com/docs/concepts/): Explanations of key
-concepts behind the LangChain framework.
+- [API Reference](https://reference.langchain.com/python/): Detailed reference on
+navigating base packages and integrations for LangChain.
 - [LangChain Forum](https://forum.langchain.com/): Connect with the community and share all of your technical questions, ideas, and feedback.
 - [API Reference](https://python.langchain.com/api_reference/): Detailed reference on
 navigating base packages and integrations for LangChain.

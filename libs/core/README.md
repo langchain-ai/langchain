@@ -17,7 +17,7 @@ These abstractions are designed to be as modular and simple as possible.
 
 The benefit of having these abstractions is that any provider can implement the required interface and then easily be used in the rest of the LangChain ecosystem.
 
-For full documentation see the [API reference](https://python.langchain.com/api_reference/core/index.html).
+For full documentation see the [API reference](https://reference.langchain.com/python/).
 
 ## ⛰️ Why build on top of LangChain Core?
 
