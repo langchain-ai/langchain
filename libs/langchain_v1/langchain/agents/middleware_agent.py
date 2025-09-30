@@ -212,15 +212,22 @@ def create_agent(  # noqa: PLR0915
         "Please remove duplicate middleware instances."
     )
     middleware_w_before = [
-        m for m in middleware if m.__class__.before_model is not AgentMiddleware.before_model
+        m
+        for m in middleware
+        if m.__class__.before_model is not AgentMiddleware.before_model
+        or m.__class__.abefore_model is not AgentMiddleware.abefore_model
     ]
     middleware_w_modify_model_request = [
         m
         for m in middleware
         if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
+        or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
     ]
     middleware_w_after = [
-        m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
+        m
+        for m in middleware
+        if m.__class__.after_model is not AgentMiddleware.after_model
+        or m.__class__.aafter_model is not AgentMiddleware.aafter_model
     ]
 
     state_schemas = {m.state_schema for m in middleware}
