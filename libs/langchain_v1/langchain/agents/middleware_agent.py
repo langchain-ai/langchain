@@ -532,11 +532,17 @@ def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
 ) -> Callable[[dict[str, Any]], str | list[Send] | None]:
     def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
+        # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
 
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
         tool_message_ids = [m.tool_call_id for m in tool_messages]
+
+        # 2. if the model hasn't called any tools, jump to END
+        # this is the classic exit condition for an agent loop
+        if len(last_ai_message.tool_calls) == 0:
+            return END
 
         pending_tool_calls = [
             c
@@ -544,17 +550,16 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
+        # 3. if there are pending tool calls, jump to the tool node
         if pending_tool_calls:
-            # imo we should not be injecting state, store here,
-            # this should be done by the tool node itself ideally but this is a consequence
-            # of using Send w/ tool calls directly which allows more intuitive interrupt behavior
-            # largely internal so can be fixed later
             pending_tool_calls = [
                 tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        return END
+        # 4. AIMessage has tool calls, but there are no pending tool calls
+        # which suggests the injection of artificial tool messages. jump to the first node
+        return first_node
 
     return model_to_tools
 
