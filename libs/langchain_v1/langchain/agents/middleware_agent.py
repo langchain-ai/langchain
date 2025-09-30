@@ -358,10 +358,18 @@ def create_agent(  # noqa: PLR0915
         tuple[bool, bool, bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
     ] = []
     for m in middleware_w_modify_model_request:
-        uses_runtime = "runtime" in signature(m.modify_model_request).parameters
         # Check if async version is implemented (not the default)
         has_sync = m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
         has_async = m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
+
+        # Check runtime usage based on the actually overridden method
+        if has_sync:
+            uses_runtime = "runtime" in signature(m.modify_model_request).parameters
+        elif has_async:
+            uses_runtime = "runtime" in signature(m.amodify_model_request).parameters
+        else:
+            uses_runtime = False
+
         model_request_signatures.append((uses_runtime, has_sync, has_async, m))
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
@@ -377,12 +385,12 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for use_runtime, has_sync, has_async, m in model_request_signatures:
-            if has_async:
+            if has_sync:
                 if use_runtime:
                     m.modify_model_request(request, state, runtime)
                 else:
                     m.modify_model_request(request, state)  # type: ignore[call-arg]
-            elif has_sync:
+            elif has_async:
                 msg = (
                     f"No synchronous function provided for "
                     f'{m.__class__.__name__}.amodify_model_request".'
@@ -444,16 +452,44 @@ def create_agent(  # noqa: PLR0915
 
     # Add middleware nodes
     for m in middleware:
-        if m.__class__.before_model is not AgentMiddleware.before_model:
+        if (
+            m.__class__.before_model is not AgentMiddleware.before_model
+            or m.__class__.abefore_model is not AgentMiddleware.abefore_model
+        ):
             # Use RunnableCallable to support both sync and async
-            before_node = RunnableCallable(m.before_model, m.abefore_model)
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_before = (
+                m.before_model
+                if m.__class__.before_model is not AgentMiddleware.before_model
+                else None
+            )
+            async_before = (
+                m.abefore_model
+                if m.__class__.abefore_model is not AgentMiddleware.abefore_model
+                else None
+            )
+            before_node = RunnableCallable(sync_before, async_before)
             graph.add_node(
                 f"{m.__class__.__name__}.before_model", before_node, input_schema=state_schema
             )
 
-        if m.__class__.after_model is not AgentMiddleware.after_model:
+        if (
+            m.__class__.after_model is not AgentMiddleware.after_model
+            or m.__class__.aafter_model is not AgentMiddleware.aafter_model
+        ):
             # Use RunnableCallable to support both sync and async
-            after_node = RunnableCallable(m.after_model, m.aafter_model)
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_after = (
+                m.after_model
+                if m.__class__.after_model is not AgentMiddleware.after_model
+                else None
+            )
+            async_after = (
+                m.aafter_model
+                if m.__class__.aafter_model is not AgentMiddleware.aafter_model
+                else None
+            )
+            after_node = RunnableCallable(sync_after, async_after)
             graph.add_node(
                 f"{m.__class__.__name__}.after_model", after_node, input_schema=state_schema
             )

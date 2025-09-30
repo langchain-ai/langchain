@@ -1,5 +1,6 @@
 """Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request."""
 
+import pytest
 from typing import Any
 from typing_extensions import NotRequired
 
@@ -150,3 +151,161 @@ def test_decorators_use_function_names_as_default() -> None:
     assert my_before_hook.__class__.__name__ == "my_before_hook"
     assert my_modify_hook.__class__.__name__ == "my_modify_hook"
     assert my_after_hook.__class__.__name__ == "my_after_hook"
+
+
+# Async Decorator Tests
+
+
+def test_async_before_model_decorator() -> None:
+    """Test before_model decorator with async function."""
+
+    @before_model(state_schema=CustomState, tools=[test_tool], name="AsyncBeforeModel")
+    async def async_before_model(state: CustomState) -> dict[str, Any]:
+        return {"custom_field": "async_value"}
+
+    assert isinstance(async_before_model, AgentMiddleware)
+    assert async_before_model.state_schema == CustomState
+    assert async_before_model.tools == [test_tool]
+    assert async_before_model.__class__.__name__ == "AsyncBeforeModel"
+
+
+def test_async_after_model_decorator() -> None:
+    """Test after_model decorator with async function."""
+
+    @after_model(state_schema=CustomState, tools=[test_tool], name="AsyncAfterModel")
+    async def async_after_model(state: CustomState) -> dict[str, Any]:
+        return {"custom_field": "async_value"}
+
+    assert isinstance(async_after_model, AgentMiddleware)
+    assert async_after_model.state_schema == CustomState
+    assert async_after_model.tools == [test_tool]
+    assert async_after_model.__class__.__name__ == "AsyncAfterModel"
+
+
+def test_async_modify_model_request_decorator() -> None:
+    """Test modify_model_request decorator with async function."""
+
+    @modify_model_request(state_schema=CustomState, tools=[test_tool], name="AsyncModifyRequest")
+    async def async_modify_request(request: ModelRequest, state: CustomState) -> ModelRequest:
+        request.system_prompt = "Modified async"
+        return request
+
+    assert isinstance(async_modify_request, AgentMiddleware)
+    assert async_modify_request.state_schema == CustomState
+    assert async_modify_request.tools == [test_tool]
+    assert async_modify_request.__class__.__name__ == "AsyncModifyRequest"
+
+
+def test_mixed_sync_async_decorators() -> None:
+    """Test decorators with both sync and async functions."""
+
+    @before_model(name="MixedBeforeModel")
+    def sync_before(state: AgentState) -> None:
+        return None
+
+    @before_model(name="MixedBeforeModel")
+    async def async_before(state: AgentState) -> None:
+        return None
+
+    @modify_model_request(name="MixedModifyRequest")
+    def sync_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
+        return request
+
+    @modify_model_request(name="MixedModifyRequest")
+    async def async_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
+        return request
+
+    # Both should create valid middleware instances
+    assert isinstance(sync_before, AgentMiddleware)
+    assert isinstance(async_before, AgentMiddleware)
+    assert isinstance(sync_modify, AgentMiddleware)
+    assert isinstance(async_modify, AgentMiddleware)
+
+
+@pytest.mark.asyncio
+async def test_async_decorators_integration() -> None:
+    """Test async decorators working together in an agent."""
+    call_order = []
+
+    @before_model
+    async def track_async_before(state: AgentState) -> None:
+        call_order.append("async_before")
+        return None
+
+    @modify_model_request
+    async def track_async_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
+        call_order.append("async_modify")
+        return request
+
+    @after_model
+    async def track_async_after(state: AgentState) -> None:
+        call_order.append("async_after")
+        return None
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        middleware=[track_async_before, track_async_modify, track_async_after],
+    )
+    agent = agent.compile()
+    await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+
+    assert call_order == ["async_before", "async_modify", "async_after"]
+
+
+@pytest.mark.asyncio
+async def test_mixed_sync_async_decorators_integration() -> None:
+    """Test mixed sync/async decorators working together in an agent."""
+    call_order = []
+
+    @before_model
+    def track_sync_before(state: AgentState) -> None:
+        call_order.append("sync_before")
+        return None
+
+    @before_model
+    async def track_async_before(state: AgentState) -> None:
+        call_order.append("async_before")
+        return None
+
+    @modify_model_request
+    def track_sync_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
+        call_order.append("sync_modify")
+        return request
+
+    @modify_model_request
+    async def track_async_modify(request: ModelRequest, state: AgentState) -> ModelRequest:
+        call_order.append("async_modify")
+        return request
+
+    @after_model
+    async def track_async_after(state: AgentState) -> None:
+        call_order.append("async_after")
+        return None
+
+    @after_model
+    def track_sync_after(state: AgentState) -> None:
+        call_order.append("sync_after")
+        return None
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        middleware=[
+            track_sync_before,
+            track_async_before,
+            track_sync_modify,
+            track_async_modify,
+            track_async_after,
+            track_sync_after,
+        ],
+    )
+    agent = agent.compile()
+    await agent.ainvoke({"messages": [HumanMessage("Hello")]})
+
+    assert call_order == [
+        "sync_before",
+        "async_before",
+        "sync_modify",
+        "async_modify",
+        "sync_after",
+        "async_after",
+    ]

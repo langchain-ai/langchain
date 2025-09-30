@@ -1661,3 +1661,236 @@ def test_planning_middleware_custom_system_prompt() -> None:
     assert result["todos"] == [{"content": "Custom task", "status": "pending"}]
     # assert custom system prompt is in the first AI message
     assert "call the write_todos tool" in result["messages"][1].content
+
+
+# Async Middleware Tests
+async def test_create_agent_async_invoke() -> None:
+    """Test async invoke with async middleware hooks."""
+    calls = []
+
+    class AsyncMiddleware(AgentMiddleware):
+        async def abefore_model(self, state) -> None:
+            calls.append("AsyncMiddleware.abefore_model")
+
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            calls.append("AsyncMiddleware.amodify_model_request")
+            request.messages.append(HumanMessage("async middleware message"))
+            return request
+
+        async def aafter_model(self, state) -> None:
+            calls.append("AsyncMiddleware.aafter_model")
+
+    @tool
+    def my_tool(input: str) -> str:
+        """A great tool"""
+        calls.append("my_tool")
+        return input.upper()
+
+    agent = create_agent(
+        model=FakeToolCallingModel(
+            tool_calls=[
+                [{"args": {"input": "yo"}, "id": "1", "name": "my_tool"}],
+                [],
+            ]
+        ),
+        tools=[my_tool],
+        system_prompt="You are a helpful assistant.",
+        middleware=[AsyncMiddleware()],
+    ).compile()
+
+    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+
+    # Should have:
+    # 1. Original hello message
+    # 2. Async middleware message (first invoke)
+    # 3. AI message with tool call
+    # 4. Tool message
+    # 5. Async middleware message (second invoke)
+    # 6. Final AI message
+    assert len(result["messages"]) == 6
+    assert result["messages"][0].content == "hello"
+    assert result["messages"][1].content == "async middleware message"
+    assert calls == [
+        "AsyncMiddleware.abefore_model",
+        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aafter_model",
+        "my_tool",
+        "AsyncMiddleware.abefore_model",
+        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aafter_model",
+    ]
+
+
+async def test_create_agent_async_invoke_multiple_middleware() -> None:
+    """Test async invoke with multiple async middleware hooks."""
+    calls = []
+
+    class AsyncMiddlewareOne(AgentMiddleware):
+        async def abefore_model(self, state) -> None:
+            calls.append("AsyncMiddlewareOne.abefore_model")
+
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            calls.append("AsyncMiddlewareOne.amodify_model_request")
+            return request
+
+        async def aafter_model(self, state) -> None:
+            calls.append("AsyncMiddlewareOne.aafter_model")
+
+    class AsyncMiddlewareTwo(AgentMiddleware):
+        async def abefore_model(self, state) -> None:
+            calls.append("AsyncMiddlewareTwo.abefore_model")
+
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            calls.append("AsyncMiddlewareTwo.amodify_model_request")
+            return request
+
+        async def aafter_model(self, state) -> None:
+            calls.append("AsyncMiddlewareTwo.aafter_model")
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
+    ).compile()
+
+    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+
+    assert calls == [
+        "AsyncMiddlewareOne.abefore_model",
+        "AsyncMiddlewareTwo.abefore_model",
+        "AsyncMiddlewareOne.amodify_model_request",
+        "AsyncMiddlewareTwo.amodify_model_request",
+        "AsyncMiddlewareTwo.aafter_model",
+        "AsyncMiddlewareOne.aafter_model",
+    ]
+
+
+async def test_create_agent_async_jump() -> None:
+    """Test async invoke with async middleware using jump_to."""
+    calls = []
+
+    class AsyncMiddlewareOne(AgentMiddleware):
+        async def abefore_model(self, state) -> None:
+            calls.append("AsyncMiddlewareOne.abefore_model")
+
+    class AsyncMiddlewareTwo(AgentMiddleware):
+        before_model_jump_to = ["end"]
+
+        async def abefore_model(self, state) -> dict[str, Any]:
+            calls.append("AsyncMiddlewareTwo.abefore_model")
+            return {"jump_to": "end"}
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
+    ).compile()
+
+    result = await agent.ainvoke({"messages": []})
+
+    assert result == {"messages": []}
+    assert calls == ["AsyncMiddlewareOne.abefore_model", "AsyncMiddlewareTwo.abefore_model"]
+
+
+async def test_create_agent_mixed_sync_async_middleware() -> None:
+    """Test async invoke with mixed sync and async middleware."""
+    calls = []
+
+    class SyncMiddleware(AgentMiddleware):
+        def before_model(self, state) -> None:
+            calls.append("SyncMiddleware.before_model")
+
+        def modify_model_request(self, request, state) -> ModelRequest:
+            calls.append("SyncMiddleware.modify_model_request")
+            return request
+
+        def after_model(self, state) -> None:
+            calls.append("SyncMiddleware.after_model")
+
+    class AsyncMiddleware(AgentMiddleware):
+        async def abefore_model(self, state) -> None:
+            calls.append("AsyncMiddleware.abefore_model")
+
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            calls.append("AsyncMiddleware.amodify_model_request")
+            return request
+
+        async def aafter_model(self, state) -> None:
+            calls.append("AsyncMiddleware.aafter_model")
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[SyncMiddleware(), AsyncMiddleware()],
+    ).compile()
+
+    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+
+    # In async mode, both sync and async middleware should work
+    assert calls == [
+        "SyncMiddleware.before_model",
+        "AsyncMiddleware.abefore_model",
+        "SyncMiddleware.modify_model_request",
+        "AsyncMiddleware.amodify_model_request",
+        "AsyncMiddleware.aafter_model",
+        "SyncMiddleware.after_model",
+    ]
+
+
+def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> None:
+    """Test that sync invoke with only async middleware raises TypeError."""
+
+    class AsyncOnlyMiddleware(AgentMiddleware):
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            return request
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[AsyncOnlyMiddleware()],
+    ).compile()
+
+    with pytest.raises(
+        TypeError,
+        match=r"No synchronous function provided for AsyncOnlyMiddleware\.amodify_model_request",
+    ):
+        agent.invoke({"messages": [HumanMessage("hello")]})
+
+
+def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
+    """Test that sync invoke works with mixed sync/async middleware when sync versions exist."""
+    calls = []
+
+    class MixedMiddleware(AgentMiddleware):
+        def before_model(self, state) -> None:
+            calls.append("MixedMiddleware.before_model")
+
+        async def abefore_model(self, state) -> None:
+            calls.append("MixedMiddleware.abefore_model")
+
+        def modify_model_request(self, request, state) -> ModelRequest:
+            calls.append("MixedMiddleware.modify_model_request")
+            return request
+
+        async def amodify_model_request(self, request, state) -> ModelRequest:
+            calls.append("MixedMiddleware.amodify_model_request")
+            return request
+
+    agent = create_agent(
+        model=FakeToolCallingModel(),
+        tools=[],
+        system_prompt="You are a helpful assistant.",
+        middleware=[MixedMiddleware()],
+    ).compile()
+
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+
+    # In sync mode, only sync methods should be called
+    assert calls == [
+        "MixedMiddleware.before_model",
+        "MixedMiddleware.modify_model_request",
+    ]
