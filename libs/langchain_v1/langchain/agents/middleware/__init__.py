@@ -24,5 +24,5 @@ __all__ = [
     "SummarizationMiddleware",
     "after_model",
     "before_model",
-    "modify_model_request",
+    "modify_model_request"
 ]
