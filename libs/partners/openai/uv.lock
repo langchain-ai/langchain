@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.9.0, <4.0.0"
 resolution-markers = [
     "python_full_version >= '3.13' and platform_python_implementation == 'PyPy'",
@@ -598,7 +598,7 @@ typing = [
 
 [[package]]
 name = "langchain-openai"
-version = "0.3.33"
+version = "0.3.34"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -647,7 +647,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "openai", specifier = ">=1.104.2,<2.0.0" },
+    { name = "openai", specifier = ">=1.104.2,<3.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0,<1.0.0" },
 ]
 
@@ -1183,7 +1183,7 @@ wheels = [
 
 [[package]]
 name = "openai"
-version = "1.107.3"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1195,9 +1195,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e3/24/7fb5749bcf66b52209e3ece05cb4eaeae2102e95f8ae77589e8afaf70ba8/openai-1.107.3.tar.gz", hash = "sha256:69bb8032b05c5f00f7660e422f70f9aabc94793b9a30c5f899360ed21e46314f", size = 564194, upload-time = "2025-09-15T20:09:20.159Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/5d/74fa2b0358ef15d113b1a6ca2323cee0034020b085a81a94eeddc6914de9/openai-2.0.0.tar.gz", hash = "sha256:6b9513b485f856b0be6bc44c518831acb58e37a12bed72fcc52b1177d1fb34a8", size = 565732, upload-time = "2025-09-30T17:35:57.632Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/1d/58ad0084451f64a9193de48c0afd63047682ffdedb6ae1d494a203e03fd5/openai-1.107.3-py3-none-any.whl", hash = "sha256:4ca54a847235ac04c6320da70fdc06b62d71439de9ec0aa40d5690c3064d4025", size = 947600, upload-time = "2025-09-15T20:09:18.219Z" },
+    { url = "https://files.pythonhosted.org/packages/69/41/86ddc9cdd885acc02ee50ec24ea1c5e324eea0c7a471ee841a7088653558/openai-2.0.0-py3-none-any.whl", hash = "sha256:a79f493651f9843a6c54789a83f3b2db56df0e1770f7dcbe98bcf0e967ee2148", size = 955538, upload-time = "2025-09-30T17:35:54.695Z" },
 ]
 
 [[package]]
