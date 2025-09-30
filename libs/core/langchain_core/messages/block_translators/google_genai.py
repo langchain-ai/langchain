@@ -340,21 +340,19 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
                     else:
                         # Assume it's raw base64 without data URI
                         try:
-                            # Validate base64
-                            _ = base64.b64decode(url, validate=True)
+                            # Validate base64 and decode for mime type detection
+                            decoded_bytes = base64.b64decode(url, validate=True)
 
                             image_url_b64_block = {
                                 "type": "image",
                                 "base64": url,
                             }
 
-                            # Guess mime type based on data field if not provided
-                            mime_type, _ = mimetypes.guess_type(url)
-                            if not mime_type:
-                                # Last resort - try to guess based on file bytes
-                                kind = filetype.guess(url)
-                                if kind:
-                                    mime_type = kind.mime
+                            # Guess mime type based on file bytes
+                            mime_type = None
+                            kind = filetype.guess(decoded_bytes)
+                            if kind:
+                                mime_type = kind.mime
                             if mime_type:
                                 image_url_b64_block["mime_type"] = mime_type
 
