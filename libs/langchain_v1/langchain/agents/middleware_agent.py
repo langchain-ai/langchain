@@ -346,12 +346,15 @@ def create_agent(  # noqa: PLR0915
             )
         return request.model.bind(**request.model_settings)
 
+    # Build signatures for modify_model_request middleware with async support
     model_request_signatures: list[
-        tuple[bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
-    ] = [
-        ("runtime" in signature(m.modify_model_request).parameters, m)
-        for m in middleware_w_modify_model_request
-    ]
+        tuple[bool, bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
+    ] = []
+    for m in middleware_w_modify_model_request:
+        uses_runtime = "runtime" in signature(m.modify_model_request).parameters
+        # Check if async version is implemented (not the default)
+        has_async = m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
+        model_request_signatures.append((uses_runtime, has_async, m))
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
@@ -365,7 +368,10 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
+        for use_runtime, has_async, m in model_request_signatures:
+            if has_async:
+                # Skip async middleware in sync context
+                continue
             if use_runtime:
                 m.modify_model_request(request, state, runtime)
             else:
@@ -393,8 +399,14 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
-            if use_runtime:
+        for use_runtime, has_async, m in model_request_signatures:
+            if has_async:
+                # Use async version
+                if use_runtime:
+                    await m.amodify_model_request(request, state, runtime)
+                else:
+                    await m.amodify_model_request(request, state)  # type: ignore[call-arg]
+            elif use_runtime:
                 m.modify_model_request(request, state, runtime)
             else:
                 m.modify_model_request(request, state)  # type: ignore[call-arg]
@@ -420,13 +432,17 @@ def create_agent(  # noqa: PLR0915
     # Add middleware nodes
     for m in middleware:
         if m.__class__.before_model is not AgentMiddleware.before_model:
+            # Use RunnableCallable to support both sync and async
+            before_node = RunnableCallable(m.before_model, m.abefore_model)
             graph.add_node(
-                f"{m.__class__.__name__}.before_model", m.before_model, input_schema=state_schema
+                f"{m.__class__.__name__}.before_model", before_node, input_schema=state_schema
             )
 
         if m.__class__.after_model is not AgentMiddleware.after_model:
+            # Use RunnableCallable to support both sync and async
+            after_node = RunnableCallable(m.after_model, m.aafter_model)
             graph.add_node(
-                f"{m.__class__.__name__}.after_model", m.after_model, input_schema=state_schema
+                f"{m.__class__.__name__}.after_model", after_node, input_schema=state_schema
             )
 
     # add start edge

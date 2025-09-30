@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from inspect import signature
+from inspect import iscoroutinefunction, signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -17,6 +17,9 @@ from typing import (
     cast,
     overload,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable
 
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
@@ -129,6 +132,11 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
+    async def abefore_model(
+        self, state: StateT, runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Async logic to run before the model is called."""
+
     def modify_model_request(
         self,
         request: ModelRequest,
@@ -138,14 +146,30 @@ class AgentMiddleware(Generic[StateT, ContextT]):
         """Logic to modify request kwargs before the model is called."""
         return request
 
+    async def amodify_model_request(
+        self,
+        request: ModelRequest,
+        state: StateT,  # noqa: ARG002
+        runtime: Runtime[ContextT],  # noqa: ARG002
+    ) -> ModelRequest:
+        """Async logic to modify request kwargs before the model is called."""
+        return request
+
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called."""
+
+    async def aafter_model(
+        self, state: StateT, runtime: Runtime[ContextT]
+    ) -> dict[str, Any] | None:
+        """Async logic to run after the model is called."""
 
 
 class _CallableWithState(Protocol[StateT_contra]):
     """Callable with AgentState as argument."""
 
-    def __call__(self, state: StateT_contra) -> dict[str, Any] | Command | None:
+    def __call__(
+        self, state: StateT_contra
+    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state."""
         ...
 
@@ -155,7 +179,7 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 
     def __call__(
         self, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> dict[str, Any] | Command | None:
+    ) -> dict[str, Any] | Command | None | Awaitable[dict[str, Any] | Command | None]:
         """Perform some logic with the state and runtime."""
         ...
 
@@ -163,7 +187,9 @@ class _CallableWithStateAndRuntime(Protocol[StateT_contra, ContextT]):
 class _CallableWithModelRequestAndState(Protocol[StateT_contra]):
     """Callable with ModelRequest and AgentState as arguments."""
 
-    def __call__(self, request: ModelRequest, state: StateT_contra) -> ModelRequest:
+    def __call__(
+        self, request: ModelRequest, state: StateT_contra
+    ) -> ModelRequest | Awaitable[ModelRequest]:
         """Perform some logic with the model request and state."""
         ...
 
@@ -173,7 +199,7 @@ class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, Contex
 
     def __call__(
         self, request: ModelRequest, state: StateT_contra, runtime: Runtime[ContextT]
-    ) -> ModelRequest:
+    ) -> ModelRequest | Awaitable[ModelRequest]:
         """Perform some logic with the model request, state, and runtime."""
         ...
 
@@ -278,14 +304,53 @@ def before_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        if is_callable_with_runtime(func):
+        is_async = iscoroutinefunction(func)
+        uses_runtime = is_callable_with_runtime(func)
+
+        if is_async:
+            if uses_runtime:
+
+                async def async_wrapped_with_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    state: StateT,
+                    runtime: Runtime[ContextT],
+                ) -> dict[str, Any] | Command | None:
+                    return await func(state, runtime)  # type: ignore[misc]
+
+                async_wrapped = async_wrapped_with_runtime
+            else:
+
+                async def async_wrapped_without_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    state: StateT,
+                ) -> dict[str, Any] | Command | None:
+                    return await func(state)  # type: ignore[call-arg,misc]
+
+                async_wrapped = async_wrapped_without_runtime  # type: ignore[assignment]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "BeforeModelMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "before_model_jump_to": jump_to or [],
+                    "abefore_model": async_wrapped,
+                },
+            )()
+
+        if uses_runtime:
 
             def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return func(state, runtime)
+                return func(state, runtime)  # type: ignore[return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -298,7 +363,6 @@ def before_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
-        # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
         return type(
@@ -394,7 +458,47 @@ def modify_model_request(
     def decorator(
         func: _ModelRequestSignature[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
-        if is_callable_with_runtime_and_request(func):
+        is_async = iscoroutinefunction(func)
+        uses_runtime = is_callable_with_runtime_and_request(func)
+
+        if is_async:
+            if uses_runtime:
+
+                async def async_wrapped_with_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    request: ModelRequest,
+                    state: StateT,
+                    runtime: Runtime[ContextT],
+                ) -> ModelRequest:
+                    return await func(request, state, runtime)  # type: ignore[misc]
+
+                async_wrapped = async_wrapped_with_runtime
+            else:
+
+                async def async_wrapped_without_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    request: ModelRequest,
+                    state: StateT,
+                ) -> ModelRequest:
+                    return await func(request, state)  # type: ignore[call-arg,misc]
+
+                async_wrapped = async_wrapped_without_runtime  # type: ignore[assignment]
+
+            middleware_name = name or cast(
+                "str", getattr(func, "__name__", "ModifyModelRequestMiddleware")
+            )
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "amodify_model_request": async_wrapped,
+                },
+            )()
+
+        if uses_runtime:
 
             def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
@@ -402,7 +506,7 @@ def modify_model_request(
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> ModelRequest:
-                return func(request, state, runtime)
+                return func(request, state, runtime)  # type: ignore[return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -416,7 +520,6 @@ def modify_model_request(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
-        # Use function name as default if no name provided
         middleware_name = name or cast(
             "str", getattr(func, "__name__", "ModifyModelRequestMiddleware")
         )
@@ -504,14 +607,51 @@ def after_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        if is_callable_with_runtime(func):
+        is_async = iscoroutinefunction(func)
+        uses_runtime = is_callable_with_runtime(func)
+
+        if is_async:
+            if uses_runtime:
+
+                async def async_wrapped_with_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    state: StateT,
+                    runtime: Runtime[ContextT],
+                ) -> dict[str, Any] | Command | None:
+                    return await func(state, runtime)  # type: ignore[misc]
+
+                async_wrapped = async_wrapped_with_runtime
+            else:
+
+                async def async_wrapped_without_runtime(
+                    self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                    state: StateT,
+                ) -> dict[str, Any] | Command | None:
+                    return await func(state)  # type: ignore[call-arg,misc]
+
+                async_wrapped = async_wrapped_without_runtime  # type: ignore[assignment]
+
+            middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
+
+            return type(
+                middleware_name,
+                (AgentMiddleware,),
+                {
+                    "state_schema": state_schema or AgentState,
+                    "tools": tools or [],
+                    "after_model_jump_to": jump_to or [],
+                    "aafter_model": async_wrapped,
+                },
+            )()
+
+        if uses_runtime:
 
             def wrapped_with_runtime(
                 self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
-                return func(state, runtime)
+                return func(state, runtime)  # type: ignore[return-value]
 
             wrapped = wrapped_with_runtime
         else:
@@ -524,7 +664,6 @@ def after_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
-        # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
         return type(
