@@ -1,4 +1,5 @@
 """Message types."""
+
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
