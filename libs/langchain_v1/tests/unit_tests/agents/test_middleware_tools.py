@@ -1,12 +1,11 @@
-"""Tests for tools being represented as strings in ModelRequest."""
+"""Test Middleware handling of tools in agents."""
 
 import pytest
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
-from langchain_core.tools import tool
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.agents.middleware_agent import create_agent
-
+from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.tools import tool
 from .model import FakeToolCallingModel
 
 
