@@ -22,6 +22,10 @@ class TestOpenAIResponses(TestOpenAIStandard):
     def chat_model_params(self) -> dict:
         return {"model": "gpt-4o-mini", "output_version": "responses/v1"}
 
+    @property
+    def supports_image_tool_message(self) -> bool:
+        return True
+
     @pytest.mark.xfail(reason="Unsupported.")
     def test_stop_sequence(self, model: BaseChatModel) -> None:
         super().test_stop_sequence(model)
