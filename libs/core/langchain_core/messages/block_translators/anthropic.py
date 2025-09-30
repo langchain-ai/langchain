@@ -385,9 +385,25 @@ def _convert_to_v1_from_anthropic(message: AIMessage) -> list[types.ContentBlock
                         "args": block.get("input", {}),
                         "id": block.get("id", ""),
                     }
+
+                    if block.get("input") == {} and "partial_json" in block:
+                        try:
+                            input_ = json.loads(block["partial_json"])
+                            if isinstance(input_, dict):
+                                server_tool_call["args"] = input_
+                        except json.JSONDecodeError:
+                            pass
+
                     if "name" in block:
                         server_tool_call["extras"] = {"tool_name": block["name"]}
-                    known_fields = {"type", "name", "input", "id", "index"}
+                    known_fields = {
+                        "type",
+                        "name",
+                        "input",
+                        "partial_json",
+                        "id",
+                        "index",
+                    }
                     _populate_extras(server_tool_call, block, known_fields)
                     if "index" in block:
                         server_tool_call["index"] = block["index"]
