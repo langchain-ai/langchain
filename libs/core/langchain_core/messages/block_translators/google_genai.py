@@ -31,8 +31,8 @@ def translate_grounding_metadata_to_citations(
 
     Example:
         >>> metadata = {
-        ...     "webSearchQueries": ["UEFA Euro 2024 winner"],
-        ...     "groundingChunks": [
+        ...     "web_search_queries": ["UEFA Euro 2024 winner"],
+        ...     "grounding_chunks": [
         ...         {
         ...             "web": {
         ...                 "uri": "https://uefa.com/euro2024",
@@ -40,14 +40,14 @@ def translate_grounding_metadata_to_citations(
         ...             }
         ...         }
         ...     ],
-        ...     "groundingSupports": [
+        ...     "grounding_supports": [
         ...         {
         ...             "segment": {
-        ...                 "startIndex": 0,
-        ...                 "endIndex": 47,
+        ...                 "start_index": 0,
+        ...                 "end_index": 47,
         ...                 "text": "Spain won the UEFA Euro 2024 championship",
         ...             },
-        ...             "groundingChunkIndices": [0],
+        ...             "grounding_chunk_indices": [0],
         ...         }
         ...     ],
         ... }
@@ -60,18 +60,18 @@ def translate_grounding_metadata_to_citations(
     if not grounding_metadata:
         return []
 
-    grounding_chunks = grounding_metadata.get("groundingChunks", [])
-    grounding_supports = grounding_metadata.get("groundingSupports", [])
-    web_search_queries = grounding_metadata.get("webSearchQueries", [])
+    grounding_chunks = grounding_metadata.get("grounding_chunks", [])
+    grounding_supports = grounding_metadata.get("grounding_supports", [])
+    web_search_queries = grounding_metadata.get("web_search_queries", [])
 
     citations: list[Citation] = []
 
     for support in grounding_supports:
         segment = support.get("segment", {})
-        chunk_indices = support.get("groundingChunkIndices", [])
+        chunk_indices = support.get("grounding_chunk_indices", [])
 
-        start_index = segment.get("startIndex")
-        end_index = segment.get("endIndex")
+        start_index = segment.get("start_index")
+        end_index = segment.get("end_index")
         cited_text = segment.get("text")
 
         # Create a citation for each referenced chunk
@@ -90,7 +90,7 @@ def translate_grounding_metadata_to_citations(
                         "google_ai_metadata": {
                             "web_search_queries": web_search_queries,
                             "grounding_chunk_index": chunk_index,
-                            "confidence_scores": support.get("confidenceScores", []),
+                            "confidence_scores": support.get("confidence_scores", []),
                         }
                     },
                 )
