@@ -406,7 +406,6 @@ jobs:
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
       # TODO: this seems to be resolved upstream, so we can probably remove this workaround
       - name: Check if libs/core
-        if: false
         run: |
           if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
             echo "Not in libs/core. Exiting successfully."
