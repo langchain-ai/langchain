@@ -22,7 +22,7 @@ __all__ = [
     "ModelRequest",
     "PlanningMiddleware",
     "SummarizationMiddleware",
+    "after_model",
     "before_model",
     "modify_model_request",
-    "after_model",
 ]
