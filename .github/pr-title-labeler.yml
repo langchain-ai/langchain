@@ -38,4 +38,4 @@ label-mapping:
   refactor: ["refactor"]
   release: ["release"]
   revert: ["revert"]
-  tests: ["test"]
+  tests: ["test"] #
