@@ -18,6 +18,8 @@ from typing import (
     overload,
 )
 
+from langchain_core.runnables import run_in_executor
+
 if TYPE_CHECKING:
     from collections.abc import Awaitable
 
@@ -149,11 +151,16 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     async def amodify_model_request(
         self,
         request: ModelRequest,
-        state: StateT,  # noqa: ARG002
-        runtime: Runtime[ContextT],  # noqa: ARG002
+        state: StateT,
+        runtime: Runtime[ContextT],
     ) -> ModelRequest:
         """Async logic to modify request kwargs before the model is called."""
-        return request
+        # Try calling sync version with runtime first, fall back to without runtime
+        try:
+            return await run_in_executor(None, self.modify_model_request, request, state, runtime)
+        except TypeError:
+            # Sync version doesn't accept runtime, call without it
+            return await run_in_executor(None, self.modify_model_request, request, state)
 
     def after_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run after the model is called."""

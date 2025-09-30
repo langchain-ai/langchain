@@ -2,8 +2,9 @@
 
 import itertools
 from collections.abc import Callable, Sequence
+from dataclasses import dataclass
 from inspect import signature
-from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
+from typing import Annotated, Any, Generic, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMessage
@@ -37,6 +38,27 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
+
+ResponseT = TypeVar("ResponseT")
+
+
+@dataclass
+class MiddlewareSignature(Generic[ResponseT, ContextT]):
+    """Structured metadata for a middleware's hook implementations.
+
+    Attributes:
+        middleware: The middleware instance.
+        has_sync: Whether the middleware implements a sync version of the hook.
+        has_async: Whether the middleware implements an async version of the hook.
+        sync_uses_runtime: Whether the sync hook accepts a runtime argument.
+        async_uses_runtime: Whether the async hook accepts a runtime argument.
+    """
+
+    middleware: AgentMiddleware[AgentState[ResponseT], ContextT]
+    has_sync: bool
+    has_async: bool
+    sync_uses_runtime: bool
+    async_uses_runtime: bool
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -128,9 +150,6 @@ def _handle_structured_output_error(
         # type narrowing not working appropriately w/ callable check, can fix later
         return True, handle_errors(exception)  # type: ignore[return-value,call-arg]
     return False, ""
-
-
-ResponseT = TypeVar("ResponseT")
 
 
 def create_agent(  # noqa: PLR0915
@@ -354,23 +373,31 @@ def create_agent(  # noqa: PLR0915
         return request.model.bind(**request.model_settings)
 
     # Build signatures for modify_model_request middleware with async support
-    model_request_signatures: list[
-        tuple[bool, bool, bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
-    ] = []
+    model_request_signatures: list[MiddlewareSignature[ResponseT, ContextT]] = []
     for m in middleware_w_modify_model_request:
         # Check if async version is implemented (not the default)
         has_sync = m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
         has_async = m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
 
-        # Check runtime usage based on the actually overridden method
-        if has_sync:
-            uses_runtime = "runtime" in signature(m.modify_model_request).parameters
-        elif has_async:
-            uses_runtime = "runtime" in signature(m.amodify_model_request).parameters
-        else:
-            uses_runtime = False
+        # Check runtime usage for each implementation
+        sync_uses_runtime = (
+            "runtime" in signature(m.modify_model_request).parameters if has_sync else False
+        )
+        # If async is implemented, check its signature; otherwise default is True
+        # (the default async implementation always expects runtime)
+        async_uses_runtime = (
+            "runtime" in signature(m.amodify_model_request).parameters if has_async else True
+        )
 
-        model_request_signatures.append((uses_runtime, has_sync, has_async, m))
+        model_request_signatures.append(
+            MiddlewareSignature(
+                middleware=m,
+                has_sync=has_sync,
+                has_async=has_async,
+                sync_uses_runtime=sync_uses_runtime,
+                async_uses_runtime=async_uses_runtime,
+            )
+        )
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
@@ -384,16 +411,16 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, has_sync, has_async, m in model_request_signatures:
-            if has_sync:
-                if use_runtime:
-                    m.modify_model_request(request, state, runtime)
+        for sig in model_request_signatures:
+            if sig.has_sync:
+                if sig.sync_uses_runtime:
+                    sig.middleware.modify_model_request(request, state, runtime)
                 else:
-                    m.modify_model_request(request, state)  # type: ignore[call-arg]
-            elif has_async:
+                    sig.middleware.modify_model_request(request, state)  # type: ignore[call-arg]
+            elif sig.has_async:
                 msg = (
                     f"No synchronous function provided for "
-                    f'{m.__class__.__name__}.amodify_model_request".'
+                    f'{sig.middleware.__class__.__name__}.amodify_model_request".'
                     "\nEither initialize with a synchronous function or invoke"
                     " via the async API (ainvoke, astream, etc.)"
                 )
@@ -421,16 +448,13 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, _has_sync, has_async, m in model_request_signatures:
-            if has_async:
-                if use_runtime:
-                    await m.amodify_model_request(request, state, runtime)
-                else:
-                    await m.amodify_model_request(request, state)  # type: ignore[call-arg]
-            elif use_runtime:
-                m.modify_model_request(request, state, runtime)
+        for sig in model_request_signatures:
+            # If async is overridden and doesn't use runtime, call without it
+            if sig.has_async and not sig.async_uses_runtime:
+                await sig.middleware.amodify_model_request(request, state)  # type: ignore[call-arg]
+            # Otherwise call async with runtime (default implementation handles sync delegation)
             else:
-                m.modify_model_request(request, state)  # type: ignore[call-arg]
+                await sig.middleware.amodify_model_request(request, state, runtime)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
