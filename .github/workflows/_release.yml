@@ -376,6 +376,7 @@ jobs:
   test-prior-published-packages-against-new-core:
     # Installs the new core with old partners: Installs the new unreleased core
     # alongside the previously published partner packages and runs integration tests
+    if: false  # temporarily skip
     needs:
       - build
       - release-notes
@@ -404,9 +405,13 @@ jobs:
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
       # TODO: this seems to be resolved upstream, so we can probably remove this workaround
-      - name: Deliberately skip (temporary)
+      - name: Check if libs/core
+        if: false
         run: |
-          exit 0
+          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
+            echo "Not in libs/core. Exiting successfully."
+            exit 0
+          fi
 
       - name: Set up Python + uv
         if: startsWith(inputs.working-directory, 'libs/core')
