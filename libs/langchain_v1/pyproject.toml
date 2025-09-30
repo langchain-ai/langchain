@@ -128,9 +128,6 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "D1", # Documentation rules
     "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
-"langchain/agents/middleware/planning.py" = [
-    "E501", # Line too long
-]
 "langchain/agents/*" = [
     "ANN401", # we use Any right now, need to narrow
     "A002", # input is shadowing builtin

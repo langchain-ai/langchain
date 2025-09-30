@@ -1,4 +1,5 @@
 """Planning and task management middleware for agents."""
+# ruff: noqa: E501
 
 from __future__ import annotations
 
