@@ -404,12 +404,9 @@ jobs:
       # We implement this conditional as Github Actions does not have good support
       # for conditionally needing steps. https://github.com/actions/runner/issues/491
       # TODO: this seems to be resolved upstream, so we can probably remove this workaround
-      - name: Check if libs/core
+      - name: Deliberately skip (temporary)
         run: |
-          if [ "${{ startsWith(inputs.working-directory, 'libs/core') }}" != "true" ]; then
-            echo "Not in libs/core. Exiting successfully."
-            exit 0
-          fi
+          exit 0
 
       - name: Set up Python + uv
         if: startsWith(inputs.working-directory, 'libs/core')
