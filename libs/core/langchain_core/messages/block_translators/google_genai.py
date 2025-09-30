@@ -1,7 +1,6 @@
 """Derivations of standard content blocks from Google (GenAI) content."""
 
 import base64
-import mimetypes
 import re
 from collections.abc import Iterable
 from typing import Any, cast
@@ -298,8 +297,18 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             }
             string_blocks.append(audio_block)
 
-        # TODO: Handle citations from grounding metadata if present
-        # (in response_metadata.grounding_metadata)
+        # Handle citations from grounding metadata if present
+        generation_info = getattr(message, "generation_info", {})
+        grounding_metadata = generation_info.get("grounding_metadata")
+
+        if grounding_metadata:
+            citations = translate_grounding_metadata_to_citations(grounding_metadata)
+
+            # Add citations to the first text block
+            for block in string_blocks:
+                if block["type"] == "text" and citations:
+                    block["annotations"] = cast("list[types.Annotation]", citations)
+                    break
 
         return string_blocks
 
@@ -311,11 +320,10 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
 
     for item in message.content:
         if isinstance(item, str):
-            # Case for conversation history strings
-            converted_blocks.append({"type": "text", "text": item})  # TextContentBlock
+            # Conversation history strings
 
-            # TODO: Handle citations from grounding metadata if present
-            # (in response_metadata.grounding_metadata)
+            # Citations are handled below after all blocks are converted
+            converted_blocks.append({"type": "text", "text": item})  # TextContentBlock
 
         elif isinstance(item, dict):
             item_type = item.get("type")
