@@ -297,16 +297,13 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             }
             string_blocks.append(audio_block)
 
-        # Handle citations from grounding metadata if present
-        generation_info = getattr(message, "generation_info", {})
-        grounding_metadata = generation_info.get("grounding_metadata")
-
+        grounding_metadata = message.response_metadata.get("grounding_metadata")
         if grounding_metadata:
             citations = translate_grounding_metadata_to_citations(grounding_metadata)
 
-            # Add citations to the first text block
             for block in string_blocks:
                 if block["type"] == "text" and citations:
+                    # Add citations to the first text block only
                     block["annotations"] = cast("list[types.Annotation]", citations)
                     break
 
@@ -440,16 +437,13 @@ def _convert_to_v1_from_genai(message: AIMessage) -> list[types.ContentBlock]:
             # Non-dict, non-string content
             converted_blocks.append({"type": "non_standard", "value": item})
 
-    # Handle grounding metadata from generation_info if present
-    generation_info = getattr(message, "generation_info", {})
-    grounding_metadata = generation_info.get("grounding_metadata")
-
+    grounding_metadata = message.response_metadata.get("grounding_metadata")
     if grounding_metadata:
         citations = translate_grounding_metadata_to_citations(grounding_metadata)
 
-        # Add citations to text blocks
         for block in converted_blocks:
             if block["type"] == "text" and citations:
+                # Add citations to text blocks (only the first text block)
                 block["annotations"] = cast("list[types.Annotation]", citations)
                 break
 
