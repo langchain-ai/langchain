@@ -246,7 +246,7 @@ def create_agent(  # noqa: PLR0915
         if isinstance(response_format, ProviderStrategy):
             if not output.tool_calls and native_output_binding:
                 structured_response = native_output_binding.parse(output)
-                return {"messages": [output], "response": structured_response}
+                return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
 
         # Handle structured output with tools strategy
@@ -303,7 +303,7 @@ def create_agent(  # noqa: PLR0915
                                 name=tool_call["name"],
                             ),
                         ],
-                        "response": structured_response,
+                        "structured_response": structured_response,
                     }
                 except Exception as exc:  # noqa: BLE001
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
