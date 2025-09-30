@@ -37,7 +37,7 @@ def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -45,10 +45,10 @@ def init_chat_model(
 
 @overload
 def init_chat_model(
-    model: Literal[None] = None,
+    model: None = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -93,41 +93,41 @@ def init_chat_model(
             above). Supported model_provider values and the corresponding integration
             package are:
 
-            - ``openai``              -> ``langchain-openai``
-            - ``anthropic``           -> ``langchain-anthropic``
-            - ``azure_openai``        -> ``langchain-openai``
-            - ``azure_ai``            -> ``langchain-azure-ai``
-            - ``google_vertexai``     -> ``langchain-google-vertexai``
-            - ``google_genai``        -> ``langchain-google-genai``
-            - ``bedrock``             -> ``langchain-aws``
-            - ``bedrock_converse``    -> ``langchain-aws``
-            - ``cohere``              -> ``langchain-cohere``
-            - ``fireworks``           -> ``langchain-fireworks``
-            - ``together``            -> ``langchain-together``
-            - ``mistralai``           -> ``langchain-mistralai``
-            - ``huggingface``         -> ``langchain-huggingface``
-            - ``groq``                -> ``langchain-groq``
-            - ``ollama``              -> ``langchain-ollama``
-            - ``google_anthropic_vertex``    -> ``langchain-google-vertexai``
-            - ``deepseek``            -> ``langchain-deepseek``
-            - ``ibm``                 -> ``langchain-ibm``
-            - ``nvidia``              -> ``langchain-nvidia-ai-endpoints``
-            - ``xai``                 -> ``langchain-xai``
-            - ``perplexity``          -> ``langchain-perplexity``
+            - ``openai``              -> ``langchain-openai``
+            - ``anthropic``           -> ``langchain-anthropic``
+            - ``azure_openai``        -> ``langchain-openai``
+            - ``azure_ai``            -> ``langchain-azure-ai``
+            - ``google_vertexai``     -> ``langchain-google-vertexai``
+            - ``google_genai``        -> ``langchain-google-genai``
+            - ``bedrock``             -> ``langchain-aws``
+            - ``bedrock_converse``    -> ``langchain-aws``
+            - ``cohere``              -> ``langchain-cohere``
+            - ``fireworks``           -> ``langchain-fireworks``
+            - ``together``            -> ``langchain-together``
+            - ``mistralai``           -> ``langchain-mistralai``
+            - ``huggingface``         -> ``langchain-huggingface``
+            - ``groq``                -> ``langchain-groq``
+            - ``ollama``              -> ``langchain-ollama``
+            - ``google_anthropic_vertex``    -> ``langchain-google-vertexai``
+            - ``deepseek``            -> ``langchain-deepseek``
+            - ``ibm``                 -> ``langchain-ibm``
+            - ``nvidia``              -> ``langchain-nvidia-ai-endpoints``
+            - ``xai``                 -> ``langchain-xai``
+            - ``perplexity``          -> ``langchain-perplexity``
 
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
             - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
-            - ``claude...``                       -> ``anthropic``
-            - ``amazon...``                       -> ``bedrock``
-            - ``gemini...``                       -> ``google_vertexai``
-            - ``command...``                      -> ``cohere``
-            - ``accounts/fireworks...``           -> ``fireworks``
-            - ``mistral...``                      -> ``mistralai``
-            - ``deepseek...``                     -> ``deepseek``
-            - ``grok...``                         -> ``xai``
-            - ``sonar...``                        -> ``perplexity``
+            - ``claude...``               -> ``anthropic``
+            - ``amazon...``               -> ``bedrock``
+            - ``gemini...``               -> ``google_vertexai``
+            - ``command...``              -> ``cohere``
+            - ``accounts/fireworks...``   -> ``fireworks``
+            - ``mistral...``              -> ``mistralai``
+            - ``deepseek...``             -> ``deepseek``
+            - ``grok...``                 -> ``xai``
+            - ``sonar...``                -> ``perplexity``
         configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
@@ -273,7 +273,10 @@ def init_chat_model(
             )
 
             configurable_model_with_tools = configurable_model.bind_tools(
-                [GetWeather, GetPopulation]
+                [
+                    GetWeather,
+                    GetPopulation,
+                ]
             )
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
@@ -516,7 +519,7 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
+    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
     if model_name.startswith("claude"):
         return "anthropic"
@@ -977,3 +980,4 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
+
