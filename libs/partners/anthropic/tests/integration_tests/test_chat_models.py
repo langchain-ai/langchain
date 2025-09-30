@@ -1788,6 +1788,7 @@ def test_context_management() -> None:
                 }
             ]
         },
+        max_tokens=1024,  # type: ignore[call-arg]
     )
     llm_with_tools = llm.bind_tools(
         [{"type": "web_search_20250305", "name": "web_search"}]
