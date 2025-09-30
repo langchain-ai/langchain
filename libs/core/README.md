@@ -39,21 +39,10 @@ For more check out the [`Runnable` docs](https://python.langchain.com/docs/conce
 
 ## 📕 Releases & Versioning
 
-As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything in `langchain_core.beta`. The reason for `langchain_core.beta` is that given the rate of change of the field, being able to move quickly is still a priority, and this module is our attempt to do so.
-
-Minor version increases will occur for:
-
-- Breaking changes for any public interfaces NOT in `langchain_core.beta`
-
-Patch version increases will occur for:
-
-- Bug fixes
-- New features
-- Any changes to private interfaces
-- Any changes to `langchain_core.beta`
+See our [Releases](https://docs.langchain.com/oss/python/release-policy) and [Versioning Policy](https://docs.langchain.com/oss/python/versioning).
 
 ## 💁 Contributing
 
 As an open-source project in a rapidly developing field, we are extremely open to contributions, whether it be in the form of a new feature, improved infrastructure, or better documentation.
 
-For detailed information on how to contribute, see the [Contributing Guide](https://python.langchain.com/docs/contributing/).
+For detailed information on how to contribute, see the [Contributing Guide](https://docs.langchain.com/oss/python/contributing).
