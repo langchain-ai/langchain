@@ -331,7 +331,6 @@ def create_agent(  # noqa: PLR0915
         # Get actual tool objects from tool names
         tools_by_name = {t.name: t for t in default_tools}
 
-        # Check for unknown tool names
         unknown_tools = [name for name in request.tools if name not in tools_by_name]
         if unknown_tools:
             available_tools = sorted(tools_by_name.keys())
@@ -348,23 +347,23 @@ def create_agent(  # noqa: PLR0915
             )
             raise ValueError(msg)
 
-        actual_tools = [tools_by_name[name] for name in request.tools]
+        requested_tools = [tools_by_name[name] for name in request.tools]
 
         if isinstance(response_format, ProviderStrategy):
             # Use native structured output
             kwargs = response_format.to_model_kwargs()
             return request.model.bind_tools(
-                actual_tools, strict=True, **kwargs, **request.model_settings
+                requested_tools, strict=True, **kwargs, **request.model_settings
             )
         if isinstance(response_format, ToolStrategy):
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return request.model.bind_tools(
-                actual_tools, tool_choice=tool_choice, **request.model_settings
+                requested_tools, tool_choice=tool_choice, **request.model_settings
             )
         # Standard model binding
-        if actual_tools:
+        if requested_tools:
             return request.model.bind_tools(
-                actual_tools, tool_choice=request.tool_choice, **request.model_settings
+                requested_tools, tool_choice=request.tool_choice, **request.model_settings
             )
         return request.model.bind(**request.model_settings)
 
