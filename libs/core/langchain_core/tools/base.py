@@ -82,6 +82,7 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "search_result",
     "custom_tool_call_output",
     "document",
+    "file",
 )
 
 
