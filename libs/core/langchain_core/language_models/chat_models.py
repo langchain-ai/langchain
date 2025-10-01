@@ -6,22 +6,19 @@ import asyncio
 import inspect
 import json
 import typing
-import warnings
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator, Iterator, Sequence
 from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
-from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import (
     AsyncCallbackManager,
     AsyncCallbackManagerForLLMRun,
-    BaseCallbackManager,
     CallbackManager,
     CallbackManagerForLLMRun,
     Callbacks,
@@ -42,7 +39,6 @@ from langchain_core.messages import (
     AIMessageChunk,
     AnyMessage,
     BaseMessage,
-    HumanMessage,
     convert_to_messages,
     is_data_content_block,
     message_chunk_to_message,
@@ -319,16 +315,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 
     """  # noqa: E501
 
-    callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    )(
-        Field(
-            default=None,
-            exclude=True,
-            description="Callback manager to add to the run trace.",
-        )
-    )
-
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     "An optional rate limiter to use for limiting the number of requests."
 
@@ -372,27 +358,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     .. versionadded:: 1.0
 
     """
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        """Emit deprecation warning if ``callback_manager`` is used.
-
-        Args:
-            values (Dict): Values to validate.
-
-        Returns:
-            Dict: Validated values.
-
-        """
-        if values.get("callback_manager") is not None:
-            warnings.warn(
-                "callback_manager is deprecated. Please use callbacks instead.",
-                DeprecationWarning,
-                stacklevel=5,
-            )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -1455,40 +1420,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 break
             yield item  # type: ignore[misc]
 
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    def __call__(
-        self,
-        messages: list[BaseMessage],
-        stop: Optional[list[str]] = None,
-        callbacks: Callbacks = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        """Call the model.
-
-        Args:
-            messages: List of messages.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            callbacks: Callbacks to pass through. Used for executing additional
-                functionality, such as logging or streaming, throughout generation.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Raises:
-            ValueError: If the generation is not a chat generation.
-
-        Returns:
-            The model output message.
-
-        """
-        generation = self.generate(
-            [messages], stop=stop, callbacks=callbacks, **kwargs
-        ).generations[0][0]
-        if isinstance(generation, ChatGeneration):
-            return generation.message
-        msg = "Unexpected generation type"
-        raise ValueError(msg)
-
     async def _call_async(
         self,
         messages: list[BaseMessage],
@@ -1504,91 +1435,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
             return generation.message
         msg = "Unexpected generation type"
         raise ValueError(msg)
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    def call_as_llm(
-        self, message: str, stop: Optional[list[str]] = None, **kwargs: Any
-    ) -> str:
-        """Call the model.
-
-        Args:
-            message: The input message.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Returns:
-            The model output string.
-
-        """
-        return self.predict(message, stop=stop, **kwargs)
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @override
-    def predict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        """Predict the next message.
-
-        Args:
-            text: The input message.
-            stop: Stop words to use when generating. Model output is cut off at the
-                first occurrence of any of these substrings.
-            **kwargs: Arbitrary additional keyword arguments. These are usually passed
-                to the model provider API call.
-
-        Raises:
-            ValueError: If the output is not a string.
-
-        Returns:
-            The predicted output string.
-
-        """
-        stop_ = None if stop is None else list(stop)
-        result = self([HumanMessage(content=text)], stop=stop_, **kwargs)
-        if isinstance(result.content, str):
-            return result.content
-        msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)
-
-    @deprecated("0.1.7", alternative="invoke", removal="1.0")
-    @override
-    def predict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        stop_ = None if stop is None else list(stop)
-        return self(messages, stop=stop_, **kwargs)
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @override
-    async def apredict(
-        self, text: str, *, stop: Optional[Sequence[str]] = None, **kwargs: Any
-    ) -> str:
-        stop_ = None if stop is None else list(stop)
-        result = await self._call_async(
-            [HumanMessage(content=text)], stop=stop_, **kwargs
-        )
-        if isinstance(result.content, str):
-            return result.content
-        msg = "Cannot use predict when output is not a string."
-        raise ValueError(msg)
-
-    @deprecated("0.1.7", alternative="ainvoke", removal="1.0")
-    @override
-    async def apredict_messages(
-        self,
-        messages: list[BaseMessage],
-        *,
-        stop: Optional[Sequence[str]] = None,
-        **kwargs: Any,
-    ) -> BaseMessage:
-        stop_ = None if stop is None else list(stop)
-        return await self._call_async(messages, stop=stop_, **kwargs)
 
     @property
     @abstractmethod

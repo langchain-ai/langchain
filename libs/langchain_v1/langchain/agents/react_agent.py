@@ -523,7 +523,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
     def _resolve_model(self, state: StateT, runtime: Runtime[ContextT]) -> LanguageModelLike:
         """Resolve the model to use, handling both static and dynamic models."""
         if self._is_dynamic_model:
-            dynamic_model = self.model(state, runtime)  # type: ignore[operator, arg-type]
+            dynamic_model = self.model(state, runtime)  # type: ignore[operator]
             return self._apply_native_output_binding(dynamic_model)  # type: ignore[arg-type]
         return self._static_model  # type: ignore[return-value]
 
@@ -536,7 +536,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
             )
             return await dynamic_model(state, runtime)
         if self._is_dynamic_model:
-            dynamic_model = self.model(state, runtime)  # type: ignore[arg-type, assignment, operator]
+            dynamic_model = self.model(state, runtime)  # type: ignore[assignment, operator]
             return self._apply_native_output_binding(dynamic_model)  # type: ignore[arg-type]
         return self._static_model  # type: ignore[return-value]
 

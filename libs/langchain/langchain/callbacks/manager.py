@@ -28,7 +28,6 @@ from langchain_core.callbacks.manager import (
 )
 from langchain_core.tracers.context import (
     collect_runs,
-    tracing_enabled,
     tracing_v2_enabled,
 )
 from langchain_core.utils.env import env_var_is_set
@@ -83,7 +82,6 @@ __all__ = [
     "get_openai_callback",
     "handle_event",
     "trace_as_chain_group",
-    "tracing_enabled",
     "tracing_v2_enabled",
     "wandb_tracing_enabled",
 ]

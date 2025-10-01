@@ -123,13 +123,13 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         if with_functions:
-            predicted_message = self.llm.predict_messages(
+            predicted_message = self.llm.invoke(
                 messages,
                 functions=self.functions,
                 callbacks=callbacks,
             )
         else:
-            predicted_message = self.llm.predict_messages(
+            predicted_message = self.llm.invoke(
                 messages,
                 callbacks=callbacks,
             )
@@ -161,7 +161,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
-        predicted_message = await self.llm.apredict_messages(
+        predicted_message = await self.llm.ainvoke(
             messages,
             functions=self.functions,
             callbacks=callbacks,
