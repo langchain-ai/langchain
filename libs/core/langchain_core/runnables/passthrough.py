@@ -111,6 +111,7 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
         chain.invoke("hello")  # {'original': 'completion', 'parsed': 'noitelpmoc'}
         ```
+
     In some cases, it may be useful to pass the input through while adding some
     keys to the output. In this case, you can use the `assign` method:
 

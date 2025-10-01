@@ -352,6 +352,7 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
         chain.invoke({"x": 0})
         chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
         ```
+
     Here is an example of using a RunnableConfigurableFields with HubRunnables:
 
         ```python
@@ -511,6 +512,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
         # Runnable Sequence.
         chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
         ```
+
     Equivalently, you can initialize RunnableConfigurableAlternatives directly
     and use in LCEL in the same way:
 

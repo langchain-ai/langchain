@@ -90,6 +90,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             exponential_jitter_params={"initial": 2},
         )
         ```
+
     This logic can be used to retry any Runnable, including a chain of Runnables,
     but in general it's best practice to keep the scope of the retry as small as
     possible. For example, if you have a chain of Runnables, you should only retry
