@@ -18,7 +18,8 @@ class BasetenEmbeddings(BaseModel, Embeddings):
        intelligent request sizing.
 
        Setup:
-           Install ``langchain-baseten`` and set environment variable ``BASETEN_API_KEY``.
+            Install ``langchain-baseten`` and set environment variable
+            ``BASETEN_API_KEY``.
 
            .. code-block:: bash
 
@@ -30,13 +31,16 @@ class BasetenEmbeddings(BaseModel, Embeddings):
                Name of Baseten model to use.
            model_url: str
                The specific model URL for your deployed embedding model.
-               Compatible with /sync, /sync/v1, or /predict endpoints with built-in error correction.
+                Compatible with /sync, /sync/v1, or /predict endpoints with
+                built-in error correction.
 
        Key init args — client params:
            baseten_api_key: SecretStr
-               Baseten API key. If not passed in will be read from env var ``BASETEN_API_KEY``.
+                Baseten API key. If not passed in will be read from env var
+                ``BASETEN_API_KEY``.
 
-       See full list of supported init args and their descriptions in the params section.
+        See full list of supported init args and their descriptions in the
+        params section.
 
        Instantiate:
            .. code-block:: python
@@ -135,14 +139,17 @@ class BasetenEmbeddings(BaseModel, Embeddings):
                Dogs are loyal companions
 
        Performance features:
-           The Performance Client provides several optimizations and built-in error correction:
+            The Performance Client provides several optimizations and built-in
+            error correction:
 
            - **Automatic batching**: Processes texts in optimal batch sizes (32)
            - **Concurrent requests**: Up to 128 concurrent requests for large datasets
-           - **Smart request sizing**: Limits requests to 8000 characters for optimal performance
+            - **Smart request sizing**: Limits requests to 8000 characters for
+              optimal performance
            - **Error handling**: Robust retry logic and error management
            - **URL normalization**: Handles various endpoint URL formats automatically
-           - **Built-in error correction**: Automatically converts between /sync, /sync/v1, and /predict endpoints
+            - **Built-in error correction**: Automatically converts between /sync,
+              /sync/v1, and /predict endpoints
            - **Endpoint compatibility**: Works with any Baseten model endpoint format
 
     Note:
@@ -156,7 +163,8 @@ class BasetenEmbeddings(BaseModel, Embeddings):
            - ``https://model-<id>.api.baseten.co/environments/production/sync/v1``
            - ``https://model-<id>.api.baseten.co/environments/production/predict``
 
-           The integration automatically normalizes URLs and handles endpoint differences,
+            The integration automatically normalizes URLs and handles endpoint
+            differences,
            so you can use any of these formats and it will work correctly.
     """
 
@@ -172,7 +180,8 @@ class BasetenEmbeddings(BaseModel, Embeddings):
             ),
         ),
     )
-    """Baseten API key. Automatically read from env variable ``BASETEN_API_KEY`` if not provided."""
+    """Baseten API key. Automatically read from env variable
+    ``BASETEN_API_KEY`` if not provided."""
 
     model: str = Field(default="embeddings")
     """Model name to use for embeddings."""
@@ -206,13 +215,15 @@ class BasetenEmbeddings(BaseModel, Embeddings):
             msg = (
                 "model_url is required for Baseten embeddings. "
                 "Please provide the endpoint URL from your Baseten dashboard. "
-                "Supports /sync, /sync/v1, or /predict endpoints with automatic error correction."
+                "Supports /sync, /sync/v1, or /predict endpoints with automatic "
+                "error correction."
             )
             raise ValueError(msg)
 
         # Normalize the URL for Performance Client
-        # Strip /v1 from URL if present to just end in /sync, as Performance Client handles this format
-        # Strip /predict from URL if present and replace with /sync, as Performance Client handles this format
+        # Strip /v1 from URL if present to just end in /sync, as Performance Client
+        # handles this format. Strip /predict from URL if present and replace with
+        # /sync, as Performance Client handles this format
         base_url = self.model_url
         if base_url.endswith("/predict"):
             base_url = base_url.replace("/predict", "/sync")

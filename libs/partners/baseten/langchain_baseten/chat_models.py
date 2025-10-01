@@ -222,7 +222,8 @@ class ChatBaseten(BaseChatModel):
 
     Key init args — client params:
         baseten_api_key: Optional[SecretStr]
-            Baseten API key. If not passed in will be read from env var ``BASETEN_API_KEY``.
+            Baseten API key. If not passed in will be read from env var
+            ``BASETEN_API_KEY``.
         baseten_api_base: Optional[str]
             Base URL path for API requests.
         request_timeout: Union[float, tuple[float, float], Any, None]
@@ -250,7 +251,8 @@ class ChatBaseten(BaseChatModel):
             messages = [
                 (
                     "system",
-                    "You are a helpful translator. Translate the user sentence to French.",
+                    "You are a helpful translator. Translate the user sentence to "
+                    "French.",
                 ),
                 ("human", "I love programming."),
             ]
@@ -380,7 +382,8 @@ class ChatBaseten(BaseChatModel):
 
             json_chat = chat.bind(response_format={"type": "json_object"})
             ai_msg = json_chat.invoke(
-                "Return a JSON object with key 'random_ints' and a value of 10 random ints in [0-99]"
+                "Return a JSON object with key 'random_ints' and a value of 10 "
+                "random ints in [0-99]"
             )
             ai_msg.content
 
@@ -466,7 +469,7 @@ class ChatBaseten(BaseChatModel):
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         try:
-            import openai
+            import openai  # noqa: F401
         except ImportError as e:
             msg = (
                 "Could not import openai python package. "
@@ -688,9 +691,7 @@ class ChatBaseten(BaseChatModel):
         self,
         tools: list[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         *,
-        tool_choice: Optional[
-            Union[dict, str, Literal["auto", "none", "required"], bool]
-        ] = None,
+        tool_choice: Optional[Union[dict, str, bool]] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -705,7 +706,8 @@ class ChatBaseten(BaseChatModel):
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 "auto" to automatically determine which function to call
-                with the option to not call any function, "required" to force the model to call a tool,
+                with the option to not call any function, "required" to force the
+                model to call a tool,
                 or a dict of the form:
                 {"type": "function", "function": {"name": "my_function"}}.
             **kwargs: Any additional parameters to pass to the
@@ -742,12 +744,16 @@ class ChatBaseten(BaseChatModel):
                 will be validated, whereas with a dict they will not be. If using a
                 Pydantic class then you may also pass additional arguments to the
                 Pydantic class constructor using the **kwargs parameter.
+            method: The method to use for structured output. Can be "function_calling",
+                "json_mode", or "json_schema".
             include_raw: If False then only the parsed structured output is returned. If
                 an error occurs during model output parsing it will be raised. If True
                 then both the raw model response (a BaseMessage) and the parsed output
                 will be returned. If an error occurs during output parsing it will be
                 caught and returned as well. The final output will always be a dict with
                 keys "raw", "parsed", and "parsing_error".
+            strict: Whether to use strict mode for structured output
+                (currently ignored).
 
         Returns:
             A Runnable that takes any ChatModel input and returns as output:
