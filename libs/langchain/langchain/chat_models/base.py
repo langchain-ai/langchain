@@ -38,7 +38,6 @@ def init_chat_model(
     *,
     model_provider: Optional[str] = None,
     configurable_fields: None = None,
-    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -47,10 +46,8 @@ def init_chat_model(
 @overload
 def init_chat_model(
     model: None = None,
-    model: None = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: None = None,
     configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
@@ -131,16 +128,6 @@ def init_chat_model(
             - ``deepseek...``                     -> ``deepseek``
             - ``grok...``                         -> ``xai``
             - ``sonar...``                        -> ``perplexity``
-            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
-            - ``claude...``               -> ``anthropic``
-            - ``amazon...``               -> ``bedrock``
-            - ``gemini...``               -> ``google_vertexai``
-            - ``command...``              -> ``cohere``
-            - ``accounts/fireworks...``   -> ``fireworks``
-            - ``mistral...``              -> ``mistralai``
-            - ``deepseek...``             -> ``deepseek``
-            - ``grok...``                 -> ``xai``
-            - ``sonar...``                -> ``perplexity``
         configurable_fields: Which model parameters are configurable:
 
             - None: No configurable fields.
@@ -286,10 +273,6 @@ def init_chat_model(
             )
 
             configurable_model_with_tools = configurable_model.bind_tools(
-                [
-                    GetWeather,
-                    GetPopulation,
-                ]
                 [
                     GetWeather,
                     GetPopulation,
@@ -536,7 +519,6 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
     if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
     if model_name.startswith("claude"):
@@ -998,4 +980,3 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         return self.__getattr__("with_structured_output")(schema, **kwargs)
-
