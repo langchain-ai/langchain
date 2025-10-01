@@ -163,16 +163,16 @@
       "destination": "https://python.langchain.com/v0.2/docs/integrations/retrievers/milvus_hybrid_search/"
     },
     {
-      "source": "/en/latest/modules/models/llms/integrations/:path(.*/?)*",
-      "destination": "/docs/integrations/providers/:path(.*/?)*"
+      "source": "/en/latest/modules/models/llms/integrations/:path*",
+      "destination": "/docs/integrations/providers/:path*"
     },
     {
-      "source": "/en/latest/modules/models/llms/integrations/anthropic_example.html(/?)",
+      "source": "/en/latest/modules/models/llms/integrations/anthropic_example.html",
       "destination": "/docs/integrations/providers/anthropic/"
     },
     {
-      "source": "/docs/modules/model_io/prompts/prompt_templates(/?)",
-      "destination": "/docs/concepts/prompt_templates(/?)"
+      "source": "/docs/modules/model_io/prompts/prompt_templates",
+      "destination": "/docs/concepts/prompt_templates"
     },
     {
       "source": "/docs/changelog/core/",
