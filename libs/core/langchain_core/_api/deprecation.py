@@ -363,19 +363,15 @@ def deprecated(
             _alternative
             and _alternative.rsplit(".", maxsplit=1)[-1].lower()
             == _alternative.rsplit(".", maxsplit=1)[-1]
-        ):
-            _alternative = f":meth:`~{_alternative}`"
-        elif _alternative:
-            _alternative = f":class:`~{_alternative}`"
+        ) or _alternative:
+            _alternative = f"`{_alternative}`"
 
         if (
             _alternative_import
             and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
             == _alternative_import.rsplit(".", maxsplit=1)[-1]
-        ):
-            _alternative_import = f":meth:`~{_alternative_import}`"
-        elif _alternative_import:
-            _alternative_import = f":class:`~{_alternative_import}`"
+        ) or _alternative_import:
+            _alternative_import = f"`{_alternative_import}`"
 
         components = [
             _message,

@@ -563,7 +563,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     If a parameter is disabled then it will not be used by default in any methods, e.g.
     in
-    :meth:`~langchain_openai.chat_models.azure.AzureChatOpenAI.with_structured_output`.
+    `langchain_openai.chat_models.azure.AzureChatOpenAI.with_structured_output`.
     However this does not prevent a user from directly passed in the parameter during
     invocation.
 
@@ -826,7 +826,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -919,7 +919,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
             kwargs: Additional keyword args are passed through to the model.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.

@@ -217,7 +217,7 @@ class ChatModelTests(BaseStandardTests):
         """(bool) whether to enable VCR tests for the chat model.
 
         !!! important
-            See ``enable_vcr_tests`` dropdown :class:`above <ChatModelTests>` for more
+            See ``enable_vcr_tests`` dropdown `above <ChatModelTests>` for more
             information.
 
         """

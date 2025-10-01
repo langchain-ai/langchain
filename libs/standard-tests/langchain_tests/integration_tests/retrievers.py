@@ -172,7 +172,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         If ainvoked with the example params, the retriever should return a list of
         Documents.
 
-        See :meth:`test_invoke_returns_documents` for more information on
+        See `test_invoke_returns_documents` for more information on
         troubleshooting.
         """
         result = await retriever.ainvoke(self.retriever_query_example)

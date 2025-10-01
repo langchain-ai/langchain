@@ -702,7 +702,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
             If this test fails, you should make sure your ``_generate`` method
             does not raise any exceptions, and that it returns a valid
-            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+            `langchain_core.outputs.chat_result.ChatResult` like so:
 
             .. code-block:: python
 
@@ -729,13 +729,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``ainvoke`` has a default implementation that calls ``invoke`` in an
             async context.
 
             If that test passes but not this one, you should make sure your _agenerate
             method does not raise any exceptions, and that it returns a valid
-            :class:`~langchain_core.outputs.chat_result.ChatResult` like so:
+            `langchain_core.outputs.chat_result.ChatResult` like so:
 
             .. code-block:: python
 
@@ -762,13 +762,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`.
             because ``stream`` has a default implementation that calls ``invoke`` and
             yields the result as a single chunk.
 
             If that test passes but not this one, you should make sure your ``_stream``
             method does not raise any exceptions, and that it yields valid
-            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            `langchain_core.outputs.chat_generation.ChatGenerationChunk`
             objects like so:
 
             .. code-block:: python
@@ -794,16 +794,16 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_stream`.
             and
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`.
             because ``astream`` has a default implementation that calls ``_stream`` in
             an async context if it is implemented, or ``ainvoke`` and yields the result
             as a single chunk if not.
 
             If those tests pass but not this one, you should make sure your ``_astream``
             method does not raise any exceptions, and that it yields valid
-            :class:`~langchain_core.outputs.chat_generation.ChatGenerationChunk`
+            `langchain_core.outputs.chat_generation.ChatGenerationChunk`
             objects like so:
 
             .. code-block:: python
@@ -828,13 +828,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because ``batch`` has a default implementation that calls ``invoke`` for
             each message in the batch.
 
             If that test passes but not this one, you should make sure your ``batch``
             method does not raise any exceptions, and that it returns a list of valid
-            :class:`~langchain_core.messages.AIMessage` objects.
+            `langchain_core.messages.AIMessage` objects.
 
         """
         batch_results = model.batch(["Hello", "Hey"])
@@ -856,15 +856,15 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_batch`
             and
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_ainvoke`
             because ``abatch`` has a default implementation that calls ``ainvoke`` for
             each message in the batch.
 
             If those tests pass but not this one, you should make sure your ``abatch``
             method does not raise any exceptions, and that it returns a list of valid
-            :class:`~langchain_core.messages.AIMessage` objects.
+            `langchain_core.messages.AIMessage` objects.
 
         """
         batch_results = await model.abatch(["Hello", "Hey"])
@@ -887,13 +887,13 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             If that test passes but not this one, you should verify that:
             1. Your model correctly processes the message history
             2. The model maintains appropriate context from previous messages
-            3. The response is a valid :class:`~langchain_core.messages.AIMessage`
+            3. The response is a valid `langchain_core.messages.AIMessage`
 
         """
         messages = [
@@ -918,17 +918,17 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             First, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_invoke`
             because this test also uses ``model.invoke()``.
 
             Second, debug
-            :meth:`~langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
+            `langchain_tests.integration_tests.chat_models.ChatModelIntegrationTests.test_conversation`
             because this test is the "basic case" without double messages.
 
             If that test passes those but not this one, you should verify that:
             1. Your model API can handle double messages, or the integration should
                merge messages before sending them to the API.
-            2. The response is a valid :class:`~langchain_core.messages.AIMessage`
+            2. The response is a valid `langchain_core.messages.AIMessage`
 
         """
         messages = [
@@ -1003,7 +1003,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             If this test fails, first verify that your model returns
-            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            `langchain_core.messages.ai.UsageMetadata` dicts
             attached to the returned AIMessage object in ``_generate``:
 
             .. code-block:: python
@@ -1177,7 +1177,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         ??? note "Troubleshooting"
 
             If this test fails, first verify that your model yields
-            :class:`~langchain_core.messages.ai.UsageMetadata` dicts
+            `langchain_core.messages.ai.UsageMetadata` dicts
             attached to the returned AIMessage object in ``_stream``
             that sum up to the total usage metadata.
 
@@ -2962,7 +2962,7 @@ class ChatModelIntegrationTests(ChatModelTests):
     ) -> None:
         """Test that streaming does not introduce undue overhead.
 
-        See ``enable_vcr_tests`` dropdown :class:`above <ChatModelIntegrationTests>`
+        See ``enable_vcr_tests`` dropdown `above <ChatModelIntegrationTests>`
         for more information.
 
         ??? note "Configuration"
@@ -2979,7 +2979,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             !!! important
                 VCR will by default record authentication headers and other sensitive
                 information in cassettes. See ``enable_vcr_tests`` dropdown
-                :class:`above <ChatModelIntegrationTests>` for how to configure what
+                `above <ChatModelIntegrationTests>` for how to configure what
                 information is recorded in cassettes.
 
         """

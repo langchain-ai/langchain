@@ -1925,7 +1925,7 @@ class ChatAnthropic(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports Anthropic format tool schemas and any tool definition handled
-                by :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`.
+                by `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call. Options are:
 
                 - name of the tool as a string or as dict ``{"type": "tool", "name": "<<tool_name>>"}``: calls corresponding tool;
@@ -1936,7 +1936,7 @@ class ChatAnthropic(BaseChatModel):
 
                 !!! version-added "Added in version 0.3.2"
             kwargs: Any additional parameters are passed directly to
-                :meth:`~langchain_anthropic.chat_models.ChatAnthropic.bind`.
+                `langchain_anthropic.chat_models.ChatAnthropic.bind`.
 
         Example:
 
@@ -2207,7 +2207,7 @@ class ChatAnthropic(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`~langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
             include_raw:
@@ -2220,7 +2220,7 @@ class ChatAnthropic(BaseChatModel):
             kwargs: Additional keyword arguments are ignored.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`~langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is ``False`` and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
