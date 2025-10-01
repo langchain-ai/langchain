@@ -52,41 +52,40 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
 
     Example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.chat_models.openai import ChatOpenAI
+        from langchain_core.chat_models.anthropic import ChatAnthropic
 
-            from langchain_core.chat_models.openai import ChatOpenAI
-            from langchain_core.chat_models.anthropic import ChatAnthropic
+        model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
+            [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        )
+        # Will usually use ChatAnthropic, but fallback to ChatOpenAI
+        # if ChatAnthropic fails.
+        model.invoke("hello")
 
-            model = ChatAnthropic(model="claude-3-haiku-20240307").with_fallbacks(
-                [ChatOpenAI(model="gpt-3.5-turbo-0125")]
+        # And you can also use fallbacks at the level of a chain.
+        # Here if both LLM providers fail, we'll fallback to a good hardcoded
+        # response.
+
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.output_parser import StrOutputParser
+        from langchain_core.runnables import RunnableLambda
+
+
+        def when_all_is_lost(inputs):
+            return (
+                "Looks like our LLM providers are down. "
+                "Here's a nice 🦜️ emoji for you instead."
             )
-            # Will usually use ChatAnthropic, but fallback to ChatOpenAI
-            # if ChatAnthropic fails.
-            model.invoke("hello")
-
-            # And you can also use fallbacks at the level of a chain.
-            # Here if both LLM providers fail, we'll fallback to a good hardcoded
-            # response.
-
-            from langchain_core.prompts import PromptTemplate
-            from langchain_core.output_parser import StrOutputParser
-            from langchain_core.runnables import RunnableLambda
 
 
-            def when_all_is_lost(inputs):
-                return (
-                    "Looks like our LLM providers are down. "
-                    "Here's a nice 🦜️ emoji for you instead."
-                )
+        chain_with_fallback = (
+            PromptTemplate.from_template("Tell me a joke about {topic}")
+            | model
+            | StrOutputParser()
+        ).with_fallbacks([RunnableLambda(when_all_is_lost)])
 
-
-            chain_with_fallback = (
-                PromptTemplate.from_template("Tell me a joke about {topic}")
-                | model
-                | StrOutputParser()
-            ).with_fallbacks([RunnableLambda(when_all_is_lost)])
-
-    """
+        ```"""
 
     runnable: Runnable[Input, Output]
     """The Runnable to run first."""
@@ -595,28 +594,27 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             self.fallbacks is replaced with getattr(x, name).
 
         Example:
-            .. code-block:: python
+            ```python
+            from langchain_openai import ChatOpenAI
+            from langchain_anthropic import ChatAnthropic
 
-                from langchain_openai import ChatOpenAI
-                from langchain_anthropic import ChatAnthropic
+            gpt_4o = ChatOpenAI(model="gpt-4o")
+            claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
+            llm = gpt_4o.with_fallbacks([claude_3_sonnet])
 
-                gpt_4o = ChatOpenAI(model="gpt-4o")
-                claude_3_sonnet = ChatAnthropic(model="claude-3-7-sonnet-20250219")
-                llm = gpt_4o.with_fallbacks([claude_3_sonnet])
+            llm.model_name
+            # -> "gpt-4o"
 
-                llm.model_name
-                # -> "gpt-4o"
+            # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
+            # Equivalent to:
+            # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
+            llm.bind_tools([...])
+            # -> RunnableWithFallbacks(
+                runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
+                fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
+            )
 
-                # .bind_tools() is called on both ChatOpenAI and ChatAnthropic
-                # Equivalent to:
-                # gpt_4o.bind_tools([...]).with_fallbacks([claude_3_sonnet.bind_tools([...])])
-                llm.bind_tools([...])
-                # -> RunnableWithFallbacks(
-                    runnable=RunnableBinding(bound=ChatOpenAI(...), kwargs={"tools": [...]}),
-                    fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
-                )
-
-        """  # noqa: E501
+            ```"""  # noqa: E501
         attr = getattr(self.runnable, name)
         if _returns_runnable(attr):
 

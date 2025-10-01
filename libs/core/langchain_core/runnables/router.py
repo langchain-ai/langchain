@@ -53,18 +53,17 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
     Example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables.router import RouterRunnable
+        from langchain_core.runnables import RunnableLambda
 
-            from langchain_core.runnables.router import RouterRunnable
-            from langchain_core.runnables import RunnableLambda
+        add = RunnableLambda(func=lambda x: x + 1)
+        square = RunnableLambda(func=lambda x: x**2)
 
-            add = RunnableLambda(func=lambda x: x + 1)
-            square = RunnableLambda(func=lambda x: x**2)
+        router = RouterRunnable(runnables={"add": add, "square": square})
+        router.invoke({"key": "square", "input": 3})
 
-            router = RouterRunnable(runnables={"add": add, "square": square})
-            router.invoke({"key": "square", "input": 3})
-
-    """
+        ```"""
 
     runnables: Mapping[str, Runnable[Any, Output]]
 

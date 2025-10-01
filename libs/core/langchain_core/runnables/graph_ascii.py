@@ -256,19 +256,18 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
 
     Example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables.graph_ascii import draw_ascii
 
-            from langchain_core.runnables.graph_ascii import draw_ascii
-
-            vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
-            edges = [
-                (source, target, None, None)
-                for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
-            ]
+        vertices = {1: "1", 2: "2", 3: "3", 4: "4"}
+        edges = [
+            (source, target, None, None)
+            for source, target in [(1, 2), (2, 3), (2, 4), (1, 4)]
+        ]
 
 
-            print(draw_ascii(vertices, edges))
-
+        print(draw_ascii(vertices, edges))
+        ```
         .. code-block::
 
                  +---+

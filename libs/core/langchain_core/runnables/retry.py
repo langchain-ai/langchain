@@ -62,37 +62,36 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     Example:
     Here's an example that uses a RunnableLambda to raise an exception
 
-        .. code-block:: python
-
-            import time
-
-
-            def foo(input) -> None:
-                '''Fake function that raises an exception.'''
-                raise ValueError(f"Invoking foo failed. At time {time.time()}")
+        ```python
+        import time
 
 
-            runnable = RunnableLambda(foo)
+        def foo(input) -> None:
+            '''Fake function that raises an exception.'''
+            raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
-            runnable_with_retries = runnable.with_retry(
-                retry_if_exception_type=(ValueError,),  # Retry only on ValueError
-                wait_exponential_jitter=True,  # Add jitter to the exponential backoff
-                stop_after_attempt=2,  # Try twice
-                exponential_jitter_params={
-                    "initial": 2
-                },  # if desired, customize backoff
-            )
 
-            # The method invocation above is equivalent to the longer form below:
+        runnable = RunnableLambda(foo)
 
-            runnable_with_retries = RunnableRetry(
-                bound=runnable,
-                retry_exception_types=(ValueError,),
-                max_attempt_number=2,
-                wait_exponential_jitter=True,
-                exponential_jitter_params={"initial": 2},
-            )
+        runnable_with_retries = runnable.with_retry(
+            retry_if_exception_type=(ValueError,),  # Retry only on ValueError
+            wait_exponential_jitter=True,  # Add jitter to the exponential backoff
+            stop_after_attempt=2,  # Try twice
+            exponential_jitter_params={
+                "initial": 2
+            },  # if desired, customize backoff
+        )
 
+        # The method invocation above is equivalent to the longer form below:
+
+        runnable_with_retries = RunnableRetry(
+            bound=runnable,
+            retry_exception_types=(ValueError,),
+            max_attempt_number=2,
+            wait_exponential_jitter=True,
+            exponential_jitter_params={"initial": 2},
+        )
+        ```
     This logic can be used to retry any Runnable, including a chain of Runnables,
     but in general it's best practice to keep the scope of the retry as small as
     possible. For example, if you have a chain of Runnables, you should only retry
@@ -100,22 +99,21 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
 
     Example:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.chat_models import ChatOpenAI
+        from langchain_core.prompts import PromptTemplate
 
-            from langchain_core.chat_models import ChatOpenAI
-            from langchain_core.prompts import PromptTemplate
+        template = PromptTemplate.from_template("tell me a joke about {topic}.")
+        model = ChatOpenAI(temperature=0.5)
 
-            template = PromptTemplate.from_template("tell me a joke about {topic}.")
-            model = ChatOpenAI(temperature=0.5)
+        # Good
+        chain = template | model.with_retry()
 
-            # Good
-            chain = template | model.with_retry()
+        # Bad
+        chain = template | model
+        retryable_chain = chain.with_retry()
 
-            # Bad
-            chain = template | model
-            retryable_chain = chain.with_retry()
-
-    """
+        ```"""
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.

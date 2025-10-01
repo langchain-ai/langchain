@@ -87,55 +87,53 @@ class RunnablePassthrough(RunnableSerializable[Other, Other]):
 
     Examples:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables import (
+            RunnableLambda,
+            RunnableParallel,
+            RunnablePassthrough,
+        )
 
-            from langchain_core.runnables import (
-                RunnableLambda,
-                RunnableParallel,
-                RunnablePassthrough,
-            )
+        runnable = RunnableParallel(
+            origin=RunnablePassthrough(), modified=lambda x: x + 1
+        )
 
-            runnable = RunnableParallel(
-                origin=RunnablePassthrough(), modified=lambda x: x + 1
-            )
-
-            runnable.invoke(1)  # {'origin': 1, 'modified': 2}
-
-
-            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
-                return "completion"
+        runnable.invoke(1)  # {'origin': 1, 'modified': 2}
 
 
-            chain = RunnableLambda(fake_llm) | {
-                "original": RunnablePassthrough(),  # Original LLM output
-                "parsed": lambda text: text[::-1],  # Parsing logic
-            }
+        def fake_llm(prompt: str) -> str:  # Fake LLM for the example
+            return "completion"
 
-            chain.invoke("hello")  # {'original': 'completion', 'parsed': 'noitelpmoc'}
 
+        chain = RunnableLambda(fake_llm) | {
+            "original": RunnablePassthrough(),  # Original LLM output
+            "parsed": lambda text: text[::-1],  # Parsing logic
+        }
+
+        chain.invoke("hello")  # {'original': 'completion', 'parsed': 'noitelpmoc'}
+        ```
     In some cases, it may be useful to pass the input through while adding some
     keys to the output. In this case, you can use the `assign` method:
 
-        .. code-block:: python
-
-            from langchain_core.runnables import RunnablePassthrough
-
-
-            def fake_llm(prompt: str) -> str:  # Fake LLM for the example
-                return "completion"
+        ```python
+        from langchain_core.runnables import RunnablePassthrough
 
 
-            runnable = {
-                "llm1": fake_llm,
-                "llm2": fake_llm,
-            } | RunnablePassthrough.assign(
-                total_chars=lambda inputs: len(inputs["llm1"] + inputs["llm2"])
-            )
+        def fake_llm(prompt: str) -> str:  # Fake LLM for the example
+            return "completion"
 
-            runnable.invoke("hello")
-            # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
 
-    """
+        runnable = {
+            "llm1": fake_llm,
+            "llm2": fake_llm,
+        } | RunnablePassthrough.assign(
+            total_chars=lambda inputs: len(inputs["llm1"] + inputs["llm2"])
+        )
+
+        runnable.invoke("hello")
+        # {'llm1': 'completion', 'llm2': 'completion', 'total_chars': 20}
+
+        ```"""
 
     input_type: Optional[type[Other]] = None
 
@@ -376,37 +374,36 @@ class RunnableAssign(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     on the mapper's logic.
 
     Examples:
-        .. code-block:: python
-
-            # This is a RunnableAssign
-            from langchain_core.runnables.passthrough import (
-                RunnableAssign,
-                RunnableParallel,
-            )
-            from langchain_core.runnables.base import RunnableLambda
-
-
-            def add_ten(x: dict[str, int]) -> dict[str, int]:
-                return {"added": x["input"] + 10}
+        ```python
+        # This is a RunnableAssign
+        from langchain_core.runnables.passthrough import (
+            RunnableAssign,
+            RunnableParallel,
+        )
+        from langchain_core.runnables.base import RunnableLambda
 
 
-            mapper = RunnableParallel(
-                {
-                    "add_step": RunnableLambda(add_ten),
-                }
-            )
+        def add_ten(x: dict[str, int]) -> dict[str, int]:
+            return {"added": x["input"] + 10}
 
-            runnable_assign = RunnableAssign(mapper)
 
-            # Synchronous example
-            runnable_assign.invoke({"input": 5})
-            # returns {'input': 5, 'add_step': {'added': 15}}
+        mapper = RunnableParallel(
+            {
+                "add_step": RunnableLambda(add_ten),
+            }
+        )
 
-            # Asynchronous example
-            await runnable_assign.ainvoke({"input": 5})
-            # returns {'input': 5, 'add_step': {'added': 15}}
+        runnable_assign = RunnableAssign(mapper)
 
-    """
+        # Synchronous example
+        runnable_assign.invoke({"input": 5})
+        # returns {'input': 5, 'add_step': {'added': 15}}
+
+        # Asynchronous example
+        await runnable_assign.ainvoke({"input": 5})
+        # returns {'input': 5, 'add_step': {'added': 15}}
+
+        ```"""
 
     mapper: RunnableParallel
 
@@ -700,24 +697,23 @@ class RunnablePick(RunnableSerializable[dict[str, Any], dict[str, Any]]):
     the selected keys.
 
     Example:
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables.passthrough import RunnablePick
 
-            from langchain_core.runnables.passthrough import RunnablePick
+        input_data = {
+            "name": "John",
+            "age": 30,
+            "city": "New York",
+            "country": "USA",
+        }
 
-            input_data = {
-                "name": "John",
-                "age": 30,
-                "city": "New York",
-                "country": "USA",
-            }
+        runnable = RunnablePick(keys=["name", "age"])
 
-            runnable = RunnablePick(keys=["name", "age"])
+        output_data = runnable.invoke(input_data)
 
-            output_data = runnable.invoke(input_data)
+        print(output_data)  # Output: {'name': 'John', 'age': 30}
 
-            print(output_data)  # Output: {'name': 'John', 'age': 30}
-
-    """
+        ```"""
 
     keys: Union[str, list[str]]
 

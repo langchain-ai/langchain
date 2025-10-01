@@ -50,21 +50,20 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
     Examples:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables import RunnableBranch
 
-            from langchain_core.runnables import RunnableBranch
+        branch = RunnableBranch(
+            (lambda x: isinstance(x, str), lambda x: x.upper()),
+            (lambda x: isinstance(x, int), lambda x: x + 1),
+            (lambda x: isinstance(x, float), lambda x: x * 2),
+            lambda x: "goodbye",
+        )
 
-            branch = RunnableBranch(
-                (lambda x: isinstance(x, str), lambda x: x.upper()),
-                (lambda x: isinstance(x, int), lambda x: x + 1),
-                (lambda x: isinstance(x, float), lambda x: x * 2),
-                lambda x: "goodbye",
-            )
+        branch.invoke("hello")  # "HELLO"
+        branch.invoke(None)  # "goodbye"
 
-            branch.invoke("hello")  # "HELLO"
-            branch.invoke(None)  # "goodbye"
-
-    """
+        ```"""
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
     """A list of (condition, Runnable) pairs."""

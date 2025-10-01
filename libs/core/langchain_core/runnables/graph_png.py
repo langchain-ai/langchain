@@ -19,11 +19,10 @@ class PngDrawer:
 
     Example:
 
-        .. code-block:: python
-
-            drawer = PngDrawer()
-            drawer.draw(state_graph, "graph.png")
-    """
+        ```python
+        drawer = PngDrawer()
+        drawer.draw(state_graph, "graph.png")
+        ```"""
 
     def __init__(
         self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None

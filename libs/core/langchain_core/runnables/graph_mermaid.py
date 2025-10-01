@@ -77,8 +77,7 @@ def draw_mermaid(
 
             Example config:
 
-            .. code-block:: python
-
+            ```python
             {
                 "config": {
                     "theme": "neutral",
@@ -86,7 +85,7 @@ def draw_mermaid(
                     "themeVariables": { "primaryColor": "#e2e2e2"},
                 }
             }
-
+            ```
     Returns:
         str: Mermaid graph syntax.
 

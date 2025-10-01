@@ -47,46 +47,45 @@ class BaseStreamEvent(TypedDict):
 
     Example:
 
-        .. code-block:: python
-
-            from langchain_core.runnables import RunnableLambda
-
-
-            async def reverse(s: str) -> str:
-                return s[::-1]
+        ```python
+        from langchain_core.runnables import RunnableLambda
 
 
-            chain = RunnableLambda(func=reverse)
+        async def reverse(s: str) -> str:
+            return s[::-1]
 
-            events = [event async for event in chain.astream_events("hello")]
 
-            # will produce the following events
-            # (where some fields have been omitted for brevity):
-            [
-                {
-                    "data": {"input": "hello"},
-                    "event": "on_chain_start",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-                {
-                    "data": {"chunk": "olleh"},
-                    "event": "on_chain_stream",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-                {
-                    "data": {"output": "olleh"},
-                    "event": "on_chain_end",
-                    "metadata": {},
-                    "name": "reverse",
-                    "tags": [],
-                },
-            ]
+        chain = RunnableLambda(func=reverse)
 
-    """
+        events = [event async for event in chain.astream_events("hello")]
+
+        # will produce the following events
+        # (where some fields have been omitted for brevity):
+        [
+            {
+                "data": {"input": "hello"},
+                "event": "on_chain_start",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+            {
+                "data": {"chunk": "olleh"},
+                "event": "on_chain_stream",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+            {
+                "data": {"output": "olleh"},
+                "event": "on_chain_end",
+                "metadata": {},
+                "name": "reverse",
+                "tags": [],
+            },
+        ]
+
+        ```"""
 
     event: str
     """Event names are of the format: on_[runnable_type]_(start|stream|end).
