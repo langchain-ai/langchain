@@ -152,6 +152,8 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
         additional_kwargs: dict = {}
         if function_call := _dict.get("function_call"):
             additional_kwargs["function_call"] = dict(function_call)
+        if reasoning_content := _dict.get("reasoning_content"):
+            additional_kwargs["reasoning_content"] = _dict["reasoning_content"]
         tool_calls = []
         invalid_tool_calls = []
         if raw_tool_calls := _dict.get("tool_calls"):
