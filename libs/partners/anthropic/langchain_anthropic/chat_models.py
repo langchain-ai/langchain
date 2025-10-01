@@ -846,7 +846,7 @@ class ChatAnthropic(BaseChatModel):
 
             "After examining both images carefully, I can see that they are actually identical."
 
-        .. dropdown:: Files API
+        ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
             `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
@@ -909,7 +909,7 @@ class ChatAnthropic(BaseChatModel):
 
             "This appears to be a simple document..."
 
-        .. dropdown:: Files API
+        ??? note "Files API"
 
             You can also pass in files that are managed through Anthropic's
             `Files API <https://docs.anthropic.com/en/docs/build-with-claude/files>`__:
@@ -1128,7 +1128,7 @@ class ChatAnthropic(BaseChatModel):
                 cache_control={"type": "ephemeral"},
             )
 
-        .. dropdown:: Extended caching
+        ??? note "Extended caching"
 
             The cache lifetime is 5 minutes by default. If this is too short, you can
             apply one hour caching by setting ``ttl`` to ``'1h'``.
@@ -1274,7 +1274,7 @@ class ChatAnthropic(BaseChatModel):
         See LangChain `docs <https://python.langchain.com/docs/integrations/chat/anthropic/#built-in-tools>`__
         for more detail.
 
-        .. dropdown::  Web search
+        ??? note "Web search"
 
             .. code-block:: python
 
@@ -1291,7 +1291,7 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm_with_tools.invoke("How do I update a web app to TypeScript 5.5?")
 
-        .. dropdown::  Web fetch (beta)
+        ??? note "Web fetch (beta)"
 
             .. code-block:: python
 
@@ -1311,7 +1311,7 @@ class ChatAnthropic(BaseChatModel):
 
                 response = llm_with_tools.invoke("Please analyze the content at https://example.com/article")
 
-        .. dropdown::  Code execution
+        ??? note "Code execution"
 
             .. code-block:: python
 
@@ -1327,7 +1327,7 @@ class ChatAnthropic(BaseChatModel):
                     "Calculate the mean and standard deviation of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
                 )
 
-        .. dropdown::  Remote MCP
+        ??? note "Remote MCP"
 
             .. code-block:: python
 
@@ -1357,7 +1357,7 @@ class ChatAnthropic(BaseChatModel):
                     "spec (modelcontextprotocol/modelcontextprotocol) support?"
                 )
 
-        .. dropdown::  Text editor
+        ??? note "Text editor"
 
             .. code-block:: python
 
@@ -1383,7 +1383,7 @@ class ChatAnthropic(BaseChatModel):
                 'id': 'toolu_01VdNgt1YV7kGfj9LFLm6HyQ',
                 'type': 'tool_call'}]
 
-        .. dropdown::  Memory tool
+        ??? note "Memory tool"
 
             .. code-block:: python
 

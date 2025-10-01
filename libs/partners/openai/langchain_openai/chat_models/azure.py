@@ -881,7 +881,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
-                .. dropdown:: Example
+                ??? note "Example"
 
                     .. code-block:: python
 
@@ -949,7 +949,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         .. versionchanged:: 0.3.21
             Pass ``kwargs`` through to the model.
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
 
             Note, OpenAI has a number of restrictions on what types of schemas can be
             provided if ``strict`` = True. When using Pydantic, our model cannot
@@ -989,7 +989,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=False
+        ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -1024,7 +1024,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
             .. code-block:: python
 
@@ -1055,7 +1055,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False, strict=False
+        ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -1086,7 +1086,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=OpenAI function schema, method="json_schema", include_raw=False
+        ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1120,7 +1120,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 
@@ -1153,7 +1153,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+        ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 

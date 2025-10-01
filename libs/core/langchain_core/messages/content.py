@@ -38,7 +38,7 @@ to be included without breaking the standard structure.
     ``extras`` field, and that will become the new standard approach to adding
     provider-specific metadata.
 
-    .. dropdown::
+    ??? note
 
         **Example with PEP 728 provider-specific fields:**
 

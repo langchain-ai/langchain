@@ -68,7 +68,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 def test_k_constructor_param(self) -> None:
                     raise NotImplementedError
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever constructor does not accept a number
             of results parameter, or the retriever does not return the correct number
@@ -124,7 +124,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 def test_invoke_with_k_kwarg(self) -> None:
                     raise NotImplementedError
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever's invoke method does not accept a number
             of results parameter, or the retriever does not return the correct number
@@ -158,7 +158,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         If invoked with the example params, the retriever should return a list of
         Documents.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever's invoke method does not return a list of
             ``langchain_core.document.Document`` objects. Please confirm that your

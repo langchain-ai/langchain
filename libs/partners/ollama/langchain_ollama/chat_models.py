@@ -222,7 +222,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
-    .. dropdown:: Setup
+    ??? note "Setup"
         :open:
 
         Install ``langchain-ollama`` and download any models you want to use from ollama.
@@ -1177,7 +1177,7 @@ class ChatOllama(BaseChatModel):
 
             Updated default ``method`` to ``'json_schema'``.
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1207,7 +1207,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_schema'``, ``include_raw=True``
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
             .. code-block:: python
 
@@ -1235,7 +1235,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='function_calling'``, ``include_raw=False``
+        ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1268,7 +1268,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+        ??? note "Example: `schema=TypedDict` class, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1295,7 +1295,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: ``schema=OpenAI`` function schema, ``method='function_calling'``, ``include_raw=False``
+        ??? note "Example: `schema=OpenAI` function schema, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1325,7 +1325,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_mode'``, ``include_raw=True``
+        ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 

@@ -327,7 +327,7 @@ class ChatModelUnitTests(ChatModelTests):
     calling or multi-modality) by selectively overriding the following properties.
     Expand to see details:
 
-    .. dropdown:: has_tool_calling
+    ??? note "`has_tool_calling`"
 
         Boolean property indicating whether the chat model supports tool calling.
 
@@ -342,7 +342,7 @@ class ChatModelUnitTests(ChatModelTests):
             def has_tool_calling(self) -> bool:
                 return True
 
-    .. dropdown:: tool_choice_value
+    ??? note "`tool_choice_value`"
 
         Value to use for tool choice when used in tests.
 
@@ -361,7 +361,7 @@ class ChatModelUnitTests(ChatModelTests):
             def tool_choice_value(self) -> Optional[str]:
                 return "any"
 
-    .. dropdown:: has_tool_choice
+    ??? note "`has_tool_choice`"
 
         Boolean property indicating whether the chat model supports forcing tool
         calling via a ``tool_choice`` parameter.
@@ -381,7 +381,7 @@ class ChatModelUnitTests(ChatModelTests):
             def has_tool_choice(self) -> bool:
                 return False
 
-    .. dropdown:: has_structured_output
+    ??? note "`has_structured_output`"
 
         Boolean property indicating whether the chat model supports structured
         output.
@@ -400,7 +400,7 @@ class ChatModelUnitTests(ChatModelTests):
             def has_structured_output(self) -> bool:
                 return True
 
-    .. dropdown:: structured_output_kwargs
+    ??? note "`structured_output_kwargs`"
 
         Dict property that can be used to specify additional kwargs for
         ``with_structured_output``. Useful for testing different models.
@@ -413,7 +413,7 @@ class ChatModelUnitTests(ChatModelTests):
             def structured_output_kwargs(self) -> dict:
                 return {"method": "function_calling"}
 
-    .. dropdown:: supports_json_mode
+    ??? note "`supports_json_mode`"
 
         Boolean property indicating whether the chat model supports JSON mode in
         ``with_structured_output``.
@@ -428,7 +428,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_json_mode(self) -> bool:
                 return True
 
-    .. dropdown:: supports_image_inputs
+    ??? note "`supports_image_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
         Defaults to ``False``.
@@ -464,7 +464,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_image_inputs(self) -> bool:
                 return True
 
-    .. dropdown:: supports_image_urls
+    ??? note "`supports_image_urls`"
 
         Boolean property indicating whether the chat model supports image inputs from
         URLs. Defaults to ``False``.
@@ -490,7 +490,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_image_urls(self) -> bool:
                 return True
 
-    .. dropdown:: supports_pdf_inputs
+    ??? note "`supports_pdf_inputs`"
 
         Boolean property indicating whether the chat model supports PDF inputs.
         Defaults to ``False``.
@@ -517,7 +517,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_pdf_inputs(self) -> bool:
                 return True
 
-    .. dropdown:: supports_audio_inputs
+    ??? note "`supports_audio_inputs`"
 
         Boolean property indicating whether the chat model supports audio inputs.
         Defaults to ``False``.
@@ -544,12 +544,12 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_audio_inputs(self) -> bool:
                 return True
 
-    .. dropdown:: supports_video_inputs
+    ??? note "`supports_video_inputs`"
 
         Boolean property indicating whether the chat model supports image inputs.
         Defaults to ``False``. No current tests are written for this feature.
 
-    .. dropdown:: returns_usage_metadata
+    ??? note "`returns_usage_metadata`"
 
         Boolean property indicating whether the chat model returns usage metadata
         on invoke and streaming responses. Defaults to ``True``.
@@ -569,7 +569,7 @@ class ChatModelUnitTests(ChatModelTests):
         Models supporting ``usage_metadata`` should also return the name of the
         underlying model in the ``response_metadata`` of the ``AIMessage``.
 
-    .. dropdown:: supports_anthropic_inputs
+    ??? note "`supports_anthropic_inputs`"
 
         Boolean property indicating whether the chat model supports Anthropic-style
         inputs.
@@ -599,7 +599,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_anthropic_inputs(self) -> bool:
                 return False
 
-    .. dropdown:: supports_image_tool_message
+    ??? note "`supports_image_tool_message`"
 
         Boolean property indicating whether the chat model supports ``ToolMessage``s
         that include image content, e.g.,
@@ -647,7 +647,7 @@ class ChatModelUnitTests(ChatModelTests):
             def supports_image_tool_message(self) -> bool:
                 return False
 
-    .. dropdown:: supported_usage_metadata_details
+    ??? note "`supported_usage_metadata_details`"
 
         Property controlling what usage metadata details are emitted in both ``invoke``
         and ``stream``.
@@ -662,7 +662,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         Only needs to be overridden if these details are supplied.
 
-    .. dropdown:: enable_vcr_tests
+    ??? note "`enable_vcr_tests`"
 
         Property controlling whether to enable select tests that rely on
         `VCR <https://vcrpy.readthedocs.io/en/latest/>`_ caching of HTTP calls, such
@@ -724,7 +724,7 @@ class ChatModelUnitTests(ChatModelTests):
 
                     return config
 
-            .. dropdown:: Compressing cassettes
+            ??? note "Compressing cassettes"
 
                 ``langchain-tests`` includes a custom VCR serializer that compresses
                 cassettes using gzip. To use it, register the ``yaml.gz`` serializer
@@ -820,7 +820,7 @@ class ChatModelUnitTests(ChatModelTests):
         These tests can be enabled by overriding the ``init_from_env_params``
         property (see below):
 
-        .. dropdown:: init_from_env_params
+        ??? note "`init_from_env_params`"
 
             This property is used in unit tests to test initialization from
             environment variables. It should return a tuple of three dictionaries
@@ -872,7 +872,7 @@ class ChatModelUnitTests(ChatModelTests):
     def test_init(self) -> None:
         """Test model initialization. This should pass for all integrations.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that:
 
@@ -896,7 +896,7 @@ class ChatModelUnitTests(ChatModelTests):
         Relies on the ``init_from_env_params`` property. Test is skipped if that
         property is not set.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that ``init_from_env_params`` is specified
             correctly and that model parameters are properly set from environment
@@ -923,7 +923,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         This is for backward-compatibility purposes.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that the model can be initialized with a
             boolean ``streaming`` parameter.
@@ -949,7 +949,7 @@ class ChatModelUnitTests(ChatModelTests):
         into ``bind_tools``. Test is skipped if the ``has_tool_calling`` property
         on the test class is False.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that the model's ``bind_tools`` method
             properly handles Pydantic V2 models. ``langchain_core`` implements
@@ -992,7 +992,7 @@ class ChatModelUnitTests(ChatModelTests):
         Test is skipped if the ``has_structured_output`` property on the test class is
         False.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that the model's ``bind_tools`` method
             properly handles Pydantic V2 models. ``langchain_core`` implements
@@ -1017,7 +1017,7 @@ class ChatModelUnitTests(ChatModelTests):
 
         These are used for tracing purposes.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the model accommodates `standard parameters <https://python.langchain.com/docs/concepts/chat_models/#standard-parameters>`__.
 
@@ -1058,7 +1058,7 @@ class ChatModelUnitTests(ChatModelTests):
         Test is skipped if the ``is_lc_serializable`` property on the chat model class
         is not overwritten to return ``True``.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the ``init_from_env_params`` property is
             correctly set on the test class.

@@ -68,7 +68,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         Overriding the ``init_from_env_params`` property will enable additional tests
         for initialization from environment variables. See below for details.
 
-        .. dropdown:: init_from_env_params
+        ??? note "`init_from_env_params`"
 
             This property is used in unit tests to test initialization from
             environment variables. It should return a tuple of three dictionaries
@@ -100,7 +100,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
     def test_init(self) -> None:
         """Test model initialization.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that ``embedding_model_params`` is specified
             and the model can be initialized from those params.
@@ -125,7 +125,7 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         Relies on the ``init_from_env_params`` property.
         Test is skipped if that property is not set.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, ensure that ``init_from_env_params`` is specified
             correctly and that model parameters are properly set from environment

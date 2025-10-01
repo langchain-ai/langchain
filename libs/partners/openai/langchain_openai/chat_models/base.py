@@ -1791,7 +1791,7 @@ class BaseChatOpenAI(BaseChatModel):
                 If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
-                .. dropdown:: Example
+                ??? note "Example"
 
                     .. code-block:: python
 
@@ -2023,7 +2023,7 @@ class BaseChatOpenAI(BaseChatModel):
 class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
     r"""OpenAI chat model integration.
 
-    .. dropdown:: Setup
+    ??? note "Setup"
         :open:
 
         Install ``langchain-openai`` and set environment variable ``OPENAI_API_KEY``.
@@ -2033,7 +2033,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             pip install -U langchain-openai
             export OPENAI_API_KEY="your-api-key"
 
-    .. dropdown:: Key init args — completion params
+    ??? note "Key init args — completion params"
 
         model: str
             Name of OpenAI model to use.
@@ -2051,7 +2051,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions in the params section.
 
-    .. dropdown:: Key init args — client params
+    ??? note "Key init args — client params"
 
         timeout: Union[float, Tuple[float, float], Any, None]
             Timeout for requests.
@@ -2068,7 +2068,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See full list of supported init args and their descriptions in the params section.
 
-    .. dropdown:: Instantiate
+    ??? note "Instantiate"
 
         .. code-block:: python
 
@@ -2106,7 +2106,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
                 ChatOpenAI(...).invoke(..., frequency_penalty=0.2)
 
-    .. dropdown:: Invoke
+    ??? note "Invoke"
 
         .. code-block:: python
 
@@ -2138,7 +2138,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 usage_metadata={"input_tokens": 31, "output_tokens": 5, "total_tokens": 36},
             )
 
-    .. dropdown:: Stream
+    ??? note "Stream"
 
         .. code-block:: python
 
@@ -2179,7 +2179,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 id="run-bf917526-7f58-4683-84f7-36a6b671d140",
             )
 
-    .. dropdown:: Async
+    ??? note "Async"
 
         .. code-block:: python
 
@@ -2214,7 +2214,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 },
             )
 
-    .. dropdown:: Tool calling
+    ??? note "Tool calling"
 
         .. code-block:: python
 
@@ -2299,7 +2299,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See ``ChatOpenAI.bind_tools()`` method for more.
 
-    .. dropdown:: Built-in tools
+    ??? note "Built-in tools"
 
         !!! version-added "Added in version 0.3.9"
 
@@ -2352,7 +2352,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 }
             ]
 
-    .. dropdown:: Managing conversation state
+    ??? note "Managing conversation state"
 
         !!! version-added "Added in version 0.3.9"
 
@@ -2402,7 +2402,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             llm = ChatOpenAI(model="gpt-4.1-mini", use_previous_response_id=True)
 
-    .. dropdown:: Reasoning output
+    ??? note "Reasoning output"
 
         OpenAI's Responses API supports `reasoning models <https://platform.openai.com/docs/guides/reasoning?api-mode=responses>`_
         that expose a summary of internal reasoning processes.
@@ -2447,7 +2447,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Output: 3³ = 27
             Reasoning: The user wants to know...
 
-    .. dropdown:: Structured output
+    ??? note "Structured output"
 
         .. code-block:: python
 
@@ -2479,7 +2479,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
         See ``ChatOpenAI.with_structured_output()`` for more.
 
-    .. dropdown:: JSON mode
+    ??? note "JSON mode"
 
         .. code-block:: python
 
@@ -2493,7 +2493,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             '\\n{\\n  "random_ints": [23, 87, 45, 12, 78, 34, 56, 90, 11, 67]\\n}'
 
-    .. dropdown:: Image input
+    ??? note "Image input"
 
         .. code-block:: python
 
@@ -2519,7 +2519,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
 
             "The weather in the image appears to be clear and pleasant. The sky is mostly blue with scattered, light clouds, suggesting a sunny day with minimal cloud cover. There is no indication of rain or strong winds, and the overall scene looks bright and calm. The lush green grass and clear visibility further indicate good weather conditions."
 
-    .. dropdown:: Token usage
+    ??? note "Token usage"
 
         .. code-block:: python
 
@@ -2554,7 +2554,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             llm = ChatOpenAI(model="gpt-4o", stream_usage=True)
             structured_llm = llm.with_structured_output(...)
 
-    .. dropdown:: Logprobs
+    ??? note "Logprobs"
 
         .. code-block:: python
 
@@ -2614,7 +2614,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 ]
             }
 
-    .. dropdown:: Response metadata
+    ??? note "Response metadata"
 
         .. code-block:: python
 
@@ -2635,7 +2635,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 "logprobs": None,
             }
 
-    .. dropdown:: Flex processing
+    ??? note "Flex processing"
 
         OpenAI offers a variety of
         `service tiers <https://platform.openai.com/docs/guides/flex-processing>`_.
@@ -2656,7 +2656,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         See OpenAI `flex processing docs <https://platform.openai.com/docs/guides/flex-processing>`__
         for more detail.
 
-    .. dropdown:: OpenAI-compatible APIs
+    ??? note "OpenAI-compatible APIs"
 
         ``ChatOpenAI`` can be used with OpenAI-compatible APIs like `LM Studio <https://lmstudio.ai/>`__,
         `vLLM <https://github.com/vllm-project/vllm>`__,
@@ -2690,7 +2690,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 extra_body={"use_beam_search": True, "best_of": 4},
             )
 
-    .. dropdown:: model_kwargs vs extra_body
+    ??? note "`model_kwargs` vs `extra_body`"
 
         Use the correct parameter for different types of API arguments:
 
@@ -2741,7 +2741,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             Always use ``extra_body`` for custom parameters, **not** ``model_kwargs``.
             Using ``model_kwargs`` for non-OpenAI parameters will cause API errors.
 
-    .. dropdown:: Prompt caching optimization
+    ??? note "Prompt caching optimization"
 
         For high-volume applications with repetitive prompts, use ``prompt_cache_key``
         per-invocation to improve cache hit rates and reduce costs:
@@ -2924,7 +2924,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 If a model elects to call a
                 tool, the resulting ``AIMessage`` in ``'raw'`` will include tool calls.
 
-                .. dropdown:: Example
+                ??? note "Example"
 
                     .. code-block:: python
 
@@ -2992,7 +2992,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
         .. versionchanged:: 0.3.21
             Pass ``kwargs`` through to the model.
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False, strict=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"
 
             Note, OpenAI has a number of restrictions on what types of schemas can be
             provided if ``strict`` = True. When using Pydantic, our model cannot
@@ -3030,7 +3030,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="function_calling", include_raw=False, strict=False
+        ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -3063,7 +3063,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
             .. code-block:: python
 
@@ -3092,7 +3092,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=TypedDict class, method="json_schema", include_raw=False, strict=False
+        ??? note "Example: `schema=TypedDict` class, `method='json_schema'`, `include_raw=False`, `strict=False`"
 
             .. code-block:: python
 
@@ -3123,7 +3123,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=OpenAI function schema, method="json_schema", include_raw=False
+        ??? note "Example: `schema=OpenAI` function schema, `method='json_schema'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -3153,7 +3153,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_mode", include_raw=True
+        ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 
@@ -3182,7 +3182,7 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: schema=None, method="json_mode", include_raw=True
+        ??? note "Example: `schema=None`, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 

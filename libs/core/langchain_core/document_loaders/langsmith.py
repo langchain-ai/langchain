@@ -20,7 +20,7 @@ class LangSmithLoader(BaseLoader):
     into the Document metadata. This allows you to easily create few-shot example
     retrievers from the loaded documents.
 
-    .. dropdown:: Lazy load
+    ??? note "Lazy load"
 
         .. code-block:: python
 

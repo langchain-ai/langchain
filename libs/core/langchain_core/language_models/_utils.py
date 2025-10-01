@@ -148,7 +148,7 @@ def _normalize_messages(
         expect to receive when passing back in message history. For backward
         compatibility, this function will convert v0 message content to v1 format.
 
-    .. dropdown:: v0 Content Block Schemas
+    ??? note "v0 Content Block Schemas"
 
         ``URLContentBlock``:
 

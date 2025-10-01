@@ -162,7 +162,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    .. dropdown:: Init non-configurable model
+    ??? note "Init non-configurable model"
         :open:
 
         .. code-block:: python
@@ -179,7 +179,7 @@ def init_chat_model(
             gemini_2_flash.invoke("what's your name")
 
 
-    .. dropdown:: Partially configurable model with no default
+    ??? note "Partially configurable model with no default"
 
         .. code-block:: python
 
@@ -199,7 +199,7 @@ def init_chat_model(
             )
             # claude-3.5 sonnet response
 
-    .. dropdown:: Fully configurable model with a default
+    ??? note "Fully configurable model with a default"
 
         .. code-block:: python
 
@@ -227,7 +227,7 @@ def init_chat_model(
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
-    .. dropdown:: Bind tools to a configurable model
+    ??? note "Bind tools to a configurable model"
 
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.

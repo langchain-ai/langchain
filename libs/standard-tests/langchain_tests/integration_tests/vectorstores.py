@@ -141,7 +141,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_vectorstore_is_empty(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the test class (i.e., sub class of
             ``VectorStoreIntegrationTests``) initializes an empty vector store in the
@@ -155,7 +155,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_add_documents(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
@@ -194,7 +194,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         This just verifies that the fixture is set up properly to be empty
         after each test.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the test class (i.e., sub class of
             ``VectorStoreIntegrationTests``) correctly clears the vector store in the
@@ -208,7 +208,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_deleting_documents(self, vectorstore: VectorStore) -> None:
         """Test deleting documents from the vectorstore.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``add_documents`` preserves identifiers
             passed in through ``ids``, and that ``delete`` correctly removes
@@ -230,7 +230,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_deleting_bulk_documents(self, vectorstore: VectorStore) -> None:
         """Test that we can delete several documents at once.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``delete`` correctly removes multiple
             documents when given a list of IDs.
@@ -252,7 +252,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_delete_missing_content(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``delete`` does not raise an exception
             when deleting IDs that do not exist.
@@ -268,7 +268,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Adding by ID should be idempotent.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that adding the same document twice with the
             same IDs has the same effect as adding it once (i.e., it does not
@@ -292,7 +292,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_add_documents_by_id_with_mutation(self, vectorstore: VectorStore) -> None:
         """Test that we can overwrite by ID using add_documents.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that when ``add_documents`` is called with an
             ID that already exists in the vector store, the content is updated
@@ -333,7 +333,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
         This test requires that ``get_by_ids`` be implemented on the vector store.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
@@ -373,7 +373,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_get_by_ids_missing(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and does not
             raise an exception when given IDs that do not exist.
@@ -404,7 +404,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_add_documents_documents(self, vectorstore: VectorStore) -> None:
         """Run add_documents tests.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
@@ -446,7 +446,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     def test_add_documents_with_existing_ids(self, vectorstore: VectorStore) -> None:
         """Test that add_documents with existing IDs is idempotent.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
@@ -493,7 +493,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_vectorstore_is_empty_async(self, vectorstore: VectorStore) -> None:
         """Test that the vectorstore is empty.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the test class (i.e., sub class of
             ``VectorStoreIntegrationTests``) initializes an empty vector store in the
@@ -507,7 +507,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_add_documents_async(self, vectorstore: VectorStore) -> None:
         """Test adding documents into the vectorstore.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
@@ -549,7 +549,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
         This just verifies that the fixture is set up properly to be empty
         after each test.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that the test class (i.e., sub class of
             ``VectorStoreIntegrationTests``) correctly clears the vector store in the
@@ -563,7 +563,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_deleting_documents_async(self, vectorstore: VectorStore) -> None:
         """Test deleting documents from the vectorstore.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``aadd_documents`` preserves identifiers
             passed in through ``ids``, and that ``delete`` correctly removes
@@ -587,7 +587,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Test that we can delete several documents at once.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``adelete`` correctly removes multiple
             documents when given a list of IDs.
@@ -609,7 +609,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_delete_missing_content_async(self, vectorstore: VectorStore) -> None:
         """Deleting missing content should not raise an exception.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``adelete`` does not raise an exception
             when deleting IDs that do not exist.
@@ -625,7 +625,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Adding by ID should be idempotent.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that adding the same document twice with the
             same IDs has the same effect as adding it once (i.e., it does not
@@ -651,7 +651,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Test that we can overwrite by ID using add_documents.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that when ``aadd_documents`` is called with an
             ID that already exists in the vector store, the content is updated
@@ -692,7 +692,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
 
         This test requires that ``get_by_ids`` be implemented on the vector store.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
@@ -732,7 +732,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     async def test_get_by_ids_missing_async(self, vectorstore: VectorStore) -> None:
         """Test get by IDs with missing IDs.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and does not
             raise an exception when given IDs that do not exist.
@@ -764,7 +764,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Run add_documents tests.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
@@ -808,7 +808,7 @@ class VectorStoreIntegrationTests(BaseStandardTests):
     ) -> None:
         """Test that add_documents with existing IDs is idempotent.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that ``get_by_ids`` is implemented and returns
             documents in the same order as the IDs passed in.
