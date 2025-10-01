@@ -364,7 +364,16 @@ def create_agent(  # noqa: PLR0915
 
         # Apply modify_model_request middleware in sequence
         for m in middleware_w_modify_model_request:
-            m.modify_model_request(request, state, runtime)
+            if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
+                m.modify_model_request(request, state, runtime)
+            else:
+                msg = (
+                    f"No synchronous function provided for "
+                    f'{m.__class__.__name__}.amodify_model_request".'
+                    "\nEither initialize with a synchronous function or invoke"
+                    " via the async API (ainvoke, astream, etc.)"
+                )
+                raise TypeError(msg)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)

@@ -1856,9 +1856,11 @@ def test_create_agent_sync_invoke_with_only_async_middleware_raises_error() -> N
         middleware=[AsyncOnlyMiddleware()],
     ).compile()
 
-    # Should work now - default implementation uses run_in_executor
-    result = agent.invoke({"messages": [HumanMessage("hello")]})
-    assert result["messages"]
+    with pytest.raises(
+        TypeError,
+        match="No synchronous function provided for AsyncOnlyMiddleware.amodify_model_request",
+    ):
+        agent.invoke({"messages": [HumanMessage("hello")]})
 
 
 def test_create_agent_sync_invoke_with_mixed_middleware() -> None:
