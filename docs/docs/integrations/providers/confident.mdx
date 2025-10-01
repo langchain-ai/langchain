@@ -21,6 +21,38 @@ pip install deepeval
 
 See an [example](/docs/integrations/callbacks/confident).
 
-```python
-from langchain.callbacks.confident_callback import DeepEvalCallbackHandler
+
+## Modern Integration Example
+
+Install the required packages:
+
+```bash
+pip install deepeval langchain langchain-openai
 ```
+
+Authenticate with your API key:
+
+```python
+import os
+import deepeval
+
+# Load API key from environment variable for security
+api_key = os.environ.get("DEEPEVAL_API_KEY")
+deepeval.login(api_key)
+```
+
+Use the new callback handler:
+
+```python
+from deepeval.integrations.langchain import CallbackHandler
+
+handler = CallbackHandler(
+    name="My Trace",
+    tags=["production", "v1"],
+    metadata={"experiment": "A/B"},
+    thread_id="thread-123",
+    user_id="user-456"
+)
+```
+
+See the [full example](/docs/integrations/callbacks/confident).

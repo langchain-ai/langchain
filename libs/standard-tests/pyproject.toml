@@ -5,23 +5,23 @@ build-backend = "pdm.backend"
 [project]
 authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
-    "langchain-core<2.0.0,>=0.3.75",
-    "pytest<9,>=7",
-    "pytest-asyncio<2,>=0.20",
-    "httpx<1,>=0.28.1",
-    "syrupy<5,>=4",
-    "pytest-socket<1,>=0.7.0",
+    "langchain-core>=0.3.77,<2.0.0",
+    "pytest>=7.0.0,<9.0.0",
+    "pytest-asyncio>=0.20.0,<2.0.0",
+    "httpx>=0.28.1,<1.0.0",
+    "syrupy>=4.0.0,<5.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-recording",
-    "vcrpy>=7.0",
+    "vcrpy>=7.0.0,<8.0.0",
     "numpy>=1.26.2; python_version<'3.13'",
     "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-tests"
-version = "0.3.21"
+version = "0.3.22"
 description = "Standard tests for LangChain implementations"
 readme = "README.md"
 
@@ -32,10 +32,10 @@ repository = "https://github.com/langchain-ai/langchain"
 [dependency-groups]
 test = ["langchain-core"]
 test_integration = []
-lint = ["ruff<0.13,>=0.12.10"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 typing = [
-    "mypy<1.18,>=1.17.1",
-    "types-pyyaml<7.0.0.0,>=6.0.12.2",
+    "mypy>=1.18.1,<1.19.0",
+    "types-pyyaml>=6.0.12.2,<7.0.0.0",
     "langchain-core",
 ]
 
@@ -94,8 +94,11 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = [ "D1",]

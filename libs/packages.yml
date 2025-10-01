@@ -671,11 +671,6 @@ packages:
   provider_page: gel
   downloads: 194
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
-- name: langchain-aerospike
-  path: .
-  repo: aerospike/langchain-aerospike
-  downloads: 77
-  downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-brightdata
   path: .
   repo: luminati-io/langchain-brightdata
@@ -724,13 +719,36 @@ packages:
   downloads_updated_at: '2025-08-10T21:38:36.795416+00:00'
 - name: langchain-anchorbrowser
   provider_page: anchor_browser
+  name_title: Anchor Browser
   path: .
   repo: anchorbrowser/langchain-anchorbrowser
 - name: toolbox-langchain
   name_title: MCP Toolbox
   repo: googleapis/mcp-toolbox-sdk-python
   path: packages/toolbox-langchain
+- name: langchain-aimlapi
+  path: libs/aimlapi
+  repo: D1m7asis/langchain-aimlapi
 - name: langchain-scrapeless
   repo: scrapeless-ai/langchain-scrapeless
   path: .
-
+- name: langchain-google-bigtable
+  name_title: Bigtable
+  repo: googleapis/langchain-google-bigtable-python
+- name: langchain-oci
+  name_title: Oracle Cloud Infrastructure (OCI)
+  repo: oracle/langchain-oracle
+  path: .
+- name: langchain-timbr
+  provider_page: timbr
+  path: .
+  repo: WPSemantix/langchain-timbr
+- name: langchain-zenrows
+  path: .
+  repo: ZenRows-Hub/langchain-zenrows
+- name: langchain-zeusdb
+  repo: zeusdb/langchain-zeusdb
+  path: libs/zeusdb
+- name: langchain-scraperapi
+  path: .
+  repo: scraperapi/langchain-scraperapi

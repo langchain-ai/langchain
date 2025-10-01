@@ -1344,7 +1344,7 @@ def test_tool_invalid_docstrings() -> None:
         Args:
             bar: The bar.
             baz: The baz.
-        """  # noqa: D205,D411
+        """  # noqa: D205,D411  # We're intentionally testing bad formatting.
         return bar
 
     for func in {foo3, foo4}:
@@ -1903,6 +1903,11 @@ def test_args_schema_as_pydantic(pydantic_model: Any) -> None:
     tool = SomeTool(
         name="some_tool", description="some description", args_schema=pydantic_model
     )
+
+    assert tool.args == {
+        "a": {"title": "A", "type": "integer"},
+        "b": {"title": "B", "type": "string"},
+    }
 
     input_schema = tool.get_input_schema()
     if issubclass(input_schema, BaseModel):

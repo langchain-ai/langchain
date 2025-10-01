@@ -57,8 +57,8 @@ SEARCH_TOOL_FEAT_TABLE = {
         "available_data": "URL, Snippet, Title, Search Rank, Site Links, Authors",
         "link": "/docs/integrations/tools/searchapi",
     },
-    "SerpAPI": {
-        "pricing": "100 Free Searches/Month",
+    "SerpApi": {
+        "pricing": "250 Free Searches/Month",
         "available_data": "Answer",
         "link": "/docs/integrations/tools/serpapi",
     },
@@ -165,6 +165,11 @@ WEBBROWSING_TOOL_FEAT_TABLE = {
     "Oxylabs Web Scraper API": {
         "link": "/docs/integrations/tools/oxylabs",
         "interactions": False,
+        "pricing": "Free trial, with flat rate plans and pre-paid credits after",
+    },
+    "Anchor Browser": {
+        "link": "/docs/integrations/tools/anchor_browser",
+        "interactions": True,
         "pricing": "Free trial, with flat rate plans and pre-paid credits after",
     },
 }

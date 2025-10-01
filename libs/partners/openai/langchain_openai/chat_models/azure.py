@@ -5,12 +5,11 @@ from __future__ import annotations
 import logging
 import os
 from collections.abc import AsyncIterator, Awaitable, Iterator
-from typing import Any, Callable, Optional, TypedDict, TypeVar, Union
+from typing import Any, Callable, Optional, TypeVar, Union
 
 import openai
 from langchain_core.language_models import LanguageModelInput
 from langchain_core.language_models.chat_models import LangSmithParams
-from langchain_core.messages import BaseMessage
 from langchain_core.outputs import ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable
 from langchain_core.utils import from_env, secret_from_env
@@ -28,18 +27,12 @@ _DictOrPydanticClass = Union[dict[str, Any], type[_BM]]
 _DictOrPydantic = Union[dict, _BM]
 
 
-class _AllReturnType(TypedDict):
-    raw: BaseMessage
-    parsed: Optional[_DictOrPydantic]
-    parsing_error: Optional[BaseException]
-
-
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
 
 
 class AzureChatOpenAI(BaseChatOpenAI):
-    """Azure OpenAI chat model integration.
+    r"""Azure OpenAI chat model integration.
 
     Setup:
         Head to the Azure `OpenAI quickstart guide <https://learn.microsoft.com/en-us/azure/ai-foundry/openai/chatgpt-quickstart?tabs=keyless%2Ctypescript-keyless%2Cpython-new%2Ccommand-line&pivots=programming-language-python>`__
@@ -578,6 +571,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
     ``'parallel_tools_calls'`` will be disabled.
     """
 
+    max_tokens: Optional[int] = Field(default=None, alias="max_completion_tokens")  # type: ignore[assignment]
+    """Maximum number of tokens to generate."""
+
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object."""
@@ -585,6 +581,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @property
     def lc_secrets(self) -> dict[str, str]:
+        """Get the mapping of secret environment variables."""
         return {
             "openai_api_key": "AZURE_OPENAI_API_KEY",
             "azure_ad_token": "AZURE_OPENAI_AD_TOKEN",
@@ -592,15 +589,18 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
+        """Check if the class is serializable in langchain."""
         return True
 
     @model_validator(mode="after")
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.n is not None and self.n < 1:
-            raise ValueError("n must be at least 1.")
-        elif self.n is not None and self.n > 1 and self.streaming:
-            raise ValueError("n must be 1 when streaming.")
+            msg = "n must be at least 1."
+            raise ValueError(msg)
+        if self.n is not None and self.n > 1 and self.streaming:
+            msg = "n must be 1 when streaming."
+            raise ValueError(msg)
 
         if self.disabled_params is None:
             # As of 09-17-2024 'parallel_tool_calls' param is only supported for gpt-4o.
@@ -620,13 +620,14 @@ class AzureChatOpenAI(BaseChatOpenAI):
         openai_api_base = self.openai_api_base
         if openai_api_base and self.validate_base_url:
             if "/openai" not in openai_api_base:
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, Azure endpoints should be specified via "
                     "the `azure_endpoint` param not `openai_api_base` "
                     "(or alias `base_url`)."
                 )
+                raise ValueError(msg)
             if self.deployment_name:
-                raise ValueError(
+                msg = (
                     "As of openai>=1.0.0, if `azure_deployment` (or alias "
                     "`deployment_name`) is specified then "
                     "`base_url` (or alias `openai_api_base`) should not be. "
@@ -638,6 +639,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
                     "Or you can equivalently specify:\n\n"
                     'base_url="https://xxx.openai.azure.com/openai/deployments/my-deployment"'
                 )
+                raise ValueError(msg)
         client_params: dict = {
             "api_version": self.openai_api_version,
             "azure_endpoint": self.azure_endpoint,
@@ -684,7 +686,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
     def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
-            **{"azure_deployment": self.deployment_name},
+            "azure_deployment": self.deployment_name,
             **super()._identifying_params,
         }
 
@@ -694,10 +696,20 @@ class AzureChatOpenAI(BaseChatOpenAI):
 
     @property
     def lc_attributes(self) -> dict[str, Any]:
+        """Get the attributes relevant to tracing."""
         return {
             "openai_api_type": self.openai_api_type,
             "openai_api_version": self.openai_api_version,
         }
+
+    @property
+    def _default_params(self) -> dict[str, Any]:
+        """Get the default parameters for calling Azure OpenAI API."""
+        params = super()._default_params
+        if "max_tokens" in params:
+            params["max_completion_tokens"] = params.pop("max_tokens")
+
+        return params
 
     def _get_ls_params(
         self, stop: Optional[list[str]] = None, **kwargs: Any
@@ -727,10 +739,11 @@ class AzureChatOpenAI(BaseChatOpenAI):
             response = response.model_dump()
         for res in response["choices"]:
             if res.get("finish_reason", None) == "content_filter":
-                raise ValueError(
+                msg = (
                     "Azure has not provided the response due to a content filter "
                     "being triggered"
                 )
+                raise ValueError(msg)
 
         if "model" in response:
             model = response["model"]
@@ -778,8 +791,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         """Route to Chat Completions or Responses API."""
         if self._use_responses_api({**kwargs, **self.model_kwargs}):
             return super()._stream_responses(*args, **kwargs)
-        else:
-            return super()._stream(*args, **kwargs)
+        return super()._stream(*args, **kwargs)
 
     async def _astream(
         self, *args: Any, **kwargs: Any
@@ -801,7 +813,7 @@ class AzureChatOpenAI(BaseChatOpenAI):
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, _DictOrPydantic]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -856,9 +868,9 @@ class AzureChatOpenAI(BaseChatOpenAI):
                 If schema is specified via TypedDict or JSON schema, ``strict`` is not
                 enabled by default. Pass ``strict=True`` to enable it.
 
-                .. note:
-                    ``strict`` can only be non-null if ``method`` is
-                    ``'json_schema'`` or ``'function_calling'``.
+                .. note::
+                    ``strict`` can only be non-null if ``method`` is ``'json_schema'``
+                    or ``'function_calling'``.
             tools:
                 A list of tool-like objects to bind to the chat model. Requires that:
 

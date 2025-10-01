@@ -253,10 +253,10 @@ class ChatOllama(BaseChatModel):
             from langchain_ollama import ChatOllama
 
             llm = ChatOllama(
-                model = "gpt-oss:20b",
-                validate_model_on_init = True,
-                temperature = 0.8,
-                num_predict = 256,
+                model="gpt-oss:20b",
+                validate_model_on_init=True,
+                temperature=0.8,
+                num_predict=256,
                 # other params ...
             )
 
@@ -298,7 +298,22 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessageChunk(content='Je adore le programmation.(Note: "programmation" is the formal way to say "programming" in French, but informally, people might use the phrase "le développement logiciel" or simply "le code")', response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:38:54.933154Z', 'message': {'role': 'assistant', 'content': ''}, 'done_reason': 'stop', 'done': True, 'total_duration': 1977300042, 'load_duration': 1345709, 'prompt_eval_duration': 159343000, 'eval_count': 47, 'eval_duration': 1815123000}, id='run-3c81a3ed-3e79-4dd3-a796-04064d804890')
+            AIMessageChunk(
+                content='Je adore le programmation.(Note: "programmation" is the formal way to say "programming" in French, but informally, people might use the phrase "le développement logiciel" or simply "le code")',
+                response_metadata={
+                    "model": "llama3",
+                    "created_at": "2024-07-04T03:38:54.933154Z",
+                    "message": {"role": "assistant", "content": ""},
+                    "done_reason": "stop",
+                    "done": True,
+                    "total_duration": 1977300042,
+                    "load_duration": 1345709,
+                    "prompt_eval_duration": 159343000,
+                    "eval_count": 47,
+                    "eval_duration": 1815123000,
+                },
+                id="run-3c81a3ed-3e79-4dd3-a796-04064d804890",
+            )
 
     Async:
         .. code-block:: python
@@ -307,7 +322,23 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: python
 
-            AIMessage(content="Hi there! I'm just an AI, so I don't have feelings or emotions like humans do. But I'm functioning properly and ready to help with any questions or tasks you may have! How can I assist you today?", response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:52:08.165478Z', 'message': {'role': 'assistant', 'content': ''}, 'done_reason': 'stop', 'done': True, 'total_duration': 2138492875, 'load_duration': 1364000, 'prompt_eval_count': 10, 'prompt_eval_duration': 297081000, 'eval_count': 47, 'eval_duration': 1838524000}, id='run-29c510ae-49a4-4cdd-8f23-b972bfab1c49-0')
+            AIMessage(
+                content="Hi there! I'm just an AI, so I don't have feelings or emotions like humans do. But I'm functioning properly and ready to help with any questions or tasks you may have! How can I assist you today?",
+                response_metadata={
+                    "model": "llama3",
+                    "created_at": "2024-07-04T03:52:08.165478Z",
+                    "message": {"role": "assistant", "content": ""},
+                    "done_reason": "stop",
+                    "done": True,
+                    "total_duration": 2138492875,
+                    "load_duration": 1364000,
+                    "prompt_eval_count": 10,
+                    "prompt_eval_duration": 297081000,
+                    "eval_count": 47,
+                    "eval_duration": 1838524000,
+                },
+                id="run-29c510ae-49a4-4cdd-8f23-b972bfab1c49-0",
+            )
 
         .. code-block:: python
 
@@ -323,23 +354,57 @@ class ChatOllama(BaseChatModel):
 
         .. code-block:: python
 
-            messages = [
-                ("human", "Say hello world!"),
-                ("human","Say goodbye world!")
-            ]
+            messages = [("human", "Say hello world!"), ("human", "Say goodbye world!")]
             await llm.abatch(messages)
 
         .. code-block:: python
 
-            [AIMessage(content='HELLO, WORLD!', response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:55:07.315396Z', 'message': {'role': 'assistant', 'content': ''}, 'done_reason': 'stop', 'done': True, 'total_duration': 1696745458, 'load_duration': 1505000, 'prompt_eval_count': 8, 'prompt_eval_duration': 111627000, 'eval_count': 6, 'eval_duration': 185181000}, id='run-da6c7562-e25a-4a44-987a-2c83cd8c2686-0'),
-            AIMessage(content="It's been a blast chatting with you! Say goodbye to the world for me, and don't forget to come back and visit us again soon!", response_metadata={'model': 'llama3', 'created_at': '2024-07-04T03:55:07.018076Z', 'message': {'role': 'assistant', 'content': ''}, 'done_reason': 'stop', 'done': True, 'total_duration': 1399391083, 'load_duration': 1187417, 'prompt_eval_count': 20, 'prompt_eval_duration': 230349000, 'eval_count': 31, 'eval_duration': 1166047000}, id='run-96cad530-6f3e-4cf9-86b4-e0f8abba4cdb-0')]
+            [
+                AIMessage(
+                    content="HELLO, WORLD!",
+                    response_metadata={
+                        "model": "llama3",
+                        "created_at": "2024-07-04T03:55:07.315396Z",
+                        "message": {"role": "assistant", "content": ""},
+                        "done_reason": "stop",
+                        "done": True,
+                        "total_duration": 1696745458,
+                        "load_duration": 1505000,
+                        "prompt_eval_count": 8,
+                        "prompt_eval_duration": 111627000,
+                        "eval_count": 6,
+                        "eval_duration": 185181000,
+                    },
+                    id="run-da6c7562-e25a-4a44-987a-2c83cd8c2686-0",
+                ),
+                AIMessage(
+                    content="It's been a blast chatting with you! Say goodbye to the world for me, and don't forget to come back and visit us again soon!",
+                    response_metadata={
+                        "model": "llama3",
+                        "created_at": "2024-07-04T03:55:07.018076Z",
+                        "message": {"role": "assistant", "content": ""},
+                        "done_reason": "stop",
+                        "done": True,
+                        "total_duration": 1399391083,
+                        "load_duration": 1187417,
+                        "prompt_eval_count": 20,
+                        "prompt_eval_duration": 230349000,
+                        "eval_count": 31,
+                        "eval_duration": 1166047000,
+                    },
+                    id="run-96cad530-6f3e-4cf9-86b4-e0f8abba4cdb-0",
+                ),
+            ]
 
     JSON mode:
         .. code-block:: python
 
 
             json_llm = ChatOllama(format="json")
-            llm.invoke("Return a query for the weather in a random location and time of day with two keys: location and time_of_day. Respond using JSON only.").content
+            llm.invoke(
+                "Return a query for the weather in a random location and time of day with two keys: location and time_of_day. "
+                "Respond using JSON only."
+            ).content
 
         .. code-block:: python
 
@@ -351,19 +416,25 @@ class ChatOllama(BaseChatModel):
             from langchain_ollama import ChatOllama
             from pydantic import BaseModel, Field
 
+
             class Multiply(BaseModel):
                 a: int = Field(..., description="First integer")
                 b: int = Field(..., description="Second integer")
+
 
             ans = await chat.invoke("What is 45*67")
             ans.tool_calls
 
         .. code-block:: python
 
-            [{'name': 'Multiply',
-            'args': {'a': 45, 'b': 67},
-            'id': '420c3f3b-df10-4188-945f-eb3abdb40622',
-            'type': 'tool_call'}]
+            [
+                {
+                    "name": "Multiply",
+                    "args": {"a": 45, "b": 67},
+                    "id": "420c3f3b-df10-4188-945f-eb3abdb40622",
+                    "type": "tool_call",
+                }
+            ]
 
     Thinking / Reasoning:
         You can enable reasoning mode for models that support it by setting
@@ -385,9 +456,9 @@ class ChatOllama(BaseChatModel):
             from langchain_ollama import ChatOllama
 
             llm = ChatOllama(
-                model = "deepseek-r1:8b",
-                validate_model_on_init = True,
-                reasoning= True,
+                model="deepseek-r1:8b",
+                validate_model_on_init=True,
+                reasoning=True,
             )
 
             llm.invoke("how many r in the word strawberry?")
@@ -654,7 +725,7 @@ class ChatOllama(BaseChatModel):
                 tool_call_id = message.tool_call_id
             else:
                 msg = "Received unsupported message type for Ollama."
-                raise ValueError(msg)
+                raise TypeError(msg)
 
             content = ""
             images = []
@@ -743,9 +814,8 @@ class ChatOllama(BaseChatModel):
         if chat_params["stream"]:
             if self._client:
                 yield from self._client.chat(**chat_params)
-        else:
-            if self._client:
-                yield self._client.chat(**chat_params)
+        elif self._client:
+            yield self._client.chat(**chat_params)
 
     def _chat_stream_with_aggregation(
         self,
@@ -828,8 +898,10 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(
+                    "AIMessageChunk", final_chunk.message
+                ).usage_metadata,
+                tool_calls=cast("AIMessageChunk", final_chunk.message).tool_calls,
                 additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
@@ -1002,8 +1074,10 @@ class ChatOllama(BaseChatModel):
         chat_generation = ChatGeneration(
             message=AIMessage(
                 content=final_chunk.text,
-                usage_metadata=cast(AIMessageChunk, final_chunk.message).usage_metadata,
-                tool_calls=cast(AIMessageChunk, final_chunk.message).tool_calls,
+                usage_metadata=cast(
+                    "AIMessageChunk", final_chunk.message
+                ).usage_metadata,
+                tool_calls=cast("AIMessageChunk", final_chunk.message).tool_calls,
                 additional_kwargs=final_chunk.message.additional_kwargs,
             ),
             generation_info=generation_info,
@@ -1019,7 +1093,7 @@ class ChatOllama(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         *,
-        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051
+        tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051, ARG002
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, BaseMessage]:
         """Bind tool-like objects to this chat model.
@@ -1046,7 +1120,7 @@ class ChatOllama(BaseChatModel):
         include_raw: bool = False,
         **kwargs: Any,
     ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
-        """Model wrapper that returns outputs formatted to match the given schema.
+        r"""Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
             schema: The output schema. Can be passed in as:
@@ -1118,18 +1192,15 @@ class ChatOllama(BaseChatModel):
 
                     answer: str
                     justification: Optional[str] = Field(
-                        default=..., description="A justification for the answer."
+                        default=...,
+                        description="A justification for the answer.",
                     )
 
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
-                structured_llm = llm.with_structured_output(
-                    AnswerWithJustification
-                )
+                structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -1153,12 +1224,11 @@ class ChatOllama(BaseChatModel):
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, include_raw=True
+                    AnswerWithJustification,
+                    include_raw=True,
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
                 #     'raw': AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_Ao02pnFYXD6GN1yzc0uXPsvF', 'function': {'arguments': '{"answer":"They weigh the same.","justification":"Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ."}', 'name': 'AnswerWithJustification'}, 'type': 'function'}]}),
                 #     'parsed': AnswerWithJustification(answer='They weigh the same.', justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'),
@@ -1180,18 +1250,18 @@ class ChatOllama(BaseChatModel):
 
                     answer: str
                     justification: Optional[str] = Field(
-                        default=..., description="A justification for the answer."
+                        default=...,
+                        description="A justification for the answer.",
                     )
 
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
                 structured_llm = llm.with_structured_output(
-                    AnswerWithJustification, method="function_calling"
+                    AnswerWithJustification,
+                    method="function_calling",
                 )
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
 
                 # -> AnswerWithJustification(
                 #     answer='They weigh the same',
@@ -1213,17 +1283,13 @@ class ChatOllama(BaseChatModel):
                     '''An answer to the user question along with justification for the answer.'''
 
                     answer: str
-                    justification: Annotated[
-                        Optional[str], None, "A justification for the answer."
-                    ]
+                    justification: Annotated[Optional[str], None, "A justification for the answer."]
 
 
                 llm = ChatOllama(model="llama3.1", temperature=0)
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
-                structured_llm.invoke(
-                    "What weighs more a pound of bricks or a pound of feathers"
-                )
+                structured_llm.invoke("What weighs more a pound of bricks or a pound of feathers")
                 # -> {
                 #     'answer': 'They weigh the same',
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
@@ -1288,7 +1354,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        """  # noqa: E501, D301
+        """  # noqa: E501
         _ = kwargs.pop("strict", None)
         if kwargs:
             msg = f"Received unsupported arguments {kwargs}"
@@ -1341,7 +1407,7 @@ class ChatOllama(BaseChatModel):
                 )
                 raise ValueError(msg)
             if is_pydantic_schema:
-                schema = cast(TypeBaseModel, schema)
+                schema = cast("TypeBaseModel", schema)
                 if issubclass(schema, BaseModelV1):
                     response_format = schema.schema()
                 else:
@@ -1363,7 +1429,7 @@ class ChatOllama(BaseChatModel):
                         )
                 else:
                     # is JSON schema
-                    response_format = cast(dict, schema)
+                    response_format = cast("dict", schema)
                 llm = self.bind(
                     format=response_format,
                     ls_structured_output_format={

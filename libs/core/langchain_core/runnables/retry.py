@@ -238,31 +238,40 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Union[Output, Exception]]:
         results_map: dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
-            return [item for idx, item in enumerate(iterable) if idx not in results_map]
-
         not_set: list[Output] = []
         result = not_set
         try:
             for attempt in self._sync_retrying():
                 with attempt:
-                    # Get the results of the inputs that have not succeeded yet.
+                    # Retry for inputs that have not yet succeeded
+                    # Determine which original indices remain.
+                    remaining_indices = [
+                        i for i in range(len(inputs)) if i not in results_map
+                    ]
+                    if not remaining_indices:
+                        break
+                    pending_inputs = [inputs[i] for i in remaining_indices]
+                    pending_configs = [config[i] for i in remaining_indices]
+                    pending_run_managers = [run_manager[i] for i in remaining_indices]
+                    # Invoke underlying batch only on remaining elements.
                     result = super().batch(
-                        pending(inputs),
+                        pending_inputs,
                         self._patch_config_list(
-                            pending(config), pending(run_manager), attempt.retry_state
+                            pending_configs, pending_run_managers, attempt.retry_state
                         ),
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded.
+                    # Register the results of the inputs that have succeeded, mapping
+                    # back to their original indices.
                     first_exception = None
-                    for i, r in enumerate(result):
+                    for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
                             continue
-                        results_map[i] = r
+                        orig_idx = remaining_indices[offset]
+                        results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -305,31 +314,39 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     ) -> list[Union[Output, Exception]]:
         results_map: dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
-            return [item for idx, item in enumerate(iterable) if idx not in results_map]
-
         not_set: list[Output] = []
         result = not_set
         try:
             async for attempt in self._async_retrying():
                 with attempt:
-                    # Get the results of the inputs that have not succeeded yet.
+                    # Retry for inputs that have not yet succeeded
+                    # Determine which original indices remain.
+                    remaining_indices = [
+                        i for i in range(len(inputs)) if i not in results_map
+                    ]
+                    if not remaining_indices:
+                        break
+                    pending_inputs = [inputs[i] for i in remaining_indices]
+                    pending_configs = [config[i] for i in remaining_indices]
+                    pending_run_managers = [run_manager[i] for i in remaining_indices]
                     result = await super().abatch(
-                        pending(inputs),
+                        pending_inputs,
                         self._patch_config_list(
-                            pending(config), pending(run_manager), attempt.retry_state
+                            pending_configs, pending_run_managers, attempt.retry_state
                         ),
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded.
+                    # Register the results of the inputs that have succeeded, mapping
+                    # back to their original indices.
                     first_exception = None
-                    for i, r in enumerate(result):
+                    for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
                             continue
-                        results_map[i] = r
+                        orig_idx = remaining_indices[offset]
+                        results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception

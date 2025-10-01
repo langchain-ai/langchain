@@ -1,3 +1,10 @@
+
+# Runs `make integration_tests` on the specified package.
+#
+# Manually triggered via workflow_dispatch for testing with real APIs.
+#
+# Installs integration test dependencies and executes full test suite.
+
 name: '🚀 Integration Tests'
 run-name: 'Test ${{ inputs.working-directory }} on Python ${{ inputs.python-version }}'
 
@@ -34,6 +41,8 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: integration-tests-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Integration Dependencies'
         shell: bash
@@ -81,7 +90,7 @@ jobs:
         run: |
           make integration_tests
 
-      - name: Ensure the tests did not create any additional files
+      - name: 'Ensure testing did not create/modify files'
         shell: bash
         run: |
           set -eu

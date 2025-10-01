@@ -25,6 +25,9 @@ def test_openai_model_param() -> None:
         "ls_max_tokens": 256,
     }
 
+    ls_params = llm._get_ls_params(model="bar")
+    assert ls_params["ls_model_name"] == "bar"
+
 
 def test_openai_model_kwargs() -> None:
     llm = OpenAI(model_kwargs={"foo": "bar"})
@@ -62,7 +65,6 @@ def mock_completion() -> dict:
 @pytest.mark.parametrize("model", ["gpt-3.5-turbo-instruct"])
 def test_get_token_ids(model: str) -> None:
     OpenAI(model=model).get_token_ids("foo")
-    return
 
 
 def test_custom_token_counting() -> None:

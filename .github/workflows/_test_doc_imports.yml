@@ -1,3 +1,10 @@
+# Validates that all import statements in `.ipynb` notebooks are correct and functional.
+#
+# Called as part of check_diffs.yml.
+#
+# Installs test dependencies and LangChain packages in editable mode and
+# runs check_imports.py.
+
 name: '📑 Documentation Import Testing'
 
 on:
@@ -27,6 +34,8 @@ jobs:
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: test-doc-imports-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
       - name: '📦 Install Test Dependencies'
         shell: bash

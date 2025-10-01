@@ -471,7 +471,7 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
-            # model doesn't implement streaming, so use default implementation
+            # Model doesn't implement streaming, so use default implementation
             yield cast(
                 "BaseMessageChunk",
                 self.invoke(input, config=config, stop=stop, **kwargs),
@@ -720,7 +720,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             ls_params["ls_stop"] = stop
 
         # model
-        if hasattr(self, "model") and isinstance(self.model, str):
+        if "model" in kwargs and isinstance(kwargs["model"], str):
+            ls_params["ls_model_name"] = kwargs["model"]
+        elif hasattr(self, "model") and isinstance(self.model, str):
             ls_params["ls_model_name"] = self.model
         elif hasattr(self, "model_name") and isinstance(self.model_name, str):
             ls_params["ls_model_name"] = self.model_name

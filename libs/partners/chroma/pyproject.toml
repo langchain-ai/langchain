@@ -5,15 +5,15 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.70",
+    "langchain-core>=0.3.76,<1.0.0",
     "numpy>=1.26.0; python_version < '3.13'",
     "numpy>=2.1.0; python_version >= '3.13'",
-    "chromadb>=1.0.9",
+    "chromadb>=1.0.20,<2.0.0",
 ]
 name = "langchain-chroma"
-version = "0.2.5"
+version = "0.2.6"
 description = "An integration package connecting Chroma and LangChain."
 readme = "README.md"
 
@@ -24,29 +24,29 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "onnxruntime<1.20; python_version < \"3.10\"",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-benchmark",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "onnxruntime<1.20.0; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
-    "pytest-socket<1.0.0,>=0.7.0",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
 lint = [
-    "ruff<0.13,>=0.12.2",
+    "ruff>=0.13.1,<0.14.0",
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
 ]
 dev = ["langchain-core"]
 typing = [
-    "mypy<2.0,>=1.10",
-    "types-requests>=2.31.0",
+    "mypy>=1.10.0,<2.0.0",
+    "types-requests>=2.31.0,<3.0.0",
     "langchain-core",
 ]
 
@@ -60,6 +60,9 @@ disallow_untyped_defs = true
 
 [tool.ruff]
 target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [
@@ -106,7 +109,6 @@ ignore = [
     "D104",    # pydocstyle: Missing docstring in public package
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional
     "COM812",  # Messes with the formatter
@@ -126,6 +128,7 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]

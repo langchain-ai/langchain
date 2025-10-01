@@ -2,7 +2,7 @@
 
 from typing import Any
 
-__version__ = "1.0.0a4"
+__version__ = "1.0.0a10"
 
 
 def __getattr__(name: str) -> Any:  # noqa: ANN401

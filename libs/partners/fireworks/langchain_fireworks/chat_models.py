@@ -278,8 +278,10 @@ class ChatFireworks(BaseChatModel):
         .. code-block:: python
 
             from langchain_fireworks.chat_models import ChatFireworks
+
             fireworks = ChatFireworks(
-                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct")
+                model_name="accounts/fireworks/models/llama-v3p1-8b-instruct"
+            )
 
     """
 
@@ -413,7 +415,7 @@ class ChatFireworks(BaseChatModel):
         params = self._get_invocation_params(stop=stop, **kwargs)
         ls_params = LangSmithParams(
             ls_provider="fireworks",
-            ls_model_name=self.model_name,
+            ls_model_name=params.get("model", self.model_name),
             ls_model_type="chat",
             ls_temperature=params.get("temperature", self.temperature),
         )
@@ -825,7 +827,10 @@ class ChatFireworks(BaseChatModel):
                     )
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -852,7 +857,10 @@ class ChatFireworks(BaseChatModel):
                     justification: str
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(
                     AnswerWithJustification, include_raw=True
                 )
@@ -886,7 +894,10 @@ class ChatFireworks(BaseChatModel):
                     ]
 
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(AnswerWithJustification)
 
                 structured_llm.invoke(
@@ -904,19 +915,25 @@ class ChatFireworks(BaseChatModel):
                 from langchain_fireworks import ChatFireworks
 
                 oai_schema = {
-                    'name': 'AnswerWithJustification',
-                    'description': 'An answer to the user question along with justification for the answer.',
-                    'parameters': {
-                        'type': 'object',
-                        'properties': {
-                            'answer': {'type': 'string'},
-                            'justification': {'description': 'A justification for the answer.', 'type': 'string'}
+                    "name": "AnswerWithJustification",
+                    "description": "An answer to the user question along with justification for the answer.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "answer": {"type": "string"},
+                            "justification": {
+                                "description": "A justification for the answer.",
+                                "type": "string",
+                            },
                         },
-                        'required': ['answer']
-                    }
+                        "required": ["answer"],
+                    },
                 }
 
-                llm = ChatFireworks(model="accounts/fireworks/models/firefunction-v1", temperature=0)
+                llm = ChatFireworks(
+                    model="accounts/fireworks/models/firefunction-v1",
+                    temperature=0,
+                )
                 structured_llm = llm.with_structured_output(oai_schema)
 
                 structured_llm.invoke(

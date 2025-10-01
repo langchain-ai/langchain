@@ -884,18 +884,18 @@ class Runnable(ABC, Generic[Input, Output]):
         e.g., if the underlying ``Runnable`` uses an API which supports a batch mode.
 
         Args:
-             inputs: A list of inputs to the ``Runnable``.
-             config: A config to use when invoking the ``Runnable``.
-                 The config supports standard keys like ``'tags'``, ``'metadata'`` for
-                 tracing purposes, ``'max_concurrency'`` for controlling how much work
-                 to do in parallel, and other keys. Please refer to the
-                 ``RunnableConfig`` for more details. Defaults to None.
-             return_exceptions: Whether to return exceptions instead of raising them.
-                 Defaults to False.
-             **kwargs: Additional keyword arguments to pass to the ``Runnable``.
+            inputs: A list of inputs to the ``Runnable``.
+            config: A config to use when invoking the ``Runnable``. The config supports
+                standard keys like ``'tags'``, ``'metadata'`` for
+                tracing purposes, ``'max_concurrency'`` for controlling how much work
+                to do in parallel, and other keys. Please refer to the
+                ``RunnableConfig`` for more details. Defaults to None.
+            return_exceptions: Whether to return exceptions instead of raising them.
+                Defaults to False.
+            **kwargs: Additional keyword arguments to pass to the ``Runnable``.
 
         Returns:
-             A list of outputs from the ``Runnable``.
+            A list of outputs from the ``Runnable``.
 
         """
         if not inputs:
@@ -1397,7 +1397,10 @@ class Runnable(ABC, Generic[Input, Output]):
         .. code-block:: python
 
             template = ChatPromptTemplate.from_messages(
-                [("system", "You are Cat Agent 007"), ("human", "{question}")]
+                [
+                    ("system", "You are Cat Agent 007"),
+                    ("human", "{question}"),
+                ]
             ).with_config({"run_name": "my_template", "tags": ["my_template"]})
 
 
@@ -2531,8 +2534,6 @@ class Runnable(ABC, Generic[Input, Output]):
             name: The name of the tool. Defaults to None.
             description: The description of the tool. Defaults to None.
             arg_types: A dictionary of argument names to types. Defaults to None.
-            message_version: Version of ``ToolMessage`` to return given
-            :class:`~langchain_core.messages.content_blocks.ToolCall` input.
 
         Returns:
             A ``BaseTool`` instance.
