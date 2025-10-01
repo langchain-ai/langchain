@@ -86,3 +86,28 @@ def test_chat_baseten_llm_type() -> None:
         baseten_api_key="test_key",
     )
     assert chat._llm_type == "baseten-chat"
+
+
+def test_chat_baseten_dedicated_model_url() -> None:
+    """Test ChatBaseten with dedicated model URL."""
+    chat = ChatBaseten(
+        model="custom-model",
+        model_url="https://model-123.api.baseten.co/environments/production/predict",
+        baseten_api_key="test_key",
+    )
+
+    # Should use the dedicated URL, converted to OpenAI-compatible format
+    expected_base_url = "https://model-123.api.baseten.co/environments/production/sync/v1"
+    assert str(chat.client._base_url).rstrip('/') == expected_base_url
+
+
+def test_chat_baseten_model_apis_default() -> None:
+    """Test ChatBaseten uses Model APIs by default."""
+    chat = ChatBaseten(
+        model="deepseek-ai/DeepSeek-V3-0324",
+        baseten_api_key="test_key",
+    )
+
+    # Should use the default Model APIs base URL
+    expected_base_url = "https://inference.baseten.co/v1"
+    assert str(chat.client._base_url).rstrip('/') == expected_base_url

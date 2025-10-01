@@ -225,7 +225,10 @@ class ChatBaseten(BaseChatModel):
             Baseten API key. If not passed in will be read from env var
             ``BASETEN_API_KEY``.
         baseten_api_base: Optional[str]
-            Base URL path for API requests.
+            Base URL path for API requests (for Model APIs).
+        model_url: Optional[str]
+            Optional dedicated model URL for deployed models. If provided,
+            overrides baseten_api_base. Supports /predict, /sync, or /sync/v1 endpoints.
         request_timeout: Union[float, tuple[float, float], Any, None]
             Timeout for requests to Baseten completion API.
         max_retries: int
@@ -236,13 +239,21 @@ class ChatBaseten(BaseChatModel):
 
             from langchain_baseten import ChatBaseten
 
+            # Option 1: Use Model APIs with model slug (recommended)
             chat = ChatBaseten(
                 model="deepseek-ai/DeepSeek-V3-0324",
                 temperature=0.7,
                 max_tokens=256,
-                # baseten_api_key="...",
-                # baseten_api_base="...",
-                # other params...
+                # Uses default baseten_api_base for Model APIs
+            )
+
+            # Option 2: Use dedicated model URL for deployed models
+            chat = ChatBaseten(
+                model="your-model-name",
+                model_url="https://model-<id>.api.baseten.co/environments/production/predict",
+                temperature=0.7,
+                max_tokens=256,
+                # model_url overrides baseten_api_base
             )
 
     Invoke:
@@ -446,9 +457,14 @@ class ChatBaseten(BaseChatModel):
     )
     """Automatically inferred from env var ``BASETEN_API_KEY`` if not provided."""
     baseten_api_base: Optional[str] = Field(
-        alias="base_url", default="https://inference.baseten.co/v1/"
+        alias="base_url", default="https://inference.baseten.co/v1"
     )
-    """Base URL path for API requests."""
+    """Base URL path for API requests. Leave as default for Model APIs, or provide
+    dedicated model URL for dedicated deployments."""
+    model_url: Optional[str] = Field(default=None)
+    """Optional dedicated model URL for deployed models. If provided, this will
+    override baseten_api_base. Should be in format:
+    https://model-<id>.api.baseten.co/environments/production/predict or /sync/v1"""
     request_timeout: Union[float, tuple[float, float], Any, None] = Field(
         default=None, alias="timeout"
     )
@@ -477,10 +493,30 @@ class ChatBaseten(BaseChatModel):
             )
             raise ImportError(msg) from e
 
+        # Determine the base URL to use
+        if self.model_url:
+            # Use dedicated model URL, normalize for OpenAI client
+            base_url = self.model_url
+            if base_url.endswith("/predict"):
+                # Convert /predict to /sync/v1 for OpenAI compatibility
+                base_url = base_url.replace("/predict", "/sync/v1")
+            elif base_url.endswith("/sync"):
+                # Add /v1 for OpenAI compatibility
+                base_url = f"{base_url}/v1"
+            elif not base_url.endswith("/v1"):
+                # Ensure it ends with /v1 for OpenAI compatibility
+                if base_url.endswith("/"):
+                    base_url = f"{base_url}v1"
+                else:
+                    base_url = f"{base_url}/v1"
+        else:
+            # Use general Model APIs
+            base_url = self.baseten_api_base
+
         # Create OpenAI clients configured for Baseten
         client_params = {
             "api_key": self.baseten_api_key.get_secret_value(),
-            "base_url": self.baseten_api_base,
+            "base_url": base_url,
             "timeout": self.request_timeout,
             "max_retries": self.max_retries,
         }
