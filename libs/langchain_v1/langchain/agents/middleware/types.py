@@ -90,7 +90,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
-    response: NotRequired[ResponseT]
+    structured_response: NotRequired[ResponseT]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):
@@ -100,7 +100,7 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
     """
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
-    response: NotRequired[ResponseT]
+    structured_response: NotRequired[ResponseT]
 
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)
