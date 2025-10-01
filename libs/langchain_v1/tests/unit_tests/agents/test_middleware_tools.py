@@ -7,6 +7,7 @@ from langchain.agents.middleware_agent import create_agent
 from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_core.tools import tool
 from .model import FakeToolCallingModel
+from langgraph.runtime import Runtime
 
 
 def test_model_request_tools_are_strings() -> None:
@@ -24,7 +25,9 @@ def test_model_request_tools_are_strings() -> None:
         return f"Result: {expression}"
 
     class RequestCapturingMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             captured_requests.append(request)
             return request
 
@@ -67,7 +70,9 @@ def test_middleware_can_modify_tool_names() -> None:
         return "C"
 
     class ToolFilteringMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             # Only allow tool_a and tool_b
             request.tools = ["tool_a", "tool_b"]
             return request
@@ -102,7 +107,9 @@ def test_unknown_tool_name_raises_error() -> None:
         return "result"
 
     class BadMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             # Add an unknown tool name
             request.tools = ["known_tool", "unknown_tool"]
             return request
@@ -137,7 +144,9 @@ def test_middleware_can_add_and_remove_tools() -> None:
     class ConditionalToolMiddleware(AgentMiddleware[AdminState]):
         state_schema = AdminState
 
-        def modify_model_request(self, request: ModelRequest, state: AdminState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AdminState, runtime: Runtime
+        ) -> ModelRequest:
             # Remove admin_tool if not admin
             if not state.get("is_admin", False):
                 request.tools = [name for name in request.tools if name != "admin_tool"]
@@ -171,7 +180,9 @@ def test_empty_tools_list_is_valid() -> None:
         return "result"
 
     class NoToolsMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             # Remove all tools
             request.tools = []
             return request
@@ -210,14 +221,18 @@ def test_tools_preserved_across_multiple_middleware() -> None:
         return "C"
 
     class FirstMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             modification_order.append(request.tools.copy())
             # Remove tool_c
             request.tools = [name for name in request.tools if name != "tool_c"]
             return request
 
     class SecondMiddleware(AgentMiddleware):
-        def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
+        def modify_model_request(
+            self, request: ModelRequest, state: AgentState, runtime: Runtime
+        ) -> ModelRequest:
             modification_order.append(request.tools.copy())
             # Should not see tool_c here
             assert "tool_c" not in request.tools
