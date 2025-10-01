@@ -6,9 +6,14 @@
 >As a model inference platform, `Baseten` is a `Provider` in the LangChain ecosystem.
 The `Baseten` integration implements chat models and embeddings for comprehensive AI workflows.
 
->`Baseten` lets you run both open source models like Kimi-K2 or DeepSeekV3.1 through Model APIs.
-All models can be accessed through a slug via OpenAI-compatible endpoints. Simply choose one of the following
+>`Baseten` offers two ways to access chat models:
+
+>**Model APIs** (recommended): For access to the latest, most popular opensource models. All models can be accessed
+through a slug via OpenAI-compatible endpoints. Simply choose one of the following
 [model slugs](https://docs.baseten.co/development/model-apis/overview#supported-models) when instantiating a ChatBaseten object.
+
+>**Dedicated URLs**: Use specific model deployments with dedicated resources by providing a `model_url`
+parameter. This gives you dedicated GPU resources and consistent SLAs for your custom models.
 
 >`Baseten` also offers performant embeddings through dedicated models.
 Click deploy after choosing the model from the [Baseten model library](https://www.baseten.co/library/tag/embedding/),
