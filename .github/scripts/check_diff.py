@@ -266,7 +266,6 @@ if __name__ == "__main__":
         ):
             # add all LANGCHAIN_DIRS for infra changes
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
-            dirs_to_run["lint"].add(".")
 
         if file.startswith("libs/core"):
             dirs_to_run["codspeed"].add(f"libs/core")
@@ -322,7 +321,6 @@ if __name__ == "__main__":
             "uv.lock",
         ]:  # root uv files
             docs_edited = True
-            dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()
 
