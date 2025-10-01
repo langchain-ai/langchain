@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from inspect import signature
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -27,8 +27,6 @@ from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
@@ -43,6 +41,7 @@ __all__ = [
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
+    "jump_to",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -120,12 +119,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
-    before_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for before_model hook. Used to establish conditional edges."""
-
-    after_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for after_model hook. Used to establish conditional edges."""
-
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
@@ -197,6 +190,53 @@ def is_callable_with_runtime_and_request(
     func: _ModelRequestSignature[StateT, ContextT],
 ) -> TypeGuard[_CallableWithModelRequestAndStateAndRuntime[StateT, ContextT]]:
     return "runtime" in signature(func).parameters
+
+
+CallableT = TypeVar("CallableT", bound=Callable[..., Any])
+
+
+def jump_to(*destinations: JumpTo) -> Callable[[CallableT], CallableT]:
+    """Decorator to mark a middleware method as capable of jumping to specific destinations.
+
+    Use this decorator on `before_model` or `after_model` methods in middleware classes
+    to indicate which destinations they can jump to. This establishes conditional edges
+    in the agent graph.
+
+    Args:
+        *destinations: Valid jump destinations. Can be:
+            - "tools": Jump to the tools node
+            - "model": Jump back to the model node
+            - "end": Jump to the end of the graph
+
+    Returns:
+        Decorator function that marks the method with jump destination metadata.
+
+    Examples:
+        Using decorator on a class method:
+        ```python
+        class MyMiddleware(AgentMiddleware):
+            @jump_to("end", "model")
+            def before_model(self, state: AgentState) -> dict[str, Any] | None:
+                if some_condition(state):
+                    return {"jump_to": "end"}
+                return None
+        ```
+
+        Alternative: Use the `jump_to` parameter in `before_model`/`after_model` decorators:
+        ```python
+        @before_model(jump_to=["end"])
+        def conditional_middleware(state: AgentState) -> dict[str, Any] | None:
+            if should_exit(state):
+                return {"jump_to": "end"}
+            return None
+        ```
+    """
+
+    def decorator(func: CallableT) -> CallableT:
+        func.__jump_to__ = list(destinations)  # type: ignore[attr-defined]
+        return func
+
+    return decorator
 
 
 @overload
@@ -278,6 +318,9 @@ def before_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
+        # Extract jump_to from decorator parameter or from function metadata
+        func_jump_to = jump_to if jump_to is not None else getattr(func, "__jump_to__", [])
+
         if is_callable_with_runtime(func):
 
             def wrapped_with_runtime(
@@ -298,6 +341,10 @@ def before_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
+        # Preserve jump_to metadata on the wrapped function
+        if func_jump_to:
+            wrapped.__jump_to__ = func_jump_to  # type: ignore[attr-defined]
+
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
@@ -307,7 +354,6 @@ def before_model(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "before_model_jump_to": jump_to or [],
                 "before_model": wrapped,
             },
         )()
@@ -504,6 +550,9 @@ def after_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
+        # Extract jump_to from decorator parameter or from function metadata
+        func_jump_to = jump_to if jump_to is not None else getattr(func, "__jump_to__", [])
+
         if is_callable_with_runtime(func):
 
             def wrapped_with_runtime(
@@ -524,6 +573,10 @@ def after_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
+        # Preserve jump_to metadata on the wrapped function
+        if func_jump_to:
+            wrapped.__jump_to__ = func_jump_to  # type: ignore[attr-defined]
+
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
@@ -533,7 +586,6 @@ def after_model(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "after_model_jump_to": jump_to or [],
                 "after_model": wrapped,
             },
         )()

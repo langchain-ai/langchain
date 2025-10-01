@@ -10,6 +10,7 @@ from .types import (
     ModelRequest,
     after_model,
     before_model,
+    jump_to,
     modify_model_request,
 )
 
@@ -24,5 +25,6 @@ __all__ = [
     "SummarizationMiddleware",
     "after_model",
     "before_model",
+    "jump_to",
     "modify_model_request",
 ]

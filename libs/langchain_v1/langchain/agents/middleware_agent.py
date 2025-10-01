@@ -464,7 +464,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            jump_to=middleware_w_after[0].after_model_jump_to,
+            jump_to=getattr(middleware_w_after[0].__class__.after_model, "__jump_to__", []),
         )
 
     # Add middleware edges (same as before)
@@ -475,7 +475,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                jump_to=m1.before_model_jump_to,
+                jump_to=getattr(m1.__class__.before_model, "__jump_to__", []),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -483,7 +483,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            jump_to=middleware_w_before[-1].before_model_jump_to,
+            jump_to=getattr(middleware_w_before[-1].__class__.before_model, "__jump_to__", []),
         )
 
     if middleware_w_after:
@@ -496,7 +496,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                jump_to=m1.after_model_jump_to,
+                jump_to=getattr(m1.__class__.after_model, "__jump_to__", []),
             )
 
     return graph

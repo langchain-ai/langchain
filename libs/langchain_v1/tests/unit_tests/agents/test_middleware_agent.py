@@ -339,9 +339,10 @@ def test_create_agent_jump(
         def after_model(self, state):
             calls.append("NoopSeven.after_model")
 
-    class NoopEight(AgentMiddleware):
-        before_model_jump_to = ["end"]
+    from langchain.agents.middleware.types import jump_to
 
+    class NoopEight(AgentMiddleware):
+        @jump_to("end")
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
