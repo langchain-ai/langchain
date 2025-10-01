@@ -206,8 +206,10 @@ def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
 def _get_image_from_data_content_block(block: dict) -> str:
     """Format standard data content block to format expected by Ollama."""
     if block["type"] == "image":
-        if block["source_type"] == "base64":
+        if block.get("source_type") == "base64":
             return block["data"]
+        if block.get("base64"):
+            return block["base64"]
         error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
 
