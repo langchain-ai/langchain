@@ -395,7 +395,7 @@ def deprecated(
         else:
             removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since} {details} {removal_str}
+!!! deprecated "{since} {details} {removal_str}"
 
 {old_doc}\
 """

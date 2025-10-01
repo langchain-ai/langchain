@@ -72,9 +72,9 @@ class TextAccessor(str):
         This method exists solely to support legacy code that calls ``.text()``
         as a method. New code should use property access (``.text``) instead.
 
-        .. deprecated:: 1.0.0
-            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
-            instead. This method will be removed in 2.0.0.
+        !!! deprecated
+            As of langchain-core 1.0.0, calling ``.text()`` as a method is deprecated.
+            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The string content, identical to property access.
@@ -259,9 +259,9 @@ class BaseMessage(Serializable):
 
         Can be used as both property (``message.text``) and method (``message.text()``).
 
-        .. deprecated:: 1.0.0
-            Calling ``.text()`` as a method is deprecated. Use ``.text`` as a property
-            instead. This method will be removed in 2.0.0.
+        !!! deprecated
+            As of langchain-core 1.0.0, calling ``.text()`` as a method is deprecated.
+            Use ``.text`` as a property instead. This method will be removed in 2.0.0.
 
         Returns:
             The text content of the message.
