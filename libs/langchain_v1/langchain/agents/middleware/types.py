@@ -62,7 +62,7 @@ class ModelRequest:
     system_prompt: str | None
     messages: list[AnyMessage]  # excluding system prompt
     tool_choice: Any | None
-    tools: list[BaseTool]
+    tools: list[str]
     response_format: ResponseFormat | None
     model_settings: dict[str, Any] = field(default_factory=dict)
 
@@ -93,7 +93,7 @@ class AgentState(TypedDict, Generic[ResponseT]):
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
-    response: NotRequired[ResponseT]
+    structured_response: NotRequired[ResponseT]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):
@@ -103,7 +103,7 @@ class PublicAgentState(TypedDict, Generic[ResponseT]):
     """
 
     messages: Required[Annotated[list[AnyMessage], add_messages]]
-    response: NotRequired[ResponseT]
+    structured_response: NotRequired[ResponseT]
 
 
 StateT = TypeVar("StateT", bound=AgentState, default=AgentState)

@@ -1294,11 +1294,11 @@ def test_tools_to_model_edge_with_structured_and_regular_tool_calls():
     assert "Regular tool result for: test query" in regular_tool_message.content
 
     # Verify that the structured response is available in the result
-    assert "response" in result
-    assert result["response"] is not None
-    assert hasattr(result["response"], "temperature")
-    assert result["response"].temperature == 72.0
-    assert result["response"].condition == "sunny"
+    assert "structured_response" in result
+    assert result["structured_response"] is not None
+    assert hasattr(result["structured_response"], "temperature")
+    assert result["structured_response"].temperature == 72.0
+    assert result["structured_response"].condition == "sunny"
 
 
 def test_public_private_state_for_custom_middleware() -> None:

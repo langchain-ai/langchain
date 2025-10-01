@@ -521,6 +521,39 @@ class ChatModelIntegrationTests(ChatModelTests):
             def supports_image_tool_message(self) -> bool:
                 return False
 
+    .. dropdown:: supports_pdf_tool_message
+
+        Boolean property indicating whether the chat model supports ToolMessages
+        that include PDF content, i.e.,
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "file",
+                        "source_type": "base64",
+                        "data": pdf_data,
+                        "mime_type": "application/pdf",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_pdf",
+            )
+
+        (standard format).
+
+        If set to ``True``, the chat model will be tested with message sequences that
+        include ToolMessages of this form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_pdf_tool_message(self) -> bool:
+                return False
+
     .. dropdown:: supported_usage_metadata_details
 
         Property controlling what usage metadata details are emitted in both invoke
@@ -2706,6 +2739,95 @@ class ChatModelIntegrationTests(ChatModelTests):
                 return ""
 
             _ = model.bind_tools([random_image]).invoke(messages)
+
+    def test_pdf_tool_message(self, model: BaseChatModel) -> None:
+        """Test that the model can process ToolMessages with PDF inputs.
+
+        This test should be skipped if the model does not support messages of the
+        form:
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "file",
+                        "source_type": "base64",
+                        "data": pdf_data,
+                        "mime_type": "application/pdf",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_pdf",
+            )
+
+        containing PDF content blocks in standard format.
+
+        This test can be skipped by setting the ``supports_pdf_tool_message`` property
+        to False (see Configuration below).
+
+        .. dropdown:: Configuration
+
+            To disable this test, set ``supports_pdf_tool_message`` to False in your
+            test class:
+
+            .. code-block:: python
+
+                class TestMyChatModelIntegration(ChatModelIntegrationTests):
+                    @property
+                    def supports_pdf_tool_message(self) -> bool:
+                        return False
+
+        .. dropdown:: Troubleshooting
+
+            If this test fails, check that the model can correctly handle messages
+            with PDF content blocks in ToolMessages, specifically base64-encoded
+            PDFs. Otherwise, set the ``supports_pdf_tool_message`` property to
+            False.
+
+        """
+        if not self.supports_pdf_tool_message:
+            pytest.skip("Model does not support PDF tool message.")
+
+        url = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+        pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
+
+        tool_message = ToolMessage(
+            content=[
+                {
+                    "type": "file",
+                    "source_type": "base64",
+                    "data": pdf_data,
+                    "mime_type": "application/pdf",
+                },
+            ],
+            tool_call_id="1",
+            name="random_pdf",
+        )
+
+        messages = [
+            HumanMessage(
+                "Get a random PDF using the tool and relay the title verbatim."
+            ),
+            AIMessage(
+                [],
+                tool_calls=[
+                    {
+                        "type": "tool_call",
+                        "id": "1",
+                        "name": "random_pdf",
+                        "args": {},
+                    }
+                ],
+            ),
+            tool_message,
+        ]
+
+        def random_pdf() -> str:
+            """Return a random PDF."""
+            return ""
+
+        _ = model.bind_tools([random_pdf]).invoke(messages)
 
     def test_anthropic_inputs(self, model: BaseChatModel) -> None:
         """Test that model can process Anthropic-style message histories.
