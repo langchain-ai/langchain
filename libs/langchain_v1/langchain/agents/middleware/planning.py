@@ -189,8 +189,8 @@ class PlanningMiddleware(AgentMiddleware):
     def modify_model_request(
         self,
         request: ModelRequest,
-        state: AgentState,
-        runtime: Runtime,
+        state: AgentState,  # noqa: ARG002
+        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Update the system prompt to include the todo system prompt."""
         request.system_prompt = (

@@ -146,7 +146,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         self.interrupt_on = resolved_tool_configs
         self.description_prefix = description_prefix
 
-    def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+    def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Trigger interrupt flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:

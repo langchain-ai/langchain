@@ -44,11 +44,10 @@ class AnthropicPromptCachingMiddleware(AgentMiddleware):
     def modify_model_request(
         self,
         request: ModelRequest,
-        state: AgentState,
-        runtime: Runtime,
+        state: AgentState,  # noqa: ARG002
+        runtime: Runtime,  # noqa: ARG002
     ) -> ModelRequest:
         """Modify the model request to add cache control blocks."""
-        del state, runtime  # unused
         try:
             from langchain_anthropic import ChatAnthropic
         except ImportError:
