@@ -227,6 +227,7 @@ def hook_config(
 
     return decorator
 
+
 @overload
 def before_model(
     func: _CallableWithStateAndRuntime[StateT, ContextT],
@@ -332,7 +333,6 @@ def before_model(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "before_model_jump_to": jump_to or [],
                     "abefore_model": async_wrapped,
                 },
             )()
@@ -597,7 +597,6 @@ def after_model(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "after_model_jump_to": jump_to or [],
                     "aafter_model": async_wrapped,
                 },
             )()

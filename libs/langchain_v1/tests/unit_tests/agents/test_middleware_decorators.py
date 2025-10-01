@@ -40,7 +40,7 @@ def test_before_model_decorator() -> None:
     @before_model(
         state_schema=CustomState, tools=[test_tool], can_jump_to=["end"], name="CustomBeforeModel"
     )
-    def custom_before_model(state: CustomState) -> dict[str, Any]:
+    def custom_before_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
         return {"jump_to": "end"}
 
     assert isinstance(custom_before_model, AgentMiddleware)
@@ -49,7 +49,7 @@ def test_before_model_decorator() -> None:
     assert getattr(custom_before_model.__class__.before_model, "__can_jump_to__", []) == ["end"]
     assert custom_before_model.__class__.__name__ == "CustomBeforeModel"
 
-    result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]})
+    result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]}, None)
     assert result == {"jump_to": "end"}
 
 
@@ -167,13 +167,13 @@ def test_hook_config_decorator_on_class_method() -> None:
 
     class JumpMiddleware(AgentMiddleware):
         @hook_config(can_jump_to=["end", "model"])
-        def before_model(self, state: AgentState) -> dict[str, Any] | None:
+        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if len(state["messages"]) > 5:
                 return {"jump_to": "end"}
             return None
 
         @hook_config(can_jump_to=["tools"])
-        def after_model(self, state: AgentState) -> dict[str, Any] | None:
+        def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             return {"jump_to": "tools"}
 
     # Verify can_jump_to metadata is preserved
@@ -185,7 +185,7 @@ def test_can_jump_to_with_before_model_decorator() -> None:
     """Test can_jump_to parameter used with before_model decorator."""
 
     @before_model(can_jump_to=["end"])
-    def conditional_before(state: AgentState) -> dict[str, Any] | None:
+    def conditional_before(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if len(state["messages"]) > 3:
             return {"jump_to": "end"}
         return None
@@ -199,7 +199,7 @@ def test_can_jump_to_with_after_model_decorator() -> None:
     """Test can_jump_to parameter used with after_model decorator."""
 
     @after_model(can_jump_to=["model", "end"])
-    def conditional_after(state: AgentState) -> dict[str, Any] | None:
+    def conditional_after(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         if state["messages"][-1].content == "retry":
             return {"jump_to": "model"}
         return None
@@ -217,7 +217,7 @@ def test_can_jump_to_integration() -> None:
     calls = []
 
     @before_model(can_jump_to=["end"])
-    def early_exit(state: AgentState) -> dict[str, Any] | None:
+    def early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
         calls.append("early_exit")
         if state["messages"][0].content == "exit":
             return {"jump_to": "end"}
@@ -236,7 +236,8 @@ def test_can_jump_to_integration() -> None:
     result = agent.invoke({"messages": [HumanMessage("hello")]})
     assert calls == ["early_exit"]
     assert len(result["messages"]) > 1
-    
+
+
 # Async Decorator Tests
 
 

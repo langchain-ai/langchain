@@ -85,6 +85,29 @@ def _extract_metadata(type_: type) -> list:
     return []
 
 
+def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> list[JumpTo]:
+    """Get the can_jump_to list from either sync or async hook methods.
+
+    Args:
+        middleware: The middleware instance to inspect.
+        hook_name: The name of the hook ('before_model' or 'after_model').
+
+    Returns:
+        List of jump destinations, or empty list if not configured.
+    """
+    # Try sync method first
+    sync_method = getattr(middleware.__class__, hook_name, None)
+    if sync_method and hasattr(sync_method, "__can_jump_to__"):
+        return sync_method.__can_jump_to__
+
+    # Try async method
+    async_method = getattr(middleware.__class__, f"a{hook_name}", None)
+    if async_method and hasattr(async_method, "__can_jump_to__"):
+        return async_method.__can_jump_to__
+
+    return []
+
+
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
     """Check if a model supports native structured output."""
     model_name: str | None = None
@@ -517,7 +540,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            can_jump_to=getattr(middleware_w_after[0].__class__.after_model, "__can_jump_to__", []),
+            can_jump_to=_get_can_jump_to(middleware_w_after[0], "after_model"),
         )
 
     # Add middleware edges (same as before)
@@ -528,7 +551,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                can_jump_to=getattr(m1.__class__.before_model, "__can_jump_to__", []),
+                can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -536,9 +559,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            can_jump_to=getattr(
-                middleware_w_before[-1].__class__.before_model, "__can_jump_to__", []
-            ),
+            can_jump_to=_get_can_jump_to(middleware_w_before[-1], "before_model"),
         )
 
     if middleware_w_after:
@@ -551,7 +572,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                can_jump_to=getattr(m1.__class__.after_model, "__can_jump_to__", []),
+                can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
 
     return graph
