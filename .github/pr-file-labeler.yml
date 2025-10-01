@@ -63,7 +63,6 @@ dependencies:
 documentation:
   - changed-files:
       - any-glob-to-any-file:
-          - "docs/**/*"
           - "**/*.md"
           - "**/*.rst"
           - "**/README*"
