@@ -461,7 +461,7 @@ def filter_messages(
         anything that is not explicitly excluded will be included.
 
     Raises:
-        ValueError if two incompatible arguments are provided.
+        ValueError: If two incompatible arguments are provided.
 
     Example:
         .. code-block:: python
@@ -576,7 +576,7 @@ def merge_message_runs(
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-        Default is ``'\n'``.
+            Defaults to ``'\n'``.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -1071,11 +1071,11 @@ def convert_to_openai_messages(
         The return type depends on the input type:
 
         - dict:
-          If a single message-like object is passed in, a single OpenAI message
-          dict is returned.
+            If a single message-like object is passed in, a single OpenAI message
+            dict is returned.
         - list[dict]:
-          If a sequence of message-like objects are passed in, a list of OpenAI
-          message dicts is returned.
+            If a sequence of message-like objects are passed in, a list of OpenAI
+            message dicts is returned.
 
     Example:
 

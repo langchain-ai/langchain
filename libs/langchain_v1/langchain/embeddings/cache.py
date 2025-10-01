@@ -293,7 +293,6 @@ class CacheBackedEmbeddings(Embeddings):
         Args:
             underlying_embeddings: The embedder to use for embedding.
             document_embedding_cache: The cache to use for storing document embeddings.
-            *,
             namespace: The namespace to use for document cache.
                 This namespace is used to avoid collisions with other caches.
                 For example, set it to the name of the embedding model used.
