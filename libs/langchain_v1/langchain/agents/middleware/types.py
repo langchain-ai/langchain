@@ -41,7 +41,7 @@ __all__ = [
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
-    "jump_to",
+    "hook_config",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -195,36 +195,39 @@ def is_callable_with_runtime_and_request(
 CallableT = TypeVar("CallableT", bound=Callable[..., Any])
 
 
-def jump_to(*destinations: JumpTo) -> Callable[[CallableT], CallableT]:
-    """Decorator to mark a middleware method as capable of jumping to specific destinations.
+def hook_config(
+    *,
+    can_jump_to: list[JumpTo] | None = None,
+) -> Callable[[CallableT], CallableT]:
+    """Decorator to configure hook behavior in middleware methods.
 
     Use this decorator on `before_model` or `after_model` methods in middleware classes
-    to indicate which destinations they can jump to. This establishes conditional edges
-    in the agent graph.
+    to configure their behavior. Currently supports specifying which destinations they
+    can jump to, which establishes conditional edges in the agent graph.
 
     Args:
-        *destinations: Valid jump destinations. Can be:
+        can_jump_to: Optional list of valid jump destinations. Can be:
             - "tools": Jump to the tools node
             - "model": Jump back to the model node
             - "end": Jump to the end of the graph
 
     Returns:
-        Decorator function that marks the method with jump destination metadata.
+        Decorator function that marks the method with configuration metadata.
 
     Examples:
         Using decorator on a class method:
         ```python
         class MyMiddleware(AgentMiddleware):
-            @jump_to("end", "model")
+            @hook_config(can_jump_to=["end", "model"])
             def before_model(self, state: AgentState) -> dict[str, Any] | None:
                 if some_condition(state):
                     return {"jump_to": "end"}
                 return None
         ```
 
-        Alternative: Use the `jump_to` parameter in `before_model`/`after_model` decorators:
+        Alternative: Use the `can_jump_to` parameter in `before_model`/`after_model` decorators:
         ```python
-        @before_model(jump_to=["end"])
+        @before_model(can_jump_to=["end"])
         def conditional_middleware(state: AgentState) -> dict[str, Any] | None:
             if should_exit(state):
                 return {"jump_to": "end"}
@@ -233,7 +236,8 @@ def jump_to(*destinations: JumpTo) -> Callable[[CallableT], CallableT]:
     """
 
     def decorator(func: CallableT) -> CallableT:
-        func.__jump_to__ = list(destinations)  # type: ignore[attr-defined]
+        if can_jump_to is not None:
+            func.__can_jump_to__ = can_jump_to  # type: ignore[attr-defined]
         return func
 
     return decorator
@@ -251,7 +255,7 @@ def before_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -261,7 +265,7 @@ def before_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> (
     Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -276,7 +280,7 @@ def before_model(
         state_schema: Optional custom state schema type. If not provided, uses the default
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
-        jump_to: Optional list of valid jump destinations for conditional edges.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
@@ -300,7 +304,7 @@ def before_model(
 
         Advanced usage with runtime and conditional jumping:
         ```python
-        @before_model(jump_to=["end"])
+        @before_model(can_jump_to=["end"])
         def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
                 return {"jump_to": "end"}
@@ -318,8 +322,10 @@ def before_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        # Extract jump_to from decorator parameter or from function metadata
-        func_jump_to = jump_to if jump_to is not None else getattr(func, "__jump_to__", [])
+        # Extract can_jump_to from decorator parameter or from function metadata
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
 
         if is_callable_with_runtime(func):
 
@@ -341,9 +347,9 @@ def before_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
-        # Preserve jump_to metadata on the wrapped function
-        if func_jump_to:
-            wrapped.__jump_to__ = func_jump_to  # type: ignore[attr-defined]
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
 
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
@@ -494,7 +500,7 @@ def after_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]: ...
 
@@ -504,7 +510,7 @@ def after_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> (
     Callable[[_NodeSignature[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -519,7 +525,7 @@ def after_model(
         state_schema: Optional custom state schema type. If not provided, uses the default
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
-        jump_to: Optional list of valid jump destinations for conditional edges.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
@@ -550,8 +556,10 @@ def after_model(
     """
 
     def decorator(func: _NodeSignature[StateT, ContextT]) -> AgentMiddleware[StateT, ContextT]:
-        # Extract jump_to from decorator parameter or from function metadata
-        func_jump_to = jump_to if jump_to is not None else getattr(func, "__jump_to__", [])
+        # Extract can_jump_to from decorator parameter or from function metadata
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
 
         if is_callable_with_runtime(func):
 
@@ -573,9 +581,9 @@ def after_model(
 
             wrapped = wrapped_without_runtime  # type: ignore[assignment]
 
-        # Preserve jump_to metadata on the wrapped function
-        if func_jump_to:
-            wrapped.__jump_to__ = func_jump_to  # type: ignore[attr-defined]
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
 
         # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))

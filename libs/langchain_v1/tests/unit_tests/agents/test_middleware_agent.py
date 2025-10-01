@@ -24,7 +24,6 @@ from langgraph.types import Command
 from pydantic import BaseModel, Field
 from syrupy.assertion import SnapshotAssertion
 from typing_extensions import Annotated
-from langchain.agents.middleware.types import jump_to
 
 from langchain.agents.middleware.human_in_the_loop import (
     ActionRequest,
@@ -42,7 +41,7 @@ from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
-    jump_to,
+    hook_config,
     ModelRequest,
     OmitFromInput,
     OmitFromOutput,
@@ -342,7 +341,7 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
-        @jump_to("end")
+        @hook_config(can_jump_to=["end"])
         def before_model(self, state) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
