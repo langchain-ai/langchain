@@ -69,7 +69,7 @@ def test_middleware_can_modify_tool_names() -> None:
     class ToolFilteringMiddleware(AgentMiddleware):
         def modify_model_request(self, request: ModelRequest, state: AgentState) -> ModelRequest:
             # Only allow tool_a and tool_b
-            request.tools = [name for name in request.tools if name in ["tool_a", "tool_b"]]
+            request.tools = ["tool_a", "tool_b"]
             return request
 
     # Model will try to call tool_a
