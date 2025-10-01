@@ -3,6 +3,7 @@
 from typing import Any, Literal
 
 from langchain_core.messages import AIMessage, ToolCall, ToolMessage
+from langgraph.runtime import Runtime
 from langgraph.types import interrupt
 from typing_extensions import NotRequired, TypedDict
 
@@ -145,7 +146,7 @@ class HumanInTheLoopMiddleware(AgentMiddleware):
         self.interrupt_on = resolved_tool_configs
         self.description_prefix = description_prefix
 
-    def after_model(self, state: AgentState) -> dict[str, Any] | None:  # type: ignore[override]
+    def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Trigger interrupt flows for relevant tool calls after an AIMessage."""
         messages = state["messages"]
         if not messages:
