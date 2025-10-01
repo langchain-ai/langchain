@@ -485,7 +485,7 @@ class DeleteResponse(TypedDict, total=False):
     failed: Sequence[str]
     """The IDs that failed to be deleted.
 
-    .. warning::
+    !!! warning
         Deleting an ID that does not exist is **NOT** considered a failure.
     """
 
@@ -509,7 +509,7 @@ class DocumentIndex(BaseRetriever):
     2. Fetching document by ID.
     3. Searching for document using a query.
 
-    .. versionadded:: 0.2.29
+    !!! version-added "Added in version 0.2.29"
     """
 
     @abc.abstractmethod

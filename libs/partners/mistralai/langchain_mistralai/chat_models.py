@@ -699,7 +699,7 @@ class ChatMistralAI(BaseChatModel):
         tools: Sequence[Union[dict[str, Any], type, Callable, BaseTool]],
         tool_choice: Optional[Union[dict, str, Literal["auto", "any"]]] = None,  # noqa: PYI051
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.
@@ -707,7 +707,7 @@ class ChatMistralAI(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function or
                 ``'auto'`` to automatically determine which function to call
@@ -759,13 +759,12 @@ class ChatMistralAI(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.12
-
-                        Added support for TypedDict class.
+                !!! warning "Behavior changed in 0.1.12"
+                    Added support for TypedDict class.
 
             method: The method for steering model generation, one of:
 
@@ -782,9 +781,8 @@ class ChatMistralAI(BaseChatModel):
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
-                .. versionchanged:: 0.2.5
-
-                        Added method="json_schema"
+                !!! warning "Behavior changed in 0.2.5"
+                    Added method="json_schema"
 
             include_raw:
                 If False then only the parsed structured output is returned. If
@@ -801,7 +799,7 @@ class ChatMistralAI(BaseChatModel):
                 ``stop`` to control when the model should stop generating output.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).

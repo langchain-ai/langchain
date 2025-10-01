@@ -543,8 +543,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        template = Path(template_file).read_text()
-        # TODO: .read_text(encoding="utf-8") for v0.4
+        template = Path(template_file).read_text(encoding="utf-8")
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -792,9 +791,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Use to create flexible templated prompts for chat models.
 
     Examples:
-
-        .. versionchanged:: 0.2.24
-
+        !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
             init.

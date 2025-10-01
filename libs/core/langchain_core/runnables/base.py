@@ -20,7 +20,7 @@ from collections.abc import (
 )
 from concurrent.futures import FIRST_COMPLETED, wait
 from functools import wraps
-from itertools import groupby, tee
+from itertools import tee
 from operator import itemgetter
 from types import GenericAlias
 from typing import (
@@ -28,17 +28,19 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     Optional,
     Protocol,
     TypeVar,
     Union,
     cast,
+    get_args,
     get_type_hints,
     overload,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from typing_extensions import Literal, get_args, override
+from typing_extensions import override
 
 from langchain_core._api import beta_decorator
 from langchain_core.callbacks.manager import AsyncCallbackManager, CallbackManager
@@ -422,7 +424,8 @@ class Runnable(ABC, Generic[Input, Output]):
 
             print(runnable.get_input_jsonschema())
             ```
-        .. versionadded:: 0.3.0
+
+        !!! version-added "Added in version 0.3.0"
 
         """
         return self.get_input_schema(config).model_json_schema()
@@ -500,7 +503,8 @@ class Runnable(ABC, Generic[Input, Output]):
 
             print(runnable.get_output_jsonschema())
             ```
-        .. versionadded:: 0.3.0
+
+        !!! version-added "Added in version 0.3.0"
 
         """
         return self.get_output_schema(config).model_json_schema()
@@ -566,7 +570,7 @@ class Runnable(ABC, Generic[Input, Output]):
         Returns:
             A JSON schema that represents the config of the ``Runnable``.
 
-        .. versionadded:: 0.3.0
+        !!! version-added "Added in version 0.3.0"
 
         """
         return self.config_schema(include=include).model_json_schema()
@@ -1309,7 +1313,7 @@ class Runnable(ABC, Generic[Input, Output]):
         chains. Metadata fields have been omitted from the table for brevity.
         Chain definitions have been included after the table.
 
-        .. note::
+        !!! note
             This reference table is for the v2 version of the schema.
 
         +--------------------------+------------------+-------------------------------------+---------------------------------------------------+-----------------------------------------------------+
@@ -2590,7 +2594,8 @@ class Runnable(ABC, Generic[Input, Output]):
         as_tool = runnable.as_tool()
         as_tool.invoke("b")
         ```
-        .. versionadded:: 0.2.14
+
+        !!! version-added "Added in version 0.2.14"
 
         """
         # Avoid circular import
@@ -2855,7 +2860,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     streaming will only begin after this component is run. If there are
     multiple blocking components, streaming begins after the last one.
 
-    .. note::
+    !!! note
         ``RunnableLambdas`` do not support ``transform`` by default! So if you need to
         use a ``RunnableLambdas`` be careful about where you place them in a
         ``RunnableSequence`` (if you need to use the ``stream``/``astream`` methods).
@@ -3039,49 +3044,9 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
 
         """
         # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            CONTEXT_CONFIG_PREFIX,
-            _key_from_id,
+        return get_unique_config_specs(
+            [spec for step in self.steps for spec in step.config_specs]
         )
-
-        # get all specs
-        all_specs = [
-            (spec, idx)
-            for idx, step in enumerate(self.steps)
-            for spec in step.config_specs
-        ]
-        # calculate context dependencies
-        specs_by_pos = groupby(
-            [tup for tup in all_specs if tup[0].id.startswith(CONTEXT_CONFIG_PREFIX)],
-            itemgetter(1),
-        )
-        next_deps: set[str] = set()
-        deps_by_pos: dict[int, set[str]] = {}
-        for pos, specs in specs_by_pos:
-            deps_by_pos[pos] = next_deps
-            next_deps = next_deps | {spec[0].id for spec in specs}
-        # assign context dependencies
-        for pos, (spec, idx) in enumerate(all_specs):
-            if spec.id.startswith(CONTEXT_CONFIG_PREFIX):
-                all_specs[pos] = (
-                    ConfigurableFieldSpec(
-                        id=spec.id,
-                        annotation=spec.annotation,
-                        name=spec.name,
-                        default=spec.default,
-                        description=spec.description,
-                        is_shared=spec.is_shared,
-                        dependencies=[
-                            d
-                            for d in deps_by_pos[idx]
-                            if _key_from_id(d) != _key_from_id(spec.id)
-                        ]
-                        + (spec.dependencies or []),
-                    ),
-                    idx,
-                )
-
-        return get_unique_config_specs(spec for spec, _ in all_specs)
 
     @override
     def get_graph(self, config: Optional[RunnableConfig] = None) -> Graph:
@@ -3186,13 +3151,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
     def invoke(
         self, input: Input, config: Optional[RunnableConfig] = None, **kwargs: Any
     ) -> Output:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            config_with_context,
-        )
-
         # setup callbacks and context
-        config = config_with_context(ensure_config(config), self.steps)
+        config = ensure_config(config)
         callback_manager = get_callback_manager_for_config(config)
         # start the root run
         run_manager = callback_manager.on_chain_start(
@@ -3230,13 +3190,8 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: Optional[RunnableConfig] = None,
         **kwargs: Optional[Any],
     ) -> Output:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            aconfig_with_context,
-        )
-
         # setup callbacks and context
-        config = aconfig_with_context(ensure_config(config), self.steps)
+        config = ensure_config(config)
         callback_manager = get_async_callback_manager_for_config(config)
         # start the root run
         run_manager = await callback_manager.on_chain_start(
@@ -3277,19 +3232,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            config_with_context,
-        )
-
         if not inputs:
             return []
 
         # setup callbacks and context
-        configs = [
-            config_with_context(c, self.steps)
-            for c in get_config_list(config, len(inputs))
-        ]
+        configs = get_config_list(config, len(inputs))
         callback_managers = [
             CallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -3409,19 +3356,11 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         return_exceptions: bool = False,
         **kwargs: Optional[Any],
     ) -> list[Output]:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            aconfig_with_context,
-        )
-
         if not inputs:
             return []
 
         # setup callbacks and context
-        configs = [
-            aconfig_with_context(c, self.steps)
-            for c in get_config_list(config, len(inputs))
-        ]
+        configs = get_config_list(config, len(inputs))
         callback_managers = [
             AsyncCallbackManager.configure(
                 inheritable_callbacks=config.get("callbacks"),
@@ -3542,14 +3481,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> Iterator[Output]:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            config_with_context,
-        )
-
         steps = [self.first, *self.middle, self.last]
-        config = config_with_context(config, self.steps)
-
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
         # buffer input in memory until all available, and then start emitting output
@@ -3572,14 +3504,7 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         config: RunnableConfig,
         **kwargs: Any,
     ) -> AsyncIterator[Output]:
-        # Import locally to prevent circular import
-        from langchain_core.beta.runnables.context import (  # noqa: PLC0415
-            aconfig_with_context,
-        )
-
         steps = [self.first, *self.middle, self.last]
-        config = aconfig_with_context(config, self.steps)
-
         # stream the last steps
         # transform the input stream of each step with the next
         # steps that don't natively support transforming an input stream will
@@ -4191,7 +4116,7 @@ class RunnableGenerator(Runnable[Input, Output]):
     ``RunnableGenerator`` allows it to emit output chunks as soon as they are streamed
     in from the previous step.
 
-    .. note::
+    !!! note
         If a generator function has a ``signature A -> Iterator[B]``, such that it
         requires its input from the previous step to be completed before emitting chunks
         (e.g., most LLMs need the entire prompt available to start generating), it can

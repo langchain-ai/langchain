@@ -6,9 +6,8 @@ import json
 import warnings
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, TypedDict, Union, cast
+from typing import Any, Callable, Literal, Optional, Union, cast
 
-from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
     CallbackManagerForLLMRun,
@@ -52,7 +51,6 @@ from langchain_core.tools import BaseTool
 from langchain_core.utils import from_env, get_pydantic_field_names, secret_from_env
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
-    convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
@@ -161,7 +159,7 @@ class ChatGroq(BaseChatModel):
 
             # Streaming `text` for each content chunk received
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 
@@ -759,68 +757,6 @@ class ChatGroq(BaseChatModel):
             combined["service_tier"] = self.service_tier
         return combined
 
-    @deprecated(
-        since="0.2.1",
-        alternative="langchain_groq.chat_models.ChatGroq.bind_tools",
-        removal="1.0.0",
-    )
-    def bind_functions(
-        self,
-        functions: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
-        function_call: Optional[
-            Union[_FunctionCall, str, Literal["auto", "none"]]  # noqa: PYI051
-        ] = None,
-        **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
-        """Bind functions (and other objects) to this chat model.
-
-        Model is compatible with OpenAI function-calling API.
-
-        NOTE: Using bind_tools is recommended instead, as the `functions` and
-            `function_call` request parameters are officially deprecated.
-
-        Args:
-            functions: A list of function definitions to bind to this chat model.
-                Can be  a dictionary, pydantic model, or callable. Pydantic
-                models and callables will be automatically converted to
-                their schema dictionary representation.
-            function_call: Which function to require the model to call.
-                Must be the name of the single provided function or
-                ``'auto'`` to automatically determine which function to call
-                (if any).
-            **kwargs: Any additional parameters to pass to
-                :meth:`~langchain_groq.chat_models.ChatGroq.bind`.
-
-        """
-        formatted_functions = [convert_to_openai_function(fn) for fn in functions]
-        if function_call is not None:
-            function_call = (
-                {"name": function_call}
-                if isinstance(function_call, str)
-                and function_call not in ("auto", "none")
-                else function_call
-            )
-            if isinstance(function_call, dict) and len(formatted_functions) != 1:
-                msg = (
-                    "When specifying `function_call`, you must provide exactly one "
-                    "function."
-                )
-                raise ValueError(msg)
-            if (
-                isinstance(function_call, dict)
-                and formatted_functions[0]["name"] != function_call["name"]
-            ):
-                msg = (
-                    f"Function call {function_call} was specified, but the only "
-                    f"provided function was {formatted_functions[0]['name']}."
-                )
-                raise ValueError(msg)
-            kwargs = {**kwargs, "function_call": function_call}
-        return super().bind(
-            functions=formatted_functions,
-            **kwargs,
-        )
-
     def bind_tools(
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
@@ -829,13 +765,13 @@ class ChatGroq(BaseChatModel):
             Union[dict, str, Literal["auto", "any", "none"], bool]  # noqa: PYI051
         ] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 "auto" to automatically determine which function to call
@@ -843,7 +779,7 @@ class ChatGroq(BaseChatModel):
                 function is called, or a dict of the form:
                 ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -893,16 +829,14 @@ class ChatGroq(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.9
-
+                !!! warning "Behavior changed in 0.1.9"
                     Added support for TypedDict class.
 
-                .. versionchanged:: 0.3.8
-
+                !!! warning "Behavior changed in 0.3.8"
                     Added support for Groq's dedicated structured output feature via
                     ``method="json_schema"``.
 
@@ -930,12 +864,12 @@ class ChatGroq(BaseChatModel):
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If ``'json_mode'`` then JSON mode will be used.
 
-                .. note::
+                !!! note
                     If using ``'json_mode'`` then you must include instructions for formatting
                     the output into the desired schema into the model call. (either via the
                     prompt itself or in the system message/prompt/instructions).
 
-                .. warning::
+                !!! warning
                     ``'json_mode'`` does not support streaming responses stop sequences.
 
             include_raw:
@@ -948,10 +882,10 @@ class ChatGroq(BaseChatModel):
 
             kwargs:
                 Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -1235,10 +1169,6 @@ class ChatGroq(BaseChatModel):
 
 def _is_pydantic_class(obj: Any) -> bool:
     return isinstance(obj, type) and is_basemodel_subclass(obj)
-
-
-class _FunctionCall(TypedDict):
-    name: str
 
 
 #

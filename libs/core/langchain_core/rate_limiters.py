@@ -26,7 +26,7 @@ class BaseRateLimiter(abc.ABC):
       the time spent waiting for tokens and the time spent making the request.
 
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
     """
 
     @abc.abstractmethod
@@ -122,7 +122,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 print(toc - tic)
 
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
 
     """  # noqa: E501
 
