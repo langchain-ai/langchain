@@ -48,8 +48,8 @@ def test_before_model_decorator() -> None:
     assert custom_before_model.before_model_jump_to == ["__end__"]
     assert custom_before_model.__class__.__name__ == "CustomBeforeModel"
 
-    # Note: We can't easily test calling the method directly without a real runtime
-    # The integration tests below will test the actual execution
+    result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]}, None)
+    assert result == {"jump_to": "__end__"}
 
 
 def test_after_model_decorator() -> None:
@@ -71,6 +71,12 @@ def test_after_model_decorator() -> None:
     assert custom_after_model.after_model_jump_to == ["model", "__end__"]
     assert custom_after_model.__class__.__name__ == "CustomAfterModel"
 
+    # Verify it works
+    result = custom_after_model.after_model(
+        {"messages": [HumanMessage("Hello"), AIMessage("Hi!")]}, None
+    )
+    assert result == {"jump_to": "model"}
+
 
 def test_modify_model_request_decorator() -> None:
     """Test modify_model_request decorator with all configuration options."""
@@ -87,6 +93,20 @@ def test_modify_model_request_decorator() -> None:
     assert custom_modify_request.state_schema == CustomState
     assert custom_modify_request.tools == [test_tool]
     assert custom_modify_request.__class__.__name__ == "CustomModifyRequest"
+
+    # Verify it works
+    original_request = ModelRequest(
+        model="test-model",
+        system_prompt="Original",
+        messages=[HumanMessage("Hello")],
+        tool_choice=None,
+        tools=[],
+        response_format=None,
+    )
+    result = custom_modify_request.modify_model_request(
+        original_request, {"messages": [HumanMessage("Hello")]}, None
+    )
+    assert result.system_prompt == "Modified"
 
 
 def test_all_decorators_integration() -> None:
