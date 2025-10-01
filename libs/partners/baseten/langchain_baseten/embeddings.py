@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional
+from typing import Any
 
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import secret_from_env
@@ -13,151 +13,151 @@ from typing_extensions import Self
 class BasetenEmbeddings(BaseModel, Embeddings):
     """Baseten embedding model integration.
 
-    Baseten embedding model integration using Performance Client for optimized
-    embedding generation with automatic batching, concurrent requests, and
-    intelligent request sizing.
+       Baseten embedding model integration using Performance Client for optimized
+       embedding generation with automatic batching, concurrent requests, and
+       intelligent request sizing.
 
-    Setup:
-        Install ``langchain-baseten`` and set environment variable ``BASETEN_API_KEY``.
+       Setup:
+           Install ``langchain-baseten`` and set environment variable ``BASETEN_API_KEY``.
 
-        .. code-block:: bash
+           .. code-block:: bash
 
-            pip install -U langchain-baseten
-            export BASETEN_API_KEY="your-api-key"
+               pip install -U langchain-baseten
+               export BASETEN_API_KEY="your-api-key"
 
-    Key init args — completion params:
-        model: str
-            Name of Baseten model to use.
-        model_url: str
-            The specific model URL for your deployed embedding model.
-            Compatible with /sync, /sync/v1, or /predict endpoints with built-in error correction.
+       Key init args — completion params:
+           model: str
+               Name of Baseten model to use.
+           model_url: str
+               The specific model URL for your deployed embedding model.
+               Compatible with /sync, /sync/v1, or /predict endpoints with built-in error correction.
 
-    Key init args — client params:
-        baseten_api_key: SecretStr
-            Baseten API key. If not passed in will be read from env var ``BASETEN_API_KEY``.
+       Key init args — client params:
+           baseten_api_key: SecretStr
+               Baseten API key. If not passed in will be read from env var ``BASETEN_API_KEY``.
 
-    See full list of supported init args and their descriptions in the params section.
+       See full list of supported init args and their descriptions in the params section.
 
-    Instantiate:
-        .. code-block:: python
+       Instantiate:
+           .. code-block:: python
 
-            from langchain_baseten import BasetenEmbeddings
+               from langchain_baseten import BasetenEmbeddings
 
-            # All of these URL formats work with automatic error correction:
+               # All of these URL formats work with automatic error correction:
 
-            # Option 1: /sync endpoint (recommended)
- again            embeddings = BasetenEmbeddings(
-                model="your-embedding-model",
-                model_url="https://model-<id>.api.baseten.co/environments/production/sync",
-            )
+               # Option 1: /sync endpoint (recommended)
+    again            embeddings = BasetenEmbeddings(
+                   model="your-embedding-model",
+                   model_url="https://model-<id>.api.baseten.co/environments/production/sync",
+               )
 
-            # Option 2: /sync/v1 endpoint (automatically normalized)
-            embeddings = BasetenEmbeddings(
-                model="your-embedding-model",
-                model_url="https://model-<id>.api.baseten.co/environments/production/sync/v1",
-            )
+               # Option 2: /sync/v1 endpoint (automatically normalized)
+               embeddings = BasetenEmbeddings(
+                   model="your-embedding-model",
+                   model_url="https://model-<id>.api.baseten.co/environments/production/sync/v1",
+               )
 
-            # Option 3: /predict endpoint (automatically converted to /sync)
-            embeddings = BasetenEmbeddings(
-                model="your-embedding-model",
-                model_url="https://model-<id>.api.baseten.co/environments/production/predict",
-            )
+               # Option 3: /predict endpoint (automatically converted to /sync)
+               embeddings = BasetenEmbeddings(
+                   model="your-embedding-model",
+                   model_url="https://model-<id>.api.baseten.co/environments/production/predict",
+               )
 
-    Embed multiple texts:
-        .. code-block:: python
+       Embed multiple texts:
+           .. code-block:: python
 
-            texts = ["hello world", "goodbye world", "machine learning"]
-            vectors = embeddings.embed_documents(texts)
-            print(f"Generated {len(vectors)} embeddings")
-            print(f"Each embedding has {len(vectors[0])} dimensions")
+               texts = ["hello world", "goodbye world", "machine learning"]
+               vectors = embeddings.embed_documents(texts)
+               print(f"Generated {len(vectors)} embeddings")
+               print(f"Each embedding has {len(vectors[0])} dimensions")
 
-        .. code-block:: python
+           .. code-block:: python
 
-            Generated 3 embeddings
-            Each embedding has 768 dimensions
+               Generated 3 embeddings
+               Each embedding has 768 dimensions
 
-    Embed single text:
-        .. code-block:: python
+       Embed single text:
+           .. code-block:: python
 
-            query = "What is artificial intelligence?"
-            vector = embeddings.embed_query(query)
-            print(f"Query embedding has {len(vector)} dimensions")
-            print(f"First few values: {vector[:3]}")
+               query = "What is artificial intelligence?"
+               vector = embeddings.embed_query(query)
+               print(f"Query embedding has {len(vector)} dimensions")
+               print(f"First few values: {vector[:3]}")
 
-        .. code-block:: python
+           .. code-block:: python
 
-            Query embedding has 768 dimensions
-            First few values: [-0.021892, -0.015861, 0.012778]
+               Query embedding has 768 dimensions
+               First few values: [-0.021892, -0.015861, 0.012778]
 
-    Async usage:
-        .. code-block:: python
+       Async usage:
+           .. code-block:: python
 
-            # Async embedding for better performance in async applications
-            vectors = await embeddings.aembed_documents(["hello", "goodbye"])
-            vector = await embeddings.aembed_query("hello")
+               # Async embedding for better performance in async applications
+               vectors = await embeddings.aembed_documents(["hello", "goodbye"])
+               vector = await embeddings.aembed_query("hello")
 
-    Batch processing with Performance Client:
-        .. code-block:: python
+       Batch processing with Performance Client:
+           .. code-block:: python
 
-            # Performance Client automatically handles large batches efficiently
-            large_text_list = ["text " + str(i) for i in range(1000)]
-            vectors = embeddings.embed_documents(large_text_list)
-            print(f"Processed {len(vectors)} embeddings with automatic batching")
+               # Performance Client automatically handles large batches efficiently
+               large_text_list = ["text " + str(i) for i in range(1000)]
+               vectors = embeddings.embed_documents(large_text_list)
+               print(f"Processed {len(vectors)} embeddings with automatic batching")
 
-        .. code-block:: python
+           .. code-block:: python
 
-            Processed 1000 embeddings with automatic batching
+               Processed 1000 embeddings with automatic batching
 
-    Integration with vector stores:
-        .. code-block:: python
+       Integration with vector stores:
+           .. code-block:: python
 
-            from langchain_community.vectorstores import FAISS
-            from langchain_core.documents import Document
+               from langchain_community.vectorstores import FAISS
+               from langchain_core.documents import Document
 
-            # Create documents
-            docs = [
-                Document(page_content="Cats are independent pets"),
-                Document(page_content="Dogs are loyal companions"),
-                Document(page_content="Birds can fly and sing"),
-            ]
+               # Create documents
+               docs = [
+                   Document(page_content="Cats are independent pets"),
+                   Document(page_content="Dogs are loyal companions"),
+                   Document(page_content="Birds can fly and sing"),
+               ]
 
-            # Create vector store with Baseten embeddings
-            vectorstore = FAISS.from_documents(docs, embeddings)
+               # Create vector store with Baseten embeddings
+               vectorstore = FAISS.from_documents(docs, embeddings)
 
-            # Search for similar documents
-            results = vectorstore.similarity_search("pets and animals", k=2)
-            for doc in results:
-                print(doc.page_content)
+               # Search for similar documents
+               results = vectorstore.similarity_search("pets and animals", k=2)
+               for doc in results:
+                   print(doc.page_content)
 
-        .. code-block:: python
+           .. code-block:: python
 
-            Cats are independent pets
-            Dogs are loyal companions
+               Cats are independent pets
+               Dogs are loyal companions
 
-    Performance features:
-        The Performance Client provides several optimizations and built-in error correction:
+       Performance features:
+           The Performance Client provides several optimizations and built-in error correction:
 
-        - **Automatic batching**: Processes texts in optimal batch sizes (32)
-        - **Concurrent requests**: Up to 128 concurrent requests for large datasets
-        - **Smart request sizing**: Limits requests to 8000 characters for optimal performance
-        - **Error handling**: Robust retry logic and error management
-        - **URL normalization**: Handles various endpoint URL formats automatically
-        - **Built-in error correction**: Automatically converts between /sync, /sync/v1, and /predict endpoints
-        - **Endpoint compatibility**: Works with any Baseten model endpoint format
+           - **Automatic batching**: Processes texts in optimal batch sizes (32)
+           - **Concurrent requests**: Up to 128 concurrent requests for large datasets
+           - **Smart request sizing**: Limits requests to 8000 characters for optimal performance
+           - **Error handling**: Robust retry logic and error management
+           - **URL normalization**: Handles various endpoint URL formats automatically
+           - **Built-in error correction**: Automatically converts between /sync, /sync/v1, and /predict endpoints
+           - **Endpoint compatibility**: Works with any Baseten model endpoint format
 
     Note:
-        Unlike chat models which use the general Model APIs, Baseten embeddings
-        require a specific model URL that points to your deployed embedding model.
-        You can find this URL in your Baseten dashboard.
+           Unlike chat models which use the general Model APIs, Baseten embeddings
+           require a specific model URL that points to your deployed embedding model.
+           You can find this URL in your Baseten dashboard.
 
-        **Supported URL formats** (with automatic error correction):
+           **Supported URL formats** (with automatic error correction):
 
-        - ``https://model-<id>.api.baseten.co/environments/production/sync``
-        - ``https://model-<id>.api.baseten.co/environments/production/sync/v1``
-        - ``https://model-<id>.api.baseten.co/environments/production/predict``
+           - ``https://model-<id>.api.baseten.co/environments/production/sync``
+           - ``https://model-<id>.api.baseten.co/environments/production/sync/v1``
+           - ``https://model-<id>.api.baseten.co/environments/production/predict``
 
-        The integration automatically normalizes URLs and handles endpoint differences,
-        so you can use any of these formats and it will work correctly.
+           The integration automatically normalizes URLs and handles endpoint differences,
+           so you can use any of these formats and it will work correctly.
     """
 
     client: Any = Field(default=None, exclude=True)  # :meta private:
@@ -230,12 +230,11 @@ class BasetenEmbeddings(BaseModel, Embeddings):
 
         # Create Performance Client
         self.client = PerformanceClient(
-            base_url=base_url,
-            api_key=self.baseten_api_key.get_secret_value()
+            base_url=base_url, api_key=self.baseten_api_key.get_secret_value()
         )
         return self
 
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
         """Embed search docs.
 
         Args:
@@ -264,7 +263,7 @@ class BasetenEmbeddings(BaseModel, Embeddings):
             msg = f"Error calling Baseten embeddings API: {e}"
             raise RuntimeError(msg) from e
 
-    def embed_query(self, text: str) -> List[float]:
+    def embed_query(self, text: str) -> list[float]:
         """Embed query text.
 
         Args:
@@ -275,7 +274,7 @@ class BasetenEmbeddings(BaseModel, Embeddings):
         """
         return self.embed_documents([text])[0]
 
-    async def aembed_documents(self, texts: List[str]) -> List[List[float]]:
+    async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
         """Asynchronously embed search docs.
 
         Args:
@@ -304,7 +303,7 @@ class BasetenEmbeddings(BaseModel, Embeddings):
             msg = f"Error calling Baseten embeddings API: {e}"
             raise RuntimeError(msg) from e
 
-    async def aembed_query(self, text: str) -> List[float]:
+    async def aembed_query(self, text: str) -> list[float]:
         """Asynchronously embed query text.
 
         Args:

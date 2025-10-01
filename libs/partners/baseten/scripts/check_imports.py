@@ -17,8 +17,7 @@ if __name__ == "__main__":
             module_name = file.replace("/", ".").replace(".py", "")
             if module_name.startswith("langchain_baseten"):
                 __import__(module_name)
-        except Exception as e:
-            print(f"Failed to import {file}: {e}")
+        except Exception:
             has_failure = True
     if has_failure:
         sys.exit(1)

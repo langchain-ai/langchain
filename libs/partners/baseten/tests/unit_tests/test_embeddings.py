@@ -1,6 +1,7 @@
 """Test BasetenEmbeddings."""
 
 import os
+
 import pytest
 
 from langchain_baseten import BasetenEmbeddings
@@ -14,7 +15,10 @@ def test_baseten_embeddings_init() -> None:
         baseten_api_key="test_key",
     )
     assert embeddings.model == "test-model"
-    assert embeddings.model_url == "https://model-123.api.baseten.co/production/predict/sync/v1"
+    assert (
+        embeddings.model_url
+        == "https://model-123.api.baseten.co/production/predict/sync/v1"
+    )
 
 
 def test_baseten_embeddings_init_missing_api_key() -> None:

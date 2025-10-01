@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator, Iterator, Mapping
 from operator import itemgetter
-from typing import Any, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Callable, Literal, Optional, Union
 
 from langchain_core.callbacks import (
     AsyncCallbackManagerForLLMRun,
@@ -36,19 +36,11 @@ from langchain_core.messages import (
     ToolMessage,
     ToolMessageChunk,
 )
-from langchain_core.messages.tool import (
-    ToolCallChunk,
-)
-from langchain_core.messages.tool import (
-    tool_call_chunk as create_tool_call_chunk,
-)
 from langchain_core.output_parsers import JsonOutputParser, PydanticOutputParser
 from langchain_core.output_parsers.base import OutputParserLike
 from langchain_core.output_parsers.openai_tools import (
     JsonOutputKeyToolsParser,
     PydanticToolsParser,
-    make_invalid_tool_call,
-    parse_tool_call,
 )
 from langchain_core.outputs import ChatGeneration, ChatGenerationChunk, ChatResult
 from langchain_core.runnables import Runnable, RunnableMap, RunnablePassthrough
@@ -58,11 +50,10 @@ from langchain_core.utils import (
 )
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
-    convert_to_openai_function,
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import is_basemodel_subclass
-from langchain_core.utils.utils import _build_model_kwargs, from_env, secret_from_env
+from langchain_core.utils.utils import _build_model_kwargs, secret_from_env
 from openai import AsyncOpenAI, OpenAI
 from pydantic import (
     BaseModel,
@@ -88,25 +79,24 @@ def _convert_dict_to_message(_dict: Mapping[str, Any]) -> BaseMessage:
     role = _dict.get("role")
     if role == "user":
         return HumanMessage(content=_dict.get("content", ""))
-    elif role == "assistant":
+    if role == "assistant":
         content = _dict.get("content") or ""
-        additional_kwargs: Dict[str, Any] = {}
+        additional_kwargs: dict[str, Any] = {}
         if tool_calls := _dict.get("tool_calls"):
             additional_kwargs["tool_calls"] = tool_calls
         return AIMessage(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system":
+    if role == "system":
         return SystemMessage(content=_dict.get("content", ""))
-    elif role == "function":
+    if role == "function":
         return FunctionMessage(
             content=_dict.get("content", ""), name=_dict.get("name", "")
         )
-    elif role == "tool":
+    if role == "tool":
         return ToolMessage(
             content=_dict.get("content", ""),
             tool_call_id=_dict.get("tool_call_id", ""),
         )
-    else:
-        return ChatMessage(content=_dict.get("content", ""), role=role)
+    return ChatMessage(content=_dict.get("content", ""), role=role)
 
 
 def _convert_message_to_dict(message: BaseMessage) -> dict:
@@ -118,7 +108,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     Returns:
         The dictionary.
     """
-    message_dict: Dict[str, Any]
+    message_dict: dict[str, Any]
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
     elif isinstance(message, HumanMessage):
@@ -159,7 +149,7 @@ def _convert_message_to_dict(message: BaseMessage) -> dict:
     return message_dict
 
 
-def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> Dict[str, Any]:
+def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> dict[str, Any]:
     """Convert a LangChain tool call to an OpenAI tool call."""
     return {
         "id": tool_call["id"],
@@ -173,7 +163,7 @@ def _lc_tool_call_to_openai_tool_call(tool_call: ToolCall) -> Dict[str, Any]:
 
 def _lc_invalid_tool_call_to_openai_tool_call(
     invalid_tool_call: InvalidToolCall,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Convert a LangChain invalid tool call to an OpenAI tool call."""
     return {
         "id": invalid_tool_call["id"],
@@ -191,31 +181,28 @@ def _convert_delta_to_message_chunk(
     """Convert a delta response to a message chunk."""
     role = _dict.get("role")
     content = _dict.get("content") or ""
-    additional_kwargs: Dict[str, Any] = {}
+    additional_kwargs: dict[str, Any] = {}
 
     if tool_calls := _dict.get("tool_calls"):
         additional_kwargs["tool_calls"] = tool_calls
 
     if role == "user" or default_class == HumanMessageChunk:
         return HumanMessageChunk(content=content)
-    elif role == "assistant" or default_class == AIMessageChunk:
+    if role == "assistant" or default_class == AIMessageChunk:
         return AIMessageChunk(content=content, additional_kwargs=additional_kwargs)
-    elif role == "system" or default_class == SystemMessageChunk:
+    if role == "system" or default_class == SystemMessageChunk:
         return SystemMessageChunk(content=content)
-    elif role == "function" or default_class == FunctionMessageChunk:
+    if role == "function" or default_class == FunctionMessageChunk:
         return FunctionMessageChunk(content=content, name=_dict.get("name"))
-    elif role == "tool" or default_class == ToolMessageChunk:
-        return ToolMessageChunk(
-            content=content, tool_call_id=_dict.get("tool_call_id")
-        )
-    elif role or default_class == ChatMessageChunk:
+    if role == "tool" or default_class == ToolMessageChunk:
+        return ToolMessageChunk(content=content, tool_call_id=_dict.get("tool_call_id"))
+    if role or default_class == ChatMessageChunk:
         return ChatMessageChunk(content=content, role=role)
-    else:
-        return default_class(content=content)  # type: ignore[call-arg]
+    return default_class(content=content)  # type: ignore[call-arg]
 
 
 class ChatBaseten(BaseChatModel):
-    """Baseten chat model integration.
+    r"""Baseten chat model integration.
 
     Setup:
         Install ``langchain-baseten`` and set environment variable ``BASETEN_API_KEY``.
@@ -441,7 +428,7 @@ class ChatBaseten(BaseChatModel):
     """Penalizes repeated tokens."""
     n: int = 1
     """How many completions to generate for each prompt."""
-    model_kwargs: Dict[str, Any] = Field(default_factory=dict)
+    model_kwargs: dict[str, Any] = Field(default_factory=dict)
     """Holds any model parameters valid for `create` call not explicitly specified."""
     baseten_api_key: SecretStr = Field(
         alias="api_key",
@@ -470,7 +457,7 @@ class ChatBaseten(BaseChatModel):
 
     @model_validator(mode="before")
     @classmethod
-    def build_extra(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def build_extra(cls, values: dict[str, Any]) -> dict[str, Any]:
         """Build extra kwargs from additional params that were passed in."""
         all_required_field_names = get_pydantic_field_names(cls)
         return _build_model_kwargs(values, all_required_field_names)
@@ -500,7 +487,7 @@ class ChatBaseten(BaseChatModel):
         return self
 
     @property
-    def _default_params(self) -> Dict[str, Any]:
+    def _default_params(self) -> dict[str, Any]:
         """Get the default parameters for calling Baseten API."""
         params = {
             "model": self.model,
@@ -542,8 +529,8 @@ class ChatBaseten(BaseChatModel):
 
     def _generate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -554,14 +541,14 @@ class ChatBaseten(BaseChatModel):
             )
             return generate_from_stream(stream_iter)
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        _message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = self.client.chat.completions.create(**params)
         return self._create_chat_result(response)
 
     def _create_message_dicts(
-        self, messages: List[BaseMessage], stop: Optional[List[str]]
-    ) -> tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        self, messages: list[BaseMessage], stop: Optional[list[str]]
+    ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         """Create message dicts and params for the API call."""
         params = self._default_params
         if stop is not None:
@@ -575,13 +562,13 @@ class ChatBaseten(BaseChatModel):
 
     def _stream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> Iterator[ChatGenerationChunk]:
         """Stream the chat model response."""
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        _message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
@@ -610,8 +597,8 @@ class ChatBaseten(BaseChatModel):
 
     async def _agenerate(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> ChatResult:
@@ -622,20 +609,20 @@ class ChatBaseten(BaseChatModel):
             )
             return await agenerate_from_stream(stream_iter)
 
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        _message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs}
         response = await self.async_client.chat.completions.create(**params)
         return self._create_chat_result(response)
 
     async def _astream(
         self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
+        messages: list[BaseMessage],
+        stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
         **kwargs: Any,
     ) -> AsyncIterator[ChatGenerationChunk]:
         """Asynchronously stream the chat model response."""
-        message_dicts, params = self._create_message_dicts(messages, stop)
+        _message_dicts, params = self._create_message_dicts(messages, stop)
         params = {**params, **kwargs, "stream": True}
 
         default_chunk_class = AIMessageChunk
@@ -663,7 +650,7 @@ class ChatBaseten(BaseChatModel):
             yield generation_chunk
 
     @property
-    def _identifying_params(self) -> Dict[str, Any]:
+    def _identifying_params(self) -> dict[str, Any]:
         """Get the identifying parameters."""
         return {
             "model": self.model,
@@ -676,7 +663,7 @@ class ChatBaseten(BaseChatModel):
         }
 
     def _get_ls_params(
-        self, stop: Optional[List[str]] = None, **kwargs: Any
+        self, stop: Optional[list[str]] = None, **kwargs: Any
     ) -> LangSmithParams:
         """Get the parameters used to invoke the model."""
         params = self._get_invocation_params(stop=stop, **kwargs)
@@ -699,7 +686,7 @@ class ChatBaseten(BaseChatModel):
 
     def bind_tools(
         self,
-        tools: List[Union[Dict[str, Any], type[BaseModel], Callable, BaseTool]],
+        tools: list[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         *,
         tool_choice: Optional[
             Union[dict, str, Literal["auto", "none", "required"], bool]
@@ -737,13 +724,15 @@ class ChatBaseten(BaseChatModel):
 
     def with_structured_output(
         self,
-        schema: Union[Dict, type[BaseModel]],
+        schema: Union[dict, type[BaseModel]],
         *,
-        method: Literal["function_calling", "json_mode", "json_schema"] = "function_calling",
+        method: Literal[
+            "function_calling", "json_mode", "json_schema"
+        ] = "function_calling",
         include_raw: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, Union[Dict, BaseModel]]:
+    ) -> Runnable[LanguageModelInput, Union[dict, BaseModel]]:
         """Model wrapper that returns outputs formatted to match the given schema.
 
         Args:
@@ -779,9 +768,7 @@ class ChatBaseten(BaseChatModel):
         if kwargs:
             msg = f"Received unsupported arguments: {kwargs}"
             raise ValueError(msg)
-        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(
-            schema
-        )
+        is_pydantic_schema = isinstance(schema, type) and is_basemodel_subclass(schema)
 
         if method == "function_calling":
             if schema is None:
@@ -809,7 +796,9 @@ class ChatBaseten(BaseChatModel):
                 )
                 raise ValueError(msg)
             formatted_schema = convert_to_json_schema(schema)
-            llm = self.bind(response_format={"type": "json_object", "schema": formatted_schema})
+            llm = self.bind(
+                response_format={"type": "json_object", "schema": formatted_schema}
+            )
             output_parser = (
                 PydanticOutputParser(pydantic_object=schema)
                 if is_pydantic_schema
@@ -838,5 +827,4 @@ class ChatBaseten(BaseChatModel):
                 [parser_none], exception_key="parsing_error"
             )
             return RunnableMap(raw=llm) | parser_with_fallback
-        else:
-            return llm | output_parser
+        return llm | output_parser

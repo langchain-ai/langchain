@@ -1,6 +1,7 @@
 """Test BasetenEmbeddings integration."""
 
 import os
+
 import pytest
 
 from langchain_baseten import BasetenEmbeddings
