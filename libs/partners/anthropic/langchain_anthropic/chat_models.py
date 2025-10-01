@@ -2310,8 +2310,7 @@ class ChatAnthropic(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. versionchanged:: 0.1.22
-
+        !!! warning "Behavior changed in 0.1.22"
                 Added support for TypedDict class as `schema`.
 
         """  # noqa: E501
@@ -2420,8 +2419,7 @@ class ChatAnthropic(BaseChatModel):
 
                 403
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
                 Uses Anthropic's `token counting API <https://docs.anthropic.com/en/docs/build-with-claude/token-counting>`__ to count tokens in messages.
 
         """  # noqa: D214,E501

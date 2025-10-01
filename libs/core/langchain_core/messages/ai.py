@@ -121,8 +121,7 @@ class UsageMetadata(TypedDict):
                 },
             }
 
-    .. versionchanged:: 0.3.9
-
+    !!! warning "Behavior changed in 0.3.9"
         Added ``input_token_details`` and ``output_token_details``.
 
     """

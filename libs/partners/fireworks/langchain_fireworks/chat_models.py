@@ -692,9 +692,8 @@ class ChatFireworks(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.7
-
-                        Added support for TypedDict class.
+                !!! warning "Behavior changed in 0.1.7"
+                    Added support for TypedDict class.
 
             method: The method for steering model generation, one of:
 
@@ -705,8 +704,7 @@ class ChatFireworks(BaseChatModel):
                 - ``'json_mode'``:
                     Uses Fireworks's `JSON mode feature <https://docs.fireworks.ai/structured-responses/structured-response-formatting>`_.
 
-                .. versionchanged:: 0.2.8
-
+                !!! warning "Behavior changed in 0.2.8"
                     Added support for ``'json_schema'``.
 
             include_raw:

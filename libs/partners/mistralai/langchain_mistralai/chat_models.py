@@ -763,9 +763,8 @@ class ChatMistralAI(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.12
-
-                        Added support for TypedDict class.
+                !!! warning "Behavior changed in 0.1.12"
+                    Added support for TypedDict class.
 
             method: The method for steering model generation, one of:
 
@@ -782,9 +781,8 @@ class ChatMistralAI(BaseChatModel):
                     must include instructions for formatting the output into the
                     desired schema into the model call.
 
-                .. versionchanged:: 0.2.5
-
-                        Added method="json_schema"
+                !!! warning "Behavior changed in 0.2.5"
+                    Added method="json_schema"
 
             include_raw:
                 If False then only the parsed structured output is returned. If

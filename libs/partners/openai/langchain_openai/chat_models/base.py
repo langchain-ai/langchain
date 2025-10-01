@@ -703,8 +703,7 @@ class BaseChatOpenAI(BaseChatModel):
 
     !!! version-added "Added in version 0.3.25"
 
-    .. versionchanged:: 1.0.0
-
+    !!! warning "Behavior changed in 1.0.0"
         Default updated to ``"responses/v1"``.
 
     """
@@ -1670,8 +1669,7 @@ class BaseChatOpenAI(BaseChatModel):
             kwargs: Any additional parameters are passed directly to
                 `langchain_openai.chat_models.base.ChatOpenAI.bind`.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
 
         """  # noqa: E501
@@ -1840,19 +1838,17 @@ class BaseChatOpenAI(BaseChatModel):
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.1.20
-
+        !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
             Support for ``method="json_schema"`` added.
 
-        .. versionchanged:: 0.3.12
+        !!! warning "Behavior changed in 0.3.12"
             Support for ``tools`` added.
 
-        .. versionchanged:: 0.3.21
+        !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.
 
         """  # noqa: E501
@@ -2973,23 +2969,20 @@ class ChatOpenAI(BaseChatOpenAI):  # type: ignore[override]
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.1.20
-
+        !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
             Support for ``method="json_schema"`` added.
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
             ``method`` default changed from "function_calling" to "json_schema".
 
-        .. versionchanged:: 0.3.12
+        !!! warning "Behavior changed in 0.3.12"
             Support for ``tools`` added.
 
-        .. versionchanged:: 0.3.21
+        !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

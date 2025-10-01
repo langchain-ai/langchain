@@ -953,8 +953,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         This test is optional and should be skipped if the model does not return
         usage metadata (see Configuration below).
 
-        .. versionchanged:: 0.3.17
-
+        !!! warning "Behavior changed in 0.3.17"
             Additionally check for the presence of ``model_name`` in the response
             metadata, which is needed for usage tracking in callback handlers.
 
@@ -1129,8 +1128,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
         Test to verify that the model returns correct usage metadata in streaming mode.
 
-        .. versionchanged:: 0.3.17
-
+        !!! warning "Behavior changed in 0.3.17"
             Additionally check for the presence of ``model_name`` in the response
             metadata, which is needed for usage tracking in callback handlers.
 

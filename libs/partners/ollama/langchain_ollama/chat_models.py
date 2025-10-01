@@ -1169,12 +1169,10 @@ class ChatOllama(BaseChatModel):
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.2.2
-
+        !!! warning "Behavior changed in 0.2.2"
             Added support for structured output API via ``format`` parameter.
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
             Updated default ``method`` to ``'json_schema'``.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"

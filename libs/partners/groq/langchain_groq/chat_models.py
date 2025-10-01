@@ -833,12 +833,10 @@ class ChatGroq(BaseChatModel):
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.9
-
+                !!! warning "Behavior changed in 0.1.9"
                     Added support for TypedDict class.
 
-                .. versionchanged:: 0.3.8
-
+                !!! warning "Behavior changed in 0.3.8"
                     Added support for Groq's dedicated structured output feature via
                     ``method="json_schema"``.
 

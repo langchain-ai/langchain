@@ -930,23 +930,20 @@ class AzureChatOpenAI(BaseChatOpenAI):
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.1.20
-
+        !!! warning "Behavior changed in 0.1.20"
             Added support for TypedDict class ``schema``.
 
-        .. versionchanged:: 0.1.21
-
+        !!! warning "Behavior changed in 0.1.21"
             Support for ``strict`` argument added.
             Support for ``method="json_schema"`` added.
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
             ``method`` default changed from "function_calling" to "json_schema".
 
-        .. versionchanged:: 0.3.12
+        !!! warning "Behavior changed in 0.3.12"
             Support for ``tools`` added.
 
-        .. versionchanged:: 0.3.21
+        !!! warning "Behavior changed in 0.3.21"
             Pass ``kwargs`` through to the model.
 
         ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`, `strict=True`"

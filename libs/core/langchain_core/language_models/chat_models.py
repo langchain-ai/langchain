@@ -1752,8 +1752,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. versionchanged:: 0.2.26
-
+        !!! warning "Behavior changed in 0.2.26"
                 Added support for TypedDict class.
 
         """  # noqa: E501

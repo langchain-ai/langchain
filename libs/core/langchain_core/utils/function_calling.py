@@ -418,20 +418,16 @@ def convert_to_openai_function(
     Raises:
         ValueError: If function is not in a supported format.
 
-    .. versionchanged:: 0.2.29
-
+    !!! warning "Behavior changed in 0.2.29"
         ``strict`` arg added.
 
-    .. versionchanged:: 0.3.13
-
+    !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
 
-    .. versionchanged:: 0.3.14
-
+    !!! warning "Behavior changed in 0.3.14"
         Support for Amazon Bedrock Converse format tools added.
 
-    .. versionchanged:: 0.3.16
-
+    !!! warning "Behavior changed in 0.3.16"
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
     """
@@ -549,35 +545,28 @@ def convert_to_openai_tool(
         A dict version of the passed in tool which is compatible with the
         OpenAI tool-calling API.
 
-    .. versionchanged:: 0.2.29
-
+    !!! warning "Behavior changed in 0.2.29"
         ``strict`` arg added.
 
-    .. versionchanged:: 0.3.13
-
+    !!! warning "Behavior changed in 0.3.13"
         Support for Anthropic format tools added.
 
-    .. versionchanged:: 0.3.14
-
+    !!! warning "Behavior changed in 0.3.14"
         Support for Amazon Bedrock Converse format tools added.
 
-    .. versionchanged:: 0.3.16
-
+    !!! warning "Behavior changed in 0.3.16"
         'description' and 'parameters' keys are now optional. Only 'name' is
         required and guaranteed to be part of the output.
 
-    .. versionchanged:: 0.3.44
-
+    !!! warning "Behavior changed in 0.3.44"
         Return OpenAI Responses API-style tools unchanged. This includes
         any dict with "type" in "file_search", "function", "computer_use_preview",
         "web_search_preview".
 
-    .. versionchanged:: 0.3.61
-
+    !!! warning "Behavior changed in 0.3.61"
         Added support for OpenAI's built-in code interpreter and remote MCP tools.
 
-    .. versionchanged:: 0.3.63
-
+    !!! warning "Behavior changed in 0.3.63"
         Added support for OpenAI's image generation built-in tool.
     """
     # Import locally to prevent circular import
