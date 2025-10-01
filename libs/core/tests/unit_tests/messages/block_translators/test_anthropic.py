@@ -326,6 +326,49 @@ def test_convert_to_v1_from_anthropic_chunk() -> None:
     ]
     assert full.content_blocks == expected_content_blocks
 
+    # Test parse partial json
+    full = AIMessageChunk(
+        content=[
+            {
+                "id": "srvtoolu_abc123",
+                "input": {},
+                "name": "web_fetch",
+                "type": "server_tool_use",
+                "index": 0,
+                "partial_json": '{"url": "https://docs.langchain.com"}',
+            },
+            {
+                "id": "mcptoolu_abc123",
+                "input": {},
+                "name": "ask_question",
+                "server_name": "<my server name>",
+                "type": "mcp_tool_use",
+                "index": 1,
+                "partial_json": '{"repoName": "<my repo>", "question": "<my query>"}',
+            },
+        ],
+        response_metadata={"model_provider": "anthropic"},
+        chunk_position="last",
+    )
+    expected_content_blocks = [
+        {
+            "type": "server_tool_call",
+            "name": "web_fetch",
+            "id": "srvtoolu_abc123",
+            "args": {"url": "https://docs.langchain.com"},
+            "index": 0,
+        },
+        {
+            "type": "server_tool_call",
+            "name": "remote_mcp",
+            "id": "mcptoolu_abc123",
+            "args": {"repoName": "<my repo>", "question": "<my query>"},
+            "extras": {"tool_name": "ask_question", "server_name": "<my server name>"},
+            "index": 1,
+        },
+    ]
+    assert full.content_blocks == expected_content_blocks
+
 
 def test_convert_to_v1_from_anthropic_input() -> None:
     message = HumanMessage(
