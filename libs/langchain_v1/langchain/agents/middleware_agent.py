@@ -95,14 +95,26 @@ def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> l
     Returns:
         List of jump destinations, or empty list if not configured.
     """
-    # Try sync method first
+    # Get the base class method for comparison
+    base_sync_method = getattr(AgentMiddleware, hook_name, None)
+    base_async_method = getattr(AgentMiddleware, f"a{hook_name}", None)
+
+    # Try sync method first - only if it's overridden from base class
     sync_method = getattr(middleware.__class__, hook_name, None)
-    if sync_method and hasattr(sync_method, "__can_jump_to__"):
+    if (
+        sync_method
+        and sync_method is not base_sync_method
+        and hasattr(sync_method, "__can_jump_to__")
+    ):
         return sync_method.__can_jump_to__
 
-    # Try async method
+    # Try async method - only if it's overridden from base class
     async_method = getattr(middleware.__class__, f"a{hook_name}", None)
-    if async_method and hasattr(async_method, "__can_jump_to__"):
+    if (
+        async_method
+        and async_method is not base_async_method
+        and hasattr(async_method, "__can_jump_to__")
+    ):
         return async_method.__can_jump_to__
 
     return []

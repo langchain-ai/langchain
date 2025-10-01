@@ -323,6 +323,10 @@ def before_model(
             ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "BeforeModelMiddleware")
             )
@@ -588,6 +592,10 @@ def after_model(
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
+
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
 
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
