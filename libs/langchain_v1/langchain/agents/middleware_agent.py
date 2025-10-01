@@ -2,7 +2,6 @@
 
 import itertools
 from collections.abc import Callable, Sequence
-from inspect import signature
 from typing import Annotated, Any, cast, get_args, get_origin, get_type_hints
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -37,6 +36,8 @@ from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
+
+ResponseT = TypeVar("ResponseT")
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -130,9 +131,6 @@ def _handle_structured_output_error(
     return False, ""
 
 
-ResponseT = TypeVar("ResponseT")
-
-
 def create_agent(  # noqa: PLR0915
     *,
     model: str | BaseChatModel,
@@ -212,15 +210,22 @@ def create_agent(  # noqa: PLR0915
         "Please remove duplicate middleware instances."
     )
     middleware_w_before = [
-        m for m in middleware if m.__class__.before_model is not AgentMiddleware.before_model
+        m
+        for m in middleware
+        if m.__class__.before_model is not AgentMiddleware.before_model
+        or m.__class__.abefore_model is not AgentMiddleware.abefore_model
     ]
     middleware_w_modify_model_request = [
         m
         for m in middleware
         if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request
+        or m.__class__.amodify_model_request is not AgentMiddleware.amodify_model_request
     ]
     middleware_w_after = [
-        m for m in middleware if m.__class__.after_model is not AgentMiddleware.after_model
+        m
+        for m in middleware
+        if m.__class__.after_model is not AgentMiddleware.after_model
+        or m.__class__.aafter_model is not AgentMiddleware.aafter_model
     ]
 
     state_schemas = {m.state_schema for m in middleware}
@@ -246,7 +251,7 @@ def create_agent(  # noqa: PLR0915
         if isinstance(response_format, ProviderStrategy):
             if not output.tool_calls and native_output_binding:
                 structured_response = native_output_binding.parse(output)
-                return {"messages": [output], "response": structured_response}
+                return {"messages": [output], "structured_response": structured_response}
             return {"messages": [output]}
 
         # Handle structured output with tools strategy
@@ -303,7 +308,7 @@ def create_agent(  # noqa: PLR0915
                                 name=tool_call["name"],
                             ),
                         ],
-                        "response": structured_response,
+                        "structured_response": structured_response,
                     }
                 except Exception as exc:  # noqa: BLE001
                     exception = StructuredOutputValidationError(tool_call["name"], exc)
@@ -328,36 +333,50 @@ def create_agent(  # noqa: PLR0915
 
     def _get_bound_model(request: ModelRequest) -> Runnable:
         """Get the model with appropriate tool bindings."""
+        # Get actual tool objects from tool names
+        tools_by_name = {t.name: t for t in default_tools}
+
+        unknown_tools = [name for name in request.tools if name not in tools_by_name]
+        if unknown_tools:
+            available_tools = sorted(tools_by_name.keys())
+            msg = (
+                f"Middleware returned unknown tool names: {unknown_tools}\n\n"
+                f"Available tools: {available_tools}\n\n"
+                "To fix this issue:\n"
+                "1. Ensure the tools are passed to create_agent() via "
+                "the 'tools' parameter\n"
+                "2. If using custom middleware with tools, ensure "
+                "they're registered via middleware.tools attribute\n"
+                "3. Verify that tool names in ModelRequest.tools match "
+                "the actual tool.name values"
+            )
+            raise ValueError(msg)
+
+        requested_tools = [tools_by_name[name] for name in request.tools]
+
         if isinstance(response_format, ProviderStrategy):
             # Use native structured output
             kwargs = response_format.to_model_kwargs()
             return request.model.bind_tools(
-                request.tools, strict=True, **kwargs, **request.model_settings
+                requested_tools, strict=True, **kwargs, **request.model_settings
             )
         if isinstance(response_format, ToolStrategy):
             tool_choice = "any" if structured_output_tools else request.tool_choice
             return request.model.bind_tools(
-                request.tools, tool_choice=tool_choice, **request.model_settings
+                requested_tools, tool_choice=tool_choice, **request.model_settings
             )
         # Standard model binding
-        if request.tools:
+        if requested_tools:
             return request.model.bind_tools(
-                request.tools, tool_choice=request.tool_choice, **request.model_settings
+                requested_tools, tool_choice=request.tool_choice, **request.model_settings
             )
         return request.model.bind(**request.model_settings)
-
-    model_request_signatures: list[
-        tuple[bool, AgentMiddleware[AgentState[ResponseT], ContextT]]
-    ] = [
-        ("runtime" in signature(m.modify_model_request).parameters, m)
-        for m in middleware_w_modify_model_request
-    ]
 
     def model_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=[t.name for t in default_tools],
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
@@ -365,11 +384,17 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
-            if use_runtime:
+        for m in middleware_w_modify_model_request:
+            if m.__class__.modify_model_request is not AgentMiddleware.modify_model_request:
                 m.modify_model_request(request, state, runtime)
             else:
-                m.modify_model_request(request, state)  # type: ignore[call-arg]
+                msg = (
+                    f"No synchronous function provided for "
+                    f'{m.__class__.__name__}.amodify_model_request".'
+                    "\nEither initialize with a synchronous function or invoke"
+                    " via the async API (ainvoke, astream, etc.)"
+                )
+                raise TypeError(msg)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -382,10 +407,9 @@ def create_agent(  # noqa: PLR0915
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
-        # Start with the base model request
         request = ModelRequest(
             model=model,
-            tools=default_tools,
+            tools=[t.name for t in default_tools],
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
@@ -393,11 +417,8 @@ def create_agent(  # noqa: PLR0915
         )
 
         # Apply modify_model_request middleware in sequence
-        for use_runtime, m in model_request_signatures:
-            if use_runtime:
-                m.modify_model_request(request, state, runtime)
-            else:
-                m.modify_model_request(request, state)  # type: ignore[call-arg]
+        for m in middleware_w_modify_model_request:
+            await m.amodify_model_request(request, state, runtime)
 
         # Get the final model and messages
         model_ = _get_bound_model(request)
@@ -419,14 +440,46 @@ def create_agent(  # noqa: PLR0915
 
     # Add middleware nodes
     for m in middleware:
-        if m.__class__.before_model is not AgentMiddleware.before_model:
+        if (
+            m.__class__.before_model is not AgentMiddleware.before_model
+            or m.__class__.abefore_model is not AgentMiddleware.abefore_model
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_before = (
+                m.before_model
+                if m.__class__.before_model is not AgentMiddleware.before_model
+                else None
+            )
+            async_before = (
+                m.abefore_model
+                if m.__class__.abefore_model is not AgentMiddleware.abefore_model
+                else None
+            )
+            before_node = RunnableCallable(sync_before, async_before)
             graph.add_node(
-                f"{m.__class__.__name__}.before_model", m.before_model, input_schema=state_schema
+                f"{m.__class__.__name__}.before_model", before_node, input_schema=state_schema
             )
 
-        if m.__class__.after_model is not AgentMiddleware.after_model:
+        if (
+            m.__class__.after_model is not AgentMiddleware.after_model
+            or m.__class__.aafter_model is not AgentMiddleware.aafter_model
+        ):
+            # Use RunnableCallable to support both sync and async
+            # Pass None for sync if not overridden to avoid signature conflicts
+            sync_after = (
+                m.after_model
+                if m.__class__.after_model is not AgentMiddleware.after_model
+                else None
+            )
+            async_after = (
+                m.aafter_model
+                if m.__class__.aafter_model is not AgentMiddleware.aafter_model
+                else None
+            )
+            after_node = RunnableCallable(sync_after, async_after)
             graph.add_node(
-                f"{m.__class__.__name__}.after_model", m.after_model, input_schema=state_schema
+                f"{m.__class__.__name__}.after_model", after_node, input_schema=state_schema
             )
 
     # add start edge
