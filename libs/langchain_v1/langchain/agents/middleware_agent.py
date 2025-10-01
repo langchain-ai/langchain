@@ -378,7 +378,11 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
-        return _handle_model_output(output)
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+            **_handle_model_output(output),
+        }
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
@@ -406,7 +410,11 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
-        return _handle_model_output(output)
+        return {
+            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
+            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
+            **_handle_model_output(output),
+        }
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable

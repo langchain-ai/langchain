@@ -36,6 +36,10 @@ from langchain.agents.middleware.planning import (
     write_todos,
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
+from langchain.agents.middleware.call_tracking import (
+    ModelCallTrackingMiddleware,
+    ModelCallLimitExceededError,
+)
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
 from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
@@ -1661,3 +1665,181 @@ def test_planning_middleware_custom_system_prompt() -> None:
     assert result["todos"] == [{"content": "Custom task", "status": "pending"}]
     # assert custom system prompt is in the first AI message
     assert "call the write_todos tool" in result["messages"][1].content
+
+@tool
+def simple_tool(input: str) -> str:
+    """A simple tool"""
+    return input
+
+
+def test_middleware_unit_functionality():
+    """Test that the middleware works as expected in isolation."""
+    # Test with jump_to_end behavior
+    middleware = ModelCallTrackingMiddleware(thread_limit=2, run_limit=1)
+
+    # Mock runtime (not used in current implementation)
+    runtime = None
+
+    # Test when limits are not exceeded
+    state = {"thread_model_call_count": 0, "run_model_call_count": 0}
+    result = middleware.before_model(state, runtime)
+    assert result is None
+
+    # Test when thread limit is exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    result = middleware.before_model(state, runtime)
+    assert result == {"jump_to": "end"}
+
+    # Test when run limit is exceeded
+    state = {"thread_model_call_count": 1, "run_model_call_count": 1}
+    result = middleware.before_model(state, runtime)
+    assert result == {"jump_to": "end"}
+
+    # Test with raise_exception behavior
+    middleware_exception = ModelCallTrackingMiddleware(
+        thread_limit=2, run_limit=1, exit_behavior="raise_exception"
+    )
+
+    # Test exception when thread limit exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware_exception.before_model(state, runtime)
+
+    assert "thread limit (2/2)" in str(exc_info.value)
+
+    # Test exception when run limit exceeded
+    state = {"thread_model_call_count": 1, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware_exception.before_model(state, runtime)
+
+    assert "run limit (1/1)" in str(exc_info.value)
+
+
+def test_thread_limit_with_create_agent():
+    """Test that thread limits work correctly with create_agent."""
+    model = FakeToolCallingModel()
+
+    # Set thread limit to 1 (should be exceeded after 1 call)
+    agent = create_agent(
+        model=model,
+        tools=[simple_tool],
+        middleware=[ModelCallTrackingMiddleware(thread_limit=1)],
+    ).compile(checkpointer=InMemorySaver())
+
+    # First invocation should work - 1 model call, within thread limit
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    # Should complete successfully with 1 model call
+    assert "messages" in result
+    assert len(result["messages"]) == 2  # Human + AI messages
+
+    # Second invocation in same thread should hit thread limit
+    # The agent should jump to end after detecting the limit
+    result2 = agent.invoke(
+        {"messages": [HumanMessage("Hello again")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    assert "messages" in result2
+    # The agent should have detected the limit and jumped to end before making the model call
+    # So we should have: previous messages + new human message (no new AI response)
+    assert len(result2["messages"]) == 3  # Previous Human + AI + New Human
+    assert isinstance(result2["messages"][0], HumanMessage)  # First human
+    assert isinstance(result2["messages"][1], AIMessage)  # First AI response
+    assert isinstance(result2["messages"][2], HumanMessage)  # Second human
+    # No AI response for the second invocation due to limit
+
+
+def test_run_limit_with_create_agent():
+    """Test that run limits work correctly with create_agent."""
+    # Create a model that will make 2 calls
+    model = FakeToolCallingModel(
+        tool_calls=[
+            [{"name": "simple_tool", "args": {"input": "test"}, "id": "1"}],
+            [],  # No tool calls on second call
+        ]
+    )
+
+    # Set run limit to 1 (should be exceeded after 1 call)
+    agent = create_agent(
+        model=model,
+        tools=[simple_tool],
+        middleware=[ModelCallTrackingMiddleware(run_limit=1)],
+    ).compile(checkpointer=InMemorySaver())
+
+    # This should hit the run limit after the first model call
+    result = agent.invoke(
+        {"messages": [HumanMessage("Hello")]}, {"configurable": {"thread_id": "thread1"}}
+    )
+
+    assert "messages" in result
+    # The agent should have made 1 model call then jumped to end
+    # So we should have: Human + AI + Tool messages, but no final AI response
+    assert len(result["messages"]) == 3  # Human + AI + Tool
+    assert isinstance(result["messages"][0], HumanMessage)
+    assert isinstance(result["messages"][1], AIMessage)
+    assert isinstance(result["messages"][2], ToolMessage)
+    # No final AI response due to run limit
+
+
+def test_middleware_initialization_validation():
+    """Test that middleware initialization validates parameters correctly."""
+    # Test that at least one limit must be specified
+    with pytest.raises(ValueError, match="At least one limit must be specified"):
+        ModelCallTrackingMiddleware()
+
+    # Test invalid exit behavior
+    with pytest.raises(ValueError, match="Invalid exit_behavior"):
+        ModelCallTrackingMiddleware(thread_limit=5, exit_behavior="invalid")
+
+    # Test valid initialization
+    middleware = ModelCallTrackingMiddleware(thread_limit=5, run_limit=3)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit == 3
+    assert middleware.exit_behavior == "jump_to_end"
+
+    # Test with only thread limit
+    middleware = ModelCallTrackingMiddleware(thread_limit=5)
+    assert middleware.thread_limit == 5
+    assert middleware.run_limit is None
+
+    # Test with only run limit
+    middleware = ModelCallTrackingMiddleware(run_limit=3)
+    assert middleware.thread_limit is None
+    assert middleware.run_limit == 3
+
+
+def test_exception_error_message():
+    """Test that the exception provides clear error messages."""
+    middleware = ModelCallTrackingMiddleware(
+        thread_limit=2, run_limit=1, exit_behavior="raise_exception"
+    )
+
+    # Test thread limit exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 0}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "thread limit (2/2)" in error_msg
+
+    # Test run limit exceeded
+    state = {"thread_model_call_count": 0, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "run limit (1/1)" in error_msg
+
+    # Test both limits exceeded
+    state = {"thread_model_call_count": 2, "run_model_call_count": 1}
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        middleware.before_model(state, None)
+
+    error_msg = str(exc_info.value)
+    assert "Model call limits exceeded" in error_msg
+    assert "thread limit (2/2)" in error_msg
+    assert "run limit (1/1)" in error_msg

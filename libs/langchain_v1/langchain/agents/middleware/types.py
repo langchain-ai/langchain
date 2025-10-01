@@ -21,6 +21,7 @@ from typing import (
 # needed as top level import for pydantic schema generation on AgentState
 from langchain_core.messages import AnyMessage  # noqa: TC002
 from langgraph.channels.ephemeral_value import EphemeralValue
+from langgraph.channels.untracked_value import UntrackedValue
 from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
 from langgraph.typing import ContextT
@@ -91,6 +92,8 @@ class AgentState(TypedDict, Generic[ResponseT]):
     messages: Required[Annotated[list[AnyMessage], add_messages]]
     jump_to: NotRequired[Annotated[JumpTo | None, EphemeralValue, PrivateStateAttr]]
     response: NotRequired[ResponseT]
+    thread_model_call_count: NotRequired[Annotated[int, PrivateStateAttr]]
+    run_model_call_count: NotRequired[Annotated[int, UntrackedValue, PrivateStateAttr]]
 
 
 class PublicAgentState(TypedDict, Generic[ResponseT]):
