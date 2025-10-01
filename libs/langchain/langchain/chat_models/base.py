@@ -103,6 +103,7 @@ def init_chat_model(
             - ``bedrock_converse``    -> ``langchain-aws``
             - ``cohere``              -> ``langchain-cohere``
             - ``fireworks``           -> ``langchain-fireworks``
+            - ``baseten``             -> ``langchain-baseten``
             - ``together``            -> ``langchain-together``
             - ``mistralai``           -> ``langchain-mistralai``
             - ``huggingface``         -> ``langchain-huggingface``
@@ -389,6 +390,11 @@ def _init_chat_model_helper(
         from langchain_fireworks import ChatFireworks
 
         return ChatFireworks(model=model, **kwargs)
+    if model_provider == "baseten":
+        _check_pkg("langchain_baseten")
+        from langchain_baseten import ChatBaseten
+
+        return ChatBaseten(model=model, **kwargs)
     if model_provider == "ollama":
         try:
             _check_pkg("langchain_ollama")
@@ -481,6 +487,7 @@ _SUPPORTED_PROVIDERS = {
     "google_vertexai",
     "google_genai",
     "fireworks",
+    "baseten",
     "ollama",
     "together",
     "mistralai",

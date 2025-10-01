@@ -4,36 +4,63 @@
 > ML models performantly, scalably, and cost-efficiently.
 
 >As a model inference platform, `Baseten` is a `Provider` in the LangChain ecosystem.
-The `Baseten` integration currently implements a single `Component`, LLMs, but more are planned!
+The `Baseten` integration implements chat models and embeddings for comprehensive AI workflows.
 
->`Baseten` lets you run both open source models like Llama 2 or Mistral and run proprietary or
-fine-tuned models on dedicated GPUs. If you're used to a provider like OpenAI, using Baseten has a few differences:
+>`Baseten` lets you run both open source models like Kimi-K2 or DeepSeekV3.1 through Model APIs.
+All models can be accessed through a slug via OpenAI-compatible endpoints. Simply choose one of the following
+[model slugs](https://docs.baseten.co/development/model-apis/overview#supported-models) when instantiating a ChatBaseten object.
 
->* Rather than paying per token, you pay per minute of GPU used.
->* Every model on Baseten uses [Truss](https://truss.baseten.co/welcome), our open-source model packaging framework, for maximum customizability.
->* While we have some [OpenAI ChatCompletions-compatible models](https://docs.baseten.co/api-reference/openai), you can define your own I/O spec with `Truss`.
+>`Baseten` also offers performant embeddings through dedicated models.
+Click deploy after choosing the model from the [Baseten model library](https://www.baseten.co/library/tag/embedding/),
+then supply the `model_url` when instantiating a BasetenEmbeddings object.
 
 >[Learn more](https://docs.baseten.co/deploy/lifecycle) about model IDs and deployments.
 
 >Learn more about Baseten in [the Baseten docs](https://docs.baseten.co/).
 
-## Installation and Setup
 
-You'll need two things to use Baseten models with LangChain:
 
-* A [Baseten account](https://baseten.co)
-* An [API key](https://docs.baseten.co/observability/api-keys)
+## Installation and setup
 
-Export your API key to your as an environment variable called `BASETEN_API_KEY`.
+- Install the Baseten integration package.
 
-```sh
-export BASETEN_API_KEY="paste_your_api_key_here"
-```
+  ```bash
+  pip install langchain-baseten
+  ```
 
-## LLMs
+- Get a Baseten API key by signing up at [baseten.co](https://baseten.co).
+- Authenticate by setting the BASETEN_API_KEY environment variable.
 
-See a [usage example](/docs/integrations/llms/baseten).
+### Authentication
+
+There are two ways to authenticate using your Baseten API key:
+
+1. Setting the `BASETEN_API_KEY` environment variable.
+
+   ```python
+   import os
+   os.environ["BASETEN_API_KEY"] = "<KEY>"
+   ```
+
+2. Setting `api_key` field in the Baseten modules.
+
+   ```python
+   from langchain_baseten import ChatBaseten
+   chat = ChatBaseten(api_key="<KEY>")
+   ```
+
+## Chat Models
+
+See a [usage example](/docs/integrations/chat/baseten).
 
 ```python
-from langchain_community.llms import Baseten
+from langchain_baseten import ChatBaseten
+```
+
+## Embedding models
+
+See a [usage example](/docs/integrations/text_embedding/baseten).
+
+```python
+from langchain_baseten import BasetenEmbeddings
 ```
