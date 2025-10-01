@@ -85,6 +85,41 @@ def _extract_metadata(type_: type) -> list:
     return []
 
 
+def _get_can_jump_to(middleware: AgentMiddleware[Any, Any], hook_name: str) -> list[JumpTo]:
+    """Get the can_jump_to list from either sync or async hook methods.
+
+    Args:
+        middleware: The middleware instance to inspect.
+        hook_name: The name of the hook ('before_model' or 'after_model').
+
+    Returns:
+        List of jump destinations, or empty list if not configured.
+    """
+    # Get the base class method for comparison
+    base_sync_method = getattr(AgentMiddleware, hook_name, None)
+    base_async_method = getattr(AgentMiddleware, f"a{hook_name}", None)
+
+    # Try sync method first - only if it's overridden from base class
+    sync_method = getattr(middleware.__class__, hook_name, None)
+    if (
+        sync_method
+        and sync_method is not base_sync_method
+        and hasattr(sync_method, "__can_jump_to__")
+    ):
+        return sync_method.__can_jump_to__
+
+    # Try async method - only if it's overridden from base class
+    async_method = getattr(middleware.__class__, f"a{hook_name}", None)
+    if (
+        async_method
+        and async_method is not base_async_method
+        and hasattr(async_method, "__can_jump_to__")
+    ):
+        return async_method.__can_jump_to__
+
+    return []
+
+
 def _supports_native_structured_output(model: str | BaseChatModel) -> bool:
     """Check if a model supports native structured output."""
     model_name: str | None = None
@@ -511,13 +546,13 @@ def create_agent(  # noqa: PLR0915
         # If no tools, just go to END from model
         graph.add_edge(last_node, END)
     else:
-        # If after_model, then need to check for jump_to
+        # If after_model, then need to check for can_jump_to
         _add_middleware_edge(
             graph,
             f"{middleware_w_after[0].__class__.__name__}.after_model",
             END,
             first_node,
-            jump_to=middleware_w_after[0].after_model_jump_to,
+            can_jump_to=_get_can_jump_to(middleware_w_after[0], "after_model"),
         )
 
     # Add middleware edges (same as before)
@@ -528,7 +563,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.before_model",
                 f"{m2.__class__.__name__}.before_model",
                 first_node,
-                jump_to=m1.before_model_jump_to,
+                can_jump_to=_get_can_jump_to(m1, "before_model"),
             )
         # Go directly to model_request after the last before_model
         _add_middleware_edge(
@@ -536,7 +571,7 @@ def create_agent(  # noqa: PLR0915
             f"{middleware_w_before[-1].__class__.__name__}.before_model",
             "model_request",
             first_node,
-            jump_to=middleware_w_before[-1].before_model_jump_to,
+            can_jump_to=_get_can_jump_to(middleware_w_before[-1], "before_model"),
         )
 
     if middleware_w_after:
@@ -549,7 +584,7 @@ def create_agent(  # noqa: PLR0915
                 f"{m1.__class__.__name__}.after_model",
                 f"{m2.__class__.__name__}.after_model",
                 first_node,
-                jump_to=m1.after_model_jump_to,
+                can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
 
     return graph
@@ -643,7 +678,7 @@ def _add_middleware_edge(
     name: str,
     default_destination: str,
     model_destination: str,
-    jump_to: list[JumpTo] | None,
+    can_jump_to: list[JumpTo] | None,
 ) -> None:
     """Add an edge to the graph for a middleware node.
 
@@ -653,20 +688,20 @@ def _add_middleware_edge(
         name: The name of the middleware node.
         default_destination: The default destination for the edge.
         model_destination: The destination for the edge to the model.
-        jump_to: The conditionally jumpable destinations for the edge.
+        can_jump_to: The conditionally jumpable destinations for the edge.
     """
-    if jump_to:
+    if can_jump_to:
 
         def jump_edge(state: dict[str, Any]) -> str:
             return _resolve_jump(state.get("jump_to"), model_destination) or default_destination
 
         destinations = [default_destination]
 
-        if "end" in jump_to:
+        if "end" in can_jump_to:
             destinations.append(END)
-        if "tools" in jump_to:
+        if "tools" in can_jump_to:
             destinations.append("tools")
-        if "model" in jump_to and name != model_destination:
+        if "model" in can_jump_to and name != model_destination:
             destinations.append(model_destination)
 
         graph.add_conditional_edges(name, jump_edge, destinations)

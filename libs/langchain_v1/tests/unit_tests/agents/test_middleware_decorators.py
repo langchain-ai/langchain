@@ -3,6 +3,7 @@
 import pytest
 from typing import Any
 from typing_extensions import NotRequired
+from syrupy.assertion import SnapshotAssertion
 
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.tools import tool
@@ -16,8 +17,9 @@ from langchain.agents.middleware.types import (
     before_model,
     after_model,
     modify_model_request,
+    hook_config,
 )
-from langchain.agents.middleware_agent import create_agent
+from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
 from .model import FakeToolCallingModel
 
 
@@ -37,19 +39,19 @@ def test_before_model_decorator() -> None:
     """Test before_model decorator with all configuration options."""
 
     @before_model(
-        state_schema=CustomState, tools=[test_tool], jump_to=["__end__"], name="CustomBeforeModel"
+        state_schema=CustomState, tools=[test_tool], can_jump_to=["end"], name="CustomBeforeModel"
     )
     def custom_before_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
-        return {"jump_to": "__end__"}
+        return {"jump_to": "end"}
 
     assert isinstance(custom_before_model, AgentMiddleware)
     assert custom_before_model.state_schema == CustomState
     assert custom_before_model.tools == [test_tool]
-    assert custom_before_model.before_model_jump_to == ["__end__"]
+    assert getattr(custom_before_model.__class__.before_model, "__can_jump_to__", []) == ["end"]
     assert custom_before_model.__class__.__name__ == "CustomBeforeModel"
 
     result = custom_before_model.before_model({"messages": [HumanMessage("Hello")]}, None)
-    assert result == {"jump_to": "__end__"}
+    assert result == {"jump_to": "end"}
 
 
 def test_after_model_decorator() -> None:
@@ -58,7 +60,7 @@ def test_after_model_decorator() -> None:
     @after_model(
         state_schema=CustomState,
         tools=[test_tool],
-        jump_to=["model", "__end__"],
+        can_jump_to=["model", "end"],
         name="CustomAfterModel",
     )
     def custom_after_model(state: CustomState, runtime: Runtime) -> dict[str, Any]:
@@ -68,7 +70,10 @@ def test_after_model_decorator() -> None:
     assert isinstance(custom_after_model, AgentMiddleware)
     assert custom_after_model.state_schema == CustomState
     assert custom_after_model.tools == [test_tool]
-    assert custom_after_model.after_model_jump_to == ["model", "__end__"]
+    assert getattr(custom_after_model.__class__.after_model, "__can_jump_to__", []) == [
+        "model",
+        "end",
+    ]
     assert custom_after_model.__class__.__name__ == "CustomAfterModel"
 
     # Verify it works
@@ -156,6 +161,82 @@ def test_decorators_use_function_names_as_default() -> None:
     assert my_before_hook.__class__.__name__ == "my_before_hook"
     assert my_modify_hook.__class__.__name__ == "my_modify_hook"
     assert my_after_hook.__class__.__name__ == "my_after_hook"
+
+
+def test_hook_config_decorator_on_class_method() -> None:
+    """Test hook_config decorator on AgentMiddleware class methods."""
+
+    class JumpMiddleware(AgentMiddleware):
+        @hook_config(can_jump_to=["end", "model"])
+        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+            if len(state["messages"]) > 5:
+                return {"jump_to": "end"}
+            return None
+
+        @hook_config(can_jump_to=["tools"])
+        def after_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+            return {"jump_to": "tools"}
+
+    # Verify can_jump_to metadata is preserved
+    assert getattr(JumpMiddleware.before_model, "__can_jump_to__", []) == ["end", "model"]
+    assert getattr(JumpMiddleware.after_model, "__can_jump_to__", []) == ["tools"]
+
+
+def test_can_jump_to_with_before_model_decorator() -> None:
+    """Test can_jump_to parameter used with before_model decorator."""
+
+    @before_model(can_jump_to=["end"])
+    def conditional_before(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if len(state["messages"]) > 3:
+            return {"jump_to": "end"}
+        return None
+
+    # Verify middleware was created and has can_jump_to metadata
+    assert isinstance(conditional_before, AgentMiddleware)
+    assert getattr(conditional_before.__class__.before_model, "__can_jump_to__", []) == ["end"]
+
+
+def test_can_jump_to_with_after_model_decorator() -> None:
+    """Test can_jump_to parameter used with after_model decorator."""
+
+    @after_model(can_jump_to=["model", "end"])
+    def conditional_after(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if state["messages"][-1].content == "retry":
+            return {"jump_to": "model"}
+        return None
+
+    # Verify middleware was created and has can_jump_to metadata
+    assert isinstance(conditional_after, AgentMiddleware)
+    assert getattr(conditional_after.__class__.after_model, "__can_jump_to__", []) == [
+        "model",
+        "end",
+    ]
+
+
+def test_can_jump_to_integration() -> None:
+    """Test can_jump_to parameter in a full agent."""
+    calls = []
+
+    @before_model(can_jump_to=["end"])
+    def early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        calls.append("early_exit")
+        if state["messages"][0].content == "exit":
+            return {"jump_to": "end"}
+        return None
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[early_exit])
+    agent = agent.compile()
+
+    # Test with early exit
+    result = agent.invoke({"messages": [HumanMessage("exit")]})
+    assert calls == ["early_exit"]
+    assert len(result["messages"]) == 1
+
+    # Test without early exit
+    calls.clear()
+    result = agent.invoke({"messages": [HumanMessage("hello")]})
+    assert calls == ["early_exit"]
+    assert len(result["messages"]) > 1
 
 
 # Async Decorator Tests
@@ -324,3 +405,170 @@ async def test_mixed_sync_async_decorators_integration() -> None:
         "sync_after",
         "async_after",
     ]
+
+
+def test_async_before_model_preserves_can_jump_to() -> None:
+    """Test that can_jump_to metadata is preserved for async before_model functions."""
+
+    @before_model(can_jump_to=["end"])
+    async def async_conditional_before(
+        state: AgentState, runtime: Runtime
+    ) -> dict[str, Any] | None:
+        if len(state["messages"]) > 3:
+            return {"jump_to": "end"}
+        return None
+
+    # Verify middleware was created and has can_jump_to metadata
+    assert isinstance(async_conditional_before, AgentMiddleware)
+    assert getattr(async_conditional_before.__class__.abefore_model, "__can_jump_to__", []) == [
+        "end"
+    ]
+
+
+def test_async_after_model_preserves_can_jump_to() -> None:
+    """Test that can_jump_to metadata is preserved for async after_model functions."""
+
+    @after_model(can_jump_to=["model", "end"])
+    async def async_conditional_after(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if state["messages"][-1].content == "retry":
+            return {"jump_to": "model"}
+        return None
+
+    # Verify middleware was created and has can_jump_to metadata
+    assert isinstance(async_conditional_after, AgentMiddleware)
+    assert getattr(async_conditional_after.__class__.aafter_model, "__can_jump_to__", []) == [
+        "model",
+        "end",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_async_can_jump_to_integration() -> None:
+    """Test can_jump_to parameter in a full agent with async middleware."""
+    calls = []
+
+    @before_model(can_jump_to=["end"])
+    async def async_early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        calls.append("async_early_exit")
+        if state["messages"][0].content == "exit":
+            return {"jump_to": "end"}
+        return None
+
+    agent = create_agent(model=FakeToolCallingModel(), middleware=[async_early_exit])
+    agent = agent.compile()
+
+    # Test with early exit
+    result = await agent.ainvoke({"messages": [HumanMessage("exit")]})
+    assert calls == ["async_early_exit"]
+    assert len(result["messages"]) == 1
+
+    # Test without early exit
+    calls.clear()
+    result = await agent.ainvoke({"messages": [HumanMessage("hello")]})
+    assert calls == ["async_early_exit"]
+    assert len(result["messages"]) > 1
+
+
+def test_get_can_jump_to_no_false_positives() -> None:
+    """Test that _get_can_jump_to doesn't return false positives for base class methods."""
+
+    # Middleware with no overridden methods should return empty list
+    class EmptyMiddleware(AgentMiddleware):
+        pass
+
+    empty_middleware = EmptyMiddleware()
+    empty_middleware.tools = []
+
+    # Should not return any jump destinations for base class methods
+    assert _get_can_jump_to(empty_middleware, "before_model") == []
+    assert _get_can_jump_to(empty_middleware, "after_model") == []
+
+
+def test_get_can_jump_to_only_overridden_methods() -> None:
+    """Test that _get_can_jump_to only checks overridden methods."""
+
+    # Middleware with only sync method overridden
+    class SyncOnlyMiddleware(AgentMiddleware):
+        @hook_config(can_jump_to=["end"])
+        def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+            return None
+
+    sync_middleware = SyncOnlyMiddleware()
+    sync_middleware.tools = []
+
+    # Should return can_jump_to from overridden sync method
+    assert _get_can_jump_to(sync_middleware, "before_model") == ["end"]
+
+    # Middleware with only async method overridden
+    class AsyncOnlyMiddleware(AgentMiddleware):
+        @hook_config(can_jump_to=["model"])
+        async def aafter_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+            return None
+
+    async_middleware = AsyncOnlyMiddleware()
+    async_middleware.tools = []
+
+    # Should return can_jump_to from overridden async method
+    assert _get_can_jump_to(async_middleware, "after_model") == ["model"]
+
+
+def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAssertion) -> None:
+    """Test that async middleware with can_jump_to creates correct graph structure with conditional edges."""
+
+    # Test 1: Async before_model with can_jump_to
+    @before_model(can_jump_to=["end"])
+    async def async_before_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if len(state["messages"]) > 5:
+            return {"jump_to": "end"}
+        return None
+
+    agent_async_before = create_agent(
+        model=FakeToolCallingModel(), middleware=[async_before_with_jump]
+    )
+
+    assert agent_async_before.compile().get_graph().draw_mermaid() == snapshot
+
+    # Test 2: Async after_model with can_jump_to
+    @after_model(can_jump_to=["model", "end"])
+    async def async_after_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        if state["messages"][-1].content == "retry":
+            return {"jump_to": "model"}
+        return None
+
+    agent_async_after = create_agent(
+        model=FakeToolCallingModel(), middleware=[async_after_with_jump]
+    )
+
+    assert agent_async_after.compile().get_graph().draw_mermaid() == snapshot
+
+    # Test 3: Multiple async middleware with can_jump_to
+    @before_model(can_jump_to=["end"])
+    async def async_before_early_exit(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        return None
+
+    @after_model(can_jump_to=["model"])
+    async def async_after_retry(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        return None
+
+    agent_multiple_async = create_agent(
+        model=FakeToolCallingModel(),
+        middleware=[async_before_early_exit, async_after_retry],
+    )
+
+    assert agent_multiple_async.compile().get_graph().draw_mermaid() == snapshot
+
+    # Test 4: Mixed sync and async middleware with can_jump_to
+    @before_model(can_jump_to=["end"])
+    def sync_before_with_jump(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        return None
+
+    @after_model(can_jump_to=["model", "end"])
+    async def async_after_with_jumps(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
+        return None
+
+    agent_mixed = create_agent(
+        model=FakeToolCallingModel(),
+        middleware=[sync_before_with_jump, async_after_with_jumps],
+    )
+
+    assert agent_mixed.compile().get_graph().draw_mermaid() == snapshot
