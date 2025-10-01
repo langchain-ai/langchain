@@ -529,8 +529,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "file",
-                        "source_type": "base64",
-                        "data": pdf_data,
+                        "base64": pdf_data,
                         "mime_type": "application/pdf",
                     },
                 ],
@@ -2739,8 +2738,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 content=[
                     {
                         "type": "file",
-                        "source_type": "base64",
-                        "data": pdf_data,
+                        "base64": pdf_data,
                         "mime_type": "application/pdf",
                     },
                 ],
@@ -2780,11 +2778,10 @@ class ChatModelIntegrationTests(ChatModelTests):
         pdf_data = base64.b64encode(httpx.get(url).content).decode("utf-8")
 
         tool_message = ToolMessage(
-            content=[
+            content_blocks=[
                 {
                     "type": "file",
-                    "source_type": "base64",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                     "mime_type": "application/pdf",
                 },
             ],
