@@ -690,10 +690,7 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """Standard parameters for chat model.
-
-        :private:
-        """
+        """Standard parameters for chat model."""
         return {}
 
     def test_invoke(self, model: BaseChatModel) -> None:
@@ -2999,38 +2996,23 @@ class ChatModelIntegrationTests(ChatModelTests):
             benchmark(_run)
 
     def invoke_with_audio_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with audio input.
-
-        :private:
-        """
+        """Invoke with audio input."""
         raise NotImplementedError
 
     def invoke_with_audio_output(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with audio output.
-
-        :private:
-        """
+        """Invoke with audio output."""
         raise NotImplementedError
 
     def invoke_with_reasoning_output(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with reasoning output.
-
-        :private:
-        """
+        """Invoke with reasoning output."""
         raise NotImplementedError
 
     def invoke_with_cache_read_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with cache read input.
-
-        :private:
-        """
+        """Invoke with cache read input."""
         raise NotImplementedError
 
     def invoke_with_cache_creation_input(self, *, stream: bool = False) -> AIMessage:
-        """Invoke with cache creation input.
-
-        :private:
-        """
+        """Invoke with cache creation input."""
         raise NotImplementedError
 
     def test_unicode_tool_call_integration(

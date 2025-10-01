@@ -1,8 +1,6 @@
 """Standard tests for the BaseCache abstraction.
 
 We don't recommend implementing externally managed BaseCache abstractions at this time.
-
-:private:
 """
 
 from abc import abstractmethod

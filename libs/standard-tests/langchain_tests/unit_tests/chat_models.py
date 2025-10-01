@@ -25,11 +25,7 @@ from langchain_tests.utils.pydantic import PYDANTIC_MAJOR_VERSION
 
 
 def generate_schema_pydantic_v1_from_2() -> Any:
-    """Use to generate a schema from v1 namespace in pydantic 2.
-
-    :private:
-
-    """
+    """Use to generate a schema from v1 namespace in pydantic 2."""
     if PYDANTIC_MAJOR_VERSION != 2:
         msg = "This function is only compatible with Pydantic v2."
         raise AssertionError(msg)
@@ -44,11 +40,7 @@ def generate_schema_pydantic_v1_from_2() -> Any:
 
 
 def generate_schema_pydantic() -> Any:
-    """Works with either pydantic 1 or 2.
-
-    :private:
-
-    """
+    """Works with either pydantic 1 or 2."""
 
     class PersonA(BaseModel):
         """Record attributes of a person."""
@@ -66,11 +58,7 @@ if PYDANTIC_MAJOR_VERSION == 2:
 
 
 class ChatModelTests(BaseStandardTests):
-    """Base class for chat model tests.
-
-    :private:
-
-    """
+    """Base class for chat model tests."""
 
     @property
     @abstractmethod
@@ -85,10 +73,7 @@ class ChatModelTests(BaseStandardTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """Standard chat model parameters.
-
-        :private:
-        """
+        """Standard chat model parameters."""
         return {
             "temperature": 0,
             "max_tokens": 100,
@@ -99,10 +84,7 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def model(self) -> BaseChatModel:
-        """Model fixture.
-
-        :private:
-        """
+        """Model fixture."""
         return self.chat_model_class(
             **{
                 **self.standard_chat_model_params,
@@ -112,10 +94,7 @@ class ChatModelTests(BaseStandardTests):
 
     @pytest.fixture
     def my_adder_tool(self) -> BaseTool:
-        """Adder tool fixture.
-
-        :private:
-        """
+        """Adder tool fixture."""
 
         @tool
         def my_adder_tool(a: int, b: int) -> int:
@@ -851,10 +830,7 @@ class ChatModelUnitTests(ChatModelTests):
 
     @property
     def standard_chat_model_params(self) -> dict:
-        """Standard chat model parameters.
-
-        :private:
-        """
+        """Standard chat model parameters."""
         params = super().standard_chat_model_params
         params["api_key"] = "test"
         return params

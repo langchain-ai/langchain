@@ -12,10 +12,7 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """Embeddings tests base class.
-
-    :private:
-    """
+    """Embeddings tests base class."""
 
     @property
     @abstractmethod

@@ -39,10 +39,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
     @pytest.fixture
     def retriever(self) -> BaseRetriever:
-        """Return retriever fixture.
-
-        :private:
-        """
+        """Return retriever fixture."""
         return self.retriever_constructor(**self.retriever_constructor_params)
 
     def test_k_constructor_param(self) -> None:
