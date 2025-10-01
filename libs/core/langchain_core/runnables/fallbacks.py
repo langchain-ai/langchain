@@ -51,7 +51,6 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
     more convenient to use the ``with_fallbacks`` method on a Runnable.
 
     Example:
-
         ```python
         from langchain_core.chat_models.openai import ChatOpenAI
         from langchain_core.chat_models.anthropic import ChatAnthropic
@@ -84,8 +83,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
             | model
             | StrOutputParser()
         ).with_fallbacks([RunnableLambda(when_all_is_lost)])
-
-        ```"""
+        ```
+    """
 
     runnable: Runnable[Input, Output]
     """The Runnable to run first."""
@@ -614,7 +613,8 @@ class RunnableWithFallbacks(RunnableSerializable[Input, Output]):
                 fallbacks=[RunnableBinding(bound=ChatAnthropic(...), kwargs={"tools": [...]})],
             )
 
-            ```"""  # noqa: E501
+            ```
+        """  # noqa: E501
         attr = getattr(self.runnable, name)
         if _returns_runnable(attr):
 

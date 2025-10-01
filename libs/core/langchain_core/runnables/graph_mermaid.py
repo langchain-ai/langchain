@@ -82,7 +82,7 @@ def draw_mermaid(
                 "config": {
                     "theme": "neutral",
                     "look": "handDrawn",
-                    "themeVariables": { "primaryColor": "#e2e2e2"},
+                    "themeVariables": {"primaryColor": "#e2e2e2"},
                 }
             }
             ```

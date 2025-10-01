@@ -351,7 +351,6 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
 
         chain.invoke({"x": 0})
         chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
-
         ```
     Here is an example of using a RunnableConfigurableFields with HubRunnables:
 
@@ -377,8 +376,8 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
             {"question": "foo", "context": "bar"},
             config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
         )
-
-        ```"""
+        ```
+    """
 
     fields: dict[str, AnyConfigurableField]
     """The configurable fields to use."""
@@ -510,10 +509,7 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
 
         # The `with_config` method brings in the desired Prompt Runnable in your
         # Runnable Sequence.
-        chain.with_config(configurable={"prompt": "poem"}).invoke(
-            {"topic": "bears"}
-        )
-
+        chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
         ```
     Equivalently, you can initialize RunnableConfigurableAlternatives directly
     and use in LCEL in the same way:
@@ -531,17 +527,13 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
             default_key="joke",
             prefix_keys=False,
             alternatives={
-                "poem": PromptTemplate.from_template(
-                    "Write a short poem about {topic}"
-                )
+                "poem": PromptTemplate.from_template("Write a short poem about {topic}")
             },
         )
         chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-        chain.with_config(configurable={"prompt": "poem"}).invoke(
-            {"topic": "bears"}
-        )
-
-        ```"""
+        chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+        ```
+    """
 
     which: ConfigurableField
     """The ConfigurableField to use to choose between alternatives."""

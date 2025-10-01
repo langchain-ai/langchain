@@ -18,11 +18,11 @@ class PngDrawer:
     It requires ``graphviz`` and ``pygraphviz`` to be installed.
 
     Example:
-
         ```python
         drawer = PngDrawer()
         drawer.draw(state_graph, "graph.png")
-        ```"""
+        ```
+    """
 
     def __init__(
         self, fontname: Optional[str] = None, labels: Optional[LabelsDict] = None

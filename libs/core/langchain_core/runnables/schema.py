@@ -53,7 +53,6 @@ class BaseStreamEvent(TypedDict):
     Schema of a streaming event which is produced from the astream_events method.
 
     Example:
-
         ```python
         from langchain_core.runnables import RunnableLambda
 
@@ -91,8 +90,8 @@ class BaseStreamEvent(TypedDict):
                 "tags": [],
             },
         ]
-
-        ```"""
+        ```
+    """
 
     event: str
     """Event names are of the format: on_[runnable_type]_(start|stream|end).

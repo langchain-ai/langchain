@@ -52,7 +52,6 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
     Returns the output of the selected Runnable.
 
     Example:
-
         ```python
         from langchain_core.runnables.router import RouterRunnable
         from langchain_core.runnables import RunnableLambda
@@ -62,8 +61,8 @@ class RouterRunnable(RunnableSerializable[RouterInput, Output]):
 
         router = RouterRunnable(runnables={"add": add, "square": square})
         router.invoke({"key": "square", "input": 3})
-
-        ```"""
+        ```
+    """
 
     runnables: Mapping[str, Runnable[Any, Output]]
 

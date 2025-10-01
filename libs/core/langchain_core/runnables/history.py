@@ -166,7 +166,6 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
         )
 
         print(store)  # noqa: T201
-
         ```
     Example where the session factory takes two keys, user_id and conversation id):
 
@@ -221,8 +220,8 @@ class RunnableWithMessageHistory(RunnableBindingBase):  # type: ignore[no-redef]
             {"ability": "math", "question": "What does cosine mean?"},
             config={"configurable": {"user_id": "123", "conversation_id": "1"}},
         )
-
-        ```"""
+        ```
+    """
 
     get_session_history: GetSessionHistoryCallable
     """Function that returns a new BaseChatMessageHistory.

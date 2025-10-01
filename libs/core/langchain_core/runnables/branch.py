@@ -45,7 +45,6 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     If no condition evaluates to True, the default branch is run on the input.
 
     Examples:
-
         ```python
         from langchain_core.runnables import RunnableBranch
 
@@ -58,8 +57,8 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
 
         branch.invoke("hello")  # "HELLO"
         branch.invoke(None)  # "goodbye"
-
-        ```"""
+        ```
+    """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]
     """A list of (condition, Runnable) pairs."""

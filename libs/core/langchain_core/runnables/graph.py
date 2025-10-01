@@ -606,10 +606,9 @@ class Graph:
                     "config": {
                         "theme": "neutral",
                         "look": "handDrawn",
-                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
                     }
                 }
-
                 ```
         Returns:
             The Mermaid syntax string.
@@ -678,7 +677,7 @@ class Graph:
                     "config": {
                         "theme": "neutral",
                         "look": "handDrawn",
-                        "themeVariables": { "primaryColor": "#e2e2e2"},
+                        "themeVariables": {"primaryColor": "#e2e2e2"},
                     }
                 }
                 ```

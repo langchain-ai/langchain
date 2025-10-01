@@ -255,7 +255,6 @@ def draw_ascii(vertices: Mapping[str, str], edges: Sequence[LangEdge]) -> str:
         ASCII representation
 
     Example:
-
         ```python
         from langchain_core.runnables.graph_ascii import draw_ascii
 

@@ -77,9 +77,7 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
             retry_if_exception_type=(ValueError,),  # Retry only on ValueError
             wait_exponential_jitter=True,  # Add jitter to the exponential backoff
             stop_after_attempt=2,  # Try twice
-            exponential_jitter_params={
-                "initial": 2
-            },  # if desired, customize backoff
+            exponential_jitter_params={"initial": 2},  # if desired, customize backoff
         )
 
         # The method invocation above is equivalent to the longer form below:
@@ -98,7 +96,6 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
     the Runnable that is likely to fail, not the entire chain.
 
     Example:
-
         ```python
         from langchain_core.chat_models import ChatOpenAI
         from langchain_core.prompts import PromptTemplate
@@ -112,8 +109,8 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-rede
         # Bad
         chain = template | model
         retryable_chain = chain.with_retry()
-
-        ```"""
+        ```
+    """
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
