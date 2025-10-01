@@ -1666,6 +1666,7 @@ def test_planning_middleware_custom_system_prompt() -> None:
     # assert custom system prompt is in the first AI message
     assert "call the write_todos tool" in result["messages"][1].content
 
+
 @tool
 def simple_tool(input: str) -> str:
     """A simple tool"""
@@ -1843,3 +1844,29 @@ def test_exception_error_message():
     assert "Model call limits exceeded" in error_msg
     assert "thread limit (2/2)" in error_msg
     assert "run limit (1/1)" in error_msg
+
+
+def test_run_limit_resets_between_invocations() -> None:
+    """Test that run_model_call_count resets between invocations, but thread_model_call_count accumulates."""
+
+    # First: No tool calls per invocation, so model does not increment call counts internally
+    middleware = ModelCallTrackingMiddleware(
+        thread_limit=3, run_limit=1, exit_behavior="raise_exception"
+    )
+    model = FakeToolCallingModel(
+        tool_calls=[[], [], [], []]
+    )  # No tool calls, so only model call per run
+
+    agent = create_agent(model=model, middleware=[middleware])
+    agent = agent.compile(checkpointer=InMemorySaver())
+
+    thread_config = {"configurable": {"thread_id": "test_thread"}}
+    agent.invoke({"messages": [HumanMessage("Hello")]}, thread_config)
+    agent.invoke({"messages": [HumanMessage("Hello again")]}, thread_config)
+    agent.invoke({"messages": [HumanMessage("Hello third")]}, thread_config)
+
+    # Fourth run: should raise, thread_model_call_count == 3 (limit)
+    with pytest.raises(ModelCallLimitExceededError) as exc_info:
+        agent.invoke({"messages": [HumanMessage("Hello fourth")]}, thread_config)
+    error_msg = str(exc_info.value)
+    assert "thread limit (3/3)" in error_msg
