@@ -1,0 +1,53 @@
+---
+title: Hugging Face (chat)
+sidebar_label: Hugging Face
+---
+
+## Chat models with Hugging Face
+
+### Option 1 (works today): pipeline → wrap with `ChatHuggingFace`
+
+```python
+from transformers import pipeline
+from langchain_huggingface import ChatHuggingFace
+
+# Create a text-generation pipeline (CPU/GPU as available)
+pipe = pipeline(
+    "text-generation",
+    model="microsoft/Phi-3-mini-4k-instruct",
+    do_sample=False,        # deterministic (similar to temperature=0)
+    max_new_tokens=128,     # HF uses max_new_tokens (not max_tokens)
+)
+
+# Wrap the pipeline as a LangChain chat model
+llm = ChatHuggingFace(llm=pipe)
+
+print(llm.invoke("Say hi in one sentence.").content)
+```
+
+:::note
+- **Install**: `pip install langchain-huggingface transformers`
+- For Hugging Face pipelines prefer `max_new_tokens` (not `max_tokens`).
+:::
+
+### Option 2 (coming after fix): `init_chat_model(..., model_provider="huggingface")`
+
+Once available, you’ll be able to initialize via `init_chat_model`:
+
+```python
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(
+    model="microsoft/Phi-3-mini-4k-instruct",
+    model_provider="huggingface",
+    task="text-generation",
+    do_sample=False,
+    max_new_tokens=128,
+)
+
+print(llm.invoke("Say hi in one sentence.").content)
+```
+
+This path depends on a bug fix tracked for Hugging Face chat initialization. If your version doesn’t support it yet, use Option 1 above.
+
+
