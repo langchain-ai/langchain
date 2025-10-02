@@ -11,7 +11,7 @@ dependencies = [
     "langchain-core>=0.3.76,<2.0.0",
 ]
 name = "langchain-ollama"
-version = "0.3.8"
+version = "0.3.9"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
