@@ -583,7 +583,7 @@ def test_mermaid_base_url_default() -> None:
 
         # Verify that the URL was constructed with the default base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith("https://mermaid.ink")
 
@@ -604,7 +604,7 @@ def test_mermaid_base_url_custom() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
 
@@ -626,7 +626,7 @@ def test_draw_mermaid_png_function_base_url() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
 
@@ -650,7 +650,7 @@ def test_graph_draw_mermaid_png_base_url() -> None:
 
         # Verify that the URL was constructed with our custom base URL
         assert mock_get.called
-        args, kwargs = mock_get.call_args
+        args = mock_get.call_args[0]
         url = args[0]  # First argument to request.get is the URL
         assert url.startswith(custom_url)
 

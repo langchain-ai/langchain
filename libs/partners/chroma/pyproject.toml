@@ -39,7 +39,7 @@ test = [
 ]
 test_integration = []
 lint = [
-    "ruff>=0.12.2,<0.13.0",
+    "ruff>=0.13.1,<0.14.0",
     "onnxruntime<1.20; python_version < \"3.10\"",
     "onnxruntime; python_version >= \"3.10\"",
 ]
@@ -60,6 +60,9 @@ disallow_untyped_defs = true
 
 [tool.ruff]
 target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [
@@ -106,7 +109,6 @@ ignore = [
     "D104",    # pydocstyle: Missing docstring in public package
     "D105",    # pydocstyle: Missing docstring in magic method
     "D107",    # pydocstyle: Missing docstring in __init__
-    "D407",    # pydocstyle: Missing-dashed-underline-after-section
     "UP007",   # pyupgrade: non-pep604-annotation-union
     "UP045",   # pyupgrade: non-pep604-annotation-optional
     "COM812",  # Messes with the formatter
@@ -126,6 +128,7 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]

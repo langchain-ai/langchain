@@ -232,6 +232,16 @@ class ChatModelTests(BaseStandardTests):
         return False
 
     @property
+    def supports_pdf_tool_message(self) -> bool:
+        """Supports PDF ToolMessages.
+
+        (bool) whether the chat model supports ToolMessages that include PDF
+        content.
+
+        """
+        return False
+
+    @property
     def enable_vcr_tests(self) -> bool:
         """(bool) whether to enable VCR tests for the chat model.
 
@@ -344,11 +354,12 @@ class ChatModelUnitTests(ChatModelTests):
 
         Value to use for tool choice when used in tests.
 
-        .. warning:: Deprecated since version 0.3.15:
-           This property will be removed in version 0.3.20. If a model does not
-           support forcing tool calling, override the ``has_tool_choice`` property to
-           return ``False``. Otherwise, models should accept values of ``'any'`` or
-           the name of a tool in ``tool_choice``.
+        .. warning::
+            Deprecated since version 0.3.15.
+            This property will be removed in version 0.3.20. If a model does not
+            support forcing tool calling, override the ``has_tool_choice`` property to
+            return ``False``. Otherwise, models should accept values of ``'any'`` or
+            the name of a tool in ``tool_choice``.
 
         Example:
 
@@ -642,6 +653,39 @@ class ChatModelUnitTests(ChatModelTests):
 
             @property
             def supports_image_tool_message(self) -> bool:
+                return False
+
+    .. dropdown:: supports_pdf_tool_message
+
+        Boolean property indicating whether the chat model supports ToolMessages
+        that include PDF content, i.e.,
+
+        .. code-block:: python
+
+            ToolMessage(
+                content=[
+                    {
+                        "type": "file",
+                        "source_type": "base64",
+                        "data": pdf_data,
+                        "mime_type": "application/pdf",
+                    },
+                ],
+                tool_call_id="1",
+                name="random_pdf",
+            )
+
+        (standard format).
+
+        If set to ``True``, the chat model will be tested with message sequences that
+        include ToolMessages of this form.
+
+        Example:
+
+        .. code-block:: python
+
+            @property
+            def supports_pdf_tool_message(self) -> bool:
                 return False
 
     .. dropdown:: supported_usage_metadata_details

@@ -1,3 +1,5 @@
+# Facilitate unit testing against different Pydantic versions for a provided package.
+
 name: '🐍 Pydantic Version Testing'
 
 on:

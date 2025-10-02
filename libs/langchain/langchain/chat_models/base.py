@@ -37,7 +37,7 @@ def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -45,10 +45,10 @@ def init_chat_model(
 
 @overload
 def init_chat_model(
-    model: Literal[None] = None,
+    model: None = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -118,7 +118,7 @@ def init_chat_model(
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
+            - ``gpt-...`` | ``o1...`` | ``o3...`` -> ``openai``
             - ``claude...``                       -> ``anthropic``
             - ``amazon...``                       -> ``bedrock``
             - ``gemini...``                       -> ``google_vertexai``
@@ -273,7 +273,10 @@ def init_chat_model(
             )
 
             configurable_model_with_tools = configurable_model.bind_tools(
-                [GetWeather, GetPopulation]
+                [
+                    GetWeather,
+                    GetPopulation,
+                ]
             )
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
@@ -494,7 +497,7 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
+    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
     if model_name.startswith("claude"):
         return "anthropic"

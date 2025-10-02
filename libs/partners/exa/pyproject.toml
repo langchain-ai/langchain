@@ -29,7 +29,7 @@ test = [
     "langchain-core",
     "langchain-tests",
 ]
-lint = ["ruff>=0.12.2,<0.13.0"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = []
 typing = [
@@ -48,6 +48,9 @@ disallow_untyped_defs = "True"
 
 [tool.ruff]
 target-version = "py39"
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = [
@@ -93,8 +96,6 @@ ignore = [
     "D104",    # Missing docstring in public package
     "D105",    # Missing docstring in magic method
     "D107",    # Missing docstring in __init__
-    "D203",    # Incompatible with D211 (blank line before class)
-    "D213",    # Incompatible with D212 (multi-line summary)
     "COM812",  # Messes with the formatter
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
@@ -119,6 +120,7 @@ asyncio_mode = "auto"
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*.py" = [
