@@ -427,7 +427,7 @@ typing = [
 
 [[package]]
 name = "langchain-cli"
-version = "0.0.37"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "gitpython" },
