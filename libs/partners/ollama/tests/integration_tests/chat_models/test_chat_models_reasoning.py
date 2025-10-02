@@ -111,6 +111,14 @@ async def test_reasoning_stream(model: str, use_async: bool) -> None:
     assert "<think>" not in result.additional_kwargs["reasoning_content"]
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
+    content_blocks = result.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
+
 
 @pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
 @pytest.mark.parametrize("use_async", [False, True])
@@ -163,6 +171,14 @@ async def test_reasoning_invoke(model: str, use_async: bool) -> None:
     assert "</think>" not in result.content
     assert "<think>" not in result.additional_kwargs["reasoning_content"]
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
+
+    content_blocks = result.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
 
 
 @pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
