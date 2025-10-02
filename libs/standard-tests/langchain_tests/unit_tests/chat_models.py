@@ -443,8 +443,8 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports image inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form.
+        If set to ``True``, the chat model will be tested using the LangChain
+        `ImageContentBlock` format:
 
         .. code-block:: python
 
@@ -454,7 +454,7 @@ class ChatModelUnitTests(ChatModelTests):
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
-        In addition to OpenAI-style content blocks:
+        In addition to OpenAI Chat Completions `image_url` blocks:
 
         .. code-block:: python
 
@@ -503,8 +503,8 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports PDF inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form.
+        If set to ``True``, the chat model will be tested using the LangChain
+        `FileContentBlock` format:
 
         .. code-block:: python
 
@@ -529,8 +529,8 @@ class ChatModelUnitTests(ChatModelTests):
         Boolean property indicating whether the chat model supports audio inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form.
+        If set to ``True``, the chat model will be tested using the LangChain
+        `AudioContentBlock` format:
 
         .. code-block:: python
 
@@ -623,7 +623,8 @@ class ChatModelUnitTests(ChatModelTests):
                 name="random_image",
             )
 
-        (OpenAI Chat Completions format), as well as
+        (OpenAI Chat Completions format), as well as LangChain's `ImageContentBlock`
+        format:
 
         .. code-block:: python
 
@@ -671,7 +672,7 @@ class ChatModelUnitTests(ChatModelTests):
                 name="random_pdf",
             )
 
-        (standard format).
+        using LangChain's `FileContentBlock` format.
 
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
