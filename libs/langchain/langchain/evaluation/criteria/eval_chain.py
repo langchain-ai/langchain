@@ -96,11 +96,7 @@ class CriteriaResultOutputParser(BaseOutputParser[dict]):
             text = text[: match_end.start()].strip()
         else:
             splits = text.strip().rsplit("\n", maxsplit=1)
-            if len(splits) == 1:
-                reasoning = ""
-                verdict = splits[0]
-            else:
-                reasoning, verdict = splits
+            verdict = splits[-1]
 
         if verdict:
             score = (

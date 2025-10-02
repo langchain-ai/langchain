@@ -1,27 +1,41 @@
-# PR Title Labeler Configuration
+# PR title labeler config
+#
 # Labels PRs based on conventional commit patterns in titles
+#
 # Format: type(scope): description or type!: description (breaking)
 
 add-missing-labels: true
+clear-prexisting: false
 include-commits: false
 include-title: true
 label-for-breaking-changes: breaking
 
 label-mapping:
-  # Features and enhancements
-  feature: ["feat"]
-
-  # Bug fixes
-  fix: ["fix"]
-
-  # Documentation
   documentation: ["docs"]
-
-  # Infrastructure and tooling
-  infra: ["chore", "ci", "build", "infra"]
-
-  # Integration partners - detected by scope
-  integration: ["anthropic", "chroma", "deepseek", "exa", "fireworks", "groq", "huggingface", "mistralai", "nomic", "ollama", "openai", "perplexity", "prompty", "qdrant", "xai"]
-
-  # Releases
+  feature: ["feat"]
+  fix: ["fix"]
+  infra: ["build", "ci", "chore"]
+  integration:
+    [
+      "anthropic",
+      "chroma",
+      "deepseek",
+      "exa",
+      "fireworks",
+      "groq",
+      "huggingface",
+      "mistralai",
+      "nomic",
+      "ollama",
+      "openai",
+      "perplexity",
+      "prompty",
+      "qdrant",
+      "xai",
+    ]
+  linting: ["style"]
+  performance: ["perf"]
+  refactor: ["refactor"]
   release: ["release"]
+  revert: ["revert"]
+  tests: ["test"]

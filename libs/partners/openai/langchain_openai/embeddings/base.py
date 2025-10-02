@@ -1,3 +1,5 @@
+"""Base classes for OpenAI embeddings."""
+
 from __future__ import annotations
 
 import logging
@@ -50,29 +52,25 @@ def _process_batched_chunked_embeddings(
             embeddings.append(None)
             continue
 
-        elif len(_result) == 1:
+        if len(_result) == 1:
             # if only one embedding was produced, use it
             embeddings.append(_result[0])
             continue
 
-        else:
-            # else we need to weighted average
-            # should be same as
-            # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
-            total_weight = sum(num_tokens_in_batch[i])
-            average = [
-                sum(
-                    val * weight
-                    for val, weight in zip(embedding, num_tokens_in_batch[i])
-                )
-                / total_weight
-                for embedding in zip(*_result)
-            ]
+        # else we need to weighted average
+        # should be same as
+        # average = np.average(_result, axis=0, weights=num_tokens_in_batch[i])
+        total_weight = sum(num_tokens_in_batch[i])
+        average = [
+            sum(val * weight for val, weight in zip(embedding, num_tokens_in_batch[i]))
+            / total_weight
+            for embedding in zip(*_result)
+        ]
 
-            # should be same as
-            # embeddings.append((average / np.linalg.norm(average)).tolist())
-            magnitude = sum(val**2 for val in average) ** 0.5
-            embeddings.append([val / magnitude for val in average])
+        # should be same as
+        # embeddings.append((average / np.linalg.norm(average)).tolist())
+        magnitude = sum(val**2 for val in average) ** 0.5
+        embeddings.append([val / magnitude for val in average])
 
     return embeddings
 
@@ -267,7 +265,8 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         extra = values.get("model_kwargs", {})
         for field_name in list(values):
             if field_name in extra:
-                raise ValueError(f"Found {field_name} supplied twice.")
+                msg = f"Found {field_name} supplied twice."
+                raise ValueError(msg)
             if field_name not in all_required_field_names:
                 warnings.warn(
                     f"""WARNING! {field_name} is not default parameter.
@@ -278,10 +277,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
 
         invalid_model_kwargs = all_required_field_names.intersection(extra.keys())
         if invalid_model_kwargs:
-            raise ValueError(
+            msg = (
                 f"Parameters {invalid_model_kwargs} should be specified explicitly. "
                 f"Instead they were passed in as part of `model_kwargs` parameter."
             )
+            raise ValueError(msg)
 
         values["model_kwargs"] = extra
         return values
@@ -290,9 +290,10 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def validate_environment(self) -> Self:
         """Validate that api key and python package exists in environment."""
         if self.openai_api_type in ("azure", "azure_ad", "azuread"):
-            raise ValueError(
+            msg = (
                 "If you are using Azure, please use the `AzureOpenAIEmbeddings` class."
             )
+            raise ValueError(msg)
         client_params: dict = {
             "api_key": (
                 self.openai_api_key.get_secret_value() if self.openai_api_key else None
@@ -309,20 +310,22 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             openai_proxy = self.openai_proxy
             http_client = self.http_client
             http_async_client = self.http_async_client
-            raise ValueError(
+            msg = (
                 "Cannot specify 'openai_proxy' if one of "
                 "'http_client'/'http_async_client' is already specified. Received:\n"
                 f"{openai_proxy=}\n{http_client=}\n{http_async_client=}"
             )
+            raise ValueError(msg)
         if not self.client:
             if self.openai_proxy and not self.http_client:
                 try:
                     import httpx
                 except ImportError as e:
-                    raise ImportError(
+                    msg = (
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
-                    ) from e
+                    )
+                    raise ImportError(msg) from e
                 self.http_client = httpx.Client(proxy=self.openai_proxy)
             sync_specific = {"http_client": self.http_client}
             self.client = openai.OpenAI(**client_params, **sync_specific).embeddings  # type: ignore[arg-type]
@@ -331,10 +334,11 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
                 try:
                     import httpx
                 except ImportError as e:
-                    raise ImportError(
+                    msg = (
                         "Could not import httpx python package. "
                         "Please install it with `pip install httpx`."
-                    ) from e
+                    )
+                    raise ImportError(msg) from e
                 self.http_async_client = httpx.AsyncClient(proxy=self.openai_proxy)
             async_specific = {"http_client": self.http_async_client}
             self.async_client = openai.AsyncOpenAI(
@@ -353,8 +357,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
     def _tokenize(
         self, texts: list[str], chunk_size: int
     ) -> tuple[Iterable[int], list[Union[list[int], str]], list[int]]:
-        """
-        Take the input `texts` and `chunk_size` and return 3 iterables as a tuple:
+        """Take the input `texts` and `chunk_size` and return 3 iterables as a tuple.
 
         We have `batches`, where batches are sets of individual texts
         we want responses from the openai api. The length of a single batch is
@@ -382,11 +385,12 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
             try:
                 from transformers import AutoTokenizer
             except ImportError:
-                raise ValueError(
+                msg = (
                     "Could not import transformers python package. "
                     "This is needed for OpenAIEmbeddings to work without "
                     "`tiktoken`. Please install it with `pip install transformers`. "
                 )
+                raise ValueError(msg)
 
             tokenizer = AutoTokenizer.from_pretrained(
                 pretrained_model_name_or_path=model_name
@@ -456,8 +460,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> list[list[float]]:
-        """
-        Generate length-safe embeddings for a list of texts.
+        """Generate length-safe embeddings for a list of texts.
 
         This method handles tokenization and embedding generation, respecting the
         set embedding context length and chunk size. It supports both tiktoken
@@ -509,8 +512,7 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         chunk_size: Optional[int] = None,
         **kwargs: Any,
     ) -> list[list[float]]:
-        """
-        Asynchronously generate length-safe embeddings for a list of texts.
+        """Asynchronously generate length-safe embeddings for a list of texts.
 
         This method handles tokenization and asynchronous embedding generation,
         respecting the set embedding context length and chunk size. It supports both
@@ -524,7 +526,6 @@ class OpenAIEmbeddings(BaseModel, Embeddings):
         Returns:
             List[List[float]]: A list of embeddings for each input text.
         """
-
         _chunk_size = chunk_size or self.chunk_size
         client_kwargs = {**self._invocation_params, **kwargs}
         _iter, tokens, indices = await run_in_executor(

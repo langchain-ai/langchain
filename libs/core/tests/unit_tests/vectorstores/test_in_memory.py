@@ -157,15 +157,15 @@ async def test_inmemory_upsert() -> None:
     store = InMemoryVectorStore(embedding=embedding)
 
     # Check sync version
-    store.upsert([Document(page_content="foo", id="1")])
+    store.add_documents([Document(page_content="foo", id="1")])
     assert sorted(store.store.keys()) == ["1"]
 
     # Check async version
-    await store.aupsert([Document(page_content="bar", id="2")])
+    await store.aadd_documents([Document(page_content="bar", id="2")])
     assert sorted(store.store.keys()) == ["1", "2"]
 
     # update existing document
-    await store.aupsert(
+    await store.aadd_documents(
         [Document(page_content="baz", id="2", metadata={"metadata": "value"})]
     )
     item = store.store["2"]
@@ -183,7 +183,7 @@ async def test_inmemory_get_by_ids() -> None:
     """Test get by ids."""
     store = InMemoryVectorStore(embedding=DeterministicFakeEmbedding(size=3))
 
-    store.upsert(
+    store.add_documents(
         [
             Document(page_content="foo", id="1", metadata={"metadata": "value"}),
             Document(page_content="bar", id="2"),

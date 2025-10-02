@@ -54,6 +54,7 @@ test = [
 ]
 docs = [
     "toml>=0.10.2,<0.11.0",
+    "types-toml>=0.10.8.20240310",
     "autodoc-pydantic>=2.0.0,<3.0.0",
     "sphinx>=6.0.0,<8.0.0",
     "myst-parser>=3.0.0,<4.0.0",
@@ -65,6 +66,8 @@ docs = [
     "sphinx-copybutton",
     "beautifulsoup4",
     "sphinxcontrib-googleanalytics",
+    "docutils>=0.21.2,<1.0.0",
+    "types-docutils>=0.22.1.20250923",
 ]
 
 [tool.uv.sources]
