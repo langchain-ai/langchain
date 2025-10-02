@@ -202,7 +202,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             len(encoded) for encoded in self.tokenizer.encode_batch(texts)
         ]
 
-        for text, text_tokens in zip(texts, text_token_lengths):
+        for text, text_tokens in zip(texts, text_token_lengths, strict=False):
             if batch_tokens + text_tokens > MAX_TOKENS:
                 if len(batch) > 0:
                     # edge case where first batch exceeds max tokens

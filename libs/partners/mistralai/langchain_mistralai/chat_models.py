@@ -7,11 +7,11 @@ import os
 import re
 import ssl
 import uuid
+from collections.abc import Callable  # noqa: TC003
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Literal,
     Optional,
     Union,
