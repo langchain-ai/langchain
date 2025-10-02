@@ -6,6 +6,8 @@ for each instance of ChatOpenAI.
 Logic is largely replicated from openai._base_client.
 """
 
+from __future__ import annotations
+
 import asyncio
 import os
 from functools import lru_cache
@@ -15,7 +17,7 @@ import openai
 
 
 class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
-    """Borrowed from openai._base_client"""
+    """Borrowed from openai._base_client."""
 
     def __del__(self) -> None:
         if self.is_closed:
@@ -23,12 +25,12 @@ class _SyncHttpxClientWrapper(openai.DefaultHttpxClient):
 
         try:
             self.close()
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 
 class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
-    """Borrowed from openai._base_client"""
+    """Borrowed from openai._base_client."""
 
     def __del__(self) -> None:
         if self.is_closed:
@@ -37,7 +39,7 @@ class _AsyncHttpxClientWrapper(openai.DefaultAsyncHttpxClient):
         try:
             # TODO(someday): support non asyncio runtimes here
             asyncio.get_running_loop().create_task(self.aclose())
-        except Exception:
+        except Exception:  # noqa: S110
             pass
 
 

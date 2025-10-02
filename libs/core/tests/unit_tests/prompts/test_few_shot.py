@@ -27,7 +27,6 @@ EXAMPLE_PROMPT = PromptTemplate(
 
 
 @pytest.fixture
-@pytest.mark.requires("jinja2")
 def example_jinja2_prompt() -> tuple[PromptTemplate, list[dict[str, str]]]:
     example_template = "{{ word }}: {{ antonym }}"
 
@@ -266,7 +265,7 @@ def test_prompt_jinja2_missing_input_variables(
     suffix = "Ending with {{ bar }}"
 
     # Test when missing in suffix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'bar'}"):
         FewShotPromptTemplate(
             input_variables=[],
             suffix=suffix,
@@ -284,7 +283,7 @@ def test_prompt_jinja2_missing_input_variables(
     ).input_variables == ["bar"]
 
     # Test when missing in prefix
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Missing variables: {'foo'}"):
         FewShotPromptTemplate(
             input_variables=["bar"],
             suffix=suffix,
@@ -311,7 +310,7 @@ def test_prompt_jinja2_extra_input_variables(
     """Test error is raised when there are too many input variables."""
     prefix = "Starting with {{ foo }}"
     suffix = "Ending with {{ bar }}"
-    with pytest.warns(UserWarning):
+    with pytest.warns(UserWarning, match="Extra variables:"):
         FewShotPromptTemplate(
             input_variables=["bar", "foo", "extra", "thing"],
             suffix=suffix,
@@ -358,11 +357,11 @@ async def test_few_shot_chat_message_prompt_template() -> None:
 
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
 
     messages = final_prompt.format_messages(input="100 + 1")
@@ -433,11 +432,11 @@ def test_few_shot_chat_message_prompt_template_with_selector() -> None:
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = final_prompt.format_messages(input="100 + 1")
     assert messages == expected
@@ -532,11 +531,11 @@ async def test_few_shot_chat_message_prompt_template_with_selector_async() -> No
     )
     expected = [
         SystemMessage(content="You are a helpful AI Assistant", additional_kwargs={}),
-        HumanMessage(content="2+2", additional_kwargs={}, example=False),
-        AIMessage(content="4", additional_kwargs={}, example=False),
-        HumanMessage(content="2+3", additional_kwargs={}, example=False),
-        AIMessage(content="5", additional_kwargs={}, example=False),
-        HumanMessage(content="100 + 1", additional_kwargs={}, example=False),
+        HumanMessage(content="2+2", additional_kwargs={}),
+        AIMessage(content="4", additional_kwargs={}),
+        HumanMessage(content="2+3", additional_kwargs={}),
+        AIMessage(content="5", additional_kwargs={}),
+        HumanMessage(content="100 + 1", additional_kwargs={}),
     ]
     messages = await final_prompt.aformat_messages(input="100 + 1")
     assert messages == expected

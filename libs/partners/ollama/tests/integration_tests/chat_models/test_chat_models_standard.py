@@ -24,7 +24,9 @@ class TestChatOllama(ChatModelIntegrationTests):
 
     @property
     def has_tool_choice(self) -> bool:
-        return False  # TODO: update after Ollama implements
+        # TODO: update after Ollama implements
+        # https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
+        return False
 
     @property
     def supports_image_inputs(self) -> bool:
@@ -47,3 +49,14 @@ class TestChatOllama(ChatModelIntegrationTests):
     )
     async def test_tool_calling_async(self, model: BaseChatModel) -> None:
         await super().test_tool_calling_async(model)
+
+    @pytest.mark.xfail(
+        reason=(
+            "Will sometimes fail due to Ollama's inconsistent tool call argument "
+            "structure (see https://github.com/ollama/ollama/issues/6155). "
+            "Args may contain unexpected keys like 'conversations' instead of "
+            "empty dict."
+        )
+    )
+    def test_tool_calling_with_no_arguments(self, model: BaseChatModel) -> None:
+        super().test_tool_calling_with_no_arguments(model)

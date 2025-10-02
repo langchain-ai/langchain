@@ -1,8 +1,17 @@
+"""NLTK text splitter."""
+
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from langchain_text_splitters.base import TextSplitter
+
+try:
+    import nltk
+
+    _HAS_NLTK = True
+except ImportError:
+    _HAS_NLTK = False
 
 
 class NLTKTextSplitter(TextSplitter):
@@ -21,21 +30,18 @@ class NLTKTextSplitter(TextSplitter):
         self._separator = separator
         self._language = language
         self._use_span_tokenize = use_span_tokenize
-        if self._use_span_tokenize and self._separator != "":
-            raise ValueError("When use_span_tokenize is True, separator should be ''")
-        try:
-            import nltk
+        if self._use_span_tokenize and self._separator:
+            msg = "When use_span_tokenize is True, separator should be ''"
+            raise ValueError(msg)
+        if not _HAS_NLTK:
+            msg = "NLTK is not installed, please install it with `pip install nltk`."
+            raise ImportError(msg)
+        if self._use_span_tokenize:
+            self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)  # noqa: SLF001
+        else:
+            self._tokenizer = nltk.tokenize.sent_tokenize
 
-            if self._use_span_tokenize:
-                self._tokenizer = nltk.tokenize._get_punkt_tokenizer(self._language)
-            else:
-                self._tokenizer = nltk.tokenize.sent_tokenize
-        except ImportError:
-            raise ImportError(
-                "NLTK is not installed, please install it with `pip install nltk`."
-            )
-
-    def split_text(self, text: str) -> List[str]:
+    def split_text(self, text: str) -> list[str]:
         """Split incoming text and return chunks."""
         # First we naively split the large input into a bunch of smaller ones.
         if self._use_span_tokenize:

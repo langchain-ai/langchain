@@ -197,7 +197,7 @@ def test_relevance_search_with_threshold(
     kwargs = {"score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -248,7 +248,7 @@ def test_relevance_search_with_threshold_and_filter(
     kwargs = {"filter": positive_filter, "score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("location", qdrant_locations())
@@ -309,3 +309,105 @@ def test_similarity_search_filters_with_qdrant_filters(
             )
         ],
     )
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_embeddings_property_sparse_mode(location: str) -> None:
+    """Test that embeddings property returns None in SPARSE mode."""
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # In SPARSE mode, embeddings should return None
+    assert vectorstore.embeddings is None
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_embeddings_property_dense_mode(location: str) -> None:
+    """Test that embeddings property returns embedding object in DENSE mode."""
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    embedding = ConsistentFakeEmbeddings()
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=embedding,
+        location=location,
+        retrieval_mode=RetrievalMode.DENSE,
+    )
+
+    # In DENSE mode, embeddings should return the embedding object
+    assert vectorstore.embeddings is embedding
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_as_retriever_sparse_mode(location: str) -> None:
+    """Test that as_retriever() works in SPARSE mode."""
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # Add test documents
+    docs = [
+        Document(page_content="Python programming", metadata={"topic": "programming"}),
+        Document(page_content="Machine learning", metadata={"topic": "AI"}),
+        Document(page_content="Data analysis", metadata={"topic": "data"}),
+    ]
+    vectorstore.add_documents(docs)
+
+    # Test basic as_retriever() functionality
+    retriever = vectorstore.as_retriever()
+    results = retriever.invoke("programming")
+
+    # Should return documents
+    assert len(results) > 0
+    assert all(isinstance(doc, Document) for doc in results)
+
+    # Test that retriever has tags
+    assert hasattr(retriever, "tags")
+    assert isinstance(retriever.tags, list)
+    assert "QdrantVectorStore" in retriever.tags
+
+
+@pytest.mark.parametrize("location", qdrant_locations())
+def test_as_retriever_sparse_mode_with_search_kwargs(location: str) -> None:
+    """Test as_retriever() with custom search_kwargs in SPARSE mode."""
+    # Use from_texts to create the vectorstore, which handles collection creation
+    texts = ["test document"]
+    vectorstore = QdrantVectorStore.from_texts(
+        texts,
+        embedding=None,  # No dense embedding for SPARSE mode
+        location=location,
+        retrieval_mode=RetrievalMode.SPARSE,
+        sparse_embedding=ConsistentFakeSparseEmbeddings(),
+        sparse_vector_name="sparse",
+    )
+
+    # Add test documents
+    docs = [
+        Document(page_content="Python programming", metadata={"topic": "programming"}),
+        Document(page_content="Machine learning", metadata={"topic": "AI"}),
+        Document(page_content="Data analysis", metadata={"topic": "data"}),
+    ]
+    vectorstore.add_documents(docs)
+
+    # Test with custom search_kwargs
+    retriever = vectorstore.as_retriever(search_kwargs={"k": 1})
+    results = retriever.invoke("programming")
+
+    # Should return exactly 1 document
+    assert len(results) == 1
+    assert isinstance(results[0], Document)

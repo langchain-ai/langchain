@@ -1,4 +1,3 @@
-import sys
 import typing
 from collections.abc import Iterable, Mapping, MutableMapping, Sequence
 from typing import Annotated as ExtensionsAnnotated
@@ -22,6 +21,10 @@ try:
 except ImportError:
     TypingAnnotated = ExtensionsAnnotated
 
+
+from importlib.metadata import version
+
+from packaging.version import parse
 from pydantic import BaseModel, Field
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
@@ -1047,12 +1050,9 @@ def test__convert_typed_dict_to_openai_function_fail(typed_dict: type) -> None:
         _convert_typed_dict_to_openai_function(Tool)
 
 
-@pytest.mark.skipif(
-    sys.version_info < (3, 10), reason="Requires python version >= 3.10 to run."
-)
-def test_convert_union_type_py_39() -> None:
+def test_convert_union_type() -> None:
     @tool
-    def magic_function(value: int | str) -> str:  # type: ignore[syntax,unused-ignore] # noqa: ARG001,FA102
+    def magic_function(value: int | str) -> str:  # noqa: ARG001,FA102
         """Compute a magic function."""
         return ""
 
@@ -1122,3 +1122,41 @@ def test_convert_to_json_schema(
     ):
         actual = convert_to_json_schema(fn)
         assert actual == expected
+
+
+def test_convert_to_openai_function_nested_strict_2() -> None:
+    def my_function(arg1: dict, arg2: Union[dict, None]) -> None:
+        """Dummy function."""
+
+    expected: dict = {
+        "name": "my_function",
+        "description": "Dummy function.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "arg1": {
+                    "additionalProperties": False,
+                    "type": "object",
+                },
+                "arg2": {
+                    "anyOf": [
+                        {"additionalProperties": False, "type": "object"},
+                        {"type": "null"},
+                    ],
+                },
+            },
+            "required": ["arg1", "arg2"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    }
+
+    # there will be no extra `"additionalProperties": False` when Pydantic < 2.11
+    if parse(version("pydantic")) < parse("2.11"):
+        del expected["parameters"]["properties"]["arg1"]["additionalProperties"]
+        del expected["parameters"]["properties"]["arg2"]["anyOf"][0][
+            "additionalProperties"
+        ]
+
+    actual = convert_to_openai_function(my_function, strict=True)
+    assert actual == expected

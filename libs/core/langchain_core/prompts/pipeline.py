@@ -18,16 +18,14 @@ def _get_inputs(inputs: dict, input_variables: list[str]) -> dict:
     since="0.3.22",
     removal="1.0",
     message=(
-        "This class is deprecated. Please see the docstring below or at the link"
-        " for a replacement option: "
-        "https://python.langchain.com/api_reference/core/prompts/langchain_core.prompts.pipeline.PipelinePromptTemplate.html"
+        "This class is deprecated in favor of chaining individual prompts together."
     ),
 )
 class PipelinePromptTemplate(BasePromptTemplate):
-    """[DEPRECATED] Pipeline prompt template.
+    """Pipeline prompt template.
 
     This has been deprecated in favor of chaining individual prompts together in your
-    code. E.g. using a for loop, you could do:
+    code; e.g. using a for loop, you could do:
 
     .. code-block:: python
 
@@ -41,22 +39,28 @@ class PipelinePromptTemplate(BasePromptTemplate):
     This can be useful when you want to reuse parts of prompts.
 
     A PipelinePrompt consists of two main parts:
-        - final_prompt: This is the final prompt that is returned
-        - pipeline_prompts: This is a list of tuples, consisting
-          of a string (`name`) and a Prompt Template.
-          Each PromptTemplate will be formatted and then passed
-          to future prompt templates as a variable with
-          the same name as `name`
+
+    - final_prompt: This is the final prompt that is returned
+    - pipeline_prompts: This is a list of tuples, consisting
+      of a string (``name``) and a Prompt Template.
+      Each PromptTemplate will be formatted and then passed
+      to future prompt templates as a variable with
+      the same name as ``name``
+
     """
 
     final_prompt: BasePromptTemplate
     """The final prompt that is returned."""
     pipeline_prompts: list[tuple[str, BasePromptTemplate]]
-    """A list of tuples, consisting of a string (`name`) and a Prompt Template."""
+    """A list of tuples, consisting of a string (``name``) and a Prompt Template."""
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
-        """Get the namespace of the langchain object."""
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "pipeline"]``
+        """
         return ["langchain", "prompts", "pipeline"]
 
     @model_validator(mode="before")
@@ -81,13 +85,13 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
-                kwargs[k] = prompt.format_messages(**_inputs)
+                kwargs[k] = prompt.format_messages(**inputs)
             else:
-                kwargs[k] = prompt.format(**_inputs)
-        _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
-        return self.final_prompt.format_prompt(**_inputs)
+                kwargs[k] = prompt.format(**inputs)
+        inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
+        return self.final_prompt.format_prompt(**inputs)
 
     async def aformat_prompt(self, **kwargs: Any) -> PromptValue:
         """Async format the prompt with the inputs.
@@ -99,13 +103,13 @@ class PipelinePromptTemplate(BasePromptTemplate):
             A formatted string.
         """
         for k, prompt in self.pipeline_prompts:
-            _inputs = _get_inputs(kwargs, prompt.input_variables)
+            inputs = _get_inputs(kwargs, prompt.input_variables)
             if isinstance(prompt, BaseChatPromptTemplate):
-                kwargs[k] = await prompt.aformat_messages(**_inputs)
+                kwargs[k] = await prompt.aformat_messages(**inputs)
             else:
-                kwargs[k] = await prompt.aformat(**_inputs)
-        _inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
-        return await self.final_prompt.aformat_prompt(**_inputs)
+                kwargs[k] = await prompt.aformat(**inputs)
+        inputs = _get_inputs(kwargs, self.final_prompt.input_variables)
+        return await self.final_prompt.aformat_prompt(**inputs)
 
     def format(self, **kwargs: Any) -> str:
         """Format the prompt with the inputs.

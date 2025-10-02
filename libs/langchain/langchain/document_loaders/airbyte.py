@@ -38,11 +38,11 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "AirbyteCDKLoader",
+    "AirbyteGongLoader",
     "AirbyteHubspotLoader",
+    "AirbyteSalesforceLoader",
+    "AirbyteShopifyLoader",
     "AirbyteStripeLoader",
     "AirbyteTypeformLoader",
     "AirbyteZendeskSupportLoader",
-    "AirbyteShopifyLoader",
-    "AirbyteSalesforceLoader",
-    "AirbyteGongLoader",
 ]

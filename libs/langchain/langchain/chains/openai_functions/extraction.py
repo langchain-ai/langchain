@@ -25,7 +25,7 @@ def _get_extraction_function(entity_schema: dict) -> dict:
         "parameters": {
             "type": "object",
             "properties": {
-                "info": {"type": "array", "items": _convert_schema(entity_schema)}
+                "info": {"type": "array", "items": _convert_schema(entity_schema)},
             },
             "required": ["info"],
         },
@@ -63,18 +63,18 @@ Passage:
         """
             from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
-    
+
             class Joke(BaseModel):
                 setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke") 
-    
+                punchline: str = Field(description="The punchline to the joke")
+
             # Or any other chat model that supports tools.
             # Please reference to to the documentation of structured_output
-            # to see an up to date list of which models support 
+            # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
             structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats. 
+            structured_llm.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -84,7 +84,7 @@ def create_extraction_chain(
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
     tags: Optional[list[str]] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage.
 
@@ -92,6 +92,7 @@ def create_extraction_chain(
         schema: The schema of the entities to extract.
         llm: The language model to use.
         prompt: The prompt to use for extraction.
+        tags: Optional list of tags to associate with the chain.
         verbose: Whether to run in verbose mode. In verbose mode, some intermediate
             logs will be printed to the console. Defaults to the global `verbose` value,
             accessible via `langchain.globals.get_verbose()`.
@@ -103,7 +104,7 @@ def create_extraction_chain(
     extraction_prompt = prompt or ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     output_parser = JsonKeyOutputFunctionsParser(key_name="info")
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
@@ -111,7 +112,6 @@ def create_extraction_chain(
         tags=tags,
         verbose=verbose,
     )
-    return chain
 
 
 @deprecated(
@@ -133,18 +133,18 @@ def create_extraction_chain(
         """
             from pydantic import BaseModel, Field
             from langchain_anthropic import ChatAnthropic
-    
+
             class Joke(BaseModel):
                 setup: str = Field(description="The setup of the joke")
-                punchline: str = Field(description="The punchline to the joke") 
-    
+                punchline: str = Field(description="The punchline to the joke")
+
             # Or any other chat model that supports tools.
             # Please reference to to the documentation of structured_output
-            # to see an up to date list of which models support 
+            # to see an up to date list of which models support
             # with_structured_output.
             model = ChatAnthropic(model="claude-3-opus-20240229", temperature=0)
             structured_llm = model.with_structured_output(Joke)
-            structured_llm.invoke("Tell me a joke about cats. 
+            structured_llm.invoke("Tell me a joke about cats.
                 Make sure to call the Joke function.")
             """
     ),
@@ -153,7 +153,7 @@ def create_extraction_chain_pydantic(
     pydantic_schema: Any,
     llm: BaseLanguageModel,
     prompt: Optional[BasePromptTemplate] = None,
-    verbose: bool = False,
+    verbose: bool = False,  # noqa: FBT001,FBT002
 ) -> Chain:
     """Creates a chain that extracts information from a passage using pydantic schema.
 
@@ -178,20 +178,21 @@ def create_extraction_chain_pydantic(
         openai_schema = pydantic_schema.schema()
 
     openai_schema = _resolve_schema_references(
-        openai_schema, openai_schema.get("definitions", {})
+        openai_schema,
+        openai_schema.get("definitions", {}),
     )
 
     function = _get_extraction_function(openai_schema)
     extraction_prompt = prompt or ChatPromptTemplate.from_template(_EXTRACTION_TEMPLATE)
     output_parser = PydanticAttrOutputFunctionsParser(
-        pydantic_schema=PydanticSchema, attr_name="info"
+        pydantic_schema=PydanticSchema,
+        attr_name="info",
     )
     llm_kwargs = get_llm_kwargs(function)
-    chain = LLMChain(
+    return LLMChain(
         llm=llm,
         prompt=extraction_prompt,
         llm_kwargs=llm_kwargs,
         output_parser=output_parser,
         verbose=verbose,
     )
-    return chain

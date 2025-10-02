@@ -24,10 +24,10 @@ def test_resolve_criteria_enum(criterion: Criteria) -> None:
 def test_resolve_criteria_list_enum() -> None:
     val = resolve_pairwise_criteria(list(Criteria))
     assert isinstance(val, dict)
-    assert set(val.keys()) == set(c.value for c in list(Criteria))
+    assert set(val.keys()) == {c.value for c in list(Criteria)}
 
 
-def test_PairwiseStringResultOutputParser_parse() -> None:
+def test_pairwise_string_result_output_parser_parse() -> None:
     output_parser = PairwiseStringResultOutputParser()
     text = """I like pie better than cake.
 [[A]]"""
@@ -112,7 +112,9 @@ def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
         sequential_responses=True,
     )
     chain = LabeledPairwiseStringEvalChain.from_llm(llm=llm)
-    with pytest.raises(ValueError):
+    with pytest.raises(
+        ValueError, match="LabeledPairwiseStringEvalChain requires a reference string"
+    ):
         chain.evaluate_string_pairs(
             prediction="I like pie.",
             prediction_b="I love pie.",

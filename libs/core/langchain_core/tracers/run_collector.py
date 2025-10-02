@@ -11,12 +11,6 @@ class RunCollectorCallbackHandler(BaseTracer):
     """Tracer that collects all nested runs in a list.
 
     This tracer is useful for inspection and evaluation purposes.
-
-    Parameters
-    ----------
-    name : str, default="run-collector_callback_handler"
-    example_id : Optional[Union[UUID, str]], default=None
-        The ID of the example being traced. It can be either a UUID or a string.
     """
 
     name: str = "run-collector_callback_handler"
@@ -26,12 +20,10 @@ class RunCollectorCallbackHandler(BaseTracer):
     ) -> None:
         """Initialize the RunCollectorCallbackHandler.
 
-        Parameters
-        ----------
-        example_id : Optional[Union[UUID, str]], default=None
-            The ID of the example being traced. It can be either a UUID or a string.
-        **kwargs : Any
-            Additional keyword arguments
+        Args:
+            example_id: The ID of the example being traced. (default: None).
+                It can be either a UUID or a string.
+            **kwargs: Additional keyword arguments.
         """
         super().__init__(**kwargs)
         self.example_id = (
@@ -42,10 +34,8 @@ class RunCollectorCallbackHandler(BaseTracer):
     def _persist_run(self, run: Run) -> None:
         """Persist a run by adding it to the traced_runs list.
 
-        Parameters
-        ----------
-        run : Run
-            The run to be persisted.
+        Args:
+            run: The run to be persisted.
         """
         run_ = run.copy()
         run_.reference_example_id = self.example_id

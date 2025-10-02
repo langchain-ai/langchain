@@ -1,9 +1,12 @@
 """Test ChatGroq chat model."""
 
+from __future__ import annotations
+
 import json
 from typing import Any, Optional, cast
 
 import pytest
+from groq import BadRequestError
 from langchain_core.messages import (
     AIMessage,
     AIMessageChunk,
@@ -21,7 +24,10 @@ from tests.unit_tests.fake.callbacks import (
     FakeCallbackHandlerWithChatStart,
 )
 
-MODEL_NAME = "llama-3.3-70b-versatile"
+DEFAULT_MODEL_NAME = "openai/gpt-oss-20b"
+
+# gpt-oss doesn't support `reasoning_effort`
+REASONING_MODEL_NAME = "deepseek-r1-distill-llama-70b"
 
 
 #
@@ -31,7 +37,7 @@ MODEL_NAME = "llama-3.3-70b-versatile"
 def test_invoke() -> None:
     """Test Chat wrapper."""
     chat = ChatGroq(
-        model=MODEL_NAME,
+        model=DEFAULT_MODEL_NAME,
         temperature=0.7,
         base_url=None,
         groq_proxy=None,
@@ -52,7 +58,7 @@ def test_invoke() -> None:
 @pytest.mark.scheduled
 async def test_ainvoke() -> None:
     """Test ainvoke tokens from ChatGroq."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
     result = await chat.ainvoke("Welcome to the Groqetship!", config={"tags": ["foo"]})
     assert isinstance(result, BaseMessage)
@@ -62,7 +68,7 @@ async def test_ainvoke() -> None:
 @pytest.mark.scheduled
 def test_batch() -> None:
     """Test batch tokens from ChatGroq."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
     result = chat.batch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
@@ -73,7 +79,7 @@ def test_batch() -> None:
 @pytest.mark.scheduled
 async def test_abatch() -> None:
     """Test abatch tokens from ChatGroq."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
     result = await chat.abatch(["Hello!", "Welcome to the Groqetship!"])
     for token in result:
@@ -84,7 +90,7 @@ async def test_abatch() -> None:
 @pytest.mark.scheduled
 async def test_stream() -> None:
     """Test streaming tokens from Groq."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
     for token in chat.stream("Welcome to the Groqetship!"):
         assert isinstance(token, BaseMessageChunk)
@@ -94,7 +100,7 @@ async def test_stream() -> None:
 @pytest.mark.scheduled
 async def test_astream() -> None:
     """Test streaming tokens from Groq."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
 
     full: Optional[BaseMessageChunk] = None
     chunks_with_token_counts = 0
@@ -108,11 +114,12 @@ async def test_astream() -> None:
         if token.response_metadata:
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with token counts or metadata. "
             "AIMessageChunk aggregation adds / appends these metadata. Check that "
             "this is behaving properly."
         )
+        raise AssertionError(msg)
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
@@ -132,7 +139,7 @@ async def test_astream() -> None:
 def test_generate() -> None:
     """Test sync generate."""
     n = 1
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
     message = HumanMessage(content="Hello", n=1)
     response = chat.generate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -151,7 +158,7 @@ def test_generate() -> None:
 async def test_agenerate() -> None:
     """Test async generation."""
     n = 1
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10, n=1)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10, n=1)
     message = HumanMessage(content="Hello")
     response = await chat.agenerate([[message], [message]])
     assert isinstance(response, LLMResult)
@@ -174,7 +181,7 @@ def test_invoke_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandler()
     chat = ChatGroq(
-        model=MODEL_NAME,
+        model=DEFAULT_MODEL_NAME,
         max_tokens=2,
         streaming=True,
         temperature=0,
@@ -191,7 +198,7 @@ async def test_agenerate_streaming() -> None:
     """Test that streaming correctly invokes on_llm_new_token callback."""
     callback_handler = FakeCallbackHandlerWithChatStart()
     chat = ChatGroq(
-        model=MODEL_NAME,
+        model=DEFAULT_MODEL_NAME,
         max_tokens=10,
         streaming=True,
         temperature=0,
@@ -218,7 +225,7 @@ async def test_agenerate_streaming() -> None:
 def test_reasoning_output_invoke() -> None:
     """Test reasoning output from ChatGroq with invoke."""
     chat = ChatGroq(
-        model="deepseek-r1-distill-llama-70b",
+        model=REASONING_MODEL_NAME,
         reasoning_format="parsed",
     )
     message = [
@@ -237,7 +244,7 @@ def test_reasoning_output_invoke() -> None:
 def test_reasoning_output_stream() -> None:
     """Test reasoning output from ChatGroq with stream."""
     chat = ChatGroq(
-        model="deepseek-r1-distill-llama-70b",
+        model=REASONING_MODEL_NAME,
         reasoning_format="parsed",
     )
     message = [
@@ -255,7 +262,7 @@ def test_reasoning_output_stream() -> None:
             full_response = token
         else:
             # Casting since adding results in a type error
-            full_response = cast(AIMessageChunk, full_response + token)
+            full_response = cast("AIMessageChunk", full_response + token)
 
     assert full_response is not None
     assert isinstance(full_response, AIMessageChunk)
@@ -267,14 +274,88 @@ def test_reasoning_output_stream() -> None:
 def test_reasoning_effort_none() -> None:
     """Test that no reasoning output is returned if effort is set to none."""
     chat = ChatGroq(
-        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort
+        model="qwen/qwen3-32b",  # Only qwen3 currently supports reasoning_effort = none
         reasoning_effort="none",
     )
     message = HumanMessage(content="What is the capital of France?")
     response = chat.invoke([message])
     assert isinstance(response, AIMessage)
     assert "reasoning_content" not in response.additional_kwargs
-    assert "<think>" not in response.content and "<think/>" not in response.content
+    assert "<think>" not in response.content
+    assert "<think/>" not in response.content
+
+
+@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+def test_reasoning_effort_levels(effort: str) -> None:
+    """Test reasoning effort options for different levels."""
+    # As of now, only the new gpt-oss models support `'low'`, `'medium'`, and `'high'`
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+        reasoning_effort=effort,
+    )
+    message = HumanMessage(content="What is the capital of France?")
+    response = chat.invoke([message])
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    assert response.response_metadata.get("reasoning_effort") == effort
+
+
+@pytest.mark.parametrize("effort", ["low", "medium", "high"])
+def test_reasoning_effort_invoke_override(effort: str) -> None:
+    """Test that reasoning_effort in invoke() overrides class-level setting."""
+    # Create chat with no reasoning effort at class level
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    # Override reasoning_effort in invoke()
+    response = chat.invoke([message], reasoning_effort=effort)
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    assert response.response_metadata.get("reasoning_effort") == effort
+
+
+def test_reasoning_effort_invoke_override_different_level() -> None:
+    """Test that reasoning_effort in invoke() overrides class-level setting."""
+    # Create chat with reasoning effort at class level
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,  # openai/gpt-oss-20b supports reasoning_effort
+        reasoning_effort="high",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    # Override reasoning_effort to 'low' in invoke()
+    response = chat.invoke([message], reasoning_effort="low")
+    assert isinstance(response, AIMessage)
+    assert isinstance(response.content, str)
+    assert len(response.content) > 0
+    # Should reflect the overridden value, not the class-level setting
+    assert response.response_metadata.get("reasoning_effort") == "low"
+
+
+def test_reasoning_effort_streaming() -> None:
+    """Test that reasoning_effort is captured in streaming response metadata."""
+    chat = ChatGroq(
+        model=DEFAULT_MODEL_NAME,
+        reasoning_effort="medium",
+    )
+    message = HumanMessage(content="What is the capital of France?")
+
+    chunks = list(chat.stream([message]))
+    assert len(chunks) > 0
+
+    # Find the final chunk with finish_reason
+    final_chunk = None
+    for chunk in chunks:
+        if chunk.response_metadata.get("finish_reason"):
+            final_chunk = chunk
+            break
+
+    assert final_chunk is not None
+    assert final_chunk.response_metadata.get("reasoning_effort") == "medium"
 
 
 #
@@ -296,7 +377,7 @@ def test_streaming_generation_info() -> None:
 
     callback = _FakeCallback()
     chat = ChatGroq(
-        model=MODEL_NAME,
+        model="llama-3.1-8b-instant",  # Use a model that properly streams content
         max_tokens=2,
         temperature=0,
         callbacks=[callback],
@@ -310,7 +391,7 @@ def test_streaming_generation_info() -> None:
 
 def test_system_message() -> None:
     """Test ChatGroq wrapper with system message."""
-    chat = ChatGroq(model=MODEL_NAME, max_tokens=10)
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, max_tokens=10)
     system_message = SystemMessage(content="You are to chat with the user.")
     human_message = HumanMessage(content="Hello")
     response = chat.invoke([system_message, human_message])
@@ -320,7 +401,7 @@ def test_system_message() -> None:
 
 def test_tool_choice() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=MODEL_NAME)
+    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -328,7 +409,7 @@ def test_tool_choice() -> None:
 
     with_tool = llm.bind_tools([MyTool], tool_choice="MyTool")
 
-    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    resp = with_tool.invoke("Who was the 27 year old named Erick? Use the tool.")
     assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
@@ -350,7 +431,7 @@ def test_tool_choice() -> None:
 
 def test_tool_choice_bool() -> None:
     """Test that tool choice is respected just passing in True."""
-    llm = ChatGroq(model=MODEL_NAME)
+    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -358,7 +439,7 @@ def test_tool_choice_bool() -> None:
 
     with_tool = llm.bind_tools([MyTool], tool_choice=True)
 
-    resp = with_tool.invoke("Who was the 27 year old named Erick?")
+    resp = with_tool.invoke("Who was the 27 year old named Erick? Use the tool.")
     assert isinstance(resp, AIMessage)
     assert resp.content == ""  # should just be tool call
     tool_calls = resp.additional_kwargs["tool_calls"]
@@ -375,7 +456,7 @@ def test_tool_choice_bool() -> None:
 @pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 def test_streaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=MODEL_NAME)
+    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -413,7 +494,7 @@ def test_streaming_tool_call() -> None:
 @pytest.mark.xfail(reason="Groq tool_choice doesn't currently force a tool call")
 async def test_astreaming_tool_call() -> None:
     """Test that tool choice is respected."""
-    llm = ChatGroq(model=MODEL_NAME)
+    llm = ChatGroq(model=DEFAULT_MODEL_NAME)
 
     class MyTool(BaseModel):
         name: str
@@ -450,7 +531,7 @@ async def test_astreaming_tool_call() -> None:
 
 @pytest.mark.scheduled
 def test_json_mode_structured_output() -> None:
-    """Test with_structured_output with json"""
+    """Test with_structured_output with json."""
 
     class Joke(BaseModel):
         """Joke to tell user."""
@@ -458,13 +539,122 @@ def test_json_mode_structured_output() -> None:
         setup: str = Field(description="question to set up a joke")
         punchline: str = Field(description="answer to resolve the joke")
 
-    chat = ChatGroq(model=MODEL_NAME).with_structured_output(Joke, method="json_mode")
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME).with_structured_output(
+        Joke, method="json_mode"
+    )
     result = chat.invoke(
         "Tell me a joke about cats, respond in JSON with `setup` and `punchline` keys"
     )
     assert type(result) is Joke
     assert len(result.setup) != 0
     assert len(result.punchline) != 0
+
+
+def test_setting_service_tier_class() -> None:
+    """Test setting service tier defined at ChatGroq level."""
+    message = HumanMessage(content="Welcome to the Groqetship")
+
+    # Initialization
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="auto")
+    assert chat.service_tier == "auto"
+    response = chat.invoke([message])
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, str)
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="flex")
+    assert chat.service_tier == "flex"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "flex"
+
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="on_demand")
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME)
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke([message])
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    with pytest.raises(ValueError):
+        ChatGroq(model=DEFAULT_MODEL_NAME, service_tier=None)  # type: ignore[arg-type]
+    with pytest.raises(ValueError):
+        ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="invalid")  # type: ignore[arg-type]
+
+
+def test_setting_service_tier_request() -> None:
+    """Test setting service tier defined at request level."""
+    message = HumanMessage(content="Welcome to the Groqetship")
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME)
+
+    response = chat.invoke(
+        [message],
+        service_tier="auto",
+    )
+    assert isinstance(response, BaseMessage)
+    assert isinstance(response.content, str)
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    response = chat.invoke(
+        [message],
+        service_tier="flex",
+    )
+    assert response.response_metadata.get("service_tier") == "flex"
+
+    response = chat.invoke(
+        [message],
+        service_tier="on_demand",
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    assert chat.service_tier == "on_demand"
+    response = chat.invoke(
+        [message],
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    # If an `invoke` call is made with no service tier, we fall back to the class level
+    # setting
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="auto")
+    response = chat.invoke(
+        [message],
+    )
+    assert response.response_metadata.get("service_tier") == "auto"
+
+    response = chat.invoke(
+        [message],
+        service_tier="on_demand",
+    )
+    assert response.response_metadata.get("service_tier") == "on_demand"
+
+    with pytest.raises(BadRequestError):
+        response = chat.invoke(
+            [message],
+            service_tier="invalid",
+        )
+
+    response = chat.invoke(
+        [message],
+        service_tier=None,
+    )
+    assert response.response_metadata.get("service_tier") == "auto"
+
+
+def test_setting_service_tier_streaming() -> None:
+    """Test service tier settings for streaming calls."""
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="flex")
+    chunks = list(chat.stream("Why is the sky blue?", service_tier="auto"))
+
+    assert chunks[-1].response_metadata.get("service_tier") == "auto"
+
+
+async def test_setting_service_tier_request_async() -> None:
+    """Test async setting of service tier at the request level."""
+    chat = ChatGroq(model=DEFAULT_MODEL_NAME, service_tier="flex")
+    response = await chat.ainvoke("Hello!", service_tier="on_demand")
+
+    assert response.response_metadata.get("service_tier") == "on_demand"
 
 
 # Groq does not currently support N > 1

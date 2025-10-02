@@ -1,13 +1,12 @@
+"""Experimental tool-calling support for Anthropic chat models."""
+
+from __future__ import annotations
+
 import json
 from typing import (
     Any,
     Union,
 )
-
-from langchain_core._api import deprecated
-from pydantic import PrivateAttr
-
-from langchain_anthropic.chat_models import ChatAnthropic
 
 SYSTEM_PROMPT_FORMAT = """In this environment you have access to a set of tools you can use to answer the user's question.
 
@@ -66,7 +65,7 @@ def get_system_message(tools: list[dict]) -> str:
                         parameter_description=parameter.get("description"),
                     )
                     for name, parameter in tool["parameters"]["properties"].items()
-                ]
+                ],
             ),
         }
         for tool in tools
@@ -79,7 +78,7 @@ def get_system_message(tools: list[dict]) -> str:
                 formatted_parameters=tool["formatted_parameters"],
             )
             for tool in tools_data
-        ]
+        ],
     )
     return SYSTEM_PROMPT_FORMAT.format(formatted_tools=tools_formatted)
 
@@ -111,18 +110,20 @@ def _xml_to_function_call(invoke: Any, tools: list[dict]) -> dict[str, Any]:
     if len(filtered_tools) > 0 and not isinstance(arguments, str):
         tool = filtered_tools[0]
         for key, value in arguments.items():
-            if key in tool["parameters"]["properties"]:
-                if "type" in tool["parameters"]["properties"][key]:
-                    if tool["parameters"]["properties"][key][
-                        "type"
-                    ] == "array" and not isinstance(value, list):
-                        arguments[key] = [value]
-                    if (
-                        tool["parameters"]["properties"][key]["type"] != "object"
-                        and isinstance(value, dict)
-                        and len(value.keys()) == 1
-                    ):
-                        arguments[key] = list(value.values())[0]
+            if (
+                key in tool["parameters"]["properties"]
+                and "type" in tool["parameters"]["properties"][key]
+            ):
+                if tool["parameters"]["properties"][key][
+                    "type"
+                ] == "array" and not isinstance(value, list):
+                    arguments[key] = [value]
+                if (
+                    tool["parameters"]["properties"][key]["type"] != "object"
+                    and isinstance(value, dict)
+                    and len(value.keys()) == 1
+                ):
+                    arguments[key] = next(iter(value.values()))
 
     return {
         "function": {
@@ -134,24 +135,7 @@ def _xml_to_function_call(invoke: Any, tools: list[dict]) -> dict[str, Any]:
 
 
 def _xml_to_tool_calls(elem: Any, tools: list[dict]) -> list[dict[str, Any]]:
-    """
-    Convert an XML element and its children into a dictionary of dictionaries.
-    """
+    """Convert an XML element and its children into a dictionary of dictionaries."""
     invokes = elem.findall("invoke")
 
     return [_xml_to_function_call(invoke, tools) for invoke in invokes]
-
-
-@deprecated(
-    "0.1.5",
-    removal="1.0.0",
-    alternative="ChatAnthropic",
-    message=(
-        "Tool-calling is now officially supported by the Anthropic API so this "
-        "workaround is no longer needed."
-    ),
-)
-class ChatAnthropicTools(ChatAnthropic):
-    """Chat model for interacting with Anthropic functions."""
-
-    _xmllib: Any = PrivateAttr(default=None)

@@ -10,6 +10,7 @@ from langchain_core.callbacks import (
     CallbackManagerForChainRun,
 )
 from pydantic import Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 
@@ -25,6 +26,7 @@ class TransformChain(Chain):
             from langchain.chains import TransformChain
             transform_chain = TransformChain(input_variables=["text"],
              output_variables["entities"], transform=func())
+
     """
 
     input_variables: list[str]
@@ -63,6 +65,7 @@ class TransformChain(Chain):
         """
         return self.output_variables
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
@@ -70,6 +73,7 @@ class TransformChain(Chain):
     ) -> dict[str, str]:
         return self.transform_cb(inputs)
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -77,9 +81,8 @@ class TransformChain(Chain):
     ) -> dict[str, Any]:
         if self.atransform_cb is not None:
             return await self.atransform_cb(inputs)
-        else:
-            self._log_once(
-                "TransformChain's atransform is not provided, falling"
-                " back to synchronous transform"
-            )
-            return self.transform_cb(inputs)
+        self._log_once(
+            "TransformChain's atransform is not provided, falling"
+            " back to synchronous transform",
+        )
+        return self.transform_cb(inputs)

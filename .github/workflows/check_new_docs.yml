@@ -1,4 +1,7 @@
-name: Integration docs lint
+# For integrations, we run check_templates.py to ensure that new docs use the correct
+# templates based on their type. See the script for more details.
+
+name: '📑 Integration Docs Lint'
 
 on:
   push:
@@ -15,12 +18,15 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.10'
       - id: files
@@ -30,6 +36,6 @@ jobs:
             *.ipynb
             *.md
             *.mdx
-      - name: Check new docs
+      - name: '🔍 Check New Documentation Templates'
         run: |
           python docs/scripts/check_templates.py ${{ steps.files.outputs.added }}

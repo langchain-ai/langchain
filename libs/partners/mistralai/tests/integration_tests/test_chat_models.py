@@ -1,5 +1,7 @@
 """Test ChatMistral chat model."""
 
+from __future__ import annotations
+
 import json
 import logging
 import time
@@ -43,11 +45,12 @@ async def test_astream() -> None:
         if token.response_metadata:
             chunks_with_response_metadata += 1
     if chunks_with_token_counts != 1 or chunks_with_response_metadata != 1:
-        raise AssertionError(
+        msg = (
             "Expected exactly one chunk with token counts or response_metadata. "
             "AIMessageChunk aggregation adds / appends counts and metadata. Check that "
             "this is behaving properly."
         )
+        raise AssertionError(msg)
     assert isinstance(full, AIMessageChunk)
     assert full.usage_metadata is not None
     assert full.usage_metadata["input_tokens"] > 0
@@ -61,7 +64,7 @@ async def test_astream() -> None:
 
 
 async def test_abatch() -> None:
-    """Test streaming tokens from ChatMistralAI"""
+    """Test streaming tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     result = await llm.abatch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -70,7 +73,7 @@ async def test_abatch() -> None:
 
 
 async def test_abatch_tags() -> None:
-    """Test batch tokens from ChatMistralAI"""
+    """Test batch tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     result = await llm.abatch(
@@ -81,7 +84,7 @@ async def test_abatch_tags() -> None:
 
 
 def test_batch() -> None:
-    """Test batch tokens from ChatMistralAI"""
+    """Test batch tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     result = llm.batch(["I'm Pickle Rick", "I'm not Pickle Rick"])
@@ -90,7 +93,7 @@ def test_batch() -> None:
 
 
 async def test_ainvoke() -> None:
-    """Test invoke tokens from ChatMistralAI"""
+    """Test invoke tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
     result = await llm.ainvoke("I'm Pickle Rick", config={"tags": ["foo"]})
@@ -99,10 +102,10 @@ async def test_ainvoke() -> None:
 
 
 def test_invoke() -> None:
-    """Test invoke tokens from ChatMistralAI"""
+    """Test invoke tokens from ChatMistralAI."""
     llm = ChatMistralAI()
 
-    result = llm.invoke("I'm Pickle Rick", config=dict(tags=["foo"]))
+    result = llm.invoke("I'm Pickle Rick", config={"tags": ["foo"]})
     assert isinstance(result.content, str)
 
 
@@ -178,13 +181,11 @@ def test_streaming_structured_output() -> None:
 
     structured_llm = llm.with_structured_output(Person)
     strm = structured_llm.stream("Erick, 27 years old")
-    chunk_num = 0
-    for chunk in strm:
+    for chunk_num, chunk in enumerate(strm):
         assert chunk_num == 0, "should only have one chunk with model"
         assert isinstance(chunk, Person)
         assert chunk.name == "Erick"
         assert chunk.age == 27
-        chunk_num += 1
 
 
 class Book(BaseModel):
@@ -201,7 +202,7 @@ def _check_parsed_result(result: Any, schema: Any) -> None:
     if schema == Book:
         assert isinstance(result, Book)
     else:
-        assert all(key in ["name", "authors"] for key in result.keys())
+        assert all(key in ["name", "authors"] for key in result)
 
 
 @pytest.mark.parametrize("schema", [Book, BookDict, Book.model_json_schema()])
@@ -319,6 +320,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
     # Measure start time
     t0 = time.time()
+    logger = logging.getLogger(__name__)
 
     try:
         # Try to get a response
@@ -326,7 +328,7 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
         # If successful, validate the response
         elapsed_time = time.time() - t0
-        logging.info(f"Request succeeded in {elapsed_time:.2f} seconds")
+        logger.info("Request succeeded in %.2f seconds", elapsed_time)
         # Check that we got a valid response
         assert response.content
         assert isinstance(response.content, str)
@@ -334,9 +336,9 @@ def test_retry_parameters(caplog: pytest.LogCaptureFixture) -> None:
 
     except ReadTimeout:
         elapsed_time = time.time() - t0
-        logging.info(f"Request timed out after {elapsed_time:.2f} seconds")
+        logger.info("Request timed out after %.2f seconds", elapsed_time)
         assert elapsed_time >= 3.0
         pytest.skip("Test timed out as expected with short timeout")
-    except Exception as e:
-        logging.error(f"Unexpected exception: {e}")
+    except Exception:
+        logger.exception("Unexpected exception")
         raise

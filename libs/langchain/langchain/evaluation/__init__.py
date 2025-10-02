@@ -30,6 +30,7 @@ name of the dataset to load.
 .. code-block:: python
 
         from langchain.evaluation import load_dataset
+
         ds = load_dataset("llm-math")
 
 **Some common use cases for evaluation include:**
@@ -95,34 +96,34 @@ from langchain.evaluation.string_distance import (
 )
 
 __all__ = [
-    "EvaluatorType",
-    "ExactMatchStringEvaluator",
-    "RegexMatchStringEvaluator",
-    "PairwiseStringEvalChain",
-    "LabeledPairwiseStringEvalChain",
-    "QAEvalChain",
-    "CotQAEvalChain",
+    "AgentTrajectoryEvaluator",
     "ContextQAEvalChain",
-    "StringEvaluator",
-    "PairwiseStringEvaluator",
-    "TrajectoryEvalChain",
-    "CriteriaEvalChain",
+    "CotQAEvalChain",
     "Criteria",
+    "CriteriaEvalChain",
     "EmbeddingDistance",
     "EmbeddingDistanceEvalChain",
+    "EvaluatorType",
+    "ExactMatchStringEvaluator",
+    "JsonEditDistanceEvaluator",
+    "JsonEqualityEvaluator",
+    "JsonSchemaEvaluator",
+    "JsonValidityEvaluator",
+    "LabeledCriteriaEvalChain",
+    "LabeledPairwiseStringEvalChain",
+    "LabeledScoreStringEvalChain",
     "PairwiseEmbeddingDistanceEvalChain",
+    "PairwiseStringDistanceEvalChain",
+    "PairwiseStringEvalChain",
+    "PairwiseStringEvaluator",
+    "QAEvalChain",
+    "RegexMatchStringEvaluator",
+    "ScoreStringEvalChain",
     "StringDistance",
     "StringDistanceEvalChain",
-    "PairwiseStringDistanceEvalChain",
-    "LabeledCriteriaEvalChain",
-    "load_evaluators",
-    "load_evaluator",
+    "StringEvaluator",
+    "TrajectoryEvalChain",
     "load_dataset",
-    "AgentTrajectoryEvaluator",
-    "ScoreStringEvalChain",
-    "LabeledScoreStringEvalChain",
-    "JsonValidityEvaluator",
-    "JsonEqualityEvaluator",
-    "JsonEditDistanceEvaluator",
-    "JsonSchemaEvaluator",
+    "load_evaluator",
+    "load_evaluators",
 ]

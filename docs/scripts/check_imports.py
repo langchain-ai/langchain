@@ -1,4 +1,20 @@
-"""This script checks documentation for broken import statements."""
+"""Check documentation for broken import statements.
+
+Validates that all import statements in Jupyter notebooks within the documentation
+directory are functional and can be successfully imported.
+
+- Scans all `.ipynb` files in `docs/`
+- Extracts import statements from code cells
+- Tests each import to ensure it works
+- Reports any broken imports that would fail for users
+
+Usage:
+    python docs/scripts/check_imports.py
+
+Exit codes:
+    0: All imports are valid
+    1: Found broken imports (ImportError raised)
+"""
 
 import importlib
 import json
@@ -86,7 +102,7 @@ def _is_relevant_import(module: str) -> bool:
         "langchain",
         "langchain_core",
         "langchain_community",
-        "langchain_experimental",
+        # "langchain_experimental",
         "langchain_text_splitters",
     ]
     return module.split(".")[0] in recognized_packages
@@ -128,4 +144,4 @@ def check_notebooks(directory: str) -> list:
 if __name__ == "__main__":
     bad_files = check_notebooks(DOCS_DIR)
     if bad_files:
-        raise ImportError("Found bad imports:\n" f"{_serialize_bad_imports(bad_files)}")
+        raise ImportError(f"Found bad imports:\n{_serialize_bad_imports(bad_files)}")

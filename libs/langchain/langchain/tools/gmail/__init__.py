@@ -34,8 +34,8 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "GmailCreateDraft",
-    "GmailSendMessage",
-    "GmailSearch",
     "GmailGetMessage",
     "GmailGetThread",
+    "GmailSearch",
+    "GmailSendMessage",
 ]

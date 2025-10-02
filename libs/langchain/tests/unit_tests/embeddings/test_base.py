@@ -40,7 +40,8 @@ def test_parse_model_string_errors() -> None:
         _parse_model_string("openai:")
 
     with pytest.raises(
-        ValueError, match="Provider 'invalid-provider' is not supported"
+        ValueError,
+        match="Provider 'invalid-provider' is not supported",
     ):
         _parse_model_string("invalid-provider:model-name")
 
@@ -57,11 +58,13 @@ def test_infer_model_and_provider() -> None:
     )
 
     assert _infer_model_and_provider(
-        model="text-embedding-3-small", provider="openai"
+        model="text-embedding-3-small",
+        provider="openai",
     ) == ("openai", "text-embedding-3-small")
 
     assert _infer_model_and_provider(
-        model="ft:text-embedding-3-small", provider="openai"
+        model="ft:text-embedding-3-small",
+        provider="openai",
     ) == ("openai", "ft:text-embedding-3-small")
 
     assert _infer_model_and_provider(model="openai:ft:text-embedding-3-small") == (
@@ -85,12 +88,9 @@ def test_infer_model_and_provider_errors() -> None:
         _infer_model_and_provider("model", provider="")
 
     # Test invalid provider
-    with pytest.raises(ValueError, match="is not supported"):
+    with pytest.raises(ValueError, match="Provider 'invalid' is not supported") as exc:
         _infer_model_and_provider("model", provider="invalid")
-
     # Test provider list is in error
-    with pytest.raises(ValueError) as exc:
-        _infer_model_and_provider("model", provider="invalid")
     for provider in _SUPPORTED_PROVIDERS:
         assert provider in str(exc.value)
 

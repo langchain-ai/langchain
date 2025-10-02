@@ -1,4 +1,12 @@
-name: Integration tests
+
+# Runs `make integration_tests` on the specified package.
+#
+# Manually triggered via workflow_dispatch for testing with real APIs.
+#
+# Installs integration test dependencies and executes full test suite.
+
+name: '🚀 Integration Tests'
+run-name: 'Test ${{ inputs.working-directory }} on Python ${{ inputs.python-version }}'
 
 on:
   workflow_dispatch:
@@ -11,6 +19,10 @@ on:
         required: true
         type: string
         description: "Python version to use"
+        default: "3.11"
+
+permissions:
+  contents: read
 
 env:
   UV_FROZEN: "true"
@@ -21,20 +33,22 @@ jobs:
       run:
         working-directory: ${{ inputs.working-directory }}
     runs-on: ubuntu-latest
-    name: Python ${{ inputs.python-version }}
+    name: 'Python ${{ inputs.python-version }}'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Python ${{ inputs.python-version }} + uv
+      - name: '🐍 Set up Python ${{ inputs.python-version }} + UV'
         uses: "./.github/actions/uv_setup"
         with:
           python-version: ${{ inputs.python-version }}
+          cache-suffix: integration-tests-${{ inputs.working-directory }}
+          working-directory: ${{ inputs.working-directory }}
 
-      - name: Install dependencies
+      - name: '📦 Install Integration Dependencies'
         shell: bash
         run: uv sync --group test --group test_integration
 
-      - name: Run integration tests
+      - name: '🚀 Run Integration Tests'
         shell: bash
         env:
           AI21_API_KEY: ${{ secrets.AI21_API_KEY }}
@@ -76,7 +90,7 @@ jobs:
         run: |
           make integration_tests
 
-      - name: Ensure the tests did not create any additional files
+      - name: 'Ensure testing did not create/modify files'
         shell: bash
         run: |
           set -eu

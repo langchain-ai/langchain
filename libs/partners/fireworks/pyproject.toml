@@ -5,13 +5,13 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.55",
-    "fireworks-ai>=0.13.0",
-    "openai<2.0.0,>=1.10.0",
-    "requests<3,>=2",
-    "aiohttp<4.0.0,>=3.9.1",
+    "langchain-core>=0.3.55,<2.0.0",
+    "fireworks-ai>=0.13.0,<1.0.0",
+    "openai>=1.0.0,<2.0.0",
+    "requests>=2.0.0,<3.0.0",
+    "aiohttp>=3.9.1,<4.0.0",
 ]
 name = "langchain-fireworks"
 version = "0.3.0"
@@ -25,21 +25,20 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest>=7.3.0,<8.0.0",
+    "freezegun>=1.2.2,<2.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "types-requests<3,>=2", "langchain-core"]
+typing = ["mypy>=1.10.0,<2.0.0", "types-requests>=2.0.0,<3.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -51,9 +50,67 @@ disallow_untyped_defs = "True"
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
-ignore = [ "UP007", ]
+select = [
+    "A",      # flake8-builtins
+    "ASYNC",  # flake8-async
+    "C4",     # flake8-comprehensions
+    "COM",    # flake8-commas
+    "D",      # pydocstyle
+    "E",      # pycodestyle error
+    "EM",     # flake8-errmsg
+    "F",      # pyflakes
+    "FA",     # flake8-future-annotations
+    "FBT",    # flake8-boolean-trap
+    "FLY",    # flake8-flynt
+    "I",      # isort
+    "ICN",    # flake8-import-conventions
+    "INT",    # flake8-gettext
+    "ISC",    # isort-comprehensions
+    "PGH",    # pygrep-hooks
+    "PIE",    # flake8-pie
+    "PERF",   # flake8-perf
+    "PYI",    # flake8-pyi
+    "Q",      # flake8-quotes
+    "RET",    # flake8-return
+    "RSE",    # flake8-rst-docstrings
+    "RUF",    # ruff
+    "S",      # flake8-bandit
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "T10",    # flake8-debugger
+    "T20",    # flake8-print
+    "TID",    # flake8-tidy-imports
+    "UP",     # pyupgrade
+    "W",      # pycodestyle warning
+    "YTT",    # flake8-2020
+]
+ignore = [
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D107",    # Missing docstring in __init__
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -65,3 +122,9 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+]

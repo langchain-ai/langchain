@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 from langchain_core.language_models import BaseChatModel
 from langchain_tests.unit_tests.chat_models import (
@@ -9,6 +9,8 @@ from langchain_groq import ChatGroq
 
 
 class TestGroqStandard(ChatModelUnitTests):
+    """Run ChatGroq on LangChain standard tests."""
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq

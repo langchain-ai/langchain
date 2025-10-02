@@ -1,4 +1,4 @@
-"""Standard LangChain interface tests"""
+"""Standard LangChain interface tests."""
 
 import pytest
 from langchain_core.language_models import BaseChatModel
@@ -9,6 +9,8 @@ from langchain_anthropic import ChatAnthropic
 
 
 class TestAnthropicStandard(ChatModelUnitTests):
+    """Use the standard ChatModel unit tests against the ChatAnthropic class."""
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatAnthropic

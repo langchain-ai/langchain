@@ -5,16 +5,16 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<1.0.0,>=0.3.49",
-    "tokenizers<1,>=0.15.1",
-    "httpx<1,>=0.25.2",
-    "httpx-sse<1,>=0.3.1",
-    "pydantic<3,>=2",
+    "langchain-core>=0.3.68,<2.0.0",
+    "tokenizers>=0.15.1,<1.0.0",
+    "httpx>=0.25.2,<1.0.0",
+    "httpx-sse>=0.3.1,<1.0.0",
+    "pydantic>=2.0.0,<3.0.0",
 ]
 name = "langchain-mistralai"
-version = "0.2.10"
+version = "0.2.12"
 description = "An integration package connecting Mistral and LangChain"
 readme = "README.md"
 
@@ -25,17 +25,16 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-watcher<1.0.0,>=0.3.4",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
     "langchain-core",
     "langchain-tests",
 ]
 test_integration = []
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -47,9 +46,43 @@ disallow_untyped_defs = "True"
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
-ignore = [ "UP007", ]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "TD",
+    "PLR0912",
+    "C901",
+    "FIX",
+
+    # TODO
+    "TC002",
+    "ANN401",
+    "ARG001",
+    "ARG002",
+    "PT011",
+    "PLC0415",
+    "PLR2004",
+    "BLE001",
+    "D100",
+    "D102",
+    "D104",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -61,3 +94,14 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "PLR2004",
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

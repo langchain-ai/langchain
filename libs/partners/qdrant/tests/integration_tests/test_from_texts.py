@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import tempfile
 import uuid
 from typing import Optional
@@ -30,7 +32,7 @@ def test_qdrant_from_texts_stores_duplicated_texts() -> None:
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        assert 2 == client.count(collection_name).count
+        assert client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -59,7 +61,7 @@ def test_qdrant_from_texts_stores_ids(
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        assert 2 == client.count(collection_name).count
+        assert client.count(collection_name).count == 2
         stored_ids = [point.id for point in client.scroll(collection_name)[0]]
         assert set(ids) == set(stored_ids)
 
@@ -81,7 +83,7 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) 
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        assert 5 == client.count(collection_name).count
+        assert client.count(collection_name).count == 5
         assert all(
             vector_name in point.vector  # type: ignore[operator]
             for point in client.scroll(collection_name, with_vectors=True)[0]
@@ -90,7 +92,7 @@ def test_qdrant_from_texts_stores_embeddings_as_named_vectors(vector_name: str) 
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) -> None:
-    """Test if Qdrant.from_texts reuses the same collection"""
+    """Test if Qdrant.from_texts reuses the same collection."""
     from qdrant_client import QdrantClient
 
     collection_name = uuid.uuid4().hex
@@ -115,14 +117,14 @@ def test_qdrant_from_texts_reuses_same_collection(vector_name: Optional[str]) ->
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        assert 7 == client.count(collection_name).count
+        assert client.count(collection_name).count == 7
 
 
 @pytest.mark.parametrize("vector_name", [None, "custom-vector"])
 def test_qdrant_from_texts_raises_error_on_different_dimensionality(
     vector_name: Optional[str],
 ) -> None:
-    """Test if Qdrant.from_texts raises an exception if dimensionality does not match"""
+    """Test if Qdrant.from_texts raises an exception if dimensionality doesn't match."""
     collection_name = uuid.uuid4().hex
     with tempfile.TemporaryDirectory() as tmpdir:
         vec_store = Qdrant.from_texts(
@@ -145,7 +147,7 @@ def test_qdrant_from_texts_raises_error_on_different_dimensionality(
 
 
 @pytest.mark.parametrize(
-    ["first_vector_name", "second_vector_name"],
+    ("first_vector_name", "second_vector_name"),
     [
         (None, "custom-vector"),
         ("custom-vector", None),
@@ -156,7 +158,7 @@ def test_qdrant_from_texts_raises_error_on_different_vector_name(
     first_vector_name: Optional[str],
     second_vector_name: Optional[str],
 ) -> None:
-    """Test if Qdrant.from_texts raises an exception if vector name does not match"""
+    """Test if Qdrant.from_texts raises an exception if vector name does not match."""
     collection_name = uuid.uuid4().hex
     with tempfile.TemporaryDirectory() as tmpdir:
         vec_store = Qdrant.from_texts(
@@ -179,7 +181,7 @@ def test_qdrant_from_texts_raises_error_on_different_vector_name(
 
 
 def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
-    """Test if Qdrant.from_texts raises an exception if distance does not match"""
+    """Test if Qdrant.from_texts raises an exception if distance does not match."""
     collection_name = uuid.uuid4().hex
     with tempfile.TemporaryDirectory() as tmpdir:
         vec_store = Qdrant.from_texts(
@@ -211,7 +213,7 @@ def test_qdrant_from_texts_raises_error_on_different_distance() -> None:
 def test_qdrant_from_texts_recreates_collection_on_force_recreate(
     vector_name: Optional[str],
 ) -> None:
-    """Test if Qdrant.from_texts recreates the collection even if config mismatches"""
+    """Test if Qdrant.from_texts recreates the collection even if config mismatches."""
     from qdrant_client import QdrantClient
 
     collection_name = uuid.uuid4().hex
@@ -236,7 +238,7 @@ def test_qdrant_from_texts_recreates_collection_on_force_recreate(
         del vec_store
 
         client = QdrantClient(path=str(tmpdir))
-        assert 2 == client.count(collection_name).count
+        assert client.count(collection_name).count == 2
 
 
 @pytest.mark.parametrize("batch_size", [1, 64])
@@ -283,6 +285,6 @@ def test_from_texts_passed_optimizers_config_and_on_disk_payload(location: str) 
     )
 
     collection_info = vec_store.client.get_collection(collection_name)
-    assert collection_info.config.params.vectors.on_disk is True  # type: ignore
+    assert collection_info.config.params.vectors.on_disk is True  # type: ignore[union-attr]
     assert collection_info.config.optimizer_config.memmap_threshold == 1000
     assert collection_info.config.params.on_disk_payload is True

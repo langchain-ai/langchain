@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 from typing import Optional
 
 import numpy as np
 import pytest  # type: ignore[import-not-found]
 from langchain_core.documents import Document
+from qdrant_client.http import models as rest
 
 from langchain_qdrant import Qdrant
 from tests.integration_tests.common import (
@@ -174,7 +177,7 @@ def test_qdrant_similarity_search_with_relevance_score_with_threshold(
     kwargs = {"score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
@@ -205,7 +208,7 @@ def test_qdrant_similarity_search_with_relevance_score_with_threshold_and_filter
     kwargs = {"filter": positive_filter, "score_threshold": score_threshold}
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3, **kwargs)
     assert len(output) == 1
-    assert all([score >= score_threshold for _, score in output])
+    assert all(score >= score_threshold for _, score in output)
 
 
 @pytest.mark.parametrize("vector_name", [None, "my-vector"])
@@ -213,8 +216,6 @@ def test_qdrant_similarity_search_filters_with_qdrant_filters(
     vector_name: Optional[str],
 ) -> None:
     """Test end to end construction and search."""
-    from qdrant_client.http import models as rest
-
     texts = ["foo", "bar", "baz"]
     metadatas = [
         {"page": i, "details": {"page": i + 1, "pages": [i + 2, -1]}}
@@ -280,5 +281,5 @@ def test_qdrant_similarity_search_with_relevance_scores(
     output = docsearch.similarity_search_with_relevance_scores("foo", k=3)
 
     assert all(
-        (1 >= score or np.isclose(score, 1)) and score >= 0 for _, score in output
+        (score <= 1 or np.isclose(score, 1)) and score >= 0 for _, score in output
     )

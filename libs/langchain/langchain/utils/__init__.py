@@ -1,5 +1,4 @@
-"""
-**Utility functions** for LangChain.
+"""**Utility functions** for LangChain.
 
 These functions do not depend on any other LangChain module.
 """
@@ -60,12 +59,12 @@ __all__ = [
     "convert_to_secret_str",
     "cosine_similarity",
     "cosine_similarity_top_k",
+    "formatter",
     "get_bolded_text",
     "get_color_mapping",
     "get_colored_text",
     "get_from_dict_or_env",
     "get_from_env",
-    "formatter",
     "get_pydantic_field_names",
     "guard_import",
     "mock_now",

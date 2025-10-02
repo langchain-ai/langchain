@@ -1,25 +1,30 @@
-name: Check Broken Links
+# Runs broken link checker in /docs on a daily schedule.
+
+name: '🔗 Check Broken Links'
 
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '0 13 * * *'
+    - cron:  '0 13 * * *'  # Runs daily at 1PM UTC (9AM EDT/6AM PDT)
+
+permissions:
+  contents: read
 
 jobs:
   check-links:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - name: '🟢 Setup Node.js 18.x'
+        uses: actions/setup-node@v5
         with:
           node-version: 18.x
           cache: "yarn"
           cache-dependency-path: ./docs/yarn.lock
-      - name: Install dependencies
+      - name: '📦 Install Node Dependencies'
         run: yarn install --immutable --mode=skip-build
         working-directory: ./docs
-      - name: Check broken links
+      - name: '🔍 Scan Documentation for Broken Links'
         run: yarn check-broken-links
         working-directory: ./docs

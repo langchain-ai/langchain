@@ -56,6 +56,7 @@ class PromptTemplate(StringPromptTemplate):
 
             # Instantiation using initializer
             prompt = PromptTemplate(template="Say {foo}")
+
     """
 
     @property
@@ -68,6 +69,11 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "prompt"]``
+        """
         return ["langchain", "prompts", "prompt"]
 
     template: str
@@ -134,14 +140,20 @@ class PromptTemplate(StringPromptTemplate):
         return mustache_schema(self.template)
 
     def __add__(self, other: Any) -> PromptTemplate:
-        """Override the + operator to allow for combining prompt templates."""
+        """Override the + operator to allow for combining prompt templates.
+
+        Raises:
+            ValueError: If the template formats are not f-string or if there are
+                conflicting partial variables.
+            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+
+        Returns:
+            A new ``PromptTemplate`` that is the combination of the two.
+        """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
-            if self.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
-                raise ValueError(msg)
-            if other.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
+            if self.template_format != other.template_format:
+                msg = "Cannot add templates of different formats"
                 raise ValueError(msg)
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
@@ -159,11 +171,14 @@ class PromptTemplate(StringPromptTemplate):
                 template=template,
                 input_variables=input_variables,
                 partial_variables=partial_variables,
-                template_format="f-string",
+                template_format=self.template_format,
                 validate_template=validate_template,
             )
         if isinstance(other, str):
-            prompt = PromptTemplate.from_template(other)
+            prompt = PromptTemplate.from_template(
+                other,
+                template_format=self.template_format,
+            )
             return self + prompt
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)
@@ -287,17 +302,17 @@ class PromptTemplate(StringPromptTemplate):
             The prompt template loaded from the template.
         """
         input_variables = get_template_variables(template, template_format)
-        _partial_variables = partial_variables or {}
+        partial_variables_ = partial_variables or {}
 
-        if _partial_variables:
+        if partial_variables_:
             input_variables = [
-                var for var in input_variables if var not in _partial_variables
+                var for var in input_variables if var not in partial_variables_
             ]
 
         return cls(
             input_variables=input_variables,
             template=template,
             template_format=template_format,
-            partial_variables=_partial_variables,
+            partial_variables=partial_variables_,
             **kwargs,
         )

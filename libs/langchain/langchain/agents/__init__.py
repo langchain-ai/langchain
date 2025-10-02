@@ -1,5 +1,4 @@
-"""
-**Agent** is a class that uses an LLM to choose a sequence of actions to take.
+"""**Agent** is a class that uses an LLM to choose a sequence of actions to take.
 
 In Chains, a sequence of actions is hardcoded. In Agents,
 a language model is used as a reasoning engine to determine which actions
@@ -120,18 +119,21 @@ def __getattr__(name: str) -> Any:
     """Get attr name."""
     if name in DEPRECATED_CODE:
         # Get directory of langchain package
-        HERE = Path(__file__).parents[1]
+        here = Path(__file__).parents[1]
         relative_path = as_import_path(
-            Path(__file__).parent, suffix=name, relative_to=HERE
+            Path(__file__).parent,
+            suffix=name,
+            relative_to=here,
         )
         old_path = "langchain." + relative_path
         new_path = "langchain_experimental." + relative_path
-        raise ImportError(
+        msg = (
             f"{name} has been moved to langchain experimental. "
             "See https://github.com/langchain-ai/langchain/discussions/11680"
             "for more information.\n"
             f"Please update your import statement from: `{old_path}` to `{new_path}`."
         )
+        raise ImportError(msg)
     return _import_attribute(name)
 
 
@@ -153,29 +155,29 @@ __all__ = [
     "ReActTextWorldAgent",
     "SelfAskWithSearchChain",
     "StructuredChatAgent",
+    "Tool",
+    "XMLAgent",
     "ZeroShotAgent",
     "create_json_agent",
+    "create_json_chat_agent",
+    "create_openai_functions_agent",
+    "create_openai_tools_agent",
     "create_openapi_agent",
     "create_pbi_agent",
     "create_pbi_chat_agent",
+    "create_react_agent",
+    "create_self_ask_with_search_agent",
     "create_spark_sql_agent",
     "create_sql_agent",
+    "create_structured_chat_agent",
+    "create_tool_calling_agent",
     "create_vectorstore_agent",
     "create_vectorstore_router_agent",
+    "create_xml_agent",
     "get_all_tool_names",
     "initialize_agent",
     "load_agent",
     "load_huggingface_tool",
     "load_tools",
-    "XMLAgent",
-    "create_openai_functions_agent",
-    "create_xml_agent",
-    "create_react_agent",
-    "create_openai_tools_agent",
-    "create_self_ask_with_search_agent",
-    "create_json_chat_agent",
-    "create_structured_chat_agent",
-    "create_tool_calling_agent",
-    "Tool",
     "tool",
 ]

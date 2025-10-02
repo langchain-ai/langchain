@@ -50,7 +50,7 @@ class GalleryGridDirective(SphinxDirective):
     individual cards + ["image", "header", "content", "title"].
 
     Danger:
-        This directive can only be used in the context of a Myst documentation page as
+        This directive can only be used in the context of a MyST documentation page as
         the templates use Markdown flavored formatting.
     """
 
@@ -108,7 +108,7 @@ class GalleryGridDirective(SphinxDirective):
 
         # Parse the template with Sphinx Design to create an output container
         # Prep the options for the template grid
-        class_ = "gallery-directive" + f' {self.options.get("class-container", "")}'
+        class_ = "gallery-directive" + f" {self.options.get('class-container', '')}"
         options = {"gutter": 2, "class-container": class_}
         options_str = "\n".join(f":{k}: {v}" for k, v in options.items())
 

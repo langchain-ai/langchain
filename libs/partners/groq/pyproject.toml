@@ -5,10 +5,10 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.66", "groq<1,>=0.28.0"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = ["langchain-core>=0.3.76,<2.0.0", "groq>=0.30.0,<1.0.0"]
 name = "langchain-groq"
-version = "0.3.4"
+version = "0.3.8"
 description = "An integration package connecting Groq and LangChain"
 readme = "README.md"
 
@@ -19,19 +19,18 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "pytest-retry<1.8.0,>=1.7.0",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-retry>=1.7.0,<1.8.0",
     "langchain-core",
     "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
 test_integration = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "langchain-core"]
+typing = ["mypy>=1.10.0,<2.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
@@ -43,9 +42,37 @@ disallow_untyped_defs = "True"
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = 100
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "W", "UP"]
-ignore = [ "UP007", ]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "PLR0911",
+    "PLR0912",
+    "C901",
+
+    # TODO
+    "ERA001",
+    "ANN401",
+    "BLE001",
+    "TC002",
+    "TC003",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.coverage.run]
 omit = ["tests/*"]
@@ -57,3 +84,22 @@ markers = [
     "scheduled: mark tests to run in scheduled testing",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "PT011",
+    "PT030",
+    "PT031",
+    "PLR2004",
+    "ANN401",
+    "ARG001",
+    "ARG002",
+
+    # TODO
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

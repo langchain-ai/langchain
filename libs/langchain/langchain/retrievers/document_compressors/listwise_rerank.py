@@ -70,11 +70,12 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             compressed_docs = reranker.compress_documents(documents, "Who is steve")
             assert len(compressed_docs) == 3
             assert "Steve" in compressed_docs[0].page_content
+
     """
 
     reranker: Runnable[dict, list[Document]]
-    """LLM-based reranker to use for filtering documents. Expected to take in a dict 
-        with 'documents: Sequence[Document]' and 'query: str' keys and output a 
+    """LLM-based reranker to use for filtering documents. Expected to take in a dict
+        with 'documents: Sequence[Document]' and 'query: str' keys and output a
         List[Document]."""
 
     top_n: int = 3
@@ -92,7 +93,8 @@ class LLMListwiseRerank(BaseDocumentCompressor):
     ) -> Sequence[Document]:
         """Filter down documents based on their relevance to the query."""
         results = self.reranker.invoke(
-            {"documents": documents, "query": query}, config={"callbacks": callbacks}
+            {"documents": documents, "query": query},
+            config={"callbacks": callbacks},
         )
         return results[: self.top_n]
 
@@ -115,15 +117,17 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         Returns:
             A LLMListwiseRerank document compressor that uses the given language model.
         """
-
         if llm.with_structured_output == BaseLanguageModel.with_structured_output:
-            raise ValueError(
+            msg = (
                 f"llm of type {type(llm)} does not implement `with_structured_output`."
             )
+            raise ValueError(msg)
 
         class RankDocuments(BaseModel):
             """Rank the documents by their relevance to the user question.
-            Rank from most to least relevant."""
+
+            Rank from most to least relevant.
+            """
 
             ranked_document_ids: list[int] = Field(
                 ...,
@@ -137,6 +141,6 @@ class LLMListwiseRerank(BaseDocumentCompressor):
         reranker = RunnablePassthrough.assign(
             ranking=RunnableLambda(_get_prompt_input)
             | _prompt
-            | llm.with_structured_output(RankDocuments)
+            | llm.with_structured_output(RankDocuments),
         ) | RunnableLambda(_parse_ranking)
         return cls(reranker=reranker, **kwargs)

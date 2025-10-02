@@ -15,9 +15,9 @@ AGENT_DEPRECATION_WARNING = (
     "details, refer to the "
     "`LangGraph documentation <https://langchain-ai.github.io/langgraph/>`_"
     " as well as guides for "
-    "`Migrating from AgentExecutor <https://python.langchain.com/docs/how_to/migrate_agent/>`_"  # noqa: E501
+    "`Migrating from AgentExecutor <https://python.langchain.com/docs/how_to/migrate_agent/>`_"
     " and LangGraph's "
-    "`Pre-built ReAct agent <https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/>`_."  # noqa: E501
+    "`Pre-built ReAct agent <https://langchain-ai.github.io/langgraph/how-tos/create-react-agent/>`_."
 )
 
 
@@ -27,6 +27,6 @@ __all__ = [
     "LangChainPendingDeprecationWarning",
     "deprecated",
     "suppress_langchain_deprecation_warning",
-    "warn_deprecated",
     "surface_langchain_deprecation_warnings",
+    "warn_deprecated",
 ]

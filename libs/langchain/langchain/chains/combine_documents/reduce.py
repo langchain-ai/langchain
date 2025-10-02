@@ -27,7 +27,10 @@ class AsyncCombineDocsProtocol(Protocol):
 
 
 def split_list_of_docs(
-    docs: list[Document], length_func: Callable, token_max: int, **kwargs: Any
+    docs: list[Document],
+    length_func: Callable,
+    token_max: int,
+    **kwargs: Any,
 ) -> list[list[Document]]:
     """Split Documents into subsets that each meet a cumulative length constraint.
 
@@ -48,10 +51,11 @@ def split_list_of_docs(
         _num_tokens = length_func(_sub_result_docs, **kwargs)
         if _num_tokens > token_max:
             if len(_sub_result_docs) == 1:
-                raise ValueError(
+                msg = (
                     "A single document was longer than the context length,"
                     " we cannot handle this."
                 )
+                raise ValueError(msg)
             new_result_doc_list.append(_sub_result_docs[:-1])
             _sub_result_docs = _sub_result_docs[-1:]
     new_result_doc_list.append(_sub_result_docs)
@@ -153,7 +157,9 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
         .. code-block:: python
 
             from langchain.chains import (
-                StuffDocumentsChain, LLMChain, ReduceDocumentsChain
+                StuffDocumentsChain,
+                LLMChain,
+                ReduceDocumentsChain,
             )
             from langchain_core.prompts import PromptTemplate
             from langchain_community.llms import OpenAI
@@ -162,21 +168,18 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             # it will be passed to `format_document` - see that function for more
             # details.
             document_prompt = PromptTemplate(
-                input_variables=["page_content"],
-                 template="{page_content}"
+                input_variables=["page_content"], template="{page_content}"
             )
             document_variable_name = "context"
             llm = OpenAI()
             # The prompt here should take as an input variable the
             # `document_variable_name`
-            prompt = PromptTemplate.from_template(
-                "Summarize this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Summarize this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             combine_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
             chain = ReduceDocumentsChain(
                 combine_documents_chain=combine_documents_chain,
@@ -184,19 +187,18 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             # If we wanted to, we could also pass in collapse_documents_chain
             # which is specifically aimed at collapsing documents BEFORE
             # the final call.
-            prompt = PromptTemplate.from_template(
-                "Collapse this content: {context}"
-            )
+            prompt = PromptTemplate.from_template("Collapse this content: {context}")
             llm_chain = LLMChain(llm=llm, prompt=prompt)
             collapse_documents_chain = StuffDocumentsChain(
                 llm_chain=llm_chain,
                 document_prompt=document_prompt,
-                document_variable_name=document_variable_name
+                document_variable_name=document_variable_name,
             )
             chain = ReduceDocumentsChain(
                 combine_documents_chain=combine_documents_chain,
                 collapse_documents_chain=collapse_documents_chain,
             )
+
     """
 
     combine_documents_chain: BaseCombineDocumentsChain
@@ -224,8 +226,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
     def _collapse_chain(self) -> BaseCombineDocumentsChain:
         if self.collapse_documents_chain is not None:
             return self.collapse_documents_chain
-        else:
-            return self.combine_documents_chain
+        return self.combine_documents_chain
 
     def combine_docs(
         self,
@@ -249,11 +250,16 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
-        result_docs, extra_return_dict = self._collapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+        result_docs, _ = self._collapse(
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return self.combine_documents_chain.combine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     async def acombine_docs(
@@ -278,11 +284,16 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
-        result_docs, extra_return_dict = await self._acollapse(
-            docs, token_max=token_max, callbacks=callbacks, **kwargs
+        result_docs, _ = await self._acollapse(
+            docs,
+            token_max=token_max,
+            callbacks=callbacks,
+            **kwargs,
         )
         return await self.combine_documents_chain.acombine_docs(
-            docs=result_docs, callbacks=callbacks, **kwargs
+            docs=result_docs,
+            callbacks=callbacks,
+            **kwargs,
         )
 
     def _collapse(
@@ -298,26 +309,30 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return self._collapse_chain.run(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = collapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                collapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     async def _acollapse(
@@ -333,26 +348,30 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
 
         async def _collapse_docs_func(docs: list[Document], **kwargs: Any) -> str:
             return await self._collapse_chain.arun(
-                input_documents=docs, callbacks=callbacks, **kwargs
+                input_documents=docs,
+                callbacks=callbacks,
+                **kwargs,
             )
 
         _token_max = token_max or self.token_max
         retries: int = 0
         while num_tokens is not None and num_tokens > _token_max:
             new_result_doc_list = split_list_of_docs(
-                result_docs, length_func, _token_max, **kwargs
+                result_docs,
+                length_func,
+                _token_max,
+                **kwargs,
             )
-            result_docs = []
-            for docs in new_result_doc_list:
-                new_doc = await acollapse_docs(docs, _collapse_docs_func, **kwargs)
-                result_docs.append(new_doc)
+            result_docs = [
+                await acollapse_docs(docs_, _collapse_docs_func, **kwargs)
+                for docs_ in new_result_doc_list
+            ]
             num_tokens = length_func(result_docs, **kwargs)
             retries += 1
             if self.collapse_max_retries and retries == self.collapse_max_retries:
-                raise ValueError(
-                    f"Exceed {self.collapse_max_retries} tries to \
+                msg = f"Exceed {self.collapse_max_retries} tries to \
                         collapse document to {_token_max} tokens."
-                )
+                raise ValueError(msg)
         return result_docs, {}
 
     @property

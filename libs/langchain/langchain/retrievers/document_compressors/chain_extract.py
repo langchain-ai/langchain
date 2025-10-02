@@ -12,6 +12,7 @@ from langchain_core.output_parsers import BaseOutputParser, StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import Runnable
 from pydantic import ConfigDict
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.retrievers.document_compressors.chain_extract_prompt import (
@@ -29,6 +30,7 @@ class NoOutputParser(BaseOutputParser[str]):
 
     no_output_str: str = "NO_OUTPUT"
 
+    @override
     def parse(self, text: str) -> str:
         cleaned_text = text.strip()
         if cleaned_text == self.no_output_str:
@@ -47,8 +49,11 @@ def _get_default_chain_prompt() -> PromptTemplate:
 
 
 class LLMChainExtractor(BaseDocumentCompressor):
-    """Document compressor that uses an LLM chain to extract
-    the relevant parts of documents."""
+    """LLM Chain Extractor.
+
+    Document compressor that uses an LLM chain to extract
+    the relevant parts of documents.
+    """
 
     llm_chain: Runnable
     """LLM wrapper to use for compressing documents."""
@@ -80,7 +85,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(output) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=cast(str, output), metadata=doc.metadata)
+                Document(page_content=cast("str", output), metadata=doc.metadata),
             )
         return compressed_docs
 
@@ -98,7 +103,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
             if len(outputs[i]) == 0:
                 continue
             compressed_docs.append(
-                Document(page_content=outputs[i], metadata=doc.metadata)
+                Document(page_content=outputs[i], metadata=doc.metadata),
             )
         return compressed_docs
 
@@ -108,7 +113,7 @@ class LLMChainExtractor(BaseDocumentCompressor):
         llm: BaseLanguageModel,
         prompt: Optional[PromptTemplate] = None,
         get_input: Optional[Callable[[str, Document], str]] = None,
-        llm_chain_kwargs: Optional[dict] = None,
+        llm_chain_kwargs: Optional[dict] = None,  # noqa: ARG003
     ) -> LLMChainExtractor:
         """Initialize from LLM."""
         _prompt = prompt if prompt is not None else _get_default_chain_prompt()
@@ -118,4 +123,4 @@ class LLMChainExtractor(BaseDocumentCompressor):
         else:
             parser = StrOutputParser()
         llm_chain = _prompt | llm | parser
-        return cls(llm_chain=llm_chain, get_input=_get_input)  # type: ignore[arg-type]
+        return cls(llm_chain=llm_chain, get_input=_get_input)

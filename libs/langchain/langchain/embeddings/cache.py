@@ -26,16 +26,16 @@ NAMESPACE_UUID = uuid.UUID(int=1985)
 
 
 def _sha1_hash_to_uuid(text: str) -> uuid.UUID:
-    """Return a UUID derived from *text* using SHA‑1 (deterministic).
+    """Return a UUID derived from *text* using SHA-1 (deterministic).
 
-    Deterministic and fast, **but not collision‑resistant**.
+    Deterministic and fast, **but not collision-resistant**.
 
     A malicious attacker could try to create two different texts that hash to the same
     UUID. This may not necessarily be an issue in the context of caching embeddings,
     but new applications should swap this out for a stronger hash function like
-    xxHash, BLAKE2 or SHA‑256, which are collision-resistant.
+    xxHash, BLAKE2 or SHA-256, which are collision-resistant.
     """
-    sha1_hex = hashlib.sha1(text.encode("utf-8")).hexdigest()
+    sha1_hex = hashlib.sha1(text.encode("utf-8"), usedforsecurity=False).hexdigest()
     # Embed the hex string in `uuid5` to obtain a valid UUID.
     return uuid.uuid5(NAMESPACE_UUID, sha1_hex)
 
@@ -44,12 +44,12 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
     """Create a default key encoder function.
 
     Args:
-       namespace: Prefix that segregates keys from different embedding models.
-       algorithm:
-           * `sha1` - fast but not collision‑resistant
-           * `blake2b` - cryptographically strong, faster than SHA‑1
-           * `sha256` - cryptographically strong, slower than SHA‑1
-           * `sha512` - cryptographically strong, slower than SHA‑1
+        namespace: Prefix that segregates keys from different embedding models.
+        algorithm:
+           * ``'sha1'`` - fast but not collision-resistant
+           * ``'blake2b'`` - cryptographically strong, faster than SHA-1
+           * ``'sha256'`` - cryptographically strong, slower than SHA-1
+           * ``'sha512'`` - cryptographically strong, slower than SHA-1
 
     Returns:
         A function that encodes a key using the specified algorithm.
@@ -67,7 +67,8 @@ def _make_default_key_encoder(namespace: str, algorithm: str) -> Callable[[str],
             return f"{namespace}{hashlib.sha256(key.encode('utf-8')).hexdigest()}"
         if algorithm == "sha512":
             return f"{namespace}{hashlib.sha512(key.encode('utf-8')).hexdigest()}"
-        raise ValueError(f"Unsupported algorithm: {algorithm}")
+        msg = f"Unsupported algorithm: {algorithm}"
+        raise ValueError(msg)
 
     return _key_encoder
 
@@ -79,7 +80,7 @@ def _value_serializer(value: Sequence[float]) -> bytes:
 
 def _value_deserializer(serialized_value: bytes) -> list[float]:
     """Deserialize a value."""
-    return cast(list[float], json.loads(serialized_value.decode()))
+    return cast("list[float]", json.loads(serialized_value.decode()))
 
 
 # The warning is global; track emission, so it appears only once.
@@ -87,15 +88,15 @@ _warned_about_sha1: bool = False
 
 
 def _warn_about_sha1_encoder() -> None:
-    """Emit a one‑time warning about SHA‑1 collision weaknesses."""
-    global _warned_about_sha1
+    """Emit a one-time warning about SHA-1 collision weaknesses."""
+    global _warned_about_sha1  # noqa: PLW0603
     if not _warned_about_sha1:
         warnings.warn(
-            "Using default key encoder: SHA‑1 is *not* collision‑resistant. "
+            "Using default key encoder: SHA-1 is *not* collision-resistant. "
             "While acceptable for most cache scenarios, a motivated attacker "
             "can craft two different payloads that map to the same cache key. "
             "If that risk matters in your environment, supply a stronger "
-            "encoder (e.g. SHA‑256 or BLAKE2) via the `key_encoder` argument. "
+            "encoder (e.g. SHA-256 or BLAKE2) via the `key_encoder` argument. "
             "If you change the key encoder, consider also creating a new cache, "
             "to avoid (the potential for) collisions with existing keys.",
             category=UserWarning,
@@ -118,7 +119,6 @@ class CacheBackedEmbeddings(Embeddings):
     embeddings too, pass in a query_embedding_store to constructor.
 
     Examples:
-
         .. code-block: python
 
             from langchain.embeddings import CacheBackedEmbeddings
@@ -154,7 +154,7 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_store: The store to use for caching document embeddings.
             batch_size: The number of documents to embed between store updates.
             query_embedding_store: The store to use for caching query embeddings.
-                If None, query embeddings are not cached.
+                If ``None``, query embeddings are not cached.
         """
         super().__init__()
         self.document_embedding_store = document_embedding_store
@@ -176,7 +176,7 @@ class CacheBackedEmbeddings(Embeddings):
             A list of embeddings for the given texts.
         """
         vectors: list[Union[list[float], None]] = self.document_embedding_store.mget(
-            texts
+            texts,
         )
         all_missing_indices: list[int] = [
             i for i, vector in enumerate(vectors) if vector is None
@@ -186,13 +186,14 @@ class CacheBackedEmbeddings(Embeddings):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = self.underlying_embeddings.embed_documents(missing_texts)
             self.document_embedding_store.mset(
-                list(zip(missing_texts, missing_vectors))
+                list(zip(missing_texts, missing_vectors)),
             )
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]], vectors
+            "list[list[float]]",
+            vectors,
         )  # Nones should have been resolved by now
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -220,23 +221,24 @@ class CacheBackedEmbeddings(Embeddings):
         for missing_indices in batch_iterate(self.batch_size, all_missing_indices):
             missing_texts = [texts[i] for i in missing_indices]
             missing_vectors = await self.underlying_embeddings.aembed_documents(
-                missing_texts
+                missing_texts,
             )
             await self.document_embedding_store.amset(
-                list(zip(missing_texts, missing_vectors))
+                list(zip(missing_texts, missing_vectors)),
             )
             for index, updated_vector in zip(missing_indices, missing_vectors):
                 vectors[index] = updated_vector
 
         return cast(
-            list[list[float]], vectors
+            "list[list[float]]",
+            vectors,
         )  # Nones should have been resolved by now
 
     def embed_query(self, text: str) -> list[float]:
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        `cache_query` parameter to `True` when initializing the embedder.
+        ``cache_query`` parameter to ``True`` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -259,7 +261,7 @@ class CacheBackedEmbeddings(Embeddings):
         """Embed query text.
 
         By default, this method does not cache queries. To enable caching, set the
-        `cache_query` parameter to `True` when initializing the embedder.
+        ``cache_query`` parameter to ``True`` when initializing the embedder.
 
         Args:
             text: The text to embed.
@@ -288,7 +290,8 @@ class CacheBackedEmbeddings(Embeddings):
         batch_size: Optional[int] = None,
         query_embedding_cache: Union[bool, ByteStore] = False,
         key_encoder: Union[
-            Callable[[str], str], Literal["sha1", "blake2b", "sha256", "sha512"]
+            Callable[[str], str],
+            Literal["sha1", "blake2b", "sha256", "sha512"],
         ] = "sha1",
     ) -> CacheBackedEmbeddings:
         """On-ramp that adds the necessary serialization and encoding to the store.
@@ -298,14 +301,14 @@ class CacheBackedEmbeddings(Embeddings):
             document_embedding_cache: The cache to use for storing document embeddings.
             *,
             namespace: The namespace to use for document cache.
-                       This namespace is used to avoid collisions with other caches.
-                       For example, set it to the name of the embedding model used.
+                This namespace is used to avoid collisions with other caches.
+                For example, set it to the name of the embedding model used.
             batch_size: The number of documents to embed between store updates.
             query_embedding_cache: The cache to use for storing query embeddings.
                 True to use the same cache as document embeddings.
                 False to not cache query embeddings.
             key_encoder: Optional callable to encode keys. If not provided,
-                a default encoder using SHA‑1 will be used. SHA-1 is not
+                a default encoder using SHA-1 will be used. SHA-1 is not
                 collision-resistant, and a motivated attacker could craft two
                 different texts that hash to the same cache key.
 
@@ -327,15 +330,17 @@ class CacheBackedEmbeddings(Embeddings):
             # namespace.
             # A user can handle namespacing in directly their custom key encoder.
             if namespace:
-                raise ValueError(
+                msg = (
                     "Do not supply `namespace` when using a custom key_encoder; "
                     "add any prefixing inside the encoder itself."
                 )
+                raise ValueError(msg)
         else:
-            raise ValueError(
+            msg = (  # type: ignore[unreachable]
                 "key_encoder must be either 'blake2b', 'sha1', 'sha256', 'sha512' "
                 "or a callable that encodes keys."
             )
+            raise ValueError(msg)  # noqa: TRY004
 
         document_embedding_store = EncoderBackedStore[str, list[float]](
             document_embedding_cache,

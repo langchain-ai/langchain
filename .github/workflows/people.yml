@@ -1,8 +1,11 @@
-name: LangChain People
+# Updates the LangChain People data by fetching the latest info from the LangChain Git.
+# TODO: broken/not used
 
+name: '👥 LangChain People'
+run-name: 'Update People Data'
 on:
   schedule:
-    - cron: "0 14 1 * *"
+    - cron: "0 14 1 * *"  # Runs at 14:00 UTC on the 1st of every month (10AM EDT/7AM PDT)
   push:
     branches: [jacob/people]
   workflow_dispatch:
@@ -11,15 +14,16 @@ jobs:
   langchain-people:
     if: github.repository_owner == 'langchain-ai' || github.event_name != 'schedule'
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
     steps:
-      - name: Dump GitHub context
+      - name: '📋 Dump GitHub Context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Ref: https://github.com/actions/runner/issues/2033
-      - name: Fix git safe.directory in container
+      - name: '🔧 Fix Git Safe Directory in Container'
         run: mkdir -p /home/runner/work/_temp/_github_home && printf "[safe]\n\tdirectory = /github/workspace" > /home/runner/work/_temp/_github_home/.gitconfig
       - uses: ./.github/actions/people
         with:

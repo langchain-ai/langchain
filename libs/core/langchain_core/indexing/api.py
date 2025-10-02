@@ -56,7 +56,7 @@ def _warn_about_sha1() -> None:
             "that map to the same fingerprint. If this matters in your "
             "threat model, switch to a stronger algorithm such "
             "as 'blake2b', 'sha256', or 'sha512' by specifying "
-            " `key_encoder` parameter in the the `index` or `aindex` function. ",
+            " `key_encoder` parameter in the `index` or `aindex` function. ",
             category=UserWarning,
             stacklevel=2,
         )
@@ -185,6 +185,9 @@ def _get_document_with_hash(
             When changing the key encoder, you must change the
             index as well to avoid duplicated documents in the cache.
 
+    Raises:
+        ValueError: If the metadata cannot be serialized using json.
+
     Returns:
         Document with a unique identifier based on the hash of the content and metadata.
     """
@@ -273,7 +276,7 @@ def index(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -291,22 +294,26 @@ def index(
     documents were deleted, which documents should be skipped.
 
     For the time being, documents are indexed using their hashes, and users
-     are not able to specify the uid of the document.
+    are not able to specify the uid of the document.
 
-    Important:
-       * In full mode, the loader should be returning
-         the entire dataset, and not just a subset of the dataset.
-         Otherwise, the auto_cleanup will remove documents that it is not
-         supposed to.
-       * In incremental mode, if documents associated with a particular
-         source id appear across different batches, the indexing API
-         will do some redundant work. This will still result in the
-         correct end state of the index, but will unfortunately not be
-         100% efficient. For example, if a given document is split into 15
-         chunks, and we index them using a batch size of 5, we'll have 3 batches
-         all with the same source id. In general, to avoid doing too much
-         redundant work select as big a batch size as possible.
-        * The `scoped_full` mode is suitable if determining an appropriate batch size
+    .. versionchanged:: 0.3.25
+        Added ``scoped_full`` cleanup mode.
+
+    .. important::
+
+        * In full mode, the loader should be returning
+          the entire dataset, and not just a subset of the dataset.
+          Otherwise, the auto_cleanup will remove documents that it is not
+          supposed to.
+        * In incremental mode, if documents associated with a particular
+          source id appear across different batches, the indexing API
+          will do some redundant work. This will still result in the
+          correct end state of the index, but will unfortunately not be
+          100% efficient. For example, if a given document is split into 15
+          chunks, and we index them using a batch size of 5, we'll have 3 batches
+          all with the same source id. In general, to avoid doing too much
+          redundant work select as big a batch size as possible.
+        * The ``scoped_full`` mode is suitable if determining an appropriate batch size
           is challenging or if your data loader cannot return the entire dataset at
           once. This mode keeps track of source IDs in memory, which should be fine
           for most use cases. If your dataset is large (10M+ docs), you will likely
@@ -315,23 +322,22 @@ def index(
     Args:
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
-                         updated.
+            updated.
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
+
             - incremental: Cleans up all documents that haven't been updated AND
-                           that are associated with source ids that were seen
-                           during indexing.
-                           Clean up is done continuously during indexing helping
-                           to minimize the probability of users seeing duplicated
-                           content.
+              that are associated with source ids that were seen during indexing.
+              Clean up is done continuously during indexing helping to minimize the
+              probability of users seeing duplicated content.
             - full: Delete all documents that have not been returned by the loader
-                    during this run of indexing.
-                    Clean up runs after all documents have been indexed.
-                    This means that users may see duplicated content during indexing.
+              during this run of indexing.
+              Clean up runs after all documents have been indexed.
+              This means that users may see duplicated content during indexing.
             - scoped_full: Similar to Full, but only deletes all documents
-                           that haven't been updated AND that are associated with
-                           source ids that were seen during indexing.
+              that haven't been updated AND that are associated with
+              source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -358,10 +364,9 @@ def index(
             When changing the key encoder, you must change the
             index as well to avoid duplicated documents in the cache.
         upsert_kwargs: Additional keyword arguments to pass to the add_documents
-                       method of the VectorStore or the upsert method of the
-                       DocumentIndex. For example, you can use this to
-                       specify a custom vector_field:
-                       upsert_kwargs={"vector_field": "embedding"}
+            method of the VectorStore or the upsert method of the DocumentIndex.
+            For example, you can use this to specify a custom vector_field:
+            upsert_kwargs={"vector_field": "embedding"}
             .. versionadded:: 0.3.10
 
     Returns:
@@ -374,10 +379,9 @@ def index(
         ValueError: If vectorstore does not have
             "delete" and "add_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-
-    .. version_modified:: 0.3.25
-
-        * Added `scoped_full` cleanup mode.
+        TypeError: If ``vectorstore`` is not a VectorStore or a DocumentIndex.
+        AssertionError: If ``source_id`` is None when cleanup mode is incremental.
+            (should be unreachable code).
     """
     # Behavior is deprecated, but we keep it for backwards compatibility.
     # # Warn only once per process.
@@ -444,6 +448,9 @@ def index(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     for doc_batch in _batch(batch_size, doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -452,6 +459,8 @@ def index(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(hashed_doc) for hashed_doc in hashed_docs
@@ -540,10 +549,10 @@ def index(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := record_manager.list_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 _delete(destination, uids_to_delete)
@@ -609,7 +618,7 @@ async def aindex(
     vector_store: Union[VectorStore, DocumentIndex],
     *,
     batch_size: int = 100,
-    cleanup: Literal["incremental", "full", "scoped_full", None] = None,
+    cleanup: Optional[Literal["incremental", "full", "scoped_full"]] = None,
     source_id_key: Union[str, Callable[[Document], str], None] = None,
     cleanup_batch_size: int = 1_000,
     force_update: bool = False,
@@ -627,46 +636,50 @@ async def aindex(
     documents were deleted, which documents should be skipped.
 
     For the time being, documents are indexed using their hashes, and users
-     are not able to specify the uid of the document.
+    are not able to specify the uid of the document.
 
-    Important:
-       * In full mode, the loader should be returning
-         the entire dataset, and not just a subset of the dataset.
-         Otherwise, the auto_cleanup will remove documents that it is not
-         supposed to.
-       * In incremental mode, if documents associated with a particular
-         source id appear across different batches, the indexing API
-         will do some redundant work. This will still result in the
-         correct end state of the index, but will unfortunately not be
-         100% efficient. For example, if a given document is split into 15
-         chunks, and we index them using a batch size of 5, we'll have 3 batches
-         all with the same source id. In general, to avoid doing too much
-         redundant work select as big a batch size as possible.
-       * The `scoped_full` mode is suitable if determining an appropriate batch size
-         is challenging or if your data loader cannot return the entire dataset at
-         once. This mode keeps track of source IDs in memory, which should be fine
-         for most use cases. If your dataset is large (10M+ docs), you will likely
-         need to parallelize the indexing process regardless.
+    .. versionchanged:: 0.3.25
+        Added ``scoped_full`` cleanup mode.
+
+    .. important::
+
+        * In full mode, the loader should be returning
+          the entire dataset, and not just a subset of the dataset.
+          Otherwise, the auto_cleanup will remove documents that it is not
+          supposed to.
+        * In incremental mode, if documents associated with a particular
+          source id appear across different batches, the indexing API
+          will do some redundant work. This will still result in the
+          correct end state of the index, but will unfortunately not be
+          100% efficient. For example, if a given document is split into 15
+          chunks, and we index them using a batch size of 5, we'll have 3 batches
+          all with the same source id. In general, to avoid doing too much
+          redundant work select as big a batch size as possible.
+        * The ``scoped_full`` mode is suitable if determining an appropriate batch size
+          is challenging or if your data loader cannot return the entire dataset at
+          once. This mode keeps track of source IDs in memory, which should be fine
+          for most use cases. If your dataset is large (10M+ docs), you will likely
+          need to parallelize the indexing process regardless.
 
     Args:
         docs_source: Data loader or iterable of documents to index.
         record_manager: Timestamped set to keep track of which documents were
-                         updated.
+            updated.
         vector_store: VectorStore or DocumentIndex to index the documents into.
         batch_size: Batch size to use when indexing. Default is 100.
         cleanup: How to handle clean up of documents. Default is None.
+
             - incremental: Cleans up all documents that haven't been updated AND
-                           that are associated with source ids that were seen
-                           during indexing.
-                           Clean up is done continuously during indexing helping
-                           to minimize the probability of users seeing duplicated
-                           content.
-            - full: Delete all documents that haven to been returned by the loader.
-                    Clean up runs after all documents have been indexed.
-                    This means that users may see duplicated content during indexing.
+              that are associated with source ids that were seen during indexing.
+              Clean up is done continuously during indexing helping to minimize the
+              probability of users seeing duplicated content.
+            - full: Delete all documents that have not been returned by the loader
+              during this run of indexing.
+              Clean up runs after all documents have been indexed.
+              This means that users may see duplicated content during indexing.
             - scoped_full: Similar to Full, but only deletes all documents
-                           that haven't been updated AND that are associated with
-                           source ids that were seen during indexing.
+              that haven't been updated AND that are associated with
+              source ids that were seen during indexing.
             - None: Do not delete any documents.
         source_id_key: Optional key that helps identify the original source
             of the document. Default is None.
@@ -675,6 +688,12 @@ async def aindex(
         force_update: Force update documents even if they are present in the
             record manager. Useful if you are re-indexing with updated embeddings.
             Default is False.
+        key_encoder: Hashing algorithm to use for hashing the document content and
+            metadata. Default is "sha1".
+            Other options include "blake2b", "sha256", and "sha512".
+
+            .. versionadded:: 0.3.66
+
         key_encoder: Hashing algorithm to use for hashing the document.
             If not provided, a default encoder using SHA-1 will be used.
             SHA-1 is not collision-resistant, and a motivated attacker
@@ -686,11 +705,10 @@ async def aindex(
 
             When changing the key encoder, you must change the
             index as well to avoid duplicated documents in the cache.
-        upsert_kwargs: Additional keyword arguments to pass to the aadd_documents
-                       method of the VectorStore or the aupsert method of the
-                       DocumentIndex. For example, you can use this to
-                       specify a custom vector_field:
-                       upsert_kwargs={"vector_field": "embedding"}
+        upsert_kwargs: Additional keyword arguments to pass to the add_documents
+            method of the VectorStore or the upsert method of the DocumentIndex.
+            For example, you can use this to specify a custom vector_field:
+            upsert_kwargs={"vector_field": "embedding"}
             .. versionadded:: 0.3.10
 
     Returns:
@@ -703,10 +721,9 @@ async def aindex(
         ValueError: If vectorstore does not have
             "adelete" and "aadd_documents" required methods.
         ValueError: If source_id_key is not None, but is not a string or callable.
-
-    .. version_modified:: 0.3.25
-
-        * Added `scoped_full` cleanup mode.
+        TypeError: If ``vector_store`` is not a VectorStore or DocumentIndex.
+        AssertionError: If ``source_id_key`` is None when cleanup mode is
+            incremental or ``scoped_full`` (should be unreachable).
     """
     # Behavior is deprecated, but we keep it for backwards compatibility.
     # # Warn only once per process.
@@ -784,6 +801,9 @@ async def aindex(
     scoped_full_cleanup_source_ids: set[str] = set()
 
     async for doc_batch in _abatch(batch_size, async_doc_iterator):
+        # Track original batch size before deduplication
+        original_batch_size = len(doc_batch)
+
         hashed_docs = list(
             _deduplicate_in_order(
                 [
@@ -792,6 +812,8 @@ async def aindex(
                 ]
             )
         )
+        # Count documents removed by within-batch deduplication
+        num_skipped += original_batch_size - len(hashed_docs)
 
         source_ids: Sequence[Optional[str]] = [
             source_id_assigner(doc) for doc in hashed_docs
@@ -881,10 +903,10 @@ async def aindex(
                     )
                     raise AssertionError(msg)
 
-            _source_ids = cast("Sequence[str]", source_ids)
+            source_ids_ = cast("Sequence[str]", source_ids)
 
             while uids_to_delete := await record_manager.alist_keys(
-                group_ids=_source_ids, before=index_start_dt, limit=cleanup_batch_size
+                group_ids=source_ids_, before=index_start_dt, limit=cleanup_batch_size
             ):
                 # Then delete from vector store.
                 await _adelete(destination, uids_to_delete)

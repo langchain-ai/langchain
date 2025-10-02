@@ -27,6 +27,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import BaseOutputParser
 from langchain_core.tools import BaseTool
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.llm import LLMChain
 from langchain.evaluation.agents.trajectory_eval_prompt import (
@@ -34,6 +35,8 @@ from langchain.evaluation.agents.trajectory_eval_prompt import (
     TOOL_FREE_EVAL_CHAT_PROMPT,
 )
 from langchain.evaluation.schema import AgentTrajectoryEvaluator, LLMEvalChain
+
+_MAX_SCORE = 5
 
 
 class TrajectoryEval(TypedDict):
@@ -66,9 +69,8 @@ class TrajectoryOutputParser(BaseOutputParser):
                 if the LLM's score is not a digit in the range 1-5.
         """
         if "Score:" not in text:
-            raise OutputParserException(
-                f"Could not find score in model eval output: {text}"
-            )
+            msg = f"Could not find score in model eval output: {text}"
+            raise OutputParserException(msg)
 
         reasoning, score_str = text.split("Score: ", maxsplit=1)
 
@@ -82,16 +84,14 @@ class TrajectoryOutputParser(BaseOutputParser):
         _score = re.search(r"(\d+(\.\d+)?)", score_str)
         # If the score is not found or is a float, raise an exception.
         if _score is None or "." in _score.group(1):
-            raise OutputParserException(
-                f"Score is not an integer digit in the range 1-5: {text}"
-            )
+            msg = f"Score is not an integer digit in the range 1-5: {text}"
+            raise OutputParserException(msg)
         score = int(_score.group(1))
         # If the score is not in the range 1-5, raise an exception.
-        if not 1 <= score <= 5:
-            raise OutputParserException(
-                f"Score is not a digit in the range 1-5: {text}"
-            )
-        normalized_score = (score - 1) / 4
+        if not 1 <= score <= _MAX_SCORE:
+            msg = f"Score is not a digit in the range 1-5: {text}"
+            raise OutputParserException(msg)
+        normalized_score = (score - 1) / (_MAX_SCORE - 1)
         return TrajectoryEval(score=normalized_score, reasoning=reasoning)
 
 
@@ -140,6 +140,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
         )
         print(result["score"])  # noqa: T201
         # 0
+
     """
 
     agent_tools: Optional[list[BaseTool]] = None
@@ -147,7 +148,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
     eval_chain: LLMChain
     """The language model chain used for evaluation."""
     output_parser: TrajectoryOutputParser = Field(
-        default_factory=TrajectoryOutputParser
+        default_factory=TrajectoryOutputParser,
     )
     """The output parser used to parse the output."""
     return_reasoning: bool = False  # :meta private:
@@ -176,7 +177,7 @@ class TrajectoryEvalChain(AgentTrajectoryEvaluator, LLMEvalChain):
                 f"""Tool {i}: {tool.name}
 Description: {tool.description}"""
                 for i, tool in enumerate(self.agent_tools, 1)
-            ]
+            ],
         )
 
     @staticmethod
@@ -201,7 +202,7 @@ Tool used: {action.tool}
 Tool input: {action.tool_input}
 Tool output: {output}"""
                 for i, (action, output) in enumerate(steps, 1)
-            ]
+            ],
         )
 
     @staticmethod
@@ -235,25 +236,22 @@ The following is the expected answer. Use this to measure correctness:
         """Create a TrajectoryEvalChain object from a language model chain.
 
         Args:
-            llm (BaseChatModel): The language model chain.
-            agent_tools (Optional[Sequence[BaseTool]]): A list of tools
-                available to the agent.
-            output_parser (Optional[TrajectoryOutputParser]): The output parser
-                used to parse the chain output into a score.
+            llm: The language model chain.
+            agent_tools: A list of tools available to the agent.
+            output_parser : The output parser used to parse the chain output into a
+                score.
+            **kwargs: Additional keyword arguments.
+
         Returns:
             TrajectoryEvalChain: The TrajectoryEvalChain object.
         """
         if not isinstance(llm, BaseChatModel):
-            raise NotImplementedError(
-                "Only chat models supported by the current trajectory eval"
-            )
-        if agent_tools:
-            prompt = EVAL_CHAT_PROMPT
-        else:
-            prompt = TOOL_FREE_EVAL_CHAT_PROMPT
+            msg = "Only chat models supported by the current trajectory eval"
+            raise NotImplementedError(msg)
+        prompt = EVAL_CHAT_PROMPT if agent_tools else TOOL_FREE_EVAL_CHAT_PROMPT
         eval_chain = LLMChain(llm=llm, prompt=prompt)
         return cls(
-            agent_tools=agent_tools,  # type: ignore[arg-type]
+            agent_tools=agent_tools,
             eval_chain=eval_chain,
             output_parser=output_parser or TrajectoryOutputParser(),
             **kwargs,
@@ -302,9 +300,10 @@ The following is the expected answer. Use this to measure correctness:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or CallbackManagerForChainRun.get_noop_manager()
         raw_output = self.eval_chain.run(
-            chain_input, callbacks=_run_manager.get_child()
+            chain_input,
+            callbacks=_run_manager.get_child(),
         )
-        return cast(dict, self.output_parser.parse(raw_output))
+        return cast("dict", self.output_parser.parse(raw_output))
 
     async def _acall(
         self,
@@ -326,10 +325,12 @@ The following is the expected answer. Use this to measure correctness:
             chain_input["tool_descriptions"] = self._tools_description
         _run_manager = run_manager or AsyncCallbackManagerForChainRun.get_noop_manager()
         raw_output = await self.eval_chain.arun(
-            chain_input, callbacks=_run_manager.get_child()
+            chain_input,
+            callbacks=_run_manager.get_child(),
         )
-        return cast(dict, self.output_parser.parse(raw_output))
+        return cast("dict", self.output_parser.parse(raw_output))
 
+    @override
     def _evaluate_agent_trajectory(
         self,
         *,
@@ -346,15 +347,18 @@ The following is the expected answer. Use this to measure correctness:
         """Evaluate a trajectory.
 
         Args:
-            prediction (str): The final predicted response.
-            input (str): The input to the agent.
-            agent_trajectory (List[Tuple[AgentAction, str]]):
-                The intermediate steps forming the agent trajectory.
-            reference (Optional[str]): The reference answer.
-            callbacks (Callbacks): Callbacks to use for this chain run.
+            prediction: The final predicted response.
+            input: The input to the agent.
+            agent_trajectory: The intermediate steps forming the agent trajectory.
+            reference: The reference answer.
+            callbacks: Callbacks to use for this chain run.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation result, which includes the score and optionally
+            The evaluation result, which includes the score and optionally
                 the reasoning for reaching that.
         """
         inputs = {
@@ -372,6 +376,7 @@ The following is the expected answer. Use this to measure correctness:
             return_only_outputs=True,
         )
 
+    @override
     async def _aevaluate_agent_trajectory(
         self,
         *,
@@ -388,15 +393,18 @@ The following is the expected answer. Use this to measure correctness:
         """Asynchronously evaluate a trajectory.
 
         Args:
-            prediction (str): The final predicted response.
-            input (str): The input to the agent.
-            agent_trajectory (List[Tuple[AgentAction, str]]):
-                The intermediate steps forming the agent trajectory.
-            reference (Optional[str]): The reference answer.
-            callbacks (Callbacks): Callbacks to use for this chain run.
+            prediction: The final predicted response.
+            input: The input to the agent.
+            agent_trajectory: The intermediate steps forming the agent trajectory.
+            reference: The reference answer.
+            callbacks: Callbacks to use for this chain run.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run info in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: The evaluation result, which includes the score and optionally
+            The evaluation result, which includes the score and optionally
                 the reasoning for reaching that.
         """
         inputs = {

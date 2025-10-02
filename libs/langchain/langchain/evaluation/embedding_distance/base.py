@@ -14,6 +14,7 @@ from langchain_core.callbacks.manager import (
 from langchain_core.embeddings import Embeddings
 from langchain_core.utils import pre_init
 from pydantic import ConfigDict, Field
+from typing_extensions import override
 
 from langchain.chains.base import Chain
 from langchain.evaluation.schema import PairwiseStringEvaluator, StringEvaluator
@@ -23,12 +24,10 @@ from langchain.schema import RUN_KEY
 def _import_numpy() -> Any:
     try:
         import numpy as np
-
-        return np
     except ImportError as e:
-        raise ImportError(
-            "Could not import numpy, please install with `pip install numpy`."
-        ) from e
+        msg = "Could not import numpy, please install with `pip install numpy`."
+        raise ImportError(msg) from e
+    return np
 
 
 logger = logging.getLogger(__name__)
@@ -43,13 +42,14 @@ def _check_numpy() -> bool:
         "langchain will use a pure Python implementation for embedding distance "
         "operations, which may significantly impact performance, especially for large "
         "datasets. For optimal speed and efficiency, consider installing NumPy: "
-        "pip install numpy"
+        "pip install numpy",
     )
     return False
 
 
 def _embedding_factory() -> Embeddings:
     """Create an Embeddings object.
+
     Returns:
         Embeddings: The created Embeddings object.
     """
@@ -63,11 +63,12 @@ def _embedding_factory() -> Embeddings:
             from langchain_community.embeddings.openai import (  # type: ignore[no-redef]
                 OpenAIEmbeddings,
             )
-        except ImportError:
-            raise ImportError(
+        except ImportError as e:
+            msg = (
                 "Could not import OpenAIEmbeddings. Please install the "
                 "OpenAIEmbeddings package using `pip install langchain-openai`."
             )
+            raise ImportError(msg) from e
     return OpenAIEmbeddings()
 
 
@@ -130,21 +131,23 @@ class _EmbeddingDistanceChainMixin(Chain):
             pass
 
         if not types_:
-            raise ImportError(
+            msg = (
                 "Could not import OpenAIEmbeddings. Please install the "
                 "OpenAIEmbeddings package using `pip install langchain-openai`."
             )
+            raise ImportError(msg)
 
         if isinstance(embeddings, tuple(types_)):
             try:
                 import tiktoken  # noqa: F401
-            except ImportError:
-                raise ImportError(
+            except ImportError as e:
+                msg = (
                     "The tiktoken library is required to use the default "
                     "OpenAI embeddings with embedding distance evaluators."
                     " Please either manually select a different Embeddings object"
                     " or install tiktoken using `pip install tiktoken`."
                 )
+                raise ImportError(msg) from e
         return values
 
     model_config = ConfigDict(
@@ -184,8 +187,8 @@ class _EmbeddingDistanceChainMixin(Chain):
         }
         if metric in metrics:
             return metrics[metric]
-        else:
-            raise ValueError(f"Invalid metric: {metric}")
+        msg = f"Invalid metric: {metric}"
+        raise ValueError(msg)
 
     @staticmethod
     def _cosine_distance(a: Any, b: Any) -> Any:
@@ -199,14 +202,41 @@ class _EmbeddingDistanceChainMixin(Chain):
             np.ndarray: The cosine distance.
         """
         try:
-            from langchain_community.utils.math import cosine_similarity
+            from langchain_core.vectorstores.utils import _cosine_similarity
+
+            return 1.0 - _cosine_similarity(a, b)
         except ImportError:
-            raise ImportError(
-                "The cosine_similarity function is required to compute cosine distance."
-                " Please install the langchain-community package using"
-                " `pip install langchain-community`."
-            )
-        return 1.0 - cosine_similarity(a, b)
+            # Fallback to scipy if available
+            try:
+                from scipy.spatial.distance import cosine
+
+                return cosine(a.flatten(), b.flatten())
+            except ImportError:
+                # Pure numpy fallback
+                if _check_numpy():
+                    np = _import_numpy()
+                    a_flat = a.flatten()
+                    b_flat = b.flatten()
+                    dot_product = np.dot(a_flat, b_flat)
+                    norm_a = np.linalg.norm(a_flat)
+                    norm_b = np.linalg.norm(b_flat)
+                    if norm_a == 0 or norm_b == 0:
+                        return 0.0
+                    return 1.0 - (dot_product / (norm_a * norm_b))
+                # Pure Python implementation
+                a_flat = a if hasattr(a, "__len__") else [a]
+                b_flat = b if hasattr(b, "__len__") else [b]
+                if hasattr(a, "flatten"):
+                    a_flat = a.flatten()
+                if hasattr(b, "flatten"):
+                    b_flat = b.flatten()
+
+                dot_product = sum(x * y for x, y in zip(a_flat, b_flat))
+                norm_a = sum(x * x for x in a_flat) ** 0.5
+                norm_b = sum(x * x for x in b_flat) ** 0.5
+                if norm_a == 0 or norm_b == 0:
+                    return 0.0
+                return 1.0 - (dot_product / (norm_a * norm_b))
 
     @staticmethod
     def _euclidean_distance(a: Any, b: Any) -> Any:
@@ -219,12 +249,17 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.floating: The Euclidean distance.
         """
-        if _check_numpy():
-            import numpy as np
+        try:
+            from scipy.spatial.distance import euclidean
 
-            return np.linalg.norm(a - b)
+            return euclidean(a.flatten(), b.flatten())
+        except ImportError:
+            if _check_numpy():
+                import numpy as np
 
-        return sum((x - y) * (x - y) for x, y in zip(a, b)) ** 0.5
+                return np.linalg.norm(a - b)
+
+            return sum((x - y) * (x - y) for x, y in zip(a, b)) ** 0.5
 
     @staticmethod
     def _manhattan_distance(a: Any, b: Any) -> Any:
@@ -237,11 +272,16 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.floating: The Manhattan distance.
         """
-        if _check_numpy():
-            np = _import_numpy()
-            return np.sum(np.abs(a - b))
+        try:
+            from scipy.spatial.distance import cityblock
 
-        return sum(abs(x - y) for x, y in zip(a, b))
+            return cityblock(a.flatten(), b.flatten())
+        except ImportError:
+            if _check_numpy():
+                np = _import_numpy()
+                return np.sum(np.abs(a - b))
+
+            return sum(abs(x - y) for x, y in zip(a, b))
 
     @staticmethod
     def _chebyshev_distance(a: Any, b: Any) -> Any:
@@ -254,11 +294,16 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.floating: The Chebyshev distance.
         """
-        if _check_numpy():
-            np = _import_numpy()
-            return np.max(np.abs(a - b))
+        try:
+            from scipy.spatial.distance import chebyshev
 
-        return max(abs(x - y) for x, y in zip(a, b))
+            return chebyshev(a.flatten(), b.flatten())
+        except ImportError:
+            if _check_numpy():
+                np = _import_numpy()
+                return np.max(np.abs(a - b))
+
+            return max(abs(x - y) for x, y in zip(a, b))
 
     @staticmethod
     def _hamming_distance(a: Any, b: Any) -> Any:
@@ -271,11 +316,16 @@ class _EmbeddingDistanceChainMixin(Chain):
         Returns:
             np.floating: The Hamming distance.
         """
-        if _check_numpy():
-            np = _import_numpy()
-            return np.mean(a != b)
+        try:
+            from scipy.spatial.distance import hamming
 
-        return sum(1 for x, y in zip(a, b) if x != y) / len(a)
+            return hamming(a.flatten(), b.flatten())
+        except ImportError:
+            if _check_numpy():
+                np = _import_numpy()
+                return np.mean(a != b)
+
+            return sum(1 for x, y in zip(a, b) if x != y) / len(a)
 
     def _compute_score(self, vectors: Any) -> float:
         """Compute the score based on the distance metric.
@@ -295,7 +345,9 @@ class _EmbeddingDistanceChainMixin(Chain):
 
 
 class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
-    """Use embedding distances to score semantic difference between
+    """Embedding distance evaluation chain.
+
+    Use embedding distances to score semantic difference between
     a prediction and reference.
 
     Examples:
@@ -315,6 +367,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         return True
 
     @property
+    @override
     def evaluation_name(self) -> str:
         return f"embedding_{self.distance_metric.value}_distance"
 
@@ -327,6 +380,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         """
         return ["prediction", "reference"]
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -343,7 +397,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             Dict[str, Any]: The computed score.
         """
         vectors = self.embeddings.embed_documents(
-            [inputs["prediction"], inputs["reference"]]
+            [inputs["prediction"], inputs["reference"]],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -351,6 +405,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -370,7 +425,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
             [
                 inputs["prediction"],
                 inputs["reference"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -378,6 +433,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_strings(
         self,
         *,
@@ -389,19 +445,20 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Evaluate the embedding distance between a prediction and
-        reference.
+        """Evaluate the embedding distance between a prediction and reference.
 
         Args:
-            prediction (str): The output string from the first model.
-            reference (str): The reference string (required)
-            callbacks (Callbacks, optional): The callbacks to use.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            reference: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = self(
             inputs={"prediction": prediction, "reference": reference},
@@ -412,6 +469,7 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_strings(
         self,
         *,
@@ -423,19 +481,20 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate the embedding distance between
-        a prediction and reference.
+        """Evaluate the embedding distance between a prediction and reference.
 
         Args:
-            prediction (str): The output string from the first model.
-            reference (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            reference: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "reference": reference},
@@ -448,7 +507,8 @@ class EmbeddingDistanceEvalChain(_EmbeddingDistanceChainMixin, StringEvaluator):
 
 
 class PairwiseEmbeddingDistanceEvalChain(
-    _EmbeddingDistanceChainMixin, PairwiseStringEvaluator
+    _EmbeddingDistanceChainMixin,
+    PairwiseStringEvaluator,
 ):
     """Use embedding distances to score semantic difference between two predictions.
 
@@ -470,8 +530,10 @@ class PairwiseEmbeddingDistanceEvalChain(
 
     @property
     def evaluation_name(self) -> str:
+        """Return the evaluation name."""
         return f"pairwise_embedding_{self.distance_metric.value}_distance"
 
+    @override
     def _call(
         self,
         inputs: dict[str, Any],
@@ -491,7 +553,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -499,6 +561,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     async def _acall(
         self,
         inputs: dict[str, Any],
@@ -518,7 +581,7 @@ class PairwiseEmbeddingDistanceEvalChain(
             [
                 inputs["prediction"],
                 inputs["prediction_b"],
-            ]
+            ],
         )
         if _check_numpy():
             np = _import_numpy()
@@ -526,6 +589,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         score = self._compute_score(vectors)
         return {"score": score}
 
+    @override
     def _evaluate_string_pairs(
         self,
         *,
@@ -540,17 +604,17 @@ class PairwiseEmbeddingDistanceEvalChain(
         """Evaluate the embedding distance between two predictions.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces
-            metadata (Dict[str, Any], optional): metadata to apply to
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+                - score: The embedding distance between the two predictions.
         """
         result = self(
             inputs={"prediction": prediction, "prediction_b": prediction_b},
@@ -561,6 +625,7 @@ class PairwiseEmbeddingDistanceEvalChain(
         )
         return self._prepare_output(result)
 
+    @override
     async def _aevaluate_string_pairs(
         self,
         *,
@@ -572,22 +637,20 @@ class PairwiseEmbeddingDistanceEvalChain(
         include_run_info: bool = False,
         **kwargs: Any,
     ) -> dict:
-        """Asynchronously evaluate the embedding distance
-
-        between two predictions.
+        """Asynchronously evaluate the embedding distance between two predictions.
 
         Args:
-            prediction (str): The output string from the first model.
-            prediction_b (str): The output string from the second model.
-            callbacks (Callbacks, optional): The callbacks to use.
-            tags (List[str], optional): Tags to apply to traces
-            metadata (Dict[str, Any], optional): metadata to apply to traces
-            **kwargs (Any): Additional keyword arguments.
+            prediction: The output string from the first model.
+            prediction_b: The output string from the second model.
+            callbacks: The callbacks to use.
+            tags: The tags to apply.
+            metadata: The metadata to use.
+            include_run_info: Whether to include run information in the output.
+            **kwargs: Additional keyword arguments.
 
         Returns:
-            dict: A dictionary containing:
-                - score: The embedding distance between the two
-                    predictions.
+            A dictionary containing:
+            - score: The embedding distance between the two predictions.
         """
         result = await self.acall(
             inputs={"prediction": prediction, "prediction_b": prediction_b},

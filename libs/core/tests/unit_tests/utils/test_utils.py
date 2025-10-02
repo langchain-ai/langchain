@@ -6,9 +6,12 @@ from typing import Any, Callable, Optional, Union
 from unittest.mock import patch
 
 import pytest
-from pydantic import SecretStr
+from pydantic import BaseModel, Field, SecretStr
+from pydantic.v1 import BaseModel as PydanticV1BaseModel
+from pydantic.v1 import Field as PydanticV1Field
 
 from langchain_core import utils
+from langchain_core.outputs import GenerationChunk
 from langchain_core.utils import (
     check_package_version,
     from_env,
@@ -95,7 +98,7 @@ def test_check_package_version(
                 TypeError,
                 match=(
                     "Additional kwargs key a already exists in left dict and value "
-                    "has unsupported type .+tuple.+."
+                    r"has unsupported type .+tuple.+."
                 ),
             ),
         ),
@@ -135,7 +138,7 @@ def test_merge_dicts(
         (
             {"type": "foo"},
             {"type": "bar"},
-            pytest.raises(ValueError, match="Unable to merge."),
+            pytest.raises(ValueError, match="Unable to merge"),
         ),
     ],
 )
@@ -211,13 +214,10 @@ def test_guard_import_failure(
 
 
 def test_get_pydantic_field_names_v1_in_2() -> None:
-    from pydantic.v1 import BaseModel as PydanticV1BaseModel
-    from pydantic.v1 import Field
-
     class PydanticV1Model(PydanticV1BaseModel):
         field1: str
         field2: int
-        alias_field: int = Field(alias="aliased_field")
+        alias_field: int = PydanticV1Field(alias="aliased_field")
 
     result = get_pydantic_field_names(PydanticV1Model)
     expected = {"field1", "field2", "aliased_field", "alias_field"}
@@ -225,8 +225,6 @@ def test_get_pydantic_field_names_v1_in_2() -> None:
 
 
 def test_get_pydantic_field_names_v2_in_2() -> None:
-    from pydantic import BaseModel, Field
-
     class PydanticModel(BaseModel):
         field1: str
         field2: int
@@ -340,13 +338,11 @@ def test_secret_from_env_with_custom_error_message(
 def test_using_secret_from_env_as_default_factory(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    from pydantic import BaseModel, Field
-
     class Foo(BaseModel):
         secret: SecretStr = Field(default_factory=secret_from_env("TEST_KEY"))
 
     # Pass the secret as a parameter
-    foo = Foo(secret="super_secret")  # type: ignore[arg-type]
+    foo = Foo(secret="super_secret")
     assert foo.secret.get_secret_value() == "super_secret"
 
     # Set the environment variable
@@ -375,3 +371,10 @@ def test_using_secret_from_env_as_default_factory(
 
     with pytest.raises(ValueError, match="Did not find FOOFOOFOOBAR"):
         OhMy()
+
+
+def test_generation_chunk_addition_type_error() -> None:
+    chunk1 = GenerationChunk(text="", generation_info={"len": 0})
+    chunk2 = GenerationChunk(text="Non-empty text", generation_info={"len": 14})
+    result = chunk1 + chunk2
+    assert result == GenerationChunk(text="Non-empty text", generation_info={"len": 14})

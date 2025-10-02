@@ -3,11 +3,19 @@
 This guide walks through how to run the repository locally and check in your first code.
 For a [development container](https://containers.dev/), see the [.devcontainer folder](https://github.com/langchain-ai/langchain/tree/master/.devcontainer).
 
-## Dependency Management: `uv` and other env/dependency managers
+## Dependency management: `uv` and other env/dependency managers
 
 This project utilizes [uv](https://docs.astral.sh/uv/) v0.5+ as a dependency manager.
 
 Install `uv`: **[documentation on how to install it](https://docs.astral.sh/uv/getting-started/installation/)**.
+
+### Windows Users
+
+If you're on Windows and don't have `make` installed, you can install it via:
+- **Option 1**: Install via [Chocolatey](https://chocolatey.org/): `choco install make`
+- **Option 2**: Install via [Scoop](https://scoop.sh/): `scoop install make`
+- **Option 3**: Use [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/)
+- **Option 4**: Use the direct `uv` commands shown in the sections below
 
 ## Different packages
 
@@ -37,7 +45,7 @@ For this quickstart, start with `langchain`:
 cd libs/langchain
 ```
 
-## Local Development Dependencies
+## Local development dependencies
 
 Install development requirements (for running langchain, running examples, linting, formatting, tests, and coverage):
 
@@ -48,7 +56,11 @@ uv sync
 Then verify dependency installation:
 
 ```bash
+# If you have `make` installed:
 make test
+
+# If you don't have `make` (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
 ## Testing
@@ -61,13 +73,11 @@ If you add new logic, please add a unit test.
 To run unit tests:
 
 ```bash
+# If you have `make` installed:
 make test
-```
 
-To run unit tests in Docker:
-
-```bash
-make docker_tests
+# If you don't have make (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
 There are also [integration tests and code-coverage](../testing.mdx) available.
@@ -78,34 +88,56 @@ If you are only developing `langchain_core`, you can simply install the dependen
 
 ```bash
 cd libs/core
+
+# If you have `make` installed:
 make test
+
+# If you don't have `make` (Windows alternative):
+uv run --group test pytest -n auto --disable-socket --allow-unix-socket tests/unit_tests
 ```
 
-## Formatting and Linting
+## Formatting and linting
 
 Run these locally before submitting a PR; the CI system will check also.
 
-### Code Formatting
+### Code formatting
 
 Formatting for this project is done via [ruff](https://docs.astral.sh/ruff/rules/).
 
 To run formatting for docs, cookbook and templates:
 
 ```bash
+# If you have `make` installed:
 make format
+
+# If you don't have make (Windows alternative):
+uv run --all-groups ruff format .
+uv run --all-groups ruff check --fix .
 ```
 
 To run formatting for a library, run the same command from the relevant library directory:
 
 ```bash
 cd libs/{LIBRARY}
+
+# If you have `make` installed:
 make format
+
+# If you don't have make (Windows alternative):
+uv run --all-groups ruff format .
+uv run --all-groups ruff check --fix .
 ```
 
 Additionally, you can run the formatter only on the files that have been modified in your current branch as compared to the master branch using the format_diff command:
 
 ```bash
+# If you have `make` installed:
 make format_diff
+
+# If you don't have `make` (Windows alternative):
+# First, get the list of modified files:
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check --fix
 ```
 
 This is especially useful when you have made changes to a subset of the project and want to ensure your changes are properly formatted without affecting the rest of the codebase.
@@ -117,53 +149,90 @@ Linting for this project is done via a combination of [ruff](https://docs.astral
 To run linting for docs, cookbook and templates:
 
 ```bash
+# If you have `make` installed:
 make lint
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups ruff check .
+uv run --all-groups ruff format . --diff
+uv run --all-groups mypy . --cache-dir .mypy_cache
 ```
 
 To run linting for a library, run the same command from the relevant library directory:
 
 ```bash
 cd libs/{LIBRARY}
+
+# If you have `make` installed:
 make lint
+
+# If you don't have `make` (Windows alternative):
+uv run --all-groups ruff check .
+uv run --all-groups ruff format . --diff
+uv run --all-groups mypy . --cache-dir .mypy_cache
 ```
 
 In addition, you can run the linter only on the files that have been modified in your current branch as compared to the master branch using the lint_diff command:
 
 ```bash
+# If you have `make` installed:
 make lint_diff
+
+# If you don't have `make` (Windows alternative):
+# First, get the list of modified files:
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff check
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups ruff format --diff
+git diff --relative=libs/langchain --name-only --diff-filter=d master | grep -E '\.py$$|\.ipynb$$' | xargs uv run --all-groups mypy --cache-dir .mypy_cache
 ```
 
 This can be very helpful when you've made changes to only certain parts of the project and want to ensure your changes meet the linting standards without having to check the entire codebase.
 
 We recognize linting can be annoying - if you do not want to do it, please contact a project maintainer, and they can help you with it. We do not want this to be a blocker for good code getting contributed.
 
-### Spellcheck
+### Pre-commit
 
-Spellchecking for this project is done via [codespell](https://github.com/codespell-project/codespell).
-Note that `codespell` finds common typos, so it could have false-positive (correctly spelled but rarely used) and false-negatives (not finding misspelled) words.
+We use [pre-commit](https://pre-commit.com/) to ensure commits are formatted/linted.
 
-To check spelling for this project:
+#### Installing Pre-commit
 
-```bash
-make spell_check
-```
-
-To fix spelling in place:
+First, install pre-commit:
 
 ```bash
-make spell_fix
+# Option 1: Using uv (recommended)
+uv tool install pre-commit
+
+# Option 2: Using Homebrew (globally for macOS/Linux)
+brew install pre-commit
+
+# Option 3: Using pip
+pip install pre-commit
 ```
 
-If codespell is incorrectly flagging a word, you can skip spellcheck for that word by adding it to the codespell config in the `pyproject.toml` file.
+Then install the git hook scripts:
 
-```python
-[tool.codespell]
-...
-# Add here:
-ignore-words-list = 'momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure'
+```bash
+pre-commit install
 ```
 
-## Working with Optional Dependencies
+#### How Pre-commit Works
+
+Once installed, pre-commit will automatically run on every `git commit`. Hooks are specified in `.pre-commit-config.yaml` and will:
+
+- Format code using `ruff` for the specific library/package you're modifying
+- Only run on files that have changed
+- Prevent commits if formatting fails
+
+#### Skipping Pre-commit
+
+In exceptional cases, you can skip pre-commit hooks with:
+
+```bash
+git commit --no-verify
+```
+
+However, this is discouraged as the CI system will still enforce the same formatting rules.
+
+## Working with optional dependencies
 
 `langchain`, `langchain-community`, and `langchain-experimental` rely on optional dependencies to keep these packages lightweight.
 

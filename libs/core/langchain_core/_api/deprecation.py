@@ -18,6 +18,7 @@ from collections.abc import Generator
 from typing import (
     Any,
     Callable,
+    ParamSpec,
     TypeVar,
     Union,
     cast,
@@ -25,7 +26,6 @@ from typing import (
 
 from pydantic.fields import FieldInfo
 from pydantic.v1.fields import FieldInfo as FieldInfoV1
-from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -129,13 +129,17 @@ def deprecated(
         package: str, optional
             The package of the deprecated object.
 
+    Returns:
+        A decorator to mark a function or class as deprecated.
+
     Examples:
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
+
     """
     _validate_deprecation_params(
         removal, alternative, alternative_import, pending=pending
@@ -224,7 +228,7 @@ def deprecated(
                 obj.__init__ = functools.wraps(obj.__init__)(  # type: ignore[misc]
                     warn_if_direct_instance
                 )
-                return cast("T", obj)
+                return obj
 
         elif isinstance(obj, FieldInfoV1):
             wrapped = None
@@ -357,7 +361,8 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative = f":meth:`~{_alternative}`"
         elif _alternative:
@@ -365,8 +370,8 @@ def deprecated(
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
         ):
             _alternative_import = f":meth:`~{_alternative_import}`"
         elif _alternative_import:
@@ -426,35 +431,35 @@ def warn_deprecated(
 ) -> None:
     """Display a standardized deprecation.
 
-    Arguments:
-        since : str
+    Args:
+        since:
             The release at which this API became deprecated.
-        message : str, optional
+        message:
             Override the default deprecation message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the deprecated object.
-        alternative : str, optional
+        alternative:
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
-        alternative_import: str, optional
+        alternative_import:
             An alternative import that the user may use instead.
-        pending : bool, optional
+        pending:
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
+        obj_type:
             The object type being deprecated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
-        removal : str, optional
+        removal:
             The expected removal version. With the default (an empty
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
-        package: str, optional
+        package:
             The package of the deprecated object.
     """
     if not pending:
@@ -469,8 +474,8 @@ def warn_deprecated(
 
     if not message:
         message = ""
-        _package = (
-            package or name.split(".")[0].replace("_", "-")
+        package_ = (
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -483,14 +488,14 @@ def warn_deprecated(
         if pending:
             message += " will be deprecated in a future version"
         else:
-            message += f" was deprecated in {_package} {since}"
+            message += f" was deprecated in {package_} {since}"
 
             if removal:
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
-            if alt_package == _package:
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
+            if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
                 alt_module, alt_name = alternative_import.rsplit(".", 1)
@@ -543,12 +548,22 @@ def rename_parameter(
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
 
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
+
     Example:
 
         .. code-block:: python
 
             @_api.rename_parameter("3.1", "bad_name", "good_name")
             def func(good_name): ...
+
     """
 
     def decorator(f: Callable[_P, _R]) -> Callable[_P, _R]:

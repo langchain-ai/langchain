@@ -23,7 +23,7 @@ def test_regex_parser_parse() -> None:
         output_keys=["confidence", "explanation"],
         default_output_key="noConfidence",
     )
-    assert DEF_EXPECTED_RESULT == parser.parse(DEF_README)
+    assert parser.parse(DEF_README) == DEF_EXPECTED_RESULT
 
 
 def test_regex_parser_output_type() -> None:

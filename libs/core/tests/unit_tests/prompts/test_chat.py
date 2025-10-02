@@ -173,7 +173,7 @@ def test_create_system_message_prompt_list_template_partial_variables_not_null()
         """
 
     with pytest.raises(
-        ValueError, match="Partial variables are not supported for list of templates."
+        ValueError, match="Partial variables are not supported for list of templates"
     ):
         _ = SystemMessagePromptTemplate.from_template(
             template=[graph_creator_content1, graph_creator_content2],
@@ -260,13 +260,9 @@ async def test_chat_prompt_template_from_messages_using_role_strings() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
     messages = template.format_messages(name="Bob", user_input="What is your name?")
@@ -296,13 +292,9 @@ def test_chat_prompt_template_from_messages_mustache() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
@@ -324,13 +316,9 @@ def test_chat_prompt_template_from_messages_jinja2() -> None:
         SystemMessage(
             content="You are a helpful AI bot. Your name is Bob.", additional_kwargs={}
         ),
-        HumanMessage(
-            content="Hello, how are you doing?", additional_kwargs={}, example=False
-        ),
-        AIMessage(
-            content="I'm doing well, thanks!", additional_kwargs={}, example=False
-        ),
-        HumanMessage(content="What is your name?", additional_kwargs={}, example=False),
+        HumanMessage(content="Hello, how are you doing?", additional_kwargs={}),
+        AIMessage(content="I'm doing well, thanks!", additional_kwargs={}),
+        HumanMessage(content="What is your name?", additional_kwargs={}),
     ]
 
 
@@ -380,7 +368,10 @@ def test_chat_prompt_template_with_messages(
     messages: list[BaseMessagePromptTemplate],
 ) -> None:
     chat_prompt_template = ChatPromptTemplate.from_messages(
-        [*messages, HumanMessage(content="foo")]
+        [
+            *messages,
+            HumanMessage(content="foo"),
+        ]
     )
     assert sorted(chat_prompt_template.input_variables) == sorted(
         [
@@ -565,7 +556,7 @@ def test_chat_prompt_template_append_and_extend() -> None:
 
 def test_convert_to_message_is_strict() -> None:
     """Verify that _convert_to_message is strict."""
-    with pytest.raises(ValueError, match="Unexpected message type: meow."):
+    with pytest.raises(ValueError, match="Unexpected message type: meow"):
         # meow does not correspond to a valid message type.
         # this test is here to ensure that functionality to interpret `meow`
         # as a role is NOT added.
@@ -755,7 +746,7 @@ async def test_chat_tmpl_from_messages_multipart_image() -> None:
 
 async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
     """Verify that we cannot pass `path` for an image as a variable."""
-    in_mem = "base64mem"
+    in_mem_ = "base64mem"
 
     template = ChatPromptTemplate.from_messages(
         [
@@ -778,21 +769,27 @@ async def test_chat_tmpl_from_messages_multipart_formatting_with_path() -> None:
     )
     with pytest.raises(
         ValueError,
-        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+        match=re.escape(
+            "Loading images from 'path' has been removed as of 0.3.15 "
+            "for security reasons."
+        ),
     ):
         template.format_messages(
             name="R2D2",
-            in_mem=in_mem,
+            in_mem=in_mem_,
             file_path="some/path",
         )
 
     with pytest.raises(
         ValueError,
-        match="Loading images from 'path' has been removed as of 0.3.15 for security reasons.",
+        match=re.escape(
+            "Loading images from 'path' has been removed as of 0.3.15 "
+            "for security reasons."
+        ),
     ):
         await template.aformat_messages(
             name="R2D2",
-            in_mem=in_mem,
+            in_mem=in_mem_,
             file_path="some/path",
         )
 
@@ -882,7 +879,10 @@ def test_chat_prompt_message_placeholder_dict() -> None:
 
 def test_chat_prompt_message_dict() -> None:
     prompt = ChatPromptTemplate(
-        [{"role": "system", "content": "foo"}, {"role": "user", "content": "bar"}]
+        [
+            {"role": "system", "content": "foo"},
+            {"role": "user", "content": "bar"},
+        ]
     )
     assert prompt.format_messages() == [
         SystemMessage(content="foo"),
@@ -892,7 +892,7 @@ def test_chat_prompt_message_dict() -> None:
     with pytest.raises(ValueError, match="Invalid template: False"):
         ChatPromptTemplate([{"role": "system", "content": False}])
 
-    with pytest.raises(ValueError, match="Unexpected message type: foo."):
+    with pytest.raises(ValueError, match="Unexpected message type: foo"):
         ChatPromptTemplate([{"role": "foo", "content": "foo"}])
 
 

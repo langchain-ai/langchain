@@ -1,9 +1,11 @@
 """Test chat model integration."""
 
+from __future__ import annotations
+
 from typing import Any, Literal, Union
 from unittest.mock import MagicMock
 
-from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk, ToolMessage
 from langchain_tests.unit_tests import ChatModelUnitTests
 from openai import BaseModel
 from openai.types.chat import ChatCompletionMessage
@@ -16,10 +18,10 @@ class MockOpenAIResponse(BaseModel):
     choices: list
     error: None = None
 
-    def model_dump(
+    def model_dump(  # type: ignore[override]
         self,
         *,
-        mode: Union[Literal["json", "python"], str] = "python",
+        mode: Union[Literal["json", "python"], str] = "python",  # noqa: PYI051
         include: Any = None,
         exclude: Any = None,
         by_alias: bool = False,
@@ -100,7 +102,8 @@ class TestChatDeepSeekCustomUnit:
         mock_message.reasoning_content = "This is the reasoning content"
         mock_message.role = "assistant"
         mock_response = MockOpenAIResponse(
-            choices=[MagicMock(message=mock_message)], error=None
+            choices=[MagicMock(message=mock_message)],
+            error=None,
         )
 
         result = chat_model._create_chat_result(mock_response)
@@ -140,16 +143,19 @@ class TestChatDeepSeekCustomUnit:
                     "delta": {
                         "content": "Main content",
                         "reasoning_content": "Streaming reasoning content",
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         }
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
-            chunk, AIMessageChunk, None
+            chunk,
+            AIMessageChunk,
+            None,
         )
         if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
         assert (
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning content"
@@ -164,16 +170,19 @@ class TestChatDeepSeekCustomUnit:
                     "delta": {
                         "content": "Main content",
                         "reasoning": "Streaming reasoning",
-                    }
-                }
-            ]
+                    },
+                },
+            ],
         }
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
-            chunk, AIMessageChunk, None
+            chunk,
+            AIMessageChunk,
+            None,
         )
         if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
         assert (
             chunk_result.message.additional_kwargs.get("reasoning_content")
             == "Streaming reasoning"
@@ -185,10 +194,13 @@ class TestChatDeepSeekCustomUnit:
         chunk: dict[str, Any] = {"choices": [{"delta": {"content": "Main content"}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
-            chunk, AIMessageChunk, None
+            chunk,
+            AIMessageChunk,
+            None,
         )
         if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
 
     def test_convert_chunk_with_empty_delta(self) -> None:
@@ -197,8 +209,27 @@ class TestChatDeepSeekCustomUnit:
         chunk: dict[str, Any] = {"choices": [{"delta": {}}]}
 
         chunk_result = chat_model._convert_chunk_to_generation_chunk(
-            chunk, AIMessageChunk, None
+            chunk,
+            AIMessageChunk,
+            None,
         )
         if chunk_result is None:
-            raise AssertionError("Expected chunk_result not to be None")
+            msg = "Expected chunk_result not to be None"
+            raise AssertionError(msg)
         assert chunk_result.message.additional_kwargs.get("reasoning_content") is None
+
+    def test_get_request_payload(self) -> None:
+        """Test that tool message content is converted from list to string."""
+        chat_model = ChatDeepSeek(model="deepseek-chat", api_key=SecretStr("api_key"))
+
+        tool_message = ToolMessage(content=[], tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "[]"
+
+        tool_message = ToolMessage(content=["item1", "item2"], tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == '["item1", "item2"]'
+
+        tool_message = ToolMessage(content="test string", tool_call_id="test_id")
+        payload = chat_model._get_request_payload([tool_message])
+        assert payload["messages"][0]["content"] == "test string"

@@ -13,7 +13,7 @@ class RemoveMessage(BaseMessage):
 
     def __init__(
         self,
-        id: str,  # noqa: A002
+        id: str,
         **kwargs: Any,
     ) -> None:
         """Create a RemoveMessage.
@@ -24,6 +24,7 @@ class RemoveMessage(BaseMessage):
 
         Raises:
             ValueError: If the 'content' field is passed in kwargs.
+
         """
         if kwargs.pop("content", None):
             msg = "RemoveMessage does not support 'content' field."

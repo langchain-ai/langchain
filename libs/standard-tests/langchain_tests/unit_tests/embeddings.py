@@ -1,6 +1,7 @@
+"""Embeddings unit tests."""
+
 import os
 from abc import abstractmethod
-from typing import Tuple, Type
 from unittest import mock
 
 import pytest
@@ -11,20 +12,24 @@ from langchain_tests.base import BaseStandardTests
 
 
 class EmbeddingsTests(BaseStandardTests):
-    """
+    """Embeddings tests base class.
+
     :private:
     """
 
     @property
     @abstractmethod
-    def embeddings_class(self) -> Type[Embeddings]: ...
+    def embeddings_class(self) -> type[Embeddings]:
+        """Embeddings class."""
 
     @property
     def embedding_model_params(self) -> dict:
+        """Embeddings model parameters."""
         return {}
 
     @pytest.fixture
     def model(self) -> Embeddings:
+        """Embeddings model fixture."""
         return self.embeddings_class(**self.embedding_model_params)
 
 
@@ -89,7 +94,8 @@ class EmbeddingsUnitTests(EmbeddingsTests):
                             "my_api_key": "api_key",
                         },
                     )
-    """  # noqa: E501
+
+    """  # noqa: D214
 
     def test_init(self) -> None:
         """Test model initialization.
@@ -103,17 +109,21 @@ class EmbeddingsUnitTests(EmbeddingsTests):
         assert model is not None
 
     @property
-    def init_from_env_params(self) -> Tuple[dict, dict, dict]:
-        """This property is used in unit tests to test initialization from environment
+    def init_from_env_params(self) -> tuple[dict, dict, dict]:
+        """Init from env params.
+
+        This property is used in unit tests to test initialization from environment
         variables. It should return a tuple of three dictionaries that specify the
         environment variables, additional initialization args, and expected instance
-        attributes to check."""
+        attributes to check.
+        """
         return {}, {}, {}
 
     def test_init_from_env(self) -> None:
-        """Test initialization from environment variables. Relies on the
-        ``init_from_env_params`` property. Test is skipped if that property is not
-        set.
+        """Test initialization from environment variables.
+
+        Relies on the ``init_from_env_params`` property.
+        Test is skipped if that property is not set.
 
         .. dropdown:: Troubleshooting
 

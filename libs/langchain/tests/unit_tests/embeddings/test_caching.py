@@ -1,26 +1,31 @@
 """Embeddings tests."""
 
+import contextlib
 import hashlib
 import importlib
 import warnings
 
 import pytest
 from langchain_core.embeddings import Embeddings
+from typing_extensions import override
 
 from langchain.embeddings import CacheBackedEmbeddings
 from langchain.storage.in_memory import InMemoryStore
 
 
 class MockEmbeddings(Embeddings):
+    @override
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         # Simulate embedding documents
         embeddings: list[list[float]] = []
         for text in texts:
             if text == "RAISE_EXCEPTION":
-                raise ValueError("Simulated embedding failure")
+                msg = "Simulated embedding failure"
+                raise ValueError(msg)
             embeddings.append([len(text), len(text) + 1])
         return embeddings
 
+    @override
     def embed_query(self, text: str) -> list[float]:
         # Simulate embedding a query
         return [5.0, 6.0]
@@ -32,7 +37,9 @@ def cache_embeddings() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace"
+        embeddings,
+        store,
+        namespace="test_namespace",
     )
 
 
@@ -42,7 +49,10 @@ def cache_embeddings_batch() -> CacheBackedEmbeddings:
     store = InMemoryStore()
     embeddings = MockEmbeddings()
     return CacheBackedEmbeddings.from_bytes_store(
-        embeddings, store, namespace="test_namespace", batch_size=3
+        embeddings,
+        store,
+        namespace="test_namespace",
+        batch_size=3,
     )
 
 
@@ -74,10 +84,8 @@ def test_embed_documents(cache_embeddings: CacheBackedEmbeddings) -> None:
 def test_embed_documents_batch(cache_embeddings_batch: CacheBackedEmbeddings) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         cache_embeddings_batch.embed_documents(texts)
-    except ValueError:
-        pass
     keys = list(cache_embeddings_batch.document_embedding_store.yield_keys())
     # only the first batch of three embeddings should exist
     assert len(keys) == 3
@@ -121,10 +129,8 @@ async def test_aembed_documents_batch(
 ) -> None:
     # "RAISE_EXCEPTION" forces a failure in batch 2
     texts = ["1", "22", "a", "333", "RAISE_EXCEPTION"]
-    try:
+    with contextlib.suppress(ValueError):
         await cache_embeddings_batch.aembed_documents(texts)
-    except ValueError:
-        pass
     keys = [
         key
         async for key in cache_embeddings_batch.document_embedding_store.ayield_keys()
@@ -157,7 +163,10 @@ def test_blake2b_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="blake2b"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="blake2b",
     )
 
     text = "blake"
@@ -173,7 +182,10 @@ def test_sha256_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha256"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha256",
     )
 
     text = "foo"
@@ -189,7 +201,10 @@ def test_sha512_encoder() -> None:
     store = InMemoryStore()
     emb = MockEmbeddings()
     cbe = CacheBackedEmbeddings.from_bytes_store(
-        emb, store, namespace="ns_", key_encoder="sha512"
+        emb,
+        store,
+        namespace="ns_",
+        key_encoder="sha512",
     )
 
     text = "foo"
@@ -201,11 +216,11 @@ def test_sha512_encoder() -> None:
 
 
 def test_sha1_warning_emitted_once() -> None:
-    """Test that a warning is emitted when using SHA‑1 as the default key encoder."""
+    """Test that a warning is emitted when using SHA-1 as the default key encoder."""
     module = importlib.import_module(CacheBackedEmbeddings.__module__)
 
     # Create a *temporary* MonkeyPatch object whose effects disappear
-    # automatically when the with‑block exits.
+    # automatically when the with-block exits.
     with pytest.MonkeyPatch.context() as mp:
         # We're monkey patching the module to reset the `_warned_about_sha1` flag
         # which may have been set while testing other parts of the codebase.
@@ -219,7 +234,7 @@ def test_sha1_warning_emitted_once() -> None:
             CacheBackedEmbeddings.from_bytes_store(emb, store)  # triggers warning
             CacheBackedEmbeddings.from_bytes_store(emb, store)  # silent
 
-        sha1_msgs = [w for w in caught if "SHA‑1" in str(w.message)]
+        sha1_msgs = [w for w in caught if "SHA-1" in str(w.message)]
         assert len(sha1_msgs) == 1
 
 

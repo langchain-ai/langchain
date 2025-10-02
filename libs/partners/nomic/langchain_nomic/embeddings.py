@@ -1,3 +1,7 @@
+"""Nomic partner integration for LangChain."""
+
+from __future__ import annotations
+
 import os
 from typing import Literal, Optional, overload
 
@@ -10,11 +14,13 @@ class NomicEmbeddings(Embeddings):
     """NomicEmbeddings embedding model.
 
     Example:
+
         .. code-block:: python
 
             from langchain_nomic import NomicEmbeddings
 
             model = NomicEmbeddings()
+
     """
 
     @overload
@@ -25,8 +31,7 @@ class NomicEmbeddings(Embeddings):
         nomic_api_key: Optional[str] = ...,
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["remote"] = ...,
-    ):
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -37,8 +42,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: Literal["local", "dynamic"],
         device: Optional[str] = ...,
-    ):
-        ...
+    ) -> None: ...
 
     @overload
     def __init__(
@@ -49,8 +53,7 @@ class NomicEmbeddings(Embeddings):
         dimensionality: Optional[int] = ...,
         inference_mode: str,
         device: Optional[str] = ...,
-    ):
-        ...
+    ) -> None: ...
 
     def __init__(
         self,
@@ -66,16 +69,18 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             model: model name
-            nomic_api_key: optionally, set the Nomic API key. Uses the NOMIC_API_KEY
+            nomic_api_key: optionally, set the Nomic API key. Uses the ``NOMIC_API_KEY``
                 environment variable by default.
             dimensionality: The embedding dimension, for use with Matryoshka-capable
                 models. Defaults to full-size.
-            inference_mode: How to generate embeddings. One of `remote`, `local`
-                (Embed4All), or `dynamic` (automatic). Defaults to `remote`.
+            inference_mode: How to generate embeddings. One of ``'remote'``, ``'local'``
+                (Embed4All), or ``'dynamic'`` (automatic). Defaults to ``'remote'``.
             device: The device to use for local embeddings. Choices include
-                `cpu`, `gpu`, `nvidia`, `amd`, or a specific device name. See
-                the docstring for `GPT4All.__init__` for more info. Typically
-                defaults to CPU. Do not use on macOS.
+                ``'cpu'``, ``'gpu'``, ``'nvidia'``, ``'amd'``, or a specific device
+                name. See the docstring for ``GPT4All.__init__`` for more info.
+                Typically defaults to ``'cpu'``. Do not use on macOS.
+            vision_model: The vision model to use for image embeddings.
+
         """
         _api_key = nomic_api_key or os.environ.get("NOMIC_API_KEY")
         if _api_key:
@@ -91,10 +96,10 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             texts: list of texts to embed
-            task_type: the task type to use when embedding. One of `search_query`,
-                `search_document`, `classification`, `clustering`
-        """
+            task_type: the task type to use when embedding. One of ``'search_query'``,
+                ``'search_document'``, ``'classification'``, ``'clustering'``
 
+        """
         output = embed.text(
             texts=texts,
             model=self.model,
@@ -110,6 +115,7 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             texts: list of texts to embed as documents
+
         """
         return self.embed(
             texts=texts,
@@ -121,6 +127,7 @@ class NomicEmbeddings(Embeddings):
 
         Args:
             text: query text
+
         """
         return self.embed(
             texts=[text],
@@ -128,6 +135,11 @@ class NomicEmbeddings(Embeddings):
         )[0]
 
     def embed_image(self, uris: list[str]) -> list[list[float]]:
+        """Embed images.
+
+        Args:
+            uris: list of image URIs to embed
+        """
         return embed.image(
             images=uris,
             model=self.vision_model,

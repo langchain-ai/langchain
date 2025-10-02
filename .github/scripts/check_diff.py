@@ -1,24 +1,38 @@
+"""Analyze git diffs to determine which directories need to be tested.
+
+Intelligently determines which LangChain packages and directories need to be tested,
+linted, or built based on the changes. Handles dependency relationships between
+packages, maps file changes to appropriate CI job configurations, and outputs JSON
+configurations for GitHub Actions.
+
+- Maps changed files to affected package directories (libs/core, libs/partners/*, etc.)
+- Builds dependency graph to include dependent packages when core components change
+- Generates test matrix configurations with appropriate Python versions
+- Handles special cases for Pydantic version testing and performance benchmarks
+
+Used as part of the check_diffs workflow.
+"""
+
 import glob
 import json
 import os
 import sys
 from collections import defaultdict
-from typing import Dict, List, Set
 from pathlib import Path
+from typing import Dict, List, Set
+
 import tomllib
-
-from packaging.requirements import Requirement
-
 from get_min_versions import get_min_version_from_toml
-
+from packaging.requirements import Requirement
 
 LANGCHAIN_DIRS = [
     "libs/core",
     "libs/text-splitters",
     "libs/langchain",
+    "libs/langchain_v1",
 ]
 
-# when set to True, we are ignoring core dependents
+# When set to True, we are ignoring core dependents
 # in order to be able to get CI to pass for each individual
 # package that depends on core
 # e.g. if you touch core, we don't then add textsplitters/etc to CI
@@ -37,7 +51,7 @@ IGNORED_PARTNERS = [
 ]
 
 PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma", # https://github.com/chroma-core/chroma/issues/4382
+    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
 ]
 
 
@@ -50,9 +64,9 @@ def all_package_dirs() -> Set[str]:
 
 
 def dependents_graph() -> dict:
-    """
-    Construct a mapping of package -> dependents, such that we can
-    run tests on all dependents of a package when a change is made.
+    """Construct a mapping of package -> dependents
+
+    Done such that we can run tests on all dependents of a package when a change is made.
     """
     dependents = defaultdict(set)
 
@@ -84,9 +98,9 @@ def dependents_graph() -> dict:
                 for depline in extended_deps:
                     if depline.startswith("-e "):
                         # editable dependency
-                        assert depline.startswith(
-                            "-e ../partners/"
-                        ), "Extended test deps should only editable install partner packages"
+                        assert depline.startswith("-e ../partners/"), (
+                            "Extended test deps should only editable install partner packages"
+                        )
                         partner = depline.split("partners/")[1]
                         dep = f"langchain-{partner}"
                     else:
@@ -122,23 +136,24 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     if job == "codspeed":
         py_versions = ["3.12"]  # 3.13 is not yet supported
     elif dir_ == "libs/core":
-        py_versions = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        py_versions = ["3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
-    elif dir_ == "libs/partners/milvus":
-        # milvus doesn't allow 3.12 because they declare deps in funny way
-        py_versions = ["3.9", "3.11"]
 
     elif dir_ in PY_312_MAX_PACKAGES:
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.10", "3.12"]
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
+    elif dir_ == "libs/langchain_v1":
+        py_versions = ["3.10", "3.13"]
+    elif dir_ in {"libs/cli"}:
+        py_versions = ["3.10", "3.13"]
 
     elif dir_ == ".":
         # unable to install with 3.13 because tokenizers doesn't support 3.13 yet
-        py_versions = ["3.9", "3.12"]
+        py_versions = ["3.10", "3.12"]
     else:
-        py_versions = ["3.9", "3.13"]
+        py_versions = ["3.10", "3.13"]
 
     return [{"working-directory": dir_, "python-version": py_v} for py_v in py_versions]
 
@@ -270,7 +285,7 @@ if __name__ == "__main__":
                     dirs_to_run["extended-test"].add(dir_)
         elif file.startswith("libs/standard-tests"):
             # TODO: update to include all packages that rely on standard-tests (all partner packages)
-            # note: won't run on external repo partners
+            # Note: won't run on external repo partners
             dirs_to_run["lint"].add("libs/standard-tests")
             dirs_to_run["test"].add("libs/standard-tests")
             dirs_to_run["lint"].add("libs/cli")
@@ -284,7 +299,7 @@ if __name__ == "__main__":
         elif file.startswith("libs/cli"):
             dirs_to_run["lint"].add("libs/cli")
             dirs_to_run["test"].add("libs/cli")
-            
+
         elif file.startswith("libs/partners"):
             partner_dir = file.split("/")[2]
             if os.path.isdir(f"libs/partners/{partner_dir}") and [
@@ -302,7 +317,10 @@ if __name__ == "__main__":
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in ["pyproject.toml", "uv.lock"]: # docs or root uv files
+        elif file.startswith("docs/") or file in [
+            "pyproject.toml",
+            "uv.lock",
+        ]:  # docs or root uv files
             docs_edited = True
             dirs_to_run["lint"].add(".")
 

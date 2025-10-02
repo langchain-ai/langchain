@@ -5,14 +5,14 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
+requires-python = ">=3.9.0,<4.0.0"
 dependencies = [
-    "qdrant-client<2.0.0,>=1.10.1",
-    "pydantic<3.0.0,>=2.7.4",
+    "qdrant-client>=1.10.1,<2.0.0",
+    "pydantic>=2.7.4,<3.0.0",
     "langchain-core!=0.3.0,!=0.3.1,!=0.3.10,!=0.3.11,!=0.3.12,!=0.3.13,!=0.3.14,!=0.3.2,!=0.3.3,!=0.3.4,!=0.3.5,!=0.3.6,!=0.3.7,!=0.3.8,!=0.3.9,<0.4.0,>=0.2.43",
 ]
 name = "langchain-qdrant"
-version = "0.2.0"
+version = "0.2.1"
 description = "An integration package connecting Qdrant and LangChain"
 readme = "README.md"
 
@@ -23,36 +23,64 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [project.optional-dependencies]
 fastembed = [
-    "fastembed<1.0.0,>=0.3.3; python_version < \"3.13\" and python_version >= \"3.9\"",
+    "fastembed>=0.3.3,<1.0.0; python_version < \"3.13\" and python_version >= \"3.9\"",
 ]
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
-    "requests<3.0.0,>=2.31.0",
-    "pytest-socket<1.0.0,>=0.7.0",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-socket>=0.7.0,<1.0.0",
+    "pytest-benchmark",
+    "freezegun>=1.2.2,<2.0.0",
+    "syrupy>=4.0.2,<5.0.0",
+    "requests>=2.31.0,<3.0.0",
     "langchain-core",
+    "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<1.0,>=0.5"]
+lint = ["ruff>=0.13.1,<0.14.0"]
 dev = ["langchain-core"]
-typing = ["mypy<2.0,>=1.10", "simsimd<7.0.0,>=6.0.0", "langchain-core"]
+typing = ["mypy>=1.10.0,<2.0.0", "simsimd>=6.0.0,<7.0.0", "langchain-core"]
 
 [tool.uv.sources]
 langchain-core = { path = "../../core", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
 [tool.ruff]
 target-version = "py39"
 
+[tool.ruff.format]
+docstring-code-format = true
+
 [tool.ruff.lint]
-select = ["E", "F", "I", "T201", "UP"]
-ignore = [ "UP007", ]
+select = ["ALL"]
+ignore = [
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "S112",    # Rarely useful
+    "RUF012",  # Doesn't play well with Pydantic
+    "SLF001",  # Private member access
+    "UP007",   # pyupgrade: non-pep604-annotation-union
+    "UP045",   # pyupgrade: non-pep604-annotation-optional
+    "PLR0913", # Function has too many arguments
+    "C901",    # Complex functions
+
+    # TODO"
+    "ANN401",
+    "ARG002",
+    "D100",
+    "D102",
+    "D104",
+]
+unfixable = ["B028"] # People should intentionally tune the stacklevel
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -67,3 +95,19 @@ markers = [
     "compile: mark placeholder test used to compile integration tests without running them",
 ]
 asyncio_mode = "auto"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"tests/**/*.py" = [
+    "S101", # Tests need assertions
+    "S311", # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "PT011",
+    "PLR2004",
+
+    # TODO
+    "PLC0415",
+    "PT012",
+    "D",
+]
+"scripts/*.py" = [
+    "INP001",   # Not a package
+]

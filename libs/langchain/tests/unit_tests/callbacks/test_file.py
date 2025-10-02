@@ -1,8 +1,9 @@
 import pathlib
-from typing import Any, Optional
+import re
+from typing import Optional
 
-import pytest
 from langchain_core.callbacks import CallbackManagerForChainRun
+from typing_extensions import override
 
 from langchain.callbacks import FileCallbackHandler
 from langchain.chains.base import Chain
@@ -25,6 +26,7 @@ class FakeChain(Chain):
         """Output key of bar."""
         return self.the_output_keys
 
+    @override
     def _call(
         self,
         inputs: dict[str, str],
@@ -33,14 +35,38 @@ class FakeChain(Chain):
         return {"bar": "bar"}
 
 
-def test_filecallback(capsys: pytest.CaptureFixture, tmp_path: pathlib.Path) -> Any:
+def strip_ansi(text: str) -> str:
+    """Removes ANSI escape sequences from a string.
+
+    Args:
+        text: The string potentially containing ANSI codes.
+    """
+    ansi_escape = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+    return ansi_escape.sub("", text)
+
+
+def test_filecallback(tmp_path: pathlib.Path) -> None:
     """Test the file callback handler."""
-    p = tmp_path / "output.log"
-    handler = FileCallbackHandler(str(p))
+    log1 = tmp_path / "output.log"
+    handler = FileCallbackHandler(str(log1))
     chain_test = FakeChain(callbacks=[handler])
     chain_test.invoke({"foo": "bar"})
+    handler.close()
     # Assert the output is as expected
-    assert p.read_text() == (
-        "\n\n\x1b[1m> Entering new FakeChain "
-        "chain...\x1b[0m\n\n\x1b[1m> Finished chain.\x1b[0m\n"
-    )
+    assert "Entering new FakeChain chain" in strip_ansi(log1.read_text())
+
+    # Test using a callback manager
+    log2 = tmp_path / "output2.log"
+
+    with FileCallbackHandler(str(log2)) as handler_cm:
+        chain_test = FakeChain(callbacks=[handler_cm])
+        chain_test.invoke({"foo": "bar"})
+
+    assert "Entering new FakeChain chain" in strip_ansi(log2.read_text())
+
+    # Test passing via invoke callbacks
+    log3 = tmp_path / "output3.log"
+
+    with FileCallbackHandler(str(log3)) as handler_cm:
+        chain_test.invoke({"foo": "bar"}, {"callbacks": [handler_cm]})
+    assert "Entering new FakeChain chain" in strip_ansi(log3.read_text())

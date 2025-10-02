@@ -1,3 +1,5 @@
+"""Integration tests for LangChain components."""
+
 # ruff: noqa: E402
 import pytest
 
@@ -26,13 +28,13 @@ from .tools import ToolsIntegrationTests
 from .vectorstores import VectorStoreIntegrationTests
 
 __all__ = [
-    "ChatModelIntegrationTests",
-    "EmbeddingsIntegrationTests",
-    "ToolsIntegrationTests",
+    "AsyncCacheTestSuite",
     "BaseStoreAsyncTests",
     "BaseStoreSyncTests",
-    "AsyncCacheTestSuite",
-    "SyncCacheTestSuite",
-    "VectorStoreIntegrationTests",
+    "ChatModelIntegrationTests",
+    "EmbeddingsIntegrationTests",
     "RetrieversIntegrationTests",
+    "SyncCacheTestSuite",
+    "ToolsIntegrationTests",
+    "VectorStoreIntegrationTests",
 ]

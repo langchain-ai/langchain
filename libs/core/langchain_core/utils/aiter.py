@@ -37,7 +37,7 @@ _no_default = object()
 # before 3.10, the builtin anext() was not available
 def py_anext(
     iterator: AsyncIterator[T], default: Union[T, Any] = _no_default
-) -> Awaitable[Union[T, None, Any]]:
+) -> Awaitable[Union[T, Any, None]]:
     """Pure-Python implementation of anext() for testing purposes.
 
     Closely matches the builtin anext() C implementation.
@@ -94,7 +94,7 @@ class NoLock:
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
-        """Exception not handled."""
+        """Return False, exception not suppressed."""
         return False
 
 
@@ -165,7 +165,7 @@ class Tee(Generic[T]):
     A ``tee`` works lazily and can handle an infinite ``iterable``, provided
     that all iterators advance.
 
-    .. code-block:: python3
+    .. code-block:: python
 
         async def derivative(sensor_data):
             previous, current = a.tee(sensor_data, n=2)
@@ -189,6 +189,7 @@ class Tee(Generic[T]):
     To enforce sequential use of ``anext``, provide a ``lock``
     - e.g. an :py:class:`asyncio.Lock` instance in an :py:mod:`asyncio` application -
     and access is automatically synchronised.
+
     """
 
     def __init__(
@@ -235,7 +236,11 @@ class Tee(Generic[T]):
         return self._children[item]
 
     def __iter__(self) -> Iterator[AsyncIterator[T]]:
-        """Iterate over the child iterators."""
+        """Iterate over the child iterators.
+
+        Yields:
+            The child iterators.
+        """
         yield from self._children
 
     async def __aenter__(self) -> "Tee[T]":
@@ -248,7 +253,11 @@ class Tee(Generic[T]):
         exc_val: Optional[BaseException],
         exc_tb: Optional[TracebackType],
     ) -> bool:
-        """Close all child iterators."""
+        """Close all child iterators.
+
+        Returns:
+            False, exceptions not suppressed.
+        """
         await self.aclose()
         return False
 
@@ -266,10 +275,14 @@ class aclosing(AbstractAsyncContextManager):  # noqa: N801
 
     Code like this:
 
+    .. code-block:: python
+
         async with aclosing(<module>.fetch(<arguments>)) as agen:
             <block>
 
     is equivalent to this:
+
+    .. code-block:: python
 
         agen = <module>.fetch(<arguments>)
         try:
@@ -313,8 +326,8 @@ async def abatch_iterate(
         size: The size of the batch.
         iterable: The async iterable to batch.
 
-    Returns:
-        An async iterator over the batches.
+    Yields:
+        The batches.
     """
     batch: list[T] = []
     async for element in iterable:

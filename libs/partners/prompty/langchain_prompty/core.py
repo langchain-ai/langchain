@@ -55,7 +55,7 @@ class TemplateSettings(BaseModel):
 class Prompty(BaseModel):
     """Base Prompty model."""
 
-    # metadata
+    # Metadata
     name: str = Field(default="")
     description: str = Field(default="")
     authors: list[str] = Field(default=[])
@@ -63,17 +63,18 @@ class Prompty(BaseModel):
     version: str = Field(default="")
     base: str = Field(default="")
     basePrompty: Optional[Prompty] = Field(default=None)
-    # model
+
+    # Model
     model: ModelSettings = Field(default_factory=ModelSettings)
 
-    # sample
+    # Sample
     sample: dict = Field(default={})
 
-    # input / output
+    # Input / output
     inputs: dict[str, PropertySettings] = Field(default={})
     outputs: dict[str, PropertySettings] = Field(default={})
 
-    # template
+    # Template
     template: TemplateSettings
 
     file: FilePath = Field(default="")  # type: ignore[assignment]
@@ -96,14 +97,14 @@ class Prompty(BaseModel):
                         else self.file
                     )
                 elif k == "basePrompty":
-                    # no need to serialize basePrompty
+                    # No need to serialize basePrompty
                     continue
 
                 else:
                     d[k] = v
         return d
 
-    # generate json representation of the prompty
+    # Generate json representation of the prompty
     def to_safe_json(self) -> str:
         d = self.to_safe_dict()
         return json.dumps(d)
@@ -307,9 +308,9 @@ class Frontmatter:
         """Returns dict with separated frontmatter from string.
 
         Returned dict keys:
-        attributes -- extracted YAML attributes in dict form.
-        body -- string contents below the YAML separators
-        frontmatter -- string representation of YAML
+        - attributes: extracted YAML attributes in dict form.
+        - body: string contents below the YAML separators
+        - frontmatter: string representation of YAML
         """
         fmatter = ""
         body = ""
@@ -319,7 +320,7 @@ class Frontmatter:
             fmatter = result.group(1)
             body = result.group(2)
         return {
-            "attributes": yaml.load(fmatter, Loader=yaml.FullLoader),
+            "attributes": yaml.safe_load(fmatter),
             "body": body,
             "frontmatter": fmatter,
         }

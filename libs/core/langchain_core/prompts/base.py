@@ -43,7 +43,7 @@ FormatOutputType = TypeVar("FormatOutputType")
 
 
 class BasePromptTemplate(
-    RunnableSerializable[dict, PromptValue], Generic[FormatOutputType], ABC
+    RunnableSerializable[dict, PromptValue], ABC, Generic[FormatOutputType]
 ):
     """Base class for all prompt templates, returning a prompt."""
 
@@ -101,16 +101,14 @@ class BasePromptTemplate(
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Returns ["langchain", "schema", "prompt_template"].
+        Returns:
+            ``["langchain", "schema", "prompt_template"]``
         """
         return ["langchain", "schema", "prompt_template"]
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable.
-
-        Returns True.
-        """
+        """Return True as this class is serializable."""
         return True
 
     model_config = ConfigDict(
@@ -186,14 +184,14 @@ class BasePromptTemplate(
         return inner_input
 
     def _format_prompt_with_error_handling(self, inner_input: dict) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return self.format_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return self.format_prompt(**inner_input_)
 
     async def _aformat_prompt_with_error_handling(
         self, inner_input: dict
     ) -> PromptValue:
-        _inner_input = self._validate_input(inner_input)
-        return await self.aformat_prompt(**_inner_input)
+        inner_input_ = self._validate_input(inner_input)
+        return await self.aformat_prompt(**inner_input_)
 
     @override
     def invoke(
@@ -212,7 +210,7 @@ class BasePromptTemplate(
         if self.metadata:
             config["metadata"] = {**config["metadata"], **self.metadata}
         if self.tags:
-            config["tags"] = config["tags"] + self.tags
+            config["tags"] += self.tags
         return self._call_with_config(
             self._format_prompt_with_error_handling,
             input,
@@ -307,6 +305,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             prompt.format(variable1="foo")
+
         """
 
     async def aformat(self, **kwargs: Any) -> FormatOutputType:
@@ -323,6 +322,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             await prompt.aformat(variable1="foo")
+
         """
         return self.format(**kwargs)
 
@@ -339,9 +339,6 @@ class BasePromptTemplate(
 
         Returns:
             Dict: Dictionary representation of the prompt.
-
-        Raises:
-            NotImplementedError: If the prompt type is not implemented.
         """
         prompt_dict = super().model_dump(**kwargs)
         with contextlib.suppress(NotImplementedError):
@@ -363,6 +360,7 @@ class BasePromptTemplate(
         .. code-block:: python
 
             prompt.save(file_path="path/prompt.yaml")
+
         """
         if self.partial_variables:
             msg = "Cannot save prompt with partial variables."
@@ -381,10 +379,10 @@ class BasePromptTemplate(
         directory_path.mkdir(parents=True, exist_ok=True)
 
         if save_path.suffix == ".json":
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 json.dump(prompt_dict, f, indent=4)
         elif save_path.suffix.endswith((".yaml", ".yml")):
-            with save_path.open("w") as f:
+            with save_path.open("w", encoding="utf-8") as f:
                 yaml.dump(prompt_dict, f, default_flow_style=False)
         else:
             msg = f"{save_path} must be json or yaml"
@@ -442,6 +440,7 @@ def format_document(doc: Document, prompt: BasePromptTemplate[str]) -> str:
             prompt = PromptTemplate.from_template("Page {page}: {page_content}")
             format_document(doc, prompt)
             >>> "Page 1: This is a joke"
+
     """
     return prompt.format(**_get_document_info(doc, prompt))
 

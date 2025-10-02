@@ -520,11 +520,11 @@ class BaseTracer(_TracerCore, BaseCallbackHandler, ABC):
         return retrieval_run
 
     def __deepcopy__(self, memo: dict) -> BaseTracer:
-        """Deepcopy the tracer."""
+        """Return self."""
         return self
 
     def __copy__(self) -> BaseTracer:
-        """Copy the tracer."""
+        """Return self."""
         return self
 
 
