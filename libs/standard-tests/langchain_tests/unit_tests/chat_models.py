@@ -133,6 +133,12 @@ class ChatModelTests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
+    def tool_choice_value(self) -> str | None:
+        """(None or str) to use for tool choice when used in tests."""
+        return None
+
+    @property
+
     def has_tool_choice(self) -> bool:
         """(bool) whether the model supports tool calling."""
         bind_tools_params = inspect.signature(
