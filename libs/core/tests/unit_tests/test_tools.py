@@ -104,43 +104,43 @@ def test_tool_decorator_type_annotations() -> None:
     # This test verifies the fix for GitHub issue #33019
     # Previously, importing tool in strict Pylance mode would show:
     # "Type of 'tool' is partially unknown"
-    
+
     # Test basic decorator usage
     @tool
     def basic_tool(query: str) -> str:
         """Basic tool."""
         return query
-    
+
     # Test decorator with custom name
     @tool("custom_name")
     def named_tool(x: int) -> str:
         """Named tool."""
         return str(x)
-    
+
     # Test decorator with keyword arguments
     @tool(description="Custom description")
     def described_tool(value: float) -> str:
         """Described tool."""
         return str(value)
-    
+
     # Test direct function conversion
     def raw_func(data: str) -> str:
         """Raw function."""
         return data
-    
+
     direct_tool = tool(raw_func)
-    
+
     # Verify all tools are created correctly
     assert isinstance(basic_tool, BaseTool)
     assert isinstance(named_tool, BaseTool)
     assert isinstance(described_tool, BaseTool)
     assert isinstance(direct_tool, BaseTool)
-    
+
     assert basic_tool.name == "basic_tool"
     assert named_tool.name == "custom_name"
     assert described_tool.name == "described_tool"
     assert direct_tool.name == "raw_func"
-    
+
     # Test descriptions
     assert basic_tool.description == "Basic tool."
     assert named_tool.description == "Named tool."
