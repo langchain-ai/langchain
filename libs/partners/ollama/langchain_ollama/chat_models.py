@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import json
 import logging
+import re
 from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
 from operator import itemgetter
 from typing import (
@@ -94,8 +95,6 @@ def _strip_think_tags(content: str) -> str:
     Returns:
         The content string with think tags removed
     """
-    import re
-
     # Remove <think>...</think> blocks, including multiline content
     # Also clean up extra whitespace/newlines that might be left behind
     result = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL)
