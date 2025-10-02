@@ -41,7 +41,7 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     Example: A ``ToolMessage`` where only part of the tool output is sent to the model
         and the full output is passed in to artifact.
 
-        .. versionadded:: 0.2.17
+        !!! version-added "Added in version 0.2.17"
 
         .. code-block:: python
 
@@ -83,14 +83,14 @@ class ToolMessage(BaseMessage, ToolOutputMixin):
     a subset of the full tool output is being passed as message content but the full
     output is needed in other parts of the code.
 
-    .. versionadded:: 0.2.17
+    !!! version-added "Added in version 0.2.17"
 
     """
 
     status: Literal["success", "error"] = "success"
     """Status of the tool invocation.
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
 
     """
 

@@ -44,7 +44,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
 
@@ -131,7 +131,7 @@ def get_usage_metadata_callback(
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (

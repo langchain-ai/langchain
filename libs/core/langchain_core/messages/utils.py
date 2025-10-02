@@ -461,7 +461,7 @@ def filter_messages(
         anything that is not explicitly excluded will be included.
 
     Raises:
-        ValueError if two incompatible arguments are provided.
+        ValueError: If two incompatible arguments are provided.
 
     Example:
         .. code-block:: python
@@ -569,14 +569,14 @@ def merge_message_runs(
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    .. note::
+    !!! note
         ToolMessages are not merged, as each has a distinct tool call id that can't be
         merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-        Default is ``'\n'``.
+            Defaults to ``'\n'``.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -739,7 +739,7 @@ def trim_messages(
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
-    .. note::
+    !!! note
         The examples below show how to configure ``trim_messages`` to achieve a behavior
         consistent with the above properties.
 
@@ -751,7 +751,7 @@ def trim_messages(
             ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
             Set to ``len`` to count the number of **messages** in the chat history.
 
-            .. note::
+            !!! note
                 Use ``count_tokens_approximately`` to get fast, approximate token
                 counts.
                 This is recommended for using ``trim_messages`` on the hot path, where
@@ -1071,11 +1071,11 @@ def convert_to_openai_messages(
         The return type depends on the input type:
 
         - dict:
-          If a single message-like object is passed in, a single OpenAI message
-          dict is returned.
+            If a single message-like object is passed in, a single OpenAI message
+            dict is returned.
         - list[dict]:
-          If a sequence of message-like objects are passed in, a list of OpenAI
-          message dicts is returned.
+            If a sequence of message-like objects are passed in, a list of OpenAI
+            message dicts is returned.
 
     Example:
 
@@ -1123,7 +1123,7 @@ def convert_to_openai_messages(
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
 
-    .. versionadded:: 0.3.11
+    !!! version-added "Added in version 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1720,14 +1720,14 @@ def count_tokens_approximately(
     Returns:
         Approximate number of tokens in the messages.
 
-    .. note::
+    !!! note
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
-    .. versionadded:: 0.3.46
+    !!! version-added "Added in version 0.3.46"
 
     """
     token_count = 0.0

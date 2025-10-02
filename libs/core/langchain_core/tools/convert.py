@@ -157,7 +157,7 @@ def tool(
             def search_api(query: str) -> tuple[str, dict]:
                 return "partial json of results", {"full": "object of results"}
 
-    .. versionadded:: 0.2.14
+    !!! version-added "Added in version 0.2.14"
 
         Parse Google-style docstrings:
 

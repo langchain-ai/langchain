@@ -4,7 +4,7 @@ This module was loosely adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.

@@ -533,7 +533,7 @@ class HTMLSemanticPreservingSplitter(BaseDocumentTransformer):
     elements by converting them into Markdown format. Note that some chunks may
     exceed the maximum size to maintain semantic integrity.
 
-    .. versionadded: 0.3.5
+    !!! version-added "Added in version 0.3.5"
 
     Example:
         .. code-block:: python

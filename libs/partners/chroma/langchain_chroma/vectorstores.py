@@ -1157,7 +1157,7 @@ class Chroma(VectorStore):
         Returns:
             List of Documents.
 
-        ... versionadded:: 0.2.1
+        !!! version-added "Added in 0.2.1"
         """
         results = self.get(ids=list(ids))
         return [

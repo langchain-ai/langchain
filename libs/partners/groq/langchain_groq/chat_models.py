@@ -605,6 +605,12 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+
+            if generation_info:
+                message_chunk = message_chunk.model_copy(
+                    update={"response_metadata": generation_info}
+                )
+
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -653,6 +659,12 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+
+            if generation_info:
+                message_chunk = message_chunk.model_copy(
+                    update={"response_metadata": generation_info}
+                )
+
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -771,7 +783,7 @@ class ChatGroq(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: Which tool to require the model to call.
                 Must be the name of the single provided function,
                 "auto" to automatically determine which function to call
@@ -779,7 +791,7 @@ class ChatGroq(BaseChatModel):
                 function is called, or a dict of the form:
                 ``{"type": "function", "function": {"name": <<tool_name>>}}``.
             **kwargs: Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         """
         formatted_tools = [convert_to_openai_tool(tool) for tool in tools]
@@ -829,16 +841,14 @@ class ChatGroq(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
-                .. versionchanged:: 0.1.9
-
+                !!! warning "Behavior changed in 0.1.9"
                     Added support for TypedDict class.
 
-                .. versionchanged:: 0.3.8
-
+                !!! warning "Behavior changed in 0.3.8"
                     Added support for Groq's dedicated structured output feature via
                     ``method="json_schema"``.
 
@@ -866,12 +876,12 @@ class ChatGroq(BaseChatModel):
                 to an OpenAI function and the returned model will make use of the
                 function-calling API. If ``'json_mode'`` then JSON mode will be used.
 
-                .. note::
+                !!! note
                     If using ``'json_mode'`` then you must include instructions for formatting
                     the output into the desired schema into the model call. (either via the
                     prompt itself or in the system message/prompt/instructions).
 
-                .. warning::
+                !!! warning
                     ``'json_mode'`` does not support streaming responses stop sequences.
 
             include_raw:
@@ -884,10 +894,10 @@ class ChatGroq(BaseChatModel):
 
             kwargs:
                 Any additional parameters to pass to the
-                :class:`~langchain.runnable.Runnable` constructor.
+                `langchain.runnable.Runnable` constructor.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).

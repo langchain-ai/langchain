@@ -266,10 +266,9 @@ if __name__ == "__main__":
         ):
             # add all LANGCHAIN_DIRS for infra changes
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
-            dirs_to_run["lint"].add(".")
 
         if file.startswith("libs/core"):
-            dirs_to_run["codspeed"].add(f"libs/core")
+            dirs_to_run["codspeed"].add("libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -310,19 +309,16 @@ if __name__ == "__main__":
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
-        elif file == "libs/packages.yml":
-            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
             )
-        elif file.startswith("docs/") or file in [
+        elif file in [
             "pyproject.toml",
             "uv.lock",
-        ]:  # docs or root uv files
+        ]:  # root uv files
             docs_edited = True
-            dirs_to_run["lint"].add(".")
 
     dependents = dependents_graph()
 
@@ -340,9 +336,6 @@ if __name__ == "__main__":
             "codspeed",
         ]
     }
-    map_job_to_configs["test-doc-imports"] = (
-        [{"python-version": "3.12"}] if docs_edited else []
-    )
 
     for key, value in map_job_to_configs.items():
         json_output = json.dumps(value)

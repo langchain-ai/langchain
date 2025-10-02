@@ -132,7 +132,7 @@ def test_deprecated_function() -> None:
 
         doc = deprecated_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
     assert not inspect.iscoroutinefunction(deprecated_function)
 
@@ -153,7 +153,7 @@ async def test_deprecated_async_function() -> None:
 
         doc = deprecated_function.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
     assert inspect.iscoroutinefunction(deprecated_async_function)
 
@@ -173,7 +173,7 @@ def test_deprecated_method() -> None:
 
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
     assert not inspect.iscoroutinefunction(obj.deprecated_method)
 
@@ -195,7 +195,7 @@ async def test_deprecated_async_method() -> None:
 
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
     assert inspect.iscoroutinefunction(obj.deprecated_async_method)
 
@@ -214,7 +214,7 @@ def test_deprecated_classmethod() -> None:
 
         doc = ClassWithDeprecatedMethods.deprecated_classmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
 
 def test_deprecated_staticmethod() -> None:
@@ -234,7 +234,7 @@ def test_deprecated_staticmethod() -> None:
         )
         doc = ClassWithDeprecatedMethods.deprecated_staticmethod.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
 
 def test_deprecated_property() -> None:
@@ -254,7 +254,7 @@ def test_deprecated_property() -> None:
         )
         doc = ClassWithDeprecatedMethods.deprecated_property.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
 
 def test_whole_class_deprecation() -> None:
@@ -292,7 +292,7 @@ def test_whole_class_deprecation() -> None:
         )
         # [*Deprecated*] should be inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count(".. deprecated") == 1
+            assert obj.__doc__.count("!!! deprecated") == 1
 
 
 def test_whole_class_inherited_deprecation() -> None:
@@ -347,7 +347,7 @@ def test_whole_class_inherited_deprecation() -> None:
         )
         # if [*Deprecated*] was inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count(".. deprecated") == 1
+            assert obj.__doc__.count("!!! deprecated") == 1
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always")
@@ -371,8 +371,8 @@ def test_whole_class_inherited_deprecation() -> None:
         )
         # if [*Deprecated*] was inserted only once:
         if obj.__doc__ is not None:
-            assert obj.__doc__.count(".. deprecated::") == 1
-            assert ".. deprecated::" in obj.__doc__
+            assert obj.__doc__.count("!!! deprecated") == 1
+            assert "!!! deprecated" in obj.__doc__
 
 
 # Tests with pydantic models
@@ -398,7 +398,7 @@ def test_deprecated_method_pydantic() -> None:
 
         doc = obj.deprecated_method.__doc__
         assert isinstance(doc, str)
-        assert doc.startswith(".. deprecated::")
+        assert doc.startswith("!!! deprecated")
 
 
 def test_raise_error_for_bad_decorator() -> None:

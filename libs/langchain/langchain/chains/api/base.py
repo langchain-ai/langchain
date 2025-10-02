@@ -82,7 +82,7 @@ try:
 
             See https://python.langchain.com/docs/security for more information.
 
-        .. note::
+        !!! note
             This class is deprecated. See below for a replacement implementation using
             LangGraph. The benefits of this implementation are:
 

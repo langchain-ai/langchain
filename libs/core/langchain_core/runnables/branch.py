@@ -45,21 +45,19 @@ class RunnableBranch(RunnableSerializable[Input, Output]):
     If no condition evaluates to True, the default branch is run on the input.
 
     Examples:
+        ```python
+        from langchain_core.runnables import RunnableBranch
 
-        .. code-block:: python
+        branch = RunnableBranch(
+            (lambda x: isinstance(x, str), lambda x: x.upper()),
+            (lambda x: isinstance(x, int), lambda x: x + 1),
+            (lambda x: isinstance(x, float), lambda x: x * 2),
+            lambda x: "goodbye",
+        )
 
-            from langchain_core.runnables import RunnableBranch
-
-            branch = RunnableBranch(
-                (lambda x: isinstance(x, str), lambda x: x.upper()),
-                (lambda x: isinstance(x, int), lambda x: x + 1),
-                (lambda x: isinstance(x, float), lambda x: x * 2),
-                lambda x: "goodbye",
-            )
-
-            branch.invoke("hello")  # "HELLO"
-            branch.invoke(None)  # "goodbye"
-
+        branch.invoke("hello")  # "HELLO"
+        branch.invoke(None)  # "goodbye"
+        ```
     """
 
     branches: Sequence[tuple[Runnable[Input, bool], Runnable[Input, Output]]]

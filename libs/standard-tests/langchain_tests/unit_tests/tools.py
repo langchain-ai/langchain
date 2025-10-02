@@ -16,7 +16,6 @@ from langchain_tests.base import BaseStandardTests
 class ToolsTests(BaseStandardTests):
     """Base class for testing tools.
 
-    :private:
     This won't show in the documentation, but the docstrings will be inherited by
     subclasses.
     """
@@ -43,10 +42,7 @@ class ToolsTests(BaseStandardTests):
 
     @pytest.fixture
     def tool(self) -> BaseTool:
-        """Tool fixture.
-
-        :private:
-        """
+        """Tool fixture."""
         if isinstance(self.tool_constructor, BaseTool):
             if self.tool_constructor_params != {}:
                 msg = (
