@@ -1,25 +1,28 @@
-"""Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request."""
+"""Test middleware decorators.
+
+Consolidated tests for middleware decorators: before_model, after_model, and modify_model_request.
+"""
+
+from typing import Any
 
 import pytest
-from typing import Any
-from typing_extensions import NotRequired
-from syrupy.assertion import SnapshotAssertion
-
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.tools import tool
 from langgraph.runtime import Runtime
-from langgraph.types import Command
+from syrupy.assertion import SnapshotAssertion
+from typing_extensions import NotRequired
 
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
     ModelRequest,
-    before_model,
     after_model,
-    modify_model_request,
+    before_model,
     hook_config,
+    modify_model_request,
 )
-from langchain.agents.middleware_agent import create_agent, _get_can_jump_to
+from langchain.agents.middleware_agent import _get_can_jump_to, create_agent
+
 from .model import FakeToolCallingModel
 
 
@@ -30,9 +33,9 @@ class CustomState(AgentState):
 
 
 @tool
-def test_tool(input: str) -> str:
+def test_tool(value: str) -> str:
     """A test tool for middleware testing."""
-    return f"Tool result: {input}"
+    return f"Tool result: {value}"
 
 
 def test_before_model_decorator() -> None:
@@ -121,7 +124,6 @@ def test_all_decorators_integration() -> None:
     @before_model
     def track_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("before")
-        return None
 
     @modify_model_request
     def track_modify(request: ModelRequest, state: AgentState, runtime: Runtime) -> ModelRequest:
@@ -131,7 +133,6 @@ def test_all_decorators_integration() -> None:
     @after_model
     def track_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(), middleware=[track_before, track_modify, track_after]
@@ -320,7 +321,6 @@ async def test_async_decorators_integration() -> None:
     @before_model
     async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
-        return None
 
     @modify_model_request
     async def track_async_modify(
@@ -332,7 +332,6 @@ async def test_async_decorators_integration() -> None:
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -352,12 +351,10 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     @before_model
     def track_sync_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_before")
-        return None
 
     @before_model
     async def track_async_before(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_before")
-        return None
 
     @modify_model_request
     def track_sync_modify(
@@ -376,12 +373,10 @@ async def test_mixed_sync_async_decorators_integration() -> None:
     @after_model
     async def track_async_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("async_after")
-        return None
 
     @after_model
     def track_sync_after(state: AgentState, runtime: Runtime) -> None:
         call_order.append("sync_after")
-        return None
 
     agent = create_agent(
         model=FakeToolCallingModel(),
@@ -513,7 +508,11 @@ def test_get_can_jump_to_only_overridden_methods() -> None:
 
 
 def test_async_middleware_with_can_jump_to_graph_snapshot(snapshot: SnapshotAssertion) -> None:
-    """Test that async middleware with can_jump_to creates correct graph structure with conditional edges."""
+    """Test async middleware with can_jump_to graph snapshot.
+
+    Test that async middleware with can_jump_to creates correct graph structure with
+    conditional edges.
+    """
 
     # Test 1: Async before_model with can_jump_to
     @before_model(can_jump_to=["end"])

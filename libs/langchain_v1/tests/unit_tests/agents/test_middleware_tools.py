@@ -1,13 +1,14 @@
 """Test Middleware handling of tools in agents."""
 
 import pytest
+from langchain_core.messages import HumanMessage, ToolMessage
+from langchain_core.tools import tool
+from langgraph.runtime import Runtime
 
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, ModelRequest
 from langchain.agents.middleware_agent import create_agent
-from langchain_core.messages import HumanMessage, ToolMessage
-from langchain_core.tools import tool
+
 from .model import FakeToolCallingModel
-from langgraph.runtime import Runtime
 
 
 def test_model_request_tools_are_strings() -> None:
@@ -55,17 +56,17 @@ def test_middleware_can_modify_tool_names() -> None:
     """Test that middleware can modify the list of tool names in ModelRequest."""
 
     @tool
-    def tool_a(input: str) -> str:
+    def tool_a(value: str) -> str:
         """Tool A."""
         return "A"
 
     @tool
-    def tool_b(input: str) -> str:
+    def tool_b(value: str) -> str:
         """Tool B."""
         return "B"
 
     @tool
-    def tool_c(input: str) -> str:
+    def tool_c(value: str) -> str:
         """Tool C."""
         return "C"
 
@@ -102,7 +103,7 @@ def test_unknown_tool_name_raises_error() -> None:
     """Test that using an unknown tool name in ModelRequest raises a clear error."""
 
     @tool
-    def known_tool(input: str) -> str:
+    def known_tool(value: str) -> str:
         """A known tool."""
         return "result"
 
@@ -175,7 +176,7 @@ def test_empty_tools_list_is_valid() -> None:
     """Test that middleware can set tools to an empty list."""
 
     @tool
-    def some_tool(input: str) -> str:
+    def some_tool(value: str) -> str:
         """Some tool."""
         return "result"
 
@@ -206,17 +207,17 @@ def test_tools_preserved_across_multiple_middleware() -> None:
     modification_order: list[list[str]] = []
 
     @tool
-    def tool_a(input: str) -> str:
+    def tool_a(value: str) -> str:
         """Tool A."""
         return "A"
 
     @tool
-    def tool_b(input: str) -> str:
+    def tool_b(value: str) -> str:
         """Tool B."""
         return "B"
 
     @tool
-    def tool_c(input: str) -> str:
+    def tool_c(value: str) -> str:
         """Tool C."""
         return "C"
 
@@ -261,12 +262,12 @@ def test_middleware_with_additional_tools() -> None:
     """Test middleware that provides additional tools via tools attribute."""
 
     @tool
-    def base_tool(input: str) -> str:
+    def base_tool(value: str) -> str:
         """Base tool."""
         return "base"
 
     @tool
-    def middleware_tool(input: str) -> str:
+    def middleware_tool(value: str) -> str:
         """Tool provided by middleware."""
         return "middleware"
 
@@ -276,7 +277,7 @@ def test_middleware_with_additional_tools() -> None:
     # Model calls the middleware-provided tool
     model = FakeToolCallingModel(
         tool_calls=[
-            [{"args": {"input": "test"}, "id": "1", "name": "middleware_tool"}],
+            [{"args": {"value": "test"}, "id": "1", "name": "middleware_tool"}],
             [],
         ]
     )

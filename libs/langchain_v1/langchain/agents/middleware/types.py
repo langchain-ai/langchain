@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Awaitable
 
 # needed as top level import for pydantic schema generation on AgentState
-from langchain_core.messages import AnyMessage  # noqa: TC002
+from langchain_core.messages import AnyMessage
 from langgraph.channels.ephemeral_value import EphemeralValue
 from langgraph.graph.message import add_messages
 from langgraph.runtime import Runtime
@@ -317,7 +317,7 @@ def before_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -342,7 +342,7 @@ def before_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
@@ -459,7 +459,7 @@ def modify_model_request(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 request: ModelRequest,
                 state: StateT,
                 runtime: Runtime[ContextT],
@@ -481,7 +481,7 @@ def modify_model_request(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             request: ModelRequest,
             state: StateT,
             runtime: Runtime[ContextT],
@@ -587,7 +587,7 @@ def after_model(
         if is_async:
 
             async def async_wrapped(
-                self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+                _self: AgentMiddleware[StateT, ContextT],
                 state: StateT,
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
@@ -610,7 +610,7 @@ def after_model(
             )()
 
         def wrapped(
-            self: AgentMiddleware[StateT, ContextT],  # noqa: ARG001
+            _self: AgentMiddleware[StateT, ContextT],
             state: StateT,
             runtime: Runtime[ContextT],
         ) -> dict[str, Any] | Command | None:
