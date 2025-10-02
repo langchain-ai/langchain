@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from inspect import iscoroutinefunction
 from typing import (
     TYPE_CHECKING,
     Annotated,
     Any,
-    ClassVar,
     Generic,
     Literal,
     Protocol,
@@ -30,8 +30,6 @@ from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
-
     from langchain_core.language_models.chat_models import BaseChatModel
     from langchain_core.tools import BaseTool
     from langgraph.runtime import Runtime
@@ -46,6 +44,7 @@ __all__ = [
     "ModelRequest",
     "OmitFromSchema",
     "PublicAgentState",
+    "hook_config",
 ]
 
 JumpTo = Literal["tools", "model", "end"]
@@ -123,12 +122,6 @@ class AgentMiddleware(Generic[StateT, ContextT]):
     tools: list[BaseTool]
     """Additional tools registered by the middleware."""
 
-    before_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for before_model hook. Used to establish conditional edges."""
-
-    after_model_jump_to: ClassVar[list[JumpTo]] = []
-    """Valid jump destinations for after_model hook. Used to establish conditional edges."""
-
     def before_model(self, state: StateT, runtime: Runtime[ContextT]) -> dict[str, Any] | None:
         """Logic to run before the model is called."""
 
@@ -184,6 +177,57 @@ class _CallableWithModelRequestAndStateAndRuntime(Protocol[StateT_contra, Contex
         ...
 
 
+CallableT = TypeVar("CallableT", bound=Callable[..., Any])
+
+
+def hook_config(
+    *,
+    can_jump_to: list[JumpTo] | None = None,
+) -> Callable[[CallableT], CallableT]:
+    """Decorator to configure hook behavior in middleware methods.
+
+    Use this decorator on `before_model` or `after_model` methods in middleware classes
+    to configure their behavior. Currently supports specifying which destinations they
+    can jump to, which establishes conditional edges in the agent graph.
+
+    Args:
+        can_jump_to: Optional list of valid jump destinations. Can be:
+            - "tools": Jump to the tools node
+            - "model": Jump back to the model node
+            - "end": Jump to the end of the graph
+
+    Returns:
+        Decorator function that marks the method with configuration metadata.
+
+    Examples:
+        Using decorator on a class method:
+        ```python
+        class MyMiddleware(AgentMiddleware):
+            @hook_config(can_jump_to=["end", "model"])
+            def before_model(self, state: AgentState) -> dict[str, Any] | None:
+                if some_condition(state):
+                    return {"jump_to": "end"}
+                return None
+        ```
+
+        Alternative: Use the `can_jump_to` parameter in `before_model`/`after_model` decorators:
+        ```python
+        @before_model(can_jump_to=["end"])
+        def conditional_middleware(state: AgentState) -> dict[str, Any] | None:
+            if should_exit(state):
+                return {"jump_to": "end"}
+            return None
+        ```
+    """
+
+    def decorator(func: CallableT) -> CallableT:
+        if can_jump_to is not None:
+            func.__can_jump_to__ = can_jump_to  # type: ignore[attr-defined]
+        return func
+
+    return decorator
+
+
 @overload
 def before_model(
     func: _CallableWithStateAndRuntime[StateT, ContextT],
@@ -196,7 +240,7 @@ def before_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
@@ -208,7 +252,7 @@ def before_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -222,7 +266,7 @@ def before_model(
         state_schema: Optional custom state schema type. If not provided, uses the default
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
-        jump_to: Optional list of valid jump destinations for conditional edges.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
@@ -246,7 +290,7 @@ def before_model(
 
         With conditional jumping:
         ```python
-        @before_model(jump_to=["end"])
+        @before_model(can_jump_to=["end"])
         def conditional_before_model(state: AgentState, runtime: Runtime) -> dict[str, Any] | None:
             if some_condition(state):
                 return {"jump_to": "end"}
@@ -266,6 +310,10 @@ def before_model(
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
 
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
+
         if is_async:
 
             async def async_wrapped(
@@ -274,6 +322,10 @@ def before_model(
                 runtime: Runtime[ContextT],
             ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
+
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
 
             middleware_name = name or cast(
                 "str", getattr(func, "__name__", "BeforeModelMiddleware")
@@ -285,7 +337,6 @@ def before_model(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "before_model_jump_to": jump_to or [],
                     "abefore_model": async_wrapped,
                 },
             )()
@@ -297,6 +348,11 @@ def before_model(
         ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+        # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "BeforeModelMiddleware"))
 
         return type(
@@ -305,7 +361,6 @@ def before_model(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "before_model_jump_to": jump_to or [],
                 "before_model": wrapped,
             },
         )()
@@ -464,7 +519,7 @@ def after_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> Callable[
     [_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]
@@ -476,7 +531,7 @@ def after_model(
     *,
     state_schema: type[StateT] | None = None,
     tools: list[BaseTool] | None = None,
-    jump_to: list[JumpTo] | None = None,
+    can_jump_to: list[JumpTo] | None = None,
     name: str | None = None,
 ) -> (
     Callable[[_CallableWithStateAndRuntime[StateT, ContextT]], AgentMiddleware[StateT, ContextT]]
@@ -490,7 +545,7 @@ def after_model(
         state_schema: Optional custom state schema type. If not provided, uses the default
             AgentState schema.
         tools: Optional list of additional tools to register with this middleware.
-        jump_to: Optional list of valid jump destinations for conditional edges.
+        can_jump_to: Optional list of valid jump destinations for conditional edges.
             Valid values are: "tools", "model", "end"
         name: Optional name for the generated middleware class. If not provided,
             uses the decorated function's name.
@@ -524,6 +579,10 @@ def after_model(
         func: _CallableWithStateAndRuntime[StateT, ContextT],
     ) -> AgentMiddleware[StateT, ContextT]:
         is_async = iscoroutinefunction(func)
+        # Extract can_jump_to from decorator parameter or from function metadata
+        func_can_jump_to = (
+            can_jump_to if can_jump_to is not None else getattr(func, "__can_jump_to__", [])
+        )
 
         if is_async:
 
@@ -534,6 +593,10 @@ def after_model(
             ) -> dict[str, Any] | Command | None:
                 return await func(state, runtime)  # type: ignore[misc]
 
+            # Preserve can_jump_to metadata on the wrapped function
+            if func_can_jump_to:
+                async_wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
             middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
             return type(
@@ -542,7 +605,6 @@ def after_model(
                 {
                     "state_schema": state_schema or AgentState,
                     "tools": tools or [],
-                    "after_model_jump_to": jump_to or [],
                     "aafter_model": async_wrapped,
                 },
             )()
@@ -554,6 +616,11 @@ def after_model(
         ) -> dict[str, Any] | Command | None:
             return func(state, runtime)  # type: ignore[return-value]
 
+        # Preserve can_jump_to metadata on the wrapped function
+        if func_can_jump_to:
+            wrapped.__can_jump_to__ = func_can_jump_to  # type: ignore[attr-defined]
+
+        # Use function name as default if no name provided
         middleware_name = name or cast("str", getattr(func, "__name__", "AfterModelMiddleware"))
 
         return type(
@@ -562,7 +629,6 @@ def after_model(
             {
                 "state_schema": state_schema or AgentState,
                 "tools": tools or [],
-                "after_model_jump_to": jump_to or [],
                 "after_model": wrapped,
             },
         )()
