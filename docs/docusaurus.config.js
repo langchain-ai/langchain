@@ -87,7 +87,7 @@ const config = {
       ({
         docs: {
           editUrl:
-            "https://github.com/langchain-ai/langchain/edit/master/docs/",
+            "https://github.com/langchain-ai/langchain/edit/v0.3/docs/",
           sidebarPath: require.resolve("./sidebars.js"),
           remarkPlugins: [
             [require("@docusaurus/remark-plugin-npm2yarn"), { sync: true }],
