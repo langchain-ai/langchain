@@ -50,16 +50,14 @@ IGNORED_PARTNERS = [
     "prompty",
 ]
 
-PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
-]
-
 
 def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1]).lstrip("./")
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if "libs/cli" not in path and "libs/standard-tests" not in path
+        if "libs/cli" not in path
+        and "libs/standard-tests" not in path
+        and "README.md" not in path
     }
 
 
@@ -317,7 +315,6 @@ if __name__ == "__main__":
         elif file in [
             "pyproject.toml",
             "uv.lock",
-            "README.md",
         ]:  # root uv files
             docs_edited = True
 
