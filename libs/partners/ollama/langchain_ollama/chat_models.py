@@ -42,7 +42,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from ollama import AsyncClient, Client, Message, Options
+from ollama import AsyncClient, Client, Message
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -675,7 +675,7 @@ class ChatOllama(BaseChatModel):
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
-            "options": Options(**options_dict),
+            "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
         }
