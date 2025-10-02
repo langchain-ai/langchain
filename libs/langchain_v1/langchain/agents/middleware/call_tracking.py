@@ -4,16 +4,44 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, ClassVar, Literal
 
+from langchain_core.messages import AIMessage
+
 from langchain.agents.middleware.types import AgentMiddleware, AgentState, JumpTo
 
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
 
 
+def _build_limit_exceeded_message(
+    thread_count: int,
+    run_count: int,
+    thread_limit: int | None,
+    run_limit: int | None,
+) -> str:
+    """Build a message indicating which limits were exceeded.
+
+    Args:
+        thread_count: Current thread model call count.
+        run_count: Current run model call count.
+        thread_limit: Thread model call limit (if set).
+        run_limit: Run model call limit (if set).
+
+    Returns:
+        A formatted message describing which limits were exceeded.
+    """
+    exceeded_limits = []
+    if thread_limit is not None and thread_count >= thread_limit:
+        exceeded_limits.append(f"thread limit ({thread_count}/{thread_limit})")
+    if run_limit is not None and run_count >= run_limit:
+        exceeded_limits.append(f"run limit ({run_count}/{run_limit})")
+
+    return f"Model call limits exceeded: {', '.join(exceeded_limits)}"
+
+
 class ModelCallLimitExceededError(Exception):
     """Exception raised when model call limits are exceeded.
 
-    This exception is raised when the configured exit behavior is 'raise_exception'
+    This exception is raised when the configured exit behavior is 'error'
     and either the thread or run model call limit has been exceeded.
     """
 
@@ -37,14 +65,7 @@ class ModelCallLimitExceededError(Exception):
         self.thread_limit = thread_limit
         self.run_limit = run_limit
 
-        # Build error message
-        exceeded_limits = []
-        if thread_limit is not None and thread_count >= thread_limit:
-            exceeded_limits.append(f"thread limit ({thread_count}/{thread_limit})")
-        if run_limit is not None and run_count >= run_limit:
-            exceeded_limits.append(f"run limit ({run_count}/{run_limit})")
-
-        msg = f"Model call limits exceeded: {', '.join(exceeded_limits)}"
+        msg = _build_limit_exceeded_message(thread_count, run_count, thread_limit, run_limit)
         super().__init__(msg)
 
 
@@ -61,9 +82,7 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         from langchain.agents import create_agent
 
         # Create middleware with limits
-        call_tracker = ModelCallLimitMiddleware(
-            thread_limit=10, run_limit=5, exit_behavior="jump_to_end"
-        )
+        call_tracker = ModelCallLimitMiddleware(thread_limit=10, run_limit=5, exit_behavior="end")
 
         agent = create_agent("openai:gpt-4o", middleware=[call_tracker])
 
@@ -79,7 +98,7 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         *,
         thread_limit: int | None = None,
         run_limit: int | None = None,
-        exit_behavior: Literal["jump_to_end", "raise_exception"] = "jump_to_end",
+        exit_behavior: Literal["end", "error"] = "end",
     ) -> None:
         """Initialize the call tracking middleware.
 
@@ -89,9 +108,10 @@ class ModelCallLimitMiddleware(AgentMiddleware):
             run_limit: Maximum number of model calls allowed per run.
                 None means no limit. Defaults to None.
             exit_behavior: What to do when limits are exceeded.
-                - "jump_to_end": Jump to the end of the agent execution (default)
-                - "raise_exception": Raise a ModelCallLimitExceededError
-                Defaults to "jump_to_end".
+                - "end": Jump to the end of the agent execution and
+                    inject an artificial AI message indicating that the limit was exceeded.
+                - "error": Raise a ModelCallLimitExceededError
+                Defaults to "end".
 
         Raises:
             ValueError: If both limits are None or if exit_behavior is invalid.
@@ -102,11 +122,8 @@ class ModelCallLimitMiddleware(AgentMiddleware):
             msg = "At least one limit must be specified (thread_limit or run_limit)"
             raise ValueError(msg)
 
-        if exit_behavior not in ("jump_to_end", "raise_exception"):
-            msg = (
-                f"Invalid exit_behavior: {exit_behavior}. "
-                "Must be 'jump_to_end' or 'raise_exception'"
-            )
+        if exit_behavior not in ("end", "error"):
+            msg = f"Invalid exit_behavior: {exit_behavior}. Must be 'end' or 'error'"
             raise ValueError(msg)
 
         self.thread_limit = thread_limit
@@ -121,12 +138,12 @@ class ModelCallLimitMiddleware(AgentMiddleware):
             runtime: The langgraph runtime.
 
         Returns:
-            If limits are exceeded and exit_behavior is "jump_to_end", returns
-            a Command to jump to the end. Otherwise returns None.
+            If limits are exceeded and exit_behavior is "end", returns
+            a Command to jump to the end with a limit exceeded message. Otherwise returns None.
 
         Raises:
             ModelCallLimitExceededError: If limits are exceeded and exit_behavior
-                is "raise_exception".
+                is "error".
         """
         thread_count = state.get("thread_model_call_count", 0)
         run_count = state.get("run_model_call_count", 0)
@@ -136,14 +153,20 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         run_limit_exceeded = self.run_limit is not None and run_count >= self.run_limit
 
         if thread_limit_exceeded or run_limit_exceeded:
-            if self.exit_behavior == "raise_exception":
+            if self.exit_behavior == "error":
                 raise ModelCallLimitExceededError(
                     thread_count=thread_count,
                     run_count=run_count,
                     thread_limit=self.thread_limit,
                     run_limit=self.run_limit,
                 )
-            if self.exit_behavior == "jump_to_end":
-                return {"jump_to": "end"}
+            if self.exit_behavior == "end":
+                # Create a message indicating the limit was exceeded
+                limit_message = _build_limit_exceeded_message(
+                    thread_count, run_count, self.thread_limit, self.run_limit
+                )
+                limit_ai_message = AIMessage(content=limit_message)
+
+                return {"jump_to": "end", "messages": [limit_ai_message]}
 
         return None
