@@ -55,9 +55,7 @@ def all_package_dirs() -> Set[str]:
     return {
         "/".join(path.split("/")[:-1]).lstrip("./")
         for path in glob.glob("./libs/**/pyproject.toml", recursive=True)
-        if "libs/cli" not in path
-        and "libs/standard-tests" not in path
-        and "README.md" not in path
+        if "libs/cli" not in path and "libs/standard-tests" not in path
     }
 
 
@@ -308,6 +306,11 @@ if __name__ == "__main__":
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
+            # Check if this is a root-level file in libs/ (e.g., libs/README.md)
+            file_parts = file.split("/")
+            if len(file_parts) == 2:
+                # Root-level file in libs/, skip it (no tests needed)
+                continue
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
