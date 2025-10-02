@@ -25,7 +25,7 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
         return SimpleNamespace(_kind="dummy_hf_pipeline")
 
     transformers_mod = types.ModuleType("transformers")
-    setattr(transformers_mod, "pipeline", fake_pipeline)
+    setattr(transformers_mod, "pipeline", fake_pipeline)  # noqa: B010
     monkeypatch.setitem(sys.modules, "transformers", transformers_mod)
 
     # Fake langchain_huggingface.ChatHuggingFace that REQUIRES `llm`
@@ -46,10 +46,10 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     hf_chat_hf_mod = types.ModuleType(
         "langchain_huggingface.chat_models.huggingface",
     )
-    setattr(hf_chat_hf_mod, "ChatHuggingFace", FakeChatHuggingFace)
+    setattr(hf_chat_hf_mod, "ChatHuggingFace", FakeChatHuggingFace)  # noqa: B010
 
     # Also expose at package root for top-level imports
-    setattr(hf_pkg, "ChatHuggingFace", FakeChatHuggingFace)
+    setattr(hf_pkg, "ChatHuggingFace", FakeChatHuggingFace)  # noqa: B010
 
     monkeypatch.setitem(sys.modules, "langchain_huggingface", hf_pkg)
     monkeypatch.setitem(
