@@ -1485,6 +1485,50 @@ def test_search_result_top_level() -> None:
     assert any("citations" in block for block in result.content)
 
 
+def test_memory_tool() -> None:
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        betas=["context-management-2025-06-27"],
+    )
+    llm_with_tools = llm.bind_tools([{"type": "memory_20250818", "name": "memory"}])
+    response = llm_with_tools.invoke("What are my interests?")
+    assert isinstance(response, AIMessage)
+    assert response.tool_calls
+    assert response.tool_calls[0]["name"] == "memory"
+
+
+@pytest.mark.vcr
+def test_context_management() -> None:
+    # TODO: update example to trigger action
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        betas=["context-management-2025-06-27"],
+        context_management={
+            "edits": [
+                {
+                    "type": "clear_tool_uses_20250919",
+                    "trigger": {"type": "input_tokens", "value": 10},
+                    "clear_at_least": {"type": "input_tokens", "value": 5},
+                }
+            ]
+        },
+    )
+    llm_with_tools = llm.bind_tools(
+        [{"type": "web_search_20250305", "name": "web_search"}]
+    )
+    input_message = {"role": "user", "content": "Search for recent developments in AI"}
+    response = llm_with_tools.invoke([input_message])
+    assert response.response_metadata.get("context_management")
+
+    # Test streaming
+    full: Optional[BaseMessageChunk] = None
+    for chunk in llm_with_tools.stream([input_message]):
+        assert isinstance(chunk, AIMessageChunk)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.response_metadata.get("context_management")
+
+
 def test_async_shared_client() -> None:
     llm = ChatAnthropic(model="claude-3-5-haiku-latest")  # type: ignore[call-arg]
     _ = asyncio.run(llm.ainvoke("Hello"))

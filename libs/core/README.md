@@ -27,16 +27,6 @@ The LangChain ecosystem is built on top of `langchain-core`. Some of the benefit
 - **Stability**: We are committed to a stable versioning scheme, and will communicate any breaking changes with advance notice and version bumps.
 - **Battle-tested**: Core components have the largest install base in the LLM ecosystem, and are used in production by many companies.
 
-## 1️⃣ Core Interface: Runnables
-
-The concept of a `Runnable` is central to LangChain Core – it is the interface that most LangChain Core components implement, giving them
-
-- A common invocation interface (`invoke()`, `batch()`, `stream()`, etc.)
-- Built-in utilities for retries, fallbacks, schemas and runtime configurability
-- Easy deployment with [LangGraph](https://github.com/langchain-ai/langgraph)
-
-For more check out the [`Runnable` docs](https://python.langchain.com/docs/concepts/runnables/). Examples of components that implement the interface include: Chat Models, Tools, Retrievers, and Output Parsers.
-
 ## 📕 Releases & Versioning
 
 As `langchain-core` contains the base abstractions and runtime for the whole LangChain ecosystem, we will communicate any breaking changes with advance notice and version bumps. The exception for this is anything in `langchain_core.beta`. The reason for `langchain_core.beta` is that given the rate of change of the field, being able to move quickly is still a priority, and this module is our attempt to do so.

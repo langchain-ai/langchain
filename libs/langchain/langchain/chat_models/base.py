@@ -118,7 +118,7 @@ def init_chat_model(
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
+            - ``gpt-...`` | ``o1...`` | ``o3...`` -> ``openai``
             - ``claude...``                       -> ``anthropic``
             - ``amazon...``                       -> ``bedrock``
             - ``gemini...``                       -> ``google_vertexai``
@@ -497,7 +497,7 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
+    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
     if model_name.startswith("claude"):
         return "anthropic"

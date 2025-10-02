@@ -1065,9 +1065,21 @@ def test_get_num_tokens_from_messages_passes_kwargs() -> None:
     with patch.object(anthropic, "Client") as _client:
         llm.get_num_tokens_from_messages([HumanMessage("foo")], foo="bar")
 
-    assert (
-        _client.return_value.beta.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+    assert _client.return_value.messages.count_tokens.call_args.kwargs["foo"] == "bar"
+
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
     )
+    with patch.object(anthropic, "Client") as _client:
+        llm.get_num_tokens_from_messages([HumanMessage("foo")])
+
+    call_args = _client.return_value.beta.messages.count_tokens.call_args.kwargs
+    assert call_args["betas"] == ["context-management-2025-06-27"]
+    assert call_args["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
 
 
 def test_usage_metadata_standardization() -> None:
@@ -1215,6 +1227,22 @@ def test_cache_control_kwarg() -> None:
             ],
         },
     ]
+
+
+def test_context_management_in_payload() -> None:
+    llm = ChatAnthropic(
+        model="claude-sonnet-4-5-20250929",  # type: ignore[call-arg]
+        betas=["context-management-2025-06-27"],
+        context_management={"edits": [{"type": "clear_tool_uses_20250919"}]},
+    )
+    llm_with_tools = llm.bind_tools(
+        [{"type": "web_search_20250305", "name": "web_search"}]
+    )
+    input_message = HumanMessage("Search for recent developments in AI")
+    payload = llm_with_tools._get_request_payload([input_message])  # type: ignore[attr-defined]
+    assert payload["context_management"] == {
+        "edits": [{"type": "clear_tool_uses_20250919"}]
+    }
 
 
 def test_anthropic_model_params() -> None:
