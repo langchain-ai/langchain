@@ -48,7 +48,7 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
-from ._utils import parse_url_with_auth, validate_model
+from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 log = logging.getLogger(__name__)
 
@@ -692,12 +692,7 @@ class ChatOllama(BaseChatModel):
         client_kwargs = self.client_kwargs or {}
 
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
-
-        # Merge authentication headers with existing headers
-        if auth_headers:
-            headers = client_kwargs.get("headers", {})
-            headers.update(auth_headers)
-            client_kwargs = {**client_kwargs, "headers": headers}
+        merge_auth_headers(client_kwargs, auth_headers)
 
         sync_client_kwargs = client_kwargs
         if self.sync_client_kwargs:

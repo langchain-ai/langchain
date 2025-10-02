@@ -97,3 +97,19 @@ def parse_url_with_auth(
         cleaned_url += f"#{parsed.fragment}"
 
     return cleaned_url, headers
+
+
+def merge_auth_headers(
+    client_kwargs: dict,
+    auth_headers: Optional[dict[str, str]],
+) -> None:
+    """Merge authentication headers into client kwargs in-place.
+
+    Args:
+        client_kwargs: The client kwargs dict to update.
+        auth_headers: Headers to merge (typically from ``parse_url_with_auth``).
+    """
+    if auth_headers:
+        headers = client_kwargs.get("headers", {})
+        headers.update(auth_headers)
+        client_kwargs["headers"] = headers
