@@ -317,6 +317,7 @@ if __name__ == "__main__":
         elif file in [
             "pyproject.toml",
             "uv.lock",
+            "README.md",
         ]:  # root uv files
             docs_edited = True
 
