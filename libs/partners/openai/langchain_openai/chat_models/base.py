@@ -475,7 +475,7 @@ class BaseChatOpenAI(BaseChatModel):
     message chunk will be generated during the stream including usage metadata.
 
     This parameter is enabled unless ``openai_api_base`` is set or the model is
-    initialized with a custom client, as many chat completions APIs do not support this
+    initialized with a custom client, as many chat completions APIs do not support
     streaming token usage.
 
     .. versionadded:: 0.3.9
