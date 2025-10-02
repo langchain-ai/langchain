@@ -605,6 +605,12 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+
+            if generation_info:
+                message_chunk = message_chunk.model_copy(
+                    update={"response_metadata": generation_info}
+                )
+
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
@@ -653,6 +659,12 @@ class ChatGroq(BaseChatModel):
             logprobs = choice.get("logprobs")
             if logprobs:
                 generation_info["logprobs"] = logprobs
+
+            if generation_info:
+                message_chunk = message_chunk.model_copy(
+                    update={"response_metadata": generation_info}
+                )
+
             default_chunk_class = message_chunk.__class__
             generation_chunk = ChatGenerationChunk(
                 message=message_chunk, generation_info=generation_info or None
