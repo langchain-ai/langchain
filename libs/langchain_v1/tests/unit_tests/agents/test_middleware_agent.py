@@ -41,6 +41,7 @@ from langchain.agents.middleware.summarization import SummarizationMiddleware
 from langchain.agents.middleware.types import (
     AgentMiddleware,
     AgentState,
+    hook_config,
     ModelRequest,
     OmitFromInput,
     OmitFromOutput,
@@ -340,8 +341,7 @@ def test_create_agent_jump(
             calls.append("NoopSeven.after_model")
 
     class NoopEight(AgentMiddleware):
-        before_model_jump_to = ["end"]
-
+        @hook_config(can_jump_to=["end"])
         def before_model(self, state, runtime) -> dict[str, Any]:
             calls.append("NoopEight.before_model")
             return {"jump_to": "end"}
@@ -1777,15 +1777,22 @@ async def test_create_agent_async_jump() -> None:
             calls.append("AsyncMiddlewareOne.abefore_model")
 
     class AsyncMiddlewareTwo(AgentMiddleware):
-        before_model_jump_to = ["end"]
-
+        @hook_config(can_jump_to=["end"])
         async def abefore_model(self, state, runtime) -> dict[str, Any]:
             calls.append("AsyncMiddlewareTwo.abefore_model")
             return {"jump_to": "end"}
 
+    @tool
+    def my_tool(input: str) -> str:
+        """A great tool"""
+        calls.append("my_tool")
+        return input.upper()
+
     agent = create_agent(
-        model=FakeToolCallingModel(),
-        tools=[],
+        model=FakeToolCallingModel(
+            tool_calls=[[ToolCall(id="1", name="my_tool", args={"input": "yo"})]],
+        ),
+        tools=[my_tool],
         system_prompt="You are a helpful assistant.",
         middleware=[AsyncMiddlewareOne(), AsyncMiddlewareTwo()],
     ).compile()

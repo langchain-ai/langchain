@@ -2284,6 +2284,7 @@ name = "langchain-core"
 version = "1.0.0a4"
 source = { editable = "../core" }
 dependencies = [
+    { name = "filetype" },
     { name = "jsonpatch" },
     { name = "langsmith" },
     { name = "packaging" },
@@ -2295,6 +2296,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "jsonpatch", specifier = ">=1.33.0,<2.0.0" },
     { name = "langsmith", specifier = ">=0.3.45,<1.0.0" },
     { name = "packaging", specifier = ">=23.2.0,<26.0.0" },

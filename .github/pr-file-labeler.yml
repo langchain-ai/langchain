@@ -28,6 +28,11 @@ standard-tests:
       - any-glob-to-any-file:
           - "libs/standard-tests/**/*"
 
+text-splitters:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "libs/text-splitters/**/*"
+
 # Partner integrations
 integration:
   - changed-files:

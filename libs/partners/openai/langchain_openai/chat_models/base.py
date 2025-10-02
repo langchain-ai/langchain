@@ -701,9 +701,11 @@ class BaseChatOpenAI(BaseChatModel):
       items into AIMessage content blocks (Responses API only)
     - ``"v1"``: v1 of LangChain cross-provider standard.
 
-    !!! version-added "Added in version 0.3.25"
-
     !!! warning "Behavior changed in 1.0.0"
+        Default updated to ``"responses/v1"``.
+
+    .. versionchanged:: 1.0.0
+
         Default updated to ``"responses/v1"``.
 
     """

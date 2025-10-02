@@ -351,7 +351,7 @@ requires-dist = [
     { name = "langchain-openai", marker = "extra == 'openai'", editable = "../partners/openai" },
     { name = "langchain-text-splitters", editable = "../text-splitters" },
     { name = "langchain-together", marker = "extra == 'together'" },
-    { name = "langsmith", specifier = ">=0.1.17" },
+    { name = "langsmith", specifier = ">=0.1.17,<1.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
     { name = "pyyaml", specifier = ">=5.3" },
     { name = "requests", specifier = ">=2,<3" },
@@ -483,7 +483,7 @@ typing = [{ name = "langchain", editable = "../langchain" }]
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a4"
+version = "1.0.0a5"
 source = { editable = "../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -590,7 +590,7 @@ typing = [
 
 [[package]]
 name = "langserve"
-version = "0.3.2"
+version = "0.0.51"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -598,9 +598,9 @@ dependencies = [
     { name = "orjson" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5a/fb/86e1f5049fb3593743f0fb049c4991f4984020cda00b830ae31f2c47b46b/langserve-0.3.2.tar.gz", hash = "sha256:134b78b1d897c6bcd1fb8a6258e30cf0fb318294505e4ea59c2bea72fa152129", size = 1141270, upload-time = "2025-09-17T20:01:22.183Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/af/243c8a6ad0efee30186fba5a05a68b4bd9553d3662f946e2e8302cb4a141/langserve-0.0.51.tar.gz", hash = "sha256:036c0104c512bcc2c2406ae089ef9e7e718c32c39ebf6dcb2212f168c7d09816", size = 1135441, upload-time = "2024-03-12T06:16:32.374Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/f0/193c34bf61e1dee8bd637dbeddcc644c46d14e8b03068792ca60b1909bc1/langserve-0.3.2-py3-none-any.whl", hash = "sha256:d9c4cd19d12f6362b82ceecb10357b339b3640a858b9bc30643d5f8a0a036bce", size = 1173213, upload-time = "2025-09-17T20:01:20.603Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/49/5b407071f7ea5a861b3f4c3ed2f034cdafb75db1554bbe1a256a092d2669/langserve-0.0.51-py3-none-any.whl", hash = "sha256:e735eef2b6fde7e1514f4be8234b9f0727283e639822ca9c25e8ccc2d24e8492", size = 1167759, upload-time = "2024-03-12T06:16:30.099Z" },
 ]
 
 [package.optional-dependencies]
