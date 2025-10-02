@@ -35,11 +35,13 @@
 # Rules:
 #   1. The 'Type' must start with a lowercase letter.
 #   2. Breaking changes: append "!" after type/scope (e.g., feat!: drop x support)
+#   3. When releasing (updating the pyproject.toml and uv.lock), the commit message
+#      should be: `release(scope): x.y.z` (e.g., release(core): 1.2.0)
 #
 # Enforces Conventional Commits format for pull request titles to maintain a clear and
 # machine-readable change history.
 
-name: '🏷️ PR Title Lint'
+name: "🏷️ PR Title Lint"
 
 permissions:
   pull-requests: read
@@ -51,10 +53,10 @@ on:
 jobs:
   # Validates that PR title follows Conventional Commits 1.0.0 specification
   lint-pr-title:
-    name: 'validate format'
+    name: "validate format"
     runs-on: ubuntu-latest
     steps:
-      - name: '✅ Validate Conventional Commits Format'
+      - name: "✅ Validate Conventional Commits Format"
         uses: amannn/action-semantic-pull-request@v6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
