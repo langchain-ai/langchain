@@ -7,11 +7,11 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "ollama>=0.5.3,<1.0.0",
-    "langchain-core>=0.3.76,<2.0.0",
+    "ollama>=0.6.0,<1.0.0",
+    "langchain-core>=1.0.0a6,<2.0.0",
 ]
 name = "langchain-ollama"
-version = "0.3.9"
+version = "1.0.0a1"
 description = "An integration package connecting Ollama and LangChain"
 readme = "README.md"
 
@@ -42,9 +42,6 @@ langchain-tests = { path = "../../standard-tests", editable = true }
 [tool.mypy]
 disallow_untyped_defs = "True"
 
-[tool.ruff]
-target-version = "py39"
-
 [tool.ruff.format]
 docstring-code-format = true
 docstring-code-line-length = 100
@@ -62,12 +59,14 @@ ignore = [
     "UP045",   # pyupgrade: non-pep604-annotation-optional
     "FIX002",  # TODOs
     "TD002",   # TODO authors
+    "TD003",   # TODO missing url
     "TC002",   # Incorrect type-checking block
     "TC003",   # Incorrect type-checking block
     "PLR0912", # Too many branches
     "PLR0915", # Too many statements
     "C901",    # Function too complex
     "FBT001",  # Boolean function param
+    "ERA001",  # Commented-out code
 
     # TODO
     "ANN401",

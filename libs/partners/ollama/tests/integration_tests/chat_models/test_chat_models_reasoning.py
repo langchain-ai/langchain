@@ -7,8 +7,10 @@ from langchain_ollama import ChatOllama
 
 SAMPLE = "What is 3^3?"
 
+REASONING_MODEL_NAME = "deepseek-r1:1.5b"
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
     """Test streaming with ``reasoning=False``."""
@@ -41,7 +43,7 @@ async def test_stream_no_reasoning(model: str, use_async: bool) -> None:
     assert "reasoning_content" not in result.additional_kwargs
 
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
     """Test streaming with ``reasoning=None``."""
@@ -76,7 +78,7 @@ async def test_stream_reasoning_none(model: str, use_async: bool) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_stream(model: str, use_async: bool) -> None:
     """Test streaming with ``reasoning=True``."""
@@ -111,8 +113,16 @@ async def test_reasoning_stream(model: str, use_async: bool) -> None:
     assert "<think>" not in result.additional_kwargs["reasoning_content"]
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
+    content_blocks = result.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
     """Test invoke with ``reasoning=False``."""
@@ -128,7 +138,7 @@ async def test_invoke_no_reasoning(model: str, use_async: bool) -> None:
     assert "</think>" not in result.content
 
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
     """Test invoke with ``reasoning=None``."""
@@ -146,7 +156,7 @@ async def test_invoke_reasoning_none(model: str, use_async: bool) -> None:
     assert "</think>" not in result.additional_kwargs.get("reasoning_content", "")
 
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 @pytest.mark.parametrize("use_async", [False, True])
 async def test_reasoning_invoke(model: str, use_async: bool) -> None:
     """Test invoke with ``reasoning=True``."""
@@ -164,8 +174,16 @@ async def test_reasoning_invoke(model: str, use_async: bool) -> None:
     assert "<think>" not in result.additional_kwargs["reasoning_content"]
     assert "</think>" not in result.additional_kwargs["reasoning_content"]
 
+    content_blocks = result.content_blocks
+    assert content_blocks is not None
+    assert len(content_blocks) > 0
+    reasoning_blocks = [
+        block for block in content_blocks if block.get("type") == "reasoning"
+    ]
+    assert len(reasoning_blocks) > 0
 
-@pytest.mark.parametrize("model", ["deepseek-r1:1.5b"])
+
+@pytest.mark.parametrize("model", [REASONING_MODEL_NAME])
 def test_think_tag_stripping_necessity(model: str) -> None:
     """Test that demonstrates why ``_strip_think_tags`` is necessary.
 

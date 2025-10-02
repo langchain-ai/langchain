@@ -92,7 +92,7 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of ``ChatModel``s.
+    Messages are the inputs and outputs of a ``ChatModel``.
     """
 
     content: Union[str, list[Union[str, dict]]]

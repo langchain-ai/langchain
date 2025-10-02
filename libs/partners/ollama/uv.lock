@@ -288,7 +288,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a5"
+version = "1.0.0a6"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },
@@ -346,7 +346,7 @@ typing = [
 
 [[package]]
 name = "langchain-ollama"
-version = "0.3.9"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
@@ -377,7 +377,7 @@ typing = [
 [package.metadata]
 requires-dist = [
     { name = "langchain-core", editable = "../../core" },
-    { name = "ollama", specifier = ">=0.5.3,<1.0.0" },
+    { name = "ollama", specifier = ">=0.6.0,<1.0.0" },
 ]
 
 [package.metadata.requires-dev]
