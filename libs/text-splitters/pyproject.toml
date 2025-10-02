@@ -10,7 +10,7 @@ dependencies = [
     "langchain-core>=1.0.0a6,<2.0.0",
 ]
 name = "langchain-text-splitters"
-version = "0.3.11"
+version = "1.0.0a1"
 description = "LangChain text splitting utilities"
 readme = "README.md"
 
