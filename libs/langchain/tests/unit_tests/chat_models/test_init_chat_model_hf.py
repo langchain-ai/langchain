@@ -1,22 +1,26 @@
 import sys
 import types
-from types import SimpleNamespace
 from importlib import util as import_util
+from types import SimpleNamespace
+from typing import Any, Optional
 
 import pytest
 
 from langchain.chat_models import init_chat_model
 
-
-@pytest.fixture()
+git add libs/langchain/tests/unit_tests/chat_models/test_init_chat_model_hf.py
+@pytest.fixture
 def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
-    """Install fake modules for `langchain_huggingface` and `transformers` and
-    capture their call arguments for assertions."""
-    pipeline_calls: list[tuple[str, dict]] = []
-    init_calls: list[dict] = []
+    """
+    Install fake modules for `langchain_huggingface` and `transformers` and
+    capture their call arguments for assertions.
+
+    """
+    pipeline_calls: list[tuple[str, dict[str, Any]]] = []
+    init_calls: list[dict[str, Any]] = []
 
     # Fake transformers.pipeline
-    def fake_pipeline(task: str, **kwargs):
+    def fake_pipeline(task: str, **kwargs: Any) -> SimpleNamespace:
         pipeline_calls.append((task, dict(kwargs)))
         # A simple stand-in object for the HF pipeline
         return SimpleNamespace(_kind="dummy_hf_pipeline")
@@ -27,7 +31,7 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 
     # Fake langchain_huggingface.ChatHuggingFace that REQUIRES `llm`
     class FakeChatHuggingFace:
-        def __init__(self, *, llm, **kwargs):
+        def __init__(self, *, llm: Any, **kwargs: Any) -> None:
             init_calls.append({"llm": llm, "kwargs": dict(kwargs)})
             # minimal instance; tests only assert on ctor args
             self._llm = llm
@@ -49,7 +53,11 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     hf_pkg.ChatHuggingFace = FakeChatHuggingFace
 
     monkeypatch.setitem(sys.modules, "langchain_huggingface", hf_pkg)
-    monkeypatch.setitem(sys.modules, "langchain_huggingface.chat_models", hf_chat_models_pkg)
+    monkeypatch.setitem(
+        sys.modules,
+        "langchain_huggingface.chat_models",
+        hf_chat_models_pkg,
+    )
     monkeypatch.setitem(
         sys.modules,
         "langchain_huggingface.chat_models.huggingface",
@@ -59,7 +67,7 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     # Ensure _check_pkg sees both packages as installed
     orig_find_spec = import_util.find_spec
 
-    def fake_find_spec(name: str):
+    def fake_find_spec(name: str) -> Optional[object]:
         if name in {
             "transformers",
             "langchain_huggingface",
@@ -74,19 +82,22 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     return SimpleNamespace(pipeline_calls=pipeline_calls, init_calls=init_calls)
 
 
-def _last_pipeline_kwargs(hf_fakes: SimpleNamespace) -> dict:
+def _last_pipeline_kwargs(hf_fakes: SimpleNamespace) -> dict[str, Any]:
     assert hf_fakes.pipeline_calls, "transformers.pipeline was not called"
     _, kwargs = hf_fakes.pipeline_calls[-1]
     return kwargs
 
 
-def _last_chat_kwargs(hf_fakes: SimpleNamespace) -> dict:
+def _last_chat_kwargs(hf_fakes: SimpleNamespace) -> dict[str, Any]:
     assert hf_fakes.init_calls, "ChatHuggingFace was not constructed"
     return hf_fakes.init_calls[-1]["kwargs"]
 
 
 @pytest.mark.xfail(
-    reason="Pending fix for huggingface init (#28226 / #33167) — currently passes model_id to ChatHuggingFace",
+    reason=(
+        "Pending fix for huggingface init (#28226 / #33167) — currently passes "
+        "model_id to ChatHuggingFace"
+    ),
     raises=TypeError,
 )
 def test_hf_basic_wraps_pipeline(hf_fakes: SimpleNamespace) -> None:
