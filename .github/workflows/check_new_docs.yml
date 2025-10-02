@@ -5,7 +5,7 @@ name: '📑 Integration Docs Lint'
 
 on:
   push:
-    branches: [master]
+    branches: [v0.3]
   pull_request:
 
 # If another push to the same PR or branch happens while this workflow is still running,

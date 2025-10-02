@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: v0.3
           path: langchain
       - uses: actions/checkout@v5
         with:
