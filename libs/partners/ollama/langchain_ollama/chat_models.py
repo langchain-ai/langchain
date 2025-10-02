@@ -583,32 +583,50 @@ class ChatOllama(BaseChatModel):
     """How long the model will stay loaded into memory."""
 
     base_url: Optional[str] = None
-    """Base url the model is hosted under."""
+    """Base url the model is hosted under.
+
+    If none, defaults to the Ollama client default.
+
+    Supports `userinfo` auth in the format `http://username:password@localhost:11434`.
+    Useful if your Ollama server is behind a proxy.
+
+    !!! warning
+        `userinfo` is not secure and should only be used for local testing or
+        in secure environments. Avoid using it in production or over unsecured
+        networks.
+
+    !!! note
+        If using `userinfo`, ensure that the Ollama server is configured to
+        accept and validate these credentials.
+
+    !!! note
+        `userinfo` headers are passed to both sync and async clients.
+
+    """
 
     client_kwargs: Optional[dict] = {}
-    """Additional kwargs to pass to the httpx clients.
+    """Additional kwargs to pass to the httpx clients. Pass headers in here.
 
     These arguments are passed to both synchronous and async clients.
 
     Use ``sync_client_kwargs`` and ``async_client_kwargs`` to pass different arguments
     to synchronous and asynchronous clients.
-
     """
 
     async_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before
-    passing to the httpx AsyncClient.
+    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
 
-    `Full list of params. <https://www.python-httpx.org/api/#asyncclient>`__
+    These are clients unique to the async client; for shared args use ``client_kwargs``.
 
+    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#asyncclient>`__.
     """
 
     sync_client_kwargs: Optional[dict] = {}
-    """Additional kwargs to merge with ``client_kwargs`` before
-    passing to the httpx Client.
+    """Additional kwargs to merge with ``client_kwargs`` before passing to httpx client.
 
-    `Full list of params. <https://www.python-httpx.org/api/#client>`__
+    These are clients unique to the sync client; for shared args use ``client_kwargs``.
 
+    For a full list of the params, see the `httpx documentation <https://www.python-httpx.org/api/#client>`__.
     """
 
     _client: Client = PrivateAttr()
@@ -673,7 +691,6 @@ class ChatOllama(BaseChatModel):
         """Set clients to use for ollama."""
         client_kwargs = self.client_kwargs or {}
 
-        # Parse URL for basic auth credentials
         cleaned_url, auth_headers = parse_url_with_auth(self.base_url)
 
         # Merge authentication headers with existing headers

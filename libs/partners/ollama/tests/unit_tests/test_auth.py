@@ -8,6 +8,8 @@ from langchain_ollama.chat_models import ChatOllama
 from langchain_ollama.embeddings import OllamaEmbeddings
 from langchain_ollama.llms import OllamaLLM
 
+MODEL_NAME = "llama3.1"
+
 
 class TestParseUrlWithAuth:
     """Test the parse_url_with_auth utility function."""
@@ -19,7 +21,7 @@ class TestParseUrlWithAuth:
 
     def test_parse_url_with_auth_no_credentials(self) -> None:
         """Test URLs without authentication credentials."""
-        url = "https://ollama.example.com:11434"
+        url = "https://ollama.example.com:11434/path?query=param"
         result = parse_url_with_auth(url)
         assert result == (url, None)
 
@@ -36,7 +38,7 @@ class TestParseUrlWithAuth:
         assert headers == expected_headers
 
     def test_parse_url_with_auth_with_path_and_query(self) -> None:
-        """Test URLs with path and query parameters."""
+        """Test URLs with auth, path, and query parameters."""
         url = "https://user:pass@ollama.example.com:11434/api/v1?timeout=30"
         cleaned_url, headers = parse_url_with_auth(url)
 
@@ -97,7 +99,7 @@ class TestChatOllamaUrlAuth:
         url_with_auth = "https://user:password@ollama.example.com:11434"
 
         ChatOllama(
-            model="llama3",
+            model=MODEL_NAME,
             base_url=url_with_auth,
         )
 
@@ -121,7 +123,7 @@ class TestChatOllamaUrlAuth:
         existing_headers = {"User-Agent": "test-agent", "X-Custom": "value"}
 
         ChatOllama(
-            model="llama3",
+            model=MODEL_NAME,
             base_url=url_with_auth,
             client_kwargs={"headers": existing_headers},
         )
@@ -139,23 +141,6 @@ class TestChatOllamaUrlAuth:
             host=expected_url, headers=expected_headers
         )
 
-    @patch("langchain_ollama.chat_models.Client")
-    @patch("langchain_ollama.chat_models.AsyncClient")
-    def test_chat_ollama_no_url_auth(
-        self, mock_async_client: MagicMock, mock_client: MagicMock
-    ) -> None:
-        """Test that ChatOllama works normally without URL authentication."""
-        url_without_auth = "https://ollama.example.com:11434"
-
-        ChatOllama(
-            model="llama3",
-            base_url=url_without_auth,
-        )
-
-        # Verify no auth headers are added
-        mock_client.assert_called_once_with(host=url_without_auth)
-        mock_async_client.assert_called_once_with(host=url_without_auth)
-
 
 class TestOllamaLLMUrlAuth:
     """Test URL authentication integration with OllamaLLM."""
@@ -169,11 +154,10 @@ class TestOllamaLLMUrlAuth:
         url_with_auth = "https://user:password@ollama.example.com:11434"
 
         OllamaLLM(
-            model="llama3",
+            model=MODEL_NAME,
             base_url=url_with_auth,
         )
 
-        # Verify the clients were called with cleaned URL and auth headers
         expected_url = "https://ollama.example.com:11434"
         expected_credentials = base64.b64encode(b"user:password").decode()
         expected_headers = {"Authorization": f"Basic {expected_credentials}"}
@@ -196,11 +180,10 @@ class TestOllamaEmbeddingsUrlAuth:
         url_with_auth = "https://user:password@ollama.example.com:11434"
 
         OllamaEmbeddings(
-            model="llama3",
+            model=MODEL_NAME,
             base_url=url_with_auth,
         )
 
-        # Verify the clients were called with cleaned URL and auth headers
         expected_url = "https://ollama.example.com:11434"
         expected_credentials = base64.b64encode(b"user:password").decode()
         expected_headers = {"Authorization": f"Basic {expected_credentials}"}

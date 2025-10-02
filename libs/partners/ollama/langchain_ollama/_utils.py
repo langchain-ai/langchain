@@ -48,39 +48,42 @@ def validate_model(client: Client, model_name: str) -> None:
         raise ValueError(msg) from e
 
 
-def parse_url_with_auth(url: Optional[str]) -> tuple[Optional[str], Optional[dict]]:
-    """Parse URL and extract authentication credentials for headers.
+def parse_url_with_auth(
+    url: Optional[str],
+) -> tuple[Optional[str], Optional[dict[str, str]]]:
+    """Parse URL and extract `userinfo` credentials for headers.
 
-    Handles URLs of the form: ``https://user:password@host:port/path``
+    Handles URLs of the form: `https://user:password@host:port/path`
 
     Args:
-        url: The URL to parse. Can be None.
+        url: The URL to parse.
 
     Returns:
         A tuple of ``(cleaned_url, headers_dict)`` where:
-        - ``cleaned_url`` is the URL without authentication credentials
-        - ``headers_dict`` contains Authorization header if credentials were found
+        - ``cleaned_url`` is the URL without authentication credentials if any were
+            found. Otherwise, returns the original URL.
+        - ``headers_dict`` contains Authorization header if credentials were found.
     """
     if not url:
         return None, None
 
     parsed = urlparse(url)
-
-    # If no authentication info, return as-is
+    if not parsed.scheme or not parsed.netloc or not parsed.hostname:
+        return None, None
     if not parsed.username:
         return url, None
 
     # Handle case where password might be empty string or None
     password = parsed.password or ""
 
-    # Extract credentials and create basic auth header (decode percent-encoding)
+    # Create basic auth header (decode percent-encoding)
     username = unquote(parsed.username)
     password = unquote(password)
     credentials = f"{username}:{password}"
     encoded_credentials = base64.b64encode(credentials.encode()).decode()
     headers = {"Authorization": f"Basic {encoded_credentials}"}
 
-    # Reconstruct URL without authentication
+    # Strip credentials from URL
     cleaned_netloc = parsed.hostname or ""
     if parsed.port:
         cleaned_netloc += f":{parsed.port}"
