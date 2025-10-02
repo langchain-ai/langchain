@@ -1,4 +1,43 @@
-"""Ollama chat models."""
+"""Ollama chat models.
+
+**Input Flow (LangChain -> Ollama)**
+
+`_convert_messages_to_ollama_messages()`:
+
+- Transforms LangChain messages to `ollama.Message` format
+- Extracts text content, images (base64), and tool calls
+
+`_chat_params()`:
+
+- Combines messages with model parameters (temperature, top_p, etc.)
+- Attaches tools if provided
+- Configures reasoning/thinking mode via `think` parameter
+- Sets output format (raw, JSON, or JSON schema)
+
+**Output Flow (Ollama -> LangChain)**
+
+1. **Ollama Response**
+
+Stream dictionary chunks containing:
+- `message`: Dict with `role`, `content`, `tool_calls`, `thinking`
+- `done`: Boolean indicating completion
+- `done_reason`: Reason for completion (`stop`, `length`, `load`)
+- Token counts/timing metadata
+
+2. **Response Processing** (`_iterate_over_stream()`)
+
+- Extracts content from `message.content`
+- Parses tool calls into `ToolCall`s
+- Separates reasoning content when `reasoning=True` (stored in `additional_kwargs`)
+- Builds usage metadata from token counts
+
+3. **LangChain Output** (`ChatGenerationChunk` -> `AIMessage`)
+
+- **Streaming**: Yields `ChatGenerationChunk` with `AIMessageChunk` content
+- **Non-streaming**: Returns `ChatResult` with complete `AIMessage`
+- Tool calls attached to `AIMessage.tool_calls`
+- Reasoning content in `AIMessage.additional_kwargs['reasoning_content']`
+"""
 
 from __future__ import annotations
 
@@ -26,6 +65,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
@@ -47,6 +87,8 @@ from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
+
+from langchain_ollama._compat import _convert_from_v1_to_ollama
 
 from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
@@ -196,8 +238,10 @@ def _get_image_from_data_content_block(block: dict) -> str:
     """Format standard data content block to format expected by Ollama."""
     if block["type"] == "image":
         if block.get("source_type") == "base64":
+            # v0 style
             return block["data"]
         if block.get("base64"):
+            # v1 content blocks
             return block["base64"]
         error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
@@ -679,6 +723,16 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        """Assemble the parameters for a chat completion request.
+
+        Args:
+            messages: List of LangChain messages to send to the model.
+            stop: Optional list of stop tokens to use for this invocation.
+            **kwargs: Additional keyword arguments to include in the request.
+
+        Returns:
+            A dictionary of parameters to pass to the Ollama client.
+        """
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
         if self.stop is not None and stop is not None:
@@ -749,6 +803,31 @@ class ChatOllama(BaseChatModel):
     def _convert_messages_to_ollama_messages(
         self, messages: list[BaseMessage]
     ) -> Sequence[Message]:
+        """Convert a BaseMessage list to list of messages for Ollama to consume.
+
+        Args:
+            messages: List of BaseMessage to convert.
+
+        Returns:
+            List of messages in Ollama format.
+        """
+        for idx, message in enumerate(messages):
+            # Handle message content written in v1 format
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                # Unpack known v1 content to Ollama format for the request
+                # Most types are passed through unchanged
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_ollama(
+                            cast("list[types.ContentBlock]", message.content),
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         ollama_messages: list = []
         for message in messages:
             role: str
@@ -781,7 +860,7 @@ class ChatOllama(BaseChatModel):
             images = []
             if isinstance(message.content, str):
                 content = message.content
-            else:
+            else:  # List
                 for content_part in message.content:
                     if isinstance(content_part, str):
                         content += f"\n{content_part}"
@@ -815,6 +894,7 @@ class ChatOllama(BaseChatModel):
                         else:
                             images.append(image_url_components[0])
                     elif is_data_content_block(content_part):
+                        # Handles v1 "image" type
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
@@ -993,6 +1073,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
+                    generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
@@ -1069,6 +1150,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
+                    generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
