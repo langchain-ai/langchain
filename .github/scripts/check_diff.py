@@ -268,7 +268,7 @@ if __name__ == "__main__":
             dirs_to_run["extended-test"].update(LANGCHAIN_DIRS)
 
         if file.startswith("libs/core"):
-            dirs_to_run["codspeed"].add(f"libs/core")
+            dirs_to_run["codspeed"].add("libs/core")
         if any(file.startswith(dir_) for dir_ in LANGCHAIN_DIRS):
             # add that dir and all dirs after in LANGCHAIN_DIRS
             # for extended testing
@@ -309,8 +309,6 @@ if __name__ == "__main__":
                 dirs_to_run["test"].add(f"libs/partners/{partner_dir}")
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
-        elif file == "libs/packages.yml":
-            continue
         elif file.startswith("libs/"):
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
