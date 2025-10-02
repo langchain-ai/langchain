@@ -56,7 +56,7 @@ log = logging.getLogger(__name__)
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
 ) -> Optional[UsageMetadata]:
-    """Get usage metadata from ollama generation info mapping."""
+    """Get usage metadata from Ollama generation info mapping."""
     if generation_info is None:
         return None
     input_tokens: Optional[int] = generation_info.get("prompt_eval_count")
@@ -92,7 +92,6 @@ def _parse_json_string(
 
     Raises:
         OutputParserException: If the string is invalid and ``skip=False``.
-
     """
     try:
         return json.loads(json_string)
@@ -163,7 +162,7 @@ def _parse_arguments_from_tool_call(
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
 ) -> list[ToolCall]:
-    """Get tool calls from ollama response."""
+    """Get tool calls from Ollama response."""
     tool_calls = []
     if "message" in response and (
         raw_tool_calls := response["message"].get("tool_calls")
@@ -482,8 +481,7 @@ class ChatOllama(BaseChatModel):
     """Model name to use."""
 
     reasoning: Optional[Union[bool, str]] = None
-    """Controls the reasoning/thinking mode for
-    `supported models <https://ollama.com/search?c=thinking>`__.
+    """Controls the reasoning/thinking mode for `supported models <https://ollama.com/search?c=thinking>`__.
 
     - ``True``: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
@@ -499,7 +497,6 @@ class ChatOllama(BaseChatModel):
       intensity level. Currently, this is only supported ``gpt-oss``. See the
       `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
       for more information.
-
     """
 
     validate_model_on_init: bool = False
@@ -510,72 +507,112 @@ class ChatOllama(BaseChatModel):
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+
+    (Default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)
+    """
 
     mirostat_eta: Optional[float] = None
-    """Influences how quickly the algorithm responds to feedback
-    from the generated text. A lower learning rate will result in
-    slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: ``0.1``)"""
+    """Influences how quickly the algorithm responds to feedback from generated text.
+
+    A lower learning rate will result in slower adjustments, while a higher learning
+    rate will make the algorithm more responsive.
+
+    (Default: ``0.1``)
+    """
 
     mirostat_tau: Optional[float] = None
-    """Controls the balance between coherence and diversity
-    of the output. A lower value will result in more focused and
-    coherent text. (Default: ``5.0``)"""
+    """Controls the balance between coherence and diversity of the output.
+
+    A lower value will result in more focused and coherent text.
+
+    (Default: ``5.0``)
+    """
 
     num_ctx: Optional[int] = None
-    """Sets the size of the context window used to generate the
-    next token. (Default: ``2048``)	"""
+    """Sets the size of the context window used to generate the next token.
+
+    (Default: ``2048``)
+    """
 
     num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to ``1`` to
-    enable metal support, ``0`` to disable."""
+    """The number of GPUs to use.
+
+    On macOS it defaults to ``1`` to enable metal support, ``0`` to disable.
+    """
 
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
-    By default, Ollama will detect this for optimal performance.
-    It is recommended to set this value to the number of physical
-    CPU cores your system has (as opposed to the logical number of cores)."""
+
+    By default, Ollama will detect this for optimal performance. It is recommended to
+    set this value to the number of physical CPU cores your system has (as opposed to
+    the logical number of cores).
+    """
 
     num_predict: Optional[int] = None
     """Maximum number of tokens to predict when generating text.
-    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)"""
+
+    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)
+    """
 
     repeat_last_n: Optional[int] = None
-    """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
+    """Sets how far back for the model to look back to prevent repetition.
+
+    (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)
+    """
 
     repeat_penalty: Optional[float] = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
-    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
-    will be more lenient. (Default: ``1.1``)"""
+    """Sets how strongly to penalize repetitions.
+
+    A higher value (e.g., ``1.5``) will penalize repetitions more strongly, while a
+    lower value (e.g., ``0.9``) will be more lenient. (Default: ``1.1``)
+    """
 
     temperature: Optional[float] = None
-    """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: ``0.8``)"""
+    """The temperature of the model.
+
+    Increasing the temperature will make the model answer more creatively.
+
+    (Default: ``0.8``)
+    """
 
     seed: Optional[int] = None
-    """Sets the random number seed to use for generation. Setting this
-    to a specific number will make the model generate the same text for
-    the same prompt."""
+    """Sets the random number seed to use for generation.
+
+    Setting this to a specific number will make the model generate the same text for the
+    same prompt.
+    """
 
     stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
-    """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
-    impact more, while a value of ``1.0`` disables this setting. (default: ``1``)"""
+    """Tail free sampling.
+
+    Used to reduce the impact of less probable tokens from the output.
+
+    A higher value (e.g., ``2.0``) will reduce the impact more, while a value of ``1.0``
+    disables this setting.
+
+    (Default: ``1``)
+    """
 
     top_k: Optional[int] = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
-    will give more diverse answers, while a lower value (e.g. ``10``)
-    will be more conservative. (Default: ``40``)"""
+    """Reduces the probability of generating nonsense.
+
+    A higher value (e.g. ``100``) will give more diverse answers, while a lower value
+    (e.g. ``10``) will be more conservative.
+
+    (Default: ``40``)
+    """
 
     top_p: Optional[float] = None
-    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
-    to more diverse text, while a lower value (e.g., ``0.5``) will
-    generate more focused and conservative text. (Default: ``0.9``)"""
+    """Works together with top-k.
+
+    A higher value (e.g., ``0.95``) will lead to more diverse text, while a lower value
+    (e.g., ``0.5``) will generate more focused and conservative text.
+
+    (Default: ``0.9``)
+    """
 
     format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
     """Specify the format of the output (options: ``'json'``, JSON schema)."""
@@ -787,8 +824,8 @@ class ChatOllama(BaseChatModel):
                             "with a string 'image_url' field."
                         )
                         raise ValueError(msg)
-            # Should convert to ollama.Message once role includes tool,
-            # and tool_call_id is in Message
+            # Should convert to ollama.Message once role includes tool, and tool_call_id
+            # is in Message
             msg_: dict = {
                 "role": role,
                 "content": content,
