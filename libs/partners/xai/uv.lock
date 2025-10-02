@@ -621,7 +621,7 @@ wheels = [
 
 [[package]]
 name = "langchain-core"
-version = "1.0.0a6"
+version = "1.0.0a5"
 source = { editable = "../../core" }
 dependencies = [
     { name = "jsonpatch" },

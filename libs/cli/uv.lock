@@ -353,9 +353,9 @@ requires-dist = [
     { name = "langchain-together", marker = "extra == 'together'" },
     { name = "langsmith", specifier = ">=0.1.17,<1.0.0" },
     { name = "pydantic", specifier = ">=2.7.4,<3.0.0" },
-    { name = "pyyaml", specifier = ">=5.3" },
-    { name = "requests", specifier = ">=2,<3" },
-    { name = "sqlalchemy", specifier = ">=1.4,<3" },
+    { name = "pyyaml", specifier = ">=5.3.0,<7.0.0" },
+    { name = "requests", specifier = ">=2.0.0,<3.0.0" },
+    { name = "sqlalchemy", specifier = ">=1.4.0,<3.0.0" },
 ]
 provides-extras = ["community", "anthropic", "openai", "google-vertexai", "google-genai", "together"]
 
