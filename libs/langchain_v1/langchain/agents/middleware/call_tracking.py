@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, ClassVar, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from langchain_core.messages import AIMessage
 
-from langchain.agents.middleware.types import AgentMiddleware, AgentState, JumpTo
+from langchain.agents.middleware.types import AgentMiddleware, AgentState, hook_config
 
 if TYPE_CHECKING:
     from langgraph.runtime import Runtime
@@ -97,8 +97,6 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         ```
     """
 
-    before_model_jump_to: ClassVar[list[JumpTo]] = ["end"]
-
     def __init__(
         self,
         *,
@@ -136,6 +134,7 @@ class ModelCallLimitMiddleware(AgentMiddleware):
         self.run_limit = run_limit
         self.exit_behavior = exit_behavior
 
+    @hook_config(can_jump_to=["end"])
     def before_model(self, state: AgentState, runtime: Runtime) -> dict[str, Any] | None:  # noqa: ARG002
         """Check model call limits before making a model call.
 
