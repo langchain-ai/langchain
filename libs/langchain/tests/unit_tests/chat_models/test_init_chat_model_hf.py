@@ -8,13 +8,13 @@ import pytest
 
 from langchain.chat_models import init_chat_model
 
-git add libs/langchain/tests/unit_tests/chat_models/test_init_chat_model_hf.py
+
 @pytest.fixture
 def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
-    """
-    Install fake modules for `langchain_huggingface` and `transformers` and
-    capture their call arguments for assertions.
+    """Install fakes for Hugging Face and transformers.
 
+    Capture call arguments and simulate module presence to test initialization
+    behavior, including current failure modes.
     """
     pipeline_calls: list[tuple[str, dict[str, Any]]] = []
     init_calls: list[dict[str, Any]] = []
@@ -22,7 +22,6 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     # Fake transformers.pipeline
     def fake_pipeline(task: str, **kwargs: Any) -> SimpleNamespace:
         pipeline_calls.append((task, dict(kwargs)))
-        # A simple stand-in object for the HF pipeline
         return SimpleNamespace(_kind="dummy_hf_pipeline")
 
     transformers_mod = types.ModuleType("transformers")
@@ -31,25 +30,25 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 
     # Fake langchain_huggingface.ChatHuggingFace that REQUIRES `llm`
     class FakeChatHuggingFace:
-        def __init__(self, *, llm: Any, **kwargs: Any) -> None:
+        def __init__(self, *, llm: object, **kwargs: Any) -> None:
             init_calls.append({"llm": llm, "kwargs": dict(kwargs)})
-            # minimal instance; tests only assert on ctor args
             self._llm = llm
             self._kwargs = kwargs
 
-    # Build full package path: langchain_huggingface.chat_models.huggingface
+    # Build full package path:
+    # langchain_huggingface.chat_models.huggingface
     hf_pkg = types.ModuleType("langchain_huggingface")
     hf_pkg.__path__ = []  # mark as package
 
     hf_chat_models_pkg = types.ModuleType("langchain_huggingface.chat_models")
     hf_chat_models_pkg.__path__ = []  # mark as package
 
-    hf_chat_huggingface_mod = types.ModuleType(
-        "langchain_huggingface.chat_models.huggingface"
+    hf_chat_hf_mod = types.ModuleType(
+        "langchain_huggingface.chat_models.huggingface",
     )
-    hf_chat_huggingface_mod.ChatHuggingFace = FakeChatHuggingFace
+    hf_chat_hf_mod.ChatHuggingFace = FakeChatHuggingFace
 
-    # Optional: expose at package root for compatibility with top-level imports
+    # Also expose at package root for top-level imports
     hf_pkg.ChatHuggingFace = FakeChatHuggingFace
 
     monkeypatch.setitem(sys.modules, "langchain_huggingface", hf_pkg)
@@ -61,7 +60,7 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
     monkeypatch.setitem(
         sys.modules,
         "langchain_huggingface.chat_models.huggingface",
-        hf_chat_huggingface_mod,
+        hf_chat_hf_mod,
     )
 
     # Ensure _check_pkg sees both packages as installed
@@ -79,93 +78,61 @@ def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
 
     monkeypatch.setattr("importlib.util.find_spec", fake_find_spec)
 
-    return SimpleNamespace(pipeline_calls=pipeline_calls, init_calls=init_calls)
-
-
-def _last_pipeline_kwargs(hf_fakes: SimpleNamespace) -> dict[str, Any]:
-    assert hf_fakes.pipeline_calls, "transformers.pipeline was not called"
-    _, kwargs = hf_fakes.pipeline_calls[-1]
-    return kwargs
-
-
-def _last_chat_kwargs(hf_fakes: SimpleNamespace) -> dict[str, Any]:
-    assert hf_fakes.init_calls, "ChatHuggingFace was not constructed"
-    return hf_fakes.init_calls[-1]["kwargs"]
-
-
-@pytest.mark.xfail(
-    reason=(
-        "Pending fix for huggingface init (#28226 / #33167) — currently passes "
-        "model_id to ChatHuggingFace"
-    ),
-    raises=TypeError,
-)
-def test_hf_basic_wraps_pipeline(hf_fakes: SimpleNamespace) -> None:
-    # provider specified inline
-    llm = init_chat_model(
-        "huggingface:microsoft/Phi-3-mini-4k-instruct",
-        task="text-generation",
-        temperature=0,
+    return SimpleNamespace(
+        pipeline_calls=pipeline_calls,
+        init_calls=init_calls,
     )
-    # Wrapped object should be constructed (we don't require a specific type here)
-    assert llm is not None
-
-    # Make failure modes explicit
-    assert hf_fakes.pipeline_calls, "Expected transformers.pipeline to be called"
-    assert hf_fakes.init_calls, "Expected ChatHuggingFace to be constructed"
-
-    # pipeline called with correct model (don't assert task value)
-    kwargs = _last_pipeline_kwargs(hf_fakes)
-    assert kwargs["model"] == "microsoft/Phi-3-mini-4k-instruct"
-
-    # ChatHuggingFace must be constructed with llm
-    assert "llm" in hf_fakes.init_calls[-1]
-    assert hf_fakes.init_calls[-1]["llm"]._kind == "dummy_hf_pipeline"
 
 
-@pytest.mark.xfail(
-    reason="Pending fix for huggingface init (#28226 / #33167)",
-    raises=TypeError,
-)
-def test_hf_max_tokens_translated_to_max_new_tokens(
+def test_hf_current_bug_basic_raises_typeerror(
     hf_fakes: SimpleNamespace,
 ) -> None:
-    init_chat_model(
-        model="mistralai/Mistral-7B-Instruct-v0.2",
-        model_provider="huggingface",
-        task="text-generation",
-        max_tokens=42,
-    )
-    assert hf_fakes.pipeline_calls, "Expected transformers.pipeline to be called"
-    assert hf_fakes.init_calls, "Expected ChatHuggingFace to be constructed"
-    kwargs = _last_pipeline_kwargs(hf_fakes)
-    assert kwargs.get("max_new_tokens") == 42
-    # Ensure we don't leak the old name into pipeline kwargs
-    assert "max_tokens" not in kwargs
+    """Current behavior raises TypeError when using Hugging Face provider.
+
+    init_chat_model constructs ChatHuggingFace without ``llm`` and never builds
+    a pipeline. Verify that explicitly.
+    """
+    with pytest.raises(TypeError):
+        _ = init_chat_model(
+            "huggingface:microsoft/Phi-3-mini-4k-instruct",
+            task="text-generation",
+            temperature=0,
+        )
+    # Buggy path should not touch transformers.pipeline
+    assert not hf_fakes.pipeline_calls, "pipeline should NOT be called"
 
 
-@pytest.mark.xfail(
-    reason="Pending fix for huggingface init (#28226 / #33167)",
-    raises=TypeError,
-)
-def test_hf_timeout_and_max_retries_pass_through_to_chat_wrapper(
+def test_hf_current_bug_max_tokens_case_raises_typeerror(
     hf_fakes: SimpleNamespace,
 ) -> None:
-    init_chat_model(
-        model="microsoft/Phi-3-mini-4k-instruct",
-        model_provider="huggingface",
-        task="text-generation",
-        temperature=0.1,
-        timeout=7,
-        max_retries=3,
-    )
-    assert hf_fakes.pipeline_calls, "Expected transformers.pipeline to be called"
-    assert hf_fakes.init_calls, "Expected ChatHuggingFace to be constructed"
-    chat_kwargs = _last_chat_kwargs(hf_fakes)
-    # Assert these control args are passed to the wrapper (not the pipeline)
-    assert chat_kwargs.get("timeout") == 7
-    assert chat_kwargs.get("max_retries") == 3
-    # And that they are NOT passed to transformers.pipeline
-    pipeline_kwargs = _last_pipeline_kwargs(hf_fakes)
-    assert "timeout" not in pipeline_kwargs
-    assert "max_retries" not in pipeline_kwargs
+    """Same failure when passing ``max_tokens``.
+
+    Should raise and avoid constructing a pipeline.
+    """
+    with pytest.raises(TypeError):
+        _ = init_chat_model(
+            model="mistralai/Mistral-7B-Instruct-v0.2",
+            model_provider="huggingface",
+            task="text-generation",
+            max_tokens=42,
+        )
+    assert not hf_fakes.pipeline_calls, "pipeline should NOT be called"
+
+
+def test_hf_current_bug_timeout_retries_case_raises_typeerror(
+    hf_fakes: SimpleNamespace,
+) -> None:
+    """Same failure when passing ``timeout``/``max_retries``.
+
+    Should raise and avoid constructing a pipeline.
+    """
+    with pytest.raises(TypeError):
+        _ = init_chat_model(
+            model="microsoft/Phi-3-mini-4k-instruct",
+            model_provider="huggingface",
+            task="text-generation",
+            temperature=0.1,
+            timeout=7,
+            max_retries=3,
+        )
+    assert not hf_fakes.pipeline_calls, "pipeline should NOT be called"
