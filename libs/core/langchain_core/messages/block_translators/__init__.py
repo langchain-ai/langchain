@@ -94,9 +94,6 @@ def _register_translators() -> None:
     from langchain_core.messages.block_translators.groq import (  # noqa: PLC0415
         _register_groq_translator,
     )
-    from langchain_core.messages.block_translators.ollama import (  # noqa: PLC0415
-        _register_ollama_translator,
-    )
     from langchain_core.messages.block_translators.openai import (  # noqa: PLC0415
         _register_openai_translator,
     )
@@ -107,7 +104,6 @@ def _register_translators() -> None:
     _register_google_genai_translator()
     _register_google_vertexai_translator()
     _register_groq_translator()
-    _register_ollama_translator()
     _register_openai_translator()
 
 

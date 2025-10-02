@@ -28,7 +28,7 @@ def _convert_from_v1_to_ollama(
         # TextContentBlock
         if block_dict["type"] == "text":
             # Note: this drops all other fields/extras
-            new_content.append({"text": block_dict["text"]})
+            new_content.append({"type": "text", "text": block_dict["text"]})
 
         # ReasoningContentBlock
         # Ollama doesn't take reasoning back in
@@ -60,6 +60,8 @@ def _convert_from_v1_to_ollama(
         # NonStandardContentBlock
         if block_dict["type"] == "non_standard":
             # Attempt to preserve content in text form
-            new_content.append({"text": str(block_dict.get("value", ""))})
+            new_content.append(
+                {"type": "text", "text": str(block_dict.get("value", ""))}
+            )
 
     return new_content
