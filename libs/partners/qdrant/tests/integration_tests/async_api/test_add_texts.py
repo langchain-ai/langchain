@@ -85,7 +85,9 @@ async def test_qdrant_aadd_texts_stores_ids(
         ["abc", "def"], ids=ids, batch_size=batch_size
     )
 
-    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert all(
+        first == second for first, second in zip(ids, returned_ids, strict=False)
+    )
     assert client.count(collection_name).count == 2
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)

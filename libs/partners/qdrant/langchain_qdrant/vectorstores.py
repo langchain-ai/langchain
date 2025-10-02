@@ -4,9 +4,10 @@ import functools
 import os
 import uuid
 import warnings
+from collections.abc import Callable
 from itertools import islice
 from operator import itemgetter
-from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import numpy as np
 from langchain_core._api.deprecation import deprecated
@@ -2242,6 +2243,7 @@ class Qdrant(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
@@ -2282,6 +2284,7 @@ class Qdrant(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
