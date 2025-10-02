@@ -69,9 +69,7 @@ def _find_all_strings(
     *,
     recursive: bool = True,
 ) -> ResultSet[NavigableString]:
-    return cast(
-        "ResultSet[NavigableString]", tag.find_all(string=True, recursive=recursive)
-    )
+    return tag.find_all(string=True, recursive=recursive)
 
 
 def _find_all_tags(
@@ -80,7 +78,7 @@ def _find_all_tags(
     name: bool | str | list[str] | None = None,
     recursive: bool = True,
 ) -> ResultSet[Tag]:
-    return cast("ResultSet[Tag]", tag.find_all(name, recursive=recursive))
+    return tag.find_all(name, recursive=recursive)
 
 
 class HTMLHeaderTextSplitter:
