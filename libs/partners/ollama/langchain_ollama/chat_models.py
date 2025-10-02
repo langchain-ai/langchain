@@ -648,26 +648,30 @@ class ChatOllama(BaseChatModel):
         if self.stop is not None:
             stop = self.stop
 
-        options_dict = kwargs.pop(
-            "options",
-            {
-                "mirostat": self.mirostat,
-                "mirostat_eta": self.mirostat_eta,
-                "mirostat_tau": self.mirostat_tau,
-                "num_ctx": self.num_ctx,
-                "num_gpu": self.num_gpu,
-                "num_thread": self.num_thread,
-                "num_predict": self.num_predict,
-                "repeat_last_n": self.repeat_last_n,
-                "repeat_penalty": self.repeat_penalty,
-                "temperature": self.temperature,
-                "seed": self.seed,
-                "stop": self.stop if stop is None else stop,
-                "tfs_z": self.tfs_z,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-            },
-        )
+        options_dict = kwargs.pop("options", None)
+        if options_dict is None:
+            # Only include parameters that are explicitly set (not None)
+            options_dict = {
+                k: v
+                for k, v in {
+                    "mirostat": self.mirostat,
+                    "mirostat_eta": self.mirostat_eta,
+                    "mirostat_tau": self.mirostat_tau,
+                    "num_ctx": self.num_ctx,
+                    "num_gpu": self.num_gpu,
+                    "num_thread": self.num_thread,
+                    "num_predict": self.num_predict,
+                    "repeat_last_n": self.repeat_last_n,
+                    "repeat_penalty": self.repeat_penalty,
+                    "temperature": self.temperature,
+                    "seed": self.seed,
+                    "stop": self.stop if stop is None else stop,
+                    "tfs_z": self.tfs_z,
+                    "top_k": self.top_k,
+                    "top_p": self.top_p,
+                }.items()
+                if v is not None
+            }
 
         params = {
             "messages": ollama_messages,
