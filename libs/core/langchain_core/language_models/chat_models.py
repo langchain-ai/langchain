@@ -12,7 +12,7 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 from typing_extensions import override
 
 from langchain_core.caches import BaseCache
@@ -358,28 +358,6 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     .. versionadded:: 1.0
 
     """
-
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        """Emit deprecation warning if ``callback_manager`` is used.
-
-        ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into
-        a standard format. This flag can be used to additionally store the standard
-        format in message content, e.g., for serialization purposes.
-
-        Supported values:
-
-        - ``"v0"``: provider-specific format in content (can lazily-parse with
-          ``.content_blocks``)
-        - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
-
-        Partner packages (e.g., ``langchain-openai``) can also use this field to roll
-        out new content formats in a backward-compatible way.
-
-        .. versionadded:: 1.0
-
-        """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
