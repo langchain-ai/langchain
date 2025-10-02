@@ -36,7 +36,8 @@
 #   1. The 'Type' must start with a lowercase letter.
 #   2. Breaking changes: append "!" after type/scope (e.g., feat!: drop x support)
 #   3. When releasing (updating the pyproject.toml and uv.lock), the commit message
-#      should be: `release(scope): x.y.z` (e.g., release(core): 1.2.0)
+#      should be: `release(scope): x.y.z` (e.g., `release(core): 1.2.0` with no
+#      body, footer, or preceeding/proceeding text).
 #
 # Enforces Conventional Commits format for pull request titles to maintain a clear and
 # machine-readable change history.
