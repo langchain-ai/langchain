@@ -309,8 +309,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports image inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        If set to ``True``, the chat model will be tested by inputting an
+        `ImageContentBlock` with the shape:
 
         .. code-block:: python
 
@@ -369,8 +369,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports PDF inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        If set to ``True``, the chat model will be tested by inputting a
+        `FileContentBlock` with the shape:
 
         .. code-block:: python
 
@@ -395,8 +395,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         Boolean property indicating whether the chat model supports audio inputs.
         Defaults to ``False``.
 
-        If set to ``True``, the chat model will be tested using content blocks of the
-        form
+        If set to ``True``, the chat model will be tested by inputting an
+        `AudioContentBlock` with the shape:
 
         .. code-block:: python
 
@@ -473,8 +473,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     .. dropdown:: supports_image_tool_message
 
-        Boolean property indicating whether the chat model supports ToolMessages
-        that include image content, e.g.,
+        Boolean property indicating whether the chat model supports a `ToolMessage`
+        that includes image content, e.g. in the OpenAI Chat Completions format:
 
         .. code-block:: python
 
@@ -489,7 +489,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
-        (OpenAI Chat Completions format), as well as
+        as well as the LangChain `ImageContentBlock` format:
 
         .. code-block:: python
 
@@ -505,7 +505,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
-        (standard format).
 
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
@@ -520,8 +519,8 @@ class ChatModelIntegrationTests(ChatModelTests):
 
     .. dropdown:: supports_pdf_tool_message
 
-        Boolean property indicating whether the chat model supports ToolMessages
-        that include PDF content, i.e.,
+        Boolean property indicating whether the chat model supports a `ToolMessage
+        that include PDF content using the LangChain `FileContentBlock` format:
 
         .. code-block:: python
 
@@ -536,8 +535,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_pdf",
             )
-
-        (standard format).
 
         If set to ``True``, the chat model will be tested with message sequences that
         include ToolMessages of this form.
@@ -2362,7 +2359,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that the model can process PDF inputs.
 
         This test should be skipped (see Configuration below) if the model does not
-        support PDF inputs. These will take the form:
+        support PDF inputs. These will take the shape of the LangChain
+        `FileContentBlock`:
 
         .. code-block:: python
 
@@ -2372,7 +2370,20 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "application/pdf",
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        Furthermore, for backward-compatibility, we must also support OpenAI chat
+        completions file content blocks:
+
+        .. code-block:: python
+
+            (
+                {
+                    "type": "file",
+                    "file": {
+                        "filename": "test_file.pdf",
+                        "file_data": f"data:application/pdf;base64,{pdf_data}",
+                    },
+                },
+            )
 
         .. dropdown:: Configuration
 
@@ -2407,8 +2418,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 },
                 {
                     "type": "file",
-                    "mime_type": "application/pdf",
                     "base64": pdf_data,
+                    "mime_type": "application/pdf",
                 },
             ]
         )
@@ -2424,7 +2435,7 @@ class ChatModelIntegrationTests(ChatModelTests):
                 {
                     "type": "file",
                     "file": {
-                        "filename": "test file.pdf",
+                        "filename": "test_file.pdf",
                         "file_data": f"data:application/pdf;base64,{pdf_data}",
                     },
                 },
@@ -2436,7 +2447,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that the model can process audio inputs.
 
         This test should be skipped (see Configuration below) if the model does not
-        support audio inputs. These will take the form:
+        support audio inputs. These will take the shape of the LangChain
+        `AudioContentBlock`:
 
         .. code-block:: python
 
@@ -2446,7 +2458,18 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
-        See https://python.langchain.com/docs/concepts/multimodality/
+        Furthermore, for backward-compatibility, we must also support OpenAI chat
+        completions audio content blocks:
+
+        .. code-block:: python
+
+            {
+                "type": "input_audio",
+                "input_audio": {
+                    "data": "<base64 audio data>",
+                    "format": "wav",  # or appropriate format
+                },
+            }
 
         .. dropdown:: Configuration
 
@@ -2507,7 +2530,8 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that the model can process image inputs.
 
         This test should be skipped (see Configuration below) if the model does not
-        support image inputs. These will take the form:
+        support image inputs. These will take the shape of the LangChain
+        `ImageContentBlock`:
 
         .. code-block:: python
 
@@ -2517,8 +2541,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
-        For backward-compatibility, we must also support OpenAI-style
-        image content blocks:
+        For backward-compatibility, we must also support OpenAI chat completions
+        image content blocks containing base64-encoded images:
 
         .. code-block:: python
 
@@ -2572,7 +2596,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        # OpenAI format, base64 data
+        # OpenAI CC format, base64 data
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
@@ -2584,14 +2608,14 @@ class ChatModelIntegrationTests(ChatModelTests):
         )
         _ = model.invoke([message])
 
-        # Standard format, base64 data
+        # Standard LangChain format, base64 data
         message = HumanMessage(
             content=[
                 {"type": "text", "text": "describe the weather in this image"},
                 {
                     "type": "image",
-                    "mime_type": "image/jpeg",
                     "base64": image_data,
+                    "mime_type": "image/jpeg",
                 },
             ],
         )
@@ -2614,7 +2638,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that the model can process ToolMessages with image inputs.
 
         This test should be skipped if the model does not support messages of the
-        form:
+        Chat Completions `image_url` format:
 
         .. code-block:: python
 
@@ -2629,8 +2653,8 @@ class ChatModelIntegrationTests(ChatModelTests):
                 name="random_image",
             )
 
-        containing image content blocks in OpenAI Chat Completions format, in addition
-        to messages of the form:
+        In addition, models should support the standard LangChain `ImageContentBlock`
+        format:
 
         .. code-block:: python
 
@@ -2645,8 +2669,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_image",
             )
-
-        containing image content blocks in standard format.
 
         This test can be skipped by setting the ``supports_image_tool_message`` property
         to False (see Configuration below).
@@ -2677,7 +2699,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         image_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
         image_data = base64.b64encode(httpx.get(image_url).content).decode("utf-8")
 
-        # Support both OpenAI and standard formats
+        # OpenAI CC format, base64 data
         oai_format_message = ToolMessage(
             content=[
                 {
@@ -2689,6 +2711,7 @@ class ChatModelIntegrationTests(ChatModelTests):
             name="random_image",
         )
 
+        # Standard LangChain format, base64 data
         standard_format_message = ToolMessage(
             content=[
                 {
@@ -2730,7 +2753,7 @@ class ChatModelIntegrationTests(ChatModelTests):
         """Test that the model can process ToolMessages with PDF inputs.
 
         This test should be skipped if the model does not support messages of the
-        form:
+        LangChain `FileContentBlock` format:
 
         .. code-block:: python
 
@@ -2745,8 +2768,6 @@ class ChatModelIntegrationTests(ChatModelTests):
                 tool_call_id="1",
                 name="random_pdf",
             )
-
-        containing PDF content blocks in standard format.
 
         This test can be skipped by setting the ``supports_pdf_tool_message`` property
         to False (see Configuration below).
