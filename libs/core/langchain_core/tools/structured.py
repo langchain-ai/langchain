@@ -39,7 +39,7 @@ if TYPE_CHECKING:
 class StructuredTool(BaseTool):
     """Tool that can operate on any number of inputs."""
 
-    description: str = ""
+    description: Optional[str] = None
     args_schema: Annotated[ArgsSchema, SkipValidation()] = Field(
         ..., description="The tool schema."
     )
@@ -227,21 +227,19 @@ class StructuredTool(BaseTool):
                     f"got {args_schema}"
                 )
                 raise TypeError(msg)
-        if description_ is None:
-            msg = "Function must have a docstring if description not provided."
-            raise ValueError(msg)
-        if description is None:
+        if description is None and description_ is not None:
             # Only apply if using the function's docstring
             description_ = textwrap.dedent(description_).strip()
 
-        # Description example:
-        # search_api(query: str) - Searches the API for the query.
-        description_ = f"{description_.strip()}"
+        if description_:
+            # Always strip description if it exists
+            description_ = description_.strip()
+
         return cls(
             name=name,
             func=func,
             coroutine=coroutine,
-            args_schema=args_schema,
+            args_schema=args_schema,  # type: ignore[arg-type]
             description=description_,
             return_direct=return_direct,
             response_format=response_format,
