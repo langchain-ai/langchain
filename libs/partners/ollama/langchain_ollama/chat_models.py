@@ -42,7 +42,7 @@ from langchain_core.utils.function_calling import (
     convert_to_openai_tool,
 )
 from langchain_core.utils.pydantic import TypeBaseModel, is_basemodel_subclass
-from ollama import AsyncClient, Client, Message, Options
+from ollama import AsyncClient, Client, Message
 from pydantic import BaseModel, PrivateAttr, model_validator
 from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -132,7 +132,6 @@ def _parse_arguments_from_tool_call(
     Should be removed/changed if fixed upstream.
 
     See https://github.com/ollama/ollama/issues/6155
-
     """
     if "function" not in raw_tool_call:
         return None
@@ -676,7 +675,7 @@ class ChatOllama(BaseChatModel):
             "model": kwargs.pop("model", self.model),
             "think": kwargs.pop("reasoning", self.reasoning),
             "format": kwargs.pop("format", self.format),
-            "options": Options(**options_dict),
+            "options": options_dict,
             "keep_alive": kwargs.pop("keep_alive", self.keep_alive),
             **kwargs,
         }
@@ -834,7 +833,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -860,7 +859,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
