@@ -50,10 +50,6 @@ IGNORED_PARTNERS = [
     "prompty",
 ]
 
-PY_312_MAX_PACKAGES = [
-    "libs/partners/chroma",  # https://github.com/chroma-core/chroma/issues/4382
-]
-
 
 def all_package_dirs() -> Set[str]:
     return {
@@ -138,9 +134,6 @@ def _get_configs_for_single_dir(job: str, dir_: str) -> List[Dict[str, str]]:
     elif dir_ == "libs/core":
         py_versions = ["3.10", "3.11", "3.12", "3.13"]
     # custom logic for specific directories
-
-    elif dir_ in PY_312_MAX_PACKAGES:
-        py_versions = ["3.10", "3.12"]
 
     elif dir_ == "libs/langchain" and job == "extended-tests":
         py_versions = ["3.10", "3.13"]
@@ -310,6 +303,11 @@ if __name__ == "__main__":
                 dirs_to_run["codspeed"].add(f"libs/partners/{partner_dir}")
             # Skip if the directory was deleted or is just a tombstone readme
         elif file.startswith("libs/"):
+            # Check if this is a root-level file in libs/ (e.g., libs/README.md)
+            file_parts = file.split("/")
+            if len(file_parts) == 2:
+                # Root-level file in libs/, skip it (no tests needed)
+                continue
             raise ValueError(
                 f"Unknown lib: {file}. check_diff.py likely needs "
                 "an update for this new library!"
