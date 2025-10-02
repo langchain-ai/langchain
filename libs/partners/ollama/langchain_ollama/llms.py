@@ -368,7 +368,7 @@ class OllamaLLM(BaseLLM):
         prompt: str,
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None
@@ -410,7 +410,7 @@ class OllamaLLM(BaseLLM):
         prompt: str,
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> GenerationChunk:
         final_chunk = None

@@ -132,7 +132,6 @@ def _parse_arguments_from_tool_call(
     Should be removed/changed if fixed upstream.
 
     See https://github.com/ollama/ollama/issues/6155
-
     """
     if "function" not in raw_tool_call:
         return None
@@ -834,7 +833,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[CallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
@@ -860,7 +859,7 @@ class ChatOllama(BaseChatModel):
         messages: list[BaseMessage],
         stop: Optional[list[str]] = None,
         run_manager: Optional[AsyncCallbackManagerForLLMRun] = None,
-        verbose: bool = False,  # noqa: FBT001, FBT002
+        verbose: bool = False,  # noqa: FBT002
         **kwargs: Any,
     ) -> ChatGenerationChunk:
         final_chunk = None
