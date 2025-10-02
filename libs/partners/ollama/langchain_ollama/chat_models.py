@@ -94,6 +94,13 @@ def _parse_json_string(
         OutputParserException: If the string is invalid and ``skip=False``.
 
     """
+    # Handle empty strings gracefully
+    if not json_string.strip():
+        if skip:
+            return json_string
+        # Return empty dict for empty strings in tool calls
+        return {}
+
     try:
         return json.loads(json_string)
     except json.JSONDecodeError:
@@ -949,6 +956,21 @@ class ChatOllama(BaseChatModel):
                         "This typically indicates the model was loaded but no content "
                         "was generated. Skipping this response."
                     )
+                    continue
+
+                # Handle structured output scenarios where content might be empty
+                # but tool_calls are present
+                has_tool_calls = "message" in stream_resp and stream_resp[
+                    "message"
+                ].get("tool_calls")
+
+                # Skip empty content chunks unless they have tool
+                #  calls or are final chunks
+                if (
+                    not content.strip()
+                    and not has_tool_calls
+                    and not stream_resp.get("done")
+                ):
                     continue
 
                 if stream_resp.get("done") is True:
