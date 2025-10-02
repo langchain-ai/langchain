@@ -553,7 +553,7 @@ typing = [
 
 [[package]]
 name = "langchain-perplexity"
-version = "0.1.2"
+version = "1.0.0a1"
 source = { editable = "." }
 dependencies = [
     { name = "langchain-core" },
