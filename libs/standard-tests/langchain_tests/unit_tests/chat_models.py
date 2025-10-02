@@ -1,9 +1,11 @@
 """:autodoc-options: autoproperty."""
 
+from __future__ import annotations
+
 import inspect
 import os
 from abc import abstractmethod
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 from unittest import mock
 
 import pytest
@@ -131,7 +133,7 @@ class ChatModelTests(BaseStandardTests):
         return self.chat_model_class.bind_tools is not BaseChatModel.bind_tools
 
     @property
-    def tool_choice_value(self) -> Optional[str]:
+    def tool_choice_value(self) -> str | None:
         """(None or str) to use for tool choice when used in tests."""
         return None
 
@@ -448,8 +450,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "base64",
-                "data": "<base64 image data>",
+                "base64": "<base64 image data>",
                 "mime_type": "image/jpeg",  # or appropriate mime-type
             }
 
@@ -484,7 +485,6 @@ class ChatModelUnitTests(ChatModelTests):
 
             {
                 "type": "image",
-                "source_type": "url",
                 "url": "https://...",
             }
 
@@ -510,8 +510,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             {
                 "type": "file",
-                "source_type": "base64",
-                "data": "<base64 file data>",
+                "base64": "<base64 file data>",
                 "mime_type": "application/pdf",
             }
 
@@ -537,8 +536,7 @@ class ChatModelUnitTests(ChatModelTests):
 
             {
                 "type": "audio",
-                "source_type": "base64",
-                "data": "<base64 audio data>",
+                "base64": "<base64 audio data>",
                 "mime_type": "audio/wav",  # or appropriate mime-type
             }
 
@@ -633,8 +631,7 @@ class ChatModelUnitTests(ChatModelTests):
                 content=[
                     {
                         "type": "image",
-                        "source_type": "base64",
-                        "data": image_data,
+                        "base64": image_data,
                         "mime_type": "image/jpeg",
                     },
                 ],
@@ -666,8 +663,7 @@ class ChatModelUnitTests(ChatModelTests):
                 content=[
                     {
                         "type": "file",
-                        "source_type": "base64",
-                        "data": pdf_data,
+                        "base64": pdf_data,
                         "mime_type": "application/pdf",
                     },
                 ],
@@ -1071,9 +1067,9 @@ class ChatModelUnitTests(ChatModelTests):
             ls_provider: str
             ls_model_name: str
             ls_model_type: Literal["chat"]
-            ls_temperature: Optional[float]
-            ls_max_tokens: Optional[int]
-            ls_stop: Optional[list[str]]
+            ls_temperature: float | None
+            ls_max_tokens: int | None
+            ls_stop: list[str] | None
 
         ls_params = model._get_ls_params()
         try:

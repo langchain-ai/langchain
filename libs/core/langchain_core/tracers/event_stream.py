@@ -610,6 +610,28 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
             run_type,
         )
 
+    def _get_tool_run_info_with_inputs(self, run_id: UUID) -> tuple[RunInfo, Any]:
+        """Get run info for a tool and extract inputs, with validation.
+
+        Args:
+            run_id: The run ID of the tool.
+
+        Returns:
+            A tuple of (run_info, inputs).
+
+        Raises:
+            AssertionError: If the run ID is a tool call and does not have inputs.
+        """
+        run_info = self.run_map.pop(run_id)
+        if "inputs" not in run_info:
+            msg = (
+                f"Run ID {run_id} is a tool call and is expected to have "
+                f"inputs associated with it."
+            )
+            raise AssertionError(msg)
+        inputs = run_info["inputs"]
+        return run_info, inputs
+
     @override
     async def on_tool_start(
         self,
@@ -653,20 +675,42 @@ class _AstreamEventsCallbackHandler(AsyncCallbackHandler, _StreamingCallbackHand
         )
 
     @override
+    async def on_tool_error(
+        self,
+        error: BaseException,
+        *,
+        run_id: UUID,
+        parent_run_id: Optional[UUID] = None,
+        tags: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """Run when tool errors."""
+        run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
+
+        self._send(
+            {
+                "event": "on_tool_error",
+                "data": {
+                    "error": error,
+                    "input": inputs,
+                },
+                "run_id": str(run_id),
+                "name": run_info["name"],
+                "tags": run_info["tags"],
+                "metadata": run_info["metadata"],
+                "parent_ids": self._get_parent_ids(run_id),
+            },
+            "tool",
+        )
+
+    @override
     async def on_tool_end(self, output: Any, *, run_id: UUID, **kwargs: Any) -> None:
         """End a trace for a tool run.
 
         Raises:
             AssertionError: If the run ID is a tool call and does not have inputs
         """
-        run_info = self.run_map.pop(run_id)
-        if "inputs" not in run_info:
-            msg = (
-                f"Run ID {run_id} is a tool call and is expected to have "
-                f"inputs associated with it."
-            )
-            raise AssertionError(msg)
-        inputs = run_info["inputs"]
+        run_info, inputs = self._get_tool_run_info_with_inputs(run_id)
 
         self._send(
             {

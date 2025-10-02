@@ -5,9 +5,9 @@ build-backend = "pdm.backend"
 [project]
 authors = [{ name = "Erick Friis", email = "erick@langchain.dev" }]
 license = { text = "MIT" }
-requires-python = ">=3.9.0,<4.0.0"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.77,<2.0.0",
+    "langchain-core>=1.0.0a2,<2.0.0",
     "pytest>=7.0.0,<9.0.0",
     "pytest-asyncio>=0.20.0,<2.0.0",
     "httpx>=0.28.1,<1.0.0",
@@ -21,7 +21,7 @@ dependencies = [
     "numpy>=2.1.0; python_version>='3.13'",
 ]
 name = "langchain-tests"
-version = "0.3.22"
+version = "1.0.0a1"
 description = "Standard tests for LangChain implementations"
 readme = "README.md"
 

@@ -12,18 +12,20 @@ from typing import (
     Callable,
     Literal,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from typing_extensions import TypeAlias, TypedDict, override
+from typing_extensions import TypedDict, override
 
 from langchain_core._api import deprecated
 from langchain_core.caches import BaseCache
 from langchain_core.callbacks import Callbacks
 from langchain_core.globals import get_verbose
 from langchain_core.messages import (
+    AIMessage,
     AnyMessage,
     BaseMessage,
     MessageLikeRepresentation,
@@ -101,7 +103,7 @@ def _get_token_ids_default_method(text: str) -> list[int]:
 LanguageModelInput = Union[PromptValue, str, Sequence[MessageLikeRepresentation]]
 LanguageModelOutput = Union[BaseMessage, str]
 LanguageModelLike = Runnable[LanguageModelInput, LanguageModelOutput]
-LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", BaseMessage, str)
+LanguageModelOutputVar = TypeVar("LanguageModelOutputVar", AIMessage, str)
 
 
 def _get_verbosity() -> bool:

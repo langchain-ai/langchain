@@ -1,13 +1,52 @@
-"""Ollama chat models."""
+"""Ollama chat models.
+
+**Input Flow (LangChain -> Ollama)**
+
+`_convert_messages_to_ollama_messages()`:
+
+- Transforms LangChain messages to `ollama.Message` format
+- Extracts text content, images (base64), and tool calls
+
+`_chat_params()`:
+
+- Combines messages with model parameters (temperature, top_p, etc.)
+- Attaches tools if provided
+- Configures reasoning/thinking mode via `think` parameter
+- Sets output format (raw, JSON, or JSON schema)
+
+**Output Flow (Ollama -> LangChain)**
+
+1. **Ollama Response**
+
+Stream dictionary chunks containing:
+- `message`: Dict with `role`, `content`, `tool_calls`, `thinking`
+- `done`: Boolean indicating completion
+- `done_reason`: Reason for completion (`stop`, `length`, `load`)
+- Token counts/timing metadata
+
+2. **Response Processing** (`_iterate_over_stream()`)
+
+- Extracts content from `message.content`
+- Parses tool calls into `ToolCall`s
+- Separates reasoning content when `reasoning=True` (stored in `additional_kwargs`)
+- Builds usage metadata from token counts
+
+3. **LangChain Output** (`ChatGenerationChunk` -> `AIMessage`)
+
+- **Streaming**: Yields `ChatGenerationChunk` with `AIMessageChunk` content
+- **Non-streaming**: Returns `ChatResult` with complete `AIMessage`
+- Tool calls attached to `AIMessage.tool_calls`
+- Reasoning content in `AIMessage.additional_kwargs['reasoning_content']`
+"""
 
 from __future__ import annotations
 
 import ast
 import json
 import logging
-from collections.abc import AsyncIterator, Iterator, Mapping, Sequence
+from collections.abc import AsyncIterator, Callable, Iterator, Mapping, Sequence
 from operator import itemgetter
-from typing import Any, Callable, Literal, Optional, Union, cast
+from typing import Any, Literal, Optional, Union, cast
 from uuid import uuid4
 
 from langchain_core.callbacks import CallbackManagerForLLMRun
@@ -26,6 +65,7 @@ from langchain_core.messages import (
     ToolMessage,
     is_data_content_block,
 )
+from langchain_core.messages import content as types
 from langchain_core.messages.ai import UsageMetadata
 from langchain_core.messages.tool import tool_call
 from langchain_core.output_parsers import (
@@ -48,6 +88,8 @@ from pydantic.json_schema import JsonSchemaValue
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import Self, is_typeddict
 
+from langchain_ollama._compat import _convert_from_v1_to_ollama
+
 from ._utils import merge_auth_headers, parse_url_with_auth, validate_model
 
 log = logging.getLogger(__name__)
@@ -56,7 +98,7 @@ log = logging.getLogger(__name__)
 def _get_usage_metadata_from_generation_info(
     generation_info: Optional[Mapping[str, Any]],
 ) -> Optional[UsageMetadata]:
-    """Get usage metadata from ollama generation info mapping."""
+    """Get usage metadata from Ollama generation info mapping."""
     if generation_info is None:
         return None
     input_tokens: Optional[int] = generation_info.get("prompt_eval_count")
@@ -92,7 +134,6 @@ def _parse_json_string(
 
     Raises:
         OutputParserException: If the string is invalid and ``skip=False``.
-
     """
     try:
         return json.loads(json_string)
@@ -163,7 +204,7 @@ def _parse_arguments_from_tool_call(
 def _get_tool_calls_from_response(
     response: Mapping[str, Any],
 ) -> list[ToolCall]:
-    """Get tool calls from ollama response."""
+    """Get tool calls from Ollama response."""
     tool_calls = []
     if "message" in response and (
         raw_tool_calls := response["message"].get("tool_calls")
@@ -196,8 +237,12 @@ def _lc_tool_call_to_openai_tool_call(tool_call_: ToolCall) -> dict:
 def _get_image_from_data_content_block(block: dict) -> str:
     """Format standard data content block to format expected by Ollama."""
     if block["type"] == "image":
-        if block["source_type"] == "base64":
+        if block.get("source_type") == "base64":
+            # v0 style
             return block["data"]
+        if block.get("base64"):
+            # v1 content blocks
+            return block["base64"]
         error_message = "Image data only supported through in-line base64 format."
         raise ValueError(error_message)
 
@@ -276,7 +321,7 @@ class ChatOllama(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream("Return the words Hello World!"):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
 
         .. code-block:: python
@@ -480,8 +525,7 @@ class ChatOllama(BaseChatModel):
     """Model name to use."""
 
     reasoning: Optional[Union[bool, str]] = None
-    """Controls the reasoning/thinking mode for
-    `supported models <https://ollama.com/search?c=thinking>`__.
+    """Controls the reasoning/thinking mode for `supported models <https://ollama.com/search?c=thinking>`__.
 
     - ``True``: Enables reasoning mode. The model's reasoning process will be
       captured and returned separately in the ``additional_kwargs`` of the
@@ -497,7 +541,6 @@ class ChatOllama(BaseChatModel):
       intensity level. Currently, this is only supported ``gpt-oss``. See the
       `Ollama docs <https://github.com/ollama/ollama-python/blob/da79e987f0ac0a4986bf396f043b36ef840370bc/ollama/_types.py#L210>`__
       for more information.
-
     """
 
     validate_model_on_init: bool = False
@@ -508,72 +551,112 @@ class ChatOllama(BaseChatModel):
 
     mirostat: Optional[int] = None
     """Enable Mirostat sampling for controlling perplexity.
-    (default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)"""
+
+    (Default: ``0``, ``0`` = disabled, ``1`` = Mirostat, ``2`` = Mirostat 2.0)
+    """
 
     mirostat_eta: Optional[float] = None
-    """Influences how quickly the algorithm responds to feedback
-    from the generated text. A lower learning rate will result in
-    slower adjustments, while a higher learning rate will make
-    the algorithm more responsive. (Default: ``0.1``)"""
+    """Influences how quickly the algorithm responds to feedback from generated text.
+
+    A lower learning rate will result in slower adjustments, while a higher learning
+    rate will make the algorithm more responsive.
+
+    (Default: ``0.1``)
+    """
 
     mirostat_tau: Optional[float] = None
-    """Controls the balance between coherence and diversity
-    of the output. A lower value will result in more focused and
-    coherent text. (Default: ``5.0``)"""
+    """Controls the balance between coherence and diversity of the output.
+
+    A lower value will result in more focused and coherent text.
+
+    (Default: ``5.0``)
+    """
 
     num_ctx: Optional[int] = None
-    """Sets the size of the context window used to generate the
-    next token. (Default: ``2048``)	"""
+    """Sets the size of the context window used to generate the next token.
+
+    (Default: ``2048``)
+    """
 
     num_gpu: Optional[int] = None
-    """The number of GPUs to use. On macOS it defaults to ``1`` to
-    enable metal support, ``0`` to disable."""
+    """The number of GPUs to use.
+
+    On macOS it defaults to ``1`` to enable metal support, ``0`` to disable.
+    """
 
     num_thread: Optional[int] = None
     """Sets the number of threads to use during computation.
-    By default, Ollama will detect this for optimal performance.
-    It is recommended to set this value to the number of physical
-    CPU cores your system has (as opposed to the logical number of cores)."""
+
+    By default, Ollama will detect this for optimal performance. It is recommended to
+    set this value to the number of physical CPU cores your system has (as opposed to
+    the logical number of cores).
+    """
 
     num_predict: Optional[int] = None
     """Maximum number of tokens to predict when generating text.
-    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)"""
+
+    (Default: ``128``, ``-1`` = infinite generation, ``-2`` = fill context)
+    """
 
     repeat_last_n: Optional[int] = None
-    """Sets how far back for the model to look back to prevent
-    repetition. (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)"""
+    """Sets how far back for the model to look back to prevent repetition.
+
+    (Default: ``64``, ``0`` = disabled, ``-1`` = ``num_ctx``)
+    """
 
     repeat_penalty: Optional[float] = None
-    """Sets how strongly to penalize repetitions. A higher value (e.g., ``1.5``)
-    will penalize repetitions more strongly, while a lower value (e.g., ``0.9``)
-    will be more lenient. (Default: ``1.1``)"""
+    """Sets how strongly to penalize repetitions.
+
+    A higher value (e.g., ``1.5``) will penalize repetitions more strongly, while a
+    lower value (e.g., ``0.9``) will be more lenient. (Default: ``1.1``)
+    """
 
     temperature: Optional[float] = None
-    """The temperature of the model. Increasing the temperature will
-    make the model answer more creatively. (Default: ``0.8``)"""
+    """The temperature of the model.
+
+    Increasing the temperature will make the model answer more creatively.
+
+    (Default: ``0.8``)
+    """
 
     seed: Optional[int] = None
-    """Sets the random number seed to use for generation. Setting this
-    to a specific number will make the model generate the same text for
-    the same prompt."""
+    """Sets the random number seed to use for generation.
+
+    Setting this to a specific number will make the model generate the same text for the
+    same prompt.
+    """
 
     stop: Optional[list[str]] = None
     """Sets the stop tokens to use."""
 
     tfs_z: Optional[float] = None
-    """Tail free sampling is used to reduce the impact of less probable
-    tokens from the output. A higher value (e.g., ``2.0``) will reduce the
-    impact more, while a value of ``1.0`` disables this setting. (default: ``1``)"""
+    """Tail free sampling.
+
+    Used to reduce the impact of less probable tokens from the output.
+
+    A higher value (e.g., ``2.0``) will reduce the impact more, while a value of ``1.0``
+    disables this setting.
+
+    (Default: ``1``)
+    """
 
     top_k: Optional[int] = None
-    """Reduces the probability of generating nonsense. A higher value (e.g. ``100``)
-    will give more diverse answers, while a lower value (e.g. ``10``)
-    will be more conservative. (Default: ``40``)"""
+    """Reduces the probability of generating nonsense.
+
+    A higher value (e.g. ``100``) will give more diverse answers, while a lower value
+    (e.g. ``10``) will be more conservative.
+
+    (Default: ``40``)
+    """
 
     top_p: Optional[float] = None
-    """Works together with top-k. A higher value (e.g., ``0.95``) will lead
-    to more diverse text, while a lower value (e.g., ``0.5``) will
-    generate more focused and conservative text. (Default: ``0.9``)"""
+    """Works together with top-k.
+
+    A higher value (e.g., ``0.95``) will lead to more diverse text, while a lower value
+    (e.g., ``0.5``) will generate more focused and conservative text.
+
+    (Default: ``0.9``)
+    """
 
     format: Optional[Union[Literal["", "json"], JsonSchemaValue]] = None
     """Specify the format of the output (options: ``'json'``, JSON schema)."""
@@ -640,6 +723,16 @@ class ChatOllama(BaseChatModel):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        """Assemble the parameters for a chat completion request.
+
+        Args:
+            messages: List of LangChain messages to send to the model.
+            stop: Optional list of stop tokens to use for this invocation.
+            **kwargs: Additional keyword arguments to include in the request.
+
+        Returns:
+            A dictionary of parameters to pass to the Ollama client.
+        """
         ollama_messages = self._convert_messages_to_ollama_messages(messages)
 
         if self.stop is not None and stop is not None:
@@ -710,6 +803,31 @@ class ChatOllama(BaseChatModel):
     def _convert_messages_to_ollama_messages(
         self, messages: list[BaseMessage]
     ) -> Sequence[Message]:
+        """Convert a BaseMessage list to list of messages for Ollama to consume.
+
+        Args:
+            messages: List of BaseMessage to convert.
+
+        Returns:
+            List of messages in Ollama format.
+        """
+        for idx, message in enumerate(messages):
+            # Handle message content written in v1 format
+            if (
+                isinstance(message, AIMessage)
+                and message.response_metadata.get("output_version") == "v1"
+            ):
+                # Unpack known v1 content to Ollama format for the request
+                # Most types are passed through unchanged
+                messages[idx] = message.model_copy(
+                    update={
+                        "content": _convert_from_v1_to_ollama(
+                            cast("list[types.ContentBlock]", message.content),
+                            message.response_metadata.get("model_provider"),
+                        )
+                    }
+                )
+
         ollama_messages: list = []
         for message in messages:
             role: str
@@ -742,7 +860,7 @@ class ChatOllama(BaseChatModel):
             images = []
             if isinstance(message.content, str):
                 content = message.content
-            else:
+            else:  # List
                 for content_part in message.content:
                     if isinstance(content_part, str):
                         content += f"\n{content_part}"
@@ -776,6 +894,7 @@ class ChatOllama(BaseChatModel):
                         else:
                             images.append(image_url_components[0])
                     elif is_data_content_block(content_part):
+                        # Handles v1 "image" type
                         image = _get_image_from_data_content_block(content_part)
                         images.append(image)
                     else:
@@ -785,8 +904,8 @@ class ChatOllama(BaseChatModel):
                             "with a string 'image_url' field."
                         )
                         raise ValueError(msg)
-            # Should convert to ollama.Message once role includes tool,
-            # and tool_call_id is in Message
+            # Should convert to ollama.Message once role includes tool, and tool_call_id
+            # is in Message
             msg_: dict = {
                 "role": role,
                 "content": content,
@@ -954,6 +1073,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
+                    generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
@@ -1030,6 +1150,7 @@ class ChatOllama(BaseChatModel):
                     generation_info = dict(stream_resp)
                     if "model" in generation_info:
                         generation_info["model_name"] = generation_info["model"]
+                    generation_info["model_provider"] = "ollama"
                     _ = generation_info.pop("message", None)
                 else:
                     generation_info = None
@@ -1106,7 +1227,7 @@ class ChatOllama(BaseChatModel):
         *,
         tool_choice: Optional[Union[dict, str, Literal["auto", "any"], bool]] = None,  # noqa: PYI051, ARG002
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         """Bind tool-like objects to this chat model.
 
         Assumes model is compatible with OpenAI tool-calling API.

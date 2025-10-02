@@ -95,12 +95,11 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
 
         message = HumanMessage(
             [
-                {"type": "text", "text": "Summarize this document:"},
+                {"type": "text", "text": "What is the document title, verbatim?"},
                 {
                     "type": "file",
-                    "source_type": "base64",
                     "mime_type": "application/pdf",
-                    "data": pdf_data,
+                    "base64": pdf_data,
                     "filename": "my-pdf",  # OpenAI requires a filename
                 },
             ]
@@ -110,7 +109,7 @@ class TestOpenAIStandard(ChatModelIntegrationTests):
         # Test OpenAI Chat Completions format
         message = HumanMessage(
             [
-                {"type": "text", "text": "Summarize this document:"},
+                {"type": "text", "text": "What is the document title, verbatim?"},
                 {
                     "type": "file",
                     "file": {
