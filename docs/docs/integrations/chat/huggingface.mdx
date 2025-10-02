@@ -3,7 +3,21 @@ title: Hugging Face (chat)
 sidebar_label: Hugging Face
 ---
 
-## Chat models with Hugging Face
+## Overview
+
+This page shows how to use Hugging Face models as chat models in LangChain.
+
+## Setup
+
+Install the required packages:
+
+```bash
+pip install langchain-huggingface transformers
+```
+
+> For Hugging Face pipelines, prefer `max_new_tokens` (not `max_tokens`). The pipeline will use CPU/GPU automatically depending on availability.
+
+## Instantiation
 
 ### Option 1 (works today): pipeline → wrap with `ChatHuggingFace`
 
@@ -15,24 +29,17 @@ from langchain_huggingface import ChatHuggingFace
 pipe = pipeline(
     "text-generation",
     model="microsoft/Phi-3-mini-4k-instruct",
-    do_sample=False,        # deterministic (similar to temperature=0)
+    do_sample=False,        # deterministic
     max_new_tokens=128,     # HF uses max_new_tokens (not max_tokens)
 )
 
 # Wrap the pipeline as a LangChain chat model
 llm = ChatHuggingFace(llm=pipe)
-
-print(llm.invoke("Say hi in one sentence.").content)
 ```
-
-:::note
-- **Install**: `pip install langchain-huggingface transformers`
-- For Hugging Face pipelines prefer `max_new_tokens` (not `max_tokens`).
-:::
 
 ### Option 2 (coming after fix): `init_chat_model(..., model_provider="huggingface")`
 
-Once available, you’ll be able to initialize via `init_chat_model`:
+Once available in your version, you can initialize via `init_chat_model`:
 
 ```python
 from langchain.chat_models import init_chat_model
@@ -44,10 +51,36 @@ llm = init_chat_model(
     do_sample=False,
     max_new_tokens=128,
 )
-
-print(llm.invoke("Say hi in one sentence.").content)
 ```
 
-This path depends on a bug fix tracked for Hugging Face chat initialization. If your version doesn’t support it yet, use Option 1 above.
+> If your version doesn’t support this yet, use **Option 1** above.
+
+## Invocation
+
+```python
+msg = llm.invoke("Say hi in one sentence.")
+print(msg.content)
+```
+
+## Chaining
+
+```python
+from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are helpful."),
+    ("human", "{question}"),
+])
+
+chain = prompt | llm
+result = chain.invoke({"question": "What is the capital of France?"})
+print(result.content)
+```
+
+## API reference
+
+- `langchain_huggingface.ChatHuggingFace`
+- `transformers.pipeline` (Hugging Face)
+- `langchain.chat_models.init_chat_model` (when available for Hugging Face)
 
 
