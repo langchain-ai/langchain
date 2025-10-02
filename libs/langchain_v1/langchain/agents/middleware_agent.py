@@ -34,10 +34,22 @@ from langchain.agents.structured_output import (
 )
 from langchain.chat_models import init_chat_model
 from langchain.tools import ToolNode
+from langchain.tools.tool_node import ToolInvocationError
 
 STRUCTURED_OUTPUT_ERROR_TEMPLATE = "Error: {error}\n Please fix your mistakes."
 
 ResponseT = TypeVar("ResponseT")
+
+
+def _default_handle_tool_errors(e: Exception) -> str:
+    """Default error handler for tool errors.
+
+    If the tool is a tool invocation error, return its message.
+    Otherwise, raise the error.
+    """
+    if isinstance(e, ToolInvocationError):
+        return e.message
+    raise e
 
 
 def _resolve_schema(schemas: set[type], schema_name: str, omit_flag: str | None = None) -> type:
@@ -222,7 +234,21 @@ def create_agent(  # noqa: PLR0915
         all_tools = middleware_tools + regular_tools + structured_tools
 
         # Only create ToolNode if we have tools
-        tool_node = ToolNode(tools=all_tools) if all_tools else None
+        final_tool_node = (
+            ToolNode(
+                tools=all_tools,
+                name=tool_node.name if tool_node else "tools",
+                tags=list(tool_node.tags) if tool_node and tool_node.tags else None,
+                handle_tool_errors=tool_node._handle_tool_errors
+                if tool_node and tool_node._handle_tool_errors
+                else _default_handle_tool_errors,
+                messages_key=tool_node._messages_key
+                if tool_node and tool_node._messages_key
+                else "messages",
+            )
+            if all_tools
+            else None
+        )
         default_tools = regular_tools + builtin_tools + structured_tools + middleware_tools
     elif isinstance(tools, ToolNode):
         # tools is ToolNode or None
@@ -231,7 +257,17 @@ def create_agent(  # noqa: PLR0915
             default_tools = list(tool_node.tools_by_name.values()) + middleware_tools
             # Update tool node to know about tools provided by middleware
             all_tools = list(tool_node.tools_by_name.values()) + middleware_tools
-            tool_node = ToolNode(all_tools)
+            final_tool_node = ToolNode(
+                tools=all_tools,
+                name=tool_node.name if tool_node else "tools",
+                tags=list(tool_node.tags) if tool_node and tool_node.tags else None,
+                handle_tool_errors=tool_node._handle_tool_errors
+                if tool_node
+                else _default_handle_tool_errors,
+                messages_key=tool_node._messages_key
+                if tool_node and tool_node._messages_key
+                else "messages",
+            )
             # Add structured output tools
             for info in structured_output_tools.values():
                 default_tools.append(info.tool)
@@ -470,8 +506,8 @@ def create_agent(  # noqa: PLR0915
     graph.add_node("model_request", RunnableCallable(model_request, amodel_request))
 
     # Only add tools node if we have tools
-    if tool_node is not None:
-        graph.add_node("tools", tool_node)
+    if final_tool_node is not None:
+        graph.add_node("tools", final_tool_node)
 
     # Add middleware nodes
     for m in middleware:
@@ -531,15 +567,15 @@ def create_agent(  # noqa: PLR0915
     graph.add_edge(START, first_node)
 
     # add conditional edges only if tools exist
-    if tool_node is not None:
+    if final_tool_node is not None:
         graph.add_conditional_edges(
             "tools",
-            _make_tools_to_model_edge(tool_node, first_node, structured_output_tools),
+            _make_tools_to_model_edge(final_tool_node, first_node, structured_output_tools),
             [first_node, END],
         )
         graph.add_conditional_edges(
             last_node,
-            _make_model_to_tools_edge(first_node, structured_output_tools, tool_node),
+            _make_model_to_tools_edge(first_node, structured_output_tools, final_tool_node),
             [first_node, "tools", END],
         )
     elif last_node == "model_request":
