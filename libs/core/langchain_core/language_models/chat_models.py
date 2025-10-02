@@ -63,6 +63,7 @@ from langchain_core.prompt_values import ChatPromptValue, PromptValue, StringPro
 from langchain_core.rate_limiters import BaseRateLimiter
 from langchain_core.runnables import RunnableMap, RunnablePassthrough
 from langchain_core.runnables.config import ensure_config, run_in_executor
+from langchain_core.runnables.fallbacks import RunnableWithFallbacks
 from langchain_core.tracers._streaming import _StreamingCallbackHandler
 from langchain_core.utils.function_calling import (
     convert_to_json_schema,
@@ -311,6 +312,9 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
     rate_limiter: Optional[BaseRateLimiter] = Field(default=None, exclude=True)
     "An optional rate limiter to use for limiting the number of requests."
 
+    fallback: Optional[RunnableWithFallbacks] = Field(default=None, exclude=True)
+    """A fallback type to use if provided."""
+
     disable_streaming: Union[bool, Literal["tool_calling"]] = False
     """Whether to disable streaming for this model.
 
@@ -390,6 +394,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         config = ensure_config(config)
+        fallback_object = self.get_fallback()
+        if fallback_object:
+            self._reset_fallback()
+            return fallback_object.invoke(input, config, stop=stop, **kwargs)
         return cast(
             "ChatGeneration",
             self.generate_prompt(
@@ -414,6 +422,10 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         **kwargs: Any,
     ) -> BaseMessage:
         config = ensure_config(config)
+        fallback_object = self.get_fallback()
+        if fallback_object:
+            self._reset_fallback()
+            return await fallback_object.ainvoke(input, config, stop=stop, **kwargs)
         llm_result = await self.agenerate_prompt(
             [self._convert_input(input)],
             stop=stop,
@@ -470,6 +482,12 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> Iterator[BaseMessageChunk]:
+        fallback_object = self.get_fallback()
+        if fallback_object:
+            self._reset_fallback()
+            for chunk in fallback_object.stream(input, config, stop=stop, **kwargs):
+                yield chunk
+            return
         if not self._should_stream(async_api=False, **{**kwargs, "stream": True}):
             # Model doesn't implement streaming, so use default implementation
             yield cast(
@@ -561,6 +579,14 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
         stop: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> AsyncIterator[BaseMessageChunk]:
+        fallback_object = self.get_fallback()
+        if fallback_object:
+            self._reset_fallback()
+            async for chunk in fallback_object.astream(
+                input, config, stop=stop, **kwargs
+            ):
+                yield chunk
+            return
         if not self._should_stream(async_api=True, **{**kwargs, "stream": True}):
             # No async or sync stream is implemented, so fall back to ainvoke
             yield cast(
@@ -1287,6 +1313,22 @@ class BaseChatModel(BaseLanguageModel[BaseMessage], ABC):
             if item is done:
                 break
             yield item  # type: ignore[misc]
+
+    def _reset_fallback(self) -> BaseChatModel:
+        """Reset the fallback."""
+        self.fallback = None
+        return self
+
+    def set_fallback(
+        self, fallback: Optional[RunnableWithFallbacks] = None
+    ) -> BaseChatModel:
+        """Add fallbacks to the model."""
+        self.fallback = fallback
+        return self
+
+    def get_fallback(self) -> Optional[RunnableWithFallbacks]:
+        """Get the fallback."""
+        return self.fallback
 
     @deprecated("0.1.7", alternative="invoke", removal="1.0")
     def __call__(
