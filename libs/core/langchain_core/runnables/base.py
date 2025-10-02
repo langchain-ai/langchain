@@ -1642,7 +1642,7 @@ class Runnable(ABC, Generic[Input, Output]):
             from langchain_ollama import ChatOllama
             from langchain_core.output_parsers import StrOutputParser
 
-            llm = ChatOllama(model="llama2")
+            llm = ChatOllama(model="llama3.1")
 
             # Without bind.
             chain = llm | StrOutputParser()
