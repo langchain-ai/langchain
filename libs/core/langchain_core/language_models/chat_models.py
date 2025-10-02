@@ -12,7 +12,7 @@ from functools import cached_property
 from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Literal, Optional, Union, cast
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from typing_extensions import override
 
 from langchain_core.caches import BaseCache
@@ -39,7 +39,6 @@ from langchain_core.messages import (
     AIMessageChunk,
     AnyMessage,
     BaseMessage,
-    HumanMessage,
     convert_to_messages,
     is_data_content_block,
     message_chunk_to_message,
@@ -365,22 +364,22 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     def raise_deprecation(cls, values: dict) -> Any:
         """Emit deprecation warning if ``callback_manager`` is used.
 
-    ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into a
-    standard format. This flag can be used to additionally store the standard format
-    in message content, e.g., for serialization purposes.
+        ``AIMessage.content_blocks`` will lazily parse the contents of ``content`` into
+        a standard format. This flag can be used to additionally store the standard
+        format in message content, e.g., for serialization purposes.
 
-    Supported values:
+        Supported values:
 
-    - ``"v0"``: provider-specific format in content (can lazily-parse with
-      ``.content_blocks``)
-    - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
+        - ``"v0"``: provider-specific format in content (can lazily-parse with
+          ``.content_blocks``)
+        - ``"v1"``: standardized format in content (consistent with ``.content_blocks``)
 
-    Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
-    new content formats in a backward-compatible way.
+        Partner packages (e.g., ``langchain-openai``) can also use this field to roll
+        out new content formats in a backward-compatible way.
 
-    .. versionadded:: 1.0
+        .. versionadded:: 1.0
 
-    """
+        """
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
