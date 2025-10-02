@@ -201,8 +201,8 @@ class TestUrlAuthEdgeCases:
         """Test behavior with malformed URLs."""
         malformed_url = "not-a-valid-url"
         result = parse_url_with_auth(malformed_url)
-        # Should return the original URL without modification
-        assert result == (malformed_url, None)
+        # Shouldn't return a URL as it wouldn't parse correctly or reach a server
+        assert result == (None, None)
 
     def test_parse_url_with_auth_no_port(self) -> None:
         """Test URLs without explicit port numbers."""
