@@ -7,8 +7,6 @@ import pytest
 
 from langchain.chat_models import init_chat_model
 
-pytestmark = pytest.mark.requires("langchain_huggingface", "transformers")
-
 
 @pytest.fixture()
 def hf_fakes(monkeypatch: pytest.MonkeyPatch) -> SimpleNamespace:
