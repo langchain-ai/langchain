@@ -48,7 +48,7 @@ class ModelCallLimitExceededError(Exception):
         super().__init__(msg)
 
 
-class ModelCallTrackingMiddleware(AgentMiddleware):
+class ModelCallLimitMiddleware(AgentMiddleware):
     """Middleware that tracks model call counts and enforces limits.
 
     This middleware monitors the number of model calls made during agent execution
@@ -57,11 +57,11 @@ class ModelCallTrackingMiddleware(AgentMiddleware):
 
     Example:
         ```python
-        from langchain.agents.middleware.call_tracking import ModelCallTrackingMiddleware
+        from langchain.agents.middleware.call_tracking import ModelCallLimitMiddleware
         from langchain.agents import create_agent
 
         # Create middleware with limits
-        call_tracker = ModelCallTrackingMiddleware(
+        call_tracker = ModelCallLimitMiddleware(
             thread_limit=10, run_limit=5, exit_behavior="jump_to_end"
         )
 

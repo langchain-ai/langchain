@@ -37,7 +37,7 @@ from langchain.agents.middleware.planning import (
     WRITE_TODOS_TOOL_DESCRIPTION,
 )
 from langchain.agents.middleware.call_tracking import (
-    ModelCallTrackingMiddleware,
+    ModelCallLimitMiddleware,
     ModelCallLimitExceededError,
 )
 from langchain.agents.middleware.prompt_caching import AnthropicPromptCachingMiddleware
@@ -1676,7 +1676,7 @@ def simple_tool(input: str) -> str:
 def test_middleware_unit_functionality():
     """Test that the middleware works as expected in isolation."""
     # Test with jump_to_end behavior
-    middleware = ModelCallTrackingMiddleware(thread_limit=2, run_limit=1)
+    middleware = ModelCallLimitMiddleware(thread_limit=2, run_limit=1)
 
     # Mock runtime (not used in current implementation)
     runtime = None
@@ -1697,7 +1697,7 @@ def test_middleware_unit_functionality():
     assert result == {"jump_to": "end"}
 
     # Test with raise_exception behavior
-    middleware_exception = ModelCallTrackingMiddleware(
+    middleware_exception = ModelCallLimitMiddleware(
         thread_limit=2, run_limit=1, exit_behavior="raise_exception"
     )
 
@@ -1724,7 +1724,7 @@ def test_thread_limit_with_create_agent():
     agent = create_agent(
         model=model,
         tools=[simple_tool],
-        middleware=[ModelCallTrackingMiddleware(thread_limit=1)],
+        middleware=[ModelCallLimitMiddleware(thread_limit=1)],
     ).compile(checkpointer=InMemorySaver())
 
     # First invocation should work - 1 model call, within thread limit
@@ -1766,7 +1766,7 @@ def test_run_limit_with_create_agent():
     agent = create_agent(
         model=model,
         tools=[simple_tool],
-        middleware=[ModelCallTrackingMiddleware(run_limit=1)],
+        middleware=[ModelCallLimitMiddleware(run_limit=1)],
     ).compile(checkpointer=InMemorySaver())
 
     # This should hit the run limit after the first model call
@@ -1788,32 +1788,32 @@ def test_middleware_initialization_validation():
     """Test that middleware initialization validates parameters correctly."""
     # Test that at least one limit must be specified
     with pytest.raises(ValueError, match="At least one limit must be specified"):
-        ModelCallTrackingMiddleware()
+        ModelCallLimitMiddleware()
 
     # Test invalid exit behavior
     with pytest.raises(ValueError, match="Invalid exit_behavior"):
-        ModelCallTrackingMiddleware(thread_limit=5, exit_behavior="invalid")
+        ModelCallLimitMiddleware(thread_limit=5, exit_behavior="invalid")
 
     # Test valid initialization
-    middleware = ModelCallTrackingMiddleware(thread_limit=5, run_limit=3)
+    middleware = ModelCallLimitMiddleware(thread_limit=5, run_limit=3)
     assert middleware.thread_limit == 5
     assert middleware.run_limit == 3
     assert middleware.exit_behavior == "jump_to_end"
 
     # Test with only thread limit
-    middleware = ModelCallTrackingMiddleware(thread_limit=5)
+    middleware = ModelCallLimitMiddleware(thread_limit=5)
     assert middleware.thread_limit == 5
     assert middleware.run_limit is None
 
     # Test with only run limit
-    middleware = ModelCallTrackingMiddleware(run_limit=3)
+    middleware = ModelCallLimitMiddleware(run_limit=3)
     assert middleware.thread_limit is None
     assert middleware.run_limit == 3
 
 
 def test_exception_error_message():
     """Test that the exception provides clear error messages."""
-    middleware = ModelCallTrackingMiddleware(
+    middleware = ModelCallLimitMiddleware(
         thread_limit=2, run_limit=1, exit_behavior="raise_exception"
     )
 
@@ -1850,7 +1850,7 @@ def test_run_limit_resets_between_invocations() -> None:
     """Test that run_model_call_count resets between invocations, but thread_model_call_count accumulates."""
 
     # First: No tool calls per invocation, so model does not increment call counts internally
-    middleware = ModelCallTrackingMiddleware(
+    middleware = ModelCallLimitMiddleware(
         thread_limit=3, run_limit=1, exit_behavior="raise_exception"
     )
     model = FakeToolCallingModel(
