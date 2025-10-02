@@ -76,6 +76,12 @@ class ModelCallLimitMiddleware(AgentMiddleware):
     and can terminate the agent when specified limits are reached. It supports
     both thread-level and run-level call counting with configurable exit behaviors.
 
+    Thread-level: The middleware tracks the number of model calls and persists
+    call count across multiple runs (invocations) of the agent.
+
+    Run-level: The middleware tracks the number of model calls made during a single
+    run (invocation) of the agent.
+
     Example:
         ```python
         from langchain.agents.middleware.call_tracking import ModelCallLimitMiddleware
