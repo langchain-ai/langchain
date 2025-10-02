@@ -15,7 +15,7 @@
 # Allowed Types:
 #   * feat       — a new feature (MINOR)
 #   * fix        — a bug fix (PATCH)
-#   * docs       — documentation only changes (either in /docs or code comments)
+#   * docs       — documentation only changes
 #   * style      — formatting, linting, etc.; no code change or typing refactors
 #   * refactor   — code change that neither fixes a bug nor adds a feature
 #   * perf       — code change that improves performance

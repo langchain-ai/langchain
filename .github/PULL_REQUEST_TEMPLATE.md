@@ -18,7 +18,7 @@ Thank you for contributing to LangChain! Follow these steps to mark your pull re
   - **Issue:** the issue # it fixes, if applicable (e.g. Fixes #123)
   - **Dependencies:** any dependencies required for this change
 
-- [ ] **Lint and test**: Run `make format`, `make lint` and `make test` from the root of the package(s) you've modified. **We will not consider a PR unless these three are passing in CI.** See [contribution guidelines](https://python.langchain.com/docs/contributing/) for more.
+- [ ] **Lint and test**: Run `make format`, `make lint` and `make test` from the root of the package(s) you've modified. **We will not consider a PR unless these three are passing in CI.** See [contribution guidelines](https://docs.langchain.com/oss/python/contributing) for more.
 
 Additional guidelines:
 

@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: light)" srcset="docs/static/img/logo-dark.svg">
-    <source media="(prefers-color-scheme: dark)" srcset="docs/static/img/logo-light.svg">
-    <img alt="LangChain Logo" src="docs/static/img/logo-dark.svg" width="80%">
+    <source media="(prefers-color-scheme: light)" srcset=".github/images/logo-dark.svg">
+    <source media="(prefers-color-scheme: dark)" srcset=".github/images/logo-light.svg">
+    <img alt="LangChain Logo" src=".github/images/logo-dark.svg" width="80%">
   </picture>
 </p>
 
@@ -39,7 +39,7 @@ pip install -U langchain
 
 ---
 
-**Documentation**: To learn more about LangChain, check out [the docs](https://python.langchain.com/docs/introduction/).
+**Documentation**: To learn more about LangChain, check out [the docs](https://docs.langchain.com/).
 
 If you're looking for more advanced customization or agent orchestration, check out [LangGraph](https://langchain-ai.github.io/langgraph/), our framework for building controllable agent workflows.
 
@@ -69,7 +69,7 @@ To improve your LLM application development, pair LangChain with:
 
 - [Conceptual Guides](https://docs.langchain.com/oss/python/langchain/overview): Explanations of key
 concepts behind the LangChain framework.
-- [Tutorials](https://docs.langchain.com/oss/python/learn#tutorials): Simple walkthroughs with
+- [Tutorials](https://docs.langchain.com/oss/python/learn): Simple walkthroughs with
 guided examples on getting started with LangChain.
 - [API Reference](https://reference.langchain.com/python/): Detailed reference on
 navigating base packages and integrations for LangChain.
