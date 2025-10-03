@@ -3,7 +3,10 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_classic.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
+from langchain_classic.chains.prompt_selector import (
+    ConditionalPromptSelector,
+    is_chat_model,
+)
 
 DEFAULT_REFINE_PROMPT_TMPL = (
     "The original question is as follows: {question}\n"

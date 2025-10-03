@@ -17,7 +17,9 @@ from langchain_core.vectorstores import VectorStore
 from pydantic import ConfigDict, Field, model_validator
 from typing_extensions import override
 
-from langchain_classic.chains.query_constructor.base import load_query_constructor_runnable
+from langchain_classic.chains.query_constructor.base import (
+    load_query_constructor_runnable,
+)
 from langchain_classic.chains.query_constructor.schema import AttributeInfo
 
 logger = logging.getLogger(__name__)

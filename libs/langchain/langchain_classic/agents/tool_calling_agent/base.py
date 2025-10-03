@@ -42,7 +42,11 @@ def create_tool_calling_agent(
 
         .. code-block:: python
 
-            from langchain_classic.agents import AgentExecutor, create_tool_calling_agent, tool
+            from langchain_classic.agents import (
+                AgentExecutor,
+                create_tool_calling_agent,
+                tool,
+            )
             from langchain_anthropic import ChatAnthropic
             from langchain_core.prompts import ChatPromptTemplate
 

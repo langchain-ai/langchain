@@ -5,7 +5,10 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_classic.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
+from langchain_classic.chains.prompt_selector import (
+    ConditionalPromptSelector,
+    is_chat_model,
+)
 
 templ1 = """You are a smart assistant designed to help high school teachers come up with reading comprehension questions.
 Given a piece of text, you must come up with a question and answer pair that can be used to test a student's reading comprehension abilities.

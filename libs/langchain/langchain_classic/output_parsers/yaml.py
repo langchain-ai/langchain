@@ -8,7 +8,9 @@ from langchain_core.output_parsers import BaseOutputParser
 from pydantic import BaseModel, ValidationError
 from typing_extensions import override
 
-from langchain_classic.output_parsers.format_instructions import YAML_FORMAT_INSTRUCTIONS
+from langchain_classic.output_parsers.format_instructions import (
+    YAML_FORMAT_INSTRUCTIONS,
+)
 
 T = TypeVar("T", bound=BaseModel)
 

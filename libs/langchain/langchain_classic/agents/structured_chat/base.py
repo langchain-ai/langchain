@@ -24,7 +24,11 @@ from langchain_classic.agents.output_parsers import JSONAgentOutputParser
 from langchain_classic.agents.structured_chat.output_parser import (
     StructuredChatOutputParserWithRetries,
 )
-from langchain_classic.agents.structured_chat.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain_classic.agents.structured_chat.prompt import (
+    FORMAT_INSTRUCTIONS,
+    PREFIX,
+    SUFFIX,
+)
 from langchain_classic.chains.llm import LLMChain
 from langchain_classic.tools.render import render_text_description_and_args
 
@@ -194,7 +198,10 @@ def create_structured_chat_agent(
 
             from langchain_classic import hub
             from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import AgentExecutor, create_structured_chat_agent
+            from langchain_classic.agents import (
+                AgentExecutor,
+                create_structured_chat_agent,
+            )
 
             prompt = hub.pull("hwchase17/structured-chat-agent")
             model = ChatOpenAI()

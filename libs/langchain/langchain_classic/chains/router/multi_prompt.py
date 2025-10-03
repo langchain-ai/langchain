@@ -13,8 +13,13 @@ from langchain_classic.chains import ConversationChain
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.router.base import MultiRouteChain
-from langchain_classic.chains.router.llm_router import LLMRouterChain, RouterOutputParser
-from langchain_classic.chains.router.multi_prompt_prompt import MULTI_PROMPT_ROUTER_TEMPLATE
+from langchain_classic.chains.router.llm_router import (
+    LLMRouterChain,
+    RouterOutputParser,
+)
+from langchain_classic.chains.router.multi_prompt_prompt import (
+    MULTI_PROMPT_ROUTER_TEMPLATE,
+)
 
 
 @deprecated(

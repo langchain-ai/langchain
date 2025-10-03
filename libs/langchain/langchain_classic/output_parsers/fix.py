@@ -32,7 +32,8 @@ class OutputFixingParser(BaseOutputParser[T]):
 
     parser: Annotated[Any, SkipValidation()]
     """The parser to use to parse the output."""
-    # Should be an LLMChain but we want to avoid top-level imports from langchain_classic.chains
+    # Should be an LLMChain but we want to avoid top-level imports from
+    # langchain_classic.chains
     retry_chain: Annotated[
         Union[RunnableSerializable[OutputFixingParserRetryChainInput, str], Any],
         SkipValidation(),

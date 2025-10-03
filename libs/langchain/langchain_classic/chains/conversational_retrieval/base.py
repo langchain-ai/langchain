@@ -27,7 +27,9 @@ from typing_extensions import override
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.combine_documents.base import BaseCombineDocumentsChain
 from langchain_classic.chains.combine_documents.stuff import StuffDocumentsChain
-from langchain_classic.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
+from langchain_classic.chains.conversational_retrieval.prompts import (
+    CONDENSE_QUESTION_PROMPT,
+)
 from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.question_answering import load_qa_chain
 
@@ -273,7 +275,9 @@ class ConversationalRetrievalChain(BaseConversationalRetrievalChain):
             create_history_aware_retriever,
             create_retrieval_chain,
         )
-        from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+        from langchain_classic.chains.combine_documents import (
+            create_stuff_documents_chain,
+        )
         from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
         from langchain_openai import ChatOpenAI
 
@@ -512,7 +516,8 @@ class ChatVectorDBChain(BaseConversationalRetrievalChain):
     def _raise_deprecation(cls, values: dict) -> Any:
         warnings.warn(
             "`ChatVectorDBChain` is deprecated - "
-            "please use `from langchain_classic.chains import ConversationalRetrievalChain`",
+            "please use `from langchain_classic.chains import "
+            "ConversationalRetrievalChain`",
             stacklevel=4,
         )
         return values

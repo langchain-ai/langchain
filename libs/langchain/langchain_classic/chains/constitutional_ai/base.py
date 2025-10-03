@@ -10,7 +10,10 @@ from langchain_core.prompts import BasePromptTemplate
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.constitutional_ai.models import ConstitutionalPrinciple
 from langchain_classic.chains.constitutional_ai.principles import PRINCIPLES
-from langchain_classic.chains.constitutional_ai.prompts import CRITIQUE_PROMPT, REVISION_PROMPT
+from langchain_classic.chains.constitutional_ai.prompts import (
+    CRITIQUE_PROMPT,
+    REVISION_PROMPT,
+)
 from langchain_classic.chains.llm import LLMChain
 
 

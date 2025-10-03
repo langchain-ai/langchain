@@ -60,7 +60,9 @@ from langchain_classic.agents.openai_functions_agent.base import (
     OpenAIFunctionsAgent,
     create_openai_functions_agent,
 )
-from langchain_classic.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
+from langchain_classic.agents.openai_functions_multi_agent.base import (
+    OpenAIMultiFunctionsAgent,
+)
 from langchain_classic.agents.openai_tools.base import create_openai_tools_agent
 from langchain_classic.agents.react.agent import create_react_agent
 from langchain_classic.agents.react.base import ReActChain, ReActTextWorldAgent

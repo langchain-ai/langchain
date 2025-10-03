@@ -14,7 +14,10 @@ from pydantic import ConfigDict, model_validator
 from typing_extensions import Self
 
 from langchain_classic.chains.base import Chain
-from langchain_classic.chains.elasticsearch_database.prompts import ANSWER_PROMPT, DSL_PROMPT
+from langchain_classic.chains.elasticsearch_database.prompts import (
+    ANSWER_PROMPT,
+    DSL_PROMPT,
+)
 
 if TYPE_CHECKING:
     from elasticsearch import Elasticsearch

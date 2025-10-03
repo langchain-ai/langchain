@@ -313,7 +313,10 @@ def create_openai_functions_agent(
         .. code-block:: python
 
             from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import AgentExecutor, create_openai_functions_agent
+            from langchain_classic.agents import (
+                AgentExecutor,
+                create_openai_functions_agent,
+            )
             from langchain_classic import hub
 
             prompt = hub.pull("hwchase17/openai-functions-agent")

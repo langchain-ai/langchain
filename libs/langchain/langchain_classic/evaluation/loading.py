@@ -6,9 +6,13 @@ from typing import Any, Optional, Union
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_classic.chains.base import Chain
-from langchain_classic.evaluation.agents.trajectory_eval_chain import TrajectoryEvalChain
+from langchain_classic.evaluation.agents.trajectory_eval_chain import (
+    TrajectoryEvalChain,
+)
 from langchain_classic.evaluation.comparison import PairwiseStringEvalChain
-from langchain_classic.evaluation.comparison.eval_chain import LabeledPairwiseStringEvalChain
+from langchain_classic.evaluation.comparison.eval_chain import (
+    LabeledPairwiseStringEvalChain,
+)
 from langchain_classic.evaluation.criteria.eval_chain import (
     CriteriaEvalChain,
     LabeledCriteriaEvalChain,
@@ -24,9 +28,17 @@ from langchain_classic.evaluation.parsing.base import (
 )
 from langchain_classic.evaluation.parsing.json_distance import JsonEditDistanceEvaluator
 from langchain_classic.evaluation.parsing.json_schema import JsonSchemaEvaluator
-from langchain_classic.evaluation.qa import ContextQAEvalChain, CotQAEvalChain, QAEvalChain
+from langchain_classic.evaluation.qa import (
+    ContextQAEvalChain,
+    CotQAEvalChain,
+    QAEvalChain,
+)
 from langchain_classic.evaluation.regex_match.base import RegexMatchStringEvaluator
-from langchain_classic.evaluation.schema import EvaluatorType, LLMEvalChain, StringEvaluator
+from langchain_classic.evaluation.schema import (
+    EvaluatorType,
+    LLMEvalChain,
+    StringEvaluator,
+)
 from langchain_classic.evaluation.scoring.eval_chain import (
     LabeledScoreStringEvalChain,
     ScoreStringEvalChain,

@@ -14,7 +14,11 @@ from pydantic import ConfigDict
 from typing_extensions import override
 
 from langchain_classic.chains.llm import LLMChain
-from langchain_classic.evaluation.qa.eval_prompt import CONTEXT_PROMPT, COT_PROMPT, PROMPT
+from langchain_classic.evaluation.qa.eval_prompt import (
+    CONTEXT_PROMPT,
+    COT_PROMPT,
+    PROMPT,
+)
 from langchain_classic.evaluation.schema import LLMEvalChain, StringEvaluator
 from langchain_classic.schema import RUN_KEY
 

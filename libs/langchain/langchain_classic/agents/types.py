@@ -7,7 +7,9 @@ from langchain_classic.agents.conversational.base import ConversationalAgent
 from langchain_classic.agents.conversational_chat.base import ConversationalChatAgent
 from langchain_classic.agents.mrkl.base import ZeroShotAgent
 from langchain_classic.agents.openai_functions_agent.base import OpenAIFunctionsAgent
-from langchain_classic.agents.openai_functions_multi_agent.base import OpenAIMultiFunctionsAgent
+from langchain_classic.agents.openai_functions_multi_agent.base import (
+    OpenAIMultiFunctionsAgent,
+)
 from langchain_classic.agents.react.base import ReActDocstoreAgent
 from langchain_classic.agents.self_ask_with_search.base import SelfAskWithSearchAgent
 from langchain_classic.agents.structured_chat.base import StructuredChatAgent

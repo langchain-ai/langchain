@@ -17,8 +17,12 @@ from langchain_core.prompts.loading import (
 from langchain_classic.chains import ReduceDocumentsChain
 from langchain_classic.chains.api.base import APIChain
 from langchain_classic.chains.base import Chain
-from langchain_classic.chains.combine_documents.map_reduce import MapReduceDocumentsChain
-from langchain_classic.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain_classic.chains.combine_documents.map_reduce import (
+    MapReduceDocumentsChain,
+)
+from langchain_classic.chains.combine_documents.map_rerank import (
+    MapRerankDocumentsChain,
+)
 from langchain_classic.chains.combine_documents.refine import RefineDocumentsChain
 from langchain_classic.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain_classic.chains.hyde.base import HypotheticalDocumentEmbedder
@@ -26,8 +30,12 @@ from langchain_classic.chains.llm import LLMChain
 from langchain_classic.chains.llm_checker.base import LLMCheckerChain
 from langchain_classic.chains.llm_math.base import LLMMathChain
 from langchain_classic.chains.qa_with_sources.base import QAWithSourcesChain
-from langchain_classic.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
-from langchain_classic.chains.qa_with_sources.vector_db import VectorDBQAWithSourcesChain
+from langchain_classic.chains.qa_with_sources.retrieval import (
+    RetrievalQAWithSourcesChain,
+)
+from langchain_classic.chains.qa_with_sources.vector_db import (
+    VectorDBQAWithSourcesChain,
+)
 from langchain_classic.chains.retrieval_qa.base import RetrievalQA, VectorDBQA
 
 if TYPE_CHECKING:

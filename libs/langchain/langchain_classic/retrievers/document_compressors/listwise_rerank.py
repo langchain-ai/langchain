@@ -71,7 +71,7 @@ class LLMListwiseRerank(BaseDocumentCompressor):
             assert len(compressed_docs) == 3
             assert "Steve" in compressed_docs[0].page_content
 
-    """
+    """  # noqa: E501
 
     reranker: Runnable[dict, list[Document]]
     """LLM-based reranker to use for filtering documents. Expected to take in a dict

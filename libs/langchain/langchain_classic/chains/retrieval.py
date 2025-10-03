@@ -40,7 +40,9 @@ def create_retrieval_chain(
             # pip install -U langchain langchain-community
 
             from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+            from langchain_classic.chains.combine_documents import (
+                create_stuff_documents_chain,
+            )
             from langchain_classic.chains import create_retrieval_chain
             from langchain_classic import hub
 

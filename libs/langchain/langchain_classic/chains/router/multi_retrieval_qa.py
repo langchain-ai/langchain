@@ -15,7 +15,10 @@ from langchain_classic.chains.base import Chain
 from langchain_classic.chains.conversation.prompt import DEFAULT_TEMPLATE
 from langchain_classic.chains.retrieval_qa.base import BaseRetrievalQA, RetrievalQA
 from langchain_classic.chains.router.base import MultiRouteChain
-from langchain_classic.chains.router.llm_router import LLMRouterChain, RouterOutputParser
+from langchain_classic.chains.router.llm_router import (
+    LLMRouterChain,
+    RouterOutputParser,
+)
 from langchain_classic.chains.router.multi_retrieval_prompt import (
     MULTI_RETRIEVAL_ROUTER_TEMPLATE,
 )

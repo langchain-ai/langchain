@@ -62,7 +62,9 @@ def create_stuff_documents_chain(
             from langchain_community.chat_models import ChatOpenAI
             from langchain_core.documents import Document
             from langchain_core.prompts import ChatPromptTemplate
-            from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+            from langchain_classic.chains.combine_documents import (
+                create_stuff_documents_chain,
+            )
 
             prompt = ChatPromptTemplate.from_messages(
                 [("system", "What are everyone's favorite colors:\n\n{context}")]

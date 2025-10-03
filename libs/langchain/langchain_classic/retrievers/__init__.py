@@ -21,12 +21,16 @@ the backbone of a retriever, but there are other types of retrievers as well.
 from typing import TYPE_CHECKING, Any
 
 from langchain_classic._api.module_import import create_importer
-from langchain_classic.retrievers.contextual_compression import ContextualCompressionRetriever
+from langchain_classic.retrievers.contextual_compression import (
+    ContextualCompressionRetriever,
+)
 from langchain_classic.retrievers.ensemble import EnsembleRetriever
 from langchain_classic.retrievers.merger_retriever import MergerRetriever
 from langchain_classic.retrievers.multi_query import MultiQueryRetriever
 from langchain_classic.retrievers.multi_vector import MultiVectorRetriever
-from langchain_classic.retrievers.parent_document_retriever import ParentDocumentRetriever
+from langchain_classic.retrievers.parent_document_retriever import (
+    ParentDocumentRetriever,
+)
 from langchain_classic.retrievers.re_phraser import RePhraseQueryRetriever
 from langchain_classic.retrievers.self_query.base import SelfQueryRetriever
 from langchain_classic.retrievers.time_weighted_retriever import (

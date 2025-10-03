@@ -21,7 +21,7 @@ from langchain_core._api.path import as_import_path
 from langchain_core.tools.retriever import create_retriever_tool
 
 from langchain_classic._api import create_importer
-from langchain_classic.agents.agent_toolkits.conversational_retrieval.openai_functions import (
+from langchain_classic.agents.agent_toolkits.conversational_retrieval.openai_functions import (  # noqa: E501
     create_conversational_retrieval_agent,
 )
 from langchain_classic.agents.agent_toolkits.vectorstore.base import (

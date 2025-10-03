@@ -10,7 +10,10 @@ from langchain_core.prompts import ChatPromptTemplate
 
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.llm import LLMChain
-from langchain_classic.chains.openai_functions.utils import _convert_schema, get_llm_kwargs
+from langchain_classic.chains.openai_functions.utils import (
+    _convert_schema,
+    get_llm_kwargs,
+)
 
 
 def _get_tagging_function(schema: dict) -> dict:

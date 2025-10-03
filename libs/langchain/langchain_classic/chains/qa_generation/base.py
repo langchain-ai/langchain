@@ -38,7 +38,9 @@ class QAGenerationChain(Chain):
 
         .. code-block:: python
 
-            from langchain_classic.chains.qa_generation.prompt import CHAT_PROMPT as prompt
+            from langchain_classic.chains.qa_generation.prompt import (
+                CHAT_PROMPT as prompt,
+            )
 
             # Note: import PROMPT if using a legacy non-chat model.
             from langchain_core.output_parsers import JsonOutputParser

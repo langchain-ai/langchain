@@ -16,7 +16,9 @@ from typing_extensions import override
 from langchain_classic.agents.agent import Agent, AgentExecutor, AgentOutputParser
 from langchain_classic.agents.agent_types import AgentType
 from langchain_classic.agents.format_scratchpad import format_log_to_str
-from langchain_classic.agents.self_ask_with_search.output_parser import SelfAskOutputParser
+from langchain_classic.agents.self_ask_with_search.output_parser import (
+    SelfAskOutputParser,
+)
 from langchain_classic.agents.self_ask_with_search.prompt import PROMPT
 from langchain_classic.agents.utils import validate_tools_single_input
 

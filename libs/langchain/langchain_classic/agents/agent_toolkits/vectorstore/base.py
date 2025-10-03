@@ -7,7 +7,10 @@ from langchain_core.callbacks.base import BaseCallbackManager
 from langchain_core.language_models import BaseLanguageModel
 
 from langchain_classic.agents.agent import AgentExecutor
-from langchain_classic.agents.agent_toolkits.vectorstore.prompt import PREFIX, ROUTER_PREFIX
+from langchain_classic.agents.agent_toolkits.vectorstore.prompt import (
+    PREFIX,
+    ROUTER_PREFIX,
+)
 from langchain_classic.agents.agent_toolkits.vectorstore.toolkit import (
     VectorStoreRouterToolkit,
     VectorStoreToolkit,

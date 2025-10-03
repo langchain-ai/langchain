@@ -5,7 +5,10 @@ from langchain_core.prompts.chat import (
 )
 from langchain_core.prompts.prompt import PromptTemplate
 
-from langchain_classic.chains.prompt_selector import ConditionalPromptSelector, is_chat_model
+from langchain_classic.chains.prompt_selector import (
+    ConditionalPromptSelector,
+    is_chat_model,
+)
 
 question_prompt_template = """Use the following portion of a long document to see if any of the text is relevant to answer the question.
 Return any relevant text verbatim.

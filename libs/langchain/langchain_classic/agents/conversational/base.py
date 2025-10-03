@@ -17,7 +17,11 @@ from langchain_classic._api.deprecation import AGENT_DEPRECATION_WARNING
 from langchain_classic.agents.agent import Agent, AgentOutputParser
 from langchain_classic.agents.agent_types import AgentType
 from langchain_classic.agents.conversational.output_parser import ConvoOutputParser
-from langchain_classic.agents.conversational.prompt import FORMAT_INSTRUCTIONS, PREFIX, SUFFIX
+from langchain_classic.agents.conversational.prompt import (
+    FORMAT_INSTRUCTIONS,
+    PREFIX,
+    SUFFIX,
+)
 from langchain_classic.agents.utils import validate_tools_single_input
 from langchain_classic.chains import LLMChain
 

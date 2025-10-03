@@ -10,8 +10,12 @@ from langchain_core.language_models import BaseLanguageModel
 from langchain_core.prompts import BasePromptTemplate
 
 from langchain_classic.chains.combine_documents.base import BaseCombineDocumentsChain
-from langchain_classic.chains.combine_documents.map_reduce import MapReduceDocumentsChain
-from langchain_classic.chains.combine_documents.map_rerank import MapRerankDocumentsChain
+from langchain_classic.chains.combine_documents.map_reduce import (
+    MapReduceDocumentsChain,
+)
+from langchain_classic.chains.combine_documents.map_rerank import (
+    MapRerankDocumentsChain,
+)
 from langchain_classic.chains.combine_documents.reduce import ReduceDocumentsChain
 from langchain_classic.chains.combine_documents.refine import RefineDocumentsChain
 from langchain_classic.chains.combine_documents.stuff import StuffDocumentsChain

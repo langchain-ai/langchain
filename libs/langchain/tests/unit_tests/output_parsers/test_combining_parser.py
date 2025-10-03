@@ -4,7 +4,10 @@ from typing import Any
 
 from langchain_classic.output_parsers.combining import CombiningOutputParser
 from langchain_classic.output_parsers.regex import RegexParser
-from langchain_classic.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain_classic.output_parsers.structured import (
+    ResponseSchema,
+    StructuredOutputParser,
+)
 
 DEF_EXPECTED_RESULT = {
     "answer": "Paris",

@@ -1,7 +1,9 @@
 import importlib
 from typing import Any
 
-from langchain_classic.retrievers.document_compressors.base import DocumentCompressorPipeline
+from langchain_classic.retrievers.document_compressors.base import (
+    DocumentCompressorPipeline,
+)
 from langchain_classic.retrievers.document_compressors.chain_extract import (
     LLMChainExtractor,
 )

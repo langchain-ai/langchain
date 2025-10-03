@@ -35,11 +35,19 @@ from langchain_classic.output_parsers.combining import CombiningOutputParser
 from langchain_classic.output_parsers.datetime import DatetimeOutputParser
 from langchain_classic.output_parsers.enum import EnumOutputParser
 from langchain_classic.output_parsers.fix import OutputFixingParser
-from langchain_classic.output_parsers.pandas_dataframe import PandasDataFrameOutputParser
+from langchain_classic.output_parsers.pandas_dataframe import (
+    PandasDataFrameOutputParser,
+)
 from langchain_classic.output_parsers.regex import RegexParser
 from langchain_classic.output_parsers.regex_dict import RegexDictParser
-from langchain_classic.output_parsers.retry import RetryOutputParser, RetryWithErrorOutputParser
-from langchain_classic.output_parsers.structured import ResponseSchema, StructuredOutputParser
+from langchain_classic.output_parsers.retry import (
+    RetryOutputParser,
+    RetryWithErrorOutputParser,
+)
+from langchain_classic.output_parsers.structured import (
+    ResponseSchema,
+    StructuredOutputParser,
+)
 from langchain_classic.output_parsers.yaml import YamlOutputParser
 
 if TYPE_CHECKING:

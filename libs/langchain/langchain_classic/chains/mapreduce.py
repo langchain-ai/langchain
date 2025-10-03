@@ -20,7 +20,9 @@ from pydantic import ConfigDict
 from langchain_classic.chains import ReduceDocumentsChain
 from langchain_classic.chains.base import Chain
 from langchain_classic.chains.combine_documents.base import BaseCombineDocumentsChain
-from langchain_classic.chains.combine_documents.map_reduce import MapReduceDocumentsChain
+from langchain_classic.chains.combine_documents.map_reduce import (
+    MapReduceDocumentsChain,
+)
 from langchain_classic.chains.combine_documents.stuff import StuffDocumentsChain
 from langchain_classic.chains.llm import LLMChain
 

@@ -10,7 +10,9 @@ from langchain_core.vectorstores import VectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter, TextSplitter
 from pydantic import BaseModel, ConfigDict, Field
 
-from langchain_classic.chains.qa_with_sources.retrieval import RetrievalQAWithSourcesChain
+from langchain_classic.chains.qa_with_sources.retrieval import (
+    RetrievalQAWithSourcesChain,
+)
 from langchain_classic.chains.retrieval_qa.base import RetrievalQA
 
 

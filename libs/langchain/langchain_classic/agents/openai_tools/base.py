@@ -10,7 +10,9 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from langchain_classic.agents.format_scratchpad.openai_tools import (
     format_to_openai_tool_messages,
 )
-from langchain_classic.agents.output_parsers.openai_tools import OpenAIToolsAgentOutputParser
+from langchain_classic.agents.output_parsers.openai_tools import (
+    OpenAIToolsAgentOutputParser,
+)
 
 
 def create_openai_tools_agent(
@@ -42,7 +44,10 @@ def create_openai_tools_agent(
 
             from langchain_classic import hub
             from langchain_community.chat_models import ChatOpenAI
-            from langchain_classic.agents import AgentExecutor, create_openai_tools_agent
+            from langchain_classic.agents import (
+                AgentExecutor,
+                create_openai_tools_agent,
+            )
 
             prompt = hub.pull("hwchase17/openai-tools-agent")
             model = ChatOpenAI()
