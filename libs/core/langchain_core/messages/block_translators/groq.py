@@ -1,39 +1,97 @@
 """Derivations of standard content blocks from Groq content."""
 
-import warnings
+import json
+from collections.abc import Iterable
+from typing import Any, Optional, Union, cast
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langchain_core.messages import content as types
+from langchain_core.messages.base import _extract_reasoning_from_additional_kwargs
 
-WARNED = False
+
+def _populate_extras(
+    standard_block: types.ContentBlock, block: dict[str, Any], known_fields: set[str]
+) -> types.ContentBlock:
+    """Mutate a block, populating extras."""
+    if standard_block.get("type") == "non_standard":
+        return standard_block
+
+    for key, value in block.items():
+        if key not in known_fields:
+            if "extras" not in standard_block:
+                # Below type-ignores are because mypy thinks a non-standard block can
+                # get here, although we exclude them above.
+                standard_block["extras"] = {}  # type: ignore[typeddict-unknown-key]
+            standard_block["extras"][key] = value  # type: ignore[typeddict-item]
+
+    return standard_block
 
 
-def translate_content(message: AIMessage) -> list[types.ContentBlock]:  # noqa: ARG001
-    """Derive standard content blocks from a message with Groq content."""
-    global WARNED  # noqa: PLW0603
-    if not WARNED:
-        warning_message = (
-            "Content block standardization is not yet fully supported for Groq."
+def _convert_to_v1_from_groq(message: AIMessage) -> list[types.ContentBlock]:
+    """Convert groq message content to v1 format."""
+    content_blocks: list[types.ContentBlock] = []
+
+    if reasoning_block := _extract_reasoning_from_additional_kwargs(message):
+        content_blocks.append(reasoning_block)
+
+    if executed_tools := message.additional_kwargs.get("executed_tools"):
+        for idx, executed_tool in enumerate(executed_tools):
+            args: dict[str, Any] | None = None
+            if arguments := executed_tool.get("arguments"):
+                try:
+                    args = json.loads(arguments)
+                except json.JSONDecodeError:
+                    continue
+            if isinstance(args, dict):
+                name = ""
+                if executed_tool.get("type") == "search":
+                    name = "web_search"
+                server_tool_call: types.ServerToolCall = {
+                    "type": "server_tool_call",
+                    "name": name,
+                    "id": str(idx),
+                    "args": args,
+                }
+                content_blocks.append(server_tool_call)
+            if tool_output := executed_tool.get("output"):
+                tool_result: types.ServerToolResult = {
+                    "type": "server_tool_result",
+                    "tool_call_id": str(idx),
+                    "output": tool_output,
+                    "status": "success",
+                }
+                known_fields = {"type", "arguments", "index", "output"}
+                _populate_extras(tool_result, executed_tool, known_fields)
+                content_blocks.append(tool_result)
+
+    if isinstance(message.content, str) and message.content:
+        content_blocks.append({"type": "text", "text": message.content})
+
+    for tool_call in message.tool_calls:
+        content_blocks.append(
+            {
+                "type": "tool_call",
+                "name": tool_call["name"],
+                "args": tool_call["args"],
+                "id": tool_call.get("id"),
+            }
         )
-        warnings.warn(warning_message, stacklevel=2)
-        WARNED = True
-    raise NotImplementedError
+
+    return content_blocks
 
 
-def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:  # noqa: ARG001
-    """Derive standard content blocks from a message chunk with Groq content."""
-    global WARNED  # noqa: PLW0603
-    if not WARNED:
-        warning_message = (
-            "Content block standardization is not yet fully supported for Groq."
-        )
-        warnings.warn(warning_message, stacklevel=2)
-        WARNED = True
-    raise NotImplementedError
+def translate_content(message: AIMessage) -> list[types.ContentBlock]:
+    """Derive standard content blocks from a message with groq content."""
+    return _convert_to_v1_from_groq(message)
+
+
+def translate_content_chunk(message: AIMessageChunk) -> list[types.ContentBlock]:
+    """Derive standard content blocks from a message chunk with groq content."""
+    return _convert_to_v1_from_groq(message)
 
 
 def _register_groq_translator() -> None:
-    """Register the Groq translator with the central registry.
+    """Register the groq translator with the central registry.
 
     Run automatically when the module is imported.
     """

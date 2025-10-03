@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Optional, cast
+from typing import Any, Literal, Optional, cast
 
 import pytest
 from groq import BadRequestError
@@ -663,6 +663,36 @@ async def test_setting_service_tier_request_async() -> None:
     response = await chat.ainvoke("Hello!", service_tier="on_demand")
 
     assert response.response_metadata.get("service_tier") == "on_demand"
+
+
+@pytest.mark.default_cassette("test_web_search.yaml.gz")
+@pytest.mark.vcr
+@pytest.mark.parametrize("output_version", ["v0", "v1"])
+def test_web_search(output_version: Literal["v0", "v1"]) -> None:
+    llm = ChatGroq(model="groq/compound", output_version=output_version)
+    input_message = {
+        "role": "user",
+        "content": "Search for the weather in Boston today.",
+    }
+    full: Optional[AIMessageChunk] = None
+    for chunk in llm.stream([input_message]):
+        print(chunk.content)
+        full = chunk if full is None else full + chunk
+    assert isinstance(full, AIMessageChunk)
+    assert full.additional_kwargs["reasoning_content"]
+    assert full.additional_kwargs["executed_tools"]
+    assert [block["type"] for block in full.content_blocks] == [
+        "reasoning", "server_tool_call", "server_tool_result", "text",
+    ]
+
+    next_message = {
+        "role": "user",
+        "content": "Now search for the weather in San Francisco.",
+    }
+    response  = llm.invoke([input_message, full, next_message])
+    assert [block["type"] for block in response.content_blocks] == [
+        "reasoning", "server_tool_call", "server_tool_result", "text",
+    ]
 
 
 # Groq does not currently support N > 1
