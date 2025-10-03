@@ -16,14 +16,13 @@ fi
 
 if  { \
         [ "$VERCEL_ENV" == "production" ] || \
-        [ "$VERCEL_GIT_COMMIT_REF" == "master" ] || \
         [ "$VERCEL_GIT_COMMIT_REF" == "v0.1" ] || \
         [ "$VERCEL_GIT_COMMIT_REF" == "v0.2" ] || \
         [ "$VERCEL_GIT_COMMIT_REF" == "v0.3rc" ]; \
     } && [ "$VERCEL_GIT_REPO_OWNER" == "langchain-ai" ]
 then
-     echo "✅ Production build - proceeding with build"
-     exit 1
+    echo "✅ Production build - proceeding with build"
+    exit 1
 fi
 
 

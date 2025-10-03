@@ -34,7 +34,7 @@ Currently, the build process roughly follows these steps:
 
     The docs site is served by Vercel. The Vercel deployment process copies the HTML
     files from the `langchain-api-docs-html` repository and deploys them to the live
-    site. Deployments are triggered on each new commit pushed to `master`.
+    site. Deployments are triggered on each new commit pushed to `v0.3`.
 
 #### Build Technical Details
 
