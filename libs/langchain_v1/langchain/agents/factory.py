@@ -1,4 +1,4 @@
-"""Middleware agent implementation."""
+"""Agent factory implementation."""
 
 import itertools
 from collections.abc import Callable, Sequence
@@ -9,9 +9,10 @@ from langchain_core.messages import AIMessage, AnyMessage, SystemMessage, ToolMe
 from langchain_core.runnables import Runnable
 from langchain_core.tools import BaseTool
 from langgraph.constants import END, START
-from langgraph.graph.state import StateGraph
+from langgraph.graph.state import CompiledStateGraph, StateGraph
 from langgraph.runtime import Runtime
-from langgraph.types import Send
+from langgraph.store.base import BaseStore
+from langgraph.types import Checkpointer, Send
 from langgraph.typing import ContextT
 from typing_extensions import NotRequired, Required, TypedDict, TypeVar
 
@@ -167,17 +168,142 @@ def _handle_structured_output_error(
 
 
 def create_agent(  # noqa: PLR0915
-    *,
     model: str | BaseChatModel,
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode | None = None,
+    *,
     system_prompt: str | None = None,
     middleware: Sequence[AgentMiddleware[AgentState[ResponseT], ContextT]] = (),
     response_format: ResponseFormat[ResponseT] | type[ResponseT] | None = None,
     context_schema: type[ContextT] | None = None,
-) -> StateGraph[
+    checkpointer: Checkpointer | None = None,
+    store: BaseStore | None = None,
+    interrupt_before: list[str] | None = None,
+    interrupt_after: list[str] | None = None,
+    debug: bool = False,
+    cache: Any = None,
+    name: str | None = None,
+) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
 ]:
-    """Create a middleware agent graph."""
+    """Creates an agent graph that calls tools in a loop until a stopping condition is met.
+
+    For more details on using `create_agent`,
+    visit [Agents](https://langchain-ai.github.io/langgraph/agents/overview/) documentation.
+
+    Args:
+        model: The language model for the agent. Supports static model
+            selection with string identifier (e.g., `"openai:gpt-4"`) or
+            chat model instance (e.g., `ChatOpenAI()`).
+
+        tools: A list of tools or a ToolNode instance.
+            If an empty list is provided, the agent will consist of a single LLM node
+            without tool calling.
+
+        system_prompt: An optional system prompt for the LLM. This is converted to a
+            SystemMessage and added to the beginning of the list of messages in
+            state["messages"].
+
+        middleware: An optional sequence of AgentMiddleware instances for customizing
+            agent behavior. Middleware can:
+
+            - **Intercept execution** with before_model/after_model hooks
+            - **Modify model requests** with modify_model_request
+            - **Add custom state** via state_schema
+            - **Control flow** with jump_to (using @hook_config decorator)
+
+            See AgentMiddleware documentation for implementation details.
+
+        response_format: An optional configuration for structured responses.
+
+            If provided, the agent will handle structured output via tool calls
+            during the normal conversation flow.
+            When the model calls a structured output tool, the response will be captured
+            and returned in the 'structured_response' state key.
+            If not provided, `structured_response` will not be present in the output state.
+
+            Can be one of:
+
+            - **Pydantic model class**: Automatically converted to ToolStrategy or
+              ProviderStrategy based on model capabilities
+            - **ToolStrategy**: Uses tool calling for structured output with error handling
+            - **ProviderStrategy**: Uses provider-native structured output (OpenAI, etc.)
+
+            !!! important
+                `response_format` requires the model to support tool calling
+
+            !!! note
+                Structured responses are handled directly in the model call node via
+                tool calls, eliminating the need for separate structured response nodes.
+
+        context_schema: An optional schema for runtime context.
+
+        checkpointer: An optional checkpoint saver object. This is used for persisting
+            the state of the graph (e.g., as chat memory) for a single thread
+            (e.g., a single conversation).
+
+        store: An optional store object. This is used for persisting data
+            across multiple threads (e.g., multiple conversations / users).
+
+        interrupt_before: An optional list of node names to interrupt before.
+            Should be one of the following: "model_request", "tools".
+            This is useful if you want to add a user confirmation or other interrupt
+            before taking an action.
+
+        interrupt_after: An optional list of node names to interrupt after.
+            Should be one of the following: "model_request", "tools".
+            This is useful if you want to return directly or run additional processing on an output.
+
+        debug: A flag indicating whether to enable debug mode.
+
+        cache: An optional cache object for caching LLM responses.
+
+        name: An optional name for the compiled graph.
+
+    Returns:
+        A compiled LangGraph agent that can be used for chat interactions.
+
+    The "model_request" node calls the language model with the messages list
+    (after applying the system prompt if provided).
+    If the resulting AIMessage contains `tool_calls`,
+    the graph will then call the ["tools"][langgraph.prebuilt.tool_node.ToolNode].
+    The "tools" node executes the tools (1 tool per `tool_call`)
+    and adds the responses to the messages list as `ToolMessage` objects.
+    The model_request node then calls the language model again.
+    The process repeats until no more `tool_calls` are present in the response.
+    The agent then returns the full list of messages as a dictionary containing the key "messages".
+
+    ``` mermaid
+        sequenceDiagram
+            participant U as User
+            participant A as LLM
+            participant T as Tools
+            U->>A: Initial input
+            Note over A: System Prompt + LLM
+            loop while tool_calls present
+                A->>T: Execute tools
+                T-->>A: ToolMessage for each tool_calls
+            end
+            A->>U: Return final state
+    ```
+
+    Example:
+        ```python
+        from langchain.agents import create_agent
+
+        def check_weather(location: str) -> str:
+            '''Return the weather forecast for the specified location.'''
+            return f"It's always sunny in {location}"
+
+        graph = create_agent(
+            model="anthropic:claude-3-7-sonnet-latest",
+            tools=[check_weather],
+            system_prompt="You are a helpful assistant",
+        )
+        inputs = {"messages": [{"role": "user", "content": "what is the weather in sf"}]}
+        for chunk in graph.stream(inputs, stream_mode="updates"):
+            print(chunk)
+        ```
+    """
     # init chat model
     if isinstance(model, str):
         model = init_chat_model(model)
@@ -368,26 +494,8 @@ def create_agent(  # noqa: PLR0915
 
     def _get_bound_model(request: ModelRequest) -> Runnable:
         """Get the model with appropriate tool bindings."""
-        # Get actual tool objects from tool names
-        tools_by_name = {t.name: t for t in default_tools}
-
-        unknown_tools = [name for name in request.tools if name not in tools_by_name]
-        if unknown_tools:
-            available_tools = sorted(tools_by_name.keys())
-            msg = (
-                f"Middleware returned unknown tool names: {unknown_tools}\n\n"
-                f"Available tools: {available_tools}\n\n"
-                "To fix this issue:\n"
-                "1. Ensure the tools are passed to create_agent() via "
-                "the 'tools' parameter\n"
-                "2. If using custom middleware with tools, ensure "
-                "they're registered via middleware.tools attribute\n"
-                "3. Verify that tool names in ModelRequest.tools match "
-                "the actual tool.name values"
-            )
-            raise ValueError(msg)
-
-        requested_tools = [tools_by_name[name] for name in request.tools]
+        # request.tools contains BaseTool | dict objects
+        requested_tools = request.tools
 
         if isinstance(response_format, ProviderStrategy):
             # Use native structured output
@@ -411,7 +519,7 @@ def create_agent(  # noqa: PLR0915
         """Sync model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
@@ -438,17 +546,19 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = model_.invoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output),
-        }
+        result = _handle_model_output(output)
+
+        # Always add call counts
+        result["thread_model_call_count"] = state.get("thread_model_call_count", 0) + 1
+        result["run_model_call_count"] = state.get("run_model_call_count", 0) + 1
+
+        return result
 
     async def amodel_request(state: AgentState, runtime: Runtime[ContextT]) -> dict[str, Any]:
         """Async model request handler with sequential middleware processing."""
         request = ModelRequest(
             model=model,
-            tools=[t.name for t in default_tools],
+            tools=default_tools,
             system_prompt=system_prompt,
             response_format=response_format,
             messages=state["messages"],
@@ -466,11 +576,13 @@ def create_agent(  # noqa: PLR0915
             messages = [SystemMessage(request.system_prompt), *messages]
 
         output = await model_.ainvoke(messages)
-        return {
-            "thread_model_call_count": state.get("thread_model_call_count", 0) + 1,
-            "run_model_call_count": state.get("run_model_call_count", 0) + 1,
-            **_handle_model_output(output),
-        }
+        result = _handle_model_output(output)
+
+        # Always add call counts
+        result["thread_model_call_count"] = state.get("thread_model_call_count", 0) + 1
+        result["run_model_call_count"] = state.get("run_model_call_count", 0) + 1
+
+        return result
 
     # Use sync or async based on model capabilities
     from langgraph._internal._runnable import RunnableCallable
@@ -595,7 +707,15 @@ def create_agent(  # noqa: PLR0915
                 can_jump_to=_get_can_jump_to(m1, "after_model"),
             )
 
-    return graph
+    return graph.compile(
+        checkpointer=checkpointer,
+        store=store,
+        interrupt_before=interrupt_before,
+        interrupt_after=interrupt_after,
+        debug=debug,
+        cache=cache,
+        name=name,
+    )
 
 
 def _resolve_jump(jump_to: JumpTo | None, first_node: str) -> str | None:
@@ -626,8 +746,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[dict[str, Any]], str | list[Send] | None]:
-    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any], Runtime], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any], runtime: Runtime) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
@@ -646,14 +766,19 @@ def _make_model_to_tools_edge(
             if c["id"] not in tool_message_ids and c["name"] not in structured_output_tools
         ]
 
-        # 3. if there are pending tool calls, jump to the tool node
+        # 3. if there are pending (non-structured) tool calls, jump to the tool node
         if pending_tool_calls:
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, runtime.store)
+                for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
-        # 4. AIMessage has tool calls, but there are no pending tool calls
+        # 4. if we have a structured response and no pending tool calls, we're done
+        if "structured_response" in state:
+            return END
+
+        # 5. AIMessage has tool calls, but there are no pending tool calls
         # which suggests the injection of artificial tool messages. jump to the first node
         return first_node
 
@@ -666,7 +791,8 @@ def _make_tools_to_model_edge(
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
-        if all(
+        # Check if any tool call has return_direct=True
+        if any(
             tool_node.tools_by_name[c["name"]].return_direct
             for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
@@ -692,7 +818,6 @@ def _add_middleware_edge(
 
     Args:
         graph: The graph to add the edge to.
-        method: The method to call for the middleware node.
         name: The name of the middleware node.
         default_destination: The default destination for the edge.
         model_destination: The destination for the edge to the model.
@@ -716,3 +841,6 @@ def _add_middleware_edge(
 
     else:
         graph.add_edge(name, default_destination)
+
+
+__all__ = ["create_agent"]

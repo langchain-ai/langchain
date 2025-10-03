@@ -108,4 +108,4 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                     }
                 )
 
-        return self.bind(tools=tool_dicts)
+        return self.bind(tools=tool_dicts, **kwargs)
