@@ -243,6 +243,13 @@ def create_agent(  # noqa: PLR0915
     # Defer strategy selection until middleware has modified the model.
     # We only pre-populate structured output tools if response_format is already
     # a ToolStrategy (not a raw schema type that needs auto-detection).
+    #
+    # structured_output_tools can be updated later during model binding if
+    # the model does not support provider-specific structured output.
+    # This mutation is safe in concurrent scenarios because the tool addition
+    # is idempotent and matches the ToolStrategy schema_specs.
+    # These tools are never added to the ToolNode as they're only used
+    # for parsing structured output tool calls.
     structured_output_tools: dict[str, OutputToolBinding] = {}
     if response_format is not None and isinstance(response_format, ToolStrategy):
         for response_schema in response_format.schema_specs:
@@ -462,10 +469,10 @@ def create_agent(  # noqa: PLR0915
             request.response_format, request.model
         )
 
-        # Add any dynamically created structured output tools to the request
+        # Add any dynamically resolved structured output tools
+        # Mutate the shared dict to make tools available to _handle_model_output and edge functions
         if additional_tools:
             requested_tools = requested_tools + [info.tool for info in additional_tools.values()]
-            # Update the shared dict so _handle_model_output can access these tools
             structured_output_tools.update(additional_tools)
 
         # Bind model based on strategy type
