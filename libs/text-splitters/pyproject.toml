@@ -71,20 +71,14 @@ docstring-code-format = true
 [tool.ruff.lint]
 select = [ "ALL",]
 ignore = [
-    "ANN401",  # Dynamically typed expressions (typing.Any)
     "C90",     # McCabe complexity
-    "C901",    # Complexity
     "COM812",  # Messes with the formatter
+    "CPY",     # No copyright
     "FIX002",  # Line contains TODO
     "ISC001",  # Messes with the formatter
     "PERF203", # Rarely useful
-    "PLR2004", # Magic value used in comparison
-    "PLR0915", # Too many statements
-    "PLR0911", # Too many return statements
-    "PLR0912", # Too many branches
-    "PLR0913", # Too many arguments in function definition
+    "PLR09",   # Too many something (arg, statements, etc)
     "RUF012",  # Doesn't play well with Pydantic
-    "S112",    # Rarely useful
     "TC001",   # Doesn't play well with Pydantic
     "TC002",   # Doesn't play well with Pydantic
     "TC003",   # Doesn't play well with Pydantic
@@ -100,7 +94,6 @@ flake8-annotations.allow-star-arg-any = true
 flake8-annotations.mypy-init-return = true
 flake8-type-checking.runtime-evaluated-base-classes = ["pydantic.BaseModel","langchain_core.load.serializable.Serializable","langchain_core.runnables.base.RunnableSerializable"]
 pep8-naming.classmethod-decorators = [ "classmethod", "langchain_core.utils.pydantic.pre_init", "pydantic.field_validator", "pydantic.v1.root_validator",]
-pyupgrade.keep-runtime-typing = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
