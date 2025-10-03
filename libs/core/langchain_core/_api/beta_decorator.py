@@ -4,7 +4,7 @@ This module was loosely adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.
@@ -62,6 +62,9 @@ def beta(
             The object type being beta.
         addendum : str, optional
             Additional text appended directly to the final message.
+
+    Returns:
+        A decorator which can be used to mark functions or classes as beta.
 
     Examples:
 
@@ -153,49 +156,24 @@ def beta(
             _name = _name or obj.fget.__qualname__
             old_doc = obj.__doc__
 
-            class _BetaProperty(property):
-                """A beta property."""
+            def _fget(instance: Any) -> Any:
+                if instance is not None:
+                    emit_warning()
+                return obj.fget(instance)
 
-                def __init__(
-                    self,
-                    fget: Union[Callable[[Any], Any], None] = None,
-                    fset: Union[Callable[[Any, Any], None], None] = None,
-                    fdel: Union[Callable[[Any], None], None] = None,
-                    doc: Union[str, None] = None,
-                ) -> None:
-                    super().__init__(fget, fset, fdel, doc)
-                    self.__orig_fget = fget
-                    self.__orig_fset = fset
-                    self.__orig_fdel = fdel
-                    self.__doc__ = doc
+            def _fset(instance: Any, value: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fset(instance, value)
 
-                def __get__(
-                    self, instance: Any, owner: Union[type, None] = None
-                ) -> Any:
-                    if instance is not None or owner is not None:
-                        emit_warning()
-                    return self.fget(instance)
+            def _fdel(instance: Any) -> None:
+                if instance is not None:
+                    emit_warning()
+                obj.fdel(instance)
 
-                def __set__(self, instance: Any, value: Any) -> None:
-                    if instance is not None:
-                        emit_warning()
-                    return self.fset(instance, value)
-
-                def __delete__(self, instance: Any) -> None:
-                    if instance is not None:
-                        emit_warning()
-                    return self.fdel(instance)
-
-                def __set_name__(self, owner: Union[type, None], set_name: str) -> None:
-                    nonlocal _name
-                    if _name == "<lambda>":
-                        _name = set_name
-
-            def finalize(wrapper: Callable[..., Any], new_doc: str) -> Any:  # noqa: ARG001
+            def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
-                return _BetaProperty(
-                    fget=obj.fget, fset=obj.fset, fdel=obj.fdel, doc=new_doc
-                )
+                return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
 
         else:
             _name = _name or obj.__qualname__
@@ -249,17 +227,17 @@ def warn_beta(
 ) -> None:
     """Display a standardized beta annotation.
 
-    Arguments:
-        message : str, optional
+    Args:
+        message:
             Override the default beta message. The
             %(name)s, %(obj_type)s, %(addendum)s
             format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the annotated object.
-        obj_type : str, optional
+        obj_type:
             The object type being annotated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
     """
     if not message:

@@ -1,3 +1,5 @@
+"""Integration tests for embeddings."""
+
 from langchain_core.embeddings import Embeddings
 
 from langchain_tests.unit_tests.embeddings import EmbeddingsTests
@@ -31,7 +33,7 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
                 # Return initialization parameters for the model.
                 return {"model": "model-001"}
 
-    .. note::
+    !!! note
         API references for individual test methods include troubleshooting tips.
 
     """
@@ -39,13 +41,14 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     def test_embed_query(self, model: Embeddings) -> None:
         """Test embedding a string query.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
-            1. The model will generate a list of floats when calling ``.embed_query`` on a string.
+            1. The model will generate a list of floats when calling ``.embed_query``
+               on a string.
             2. The length of the list is consistent across different inputs.
-        """  # noqa: E501
+        """
         embedding_1 = model.embed_query("foo")
 
         assert isinstance(embedding_1, list)
@@ -59,13 +62,14 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     def test_embed_documents(self, model: Embeddings) -> None:
         """Test embedding a list of strings.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
-            1. The model will generate a list of lists of floats when calling ``.embed_documents`` on a list of strings.
+            1. The model will generate a list of lists of floats when calling
+               ``.embed_documents`` on a list of strings.
             2. The length of each list is the same.
-        """  # noqa: E501
+        """
         documents = ["foo", "bar", "baz"]
         embeddings = model.embed_documents(documents)
 
@@ -78,13 +82,14 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     async def test_aembed_query(self, model: Embeddings) -> None:
         """Test embedding a string query async.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
-            1. The model will generate a list of floats when calling ``.aembed_query`` on a string.
+            1. The model will generate a list of floats when calling ``.aembed_query``
+               on a string.
             2. The length of the list is consistent across different inputs.
-        """  # noqa: E501
+        """
         embedding_1 = await model.aembed_query("foo")
 
         assert isinstance(embedding_1, list)
@@ -98,13 +103,14 @@ class EmbeddingsIntegrationTests(EmbeddingsTests):
     async def test_aembed_documents(self, model: Embeddings) -> None:
         """Test embedding a list of strings async.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, check that:
 
-            1. The model will generate a list of lists of floats when calling ``.aembed_documents`` on a list of strings.
+            1. The model will generate a list of lists of floats when calling
+               ``.aembed_documents`` on a list of strings.
             2. The length of each list is the same.
-        """  # noqa: E501
+        """
         documents = ["foo", "bar", "baz"]
         embeddings = await model.aembed_documents(documents)
 

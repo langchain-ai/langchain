@@ -21,11 +21,13 @@ class Chat__ModuleName__(BaseChatModel):
     # https://github.com/langchain-ai/langchain/blob/7ff05357bac6eaedf5058a2af88f23a1817d40fe/libs/partners/openai/langchain_openai/chat_models/base.py#L1120
     """__ModuleName__ chat model integration.
 
-    The default implementation echoes the first `parrot_buffer_length` characters of the input.
+    The default implementation echoes the first `parrot_buffer_length` characters of
+    the input.
 
     # TODO: Replace with relevant packages, env vars.
     Setup:
-        Install ``__package_name__`` and set environment variable ``__MODULE_NAME___API_KEY``.
+        Install ``__package_name__`` and set environment variable
+        ``__MODULE_NAME___API_KEY``.
 
         .. code-block:: bash
 
@@ -48,7 +50,8 @@ class Chat__ModuleName__(BaseChatModel):
         max_retries: int
             Max number of retries.
         api_key: Optional[str]
-            __ModuleName__ API key. If not passed in will be read from env var __MODULE_NAME___API_KEY.
+            __ModuleName__ API key. If not passed in will be read from env var
+            __MODULE_NAME___API_KEY.
 
     See full list of supported init args and their descriptions in the params section.
 
@@ -86,7 +89,7 @@ class Chat__ModuleName__(BaseChatModel):
         .. code-block:: python
 
             for chunk in llm.stream(messages):
-                print(chunk.text(), end="")
+                print(chunk.text, end="")
 
         .. code-block:: python
 

@@ -61,7 +61,10 @@ class HuggingFacePipeline(BaseLLM):
             tokenizer = AutoTokenizer.from_pretrained(model_id)
             model = AutoModelForCausalLM.from_pretrained(model_id)
             pipe = pipeline(
-                "text-generation", model=model, tokenizer=tokenizer, max_new_tokens=10
+                "text-generation",
+                model=model,
+                tokenizer=tokenizer,
+                max_new_tokens=10,
             )
             hf = HuggingFacePipeline(pipeline=pipe)
 
@@ -268,7 +271,7 @@ class HuggingFacePipeline(BaseLLM):
                 k: v for k, v in _model_kwargs.items() if k != "trust_remote_code"
             }
         _pipeline_kwargs = pipeline_kwargs or {}
-        pipeline = hf_pipeline(
+        pipeline = hf_pipeline(  # type: ignore[call-overload]
             task=task,
             model=model,
             tokenizer=tokenizer,

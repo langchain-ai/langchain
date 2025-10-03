@@ -22,7 +22,7 @@ def format_document_xml(doc: Document) -> str:
                 <metadata>...</metadata>
             </document>
 
-    .. note::
+    !!! note
         Does not generate valid XML or escape special characters. Intended for
         semi-structured LLM input only.
 
@@ -32,9 +32,4 @@ def format_document_xml(doc: Document) -> str:
     if doc.metadata:
         metadata_items = [f"{k}: {v!s}" for k, v in doc.metadata.items()]
         metadata_str = f"<metadata>{', '.join(metadata_items)}</metadata>"
-    return (
-        f"<document>{id_str}"
-        f"<content>{doc.page_content}</content>"
-        f"{metadata_str}"
-        f"</document>"
-    )
+    return f"<document>{id_str}<content>{doc.page_content}</content>{metadata_str}</document>"

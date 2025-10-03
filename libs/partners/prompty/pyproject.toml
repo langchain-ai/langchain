@@ -5,10 +5,13 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.9"
-dependencies = ["langchain-core<1.0.0,>=0.3.15", "pyyaml<7.0.0,>=6.0.1"]
+requires-python = ">=3.10.0,<4.0.0"
+dependencies = [
+    "langchain-core>=1.0.0a1,<2.0.0",
+    "pyyaml>=6.0.1,<7.0.0"
+]
 name = "langchain-prompty"
-version = "0.1.1"
+version = "1.0.0a1"
 description = "An integration package connecting Prompty and LangChain"
 readme = "README.md"
 
@@ -19,23 +22,27 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<8.0.0,>=7.3.0",
-    "freezegun<2.0.0,>=1.2.2",
-    "pytest-mock<4.0.0,>=3.10.0",
-    "syrupy<5.0.0,>=4.0.2",
-    "pytest-watcher<1.0.0,>=0.3.4",
-    "pytest-asyncio<1.0.0,>=0.21.1",
+    "pytest>=7.3.0,<8.0.0",
+    "pytest-mock>=3.10.0,<4.0.0",
+    "pytest-watcher>=0.3.4,<1.0.0",
+    "pytest-asyncio>=0.21.1,<1.0.0",
+    "pytest-benchmark",
+    "freezegun>=1.2.2,<2.0.0",
+    "syrupy>=4.0.2,<5.0.0",
     "langchain-core",
     "langchain",
     "langchain-text-splitters",
+    "langchain-tests",
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 test_integration = []
-lint = ["ruff<0.13,>=0.12.2"]
-dev = ["types-pyyaml<7.0.0.0,>=6.0.12.20240311", "langchain-core"]
+lint = [
+    "ruff>=0.13.1,<0.14.0",
+    "types-urllib3>=1.26.25.14,<2.0.0.0",
+]
+dev = ["types-pyyaml>=6.0.12.20240311,<7.0.0.0", "langchain-core"]
 typing = [
-    "mypy<1.0,>=0.991",
-    "types-pyyaml<7.0.0.0,>=6.0.12.20240311",
+    "mypy>=0.991.0,<1.0.0",
+    "types-pyyaml>=6.0.12.20240311,<7.0.0.0",
     "langchain-core",
 ]
 
@@ -44,13 +51,18 @@ typing = [
 langchain-core = { path = "../../core", editable = true }
 langchain-text-splitters = { path = "../../text-splitters", editable = true }
 langchain = { path = "../../langchain", editable = true }
+langchain-tests = { path = "../../standard-tests", editable = true }
 
-[tool.ruff]
-target-version = "py39"
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "T201", "UP", "S"]
-ignore = [ "UP007", ]
+ignore = [ "UP007", "UP045" ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
 
 [tool.mypy]
 disallow_untyped_defs = "True"

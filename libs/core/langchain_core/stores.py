@@ -16,6 +16,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import override
+
 from langchain_core.exceptions import LangChainException
 from langchain_core.runnables import run_in_executor
 
@@ -52,24 +54,24 @@ class BaseStore(ABC, Generic[K, V]):
 
             from langchain.storage import BaseStore
 
+
             class MyInMemoryStore(BaseStore[str, int]):
+                def __init__(self) -> None:
+                    self.store: dict[str, int] = {}
 
-                def __init__(self):
-                    self.store = {}
-
-                def mget(self, keys):
+                def mget(self, keys: Sequence[str]) -> list[int | None]:
                     return [self.store.get(key) for key in keys]
 
-                def mset(self, key_value_pairs):
+                def mset(self, key_value_pairs: Sequence[tuple[str, int]]) -> None:
                     for key, value in key_value_pairs:
                         self.store[key] = value
 
-                def mdelete(self, keys):
+                def mdelete(self, keys: Sequence[str]) -> None:
                     for key in keys:
                         if key in self.store:
                             del self.store[key]
 
-                def yield_keys(self, prefix=None):
+                def yield_keys(self, prefix: str | None = None) -> Iterator[str]:
                     if prefix is None:
                         yield from self.store.keys()
                     else:
@@ -206,27 +208,13 @@ class InMemoryBaseStore(BaseStore[str, V], Generic[V]):
         """
         return self.mget(keys)
 
+    @override
     def mset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         for key, value in key_value_pairs:
             self.store[key] = value
 
+    @override
     async def amset(self, key_value_pairs: Sequence[tuple[str, V]]) -> None:
-        """Async set the values for the given keys.
-
-        Args:
-            key_value_pairs (Sequence[tuple[str, V]]): A sequence of key-value pairs.
-
-        Returns:
-            None
-        """
         return self.mset(key_value_pairs)
 
     def mdelete(self, keys: Sequence[str]) -> None:
@@ -295,13 +283,13 @@ class InMemoryStore(InMemoryBaseStore[Any]):
             from langchain.storage import InMemoryStore
 
             store = InMemoryStore()
-            store.mset([('key1', 'value1'), ('key2', 'value2')])
-            store.mget(['key1', 'key2'])
+            store.mset([("key1", "value1"), ("key2", "value2")])
+            store.mget(["key1", "key2"])
             # ['value1', 'value2']
-            store.mdelete(['key1'])
+            store.mdelete(["key1"])
             list(store.yield_keys())
             # ['key2']
-            list(store.yield_keys(prefix='k'))
+            list(store.yield_keys(prefix="k"))
             # ['key2']
 
     """
@@ -321,13 +309,13 @@ class InMemoryByteStore(InMemoryBaseStore[bytes]):
             from langchain.storage import InMemoryByteStore
 
             store = InMemoryByteStore()
-            store.mset([('key1', b'value1'), ('key2', b'value2')])
-            store.mget(['key1', 'key2'])
+            store.mset([("key1", b"value1"), ("key2", b"value2")])
+            store.mget(["key1", "key2"])
             # [b'value1', b'value2']
-            store.mdelete(['key1'])
+            store.mdelete(["key1"])
             list(store.yield_keys())
             # ['key2']
-            list(store.yield_keys(prefix='k'))
+            list(store.yield_keys(prefix="k"))
             # ['key2']
 
     """

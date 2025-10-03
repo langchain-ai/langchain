@@ -51,11 +51,11 @@ def create_conversational_retrieval_agent(
             defaults to False.
         max_token_limit: The max number of tokens to keep around in memory.
             Defaults to 2000.
+        **kwargs: Additional keyword arguments to pass to the AgentExecutor.
 
     Returns:
         An agent executor initialized appropriately
     """
-
     if remember_intermediate_steps:
         memory: BaseMemory = AgentTokenBufferMemory(
             memory_key=memory_key,

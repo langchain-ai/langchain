@@ -26,7 +26,8 @@ https://python.langchain.com/docs/how_to/custom_chat_model/
 **LLMs**
 
 Language models that takes a string as input and returns a string.
-These are traditionally older models (newer models generally are Chat Models, see below).
+These are traditionally older models (newer models generally are Chat Models,
+see below).
 
 Although the underlying models are string in, string out, the LangChain wrappers
 also allow these models to take messages as input. This gives them the same interface
@@ -39,11 +40,12 @@ Please see the following guide for more information on how to implement a custom
 https://python.langchain.com/docs/how_to/custom_llm/
 
 
-"""  # noqa: E501
+"""
 
 from typing import TYPE_CHECKING
 
 from langchain_core._import_utils import import_attr
+from langchain_core.language_models._utils import is_openai_data_block
 
 if TYPE_CHECKING:
     from langchain_core.language_models.base import (
@@ -84,6 +86,7 @@ __all__ = (
     "ParrotFakeChatModel",
     "SimpleChatModel",
     "get_tokenizer",
+    "is_openai_data_block",
 )
 
 _dynamic_imports = {
@@ -103,6 +106,7 @@ _dynamic_imports = {
     "ParrotFakeChatModel": "fake_chat_models",
     "LLM": "llms",
     "BaseLLM": "llms",
+    "is_openai_data_block": "_utils",
 }
 
 

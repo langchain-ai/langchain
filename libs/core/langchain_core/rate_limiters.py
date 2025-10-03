@@ -26,7 +26,7 @@ class BaseRateLimiter(abc.ABC):
       the time spent waiting for tokens and the time spent making the request.
 
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
     """
 
     @abc.abstractmethod
@@ -110,9 +110,9 @@ class InMemoryRateLimiter(BaseRateLimiter):
             )
 
             from langchain_anthropic import ChatAnthropic
+
             model = ChatAnthropic(
-                model_name="claude-3-opus-20240229",
-                rate_limiter=rate_limiter
+                model_name="claude-3-opus-20240229", rate_limiter=rate_limiter
             )
 
             for _ in range(5):
@@ -122,7 +122,7 @@ class InMemoryRateLimiter(BaseRateLimiter):
                 print(toc - tic)
 
 
-    .. versionadded:: 0.2.24
+    !!! version-added "Added in version 0.2.24"
 
     """  # noqa: E501
 

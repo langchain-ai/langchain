@@ -8,11 +8,10 @@ from __future__ import annotations
 import base64
 import logging
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
 )
@@ -51,6 +50,7 @@ def _results_to_docs_and_scores(results: Any) -> list[tuple[Document, float]]:
             results["metadatas"][0],
             results["ids"][0],
             results["distances"][0],
+            strict=False,
         )
     ]
 
@@ -62,6 +62,7 @@ def _results_to_docs_and_vectors(results: Any) -> list[tuple[Document, np.ndarra
             results["documents"][0],
             results["metadatas"][0],
             results["embeddings"][0],
+            strict=False,
         )
     ]
 
@@ -214,10 +215,10 @@ class Chroma(VectorStore):
 
             updated_document = Document(
                 page_content="qux",
-                metadata={"bar": "baz"}
+                metadata={"bar": "baz"},
             )
 
-            vector_store.update_documents(ids=["1"],documents=[updated_document])
+            vector_store.update_documents(ids=["1"], documents=[updated_document])
 
     Delete Documents:
         .. code-block:: python
@@ -227,29 +228,31 @@ class Chroma(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(query="thud", k=1)
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'baz': 'bar'}]
+            *thud[{"baz": "bar"}]
 
     Search with filter:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1,filter={"baz": "bar"})
+            results = vector_store.similarity_search(
+                query="thud", k=1, filter={"baz": "bar"}
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * foo [{'baz': 'bar'}]
+            *foo[{"baz": "bar"}]
 
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -270,8 +273,8 @@ class Chroma(VectorStore):
             # results = vector_store.asimilarity_search(query="thud",k=1)
 
             # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
-            for doc,score in results:
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
@@ -289,7 +292,7 @@ class Chroma(VectorStore):
 
         .. code-block:: python
 
-            [Document(metadata={'baz': 'bar'}, page_content='thud')]
+            [Document(metadata={"baz": "bar"}, page_content="thud")]
 
     """  # noqa: E501
 
@@ -484,6 +487,23 @@ class Chroma(VectorStore):
         """Get base64 string from image URI."""
         with open(uri, "rb") as image_file:
             return base64.b64encode(image_file.read()).decode("utf-8")
+
+    def fork(self, new_name: str) -> Chroma:
+        """Fork this vector store.
+
+        Args:
+            new_name: New name for the forked store.
+
+        Returns:
+            A new Chroma store forked from this vector store.
+
+        """
+        forked_collection = self._collection.fork(new_name=new_name)
+        return Chroma(
+            client=self._client,
+            embedding_function=self._embedding_function,
+            collection_name=forked_collection.name,
+        )
 
     def add_images(
         self,
@@ -1100,7 +1120,7 @@ class Chroma(VectorStore):
                      Ids are always included.
                      Defaults to `["metadatas", "documents"]`. Optional.
 
-        Return:
+        Returns:
             A dict with the keys `"ids"`, `"embeddings"`, `"metadatas"`, `"documents"`.
         """
         kwargs = {
@@ -1138,7 +1158,7 @@ class Chroma(VectorStore):
         Returns:
             List of Documents.
 
-        ... versionadded:: 0.2.1
+        !!! version-added "Added in 0.2.1"
         """
         results = self.get(ids=list(ids))
         return [
@@ -1147,6 +1167,7 @@ class Chroma(VectorStore):
                 results["documents"],
                 results["metadatas"],
                 results["ids"],
+                strict=False,
             )
         ]
 

@@ -52,11 +52,12 @@ def load_dataset(uri: str) -> list[dict]:
 
         pip install datasets
 
-    Examples
+    Examples:
     --------
     .. code-block:: python
 
         from langchain.evaluation import load_dataset
+
         ds = load_dataset("llm-math")
 
     """
@@ -117,12 +118,12 @@ def load_evaluator(
     **kwargs : Any
         Additional keyword arguments to pass to the evaluator.
 
-    Returns
+    Returns:
     -------
     Chain
         The loaded evaluation chain.
 
-    Examples
+    Examples:
     --------
     >>> from langchain.evaluation import load_evaluator, EvaluatorType
     >>> evaluator = load_evaluator(EvaluatorType.QA)
@@ -189,12 +190,12 @@ def load_evaluators(
     **kwargs : Any
         Additional keyword arguments to pass to all evaluators.
 
-    Returns
+    Returns:
     -------
     List[Chain]
         The loaded evaluators.
 
-    Examples
+    Examples:
     --------
     >>> from langchain.evaluation import load_evaluators, EvaluatorType
     >>> evaluators = [EvaluatorType.QA, EvaluatorType.CRITERIA]

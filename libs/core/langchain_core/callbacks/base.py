@@ -71,7 +71,9 @@ class LLMManagerMixin:
         parent_run_id: Optional[UUID] = None,
         **kwargs: Any,
     ) -> Any:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -243,7 +245,7 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when LLM starts running.
 
-        .. ATTENTION::
+        !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -271,8 +273,9 @@ class CallbackManagerMixin:
     ) -> Any:
         """Run when a chat model starts running.
 
-        **ATTENTION**: This method is called for chat models. If you're implementing
-        a handler for a non-chat model, you should use ``on_llm_start`` instead.
+        !!! warning
+            This method is called for chat models. If you're implementing a handler for
+            a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -419,7 +422,7 @@ class RunManagerMixin:
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
 
-        .. versionadded:: 0.2.15
+        !!! version-added "Added in version 0.2.15"
         """
 
 
@@ -489,9 +492,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM starts running.
+        """Run when the model starts running.
 
-        .. ATTENTION::
+        !!! warning
             This method is called for non-chat models (regular LLMs). If you're
             implementing a handler for a chat model, you should use
             ``on_chat_model_start`` instead.
@@ -519,8 +522,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when a chat model starts running.
 
-        **ATTENTION**: This method is called for chat models. If you're implementing
-        a handler for a non-chat model, you should use ``on_llm_start`` instead.
+        !!! warning
+            This method is called for chat models. If you're implementing a handler for
+            a non-chat model, you should use ``on_llm_start`` instead.
 
         Args:
             serialized (dict[str, Any]): The serialized chat model.
@@ -546,7 +550,9 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run on new LLM token. Only available when streaming is enabled.
+        """Run on new output token. Only available when streaming is enabled.
+
+        For both chat models and non-chat models (legacy LLMs).
 
         Args:
             token (str): The new token.
@@ -567,7 +573,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         tags: Optional[list[str]] = None,
         **kwargs: Any,
     ) -> None:
-        """Run when LLM ends running.
+        """Run when the model ends running.
 
         Args:
             response (LLMResult): The response which was generated.
@@ -867,7 +873,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
         metadata: Optional[dict[str, Any]] = None,
         **kwargs: Any,
     ) -> None:
-        """Override to define a handler for a custom event.
+        """Override to define a handler for custom events.
 
         Args:
             name: The name of the custom event.
@@ -879,7 +885,7 @@ class AsyncCallbackHandler(BaseCallbackHandler):
             metadata: The metadata associated with the custom event
                 (includes inherited metadata).
 
-        .. versionadded:: 0.2.15
+        !!! version-added "Added in version 0.2.15"
         """
 
 
@@ -922,7 +928,7 @@ class BaseCallbackManager(CallbackManagerMixin):
         self.inheritable_metadata = inheritable_metadata or {}
 
     def copy(self) -> Self:
-        """Copy the callback manager."""
+        """Return a copy of the callback manager."""
         return self.__class__(
             handlers=self.handlers.copy(),
             inheritable_handlers=self.inheritable_handlers.copy(),
@@ -947,11 +953,18 @@ class BaseCallbackManager(CallbackManagerMixin):
 
             .. code-block:: python
 
-                from langchain_core.callbacks.manager import CallbackManager, trace_as_chain_group
+                from langchain_core.callbacks.manager import (
+                    CallbackManager,
+                    trace_as_chain_group,
+                )
                 from langchain_core.callbacks.stdout import StdOutCallbackHandler
 
-                manager = CallbackManager(handlers=[StdOutCallbackHandler()], tags=["tag2"])
-                with trace_as_chain_group("My Group Name", tags=["tag1"]) as group_manager:
+                manager = CallbackManager(
+                    handlers=[StdOutCallbackHandler()], tags=["tag2"]
+                )
+                with trace_as_chain_group(
+                    "My Group Name", tags=["tag1"]
+                ) as group_manager:
                     merged_manager = group_manager.merge(manager)
                     print(merged_manager.handlers)
                     # [

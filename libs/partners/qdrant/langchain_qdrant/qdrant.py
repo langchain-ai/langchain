@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import uuid
-from collections.abc import Generator, Iterable, Sequence
+from collections.abc import Callable
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
 from typing import (
+    TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
 )
@@ -19,7 +19,11 @@ from langchain_core.vectorstores import VectorStore
 from qdrant_client import QdrantClient, models
 
 from langchain_qdrant._utils import maximal_marginal_relevance
-from langchain_qdrant.sparse_embeddings import SparseEmbeddings
+
+if TYPE_CHECKING:
+    from collections.abc import Generator, Iterable, Sequence
+
+    from langchain_qdrant.sparse_embeddings import SparseEmbeddings
 
 
 class QdrantVectorStoreError(Exception):
@@ -27,6 +31,8 @@ class QdrantVectorStoreError(Exception):
 
 
 class RetrievalMode(str, Enum):
+    """Modes for retrieving vectors from Qdrant."""
+
     DENSE = "dense"
     SPARSE = "sparse"
     HYBRID = "hybrid"
@@ -99,32 +105,58 @@ class QdrantVectorStore(VectorStore):
     Search:
         .. code-block:: python
 
-            results = vector_store.similarity_search(query="thud",k=1)
+            results = vector_store.similarity_search(
+                query="thud",
+                k=1,
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+            *thud[
+                {
+                    "bar": "baz",
+                    "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                    "_collection_name": "demo_collection",
+                }
+            ]
 
     Search with filter:
         .. code-block:: python
 
             from qdrant_client.http import models
 
-            results = vector_store.similarity_search(query="thud",k=1,filter=models.Filter(must=[models.FieldCondition(key="metadata.bar", match=models.MatchValue(value="baz"),)]))
+            results = vector_store.similarity_search(
+                query="thud",
+                k=1,
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="metadata.bar",
+                            match=models.MatchValue(value="baz"),
+                        )
+                    ]
+                ),
+            )
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
 
-            * thud [{'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}]
+            *thud[
+                {
+                    "bar": "baz",
+                    "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                    "_collection_name": "demo_collection",
+                }
+            ]
 
 
     Search with score:
         .. code-block:: python
 
-            results = vector_store.similarity_search_with_score(query="qux",k=1)
+            results = vector_store.similarity_search_with_score(query="qux", k=1)
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
@@ -145,8 +177,8 @@ class QdrantVectorStore(VectorStore):
             # results = vector_store.asimilarity_search(query="thud",k=1)
 
             # search with score
-            results = await vector_store.asimilarity_search_with_score(query="qux",k=1)
-            for doc,score in results:
+            results = await vector_store.asimilarity_search_with_score(query="qux", k=1)
+            for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
         .. code-block:: python
@@ -164,7 +196,16 @@ class QdrantVectorStore(VectorStore):
 
         .. code-block:: python
 
-            [Document(metadata={'bar': 'baz', '_id': '0d706099-6dd9-412a-9df6-a71043e020de', '_collection_name': 'demo_collection'}, page_content='thud')]
+            [
+                Document(
+                    metadata={
+                        "bar": "baz",
+                        "_id": "0d706099-6dd9-412a-9df6-a71043e020de",
+                        "_collection_name": "demo_collection",
+                    },
+                    page_content="thud",
+                )
+            ]
 
     """  # noqa: E501
 
@@ -187,7 +228,7 @@ class QdrantVectorStore(VectorStore):
         sparse_vector_name: str = SPARSE_VECTOR_NAME,
         validate_embeddings: bool = True,  # noqa: FBT001, FBT002
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
-    ):
+    ) -> None:
         """Initialize a new instance of `QdrantVectorStore`.
 
         Example:
@@ -237,20 +278,51 @@ class QdrantVectorStore(VectorStore):
         return self._client
 
     @property
-    def embeddings(self) -> Embeddings:
+    def embeddings(self) -> Optional[Embeddings]:
         """Get the dense embeddings instance that is being used.
 
-        Raises:
-            ValueError: If embeddings are ``None``.
-
         Returns:
-            Embeddings: An instance of ``Embeddings``.
+            Embeddings: An instance of ``Embeddings``, or None for SPARSE mode.
 
         """
-        if self._embeddings is None:
-            msg = "Embeddings are `None`. Please set using the `embedding` parameter."
-            raise ValueError(msg)
         return self._embeddings
+
+    def _get_retriever_tags(self) -> list[str]:
+        """Get tags for retriever.
+
+        Override the base class method to handle SPARSE mode where embeddings can be
+        None. In SPARSE mode, embeddings is None, so we don't include embeddings class
+        name in tags. In DENSE/HYBRID modes, embeddings is not None, so we include
+        embeddings class name.
+        """
+        tags = [self.__class__.__name__]
+
+        # Handle different retrieval modes
+        if self.retrieval_mode == RetrievalMode.SPARSE:
+            # SPARSE mode: no dense embeddings, so no embeddings class name in tags
+            pass
+        # DENSE/HYBRID modes: include embeddings class name if available
+        elif self.embeddings is not None:
+            tags.append(self.embeddings.__class__.__name__)
+
+        return tags
+
+    def _require_embeddings(self, operation: str) -> Embeddings:
+        """Require embeddings for operations that need them.
+
+        Args:
+            operation: Description of the operation requiring embeddings.
+
+        Returns:
+            The embeddings instance.
+
+        Raises:
+            ValueError: If embeddings are None and required for the operation.
+        """
+        if self.embeddings is None:
+            msg = f"Embeddings are required for {operation}"
+            raise ValueError(msg)
+        return self.embeddings
 
     @property
     def sparse_embeddings(self) -> SparseEmbeddings:
@@ -393,13 +465,11 @@ class QdrantVectorStore(VectorStore):
         validate_collection_config: bool = True,  # noqa: FBT001, FBT002
         **kwargs: Any,
     ) -> QdrantVectorStore:
-        """Construct an instance of ``QdrantVectorStore`` from an existing collection
-        without adding any data.
+        """Construct ``QdrantVectorStore`` from existing collection without adding data.
 
         Returns:
             QdrantVectorStore: A new instance of ``QdrantVectorStore``.
-
-        """  # noqa: D205
+        """
         client = QdrantClient(
             location=location,
             url=url,
@@ -517,7 +587,8 @@ class QdrantVectorStore(VectorStore):
             **kwargs,
         }
         if self.retrieval_mode == RetrievalMode.DENSE:
-            query_dense_embedding = self.embeddings.embed_query(query)
+            embeddings = self._require_embeddings("DENSE mode")
+            query_dense_embedding = embeddings.embed_query(query)
             results = self.client.query_points(
                 query=query_dense_embedding,
                 using=self.vector_name,
@@ -536,7 +607,8 @@ class QdrantVectorStore(VectorStore):
             ).points
 
         elif self.retrieval_mode == RetrievalMode.HYBRID:
-            query_dense_embedding = self.embeddings.embed_query(query)
+            embeddings = self._require_embeddings("HYBRID mode")
+            query_dense_embedding = embeddings.embed_query(query)
             query_sparse_embedding = self.sparse_embeddings.embed_query(query)
             results = self.client.query_points(
                 prefetch=[
@@ -690,7 +762,8 @@ class QdrantVectorStore(VectorStore):
             self.embeddings,
         )
 
-        query_embedding = self.embeddings.embed_query(query)
+        embeddings = self._require_embeddings("max_marginal_relevance_search")
+        query_embedding = embeddings.embed_query(query)
         return self.max_marginal_relevance_search_by_vector(
             query_embedding,
             k=k,
@@ -1006,6 +1079,7 @@ class QdrantVectorStore(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
@@ -1041,7 +1115,8 @@ class QdrantVectorStore(VectorStore):
         texts: Iterable[str],
     ) -> list[models.VectorStruct]:
         if self.retrieval_mode == RetrievalMode.DENSE:
-            batch_embeddings = self.embeddings.embed_documents(list(texts))
+            embeddings = self._require_embeddings("DENSE mode")
+            batch_embeddings = embeddings.embed_documents(list(texts))
             return [
                 {
                     self.vector_name: vector,
@@ -1063,7 +1138,8 @@ class QdrantVectorStore(VectorStore):
             ]
 
         if self.retrieval_mode == RetrievalMode.HYBRID:
-            dense_embeddings = self.embeddings.embed_documents(list(texts))
+            embeddings = self._require_embeddings("HYBRID mode")
+            dense_embeddings = embeddings.embed_documents(list(texts))
             sparse_embeddings = self.sparse_embeddings.embed_documents(list(texts))
 
             if len(dense_embeddings) != len(sparse_embeddings):
@@ -1078,7 +1154,7 @@ class QdrantVectorStore(VectorStore):
                     ),
                 }
                 for dense_vector, sparse_vector in zip(
-                    dense_embeddings, sparse_embeddings
+                    dense_embeddings, sparse_embeddings, strict=False
                 )
             ]
 
@@ -1164,7 +1240,7 @@ class QdrantVectorStore(VectorStore):
             vector_size = len(dense_embeddings)
         else:
             msg = "Invalid `embeddings` type."
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         if vector_config.size != vector_size:
             msg = (

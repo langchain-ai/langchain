@@ -27,12 +27,12 @@ def test_resolve_criteria_str() -> None:
     [
         ("Y", {"reasoning": "", "value": "Y", "score": 1}),
         (
-            """Here is my step-by-step reasoning for the given criteria:
-The criterion is: "Do you like cake?" I like cake.
-Y""",
+            "Here is my step-by-step reasoning for the given criteria:\n"
+            'The criterion is: "Do you like cake?" I like cake.\n'
+            "Y",
             {
-                "reasoning": """Here is my step-by-step reasoning for the given criteria:
-The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
+                "reasoning": "Here is my step-by-step reasoning for the given criteria:"
+                '\nThe criterion is: "Do you like cake?" I like cake.',
                 "value": "Y",
                 "score": 1,
             },
@@ -51,7 +51,7 @@ The criterion is: "Do you like cake?" I like cake.""",  # noqa: E501
         ),
     ],
 )
-def test_CriteriaResultOutputParser_parse(text: str, want: dict) -> None:
+def test_criteria_result_output_parser_parse(text: str, want: dict) -> None:
     output_parser = CriteriaResultOutputParser()
     got = output_parser.parse(text)
     assert got.get("reasoning") == want["reasoning"]
@@ -92,7 +92,7 @@ def test_criteria_eval_chain_missing_reference() -> None:
         criteria={"my criterion": "my criterion description"},
     )
     with pytest.raises(
-        ValueError, match="LabeledCriteriaEvalChain requires a reference string."
+        ValueError, match="LabeledCriteriaEvalChain requires a reference string"
     ):
         chain.evaluate_strings(prediction="my prediction", input="my input")
 

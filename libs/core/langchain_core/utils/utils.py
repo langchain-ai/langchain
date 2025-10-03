@@ -9,6 +9,7 @@ import warnings
 from collections.abc import Iterator, Sequence
 from importlib.metadata import version
 from typing import Any, Callable, Optional, Union, overload
+from uuid import uuid4
 
 from packaging.version import parse
 from pydantic import SecretStr
@@ -21,17 +22,14 @@ from langchain_core.utils.pydantic import (
 
 
 def xor_args(*arg_groups: tuple[str, ...]) -> Callable:
-    """Validate specified keyword args are mutually exclusive.".
+    """Validate specified keyword args are mutually exclusive.
 
     Args:
         *arg_groups (tuple[str, ...]): Groups of mutually exclusive keyword args.
 
     Returns:
         Callable: Decorator that validates the specified keyword args
-            are mutually exclusive
-
-    Raises:
-        ValueError: If more than one arg in a group is defined.
+            are mutually exclusive.
     """
 
     def decorator(func: Callable) -> Callable:
@@ -137,7 +135,7 @@ def guard_import(
     try:
         module = importlib.import_module(module_name, package)
     except (ImportError, ModuleNotFoundError) as e:
-        pip_name = pip_name or module_name.split(".")[0].replace("_", "-")
+        pip_name = pip_name or module_name.split(".", maxsplit=1)[0].replace("_", "-")
         msg = (
             f"Could not import {module_name} python package. "
             f"Please install it with `pip install {pip_name}`."
@@ -223,7 +221,7 @@ def _build_model_kwargs(
     values: dict[str, Any],
     all_required_field_names: set[str],
 ) -> dict[str, Any]:
-    """Build "model_kwargs" param from Pydanitc constructor values.
+    """Build "model_kwargs" param from Pydantic constructor values.
 
     Args:
         values: All init args passed in by user.
@@ -381,10 +379,21 @@ def from_env(
         error_message: the error message which will be raised if the key is not found
             and no default value is provided.
             This will be raised as a ValueError.
+
+    Returns:
+        factory method that will look up the value from the environment.
     """
 
     def get_from_env_fn() -> Optional[str]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The value from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:
@@ -445,7 +454,15 @@ def secret_from_env(
     """
 
     def get_secret_from_env() -> Optional[SecretStr]:
-        """Get a value from an environment variable."""
+        """Get a value from an environment variable.
+
+        Raises:
+            ValueError: If the environment variable is not set and no default is
+                provided.
+
+        Returns:
+            The secret from the environment.
+        """
         if isinstance(key, (list, tuple)):
             for k in key:
                 if k in os.environ:
@@ -466,3 +483,31 @@ def secret_from_env(
         raise ValueError(msg)
 
     return get_secret_from_env
+
+
+LC_AUTO_PREFIX = "lc_"
+"""LangChain auto-generated ID prefix for messages and content blocks."""
+
+LC_ID_PREFIX = "lc_run-"
+"""Internal tracing/callback system identifier.
+
+Used for:
+- Tracing. Every LangChain operation (LLM call, chain execution, tool use, etc.)
+  gets a unique run_id (UUID)
+- Enables tracking parent-child relationships between operations
+"""
+
+
+def ensure_id(id_val: Optional[str]) -> str:
+    """Ensure the ID is a valid string, generating a new UUID if not provided.
+
+    Auto-generated UUIDs are prefixed by ``'lc_'`` to indicate they are
+    LangChain-generated IDs.
+
+    Args:
+        id_val: Optional string ID value to validate.
+
+    Returns:
+        A string ID, either the validated provided value or a newly generated UUID4.
+    """
+    return id_val or str(f"{LC_AUTO_PREFIX}{uuid4()}")

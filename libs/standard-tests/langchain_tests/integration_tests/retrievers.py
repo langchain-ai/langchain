@@ -1,3 +1,5 @@
+"""Integration tests for retrievers."""
+
 from abc import abstractmethod
 
 import pytest
@@ -37,7 +39,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
 
     @pytest.fixture
     def retriever(self) -> BaseRetriever:
-        """:private:"""
+        """Return retriever fixture."""
         return self.retriever_constructor(**self.retriever_constructor_params)
 
     def test_k_constructor_param(self) -> None:
@@ -49,7 +51,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         By default, the parameter tested is named ``k``, but it can be overridden by
         setting the ``num_results_arg_name`` property.
 
-        .. note::
+        !!! note
             If the retriever doesn't support configuring the number of results returned
             via the constructor, this test can be skipped using a pytest ``xfail`` on
             the test class:
@@ -63,7 +65,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 def test_k_constructor_param(self) -> None:
                     raise NotImplementedError
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever constructor does not accept a number
             of results parameter, or the retriever does not return the correct number
@@ -105,7 +107,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
         By default, the parameter is named ``, but it can be overridden by
         setting the ``num_results_arg_name`` property.
 
-        .. note::
+        !!! note
             If the retriever doesn't support configuring the number of results returned
             via the invoke method, this test can be skipped using a pytest ``xfail`` on
             the test class:
@@ -119,7 +121,7 @@ class RetrieversIntegrationTests(BaseStandardTests):
                 def test_invoke_with_k_kwarg(self) -> None:
                     raise NotImplementedError
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever's invoke method does not accept a number
             of results parameter, or the retriever does not return the correct number
@@ -148,10 +150,12 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result_3)
 
     def test_invoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """If invoked with the example params, the retriever should return a list of
+        """Test invoke returns documents.
+
+        If invoked with the example params, the retriever should return a list of
         Documents.
 
-        .. dropdown:: Troubleshooting
+        ??? note "Troubleshooting"
 
             If this test fails, the retriever's invoke method does not return a list of
             ``langchain_core.document.Document`` objects. Please confirm that your
@@ -163,10 +167,12 @@ class RetrieversIntegrationTests(BaseStandardTests):
         assert all(isinstance(doc, Document) for doc in result)
 
     async def test_ainvoke_returns_documents(self, retriever: BaseRetriever) -> None:
-        """If ainvoked with the example params, the retriever should return a list of
+        """Test ainvoke returns documents.
+
+        If ainvoked with the example params, the retriever should return a list of
         Documents.
 
-        See :meth:`test_invoke_returns_documents` for more information on
+        See `test_invoke_returns_documents` for more information on
         troubleshooting.
         """
         result = await retriever.ainvoke(self.retriever_query_example)

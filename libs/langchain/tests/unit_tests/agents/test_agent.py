@@ -451,7 +451,6 @@ def test_agent_invalid_tool() -> None:
 
 async def test_runnable_agent() -> None:
     """Simple test to verify that an agent built with LCEL works."""
-
     # Will alternate between responding with hello and goodbye
     infinite_cycle = cycle([AIMessage(content="hello world!")])
     # When streaming GenericFakeChatModel breaks AIMessage into chunks based on spaces
@@ -514,20 +513,20 @@ async def test_runnable_agent() -> None:
     ]
 
     # stream log
-    results: list[RunLogPatch] = [  # type: ignore[no-redef]
+    log_results: list[RunLogPatch] = [
         r async for r in executor.astream_log({"question": "hello"})
     ]
     # # Let's stream just the llm tokens.
     messages = []
-    for log_record in results:
-        for op in log_record.ops:  # type: ignore[attr-defined]
+    for log_record in log_results:
+        for op in log_record.ops:
             if op["op"] == "add" and isinstance(op["value"], AIMessageChunk):
                 messages.append(op["value"])  # noqa: PERF401
 
     assert messages != []
 
     # Aggregate state
-    run_log = reduce(operator.add, results)
+    run_log = reduce(operator.add, log_results)
 
     assert isinstance(run_log, RunLog)
 
@@ -908,8 +907,8 @@ async def test_openai_agent_with_streaming() -> None:
                             "name": "find_pet",
                         },
                     },
+                    "chunk_position": "last",
                     "content": "",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
@@ -947,7 +946,6 @@ async def test_openai_agent_with_streaming() -> None:
                 {
                     "additional_kwargs": {},
                     "content": "The cat is spying from under the bed.",
-                    "example": False,
                     "invalid_tool_calls": [],
                     "name": None,
                     "response_metadata": {},
@@ -1112,6 +1110,7 @@ async def test_openai_agent_tools_agent() -> None:
                                         },
                                     ],
                                 },
+                                chunk_position="last",
                             ),
                         ],
                         tool_call_id="0",
@@ -1138,6 +1137,7 @@ async def test_openai_agent_tools_agent() -> None:
                                 },
                             ],
                         },
+                        chunk_position="last",
                     ),
                 ],
             },
@@ -1168,6 +1168,7 @@ async def test_openai_agent_tools_agent() -> None:
                                         },
                                     ],
                                 },
+                                chunk_position="last",
                             ),
                         ],
                         tool_call_id="1",
@@ -1194,6 +1195,7 @@ async def test_openai_agent_tools_agent() -> None:
                                 },
                             ],
                         },
+                        chunk_position="last",
                     ),
                 ],
             },
@@ -1231,6 +1233,7 @@ async def test_openai_agent_tools_agent() -> None:
                                             },
                                         ],
                                     },
+                                    chunk_position="last",
                                 ),
                             ],
                             tool_call_id="0",
@@ -1242,7 +1245,8 @@ async def test_openai_agent_tools_agent() -> None:
             {
                 "messages": [
                     FunctionMessage(
-                        content="check_time is not a valid tool, try one of [find_pet].",  # noqa: E501
+                        content="check_time is not a valid tool, "
+                        "try one of [find_pet].",
                         name="check_time",
                     ),
                 ],
@@ -1273,6 +1277,7 @@ async def test_openai_agent_tools_agent() -> None:
                                             },
                                         ],
                                     },
+                                    chunk_position="last",
                                 ),
                             ],
                             tool_call_id="1",

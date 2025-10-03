@@ -12,6 +12,7 @@ from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.messages import AIMessage
 from langchain_core.messages.ai import UsageMetadata, add_usage
 from langchain_core.outputs import ChatGeneration, LLMResult
+from langchain_core.tracers.context import register_configure_hook
 
 
 class UsageMetadataCallbackHandler(BaseCallbackHandler):
@@ -31,7 +32,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
             result_2 = llm_2.invoke("Hello", config={"callbacks": [callback]})
             callback.usage_metadata
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
@@ -43,7 +44,7 @@ class UsageMetadataCallbackHandler(BaseCallbackHandler):
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
 
@@ -101,6 +102,9 @@ def get_usage_metadata_callback(
         name (str): The name of the context variable. Defaults to
             ``'usage_metadata_callback'``.
 
+    Yields:
+        The usage metadata callback.
+
     Example:
         .. code-block:: python
 
@@ -115,7 +119,7 @@ def get_usage_metadata_callback(
                 llm_2.invoke("Hello")
                 print(cb.usage_metadata)
 
-        .. code-block:: none
+        .. code-block::
 
             {'gpt-4o-mini-2024-07-18': {'input_tokens': 8,
               'output_tokens': 10,
@@ -127,11 +131,9 @@ def get_usage_metadata_callback(
               'total_tokens': 29,
               'input_token_details': {'cache_read': 0, 'cache_creation': 0}}}
 
-    .. versionadded:: 0.3.49
+    !!! version-added "Added in version 0.3.49"
 
     """
-    from langchain_core.tracers.context import register_configure_hook
-
     usage_metadata_callback_var: ContextVar[Optional[UsageMetadataCallbackHandler]] = (
         ContextVar(name, default=None)
     )

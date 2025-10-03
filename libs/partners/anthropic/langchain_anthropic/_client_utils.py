@@ -50,6 +50,7 @@ def _get_default_httpx_client(
     *,
     base_url: Optional[str],
     timeout: Any = _NOT_GIVEN,
+    anthropic_proxy: Optional[str] = None,
 ) -> _SyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -58,6 +59,8 @@ def _get_default_httpx_client(
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
+    if anthropic_proxy is not None:
+        kwargs["proxy"] = anthropic_proxy
     return _SyncHttpxClientWrapper(**kwargs)
 
 
@@ -66,6 +69,7 @@ def _get_default_async_httpx_client(
     *,
     base_url: Optional[str],
     timeout: Any = _NOT_GIVEN,
+    anthropic_proxy: Optional[str] = None,
 ) -> _AsyncHttpxClientWrapper:
     kwargs: dict[str, Any] = {
         "base_url": base_url
@@ -74,4 +78,6 @@ def _get_default_async_httpx_client(
     }
     if timeout is not _NOT_GIVEN:
         kwargs["timeout"] = timeout
+    if anthropic_proxy is not None:
+        kwargs["proxy"] = anthropic_proxy
     return _AsyncHttpxClientWrapper(**kwargs)

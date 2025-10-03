@@ -41,7 +41,7 @@ def create_vectorstore_agent(
 ) -> AgentExecutor:
     """Construct a VectorStore agent from an LLM and tools.
 
-    .. note::
+    !!! note
         This class is deprecated. See below for a replacement that uses tool
         calling methods and LangGraph. Install LangGraph with:
 
@@ -60,7 +60,8 @@ def create_vectorstore_agent(
 
             vector_store = InMemoryVectorStore.from_texts(
                 [
-                    "Dogs are great companions, known for their loyalty and friendliness.",
+                    "Dogs are great companions, "
+                    "known for their loyalty and friendliness.",
                     "Cats are independent pets that often enjoy their own space.",
                 ],
                 OpenAIEmbeddings(),
@@ -81,18 +82,20 @@ def create_vectorstore_agent(
                 step["messages"][-1].pretty_print()
 
     Args:
-        llm (BaseLanguageModel): LLM that will be used by the agent
-        toolkit (VectorStoreToolkit): Set of tools for the agent
-        callback_manager (Optional[BaseCallbackManager], optional): Object to handle the callback [ Defaults to None. ]
-        prefix (str, optional): The prefix prompt for the agent. If not provided uses default PREFIX.
-        verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
-        agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+        llm: LLM that will be used by the agent
+        toolkit: Set of tools for the agent
+        callback_manager: Object to handle the callback [ Defaults to None. ]
+        prefix: The prefix prompt for the agent. If not provided uses default PREFIX.
+        verbose: If you want to see the content of the scratchpad. [ Defaults to False ]
+        agent_executor_kwargs: If there is any other parameter you want to send to the
+            agent. [ Defaults to None ]
         kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:
-        AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response
+        Returns a callable AgentExecutor object.
+        Either you can call it or use run method with the query to get the response.
 
-    """  # noqa: E501
+    """
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(
@@ -136,7 +139,7 @@ def create_vectorstore_router_agent(
 ) -> AgentExecutor:
     """Construct a VectorStore router agent from an LLM and tools.
 
-    .. note::
+    !!! note
         This class is deprecated. See below for a replacement that uses tool calling
         methods and LangGraph. Install LangGraph with:
 
@@ -155,7 +158,8 @@ def create_vectorstore_router_agent(
 
             pet_vector_store = InMemoryVectorStore.from_texts(
                 [
-                    "Dogs are great companions, known for their loyalty and friendliness.",
+                    "Dogs are great companions, "
+                    "known for their loyalty and friendliness.",
                     "Cats are independent pets that often enjoy their own space.",
                 ],
                 OpenAIEmbeddings(),
@@ -179,7 +183,7 @@ def create_vectorstore_router_agent(
                     food_vector_store.as_retriever(),
                     "food_information_retriever",
                     "Fetches information about food.",
-                )
+                ),
             ]
 
             agent = create_react_agent(llm, tools)
@@ -191,18 +195,22 @@ def create_vectorstore_router_agent(
                 step["messages"][-1].pretty_print()
 
     Args:
-        llm (BaseLanguageModel): LLM that will be used by the agent
-        toolkit (VectorStoreRouterToolkit): Set of tools for the agent which have routing capability with multiple vector stores
-        callback_manager (Optional[BaseCallbackManager], optional): Object to handle the callback [ Defaults to None. ]
-        prefix (str, optional): The prefix prompt for the router agent. If not provided uses default ROUTER_PREFIX.
-        verbose (bool, optional): If you want to see the content of the scratchpad. [ Defaults to False ]
-        agent_executor_kwargs (Optional[Dict[str, Any]], optional): If there is any other parameter you want to send to the agent. [ Defaults to None ]
+        llm: LLM that will be used by the agent
+        toolkit: Set of tools for the agent which have routing capability with multiple
+            vector stores
+        callback_manager: Object to handle the callback [ Defaults to None. ]
+        prefix: The prefix prompt for the router agent.
+            If not provided uses default ROUTER_PREFIX.
+        verbose: If you want to see the content of the scratchpad. [ Defaults to False ]
+        agent_executor_kwargs: If there is any other parameter you want to send to the
+            agent. [ Defaults to None ]
         kwargs: Additional named parameters to pass to the ZeroShotAgent.
 
     Returns:
-        AgentExecutor: Returns a callable AgentExecutor object. Either you can call it or use run method with the query to get the response.
+        Returns a callable AgentExecutor object.
+        Either you can call it or use run method with the query to get the response.
 
-    """  # noqa: E501
+    """
     tools = toolkit.get_tools()
     prompt = ZeroShotAgent.create_prompt(tools, prefix=prefix)
     llm_chain = LLMChain(

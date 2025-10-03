@@ -12,10 +12,10 @@ particularly for summarization chains and other document processing workflows.
 from __future__ import annotations
 
 import inspect
-from typing import TYPE_CHECKING, Callable, Union
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable
+    from collections.abc import Awaitable, Callable
 
     from langchain_core.messages import MessageLikeRepresentation
     from langgraph.runtime import Runtime
@@ -24,11 +24,7 @@ if TYPE_CHECKING:
 
 
 def resolve_prompt(
-    prompt: Union[
-        str,
-        None,
-        Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
-    ],
+    prompt: str | None | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,
@@ -61,12 +57,13 @@ def resolve_prompt(
         def custom_prompt(state, runtime):
             return [{"role": "system", "content": "Custom"}]
 
+
         messages = resolve_prompt(custom_prompt, state, runtime, "content", "default")
         messages = resolve_prompt("Custom system", state, runtime, "content", "default")
         messages = resolve_prompt(None, state, runtime, "content", "Default")
         ```
 
-    .. note::
+    !!! note
         Callable prompts have full control over message structure and content parameter
         is ignored. String/None prompts create standard system + user structure.
 
@@ -88,14 +85,10 @@ def resolve_prompt(
 
 
 async def aresolve_prompt(
-    prompt: Union[
-        str,
-        None,
-        Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]],
-        Callable[
-            [StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]
-        ],
-    ],
+    prompt: str
+    | None
+    | Callable[[StateT, Runtime[ContextT]], list[MessageLikeRepresentation]]
+    | Callable[[StateT, Runtime[ContextT]], Awaitable[list[MessageLikeRepresentation]]],
     state: StateT,
     runtime: Runtime[ContextT],
     default_user_content: str,
@@ -130,19 +123,17 @@ async def aresolve_prompt(
         async def async_prompt(state, runtime):
             return [{"role": "system", "content": "Async"}]
 
+
         def sync_prompt(state, runtime):
             return [{"role": "system", "content": "Sync"}]
 
-        messages = await aresolve_prompt(
-            async_prompt, state, runtime, "content", "default"
-        )
-        messages = await aresolve_prompt(
-            sync_prompt, state, runtime, "content", "default"
-        )
+
+        messages = await aresolve_prompt(async_prompt, state, runtime, "content", "default")
+        messages = await aresolve_prompt(sync_prompt, state, runtime, "content", "default")
         messages = await aresolve_prompt("Custom", state, runtime, "content", "default")
         ```
 
-    .. note::
+    !!! note
         Callable prompts have full control over message structure and content parameter
         is ignored. Automatically detects and handles async callables.
 

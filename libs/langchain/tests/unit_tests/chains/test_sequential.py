@@ -146,7 +146,8 @@ def test_sequential_missing_inputs() -> None:
     chain_1 = FakeChain(input_variables=["foo"], output_variables=["bar"])
     chain_2 = FakeChain(input_variables=["bar", "test"], output_variables=["baz"])
     with pytest.raises(
-        ValueError, match="Value error, Missing required input keys: {'test'}"
+        ValueError,
+        match=re.escape("Value error, Missing required input keys: {'test'}"),
     ):
         # Also needs "test" as an input
         SequentialChain(chains=[chain_1, chain_2], input_variables=["foo"])  # type: ignore[call-arg]
@@ -158,7 +159,9 @@ def test_sequential_bad_outputs() -> None:
     chain_2 = FakeChain(input_variables=["bar"], output_variables=["baz"])
     with pytest.raises(
         ValueError,
-        match="Value error, Expected output variables that were not found: {'test'}.",
+        match=re.escape(
+            "Value error, Expected output variables that were not found: {'test'}."
+        ),
     ):
         # "test" is not present as an output variable.
         SequentialChain(
@@ -203,8 +206,10 @@ def test_simple_sequential_functionality() -> None:
     assert output == expected_output
 
 
-@pytest.mark.parametrize("isAsync", [False, True])
-async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) -> None:
+@pytest.mark.parametrize("is_async", [False, True])
+async def test_simple_sequential_functionality_with_callbacks(
+    *, is_async: bool
+) -> None:
     """Test simple sequential functionality."""
     handler_1 = FakeCallbackHandler()
     handler_2 = FakeCallbackHandler()
@@ -225,7 +230,7 @@ async def test_simple_sequential_functionality_with_callbacks(*, isAsync: bool) 
         callbacks=[handler_3],
     )
     chain = SimpleSequentialChain(chains=[chain_1, chain_2, chain_3])
-    if isAsync:
+    if is_async:
         output = await chain.ainvoke({"input": "123"})
     else:
         output = chain({"input": "123"})

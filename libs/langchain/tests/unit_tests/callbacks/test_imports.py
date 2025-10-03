@@ -25,7 +25,6 @@ EXPECTED_ALL = [
     "WandbCallbackHandler",
     "WhyLabsCallbackHandler",
     "get_openai_callback",
-    "tracing_enabled",
     "tracing_v2_enabled",
     "collect_runs",
     "wandb_tracing_enabled",

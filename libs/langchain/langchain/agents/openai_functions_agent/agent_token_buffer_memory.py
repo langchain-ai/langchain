@@ -16,7 +16,7 @@ from langchain.memory.chat_memory import BaseChatMemory
 class AgentTokenBufferMemory(BaseChatMemory):
     """Memory used to save agent output AND intermediate steps.
 
-    Parameters:
+    Args:
         human_prefix: Prefix for human messages. Default is "Human".
         ai_prefix: Prefix for AI messages. Default is "AI".
         llm: Language model.
@@ -84,7 +84,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
             outputs: Outputs from the agent.
         """
         input_str, output_str = self._get_input_output(inputs, outputs)
-        self.chat_memory.add_user_message(input_str)
+        self.chat_memory.add_messages(input_str)  # type: ignore[arg-type]
         format_to_messages = (
             format_to_tool_messages
             if self.format_as_tools
@@ -93,7 +93,7 @@ class AgentTokenBufferMemory(BaseChatMemory):
         steps = format_to_messages(outputs[self.intermediate_steps_key])
         for msg in steps:
             self.chat_memory.add_message(msg)
-        self.chat_memory.add_ai_message(output_str)
+        self.chat_memory.add_messages(output_str)  # type: ignore[arg-type]
         # Prune buffer if it exceeds max token limit
         buffer = self.chat_memory.messages
         curr_buffer_length = self.llm.get_num_tokens_from_messages(buffer)

@@ -92,7 +92,6 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
     @property
     def functions(self) -> list[dict]:
         """Get functions."""
-
         return [dict(convert_to_openai_function(t)) for t in self.tools]
 
     def plan(
@@ -124,13 +123,13 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
         if with_functions:
-            predicted_message = self.llm.predict_messages(
+            predicted_message = self.llm.invoke(
                 messages,
                 functions=self.functions,
                 callbacks=callbacks,
             )
         else:
-            predicted_message = self.llm.predict_messages(
+            predicted_message = self.llm.invoke(
                 messages,
                 callbacks=callbacks,
             )
@@ -162,7 +161,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
         full_inputs = dict(**selected_inputs, agent_scratchpad=agent_scratchpad)
         prompt = self.prompt.format_prompt(**full_inputs)
         messages = prompt.to_messages()
-        predicted_message = await self.llm.apredict_messages(
+        predicted_message = await self.llm.ainvoke(
             messages,
             functions=self.functions,
             callbacks=callbacks,
@@ -277,7 +276,7 @@ class OpenAIFunctionsAgent(BaseSingleActionAgent):
             extra_prompt_messages=extra_prompt_messages,
             system_message=system_message_,
         )
-        return cls(  # type: ignore[call-arg]
+        return cls(
             llm=llm,
             prompt=prompt,
             tools=tools,
@@ -309,7 +308,6 @@ def create_openai_functions_agent(
         ValueError: If `agent_scratchpad` is not in the prompt.
 
     Example:
-
         Creating an agent with no memory
 
         .. code-block:: python
@@ -329,6 +327,7 @@ def create_openai_functions_agent(
 
             # Using with chat history
             from langchain_core.messages import AIMessage, HumanMessage
+
             agent_executor.invoke(
                 {
                     "input": "what's my name?",

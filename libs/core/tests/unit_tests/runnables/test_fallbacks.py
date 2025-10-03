@@ -18,7 +18,7 @@ from langchain_core.language_models import (
     LanguageModelInput,
 )
 from langchain_core.load import dumps
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import (
@@ -264,16 +264,18 @@ def _generate(_: Iterator) -> Iterator[str]:
     yield from "foo bar"
 
 
-def _generate_immediate_error(_: Iterator) -> Iterator[str]:
-    msg = "immmediate error"
+def _error(msg: str) -> None:
     raise ValueError(msg)
+
+
+def _generate_immediate_error(_: Iterator) -> Iterator[str]:
+    _error("immmediate error")
     yield ""
 
 
 def _generate_delayed_error(_: Iterator) -> Iterator[str]:
     yield ""
-    msg = "delayed error"
-    raise ValueError(msg)
+    _error("delayed error")
 
 
 def test_fallbacks_stream() -> None:
@@ -295,15 +297,13 @@ async def _agenerate(_: AsyncIterator) -> AsyncIterator[str]:
 
 
 async def _agenerate_immediate_error(_: AsyncIterator) -> AsyncIterator[str]:
-    msg = "immmediate error"
-    raise ValueError(msg)
+    _error("immediate error")
     yield ""
 
 
 async def _agenerate_delayed_error(_: AsyncIterator) -> AsyncIterator[str]:
     yield ""
-    msg = "delayed error"
-    raise ValueError(msg)
+    _error("delayed error")
 
 
 async def test_fallbacks_astream() -> None:
@@ -340,7 +340,7 @@ class FakeStructuredOutputModel(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
 
     @override
@@ -373,7 +373,7 @@ class FakeModel(BaseChatModel):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.bind(tools=tools)
 
     @property

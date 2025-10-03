@@ -2,25 +2,28 @@
 
 **ATTENTION** The schema definitions are provided for backwards compatibility.
 
-    New agents should be built using the langgraph library
-    (https://github.com/langchain-ai/langgraph)), which provides a simpler
-    and more flexible way to define agents.
+!!! important
+    New agents should be built using the
+    [langgraph library](https://github.com/langchain-ai/langgraph), which provides a
+    simpler and more flexible way to define agents.
 
-    Please see the migration guide for information on how to migrate existing
-    agents to modern langgraph agents:
-    https://python.langchain.com/docs/how_to/migrate_agent/
+    Please see the
+    [migration guide](https://python.langchain.com/docs/how_to/migrate_agent/) for
+    information on how to migrate existing agents to modern langgraph agents.
 
 Agents use language models to choose a sequence of actions to take.
 
 A basic agent works in the following manner:
 
-1. Given a prompt an agent uses an LLM to request an action to take (e.g., a tool to run).
+1. Given a prompt an agent uses an LLM to request an action to take
+   (e.g., a tool to run).
 2. The agent executes the action (e.g., runs the tool), and receives an observation.
-3. The agent returns the observation to the LLM, which can then be used to generate the next action.
+3. The agent returns the observation to the LLM, which can then be used to generate
+   the next action.
 4. When the agent reaches a stopping condition, it returns a final return value.
 
 The schemas for the agents themselves are defined in langchain.agents.agent.
-"""  # noqa: E501
+"""
 
 from __future__ import annotations
 
@@ -84,7 +87,8 @@ class AgentAction(Serializable):
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default is ["langchain", "schema", "agent"].
+        Returns:
+            ``["langchain", "schema", "agent"]``
         """
         return ["langchain", "schema", "agent"]
 
@@ -153,14 +157,15 @@ class AgentFinish(Serializable):
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether or not the class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "schema", "agent"].
+        Returns:
+            ``["langchain", "schema", "agent"]``
         """
         return ["langchain", "schema", "agent"]
 

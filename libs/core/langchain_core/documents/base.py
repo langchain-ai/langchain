@@ -39,7 +39,7 @@ class BaseMedia(Serializable):
     Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
 
-    .. versionadded:: 0.2.11
+    !!! version-added "Added in version 0.2.11"
     """
 
     metadata: dict = Field(default_factory=dict)
@@ -82,7 +82,7 @@ class Blob(BaseMedia):
             blob = Blob.from_data(
                 data="Hello, world!",
                 mime_type="text/plain",
-                metadata={"source": "https://example.com"}
+                metadata={"source": "https://example.com"},
             )
 
     Example: Load the blob from a file
@@ -145,7 +145,14 @@ class Blob(BaseMedia):
         return values
 
     def as_string(self) -> str:
-        """Read data as a string."""
+        """Read data as a string.
+
+        Raises:
+            ValueError: If the blob cannot be represented as a string.
+
+        Returns:
+            The data as a string.
+        """
         if self.data is None and self.path:
             return Path(self.path).read_text(encoding=self.encoding)
         if isinstance(self.data, bytes):
@@ -156,7 +163,14 @@ class Blob(BaseMedia):
         raise ValueError(msg)
 
     def as_bytes(self) -> bytes:
-        """Read data as bytes."""
+        """Read data as bytes.
+
+        Raises:
+            ValueError: If the blob cannot be represented as bytes.
+
+        Returns:
+            The data as bytes.
+        """
         if isinstance(self.data, bytes):
             return self.data
         if isinstance(self.data, str):
@@ -168,7 +182,14 @@ class Blob(BaseMedia):
 
     @contextlib.contextmanager
     def as_bytes_io(self) -> Generator[Union[BytesIO, BufferedReader], None, None]:
-        """Read data as a byte stream."""
+        """Read data as a byte stream.
+
+        Raises:
+            NotImplementedError: If the blob cannot be represented as a byte stream.
+
+        Yields:
+            The data as a byte stream.
+        """
         if isinstance(self.data, bytes):
             yield BytesIO(self.data)
         elif self.data is None and self.path:
@@ -246,7 +267,7 @@ class Blob(BaseMedia):
         )
 
     def __repr__(self) -> str:
-        """Define the blob representation."""
+        """Return the blob representation."""
         str_repr = f"Blob {id(self)}"
         if self.source:
             str_repr += f" {self.source}"
@@ -263,8 +284,7 @@ class Document(BaseMedia):
             from langchain_core.documents import Document
 
             document = Document(
-                page_content="Hello, world!",
-                metadata={"source": "https://example.com"}
+                page_content="Hello, world!", metadata={"source": "https://example.com"}
             )
 
     """
@@ -277,23 +297,28 @@ class Document(BaseMedia):
         """Pass page_content in as positional or named arg."""
         # my-py is complaining that page_content is not defined on the base class.
         # Here, we're relying on pydantic base class to handle the validation.
-        super().__init__(page_content=page_content, **kwargs)  # type: ignore[call-arg]
+        super().__init__(page_content=page_content, **kwargs)
 
     @classmethod
     def is_lc_serializable(cls) -> bool:
-        """Return whether this class is serializable."""
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     def get_lc_namespace(cls) -> list[str]:
         """Get the namespace of the langchain object.
 
-        Default namespace is ["langchain", "schema", "document"].
+        Returns:
+            ["langchain", "schema", "document"]
         """
         return ["langchain", "schema", "document"]
 
     def __str__(self) -> str:
-        """Override __str__ to restrict it to page_content and metadata."""
+        """Override __str__ to restrict it to page_content and metadata.
+
+        Returns:
+            A string representation of the Document.
+        """
         # The format matches pydantic format for __str__.
         #
         # The purpose of this change is to make sure that user code that

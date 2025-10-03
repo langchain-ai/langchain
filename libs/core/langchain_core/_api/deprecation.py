@@ -4,7 +4,7 @@ This module was adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.
@@ -18,6 +18,7 @@ from collections.abc import Generator
 from typing import (
     Any,
     Callable,
+    ParamSpec,
     TypeVar,
     Union,
     cast,
@@ -25,7 +26,6 @@ from typing import (
 
 from pydantic.fields import FieldInfo
 from pydantic.v1.fields import FieldInfo as FieldInfoV1
-from typing_extensions import ParamSpec
 
 from langchain_core._api.internal import is_caller_internal
 
@@ -129,11 +129,14 @@ def deprecated(
         package: str, optional
             The package of the deprecated object.
 
+    Returns:
+        A decorator to mark a function or class as deprecated.
+
     Examples:
 
         .. code-block:: python
 
-            @deprecated('1.4.0')
+            @deprecated("1.4.0")
             def the_function_to_deprecate():
                 pass
 
@@ -358,20 +361,17 @@ def deprecated(
         # Modify the docstring to include a deprecation notice.
         if (
             _alternative
-            and _alternative.split(".")[-1].lower() == _alternative.split(".")[-1]
-        ):
-            _alternative = f":meth:`~{_alternative}`"
-        elif _alternative:
-            _alternative = f":class:`~{_alternative}`"
+            and _alternative.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative.rsplit(".", maxsplit=1)[-1]
+        ) or _alternative:
+            _alternative = f"`{_alternative}`"
 
         if (
             _alternative_import
-            and _alternative_import.split(".")[-1].lower()
-            == _alternative_import.split(".")[-1]
-        ):
-            _alternative_import = f":meth:`~{_alternative_import}`"
-        elif _alternative_import:
-            _alternative_import = f":class:`~{_alternative_import}`"
+            and _alternative_import.rsplit(".", maxsplit=1)[-1].lower()
+            == _alternative_import.rsplit(".", maxsplit=1)[-1]
+        ) or _alternative_import:
+            _alternative_import = f"`{_alternative_import}`"
 
         components = [
             _message,
@@ -391,7 +391,7 @@ def deprecated(
         else:
             removal_str = ""
         new_doc = f"""\
-.. deprecated:: {since} {details} {removal_str}
+!!! deprecated "{since} {details} {removal_str}"
 
 {old_doc}\
 """
@@ -427,35 +427,35 @@ def warn_deprecated(
 ) -> None:
     """Display a standardized deprecation.
 
-    Arguments:
-        since : str
+    Args:
+        since:
             The release at which this API became deprecated.
-        message : str, optional
+        message:
             Override the default deprecation message. The %(since)s,
             %(name)s, %(alternative)s, %(obj_type)s, %(addendum)s,
             and %(removal)s format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the deprecated object.
-        alternative : str, optional
+        alternative:
             An alternative API that the user may use in place of the
             deprecated API. The deprecation warning will tell the user
             about this alternative if provided.
-        alternative_import: str, optional
+        alternative_import:
             An alternative import that the user may use instead.
-        pending : bool, optional
+        pending:
             If True, uses a PendingDeprecationWarning instead of a
             DeprecationWarning. Cannot be used together with removal.
-        obj_type : str, optional
+        obj_type:
             The object type being deprecated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
-        removal : str, optional
+        removal:
             The expected removal version. With the default (an empty
             string), a removal version is automatically computed from
             since. Set to other Falsy values to not schedule a removal
             date. Cannot be used together with pending.
-        package: str, optional
+        package:
             The package of the deprecated object.
     """
     if not pending:
@@ -471,7 +471,7 @@ def warn_deprecated(
     if not message:
         message = ""
         package_ = (
-            package or name.split(".")[0].replace("_", "-")
+            package or name.split(".", maxsplit=1)[0].replace("_", "-")
             if "." in name
             else "LangChain"
         )
@@ -490,7 +490,7 @@ def warn_deprecated(
                 message += f" and will be removed {removal}"
 
         if alternative_import:
-            alt_package = alternative_import.split(".")[0].replace("_", "-")
+            alt_package = alternative_import.split(".", maxsplit=1)[0].replace("_", "-")
             if alt_package == package_:
                 message += f". Use {alternative_import} instead."
             else:
@@ -543,6 +543,15 @@ def rename_parameter(
     The actual implementation of *func* should use *new*, not *old*.  If *old*
     is passed to *func*, a DeprecationWarning is emitted, and its value is
     used, even if *new* is also passed by keyword.
+
+    Args:
+        since: The version in which the parameter was renamed.
+        removal: The version in which the old parameter will be removed.
+        old: The old parameter name.
+        new: The new parameter name.
+
+    Returns:
+        A decorator indicating that a parameter was renamed.
 
     Example:
 

@@ -48,7 +48,7 @@ class LLMResult(BaseModel):
     run: Optional[list[RunInfo]] = None
     """List of metadata info for model call for each input.
 
-    See :class:`~langchain_core.outputs.run_info.RunInfo` for details.
+    See `langchain_core.outputs.run_info.RunInfo` for details.
     """
 
     type: Literal["LLMResult"] = "LLMResult"
@@ -91,7 +91,14 @@ class LLMResult(BaseModel):
         return llm_results
 
     def __eq__(self, other: object) -> bool:
-        """Check for LLMResult equality by ignoring any metadata related to runs."""
+        """Check for ``LLMResult`` equality by ignoring any metadata related to runs.
+
+        Args:
+            other: Another ``LLMResult`` object to compare against.
+
+        Returns:
+            True if the generations and ``llm_output`` are equal, False otherwise.
+        """
         if not isinstance(other, LLMResult):
             return NotImplemented
         return (

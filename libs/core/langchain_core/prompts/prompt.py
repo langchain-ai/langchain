@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -69,6 +68,11 @@ class PromptTemplate(StringPromptTemplate):
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "prompts", "prompt"]``
+        """
         return ["langchain", "prompts", "prompt"]
 
     template: str
@@ -135,14 +139,20 @@ class PromptTemplate(StringPromptTemplate):
         return mustache_schema(self.template)
 
     def __add__(self, other: Any) -> PromptTemplate:
-        """Override the + operator to allow for combining prompt templates."""
+        """Override the + operator to allow for combining prompt templates.
+
+        Raises:
+            ValueError: If the template formats are not f-string or if there are
+                conflicting partial variables.
+            NotImplementedError: If the other object is not a ``PromptTemplate`` or str.
+
+        Returns:
+            A new ``PromptTemplate`` that is the combination of the two.
+        """
         # Allow for easy combining
         if isinstance(other, PromptTemplate):
-            if self.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
-                raise ValueError(msg)
-            if other.template_format != "f-string":
-                msg = "Adding prompt templates only supported for f-strings."
+            if self.template_format != other.template_format:
+                msg = "Cannot add templates of different formats"
                 raise ValueError(msg)
             input_variables = list(
                 set(self.input_variables) | set(other.input_variables)
@@ -160,11 +170,14 @@ class PromptTemplate(StringPromptTemplate):
                 template=template,
                 input_variables=input_variables,
                 partial_variables=partial_variables,
-                template_format="f-string",
+                template_format=self.template_format,
                 validate_template=validate_template,
             )
         if isinstance(other, str):
-            prompt = PromptTemplate.from_template(other)
+            prompt = PromptTemplate.from_template(
+                other,
+                template_format=self.template_format,
+            )
             return self + prompt
         msg = f"Unsupported operand type for +: {type(other)}"
         raise NotImplementedError(msg)
@@ -221,7 +234,6 @@ class PromptTemplate(StringPromptTemplate):
     def from_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: Optional[list[str]] = None,
         encoding: Optional[str] = None,
         **kwargs: Any,
     ) -> PromptTemplate:
@@ -229,23 +241,13 @@ class PromptTemplate(StringPromptTemplate):
 
         Args:
             template_file: The path to the file containing the prompt template.
-            input_variables: [DEPRECATED] A list of variable names the final prompt
-                template will expect. Defaults to None.
             encoding: The encoding system for opening the template file.
                 If not provided, will use the OS default.
-
-        input_variables is ignored as from_file now delegates to from_template().
 
         Returns:
             The prompt loaded from the file.
         """
         template = Path(template_file).read_text(encoding=encoding)
-        if input_variables:
-            warnings.warn(
-                "`input_variables' is deprecated and ignored.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
         return cls.from_template(template=template, **kwargs)
 
     @classmethod

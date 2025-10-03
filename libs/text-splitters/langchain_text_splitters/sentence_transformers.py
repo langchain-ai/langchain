@@ -1,8 +1,17 @@
+"""Sentence transformers text splitter."""
+
 from __future__ import annotations
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from langchain_text_splitters.base import TextSplitter, Tokenizer, split_text_on_tokens
+
+try:
+    from sentence_transformers import SentenceTransformer
+
+    _HAS_SENTENCE_TRANSFORMERS = True
+except ImportError:
+    _HAS_SENTENCE_TRANSFORMERS = False
 
 
 class SentenceTransformersTokenTextSplitter(TextSplitter):
@@ -12,30 +21,26 @@ class SentenceTransformersTokenTextSplitter(TextSplitter):
         self,
         chunk_overlap: int = 50,
         model_name: str = "sentence-transformers/all-mpnet-base-v2",
-        tokens_per_chunk: Optional[int] = None,
+        tokens_per_chunk: int | None = None,
         **kwargs: Any,
     ) -> None:
         """Create a new TextSplitter."""
         super().__init__(**kwargs, chunk_overlap=chunk_overlap)
 
-        try:
-            from sentence_transformers import SentenceTransformer
-        except ImportError as err:
+        if not _HAS_SENTENCE_TRANSFORMERS:
             msg = (
                 "Could not import sentence_transformers python package. "
-                "This is needed in order to for SentenceTransformersTokenTextSplitter. "
+                "This is needed in order to use SentenceTransformersTokenTextSplitter. "
                 "Please install it with `pip install sentence-transformers`."
             )
-            raise ImportError(msg) from err
+            raise ImportError(msg)
 
         self.model_name = model_name
         self._model = SentenceTransformer(self.model_name)
         self.tokenizer = self._model.tokenizer
         self._initialize_chunk_configuration(tokens_per_chunk=tokens_per_chunk)
 
-    def _initialize_chunk_configuration(
-        self, *, tokens_per_chunk: Optional[int]
-    ) -> None:
+    def _initialize_chunk_configuration(self, *, tokens_per_chunk: int | None) -> None:
         self.maximum_tokens_per_chunk = self._model.max_seq_length
 
         if tokens_per_chunk is None:

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 class OpenAIAssistantFinish(AgentFinish):
     """AgentFinish with run and thread metadata.
 
-    Parameters:
+    Args:
         run_id: Run id.
         thread_id: Thread id.
     """
@@ -54,7 +54,7 @@ class OpenAIAssistantFinish(AgentFinish):
 class OpenAIAssistantAction(AgentAction):
     """AgentAction with info needed to submit custom tool output to existing run.
 
-    Parameters:
+    Args:
         tool_call_id: Tool call id.
         run_id: Run id.
         thread_id: Thread id
@@ -149,11 +149,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
 
             interpreter_assistant = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=[{"type": "code_interpreter"}],
-                model="gpt-4-1106-preview"
+                model="gpt-4-1106-preview",
             )
-            output = interpreter_assistant.invoke({"content": "What's 10 - 4 raised to the 2.7"})
+            output = interpreter_assistant.invoke(
+                {"content": "What's 10 - 4 raised to the 2.7"}
+            )
 
     Example using custom tools and AgentExecutor:
         .. code-block:: python
@@ -166,10 +169,11 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
 
             agent_executor = AgentExecutor(agent=agent, tools=tools)
@@ -188,11 +192,13 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             tools = [E2BDataAnalysisTool(api_key="...")]
             agent = OpenAIAssistantRunnable.create_assistant(
                 name="langchain assistant e2b tool",
-                instructions="You are a personal math tutor. Write and run code to answer math questions.",
+                instructions="You are a personal math tutor. "
+                "Write and run code to answer math questions.",
                 tools=tools,
                 model="gpt-4-1106-preview",
-                as_agent=True
+                as_agent=True,
             )
+
 
             def execute_agent(agent, tools, input):
                 tool_map = {tool.name: tool for tool in tools}
@@ -201,21 +207,33 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                     tool_outputs = []
                     for action in response:
                         tool_output = tool_map[action.tool].invoke(action.tool_input)
-                        tool_outputs.append({"output": tool_output, "tool_call_id": action.tool_call_id})
+                        tool_outputs.append(
+                            {
+                                "output": tool_output,
+                                "tool_call_id": action.tool_call_id,
+                            }
+                        )
                     response = agent.invoke(
                         {
                             "tool_outputs": tool_outputs,
                             "run_id": action.run_id,
-                            "thread_id": action.thread_id
+                            "thread_id": action.thread_id,
                         }
                     )
 
                 return response
 
-            response = execute_agent(agent, tools, {"content": "What's 10 - 4 raised to the 2.7"})
-            next_response = execute_agent(agent, tools, {"content": "now add 17.241", "thread_id": response.thread_id})
 
-    """  # noqa: E501
+            response = execute_agent(
+                agent, tools, {"content": "What's 10 - 4 raised to the 2.7"}
+            )
+            next_response = execute_agent(
+                agent,
+                tools,
+                {"content": "now add 17.241", "thread_id": response.thread_id},
+            )
+
+    """
 
     client: Any = Field(default_factory=_get_openai_client)
     """OpenAI or AzureOpenAI client."""
@@ -302,14 +320,14 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
                 attachments: A list of files attached to the message, and the
                     tools they should be added to.
             config: Runnable config. Defaults to None.
+            **kwargs: Additional arguments.
 
-        Return:
+        Returns:
             If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = ensure_config(config)
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -360,6 +378,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run_manager.on_chain_error(e)
             raise
         try:
+            # Use sync response handler in sync invoke
             response = self._get_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
@@ -390,6 +409,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             model: Assistant model to use.
             async_client: AsyncOpenAI client.
                 Will create default async_client if not specified.
+            **kwargs: Additional arguments.
 
         Returns:
             AsyncOpenAIAssistantRunnable configured to run using the created assistant.
@@ -436,13 +456,12 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             config: Runnable config. Defaults to None.
             kwargs: Additional arguments.
 
-        Return:
+        Returns:
             If self.as_agent, will return
                 Union[List[OpenAIAssistantAction], OpenAIAssistantFinish].
                 Otherwise, will return OpenAI types
                 Union[List[ThreadMessage], List[RequiredActionFunctionToolCall]].
         """
-
         config = config or {}
         callback_manager = CallbackManager.configure(
             inheritable_callbacks=config.get("callbacks"),
@@ -496,7 +515,8 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
             run_manager.on_chain_error(e)
             raise
         try:
-            response = self._get_response(run)
+            # Use async response handler in async ainvoke
+            response = await self._aget_response(run)
         except BaseException as e:
             run_manager.on_chain_error(e, metadata=run.dict())
             raise
@@ -508,7 +528,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         self,
         intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
-        last_action, last_output = intermediate_steps[-1]
+        last_action, _ = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:
@@ -665,7 +685,7 @@ class OpenAIAssistantRunnable(RunnableSerializable[dict, OutputType]):
         self,
         intermediate_steps: list[tuple[OpenAIAssistantAction, str]],
     ) -> dict:
-        last_action, last_output = intermediate_steps[-1]
+        last_action, _ = intermediate_steps[-1]
         run = self._wait_for_run(last_action.run_id, last_action.thread_id)
         required_tool_call_ids = set()
         if run.required_action:

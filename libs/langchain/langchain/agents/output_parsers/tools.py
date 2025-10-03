@@ -16,7 +16,7 @@ from langchain.agents.agent import MultiActionAgentOutputParser
 
 
 class ToolAgentAction(AgentActionMessageLog):
-    """ "Tool agent action."""
+    """Tool agent action."""
 
     tool_call_id: str
     """Tool call that this message is responding to."""
@@ -47,7 +47,12 @@ def parse_ai_message_to_tool_action(
             try:
                 args = json.loads(function["arguments"] or "{}")
                 tool_calls.append(
-                    ToolCall(name=function_name, args=args, id=tool_call["id"]),
+                    ToolCall(
+                        type="tool_call",
+                        name=function_name,
+                        args=args,
+                        id=tool_call["id"],
+                    ),
                 )
             except JSONDecodeError as e:
                 msg = (
@@ -56,7 +61,7 @@ def parse_ai_message_to_tool_action(
                 )
                 raise OutputParserException(msg) from e
     for tool_call in tool_calls:
-        # HACK HACK HACK:
+        # A hack here:
         # The code that encodes tool input into Open AI uses a special variable
         # name called `__arg1` to handle old style tools that do not expose a
         # schema and expect a single string argument as an input.

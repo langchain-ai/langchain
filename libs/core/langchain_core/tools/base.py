@@ -31,7 +31,6 @@ from pydantic import (
     PydanticDeprecationWarning,
     SkipValidation,
     ValidationError,
-    model_validator,
     validate_arguments,
 )
 from pydantic.v1 import BaseModel as BaseModelV1
@@ -39,10 +38,8 @@ from pydantic.v1 import ValidationError as ValidationErrorV1
 from pydantic.v1 import validate_arguments as validate_arguments_v1
 from typing_extensions import override
 
-from langchain_core._api import deprecated
 from langchain_core.callbacks import (
     AsyncCallbackManager,
-    BaseCallbackManager,
     CallbackManager,
     Callbacks,
 )
@@ -81,6 +78,8 @@ TOOL_MESSAGE_BLOCK_TYPES = (
     "json",
     "search_result",
     "custom_tool_call_output",
+    "document",
+    "file",
 )
 
 
@@ -271,15 +270,12 @@ def _function_annotations_are_pydantic_v1(
 
 
 class _SchemaConfig:
-    """Configuration for Pydantic models generated from function signatures.
-
-    Attributes:
-        extra: Whether to allow extra fields in the model.
-        arbitrary_types_allowed: Whether to allow arbitrary types in the model.
-    """
+    """Configuration for Pydantic models generated from function signatures."""
 
     extra: str = "forbid"
+    """Whether to allow extra fields in the model."""
     arbitrary_types_allowed: bool = True
+    """Whether to allow arbitrary types in the model."""
 
 
 def create_schema_from_function(
@@ -465,15 +461,6 @@ class ChildTool(BaseTool):
     callbacks: Callbacks = Field(default=None, exclude=True)
     """Callbacks to be called during tool execution."""
 
-    callback_manager: Optional[BaseCallbackManager] = deprecated(
-        name="callback_manager", since="0.1.7", removal="1.0", alternative="callbacks"
-    )(
-        Field(
-            default=None,
-            exclude=True,
-            description="Callback manager to add to the run trace.",
-        )
-    )
     tags: Optional[list[str]] = None
     """Optional list of tags associated with the tool. Defaults to None.
     These tags will be associated with each call to this tool,
@@ -506,7 +493,12 @@ class ChildTool(BaseTool):
     """
 
     def __init__(self, **kwargs: Any) -> None:
-        """Initialize the tool."""
+        """Initialize the tool.
+
+        Raises:
+            TypeError: If ``args_schema`` is not a subclass of pydantic ``BaseModel`` or
+                dict.
+        """
         if (
             "args_schema" in kwargs
             and kwargs["args_schema"] is not None
@@ -543,6 +535,8 @@ class ChildTool(BaseTool):
         """
         if isinstance(self.args_schema, dict):
             json_schema = self.args_schema
+        elif self.args_schema and issubclass(self.args_schema, BaseModelV1):
+            json_schema = self.args_schema.schema()
         else:
             input_schema = self.get_input_schema()
             json_schema = input_schema.model_json_schema()
@@ -628,9 +622,10 @@ class ChildTool(BaseTool):
             The parsed and validated input.
 
         Raises:
-            ValueError: If string input is provided with JSON schema or if
-                InjectedToolCallId is required but not provided.
-            NotImplementedError: If args_schema is not a supported type.
+            ValueError: If string input is provided with JSON schema ``args_schema``.
+            ValueError: If InjectedToolCallId is required but ``tool_call_id`` is not
+                provided.
+            TypeError: If args_schema is not a Pydantic ``BaseModel`` or dict.
         """
         input_args = self.args_schema
         if isinstance(tool_input, str):
@@ -655,10 +650,7 @@ class ChildTool(BaseTool):
                 return tool_input
             if issubclass(input_args, BaseModel):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -673,10 +665,7 @@ class ChildTool(BaseTool):
                 result_dict = result.model_dump()
             elif issubclass(input_args, BaseModelV1):
                 for k, v in get_all_basemodel_annotations(input_args).items():
-                    if (
-                        _is_injected_arg_type(v, injected_type=InjectedToolCallId)
-                        and k not in tool_input
-                    ):
+                    if _is_injected_arg_type(v, injected_type=InjectedToolCallId):
                         if tool_call_id is None:
                             msg = (
                                 "When tool includes an InjectedToolCallId "
@@ -699,32 +688,15 @@ class ChildTool(BaseTool):
             }
         return tool_input
 
-    @model_validator(mode="before")
-    @classmethod
-    def raise_deprecation(cls, values: dict) -> Any:
-        """Raise deprecation warning if callback_manager is used.
-
-        Args:
-            values: The values to validate.
-
-        Returns:
-            The validated values.
-        """
-        if values.get("callback_manager") is not None:
-            warnings.warn(
-                "callback_manager is deprecated. Please use callbacks instead.",
-                DeprecationWarning,
-                stacklevel=6,
-            )
-            values["callbacks"] = values.pop("callback_manager", None)
-        return values
-
     @abstractmethod
     def _run(self, *args: Any, **kwargs: Any) -> Any:
         """Use the tool.
 
         Add run_manager: Optional[CallbackManagerForToolRun] = None
         to child implementations to enable tracing.
+
+        Returns:
+            The result of the tool execution.
         """
 
     async def _arun(self, *args: Any, **kwargs: Any) -> Any:
@@ -732,6 +704,9 @@ class ChildTool(BaseTool):
 
         Add run_manager: Optional[AsyncCallbackManagerForToolRun] = None
         to child implementations to enable tracing.
+
+        Returns:
+            The result of the tool execution.
         """
         if kwargs.get("run_manager") and signature(self._run).parameters.get(
             "run_manager"
@@ -1004,19 +979,6 @@ class ChildTool(BaseTool):
         await run_manager.on_tool_end(output, color=color, name=self.name, **kwargs)
         return output
 
-    @deprecated("0.1.47", alternative="invoke", removal="1.0")
-    def __call__(self, tool_input: str, callbacks: Callbacks = None) -> str:
-        """Make tool callable (deprecated).
-
-        Args:
-            tool_input: The input to the tool.
-            callbacks: Callbacks to use during execution.
-
-        Returns:
-            The tool's output.
-        """
-        return self.run(tool_input, callbacks=callbacks)
-
 
 def _is_tool_call(x: Any) -> bool:
     """Check if the input is a tool call dictionary.
@@ -1265,7 +1227,7 @@ class InjectedToolCallId(InjectedToolArg):
 
     .. code-block:: python
 
-        from typing_extensions import Annotated
+        from typing import Annotated
         from langchain_core.messages import ToolMessage
         from langchain_core.tools import tool, InjectedToolCallId
 
@@ -1285,7 +1247,7 @@ class InjectedToolCallId(InjectedToolArg):
 
 
 def _is_injected_arg_type(
-    type_: type, injected_type: Optional[type[InjectedToolArg]] = None
+    type_: Union[type, TypeVar], injected_type: Optional[type[InjectedToolArg]] = None
 ) -> bool:
     """Check if a type annotation indicates an injected argument.
 
@@ -1306,20 +1268,22 @@ def _is_injected_arg_type(
 
 def get_all_basemodel_annotations(
     cls: Union[TypeBaseModel, Any], *, default_to_bound: bool = True
-) -> dict[str, type]:
+) -> dict[str, Union[type, TypeVar]]:
     """Get all annotations from a Pydantic BaseModel and its parents.
 
     Args:
         cls: The Pydantic BaseModel class.
         default_to_bound: Whether to default to the bound of a TypeVar if it exists.
+
+    Returns:
+        A dictionary of field names to their type annotations.
     """
     # cls has no subscript: cls = FooBar
     if isinstance(cls, type):
-        # Gather pydantic field objects (v2: model_fields / v1: __fields__)
-        fields = getattr(cls, "model_fields", {}) or getattr(cls, "__fields__", {})
+        fields = get_fields(cls)
         alias_map = {field.alias: name for name, field in fields.items() if field.alias}
 
-        annotations: dict[str, type] = {}
+        annotations: dict[str, Union[type, TypeVar]] = {}
         for name, param in inspect.signature(cls).parameters.items():
             # Exclude hidden init args added by pydantic Config. For example if
             # BaseModel(extra="allow") then "extra_data" will part of init sig.
@@ -1355,8 +1319,8 @@ def get_all_basemodel_annotations(
                 continue
 
             # if class = FooBar inherits from Baz[str]:
-            # parent = Baz[str],
-            # parent_origin = Baz,
+            # parent = class Baz[str],
+            # parent_origin = class Baz,
             # generic_type_vars = (type vars in Baz)
             # generic_map = {type var in Baz: str}
             generic_type_vars: tuple = getattr(parent_origin, "__parameters__", ())
@@ -1373,11 +1337,11 @@ def get_all_basemodel_annotations(
 
 
 def _replace_type_vars(
-    type_: type,
+    type_: Union[type, TypeVar],
     generic_map: Optional[dict[TypeVar, type]] = None,
     *,
     default_to_bound: bool = True,
-) -> type:
+) -> Union[type, TypeVar]:
     """Replace TypeVars in a type annotation with concrete types.
 
     Args:
@@ -1393,7 +1357,7 @@ def _replace_type_vars(
         if type_ in generic_map:
             return generic_map[type_]
         if default_to_bound:
-            return type_.__bound__ or Any
+            return type_.__bound__ if type_.__bound__ is not None else Any
         return type_
     if (origin := get_origin(type_)) and (args := get_args(type_)):
         new_args = tuple(

@@ -440,15 +440,14 @@ def test_incremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode is incremental "
-        "or scoped_full.",
+        "or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(loader, record_manager, vector_store, cleanup="incremental")
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental "
-        "or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         index(
@@ -486,7 +485,7 @@ async def test_aincremental_fails_with_bad_source_ids(
     with pytest.raises(
         ValueError,
         match="Source id key is required when cleanup mode is incremental "
-        "or scoped_full.",
+        "or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -498,8 +497,7 @@ async def test_aincremental_fails_with_bad_source_ids(
 
     with pytest.raises(
         ValueError,
-        match="Source ids are required when cleanup mode is incremental "
-        "or scoped_full.",
+        match="Source ids are required when cleanup mode is incremental or scoped_full",
     ):
         # Should raise an error because no source id function was specified
         await aindex(
@@ -803,7 +801,7 @@ def test_incremental_indexing_with_batch_size(
     record_manager: SQLRecordManager,
     vector_store: InMemoryVectorStore,
 ) -> None:
-    """Test indexing with incremental indexing"""
+    """Test indexing with incremental indexing."""
     loader = ToyLoader(
         documents=[
             Document(

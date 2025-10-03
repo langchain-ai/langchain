@@ -14,7 +14,7 @@ from langchain_core.language_models.chat_models import (
     agenerate_from_stream,
     generate_from_stream,
 )
-from langchain_core.messages import AnyMessage, BaseMessage
+from langchain_core.messages import AIMessage, AnyMessage
 from langchain_core.runnables import Runnable, RunnableConfig, ensure_config
 from langchain_core.runnables.schema import StreamEvent
 from langchain_core.tools import BaseTool
@@ -37,7 +37,7 @@ def init_chat_model(
     model: str,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseChatModel: ...
@@ -45,10 +45,10 @@ def init_chat_model(
 
 @overload
 def init_chat_model(
-    model: Literal[None] = None,
+    model: None = None,
     *,
     model_provider: Optional[str] = None,
-    configurable_fields: Literal[None] = None,
+    configurable_fields: None = None,
     config_prefix: Optional[str] = None,
     **kwargs: Any,
 ) -> _ConfigurableModel: ...
@@ -80,9 +80,9 @@ def init_chat_model(
 ) -> Union[BaseChatModel, _ConfigurableModel]:
     """Initialize a ChatModel in a single line using the model's name and provider.
 
-    .. note::
+    !!! note
         Must have the integration package corresponding to the model provider installed.
-        You should look at the `provider integration's API reference <https://python.langchain.com/api_reference/reference.html#integrations>`__
+        You should look at the `provider integration's API reference <https://docs.langchain.com/oss/python/integrations/providers>`__
         to see what parameters are supported by the model.
 
     Args:
@@ -118,7 +118,7 @@ def init_chat_model(
             Will attempt to infer model_provider from model if not specified. The
             following providers will be inferred based on these model prefixes:
 
-            - ``gpt-3...`` | ``gpt-4...`` | ``o1...`` -> ``openai``
+            - ``gpt-...`` | ``o1...`` | ``o3...`` -> ``openai``
             - ``claude...``                       -> ``anthropic``
             - ``amazon...``                       -> ``bedrock``
             - ``gemini...``                       -> ``google_vertexai``
@@ -170,7 +170,7 @@ def init_chat_model(
         ValueError: If model_provider cannot be inferred or isn't supported.
         ImportError: If the model provider integration package is not installed.
 
-    .. dropdown:: Init non-configurable model
+    ??? note "Init non-configurable model"
         :open:
 
         .. code-block:: python
@@ -179,15 +179,19 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
 
             o3_mini = init_chat_model("openai:o3-mini", temperature=0)
-            claude_sonnet = init_chat_model("anthropic:claude-3-5-sonnet-latest", temperature=0)
-            gemini_2_flash = init_chat_model("google_vertexai:gemini-2.5-flash", temperature=0)
+            claude_sonnet = init_chat_model(
+                "anthropic:claude-3-5-sonnet-latest", temperature=0
+            )
+            gemini_2_flash = init_chat_model(
+                "google_vertexai:gemini-2.5-flash", temperature=0
+            )
 
             o3_mini.invoke("what's your name")
             claude_sonnet.invoke("what's your name")
             gemini_2_flash.invoke("what's your name")
 
 
-    .. dropdown:: Partially configurable model with no default
+    ??? note "Partially configurable model with no default"
 
         .. code-block:: python
 
@@ -198,18 +202,17 @@ def init_chat_model(
             configurable_model = init_chat_model(temperature=0)
 
             configurable_model.invoke(
-                "what's your name",
-                config={"configurable": {"model": "gpt-4o"}}
+                "what's your name", config={"configurable": {"model": "gpt-4o"}}
             )
             # GPT-4o response
 
             configurable_model.invoke(
                 "what's your name",
-                config={"configurable": {"model": "claude-3-5-sonnet-latest"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
             )
             # claude-3.5 sonnet response
 
-    .. dropdown:: Fully configurable model with a default
+    ??? note "Fully configurable model with a default"
 
         .. code-block:: python
 
@@ -220,7 +223,7 @@ def init_chat_model(
                 "openai:gpt-4o",
                 configurable_fields="any",  # this allows us to configure other params like temperature, max_tokens, etc at runtime.
                 config_prefix="foo",
-                temperature=0
+                temperature=0,
             )
 
             configurable_model_with_default.invoke("what's your name")
@@ -230,14 +233,14 @@ def init_chat_model(
                 "what's your name",
                 config={
                     "configurable": {
-                        "foo_model": "anthropic:claude-3-5-sonnet-20240620",
-                        "foo_temperature": 0.6
+                        "foo_model": "anthropic:claude-3-5-sonnet-latest",
+                        "foo_temperature": 0.6,
                     }
-                }
+                },
             )
             # Claude-3.5 sonnet response with temperature 0.6
 
-    .. dropdown:: Bind tools to a configurable model
+    ??? note "Bind tools to a configurable model"
 
         You can call any ChatModel declarative methods on a configurable model in the
         same way that you would with a normal model.
@@ -248,23 +251,33 @@ def init_chat_model(
             from langchain.chat_models import init_chat_model
             from pydantic import BaseModel, Field
 
+
             class GetWeather(BaseModel):
                 '''Get the current weather in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             class GetPopulation(BaseModel):
                 '''Get the current population in a given location'''
 
-                location: str = Field(..., description="The city and state, e.g. San Francisco, CA")
+                location: str = Field(
+                    ..., description="The city and state, e.g. San Francisco, CA"
+                )
+
 
             configurable_model = init_chat_model(
-                "gpt-4o",
-                configurable_fields=("model", "model_provider"),
-                temperature=0
+                "gpt-4o", configurable_fields=("model", "model_provider"), temperature=0
             )
 
-            configurable_model_with_tools = configurable_model.bind_tools([GetWeather, GetPopulation])
+            configurable_model_with_tools = configurable_model.bind_tools(
+                [
+                    GetWeather,
+                    GetPopulation,
+                ]
+            )
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?"
             )
@@ -272,18 +285,16 @@ def init_chat_model(
 
             configurable_model_with_tools.invoke(
                 "Which city is hotter today and which is bigger: LA or NY?",
-                config={"configurable": {"model": "claude-3-5-sonnet-20240620"}}
+                config={"configurable": {"model": "claude-3-5-sonnet-latest"}},
             )
             # Claude-3.5 sonnet response with tools
 
-    .. versionadded:: 0.2.7
+    !!! version-added "Added in version 0.2.7"
 
-    .. versionchanged:: 0.2.8
-
+    !!! warning "Behavior changed in 0.2.8"
         Support for ``configurable_fields`` and ``config_prefix`` added.
 
-    .. versionchanged:: 0.2.12
-
+    !!! warning "Behavior changed in 0.2.12"
         Support for Ollama via langchain-ollama package added
         (langchain_ollama.ChatOllama). Previously,
         the now-deprecated langchain-community version of Ollama was imported
@@ -292,12 +303,10 @@ def init_chat_model(
         Support for AWS Bedrock models via the Converse API added
         (model_provider="bedrock_converse").
 
-    .. versionchanged:: 0.3.5
-
+    !!! warning "Behavior changed in 0.3.5"
         Out of beta.
 
-    .. versionchanged:: 0.3.19
-
+    !!! warning "Behavior changed in 0.3.19"
         Support for Deepseek, IBM, Nvidia, and xAI models added.
 
     """  # noqa: E501
@@ -484,7 +493,7 @@ _SUPPORTED_PROVIDERS = {
 
 
 def _attempt_infer_model_provider(model_name: str) -> Optional[str]:
-    if any(model_name.startswith(pre) for pre in ("gpt-3", "gpt-4", "o1", "o3")):
+    if any(model_name.startswith(pre) for pre in ("gpt-", "o1", "o3")):
         return "openai"
     if model_name.startswith("claude"):
         return "anthropic"
@@ -533,12 +542,6 @@ def _check_pkg(pkg: str, *, pkg_kebab: Optional[str] = None) -> None:
             f"Unable to import {pkg}. Please install with `pip install -U {pkg_kebab}`"
         )
         raise ImportError(msg)
-
-
-def _remove_prefix(s: str, prefix: str) -> str:
-    if s.startswith(prefix):
-        s = s[len(prefix) :]
-    return s
 
 
 _DECLARATIVE_METHODS = ("bind_tools", "with_structured_output")
@@ -608,7 +611,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
     def _model_params(self, config: Optional[RunnableConfig]) -> dict:
         config = ensure_config(config)
         model_params = {
-            _remove_prefix(k, self._config_prefix): v
+            k.removeprefix(self._config_prefix): v
             for k, v in config.get("configurable", {}).items()
             if k.startswith(self._config_prefix)
         }
@@ -630,7 +633,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         remaining_config["configurable"] = {
             k: v
             for k, v in config.get("configurable", {}).items()
-            if _remove_prefix(k, self._config_prefix) not in model_params
+            if k.removeprefix(self._config_prefix) not in model_params
         }
         queued_declarative_operations = list(self._queued_declarative_operations)
         if remaining_config:
@@ -651,6 +654,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         )
 
     @property
+    @override
     def InputType(self) -> TypeAlias:
         """Get the input type for this runnable."""
         from langchain_core.prompt_values import (
@@ -940,7 +944,7 @@ class _ConfigurableModel(Runnable[LanguageModelInput, Any]):
         self,
         tools: Sequence[Union[dict[str, Any], type[BaseModel], Callable, BaseTool]],
         **kwargs: Any,
-    ) -> Runnable[LanguageModelInput, BaseMessage]:
+    ) -> Runnable[LanguageModelInput, AIMessage]:
         return self.__getattr__("bind_tools")(tools, **kwargs)
 
     # Explicitly added to satisfy downstream linters.

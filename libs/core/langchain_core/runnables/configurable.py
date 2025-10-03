@@ -51,17 +51,15 @@ if TYPE_CHECKING:
 class DynamicRunnable(RunnableSerializable[Input, Output]):
     """Serializable Runnable that can be dynamically configured.
 
-    A DynamicRunnable should be initiated using the `configurable_fields` or
-    `configurable_alternatives` method of a Runnable.
-
-    Parameters:
-        default: The default Runnable to use.
-        config: The configuration to use.
+    A DynamicRunnable should be initiated using the ``configurable_fields`` or
+    ``configurable_alternatives`` method of a Runnable.
     """
 
     default: RunnableSerializable[Input, Output]
+    """The default Runnable to use."""
 
     config: Optional[RunnableConfig] = None
+    """The configuration to use."""
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -70,11 +68,17 @@ class DynamicRunnable(RunnableSerializable[Input, Output]):
     @classmethod
     @override
     def is_lc_serializable(cls) -> bool:
+        """Return True as this class is serializable."""
         return True
 
     @classmethod
     @override
     def get_lc_namespace(cls) -> list[str]:
+        """Get the namespace of the langchain object.
+
+        Returns:
+            ``["langchain", "schema", "runnable"]``
+        """
         return ["langchain", "schema", "runnable"]
 
     @property
@@ -322,66 +326,62 @@ class RunnableConfigurableFields(DynamicRunnable[Input, Output]):
     A RunnableConfigurableFields should be initiated using the
     `configurable_fields` method of a Runnable.
 
-    Parameters:
-        fields: The configurable fields to use.
-
     Here is an example of using a RunnableConfigurableFields with LLMs:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.runnables import ConfigurableField
+        from langchain_openai import ChatOpenAI
 
-            from langchain_core.prompts import PromptTemplate
-            from langchain_core.runnables import ConfigurableField
-            from langchain_openai import ChatOpenAI
-
-            model = ChatOpenAI(temperature=0).configurable_fields(
-                temperature=ConfigurableField(
-                    id="temperature",
-                    name="LLM Temperature",
-                    description="The temperature of the LLM",
-                )
+        model = ChatOpenAI(temperature=0).configurable_fields(
+            temperature=ConfigurableField(
+                id="temperature",
+                name="LLM Temperature",
+                description="The temperature of the LLM",
             )
-            # This creates a RunnableConfigurableFields for a chat model.
+        )
+        # This creates a RunnableConfigurableFields for a chat model.
 
-            # When invoking the created RunnableSequence, you can pass in the
-            # value for your ConfigurableField's id which in this case
-            # will be change in temperature
+        # When invoking the created RunnableSequence, you can pass in the
+        # value for your ConfigurableField's id which in this case
+        # will be change in temperature
 
-            prompt = PromptTemplate.from_template("Pick a random number above {x}")
-            chain = prompt | model
+        prompt = PromptTemplate.from_template("Pick a random number above {x}")
+        chain = prompt | model
 
-            chain.invoke({"x": 0})
-            chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
-
+        chain.invoke({"x": 0})
+        chain.invoke({"x": 0}, config={"configurable": {"temperature": 0.9}})
+        ```
 
     Here is an example of using a RunnableConfigurableFields with HubRunnables:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.prompts import PromptTemplate
+        from langchain_core.runnables import ConfigurableField
+        from langchain_openai import ChatOpenAI
+        from langchain.runnables.hub import HubRunnable
 
-            from langchain_core.prompts import PromptTemplate
-            from langchain_core.runnables import ConfigurableField
-            from langchain_openai import ChatOpenAI
-            from langchain.runnables.hub import HubRunnable
-
-            prompt = HubRunnable("rlm/rag-prompt").configurable_fields(
-                owner_repo_commit=ConfigurableField(
-                    id="hub_commit",
-                    name="Hub Commit",
-                    description="The Hub commit to pull from",
-                )
+        prompt = HubRunnable("rlm/rag-prompt").configurable_fields(
+            owner_repo_commit=ConfigurableField(
+                id="hub_commit",
+                name="Hub Commit",
+                description="The Hub commit to pull from",
             )
+        )
 
-            prompt.invoke({"question": "foo", "context": "bar"})
+        prompt.invoke({"question": "foo", "context": "bar"})
 
-            # Invoking prompt with `with_config` method
+        # Invoking prompt with `with_config` method
 
-            prompt.invoke(
-                {"question": "foo", "context": "bar"},
-                config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
-            )
-
+        prompt.invoke(
+            {"question": "foo", "context": "bar"},
+            config={"configurable": {"hub_commit": "rlm/rag-prompt-llama"}},
+        )
+        ```
     """
 
     fields: dict[str, AnyConfigurableField]
+    """The configurable fields to use."""
 
     @property
     def config_specs(self) -> list[ConfigurableFieldSpec]:
@@ -489,51 +489,53 @@ class RunnableConfigurableAlternatives(DynamicRunnable[Input, Output]):
     Here is an example of using a RunnableConfigurableAlternatives that uses
     alternative prompts to illustrate its functionality:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables import ConfigurableField
+        from langchain_openai import ChatOpenAI
 
-            from langchain_core.runnables import ConfigurableField
-            from langchain_openai import ChatOpenAI
+        # This creates a RunnableConfigurableAlternatives for Prompt Runnable
+        # with two alternatives.
+        prompt = PromptTemplate.from_template(
+            "Tell me a joke about {topic}"
+        ).configurable_alternatives(
+            ConfigurableField(id="prompt"),
+            default_key="joke",
+            poem=PromptTemplate.from_template("Write a short poem about {topic}"),
+        )
 
-            # This creates a RunnableConfigurableAlternatives for Prompt Runnable
-            # with two alternatives.
-            prompt = PromptTemplate.from_template(
-                "Tell me a joke about {topic}"
-            ).configurable_alternatives(
-                ConfigurableField(id="prompt"),
-                default_key="joke",
-                poem=PromptTemplate.from_template("Write a short poem about {topic}")
-            )
+        # When invoking the created RunnableSequence, you can pass in the
+        # value for your ConfigurableField's id which in this case will either be
+        # `joke` or `poem`.
+        chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
 
-            # When invoking the created RunnableSequence, you can pass in the
-            # value for your ConfigurableField's id which in this case will either be
-            # `joke` or `poem`.
-            chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-
-            # The `with_config` method brings in the desired Prompt Runnable in your
-            # Runnable Sequence.
-            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
-
+        # The `with_config` method brings in the desired Prompt Runnable in your
+        # Runnable Sequence.
+        chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+        ```
 
     Equivalently, you can initialize RunnableConfigurableAlternatives directly
     and use in LCEL in the same way:
 
-        .. code-block:: python
+        ```python
+        from langchain_core.runnables import ConfigurableField
+        from langchain_core.runnables.configurable import (
+            RunnableConfigurableAlternatives,
+        )
+        from langchain_openai import ChatOpenAI
 
-            from langchain_core.runnables import ConfigurableField
-            from langchain_core.runnables.configurable import RunnableConfigurableAlternatives
-            from langchain_openai import ChatOpenAI
-
-            prompt = RunnableConfigurableAlternatives(
-                which=ConfigurableField(id='prompt'),
-                default=PromptTemplate.from_template("Tell me a joke about {topic}"),
-                default_key='joke',
-                prefix_keys=False,
-                alternatives={"poem":PromptTemplate.from_template("Write a short poem about {topic}")}
-            )
-            chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
-            chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
-
-    """  # noqa: E501
+        prompt = RunnableConfigurableAlternatives(
+            which=ConfigurableField(id="prompt"),
+            default=PromptTemplate.from_template("Tell me a joke about {topic}"),
+            default_key="joke",
+            prefix_keys=False,
+            alternatives={
+                "poem": PromptTemplate.from_template("Write a short poem about {topic}")
+            },
+        )
+        chain = prompt | ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0)
+        chain.with_config(configurable={"prompt": "poem"}).invoke({"topic": "bears"})
+        ```
+    """
 
     which: ConfigurableField
     """The ConfigurableField to use to choose between alternatives."""
@@ -680,7 +682,10 @@ def make_options_spec(
     spec: Union[ConfigurableFieldSingleOption, ConfigurableFieldMultiOption],
     description: Optional[str],
 ) -> ConfigurableFieldSpec:
-    """Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
+    """Make options spec.
+
+    Make a ConfigurableFieldSpec for a ConfigurableFieldSingleOption or
+    ConfigurableFieldMultiOption.
 
     Args:
         spec: The ConfigurableFieldSingleOption or ConfigurableFieldMultiOption.
@@ -688,7 +693,7 @@ def make_options_spec(
 
     Returns:
         The ConfigurableFieldSpec.
-    """  # noqa: E501
+    """
     with _enums_for_spec_lock:
         if enum := _enums_for_spec.get(spec):
             pass

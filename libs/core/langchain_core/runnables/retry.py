@@ -47,7 +47,7 @@ class ExponentialJitterParams(TypedDict, total=False):
     """Random additional wait sampled from random.uniform(0, jitter)."""
 
 
-class RunnableRetry(RunnableBindingBase[Input, Output]):
+class RunnableRetry(RunnableBindingBase[Input, Output]):  # type: ignore[no-redef]
     """Retry a Runnable if it fails.
 
     RunnableRetry can be used to add retry logic to any object
@@ -62,32 +62,34 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     Example:
     Here's an example that uses a RunnableLambda to raise an exception
 
-        .. code-block:: python
+        ```python
+        import time
 
-            import time
 
-            def foo(input) -> None:
-                '''Fake function that raises an exception.'''
-                raise ValueError(f"Invoking foo failed. At time {time.time()}")
+        def foo(input) -> None:
+            '''Fake function that raises an exception.'''
+            raise ValueError(f"Invoking foo failed. At time {time.time()}")
 
-            runnable = RunnableLambda(foo)
 
-            runnable_with_retries = runnable.with_retry(
-                retry_if_exception_type=(ValueError,), # Retry only on ValueError
-                wait_exponential_jitter=True, # Add jitter to the exponential backoff
-                stop_after_attempt=2, # Try twice
-                exponential_jitter_params={"initial": 2},  # if desired, customize backoff
-            )
+        runnable = RunnableLambda(foo)
 
-            # The method invocation above is equivalent to the longer form below:
+        runnable_with_retries = runnable.with_retry(
+            retry_if_exception_type=(ValueError,),  # Retry only on ValueError
+            wait_exponential_jitter=True,  # Add jitter to the exponential backoff
+            stop_after_attempt=2,  # Try twice
+            exponential_jitter_params={"initial": 2},  # if desired, customize backoff
+        )
 
-            runnable_with_retries = RunnableRetry(
-                bound=runnable,
-                retry_exception_types=(ValueError,),
-                max_attempt_number=2,
-                wait_exponential_jitter=True,
-                exponential_jitter_params={"initial": 2},
-            )
+        # The method invocation above is equivalent to the longer form below:
+
+        runnable_with_retries = RunnableRetry(
+            bound=runnable,
+            retry_exception_types=(ValueError,),
+            max_attempt_number=2,
+            wait_exponential_jitter=True,
+            exponential_jitter_params={"initial": 2},
+        )
+        ```
 
     This logic can be used to retry any Runnable, including a chain of Runnables,
     but in general it's best practice to keep the scope of the retry as small as
@@ -95,23 +97,21 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     the Runnable that is likely to fail, not the entire chain.
 
     Example:
+        ```python
+        from langchain_core.chat_models import ChatOpenAI
+        from langchain_core.prompts import PromptTemplate
 
-        .. code-block:: python
+        template = PromptTemplate.from_template("tell me a joke about {topic}.")
+        model = ChatOpenAI(temperature=0.5)
 
-            from langchain_core.chat_models import ChatOpenAI
-            from langchain_core.prompts import PromptTemplate
+        # Good
+        chain = template | model.with_retry()
 
-            template = PromptTemplate.from_template("tell me a joke about {topic}.")
-            model = ChatOpenAI(temperature=0.5)
-
-            # Good
-            chain = template | model.with_retry()
-
-            # Bad
-            chain = template | model
-            retryable_chain = chain.with_retry()
-
-    """  # noqa: E501
+        # Bad
+        chain = template | model
+        retryable_chain = chain.with_retry()
+        ```
+    """
 
     retry_exception_types: tuple[type[BaseException], ...] = (Exception,)
     """The exception types to retry on. By default all exceptions are retried.
@@ -234,31 +234,40 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     ) -> list[Union[Output, Exception]]:
         results_map: dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
-            return [item for idx, item in enumerate(iterable) if idx not in results_map]
-
         not_set: list[Output] = []
         result = not_set
         try:
             for attempt in self._sync_retrying():
                 with attempt:
-                    # Get the results of the inputs that have not succeeded yet.
+                    # Retry for inputs that have not yet succeeded
+                    # Determine which original indices remain.
+                    remaining_indices = [
+                        i for i in range(len(inputs)) if i not in results_map
+                    ]
+                    if not remaining_indices:
+                        break
+                    pending_inputs = [inputs[i] for i in remaining_indices]
+                    pending_configs = [config[i] for i in remaining_indices]
+                    pending_run_managers = [run_manager[i] for i in remaining_indices]
+                    # Invoke underlying batch only on remaining elements.
                     result = super().batch(
-                        pending(inputs),
+                        pending_inputs,
                         self._patch_config_list(
-                            pending(config), pending(run_manager), attempt.retry_state
+                            pending_configs, pending_run_managers, attempt.retry_state
                         ),
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded.
+                    # Register the results of the inputs that have succeeded, mapping
+                    # back to their original indices.
                     first_exception = None
-                    for i, r in enumerate(result):
+                    for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
                             continue
-                        results_map[i] = r
+                        orig_idx = remaining_indices[offset]
+                        results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
@@ -301,31 +310,39 @@ class RunnableRetry(RunnableBindingBase[Input, Output]):
     ) -> list[Union[Output, Exception]]:
         results_map: dict[int, Output] = {}
 
-        def pending(iterable: list[U]) -> list[U]:
-            return [item for idx, item in enumerate(iterable) if idx not in results_map]
-
         not_set: list[Output] = []
         result = not_set
         try:
             async for attempt in self._async_retrying():
                 with attempt:
-                    # Get the results of the inputs that have not succeeded yet.
+                    # Retry for inputs that have not yet succeeded
+                    # Determine which original indices remain.
+                    remaining_indices = [
+                        i for i in range(len(inputs)) if i not in results_map
+                    ]
+                    if not remaining_indices:
+                        break
+                    pending_inputs = [inputs[i] for i in remaining_indices]
+                    pending_configs = [config[i] for i in remaining_indices]
+                    pending_run_managers = [run_manager[i] for i in remaining_indices]
                     result = await super().abatch(
-                        pending(inputs),
+                        pending_inputs,
                         self._patch_config_list(
-                            pending(config), pending(run_manager), attempt.retry_state
+                            pending_configs, pending_run_managers, attempt.retry_state
                         ),
                         return_exceptions=True,
                         **kwargs,
                     )
-                    # Register the results of the inputs that have succeeded.
+                    # Register the results of the inputs that have succeeded, mapping
+                    # back to their original indices.
                     first_exception = None
-                    for i, r in enumerate(result):
+                    for offset, r in enumerate(result):
                         if isinstance(r, Exception):
                             if not first_exception:
                                 first_exception = r
                             continue
-                        results_map[i] = r
+                        orig_idx = remaining_indices[offset]
+                        results_map[orig_idx] = r
                     # If any exception occurred, raise it, to retry the failed ones
                     if first_exception:
                         raise first_exception
