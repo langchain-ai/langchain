@@ -46,19 +46,19 @@ def __getattr__(name: str) -> Any:
     if name == "MRKLChain":
         from langchain_classic.agents import MRKLChain
 
-        _warn_on_import(name, replacement="langchain.agents.MRKLChain")
+        _warn_on_import(name, replacement="langchain_classic.agents.MRKLChain")
 
         return MRKLChain
     if name == "ReActChain":
         from langchain_classic.agents import ReActChain
 
-        _warn_on_import(name, replacement="langchain.agents.ReActChain")
+        _warn_on_import(name, replacement="langchain_classic.agents.ReActChain")
 
         return ReActChain
     if name == "SelfAskWithSearchChain":
         from langchain_classic.agents import SelfAskWithSearchChain
 
-        _warn_on_import(name, replacement="langchain.agents.SelfAskWithSearchChain")
+        _warn_on_import(name, replacement="langchain_classic.agents.SelfAskWithSearchChain")
 
         return SelfAskWithSearchChain
     if name == "ConversationChain":
@@ -117,13 +117,13 @@ def __getattr__(name: str) -> Any:
     if name == "InMemoryDocstore":
         from langchain_community.docstore import InMemoryDocstore
 
-        _warn_on_import(name, replacement="langchain.docstore.InMemoryDocstore")
+        _warn_on_import(name, replacement="langchain_classic.docstore.InMemoryDocstore")
 
         return InMemoryDocstore
     if name == "Wikipedia":
         from langchain_community.docstore import Wikipedia
 
-        _warn_on_import(name, replacement="langchain.docstore.Wikipedia")
+        _warn_on_import(name, replacement="langchain_classic.docstore.Wikipedia")
 
         return Wikipedia
     if name == "Anthropic":
