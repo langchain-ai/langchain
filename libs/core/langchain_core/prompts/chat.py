@@ -436,7 +436,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
             )
             return cls(prompt=prompt, **kwargs)
         if isinstance(template, list):
-            if partial_variables:
+            if partial_variables is not None and partial_variables:
                 msg = "Partial variables are not supported for list of templates."
                 raise ValueError(msg)
             prompt = []
