@@ -34,13 +34,11 @@ def _extract_reasoning_from_additional_kwargs(
     Returns:
         A `ReasoningContentBlock` if reasoning content is found, None otherwise.
     """
-    from langchain_core.messages.content import create_reasoning_block  # noqa: PLC0415
-
     additional_kwargs = getattr(message, "additional_kwargs", {})
 
     reasoning_content = additional_kwargs.get("reasoning_content")
     if reasoning_content is not None and isinstance(reasoning_content, str):
-        return create_reasoning_block(reasoning=reasoning_content)
+        return {"type": "reasoning", "reasoning": reasoning_content}
 
     return None
 
@@ -94,7 +92,7 @@ class TextAccessor(str):
 class BaseMessage(Serializable):
     """Base abstract message class.
 
-    Messages are the inputs and outputs of ``ChatModel``s.
+    Messages are the inputs and outputs of a ``ChatModel``.
     """
 
     content: Union[str, list[Union[str, dict]]]

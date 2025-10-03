@@ -10,17 +10,6 @@ pip install -U langchain-ollama
 
 For the package to work, you will need to install and run the Ollama server locally ([download](https://ollama.com/download)).
 
-To run integration tests (`make integration_tests`), you will need the following models installed in your Ollama server:
-
-- `llama3.1`
-- `deepseek-r1:1.5b`
-
-Install these models by running:
-
-```bash
-ollama pull <name-of-model>
-```
-
 ## [Chat Models](https://python.langchain.com/api_reference/ollama/chat_models/langchain_ollama.chat_models.ChatOllama.html#chatollama)
 
 `ChatOllama` class exposes chat models from Ollama.
@@ -52,4 +41,20 @@ from langchain_ollama import OllamaLLM
 
 llm = OllamaLLM(model="llama3.1")
 llm.invoke("The meaning of life is")
+```
+
+## Development
+
+### Running Tests
+
+To run integration tests (`make integration_tests`), you will need the following models installed in your Ollama server:
+
+- `llama3.1`
+- `deepseek-r1:1.5b`
+- `gpt-oss:20b`
+
+Install these models by running:
+
+```bash
+ollama pull <name-of-model>
 ```

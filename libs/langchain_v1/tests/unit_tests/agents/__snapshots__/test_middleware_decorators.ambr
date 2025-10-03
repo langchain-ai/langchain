@@ -1,0 +1,95 @@
+# serializer version: 1
+# name: test_async_middleware_with_can_jump_to_graph_snapshot
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	async_before_with_jump\2ebefore_model(async_before_with_jump.before_model)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> async_before_with_jump\2ebefore_model;
+  	async_before_with_jump\2ebefore_model -.-> __end__;
+  	async_before_with_jump\2ebefore_model -.-> model_request;
+  	model_request --> __end__;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_async_middleware_with_can_jump_to_graph_snapshot.1
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	async_after_with_jump\2eafter_model(async_after_with_jump.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> model_request;
+  	async_after_with_jump\2eafter_model -.-> __end__;
+  	async_after_with_jump\2eafter_model -.-> model_request;
+  	model_request --> async_after_with_jump\2eafter_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_async_middleware_with_can_jump_to_graph_snapshot.2
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	async_before_early_exit\2ebefore_model(async_before_early_exit.before_model)
+  	async_after_retry\2eafter_model(async_after_retry.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> async_before_early_exit\2ebefore_model;
+  	async_after_retry\2eafter_model -.-> __end__;
+  	async_after_retry\2eafter_model -.-> async_before_early_exit\2ebefore_model;
+  	async_before_early_exit\2ebefore_model -.-> __end__;
+  	async_before_early_exit\2ebefore_model -.-> model_request;
+  	model_request --> async_after_retry\2eafter_model;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
+# name: test_async_middleware_with_can_jump_to_graph_snapshot.3
+  '''
+  ---
+  config:
+    flowchart:
+      curve: linear
+  ---
+  graph TD;
+  	__start__([<p>__start__</p>]):::first
+  	model_request(model_request)
+  	sync_before_with_jump\2ebefore_model(sync_before_with_jump.before_model)
+  	async_after_with_jumps\2eafter_model(async_after_with_jumps.after_model)
+  	__end__([<p>__end__</p>]):::last
+  	__start__ --> sync_before_with_jump\2ebefore_model;
+  	async_after_with_jumps\2eafter_model -.-> __end__;
+  	async_after_with_jumps\2eafter_model -.-> sync_before_with_jump\2ebefore_model;
+  	model_request --> async_after_with_jumps\2eafter_model;
+  	sync_before_with_jump\2ebefore_model -.-> __end__;
+  	sync_before_with_jump\2ebefore_model -.-> model_request;
+  	classDef default fill:#f2f0ff,line-height:1.2
+  	classDef first fill-opacity:0
+  	classDef last fill:#bfb6fc
+  
+  '''
+# ---
