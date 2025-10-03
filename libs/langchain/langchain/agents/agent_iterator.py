@@ -34,7 +34,7 @@ from langchain.schema import RUN_KEY
 from langchain.utilities.asyncio import asyncio_timeout
 
 if TYPE_CHECKING:
-    from langchain.agents.agent import AgentExecutor, NextStepOutput
+    from langchain.agents.agent import NextStepOutput
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class AgentExecutorIterator:
 
     def __init__(
         self,
-        agent_executor: AgentExecutor,
+        agent_executor: Any,
         inputs: Any,
         callbacks: Callbacks = None,
         *,
@@ -106,12 +106,12 @@ class AgentExecutorIterator:
         self._inputs = self.agent_executor.prep_inputs(inputs)
 
     @property
-    def agent_executor(self) -> AgentExecutor:
+    def agent_executor(self) -> Any:
         """The AgentExecutor to iterate over."""
         return self._agent_executor
 
     @agent_executor.setter
-    def agent_executor(self, agent_executor: AgentExecutor) -> None:
+    def agent_executor(self, agent_executor: Any) -> None:
         self._agent_executor = agent_executor
         # force re-prep inputs in case agent_executor's prep_inputs fn changed
         self.inputs = self.inputs
@@ -135,7 +135,6 @@ class AgentExecutorIterator:
         Reset the iterator to its initial state, clearing intermediate steps,
         iterations, and time elapsed.
         """
-        logger.debug("(Re)setting AgentExecutorIterator to fresh state")
         self.intermediate_steps: list[tuple[AgentAction, str]] = []
         self.iterations = 0
         # maybe better to start these on the first __anext__ call?
@@ -146,11 +145,6 @@ class AgentExecutorIterator:
         """Increment the number of iterations and update the time elapsed."""
         self.iterations += 1
         self.time_elapsed = time.time() - self.start_time
-        logger.debug(
-            "Agent Iterations: %s (%.2fs elapsed)",
-            self.iterations,
-            self.time_elapsed,
-        )
 
     def make_final_outputs(
         self,
@@ -179,7 +173,6 @@ class AgentExecutorIterator:
 
     def __iter__(self: AgentExecutorIterator) -> Iterator[AddableDict]:
         """Create an async iterator for the AgentExecutor."""
-        logger.debug("Initialising AgentExecutorIterator")
         self.reset()
         callback_manager = CallbackManager.configure(
             self.callbacks,
@@ -247,7 +240,6 @@ class AgentExecutorIterator:
         N.B. __aiter__ must be a normal method, so need to initialize async run manager
         on first __anext__ call where we can await it.
         """
-        logger.debug("Initialising AgentExecutorIterator (async)")
         self.reset()
         callback_manager = AsyncCallbackManager.configure(
             self.callbacks,
@@ -332,15 +324,10 @@ class AgentExecutorIterator:
         Process the output of the next step,
         handling AgentFinish and tool return cases.
         """
-        logger.debug("Processing output of Agent loop step")
         if isinstance(next_step_output, AgentFinish):
-            logger.debug(
-                "Hit AgentFinish: _return -> on_chain_end -> run final output logic",
-            )
             return self._return(next_step_output, run_manager=run_manager)
 
         self.intermediate_steps.extend(next_step_output)
-        logger.debug("Updated intermediate_steps with step output")
 
         # Check for tool return
         if len(next_step_output) == 1:
@@ -361,15 +348,10 @@ class AgentExecutorIterator:
         Process the output of the next async step,
         handling AgentFinish and tool return cases.
         """
-        logger.debug("Processing output of async Agent loop step")
         if isinstance(next_step_output, AgentFinish):
-            logger.debug(
-                "Hit AgentFinish: _areturn -> on_chain_end -> run final output logic",
-            )
             return await self._areturn(next_step_output, run_manager=run_manager)
 
         self.intermediate_steps.extend(next_step_output)
-        logger.debug("Updated intermediate_steps with step output")
 
         # Check for tool return
         if len(next_step_output) == 1:
@@ -385,7 +367,6 @@ class AgentExecutorIterator:
 
         Stop the iterator and raise a StopIteration exception with the stopped response.
         """
-        logger.warning("Stopping agent prematurely due to triggering stop condition")
         # this manually constructs agent finish with output key
         output = self.agent_executor._action_agent.return_stopped_response(  # noqa: SLF001
             self.agent_executor.early_stopping_method,
@@ -400,7 +381,6 @@ class AgentExecutorIterator:
         Stop the async iterator and raise a StopAsyncIteration exception with
         the stopped response.
         """
-        logger.warning("Stopping agent prematurely due to triggering stop condition")
         output = self.agent_executor._action_agent.return_stopped_response(  # noqa: SLF001
             self.agent_executor.early_stopping_method,
             self.intermediate_steps,
