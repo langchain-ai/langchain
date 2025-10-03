@@ -33,7 +33,9 @@ _module_lookup = {
     "ConstitutionalChain": "langchain_classic.chains.constitutional_ai.base",
     "ConversationChain": "langchain_classic.chains.conversation.base",
     "ChatVectorDBChain": "langchain_classic.chains.conversational_retrieval.base",
-    "ConversationalRetrievalChain": "langchain_classic.chains.conversational_retrieval.base",
+    "ConversationalRetrievalChain": (
+        "langchain_classic.chains.conversational_retrieval.base"
+    ),
     "generate_example": "langchain_classic.chains.example_generator",
     "FlareChain": "langchain_classic.chains.flare.base",
     "ArangoGraphQAChain": "langchain_community.chains.graph_qa.arangodb",
@@ -47,13 +49,17 @@ _module_lookup = {
     "NeptuneSparqlQAChain": "langchain_community.chains.graph_qa.neptune_sparql",
     "OntotextGraphDBQAChain": "langchain_community.chains.graph_qa.ontotext_graphdb",
     "GraphSparqlQAChain": "langchain_community.chains.graph_qa.sparql",
-    "create_history_aware_retriever": "langchain_classic.chains.history_aware_retriever",
+    "create_history_aware_retriever": (
+        "langchain_classic.chains.history_aware_retriever"
+    ),
     "HypotheticalDocumentEmbedder": "langchain_classic.chains.hyde.base",
     "LLMChain": "langchain_classic.chains.llm",
     "LLMCheckerChain": "langchain_classic.chains.llm_checker.base",
     "LLMMathChain": "langchain_classic.chains.llm_math.base",
     "LLMRequestsChain": "langchain_community.chains.llm_requests",
-    "LLMSummarizationCheckerChain": "langchain_classic.chains.llm_summarization_checker.base",
+    "LLMSummarizationCheckerChain": (
+        "langchain_classic.chains.llm_summarization_checker.base"
+    ),
     "load_chain": "langchain_classic.chains.loading",
     "MapReduceChain": "langchain_classic.chains.mapreduce",
     "OpenAIModerationChain": "langchain_classic.chains.moderation",

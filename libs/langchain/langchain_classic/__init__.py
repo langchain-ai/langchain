@@ -58,7 +58,9 @@ def __getattr__(name: str) -> Any:
     if name == "SelfAskWithSearchChain":
         from langchain_classic.agents import SelfAskWithSearchChain
 
-        _warn_on_import(name, replacement="langchain_classic.agents.SelfAskWithSearchChain")
+        _warn_on_import(
+            name, replacement="langchain_classic.agents.SelfAskWithSearchChain"
+        )
 
         return SelfAskWithSearchChain
     if name == "ConversationChain":
@@ -111,7 +113,9 @@ def __getattr__(name: str) -> Any:
     if name == "VectorDBQAWithSourcesChain":
         from langchain_classic.chains import VectorDBQAWithSourcesChain
 
-        _warn_on_import(name, replacement="langchain_classic.chains.VectorDBQAWithSourcesChain")
+        _warn_on_import(
+            name, replacement="langchain_classic.chains.VectorDBQAWithSourcesChain"
+        )
 
         return VectorDBQAWithSourcesChain
     if name == "InMemoryDocstore":
