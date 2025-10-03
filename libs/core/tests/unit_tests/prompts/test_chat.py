@@ -8,14 +8,10 @@ from packaging import version
 from pydantic import ValidationError
 from syrupy.assertion import SnapshotAssertion
 
-from langchain_core._api.deprecation import (
-    LangChainPendingDeprecationWarning,
-)
 from langchain_core.load import dumpd, load
 from langchain_core.messages import (
     AIMessage,
     BaseMessage,
-    ChatMessage,
     HumanMessage,
     SystemMessage,
     ToolMessage,
@@ -191,7 +187,6 @@ def test_message_prompt_template_from_template_file() -> None:
     )
     actual = ChatMessagePromptTemplate.from_template_file(
         Path(__file__).parent.parent / "data" / "prompt_file.txt",
-        ["question"],
         role="human",
     )
     assert expected == actual
@@ -457,32 +452,6 @@ def test_chat_valid_infer_variables() -> None:
     )
     assert set(prompt.input_variables) == {"question", "context"}
     assert prompt.partial_variables == {"formatins": "some structure"}
-
-
-async def test_chat_from_role_strings() -> None:
-    """Test instantiation of chat template from role strings."""
-    with pytest.warns(LangChainPendingDeprecationWarning):
-        template = ChatPromptTemplate.from_role_strings(
-            [
-                ("system", "You are a bot."),
-                ("assistant", "hello!"),
-                ("human", "{question}"),
-                ("other", "{quack}"),
-            ]
-        )
-
-    expected = [
-        ChatMessage(content="You are a bot.", role="system"),
-        ChatMessage(content="hello!", role="assistant"),
-        ChatMessage(content="How are you?", role="human"),
-        ChatMessage(content="duck", role="other"),
-    ]
-
-    messages = template.format_messages(question="How are you?", quack="duck")
-    assert messages == expected
-
-    messages = await template.aformat_messages(question="How are you?", quack="duck")
-    assert messages == expected
 
 
 @pytest.mark.parametrize(

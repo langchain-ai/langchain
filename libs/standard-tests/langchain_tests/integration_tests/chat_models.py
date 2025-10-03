@@ -3,14 +3,12 @@
 from __future__ import annotations
 
 import base64
-import inspect
 import json
 from typing import Annotated, Any, Literal
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
-from langchain_core._api import warn_deprecated
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.language_models import BaseChatModel, GenericFakeChatModel
 from langchain_core.messages import (
@@ -1397,21 +1395,6 @@ class ChatModelIntegrationTests(ChatModelTests):
             pytest.skip("Test requires tool calling.")
 
         tool_choice_value = None if not self.has_tool_choice else "any"
-        # Emit warning if tool_choice_value property is overridden
-        if inspect.getattr_static(
-            self, "tool_choice_value"
-        ) is not inspect.getattr_static(ChatModelIntegrationTests, "tool_choice_value"):
-            warn_deprecated(
-                "0.3.15",
-                message=(
-                    "`tool_choice_value` will be removed in version 0.3.20. If a "
-                    "model supports `tool_choice`, it should accept `tool_choice='any' "
-                    "and `tool_choice=<string name of tool>`. If the model does not "
-                    "support `tool_choice`, override the `supports_tool_choice` "
-                    "property to return `False`."
-                ),
-                removal="0.3.20",
-            )
         model_with_tools = model.bind_tools(
             [magic_function], tool_choice=tool_choice_value
         )

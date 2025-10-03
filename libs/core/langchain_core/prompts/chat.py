@@ -24,7 +24,6 @@ from pydantic import (
 )
 from typing_extensions import Self, override
 
-from langchain_core._api import deprecated
 from langchain_core.messages import (
     AIMessage,
     AnyMessage,
@@ -262,14 +261,12 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: list[str],  # noqa: ARG003  # Deprecated
         **kwargs: Any,
     ) -> Self:
         """Create a class from a template file.
 
         Args:
             template_file: path to a template file. String or Path.
-            input_variables: list of input variables.
             **kwargs: keyword arguments to pass to the constructor.
 
         Returns:
@@ -1104,41 +1101,6 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
         prompt_template = PromptTemplate.from_template(template, **kwargs)
         message = HumanMessagePromptTemplate(prompt=prompt_template)
         return cls.from_messages([message])
-
-    @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_role_strings(
-        cls, string_messages: list[tuple[str, str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role, template) tuples.
-
-        Args:
-            string_messages: list of (role, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls(
-            messages=[
-                ChatMessagePromptTemplate.from_template(template, role=role)
-                for role, template in string_messages
-            ]
-        )
-
-    @classmethod
-    @deprecated("0.0.1", alternative="from_messages", pending=True)
-    def from_strings(
-        cls, string_messages: list[tuple[type[BaseMessagePromptTemplate], str]]
-    ) -> ChatPromptTemplate:
-        """Create a chat prompt template from a list of (role class, template) tuples.
-
-        Args:
-            string_messages: list of (role class, template) tuples.
-
-        Returns:
-            a chat prompt template.
-        """
-        return cls.from_messages(string_messages)
 
     @classmethod
     def from_messages(
