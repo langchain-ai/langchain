@@ -180,6 +180,8 @@ def create_agent(  # noqa: PLR0915
     interrupt_before: list[str] | None = None,
     interrupt_after: list[str] | None = None,
     debug: bool = False,
+    cache: Any = None,
+    name: str | None = None,
 ) -> CompiledStateGraph[
     AgentState[ResponseT], ContextT, PublicAgentState[ResponseT], PublicAgentState[ResponseT]
 ]:
@@ -252,6 +254,10 @@ def create_agent(  # noqa: PLR0915
             This is useful if you want to return directly or run additional processing on an output.
 
         debug: A flag indicating whether to enable debug mode.
+
+        cache: An optional cache object for caching LLM responses.
+
+        name: An optional name for the compiled graph.
 
     Returns:
         A compiled LangGraph agent that can be used for chat interactions.
@@ -729,6 +735,8 @@ def create_agent(  # noqa: PLR0915
         interrupt_before=interrupt_before,
         interrupt_after=interrupt_after,
         debug=debug,
+        cache=cache,
+        name=name,
     )
 
 
@@ -760,8 +768,8 @@ def _fetch_last_ai_and_tool_messages(
 
 def _make_model_to_tools_edge(
     first_node: str, structured_output_tools: dict[str, OutputToolBinding], tool_node: ToolNode
-) -> Callable[[dict[str, Any]], str | list[Send] | None]:
-    def model_to_tools(state: dict[str, Any]) -> str | list[Send] | None:
+) -> Callable[[dict[str, Any], Runtime], str | list[Send] | None]:
+    def model_to_tools(state: dict[str, Any], runtime: Runtime) -> str | list[Send] | None:
         # 1. if there's an explicit jump_to in the state, use it
         if jump_to := state.get("jump_to"):
             return _resolve_jump(jump_to, first_node)
@@ -782,8 +790,9 @@ def _make_model_to_tools_edge(
 
         # 3. if there are pending (non-structured) tool calls, jump to the tool node
         if pending_tool_calls:
+            store = runtime.store if runtime else None
             pending_tool_calls = [
-                tool_node.inject_tool_args(call, state, None) for call in pending_tool_calls
+                tool_node.inject_tool_args(call, state, store) for call in pending_tool_calls
             ]
             return [Send("tools", [tool_call]) for tool_call in pending_tool_calls]
 
@@ -804,7 +813,8 @@ def _make_tools_to_model_edge(
     def tools_to_model(state: dict[str, Any]) -> str | None:
         last_ai_message, tool_messages = _fetch_last_ai_and_tool_messages(state["messages"])
 
-        if all(
+        # Check if any tool call has return_direct=True
+        if any(
             tool_node.tools_by_name[c["name"]].return_direct
             for c in last_ai_message.tool_calls
             if c["name"] in tool_node.tools_by_name
