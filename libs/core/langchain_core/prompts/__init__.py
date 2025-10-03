@@ -14,8 +14,6 @@ from multiple components and prompt values. Prompt classes and functions make co
                            BaseChatPromptTemplate --> AutoGPTPrompt
                                                       ChatPromptTemplate --> AgentScratchPadChatPromptTemplate
 
-
-
     BaseMessagePromptTemplate --> MessagesPlaceholder
                                   BaseStringMessagePromptTemplate --> ChatMessagePromptTemplate
                                                                       HumanMessagePromptTemplate
