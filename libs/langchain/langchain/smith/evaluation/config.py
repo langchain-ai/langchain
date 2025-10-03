@@ -103,11 +103,11 @@ class RunEvalConfig(BaseModel):
     ] = Field(default_factory=list)
     """Configurations for which evaluators to apply to the dataset run.
     Each can be the string of an
-    :class:`EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
+    `EvaluatorType <langchain.evaluation.schema.EvaluatorType>`, such
     as `EvaluatorType.QA`, the evaluator type string ("qa"), or a configuration for a
     given evaluator
     (e.g.,
-    :class:`RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
+    `RunEvalConfig.QA <langchain.smith.evaluation.config.RunEvalConfig.QA>`)."""
     custom_evaluators: Optional[list[CUSTOM_EVALUATOR_TYPE]] = None
     """Custom evaluators to apply to the dataset run."""
     batch_evaluators: Optional[list[BATCH_EVALUATOR_LIKE]] = None

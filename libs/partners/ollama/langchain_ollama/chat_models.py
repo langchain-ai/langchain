@@ -257,7 +257,7 @@ def _is_pydantic_class(obj: Any) -> bool:
 class ChatOllama(BaseChatModel):
     r"""Ollama chat model integration.
 
-    .. dropdown:: Setup
+    ??? note "Setup"
         :open:
 
         Install ``langchain-ollama`` and download any models you want to use from ollama.
@@ -492,7 +492,7 @@ class ChatOllama(BaseChatModel):
         ``reasoning_content`` key, but will be present within the main response content
         as think tags (``<think>`` and ``</think>``).
 
-        .. note::
+        !!! note
             This feature is only available for `models that support reasoning <https://ollama.com/search?c=thinking>`__.
 
         .. code-block:: python
@@ -546,7 +546,7 @@ class ChatOllama(BaseChatModel):
     validate_model_on_init: bool = False
     """Whether to validate the model exists in Ollama locally on initialization.
 
-    .. versionadded:: 0.3.4
+    !!! version-added "Added in version 0.3.4"
     """
 
     mirostat: Optional[int] = None
@@ -741,26 +741,30 @@ class ChatOllama(BaseChatModel):
         if self.stop is not None:
             stop = self.stop
 
-        options_dict = kwargs.pop(
-            "options",
-            {
-                "mirostat": self.mirostat,
-                "mirostat_eta": self.mirostat_eta,
-                "mirostat_tau": self.mirostat_tau,
-                "num_ctx": self.num_ctx,
-                "num_gpu": self.num_gpu,
-                "num_thread": self.num_thread,
-                "num_predict": self.num_predict,
-                "repeat_last_n": self.repeat_last_n,
-                "repeat_penalty": self.repeat_penalty,
-                "temperature": self.temperature,
-                "seed": self.seed,
-                "stop": self.stop if stop is None else stop,
-                "tfs_z": self.tfs_z,
-                "top_k": self.top_k,
-                "top_p": self.top_p,
-            },
-        )
+        options_dict = kwargs.pop("options", None)
+        if options_dict is None:
+            # Only include parameters that are explicitly set (not None)
+            options_dict = {
+                k: v
+                for k, v in {
+                    "mirostat": self.mirostat,
+                    "mirostat_eta": self.mirostat_eta,
+                    "mirostat_tau": self.mirostat_tau,
+                    "num_ctx": self.num_ctx,
+                    "num_gpu": self.num_gpu,
+                    "num_thread": self.num_thread,
+                    "num_predict": self.num_predict,
+                    "repeat_last_n": self.repeat_last_n,
+                    "repeat_penalty": self.repeat_penalty,
+                    "temperature": self.temperature,
+                    "seed": self.seed,
+                    "stop": self.stop if stop is None else stop,
+                    "tfs_z": self.tfs_z,
+                    "top_k": self.top_k,
+                    "top_p": self.top_p,
+                }.items()
+                if v is not None
+            }
 
         params = {
             "messages": ollama_messages,
@@ -1235,7 +1239,7 @@ class ChatOllama(BaseChatModel):
         Args:
             tools: A list of tool definitions to bind to this chat model.
                 Supports any tool definition handled by
-                :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`.
+                `langchain_core.utils.function_calling.convert_to_openai_tool`.
             tool_choice: If provided, which tool for model to call. **This parameter
                 is currently ignored as it is not supported by Ollama.**
             kwargs: Any additional parameters are passed directly to
@@ -1265,7 +1269,7 @@ class ChatOllama(BaseChatModel):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -1291,7 +1295,7 @@ class ChatOllama(BaseChatModel):
             kwargs: Additional keyword args aren't supported.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs an instance of ``schema`` (i.e., a Pydantic object). Otherwise, if ``include_raw`` is False then Runnable outputs a dict.
 
@@ -1301,15 +1305,13 @@ class ChatOllama(BaseChatModel):
             - ``'parsed'``: None if there was a parsing error, otherwise the type depends on the ``schema`` as described above.
             - ``'parsing_error'``: Optional[BaseException]
 
-        .. versionchanged:: 0.2.2
-
+        !!! warning "Behavior changed in 0.2.2"
             Added support for structured output API via ``format`` parameter.
 
-        .. versionchanged:: 0.3.0
-
+        !!! warning "Behavior changed in 0.3.0"
             Updated default ``method`` to ``'json_schema'``.
 
-        .. dropdown:: Example: schema=Pydantic class, method="json_schema", include_raw=False
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1339,7 +1341,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_schema'``, ``include_raw=True``
+        ??? note "Example: `schema=Pydantic` class, `method='json_schema'`, `include_raw=True`"
 
             .. code-block:: python
 
@@ -1367,7 +1369,7 @@ class ChatOllama(BaseChatModel):
                 #     'parsing_error': None
                 # }
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='function_calling'``, ``include_raw=False``
+        ??? note "Example: `schema=Pydantic` class, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1400,7 +1402,7 @@ class ChatOllama(BaseChatModel):
                 #     justification='Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume or density of the objects may differ.'
                 # )
 
-        .. dropdown:: Example: schema=TypedDict class, method="function_calling", include_raw=False
+        ??? note "Example: `schema=TypedDict` class, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1427,7 +1429,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: ``schema=OpenAI`` function schema, ``method='function_calling'``, ``include_raw=False``
+        ??? note "Example: `schema=OpenAI` function schema, `method='function_calling'`, `include_raw=False`"
 
             .. code-block:: python
 
@@ -1457,7 +1459,7 @@ class ChatOllama(BaseChatModel):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. dropdown:: Example: ``schema=Pydantic`` class, ``method='json_mode'``, ``include_raw=True``
+        ??? note "Example: `schema=Pydantic` class, `method='json_mode'`, `include_raw=True`"
 
             .. code-block::
 

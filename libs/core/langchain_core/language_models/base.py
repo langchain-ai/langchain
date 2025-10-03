@@ -300,7 +300,7 @@ class BaseLanguageModel(
 
         Useful for checking if an input fits in a model's context window.
 
-        .. note::
+        !!! note
             The base implementation of ``get_num_tokens_from_messages`` ignores tool
             schemas.
 

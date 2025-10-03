@@ -355,7 +355,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
     Partner packages (e.g., ``langchain-openai``) can also use this field to roll out
     new content formats in a backward-compatible way.
 
-    .. versionadded:: 1.0
+    !!! version-added "Added in version 1.0"
 
     """
 
@@ -1489,7 +1489,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 If ``schema`` is a Pydantic class then the model output will be a
                 Pydantic instance of that class, and the model-generated fields will be
                 validated by the Pydantic class. Otherwise the model output will be a
-                dict and will not be validated. See :meth:`langchain_core.utils.function_calling.convert_to_openai_tool`
+                dict and will not be validated. See `langchain_core.utils.function_calling.convert_to_openai_tool`
                 for more on how to properly specify types and descriptions of
                 schema fields when specifying a Pydantic or TypedDict class.
 
@@ -1507,7 +1507,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 ``with_structured_output()``.
 
         Returns:
-            A Runnable that takes same inputs as a :class:`langchain_core.language_models.chat.BaseChatModel`.
+            A Runnable that takes same inputs as a `langchain_core.language_models.chat.BaseChatModel`.
 
             If ``include_raw`` is False and ``schema`` is a Pydantic class, Runnable outputs
             an instance of ``schema`` (i.e., a Pydantic object).
@@ -1598,8 +1598,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
                 #     'justification': 'Both a pound of bricks and a pound of feathers weigh one pound. The weight is the same, but the volume and density of the two substances differ.'
                 # }
 
-        .. versionchanged:: 0.2.26
-
+        !!! warning "Behavior changed in 0.2.26"
                 Added support for TypedDict class.
 
         """  # noqa: E501
@@ -1645,7 +1644,7 @@ class BaseChatModel(BaseLanguageModel[AIMessage], ABC):
 class SimpleChatModel(BaseChatModel):
     """Simplified implementation for a chat model to inherit from.
 
-    .. note::
+    !!! note
         This implementation is primarily here for backwards compatibility. For new
         implementations, please use ``BaseChatModel`` directly.
 

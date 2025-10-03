@@ -100,7 +100,9 @@ def test_qdrant_add_texts_stores_ids(batch_size: int) -> None:
     vec_store = Qdrant(client, collection_name, ConsistentFakeEmbeddings())
     returned_ids = vec_store.add_texts(["abc", "def"], ids=ids, batch_size=batch_size)
 
-    assert all(first == second for first, second in zip(ids, returned_ids))
+    assert all(
+        first == second for first, second in zip(ids, returned_ids, strict=False)
+    )
     assert client.count(collection_name).count == 2
     stored_ids = [point.id for point in client.scroll(collection_name)[0]]
     assert set(ids) == set(stored_ids)

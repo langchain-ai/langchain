@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 from enum import Enum
 from itertools import islice
 from operator import itemgetter
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Optional,
     Union,
 )
@@ -1079,6 +1079,7 @@ class QdrantVectorStore(VectorStore):
                         self.content_payload_key,
                         self.metadata_payload_key,
                     ),
+                    strict=False,
                 )
             ]
 
@@ -1153,7 +1154,7 @@ class QdrantVectorStore(VectorStore):
                     ),
                 }
                 for dense_vector, sparse_vector in zip(
-                    dense_embeddings, sparse_embeddings
+                    dense_embeddings, sparse_embeddings, strict=False
                 )
             ]
 

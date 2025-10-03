@@ -2636,7 +2636,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -2753,7 +2753,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -3070,7 +3070,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -3276,8 +3276,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -4106,7 +4105,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -4223,7 +4222,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -4559,7 +4558,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -4765,8 +4764,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -5607,7 +5605,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -5724,7 +5722,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -6060,7 +6058,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -6266,8 +6264,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -6983,7 +6980,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -7100,7 +7097,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -7417,7 +7414,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -7623,8 +7620,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -8495,7 +8491,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -8612,7 +8608,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -8948,7 +8944,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -9154,8 +9150,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -9916,7 +9911,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -10033,7 +10028,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -10350,7 +10345,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -10556,8 +10551,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -11336,7 +11330,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -11453,7 +11447,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -11800,7 +11794,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -12006,8 +12000,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({
@@ -12798,7 +12791,7 @@
                       "cache_read": 100,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
           
           May also hold extra provider-specific keys.
         ''',
@@ -12915,7 +12908,7 @@
                       "reasoning": 200,
                   }
           
-          .. versionadded:: 0.3.9
+          !!! version-added "Added in version 0.3.9"
         ''',
         'properties': dict({
           'audio': dict({
@@ -13251,7 +13244,7 @@
           Example: A ``ToolMessage`` where only part of the tool output is sent to the model
               and the full output is passed in to artifact.
           
-              .. versionadded:: 0.2.17
+              !!! version-added "Added in version 0.2.17"
           
               .. code-block:: python
           
@@ -13457,8 +13450,7 @@
                       },
                   }
           
-          .. versionchanged:: 0.3.9
-          
+          !!! warning "Behavior changed in 0.3.9"
               Added ``input_token_details`` and ``output_token_details``.
         ''',
         'properties': dict({

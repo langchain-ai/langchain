@@ -788,9 +788,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Use to create flexible templated prompts for chat models.
 
     Examples:
-
-        .. versionchanged:: 0.2.24
-
+        !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
             init.
