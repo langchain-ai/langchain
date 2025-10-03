@@ -7,7 +7,6 @@ from langchain_core.messages import (
     ToolCall,
     ToolMessage,
 )
-from langchain_core.tools import BaseTool, InjectedToolCallId, ToolException
 from langchain_core.tools import tool as dec_tool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.store.base import BaseStore
@@ -197,6 +196,7 @@ def test_agent_with_structured_response() -> None:
         [{"name": "WeatherResponse", "id": "2", "args": {"temperature": 75}}],
     ]
 
+    @dec_tool
     def get_weather() -> str:
         """Get the weather"""
         return "The weather is sunny and 75°F."
