@@ -117,7 +117,6 @@ class ChatModelTests(BaseStandardTests):
         return None
 
     @property
-
     def has_tool_choice(self) -> bool:
         """(bool) whether the model supports tool calling."""
         bind_tools_params = inspect.signature(
