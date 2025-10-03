@@ -33,6 +33,7 @@ from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict
 
 from langchain.tools import (
+    ToolNode,
     InjectedState,
     InjectedStore,
     ToolNode,
