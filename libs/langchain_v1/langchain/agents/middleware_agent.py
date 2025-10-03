@@ -214,7 +214,9 @@ def _validate_schema_compatibility(
     for schema in state_schemas:
         if schema != AgentState:  # Skip base schema
             schema_hints = get_type_hints(schema)
-            schema_fields = set(schema_hints.keys()) - {"messages", "remaining_steps", "structured_response"}
+            schema_fields = set(schema_hints.keys()) - {
+                "messages", "remaining_steps", "structured_response"
+            }
 
             # Find which middleware defines these fields
             for m in middleware:
@@ -226,7 +228,9 @@ def _validate_schema_compatibility(
 
             middleware_fields.update(schema_fields)
 
-    user_fields = set(user_hints.keys()) - {"messages", "remaining_steps", "structured_response"}
+    user_fields = set(user_hints.keys()) - {
+        "messages", "remaining_steps", "structured_response"
+    }
     conflicts = user_fields & middleware_fields
 
     if conflicts:
@@ -238,7 +242,8 @@ def _validate_schema_compatibility(
         raise ValueError(
             f"State schema field conflicts detected: {conflicts}. "
             f"These fields are already defined by middleware: {conflict_details}. "
-            f"Please use different field names or consider extending the middleware state schema instead."
+            f"Please use different field names or consider extending the middleware "
+            f"state schema instead."
         )
 
 

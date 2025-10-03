@@ -1100,7 +1100,8 @@ def create_agent(  # noqa: D417
                 ```
 
                 When used with middleware, the schema will be merged with middleware schemas.
-                Field conflicts between user schema and middleware schemas will raise ValidationError.
+                Field conflicts between user schema and middleware schemas will raise
+                ValidationError.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object. This is used for persisting
             the state of the graph (e.g., as chat memory) for a single thread
