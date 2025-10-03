@@ -6,7 +6,7 @@ https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecati
 
 !!! warning
 
-    This module is for internal use only.  Do not use it in your own code.
+    This module is for internal use only. Do not use it in your own code.
     We may change the API at any time with no warning.
 """
 
