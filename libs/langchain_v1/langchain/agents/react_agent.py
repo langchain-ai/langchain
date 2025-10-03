@@ -979,6 +979,23 @@ def create_agent(  # noqa: D417
         tools: A list of tools or a ToolNode instance.
             If an empty list is provided, the agent will consist of a single LLM node
             without tool calling.
+        middleware: A sequence of middleware instances for customizing agent behavior.
+            Each middleware can define its own state schema, which will be automatically
+            merged with any user-provided `state_schema`. Use middleware for features like
+            conversation summarization, planning, and other cross-cutting concerns.
+
+            !!! note "Middleware + State Schema Compatibility"
+                As of this version, `middleware` and `state_schema` can be used together:
+
+                ```python
+                agent = create_agent(
+                    model="openai:gpt-4",
+                    tools=[tools],
+                    middleware=[SummarizationMiddleware()],  # For conversation management
+                    state_schema=RAGState,  # For custom state fields
+                )
+                ```
+
         prompt: An optional prompt for the LLM. Can take a few different forms:
 
             - str: This is converted to a SystemMessage and added to the beginning
@@ -1065,6 +1082,25 @@ def create_agent(  # noqa: D417
         state_schema: An optional state schema that defines graph state.
             Must have `messages` and `remaining_steps` keys.
             Defaults to `AgentState` that defines those two keys.
+
+            !!! note "Using with Middleware"
+                You can now combine `state_schema` with `middleware` for advanced use cases:
+
+                ```python
+                class RAGState(AgentState):
+                    retrieved_documents: NotRequired[list[dict]]
+                    citations: NotRequired[list[str]]
+
+                agent = create_agent(
+                    model="openai:gpt-4",
+                    tools=[retrieval_tool],
+                    middleware=[SummarizationMiddleware(model=llm)],
+                    state_schema=RAGState,  # Now supported!
+                )
+                ```
+
+                When used with middleware, the schema will be merged with middleware schemas.
+                Field conflicts between user schema and middleware schemas will raise ValidationError.
         context_schema: An optional schema for runtime context.
         checkpointer: An optional checkpoint saver object. This is used for persisting
             the state of the graph (e.g., as chat memory) for a single thread
@@ -1148,7 +1184,7 @@ def create_agent(  # noqa: D417
         assert not isinstance(response_format, tuple)  # noqa: S101
         assert pre_model_hook is None  # noqa: S101
         assert post_model_hook is None  # noqa: S101
-        assert state_schema is None  # noqa: S101
+        # REMOVED: assert state_schema is None  # Allow state_schema with middleware
         return create_middleware_agent(  # type: ignore[return-value]
             model=model,
             tools=tools,
@@ -1156,6 +1192,7 @@ def create_agent(  # noqa: D417
             middleware=middleware,
             response_format=response_format,
             context_schema=context_schema,
+            state_schema=state_schema,  # Pass user state_schema to middleware agent
         ).compile(
             checkpointer=checkpointer,
             store=store,
