@@ -41,7 +41,7 @@ def maximal_marginal_relevance(
 
 def cosine_similarity(X: Matrix, Y: Matrix) -> np.ndarray:  # noqa: N803
     """Row-wise cosine similarity between two equal-width matrices."""
-    if len(X) == 0 or len(Y) == 0:
+    if not X or not Y:
         return np.array([])
 
     x = np.array(X)
