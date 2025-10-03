@@ -1440,7 +1440,7 @@ class AgentExecutor(Chain):
             observation = InvalidTool().run(
                 {
                     "requested_tool_name": agent_action.tool,
-                    "available_tool_names": list(name_to_tool_map.keys()),
+                    "available_tool_names": list(name_to_tool_map),
                 },
                 verbose=self.verbose,
                 color=None,
@@ -1591,7 +1591,7 @@ class AgentExecutor(Chain):
             observation = await InvalidTool().arun(
                 {
                     "requested_tool_name": agent_action.tool,
-                    "available_tool_names": list(name_to_tool_map.keys()),
+                    "available_tool_names": list(name_to_tool_map),
                 },
                 verbose=self.verbose,
                 color=None,
