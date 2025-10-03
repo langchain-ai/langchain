@@ -180,7 +180,7 @@ class BaseOutputParser(
         for base in self.__class__.mro():
             if hasattr(base, "__pydantic_generic_metadata__"):
                 metadata = base.__pydantic_generic_metadata__
-                if "args" in metadata and len(metadata["args"]) > 0:
+                if "args" in metadata and metadata["args"]:
                     return metadata["args"][0]
 
         msg = (

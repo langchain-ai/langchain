@@ -24,7 +24,7 @@ class StrictFormatter(Formatter):
         Raises:
             ValueError: If any arguments are provided.
         """
-        if len(args) > 0:
+        if args:
             msg = (
                 "No arguments should be provided, "
                 "everything should be passed as keyword arguments."
