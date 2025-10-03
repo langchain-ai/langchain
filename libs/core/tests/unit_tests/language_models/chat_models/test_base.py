@@ -936,6 +936,8 @@ def test_output_version_stream(monkeypatch: Any) -> None:
     assert isinstance(full_v1, AIMessageChunk)
     assert full_v1.response_metadata["output_version"] == "v1"
 
+    assert full_v1.content == [{"type": "text", "text": "foo bar", "index": 0}]
+
     # v1 from env var
     monkeypatch.setenv("LC_OUTPUT_VERSION", "v1")
     llm = GenericFakeChatModel(messages=iter(messages))
