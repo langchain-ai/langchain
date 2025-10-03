@@ -7,7 +7,6 @@ from typing import (
     Any,
     NoReturn,
     TypeVar,
-    Union,
 )
 
 import pytest
@@ -561,7 +560,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
     @dec_tool
     def transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Bob"""
+        """Transfer to Bob."""
         return Command(
             update={
                 "messages": [ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)]
@@ -572,7 +571,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
     @dec_tool
     async def async_transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Bob"""
+        """Transfer to Bob."""
         return Command(
             update={
                 "messages": [ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)]
@@ -626,7 +625,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
     # test mixing regular tools and tools returning commands
     def add(a: int, b: int) -> int:
-        """Add two numbers"""
+        """Add two numbers."""
         return a + b
 
     tool_calls = [
@@ -756,7 +755,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
         @dec_tool
         def list_update_tool(tool_call_id: Annotated[str, InjectedToolCallId]):
-            """My tool"""
+            """My tool."""
             return Command(update=[ToolMessage(content="foo", tool_call_id=tool_call_id)])
 
         ToolNode([list_update_tool]).invoke(
@@ -775,7 +774,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
         @dec_tool
         def no_update_tool():
-            """My tool"""
+            """My tool."""
             return Command(update={"messages": []})
 
         ToolNode([no_update_tool]).invoke(
@@ -794,7 +793,7 @@ async def test_tool_node_command(input_type: str) -> None:
 
         @dec_tool
         def mismatching_tool_call_id_tool():
-            """My tool"""
+            """My tool."""
             return Command(update={"messages": [ToolMessage(content="foo", tool_call_id="2")]})
 
         ToolNode([mismatching_tool_call_id_tool]).invoke(
@@ -817,7 +816,7 @@ async def test_tool_node_command(input_type: str) -> None:
     # test validation (missing tool message in the update for parent graph is OK)
     @dec_tool
     def node_update_parent_tool():
-        """No update"""
+        """No update."""
         return Command(update={"messages": []}, graph=Command.PARENT)
 
     assert ToolNode([node_update_parent_tool]).invoke(
@@ -837,7 +836,7 @@ async def test_tool_node_command_list_input() -> None:
 
     @dec_tool
     def transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Bob"""
+        """Transfer to Bob."""
         return Command(
             update=[ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)],
             goto="bob",
@@ -846,7 +845,7 @@ async def test_tool_node_command_list_input() -> None:
 
     @dec_tool
     async def async_transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Bob"""
+        """Transfer to Bob."""
         return Command(
             update=[ToolMessage(content="Transferred to Bob", tool_call_id=tool_call_id)],
             goto="bob",
@@ -894,7 +893,7 @@ async def test_tool_node_command_list_input() -> None:
 
     # test mixing regular tools and tools returning commands
     def add(a: int, b: int) -> int:
-        """Add two numbers"""
+        """Add two numbers."""
         return a + b
 
     result = ToolNode([add, transfer_to_bob]).invoke(
@@ -1012,7 +1011,7 @@ async def test_tool_node_command_list_input() -> None:
 
         @dec_tool
         def list_update_tool(tool_call_id: Annotated[str, InjectedToolCallId]):
-            """My tool"""
+            """My tool."""
             return Command(
                 update={"messages": [ToolMessage(content="foo", tool_call_id=tool_call_id)]}
             )
@@ -1031,7 +1030,7 @@ async def test_tool_node_command_list_input() -> None:
 
         @dec_tool
         def no_update_tool():
-            """My tool"""
+            """My tool."""
             return Command(update=[])
 
         ToolNode([no_update_tool]).invoke(
@@ -1048,7 +1047,7 @@ async def test_tool_node_command_list_input() -> None:
 
         @dec_tool
         def mismatching_tool_call_id_tool():
-            """My tool"""
+            """My tool."""
             return Command(update=[ToolMessage(content="foo", tool_call_id="2")])
 
         ToolNode([mismatching_tool_call_id_tool]).invoke(
@@ -1063,7 +1062,7 @@ async def test_tool_node_command_list_input() -> None:
     # test validation (missing tool message in the update for parent graph is OK)
     @dec_tool
     def node_update_parent_tool():
-        """No update"""
+        """No update."""
         return Command(update=[], graph=Command.PARENT)
 
     assert ToolNode([node_update_parent_tool]).invoke(
@@ -1081,7 +1080,7 @@ def test_tool_node_parent_command_with_send() -> None:
 
     @dec_tool
     def transfer_to_alice(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Alice"""
+        """Transfer to Alice."""
         return Command(
             goto=[
                 Send(
@@ -1102,7 +1101,7 @@ def test_tool_node_parent_command_with_send() -> None:
 
     @dec_tool
     def transfer_to_bob(tool_call_id: Annotated[str, InjectedToolCallId]):
-        """Transfer to Bob"""
+        """Transfer to Bob."""
         return Command(
             goto=[
                 Send(
@@ -1269,12 +1268,10 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:
                     node.invoke([msg])
         else:
             failure_input = None
-            try:
+            # We'd get a validation error from pydantic state and wouldn't make it to the node
+            # anyway
+            with contextlib.suppress(Exception):
                 failure_input = schema_(messages=[msg], notfoo="bar")
-            except Exception:
-                # We'd get a validation error from pydantic state and wouldn't make it to the node
-                # anyway
-                pass
             if failure_input is not None:
                 messages_ = node.invoke(failure_input)
                 tool_message = messages_["messages"][-1]
@@ -1374,7 +1371,7 @@ def test_tool_node_inject_store() -> None:
 def test_tool_node_ensure_utf8() -> None:
     @dec_tool
     def get_day_list(days: list[str]) -> list[str]:
-        """choose days"""
+        """Choose days."""
         return days
 
     data = ["星期一", "水曜日", "목요일", "Friday"]

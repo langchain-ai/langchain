@@ -38,7 +38,7 @@ from langgraph._internal._typing import MISSING
 from langgraph.errors import ErrorCode, create_error_message
 from langgraph.graph import END, StateGraph
 from langgraph.graph.message import add_messages
-from langgraph.managed import RemainingSteps  # noqa: TC002
+from langgraph.managed import RemainingSteps
 from langgraph.types import Checkpointer, Command, Send
 from langgraph.typing import ContextT, StateT
 from pydantic import BaseModel
@@ -122,9 +122,9 @@ def _get_prompt_runnable(prompt: Prompt | None) -> Runnable:
             lambda state: _get_state_value(state, "messages"), name=PROMPT_RUNNABLE_NAME
         )
     elif isinstance(prompt, str):
-        _system_message: BaseMessage = SystemMessage(content=prompt)
+        system_message: BaseMessage = SystemMessage(content=prompt)
         prompt_runnable = RunnableCallable(
-            lambda state: [_system_message, *_get_state_value(state, "messages")],
+            lambda state: [system_message, *_get_state_value(state, "messages")],
             name=PROMPT_RUNNABLE_NAME,
         )
     elif isinstance(prompt, SystemMessage):
@@ -220,7 +220,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 "The `model` parameter should not have pre-bound tools, "
                 "simply pass the model and tools separately."
             )
-            raise ValueError(msg)
+            raise TypeError(msg)
 
         self._setup_tools()
         self._setup_state_schema()
@@ -397,13 +397,13 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                     "structured_response": structured_response,
                 }
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             exception = StructuredOutputValidationError(tool_call["name"], exc)
 
             should_retry, error_message = self._handle_structured_output_error(exception)
 
             if not should_retry:
-                raise exception
+                raise exception from exc
 
             return Command(
                 update={
@@ -583,7 +583,7 @@ class _AgentBuilder(Generic[StateT, ContextT, StructuredResponseT]):
                 remaining_steps is not None  # type: ignore[return-value]
                 and (
                     (remaining_steps < 1 and all_tools_return_direct)
-                    or (remaining_steps < 2 and has_tool_calls)
+                    or (remaining_steps < 2 and has_tool_calls)  # noqa: PLR2004
                 )
             )
 
@@ -904,7 +904,7 @@ def _supports_native_structured_output(
     )
 
 
-def create_agent(  # noqa: D417
+def create_agent(
     model: str | BaseChatModel | SyncOrAsync[[StateT, Runtime[ContextT]], BaseChatModel],
     tools: Sequence[BaseTool | Callable | dict[str, Any]] | ToolNode,
     *,
@@ -979,6 +979,7 @@ def create_agent(  # noqa: D417
         tools: A list of tools or a ToolNode instance.
             If an empty list is provided, the agent will consist of a single LLM node
             without tool calling.
+        middleware: A list of middlewares.
         prompt: An optional prompt for the LLM. Can take a few different forms:
 
             - str: This is converted to a SystemMessage and added to the beginning
@@ -1143,12 +1144,29 @@ def create_agent(  # noqa: D417
         ```
     """
     if middleware:
-        assert isinstance(model, str | BaseChatModel)  # noqa: S101
-        assert isinstance(prompt, str | None)  # noqa: S101
-        assert not isinstance(response_format, tuple)  # noqa: S101
-        assert pre_model_hook is None  # noqa: S101
-        assert post_model_hook is None  # noqa: S101
-        assert state_schema is None  # noqa: S101
+        if not isinstance(model, (str, BaseChatModel)):
+            msg = "Middleware is only supported with string or BaseChatModel models."
+            raise TypeError(msg)
+
+        if not isinstance(prompt, str | None):
+            msg = "Middleware is only supported with string prompts."
+            raise TypeError(msg)
+        if isinstance(response_format, tuple):
+            msg = "Passing a 2-tuple as response_format is no longer supported."
+            raise TypeError(msg)
+
+        if pre_model_hook is not None:
+            msg = "Pre-model hook is not supported with middleware."
+            raise ValueError(msg)
+
+        if post_model_hook is not None:
+            msg = "Post-model hook is not supported with middleware."
+            raise ValueError(msg)
+
+        if state_schema is not None:
+            msg = "State schema is not supported with middleware."
+            raise ValueError(msg)
+
         return create_middleware_agent(  # type: ignore[return-value]
             model=model,
             tools=tools,
@@ -1189,7 +1207,7 @@ def create_agent(  # noqa: D417
             response_format = ToolStrategy(
                 schema=response_format,
             )
-    elif isinstance(response_format, tuple) and len(response_format) == 2:
+    elif isinstance(response_format, tuple) and len(response_format) == 2:  # noqa: PLR2004
         msg = "Passing a 2-tuple as response_format is no longer supported. "
         raise ValueError(msg)
 
