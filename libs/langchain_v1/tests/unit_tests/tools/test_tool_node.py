@@ -67,7 +67,7 @@ async def tool3(some_val: int, some_other_val: str) -> list[dict[str, str | int]
     ]
 
 
-async def tool4(_some_val: int, _some_other_val: str) -> list[dict[str, str | dict[str, str]]]:
+async def tool4(some_val: int, some_other_val: str) -> list[dict[str, str | dict[str, str]]]:
     """Tool 4 docstring."""
     return [
         {"type": "image_url", "image_url": {"url": "abdc"}},
@@ -75,7 +75,7 @@ async def tool4(_some_val: int, _some_other_val: str) -> list[dict[str, str | di
 
 
 @dec_tool
-def tool5(_some_val: int) -> NoReturn:
+def tool5(some_val: int) -> NoReturn:
     """Tool 5 docstring."""
     msg = "Test error"
     raise ToolException(msg)
@@ -246,7 +246,7 @@ def test_tool_node_error_handling_default_invocation() -> None:
 
 def test_tool_node_error_handling_default_exception() -> None:
     tn = ToolNode([tool1])
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Test error"):
         tn.invoke(
             {
                 "messages": [
@@ -385,7 +385,7 @@ async def test_tool_node_error_handling_callable() -> None:
         assert str(exc_info.value) == "Test error"
 
     for handle_tool_errors in ((ToolException,), handle_tool_exception):
-        with pytest.raises(ValueError, match="Tool call error") as exc_info:
+        with pytest.raises(ValueError) as exc_info:
             await ToolNode([tool1, tool2], handle_tool_errors=handle_tool_errors).ainvoke(
                 {
                     "messages": [
@@ -411,7 +411,7 @@ async def test_tool_node_error_handling_callable() -> None:
 
 
 async def test_tool_node_handle_tool_errors_false() -> None:
-    with pytest.raises(ValueError, match="Tool call error") as exc_info:
+    with pytest.raises(ValueError, match="Test error") as exc_info:
         ToolNode([tool1], handle_tool_errors=False).invoke(
             {
                 "messages": [
@@ -523,7 +523,7 @@ def test_tool_node_incorrect_tool_name() -> None:
 
 
 def test_tool_node_node_interrupt() -> None:
-    def tool_interrupt(_some_val: int) -> None:
+    def tool_interrupt(some_val: int) -> None:
         """Tool docstring."""
         msg = "foo"
         raise GraphBubbleUp(msg)
@@ -550,7 +550,7 @@ def test_tool_node_node_interrupt() -> None:
                     ]
                 }
             )
-        assert exc_info.value == "foo"
+        assert str(exc_info.value) == "foo"
 
 
 @pytest.mark.parametrize("input_type", ["dict", "tool_calls"])
@@ -755,7 +755,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """My tool."""
         return Command(update=[ToolMessage(content="foo", tool_call_id=tool_call_id)])
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Tools can provide a list of messages in Command.update only when using list of messages as ToolNode input"):
         ToolNode([list_update_tool]).invoke(
             {
                 "messages": [
@@ -773,7 +773,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """My tool."""
         return Command(update={"messages": []})
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Expected to have a matching ToolMessage in Command.update"):
         ToolNode([no_update_tool]).invoke(
             {
                 "messages": [
@@ -791,7 +791,7 @@ async def test_tool_node_command(input_type: str) -> None:
         """My tool."""
         return Command(update={"messages": [ToolMessage(content="foo", tool_call_id="2")]})
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Expected to have a matching ToolMessage in Command.update"):
         ToolNode([mismatching_tool_call_id_tool]).invoke(
             {
                 "messages": [
@@ -1008,7 +1008,7 @@ async def test_tool_node_command_list_input() -> None:
         """My tool."""
         return Command(update={"messages": [ToolMessage(content="foo", tool_call_id=tool_call_id)]})
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Tools can provide a dict in Command.update only when using dict with 'messages' key as ToolNode input"):
         ToolNode([list_update_tool]).invoke(
             [
                 AIMessage(
@@ -1024,7 +1024,7 @@ async def test_tool_node_command_list_input() -> None:
         """My tool."""
         return Command(update=[])
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Expected to have a matching ToolMessage in Command.update"):
         ToolNode([no_update_tool]).invoke(
             [
                 AIMessage(
@@ -1040,7 +1040,7 @@ async def test_tool_node_command_list_input() -> None:
         """My tool."""
         return Command(update=[ToolMessage(content="foo", tool_call_id="2")])
 
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Expected to have a matching ToolMessage in Command.update"):
         ToolNode([mismatching_tool_call_id_tool]).invoke(
             [
                 AIMessage(
@@ -1157,7 +1157,7 @@ async def test_tool_node_command_remove_all_messages() -> None:
     from langchain_core.tools.base import InjectedToolCallId
 
     @dec_tool
-    def remove_all_messages_tool(_tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
+    def remove_all_messages_tool(tool_call_id: Annotated[str, InjectedToolCallId]) -> Command:
         """A tool that removes all messages."""
         return Command(update={"messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)]})
 
@@ -1210,29 +1210,29 @@ T = TypeVar("T")
     ],
 )
 def test_tool_node_inject_state(schema_: type[T]) -> None:  # noqa: PLR0912, PLR0915
-    def tool1(_some_val: int, state: Annotated[T, InjectedState]) -> str:
+    def tool1(some_val: int, state: Annotated[T, InjectedState]) -> str:
         """Tool 1 docstring."""
         if isinstance(state, dict):
             return state["foo"]
-        return getattr(state, "foo", "")
+        return state.foo
 
-    def tool2(_some_val: int, state: Annotated[T, InjectedState()]) -> str:
+    def tool2(some_val: int, state: Annotated[T, InjectedState()]) -> str:
         """Tool 2 docstring."""
         if isinstance(state, dict):
             return state["foo"]
-        return getattr(state, "foo", "")
+        return state.foo
 
     def tool3(
-        _some_val: int,
+        some_val: int,
         foo: Annotated[str, InjectedState("foo")],
-        _msgs: Annotated[list[AnyMessage], InjectedState("messages")],
+        msgs: Annotated[list[AnyMessage], InjectedState("messages")],
     ) -> str:
         """Tool 1 docstring."""
         return foo
 
-    def tool4(_some_val: int, msgs: Annotated[list[AnyMessage], InjectedState("messages")]) -> str:
+    def tool4(some_val: int, msgs: Annotated[list[AnyMessage], InjectedState("messages")]) -> str:
         """Tool 1 docstring."""
-        return str(msgs[0].content)
+        return msgs[0].content
 
     node = ToolNode([tool1, tool2, tool3, tool4], handle_tool_errors=True)
     for tool_name in ("tool1", "tool2", "tool3"):
@@ -1243,49 +1243,28 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:  # noqa: PLR0912, PLR
             "type": "tool_call",
         }
         msg = AIMessage("hi?", tool_calls=[tool_call])
-
-        # Create state with proper parameters based on schema type
-        if schema_ == _InjectStateSchema:
-            state = {"messages": [msg], "foo": "bar"}
-        elif schema_ == _InjectedStateDataclassSchema:
-            state = schema_([msg], "bar")  # type: ignore[call-arg]
-        elif schema_ in (_InjectedStatePydanticSchema, _InjectedStatePydanticV2Schema):
-            state = schema_(messages=[msg], foo="bar")
-        else:
-            state = {"messages": [msg], "foo": "bar"}
-
-        result = node.invoke(state)
+        result = node.invoke(schema_(messages=[msg], foo="bar"))
         tool_message = result["messages"][-1]
         assert tool_message.content == "bar", f"Failed for tool={tool_name}"
 
         if tool_name == "tool3":
             failure_input = None
             with contextlib.suppress(Exception):
-                if schema_ == _InjectStateSchema:
-                    failure_input = {"messages": [msg], "notfoo": "bar"}
-                elif schema_ == _InjectedStateDataclassSchema:
-                    failure_input = None  # Skip for dataclass as it will fail at construction
-                elif schema_ in (_InjectedStatePydanticSchema, _InjectedStatePydanticV2Schema):
-                    failure_input = schema_(messages=[msg], foo="bar")  # Use valid field name
-                else:
-                    failure_input = None
+                failure_input = schema_(messages=[msg], notfoo="bar")
             if failure_input is not None:
                 with pytest.raises(KeyError):
                     node.invoke(failure_input)
 
-                with pytest.raises(ValueError, match="Tool call error"):
+                with pytest.raises(ValueError):
                     node.invoke([msg])
         else:
             failure_input = None
-            with contextlib.suppress(Exception):
-                if schema_ == _InjectStateSchema:
-                    failure_input = {"messages": [msg], "notfoo": "bar"}
-                elif schema_ == _InjectedStateDataclassSchema:
-                    failure_input = None  # Skip for dataclass as it will fail at construction
-                elif schema_ in (_InjectedStatePydanticSchema, _InjectedStatePydanticV2Schema):
-                    failure_input = schema_(messages=[msg], foo="bar")  # Use valid field name
-                else:
-                    failure_input = None
+            try:
+                failure_input = schema_(messages=[msg], notfoo="bar")
+            except Exception:
+                # We'd get a validation error from pydantic state and wouldn't make it to the node
+                # anyway
+                pass
             if failure_input is not None:
                 messages_ = node.invoke(failure_input)
                 tool_message = messages_["messages"][-1]
@@ -1300,18 +1279,7 @@ def test_tool_node_inject_state(schema_: type[T]) -> None:  # noqa: PLR0912, PLR
         "type": "tool_call",
     }
     msg = AIMessage("hi?", tool_calls=[tool_call])
-
-    # Create state with proper parameters based on schema type
-    if schema_ == _InjectStateSchema:
-        state = {"messages": [msg], "foo": ""}
-    elif schema_ == _InjectedStateDataclassSchema:
-        state = schema_([msg], "")  # type: ignore[call-arg]
-    elif schema_ in (_InjectedStatePydanticSchema, _InjectedStatePydanticV2Schema):
-        state = schema_(messages=[msg], foo="")
-    else:
-        state = {"messages": [msg], "foo": ""}
-
-    result = node.invoke(state)
+    result = node.invoke(schema_(messages=[msg], foo=""))
     tool_message = result["messages"][-1]
     assert tool_message.content == "hi?"
 
@@ -1392,7 +1360,7 @@ def test_tool_node_inject_store() -> None:
 
     # test injected store without passing store to compiled graph
     failing_graph = builder.compile()
-    with pytest.raises(ValueError, match="Tool call error"):
+    with pytest.raises(ValueError, match="Cannot inject store into tools"):
         failing_graph.invoke(State(messages=[msg], bar="baz"))
 
 
