@@ -85,7 +85,7 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
+exclude = ["tests/integration_tests/examples/non-utf8-encoding.py", "tests/unit_tests/tools/test_tool_node.py"]
 line-length = 100
 
 [tool.mypy]
