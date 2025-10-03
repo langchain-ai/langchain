@@ -32,12 +32,10 @@ from pydantic import BaseModel
 from pydantic.v1 import BaseModel as BaseModelV1
 from typing_extensions import TypedDict
 
-from langchain.agents import (
-    ToolNode,
-)
 from langchain.tools import (
     InjectedState,
     InjectedStore,
+    ToolNode,
 )
 from langchain.tools.tool_node import TOOL_CALL_ERROR_TEMPLATE, ToolInvocationError, tools_condition
 

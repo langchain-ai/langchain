@@ -58,6 +58,7 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                 content_obj = asdict(self.structured_response)
             elif isinstance(self.structured_response, dict):
                 content_obj = self.structured_response
+            print(content_obj)
             message = AIMessage(content=json.dumps(content_obj), id=str(self.index))
         else:
             messages_string = "-".join([m.content for m in messages])
@@ -108,4 +109,4 @@ class FakeToolCallingModel(BaseChatModel, Generic[StructuredResponseT]):
                     }
                 )
 
-        return self.bind(tools=tool_dicts)
+        return self.bind(tools=tool_dicts, **kwargs)
