@@ -58,12 +58,6 @@ format format_diff:
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff format $(PYTHON_FILES)
 	[ "$(PYTHON_FILES)" = "" ] || uv run --all-groups ruff check --fix $(PYTHON_FILES)
 
-spell_check:
-	uv run --all-groups codespell --toml pyproject.toml
-
-spell_fix:
-	uv run --all-groups codespell --toml pyproject.toml -w
-
 benchmark:
 	uv run pytest tests/benchmarks --codspeed
 

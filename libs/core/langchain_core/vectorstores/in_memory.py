@@ -94,7 +94,7 @@ class InMemoryVectorStore(VectorStore):
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * thud [{'bar': 'baz'}]
 
@@ -111,7 +111,7 @@ class InMemoryVectorStore(VectorStore):
             for doc in results:
                 print(f"* {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * thud [{'bar': 'baz'}]
 
@@ -123,7 +123,7 @@ class InMemoryVectorStore(VectorStore):
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * [SIM=0.832268] foo [{'baz': 'bar'}]
 
@@ -144,7 +144,7 @@ class InMemoryVectorStore(VectorStore):
             for doc, score in results:
                 print(f"* [SIM={score:3f}] {doc.page_content} [{doc.metadata}]")
 
-        .. code-block:: none
+        .. code-block::
 
             * [SIM=0.832268] foo [{'baz': 'bar'}]
 
@@ -157,7 +157,7 @@ class InMemoryVectorStore(VectorStore):
             )
             retriever.invoke("thud")
 
-        .. code-block:: none
+        .. code-block::
 
             [Document(id='2', metadata={'bar': 'baz'}, page_content='thud')]
 
@@ -603,7 +603,7 @@ class InMemoryVectorStore(VectorStore):
             A VectorStore object.
         """
         path_: Path = Path(path)
-        with path_.open("r") as f:
+        with path_.open("r", encoding="utf-8") as f:
             store = load(json.load(f))
         vectorstore = cls(embedding=embedding, **kwargs)
         vectorstore.store = store
@@ -617,5 +617,5 @@ class InMemoryVectorStore(VectorStore):
         """
         path_: Path = Path(path)
         path_.parent.mkdir(exist_ok=True, parents=True)
-        with path_.open("w") as f:
+        with path_.open("w", encoding="utf-8") as f:
             json.dump(dumpd(self.store), f, indent=2)

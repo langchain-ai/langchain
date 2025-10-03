@@ -18,11 +18,12 @@ from typing import (
     NamedTuple,
     Optional,
     Protocol,
+    TypeGuard,
     TypeVar,
     Union,
 )
 
-from typing_extensions import TypeGuard, override
+from typing_extensions import override
 
 # Re-export create-model for backwards compatibility
 from langchain_core.utils.pydantic import create_model  # noqa: F401

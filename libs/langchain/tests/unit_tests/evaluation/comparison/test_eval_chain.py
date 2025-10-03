@@ -113,7 +113,7 @@ def test_labeled_pairwise_string_comparison_chain_missing_ref() -> None:
     )
     chain = LabeledPairwiseStringEvalChain.from_llm(llm=llm)
     with pytest.raises(
-        ValueError, match="LabeledPairwiseStringEvalChain requires a reference string."
+        ValueError, match="LabeledPairwiseStringEvalChain requires a reference string"
     ):
         chain.evaluate_string_pairs(
             prediction="I like pie.",

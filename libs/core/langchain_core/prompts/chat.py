@@ -262,7 +262,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
     def from_template_file(
         cls,
         template_file: Union[str, Path],
-        input_variables: list[str],
+        input_variables: list[str],  # noqa: ARG003  # Deprecated
         **kwargs: Any,
     ) -> Self:
         """Create a class from a template file.
@@ -275,7 +275,7 @@ class BaseStringMessagePromptTemplate(BaseMessagePromptTemplate, ABC):
         Returns:
             A new instance of this class.
         """
-        prompt = PromptTemplate.from_file(template_file, input_variables)
+        prompt = PromptTemplate.from_file(template_file)
         return cls(prompt=prompt, **kwargs)
 
     @abstractmethod
@@ -543,8 +543,7 @@ class _StringImageMessagePromptTemplate(BaseMessagePromptTemplate):
         Returns:
             A new instance of this class.
         """
-        template = Path(template_file).read_text()
-        # TODO: .read_text(encoding="utf-8") for v0.4
+        template = Path(template_file).read_text(encoding="utf-8")
         return cls.from_template(template, input_variables=input_variables, **kwargs)
 
     def format_messages(self, **kwargs: Any) -> list[BaseMessage]:
@@ -792,9 +791,7 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
     Use to create flexible templated prompts for chat models.
 
     Examples:
-
-        .. versionchanged:: 0.2.24
-
+        !!! warning "Behavior changed in 0.2.24"
             You can pass any Message-like formats supported by
             ``ChatPromptTemplate.from_messages()`` directly to ``ChatPromptTemplate()``
             init.
@@ -813,7 +810,10 @@ class ChatPromptTemplate(BaseChatPromptTemplate):
             )
 
             prompt_value = template.invoke(
-                {"name": "Bob", "user_input": "What is your name?"}
+                {
+                    "name": "Bob",
+                    "user_input": "What is your name?",
+                }
             )
             # Output:
             # ChatPromptValue(

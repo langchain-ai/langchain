@@ -4,7 +4,7 @@ This module was loosely adapted from matplotlibs _api/deprecation.py module:
 
 https://github.com/matplotlib/matplotlib/blob/main/lib/matplotlib/_api/deprecation.py
 
-.. warning::
+!!! warning
 
     This module is for internal use only.  Do not use it in your own code.
     We may change the API at any time with no warning.
@@ -174,6 +174,7 @@ def beta(
             def finalize(_wrapper: Callable[..., Any], new_doc: str) -> Any:
                 """Finalize the property."""
                 return property(fget=_fget, fset=_fset, fdel=_fdel, doc=new_doc)
+
         else:
             _name = _name or obj.__qualname__
             if not _obj_type:
@@ -226,17 +227,17 @@ def warn_beta(
 ) -> None:
     """Display a standardized beta annotation.
 
-    Arguments:
-        message : str, optional
+    Args:
+        message:
             Override the default beta message. The
             %(name)s, %(obj_type)s, %(addendum)s
             format specifiers will be replaced by the
             values of the respective arguments passed to this function.
-        name : str, optional
+        name:
             The name of the annotated object.
-        obj_type : str, optional
+        obj_type:
             The object type being annotated.
-        addendum : str, optional
+        addendum:
             Additional text appended directly to the final message.
     """
     if not message:

@@ -9,6 +9,8 @@ from langchain_groq import ChatGroq
 
 
 class TestGroqStandard(ChatModelUnitTests):
+    """Run ChatGroq on LangChain standard tests."""
+
     @property
     def chat_model_class(self) -> type[BaseChatModel]:
         return ChatGroq

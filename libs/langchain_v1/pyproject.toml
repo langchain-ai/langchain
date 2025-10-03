@@ -5,16 +5,16 @@ build-backend = "pdm.backend"
 [project]
 authors = []
 license = { text = "MIT" }
-requires-python = ">=3.10"
+requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core<2.0.0,>=0.3.75",
-    "langchain-text-splitters<1.0.0,>=0.3.11",
-    "langgraph>=0.6.7",
-    "pydantic>=2.7.4",
+    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-text-splitters>=1.0.0a1,<2.0.0",
+    "langgraph>=1.0.0a4,<2.0.0",
+    "pydantic>=2.7.4,<3.0.0",
 ]
 
 name = "langchain"
-version = "1.0.0a5"
+version = "1.0.0a10"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -22,15 +22,15 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-azure-ai = ["langchain-azure-ai"]
-cohere = ["langchain-cohere"]
+#azure-ai = ["langchain-azure-ai"]
+#cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
 ollama = ["langchain-ollama"]
 together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
-huggingface = ["langchain-huggingface"]
+#huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
@@ -44,37 +44,39 @@ repository = "https://github.com/langchain-ai/langchain"
 
 [dependency-groups]
 test = [
-    "pytest<9,>=8",
-    "pytest-cov>=4.0.0",
-    "pytest-watcher>=0.2.6",
-    "pytest-asyncio>=0.23.2",
-    "pytest-socket>=0.6.0",
-    "syrupy>=4.0.2",
-    "pytest-xdist>=3.6.1",
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-cov>=4.0.0,<8.0.0",
+    "pytest-watcher>=0.2.6,<1.0.0",
+    "pytest-asyncio>=0.23.2,<2.0.0",
+    "pytest-socket>=0.6.0,<1.0.0",
+    "pytest-xdist<4.0.0,>=3.6.1",
+    "pytest-mock",
+    "syrupy>=4.0.2,<5.0.0",
+    "toml>=0.10.2,<1.0.0",
     "langchain-tests",
     "langchain-text-splitters",
-    "langchain-openai",
-    "toml>=0.10.2",
-    "pytest-mock"
+    "langchain-openai"
 ]
-codespell = ["codespell<3.0.0,>=2.2.0"]
 lint = [
-    "ruff>=0.12.2",
+    "ruff>=0.12.2,<0.13.0",
 ]
 typing = [
-    "mypy<1.19,>=1.18.1",
-    "types-toml>=0.10.8.20240310",
+    "mypy>=1.18.1,<1.19.0",
+    "types-toml>=0.10.8.20240310,<1.0.0.0",
 ]
 
 test_integration = [
-    "vcrpy>=7.0",
-    "wrapt>=1.15.0",
-    "python-dotenv>=1.0.0",
-    "cassio>=0.1.0",
-    "langchainhub>=0.1.16",
+    "vcrpy>=7.0.0,<8.0.0",
+    "wrapt>=1.15.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
+    "cassio>=0.1.0,<1.0.0",
+    "langchainhub>=0.1.16,<1.0.0",
     "langchain-core",
     "langchain-text-splitters",
 ]
+
+[tool.uv]
+prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -83,7 +85,6 @@ langchain-text-splitters = { path = "../text-splitters", editable = true }
 langchain-openai = { path = "../partners/openai", editable = true }
 
 [tool.ruff]
-target-version = "py310"
 exclude = ["tests/integration_tests/examples/non-utf8-encoding.py"]
 line-length = 100
 
@@ -97,37 +98,35 @@ exclude = ["tests/unit_tests/agents/*", "tests/integration_tests/agents/*"]
 disallow_any_generics = false
 warn_return_any = false
 
-[tool.codespell]
-skip = ".git,*.pdf,*.svg,*.pdf,*.yaml,*.ipynb,poetry.lock,*.min.js,*.css,package-lock.json,example_data,_dist,examples,*.trig"
-ignore-regex = ".*(Stati Uniti|Tense=Pres).*"
-ignore-words-list = "momento,collison,ned,foor,reworkd,parth,whats,aapply,mysogyny,unsecure,damon,crate,aadd,symbl,precesses,accademia,nin"
-
 [tool.ruff.format]
 docstring-code-format = true
 
 [tool.ruff.lint]
 select = [
-  "ALL"
+    "ALL"
 ]
 ignore = [
-  "COM812",  # Messes with the formatter
-  "ISC001",  # Messes with the formatter
-  "PERF203", # Rarely useful
-  "SLF001",  # Private member access
-  "PLC0415", # Imports should be at the top. Not always desirable
-  "PLR0913", # Too many arguments in function definition
-  "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203", # Rarely useful
+    "SLF001",  # Private member access
+    "PLC0415", # Imports should be at the top. Not always desirable
+    "PLR0913", # Too many arguments in function definition
+    "PLC0414", # Inconsistent with how type checkers expect to be notified of intentional re-exports
 ]
 unfixable = ["B028"] # People should intentionally tune the stacklevel
 
-pydocstyle.convention = "google"
 pyupgrade.keep-runtime-typing = true
 flake8-annotations.allow-star-arg-any = true
 
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+ignore-var-parameters = true  # ignore missing documentation for *args and **kwargs parameters
+
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
-  "D1", # Documentation rules
-  "PLC0415", # Imports should be at the top. Not always desirable for tests
+    "D1", # Documentation rules
+    "PLC0415", # Imports should be at the top. Not always desirable for tests
 ]
 "langchain/agents/*" = [
     "ANN401", # we use Any right now, need to narrow
@@ -173,6 +172,16 @@ flake8-annotations.allow-star-arg-any = true
     "ARG002", # Unused argument
     "BLE001", # Do not catch blind exception
     "N801", # class name should use CapWords convention
+]
+
+"langchain/tools/tool_node.py" = [
+    "ANN401", # we use Any right now, need to narrow
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
 ]
 
 [tool.coverage.run]

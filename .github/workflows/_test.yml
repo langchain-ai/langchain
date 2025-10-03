@@ -1,6 +1,7 @@
-name: '🧪 Unit Testing'
 # Runs unit tests with both current and minimum supported dependency versions
-# to ensure compatibility across the supported range
+# to ensure compatibility across the supported range.
+
+name: '🧪 Unit Testing'
 
 on:
   workflow_call:

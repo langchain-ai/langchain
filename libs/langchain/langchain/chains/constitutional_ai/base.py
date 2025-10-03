@@ -26,7 +26,7 @@ from langchain.chains.llm import LLMChain
 class ConstitutionalChain(Chain):
     r'''Chain for applying constitutional principles.
 
-    .. note::
+    !!! note
         This class is deprecated. See below for a replacement implementation using
         LangGraph. The benefits of this implementation are:
 

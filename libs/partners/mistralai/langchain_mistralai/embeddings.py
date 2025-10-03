@@ -155,7 +155,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
     def validate_environment(self) -> Self:
         """Validate configuration."""
         api_key_str = self.mistral_api_key.get_secret_value()
-        # todo: handle retries
+        # TODO: handle retries
         if not self.client:
             self.client = httpx.Client(
                 base_url=self.endpoint,
@@ -166,7 +166,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 },
                 timeout=self.timeout,
             )
-        # todo: handle retries and max_concurrency
+        # TODO: handle retries and max_concurrency
         if not self.async_client:
             self.async_client = httpx.AsyncClient(
                 base_url=self.endpoint,
@@ -202,7 +202,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             len(encoded) for encoded in self.tokenizer.encode_batch(texts)
         ]
 
-        for text, text_tokens in zip(texts, text_token_lengths):
+        for text, text_tokens in zip(texts, text_token_lengths, strict=False):
             if batch_tokens + text_tokens > MAX_TOKENS:
                 if len(batch) > 0:
                     # edge case where first batch exceeds max tokens
@@ -255,8 +255,8 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
                 for response in batch_responses
                 for embedding_obj in response.json()["data"]
             ]
-        except Exception as e:
-            logger.error(f"An error occurred with MistralAI: {e}")
+        except Exception:
+            logger.exception("An error occurred with MistralAI")
             raise
 
     async def aembed_documents(self, texts: list[str]) -> list[list[float]]:
@@ -267,28 +267,37 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
-
         """
         try:
+
+            @retry(
+                retry=retry_if_exception_type(
+                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                ),
+                wait=wait_fixed(self.wait_time),
+                stop=stop_after_attempt(self.max_retries),
+            )
+            async def _aembed_batch(batch: list[str]) -> Response:
+                response = await self.async_client.post(
+                    url="/embeddings",
+                    json={
+                        "model": self.model,
+                        "input": batch,
+                    },
+                )
+                response.raise_for_status()
+                return response
+
             batch_responses = await asyncio.gather(
-                *[
-                    self.async_client.post(
-                        url="/embeddings",
-                        json={
-                            "model": self.model,
-                            "input": batch,
-                        },
-                    )
-                    for batch in self._get_batches(texts)
-                ]
+                *[_aembed_batch(batch) for batch in self._get_batches(texts)]
             )
             return [
                 list(map(float, embedding_obj["embedding"]))
                 for response in batch_responses
                 for embedding_obj in response.json()["data"]
             ]
-        except Exception as e:
-            logger.error(f"An error occurred with MistralAI: {e}")
+        except Exception:
+            logger.exception("An error occurred with MistralAI")
             raise
 
     def embed_query(self, text: str) -> list[float]:

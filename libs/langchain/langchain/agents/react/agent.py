@@ -28,7 +28,7 @@ def create_react_agent(
     Based on paper "ReAct: Synergizing Reasoning and Acting in Language Models"
     (https://arxiv.org/abs/2210.03629)
 
-    .. warning::
+    !!! warning
        This implementation is based on the foundational ReAct paper but is older and
        not well-suited for production applications.
        For a more robust and feature-rich implementation, we recommend using the

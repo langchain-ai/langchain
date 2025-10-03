@@ -15,22 +15,23 @@ from langchain_core.utils._merge import merge_dicts
 class ChatGeneration(Generation):
     """A single chat generation output.
 
-    A subclass of Generation that represents the response from a chat model
+    A subclass of ``Generation`` that represents the response from a chat model
     that generates chat messages.
 
-    The `message` attribute is a structured representation of the chat message.
-    Most of the time, the message will be of type `AIMessage`.
+    The ``message`` attribute is a structured representation of the chat message.
+    Most of the time, the message will be of type ``AIMessage``.
 
     Users working with chat models will usually access information via either
-    `AIMessage` (returned from runnable interfaces) or `LLMResult` (available
+    ``AIMessage`` (returned from runnable interfaces) or ``LLMResult`` (available
     via callbacks).
     """
 
     text: str = ""
     """The text contents of the output message.
 
-    .. warning::
+    !!! warning
         SHOULD NOT BE SET DIRECTLY!
+
     """
     message: BaseMessage
     """The message output by the chat model."""
@@ -47,6 +48,9 @@ class ChatGeneration(Generation):
 
         Returns:
             The values of the object with the text attribute set.
+
+        Raises:
+            ValueError: If the message is not a string or a list.
         """
         text = ""
         if isinstance(self.message.content, str):
@@ -66,9 +70,9 @@ class ChatGeneration(Generation):
 
 
 class ChatGenerationChunk(ChatGeneration):
-    """ChatGeneration chunk.
+    """``ChatGeneration`` chunk.
 
-    ChatGeneration chunks can be concatenated with other ChatGeneration chunks.
+    ``ChatGeneration`` chunks can be concatenated with other ``ChatGeneration`` chunks.
     """
 
     message: BaseMessageChunk

@@ -5,6 +5,7 @@ Some examples of what you can do with these functions include:
 * Convert messages to strings (serialization)
 * Convert messages from dicts to Message objects (deserialization)
 * Filter messages from a list of messages based on name, type or id etc.
+
 """
 
 from __future__ import annotations
@@ -31,10 +32,15 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
-from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
+)
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content import (
+    is_data_content_block,
+)
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -91,13 +97,14 @@ AnyMessage = Annotated[
 def get_buffer_string(
     messages: Sequence[BaseMessage], human_prefix: str = "Human", ai_prefix: str = "AI"
 ) -> str:
-    r"""Convert a sequence of Messages to strings and concatenate them into one string.
+    r"""Convert a sequence of messages to strings and concatenate them into one string.
 
     Args:
         messages: Messages to be converted to strings.
-        human_prefix: The prefix to prepend to contents of HumanMessages.
-            Default is "Human".
-        ai_prefix: The prefix to prepend to contents of AIMessages. Default is "AI".
+        human_prefix: The prefix to prepend to contents of ``HumanMessage``s.
+            Default is ``'Human'``.
+        ai_prefix: The prefix to prepend to contents of ``AIMessage``. Default is
+            ``'AI'``.
 
     Returns:
         A single string concatenation of all input messages.
@@ -135,7 +142,7 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
-        message = f"{role}: {m.text()}"
+        message = f"{role}: {m.text}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
@@ -176,19 +183,20 @@ def _message_from_dict(message: dict) -> BaseMessage:
 
 
 def messages_from_dict(messages: Sequence[dict]) -> list[BaseMessage]:
-    """Convert a sequence of messages from dicts to Message objects.
+    """Convert a sequence of messages from dicts to ``Message`` objects.
 
     Args:
         messages: Sequence of messages (as dicts) to convert.
 
     Returns:
         list of messages (BaseMessages).
+
     """
     return [_message_from_dict(m) for m in messages]
 
 
 def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
-    """Convert a message chunk to a message.
+    """Convert a message chunk to a ``Message``.
 
     Args:
         chunk: Message chunk to convert.
@@ -201,7 +209,7 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.append("tool_call_chunks")
+        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
@@ -221,10 +229,10 @@ def _create_message_from_message_type(
     id: Optional[str] = None,
     **additional_kwargs: Any,
 ) -> BaseMessage:
-    """Create a message from a message type and content string.
+    """Create a message from a ``Message`` type and content string.
 
     Args:
-        message_type: (str) the type of the message (e.g., "human", "ai", etc.).
+        message_type: (str) the type of the message (e.g., ``'human'``, ``'ai'``, etc.).
         content: (str) the content string.
         name: (str) the name of the message. Default is None.
         tool_call_id: (str) the tool call id. Default is None.
@@ -236,8 +244,9 @@ def _create_message_from_message_type(
         a message of the appropriate type.
 
     Raises:
-        ValueError: if the message type is not one of "human", "user", "ai",
-            "assistant", "function", "tool", "system", or "developer".
+        ValueError: if the message type is not one of ``'human'``, ``'user'``, ``'ai'``,
+            ``'assistant'``, ``'function'``, ``'tool'``, ``'system'``, or
+            ``'developer'``.
     """
     kwargs: dict[str, Any] = {}
     if name is not None:
@@ -303,15 +312,15 @@ def _create_message_from_message_type(
 
 
 def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
-    """Instantiate a message from a variety of message formats.
+    """Instantiate a ``Message`` from a variety of message formats.
 
     The message format can be one of the following:
 
-    - BaseMessagePromptTemplate
-    - BaseMessage
-    - 2-tuple of (role string, template); e.g., ("human", "{user_input}")
+    - ``BaseMessagePromptTemplate``
+    - ``BaseMessage``
+    - 2-tuple of (role string, template); e.g., (``'human'``, ``'{user_input}'``)
     - dict: a message dict with role and content keys
-    - string: shorthand for ("human", template); e.g., "{user_input}"
+    - string: shorthand for (``'human'``, template); e.g., ``'{user_input}'``
 
     Args:
         message: a representation of a message in one of the supported formats.
@@ -322,6 +331,7 @@ def _convert_to_message(message: MessageLikeRepresentation) -> BaseMessage:
     Raises:
         NotImplementedError: if the message type is not supported.
         ValueError: if the message dict does not contain the required keys.
+
     """
     if isinstance(message, BaseMessage):
         message_ = message
@@ -367,6 +377,7 @@ def convert_to_messages(
 
     Returns:
         list of messages (BaseMessages).
+
     """
     # Import here to avoid circular imports
     from langchain_core.prompt_values import PromptValue  # noqa: PLC0415
@@ -417,40 +428,40 @@ def filter_messages(
     exclude_ids: Optional[Sequence[str]] = None,
     exclude_tool_calls: Optional[Sequence[str] | bool] = None,
 ) -> list[BaseMessage]:
-    """Filter messages based on name, type or id.
+    """Filter messages based on ``name``, ``type`` or ``id``.
 
     Args:
         messages: Sequence Message-like objects to filter.
         include_names: Message names to include. Default is None.
         exclude_names: Messages names to exclude. Default is None.
-        include_types: Message types to include. Can be specified as string names (e.g.
-            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Default is None.
-        exclude_types: Message types to exclude. Can be specified as string names (e.g.
-            "system", "human", "ai", ...) or as BaseMessage classes (e.g.
-            SystemMessage, HumanMessage, AIMessage, ...). Default is None.
+        include_types: Message types to include. Can be specified as string names
+            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as ``BaseMessage``
+            classes (e.g. ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...).
+            Default is None.
+        exclude_types: Message types to exclude. Can be specified as string names
+            (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or as ``BaseMessage``
+            classes (e.g. ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...).
+            Default is None.
         include_ids: Message IDs to include. Default is None.
         exclude_ids: Message IDs to exclude. Default is None.
         exclude_tool_calls: Tool call IDs to exclude. Default is None.
             Can be one of the following:
-
-            - ``True``: Each ``AIMessages`` with tool calls and all ``ToolMessages``
-              will be excluded.
+            - ``True``: all ``AIMessage``s with tool calls and all
+              ``ToolMessage``s will be excluded.
             - a sequence of tool call IDs to exclude:
-
-              - ToolMessages with the corresponding tool call ID will be excluded.
-              - The ``tool_calls`` in the AIMessage will be updated to exclude matching
-                tool calls.
-                If all tool_calls are filtered from an AIMessage,
-                the whole message is excluded.
+              - ``ToolMessage``s with the corresponding tool call ID will be
+                excluded.
+              - The ``tool_calls`` in the AIMessage will be updated to exclude
+                matching tool calls. If all ``tool_calls`` are filtered from an
+                AIMessage, the whole message is excluded.
 
     Returns:
-        A list of Messages that meets at least one of the incl_* conditions and none
-        of the excl_* conditions. If not incl_* conditions are specified then
+        A list of Messages that meets at least one of the ``incl_*`` conditions and none
+        of the ``excl_*`` conditions. If not ``incl_*`` conditions are specified then
         anything that is not explicitly excluded will be included.
 
     Raises:
-        ValueError if two incompatible arguments are provided.
+        ValueError: If two incompatible arguments are provided.
 
     Example:
         .. code-block:: python
@@ -558,13 +569,14 @@ def merge_message_runs(
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    **NOTE**: ToolMessages are not merged, as each has a distinct tool call id that
-    can't be merged.
+    !!! note
+        ToolMessages are not merged, as each has a distinct tool call id that can't be
+        merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-        Default is "\n".
+            Defaults to ``'\n'``.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -705,8 +717,8 @@ def trim_messages(
 ) -> list[BaseMessage]:
     r"""Trim messages to be below a token count.
 
-    trim_messages can be used to reduce the size of a chat history to a specified token
-    count or specified message count.
+    ``trim_messages`` can be used to reduce the size of a chat history to a specified
+    token count or specified message count.
 
     In either case, if passing the trimmed chat history back into a chat model
     directly, the resulting chat history should usually satisfy the following
@@ -714,87 +726,87 @@ def trim_messages(
 
     1. The resulting chat history should be valid. Most chat models expect that chat
        history starts with either (1) a ``HumanMessage`` or (2) a ``SystemMessage``
-       followed by a ``HumanMessage``. To achieve this, set ``start_on="human"``.
+       followed by a ``HumanMessage``. To achieve this, set ``start_on='human'``.
        In addition, generally a ``ToolMessage`` can only appear after an ``AIMessage``
        that involved a tool call.
        Please see the following link for more information about messages:
        https://python.langchain.com/docs/concepts/#messages
     2. It includes recent messages and drops old messages in the chat history.
-       To achieve this set the ``strategy="last"``.
+       To achieve this set the ``strategy='last'``.
     3. Usually, the new chat history should include the ``SystemMessage`` if it
        was present in the original chat history since the ``SystemMessage`` includes
        special instructions to the chat model. The ``SystemMessage`` is almost always
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
-    .. note::
+    !!! note
         The examples below show how to configure ``trim_messages`` to achieve a behavior
         consistent with the above properties.
 
     Args:
         messages: Sequence of Message-like objects to trim.
         max_tokens: Max token count of trimmed messages.
-        token_counter: Function or llm for counting tokens in a BaseMessage or a list of
-            BaseMessage. If a BaseLanguageModel is passed in then
-            BaseLanguageModel.get_num_tokens_from_messages() will be used.
-            Set to `len` to count the number of **messages** in the chat history.
+        token_counter: Function or llm for counting tokens in a ``BaseMessage`` or a
+            list of ``BaseMessage``. If a ``BaseLanguageModel`` is passed in then
+            ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
+            Set to ``len`` to count the number of **messages** in the chat history.
 
-            .. note::
-                Use `count_tokens_approximately` to get fast, approximate token counts.
-                This is recommended for using `trim_messages` on the hot path, where
+            !!! note
+                Use ``count_tokens_approximately`` to get fast, approximate token
+                counts.
+                This is recommended for using ``trim_messages`` on the hot path, where
                 exact token counting is not necessary.
 
         strategy: Strategy for trimming.
-
-            - "first": Keep the first <= n_count tokens of the messages.
-            - "last": Keep the last <= n_count tokens of the messages.
-
+            - ``'first'``: Keep the first ``<= n_count`` tokens of the messages.
+            - ``'last'``: Keep the last ``<= n_count`` tokens of the messages.
             Default is ``'last'``.
         allow_partial: Whether to split a message if only part of the message can be
-            included. If ``strategy="last"`` then the last partial contents of a message
-            are included. If ``strategy="first"`` then the first partial contents of a
+            included. If ``strategy='last'`` then the last partial contents of a message
+            are included. If ``strategy='first'`` then the first partial contents of a
             message are included.
             Default is False.
         end_on: The message type to end on. If specified then every message after the
-            last occurrence of this type is ignored. If ``strategy=="last"`` then this
+            last occurrence of this type is ignored. If ``strategy='last'`` then this
             is done before we attempt to get the last ``max_tokens``. If
-            ``strategy=="first"`` then this is done after we get the first
-            ``max_tokens``. Can be specified as string names (e.g. "system", "human",
-            "ai", ...) or as BaseMessage classes (e.g. SystemMessage, HumanMessage,
-            AIMessage, ...). Can be a single type or a list of types.
+            ``strategy='first'`` then this is done after we get the first
+            ``max_tokens``. Can be specified as string names (e.g. ``'system'``,
+            ``'human'``, ``'ai'``, ...) or as ``BaseMessage`` classes (e.g.
+            ``SystemMessage``, ``HumanMessage``, ``AIMessage``, ...). Can be a single
+            type or a list of types.
             Default is None.
         start_on: The message type to start on. Should only be specified if
-            ``strategy="last"``. If specified then every message before
+            ``strategy='last'``. If specified then every message before
             the first occurrence of this type is ignored. This is done after we trim
             the initial messages to the last ``max_tokens``. Does not
-            apply to a SystemMessage at index 0 if ``include_system=True``. Can be
-            specified as string names (e.g. "system", "human", "ai", ...) or as
-            BaseMessage classes (e.g. SystemMessage, HumanMessage, AIMessage, ...). Can
-            be a single type or a list of types.
+            apply to a ``SystemMessage`` at index 0 if ``include_system=True``. Can be
+            specified as string names (e.g. ``'system'``, ``'human'``, ``'ai'``, ...) or
+            as ``BaseMessage`` classes (e.g. ``SystemMessage``, ``HumanMessage``,
+            ``AIMessage``, ...). Can be a single type or a list of types.
             Default is None.
         include_system: Whether to keep the SystemMessage if there is one at index 0.
             Should only be specified if ``strategy="last"``.
             Default is False.
         text_splitter: Function or ``langchain_text_splitters.TextSplitter`` for
             splitting the string contents of a message. Only used if
-            ``allow_partial=True``. If ``strategy="last"`` then the last split tokens
-            from a partial message will be included. if ``strategy=="first"`` then the
+            ``allow_partial=True``. If ``strategy='last'`` then the last split tokens
+            from a partial message will be included. if ``strategy='first'`` then the
             first split tokens from a partial message will be included. Token splitter
             assumes that separators are kept, so that split contents can be directly
             concatenated to recreate the original text. Defaults to splitting on
             newlines.
 
     Returns:
-        list of trimmed BaseMessages.
+        list of trimmed ``BaseMessage``.
 
     Raises:
         ValueError: if two incompatible arguments are specified or an unrecognized
             ``strategy`` is specified.
 
     Example:
-        Trim chat history based on token count, keeping the SystemMessage if
-        present, and ensuring that the chat history starts with a HumanMessage (
-        or a SystemMessage followed by a HumanMessage).
+        Trim chat history based on token count, keeping the ``SystemMessage`` if
+        present, and ensuring that the chat history starts with a ``HumanMessage`` (
+        or a ``SystemMessage`` followed by a ``HumanMessage``).
 
         .. code-block:: python
 
@@ -849,9 +861,9 @@ def trim_messages(
                 HumanMessage(content="what do you call a speechless parrot"),
             ]
 
-        Trim chat history based on the message count, keeping the SystemMessage if
-        present, and ensuring that the chat history starts with a HumanMessage (
-        or a SystemMessage followed by a HumanMessage).
+        Trim chat history based on the message count, keeping the ``SystemMessage`` if
+        present, and ensuring that the chat history starts with a ``HumanMessage`` (
+        or a ``SystemMessage`` followed by a ``HumanMessage``).
 
             trim_messages(
                 messages,
@@ -1040,17 +1052,16 @@ def convert_to_openai_messages(
         messages: Message-like object or iterable of objects whose contents are
             in OpenAI, Anthropic, Bedrock Converse, or VertexAI formats.
         text_format: How to format string or text block contents:
-
-            - ``'string'``:
-              If a message has a string content, this is left as a string. If
-              a message has content blocks that are all of type 'text', these are
-              joined with a newline to make a single string. If a message has
-              content blocks and at least one isn't of type 'text', then
-              all blocks are left as dicts.
-            - ``'block'``:
-              If a message has a string content, this is turned into a list
-              with a single content block of type 'text'. If a message has content
-              blocks these are left as is.
+                - ``'string'``:
+                    If a message has a string content, this is left as a string. If
+                    a message has content blocks that are all of type ``'text'``, these
+                    are joined with a newline to make a single string. If a message has
+                    content blocks and at least one isn't of type ``'text'``, then
+                    all blocks are left as dicts.
+                - ``'block'``:
+                    If a message has a string content, this is turned into a list
+                    with a single content block of type ``'text'``. If a message has
+                    content blocks these are left as is.
 
     Raises:
         ValueError: if an unrecognized ``text_format`` is specified, or if a message
@@ -1060,11 +1071,11 @@ def convert_to_openai_messages(
         The return type depends on the input type:
 
         - dict:
-          If a single message-like object is passed in, a single OpenAI message
-          dict is returned.
+            If a single message-like object is passed in, a single OpenAI message
+            dict is returned.
         - list[dict]:
-          If a sequence of message-like objects are passed in, a list of OpenAI
-          message dicts is returned.
+            If a sequence of message-like objects are passed in, a list of OpenAI
+            message dicts is returned.
 
     Example:
 
@@ -1112,7 +1123,7 @@ def convert_to_openai_messages(
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
 
-    .. versionadded:: 0.3.11
+    !!! version-added "Added in version 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1379,7 +1390,7 @@ def convert_to_openai_messages(
                             },
                         }
                     )
-                elif block.get("type") == "thinking":
+                elif block.get("type") in ["thinking", "reasoning"]:
                     content.append(block)
                 else:
                     err = (
@@ -1611,11 +1622,15 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_position"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(
+                **chunk.model_dump(
+                    exclude={"type", "tool_call_chunks", "chunk_position"}
+                )
+            )
 
     msg = (
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
@@ -1705,14 +1720,14 @@ def count_tokens_approximately(
     Returns:
         Approximate number of tokens in the messages.
 
-    .. note::
+    !!! note
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
-    .. versionadded:: 0.3.46
+    !!! version-added "Added in version 0.3.46"
 
     """
     token_count = 0.0

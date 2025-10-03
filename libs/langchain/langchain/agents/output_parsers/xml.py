@@ -46,7 +46,7 @@ class XMLAgentOutputParser(AgentOutputParser):
         Final answer (returns AgentFinish):
             <final_answer>The answer is 4</final_answer>
 
-    .. note::
+    !!! note
         Minimal escaping allows tool names containing XML tags to be safely represented.
         For example, a tool named ``search<tool>nested</tool>`` would be escaped as
         ``search[[tool]]nested[[/tool]]`` in the XML and automatically unescaped during

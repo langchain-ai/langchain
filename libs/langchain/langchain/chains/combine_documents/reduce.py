@@ -250,7 +250,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
-        result_docs, extra_return_dict = self._collapse(
+        result_docs, _ = self._collapse(
             docs,
             token_max=token_max,
             callbacks=callbacks,
@@ -284,7 +284,7 @@ class ReduceDocumentsChain(BaseCombineDocumentsChain):
             The first element returned is the single string output. The second
             element returned is a dictionary of other keys to return.
         """
-        result_docs, extra_return_dict = await self._acollapse(
+        result_docs, _ = await self._acollapse(
             docs,
             token_max=token_max,
             callbacks=callbacks,
