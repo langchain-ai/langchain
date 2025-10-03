@@ -64,7 +64,7 @@ def __getattr__(name: str) -> Any:
     if name == "ConversationChain":
         from langchain_classic.chains import ConversationChain
 
-        _warn_on_import(name, replacement="langchain.chains.ConversationChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.ConversationChain")
 
         return ConversationChain
     if name == "LLMBashChain":
@@ -81,37 +81,37 @@ def __getattr__(name: str) -> Any:
     if name == "LLMChain":
         from langchain_classic.chains import LLMChain
 
-        _warn_on_import(name, replacement="langchain.chains.LLMChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.LLMChain")
 
         return LLMChain
     if name == "LLMCheckerChain":
         from langchain_classic.chains import LLMCheckerChain
 
-        _warn_on_import(name, replacement="langchain.chains.LLMCheckerChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.LLMCheckerChain")
 
         return LLMCheckerChain
     if name == "LLMMathChain":
         from langchain_classic.chains import LLMMathChain
 
-        _warn_on_import(name, replacement="langchain.chains.LLMMathChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.LLMMathChain")
 
         return LLMMathChain
     if name == "QAWithSourcesChain":
         from langchain_classic.chains import QAWithSourcesChain
 
-        _warn_on_import(name, replacement="langchain.chains.QAWithSourcesChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.QAWithSourcesChain")
 
         return QAWithSourcesChain
     if name == "VectorDBQA":
         from langchain_classic.chains import VectorDBQA
 
-        _warn_on_import(name, replacement="langchain.chains.VectorDBQA")
+        _warn_on_import(name, replacement="langchain_classic.chains.VectorDBQA")
 
         return VectorDBQA
     if name == "VectorDBQAWithSourcesChain":
         from langchain_classic.chains import VectorDBQAWithSourcesChain
 
-        _warn_on_import(name, replacement="langchain.chains.VectorDBQAWithSourcesChain")
+        _warn_on_import(name, replacement="langchain_classic.chains.VectorDBQAWithSourcesChain")
 
         return VectorDBQAWithSourcesChain
     if name == "InMemoryDocstore":

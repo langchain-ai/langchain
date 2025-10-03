@@ -8,7 +8,7 @@ from langchain_classic._api.interactive_env import is_interactive_env
 ALLOWED_TOP_LEVEL_PKGS = {
     "langchain_community",
     "langchain_core",
-    "langchain",
+    "langchain_classic",
 }
 
 
