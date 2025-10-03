@@ -39,7 +39,7 @@ class BaseMedia(Serializable):
     Ideally this should be unique across the document collection and formatted
     as a UUID, but this will not be enforced.
 
-    .. versionadded:: 0.2.11
+    !!! version-added "Added in version 0.2.11"
     """
 
     metadata: dict = Field(default_factory=dict)

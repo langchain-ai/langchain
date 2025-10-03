@@ -7,14 +7,14 @@ authors = []
 license = { text = "MIT" }
 requires-python = ">=3.10.0,<4.0.0"
 dependencies = [
-    "langchain-core>=0.3.75,<2.0.0",
-    "langchain-text-splitters>=0.3.11,<2.0.0",
-    "langgraph>=0.6.7,<2.0.0",
+    "langchain-core>=1.0.0a6,<2.0.0",
+    "langchain-text-splitters>=1.0.0a1,<2.0.0",
+    "langgraph>=1.0.0a4,<2.0.0",
     "pydantic>=2.7.4,<3.0.0",
 ]
 
 name = "langchain"
-version = "1.0.0a9"
+version = "1.0.0a10"
 description = "Building applications with LLMs through composability"
 readme = "README.md"
 
@@ -22,15 +22,15 @@ readme = "README.md"
 community = ["langchain-community"]
 anthropic = ["langchain-anthropic"]
 openai = ["langchain-openai"]
-azure-ai = ["langchain-azure-ai"]
-cohere = ["langchain-cohere"]
+#azure-ai = ["langchain-azure-ai"]
+#cohere = ["langchain-cohere"]
 google-vertexai = ["langchain-google-vertexai"]
 google-genai = ["langchain-google-genai"]
 fireworks = ["langchain-fireworks"]
 ollama = ["langchain-ollama"]
 together = ["langchain-together"]
 mistralai = ["langchain-mistralai"]
-huggingface = ["langchain-huggingface"]
+#huggingface = ["langchain-huggingface"]
 groq = ["langchain-groq"]
 aws = ["langchain-aws"]
 deepseek = ["langchain-deepseek"]
@@ -74,6 +74,9 @@ test_integration = [
     "langchain-core",
     "langchain-text-splitters",
 ]
+
+[tool.uv]
+prerelease = "allow"
 
 [tool.uv.sources]
 langchain-core = { path = "../core", editable = true }
@@ -169,6 +172,16 @@ ignore-var-parameters = true  # ignore missing documentation for *args and **kwa
     "ARG002", # Unused argument
     "BLE001", # Do not catch blind exception
     "N801", # class name should use CapWords convention
+]
+
+"langchain/tools/tool_node.py" = [
+    "ANN401", # we use Any right now, need to narrow
+    "A002", # input is shadowing builtin
+    "A001", # input is shadowing builtin
+    "B904", # use from for exceptions
+    "PLR2004", # magic values are fine for this case
+    "C901", # too complex
+    "TRY004", # type error exception
 ]
 
 [tool.coverage.run]

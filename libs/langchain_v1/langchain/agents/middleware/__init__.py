@@ -1,9 +1,18 @@
 """Middleware plugins for agents."""
 
 from .human_in_the_loop import HumanInTheLoopMiddleware
+from .planning import PlanningMiddleware
 from .prompt_caching import AnthropicPromptCachingMiddleware
 from .summarization import SummarizationMiddleware
-from .types import AgentMiddleware, AgentState, ModelRequest
+from .types import (
+    AgentMiddleware,
+    AgentState,
+    ModelRequest,
+    after_model,
+    before_model,
+    hook_config,
+    modify_model_request,
+)
 
 __all__ = [
     "AgentMiddleware",
@@ -12,5 +21,10 @@ __all__ = [
     "AnthropicPromptCachingMiddleware",
     "HumanInTheLoopMiddleware",
     "ModelRequest",
+    "PlanningMiddleware",
     "SummarizationMiddleware",
+    "after_model",
+    "before_model",
+    "hook_config",
+    "modify_model_request",
 ]

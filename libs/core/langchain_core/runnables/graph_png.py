@@ -19,11 +19,10 @@ class PngDrawer:
     It requires ``graphviz`` and ``pygraphviz`` to be installed.
 
     Example:
-
-        .. code-block:: python
-
-            drawer = PngDrawer()
-            drawer.draw(state_graph, "graph.png")
+        ```python
+        drawer = PngDrawer()
+        drawer.draw(state_graph, "graph.png")
+        ```
     """
 
     def __init__(

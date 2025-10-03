@@ -32,10 +32,15 @@ from typing import (
 from pydantic import Discriminator, Field, Tag
 
 from langchain_core.exceptions import ErrorCode, create_message
-from langchain_core.messages import convert_to_openai_data_block, is_data_content_block
 from langchain_core.messages.ai import AIMessage, AIMessageChunk
 from langchain_core.messages.base import BaseMessage, BaseMessageChunk
+from langchain_core.messages.block_translators.openai import (
+    convert_to_openai_data_block,
+)
 from langchain_core.messages.chat import ChatMessage, ChatMessageChunk
+from langchain_core.messages.content import (
+    is_data_content_block,
+)
 from langchain_core.messages.function import FunctionMessage, FunctionMessageChunk
 from langchain_core.messages.human import HumanMessage, HumanMessageChunk
 from langchain_core.messages.modifier import RemoveMessage
@@ -137,7 +142,7 @@ def get_buffer_string(
         else:
             msg = f"Got unsupported message type: {m}"
             raise ValueError(msg)  # noqa: TRY004
-        message = f"{role}: {m.text()}"
+        message = f"{role}: {m.text}"
         if isinstance(m, AIMessage) and "function_call" in m.additional_kwargs:
             message += f"{m.additional_kwargs['function_call']}"
         string_messages.append(message)
@@ -204,7 +209,7 @@ def message_chunk_to_message(chunk: BaseMessage) -> BaseMessage:
     # chunk classes always have the equivalent non-chunk class as their first parent
     ignore_keys = ["type"]
     if isinstance(chunk, AIMessageChunk):
-        ignore_keys.append("tool_call_chunks")
+        ignore_keys.extend(["tool_call_chunks", "chunk_position"])
     return chunk.__class__.__mro__[1](
         **{k: v for k, v in chunk.__dict__.items() if k not in ignore_keys}
     )
@@ -456,7 +461,7 @@ def filter_messages(
         anything that is not explicitly excluded will be included.
 
     Raises:
-        ValueError if two incompatible arguments are provided.
+        ValueError: If two incompatible arguments are provided.
 
     Example:
         .. code-block:: python
@@ -564,14 +569,14 @@ def merge_message_runs(
 ) -> list[BaseMessage]:
     r"""Merge consecutive Messages of the same type.
 
-    .. note::
+    !!! note
         ToolMessages are not merged, as each has a distinct tool call id that can't be
         merged.
 
     Args:
         messages: Sequence Message-like objects to merge.
         chunk_separator: Specify the string to be inserted between message chunks.
-        Default is ``'\n'``.
+            Defaults to ``'\n'``.
 
     Returns:
         list of BaseMessages with consecutive runs of message types merged into single
@@ -734,7 +739,7 @@ def trim_messages(
        the first message in the history if present. To achieve this set the
        ``include_system=True``.
 
-    .. note::
+    !!! note
         The examples below show how to configure ``trim_messages`` to achieve a behavior
         consistent with the above properties.
 
@@ -746,7 +751,7 @@ def trim_messages(
             ``BaseLanguageModel.get_num_tokens_from_messages()`` will be used.
             Set to ``len`` to count the number of **messages** in the chat history.
 
-            .. note::
+            !!! note
                 Use ``count_tokens_approximately`` to get fast, approximate token
                 counts.
                 This is recommended for using ``trim_messages`` on the hot path, where
@@ -1066,11 +1071,11 @@ def convert_to_openai_messages(
         The return type depends on the input type:
 
         - dict:
-          If a single message-like object is passed in, a single OpenAI message
-          dict is returned.
+            If a single message-like object is passed in, a single OpenAI message
+            dict is returned.
         - list[dict]:
-          If a sequence of message-like objects are passed in, a list of OpenAI
-          message dicts is returned.
+            If a sequence of message-like objects are passed in, a list of OpenAI
+            message dicts is returned.
 
     Example:
 
@@ -1118,7 +1123,7 @@ def convert_to_openai_messages(
             #   {'role': 'assistant', 'content': 'thats nice'}
             # ]
 
-    .. versionadded:: 0.3.11
+    !!! version-added "Added in version 0.3.11"
 
     """  # noqa: E501
     if text_format not in {"string", "block"}:
@@ -1385,7 +1390,7 @@ def convert_to_openai_messages(
                             },
                         }
                     )
-                elif block.get("type") == "thinking":
+                elif block.get("type") in ["thinking", "reasoning"]:
                     content.append(block)
                 else:
                     err = (
@@ -1617,11 +1622,15 @@ def _msg_to_chunk(message: BaseMessage) -> BaseMessageChunk:
 def _chunk_to_msg(chunk: BaseMessageChunk) -> BaseMessage:
     if chunk.__class__ in _CHUNK_MSG_MAP:
         return _CHUNK_MSG_MAP[chunk.__class__](
-            **chunk.model_dump(exclude={"type", "tool_call_chunks"})
+            **chunk.model_dump(exclude={"type", "tool_call_chunks", "chunk_position"})
         )
     for chunk_cls, msg_cls in _CHUNK_MSG_MAP.items():
         if isinstance(chunk, chunk_cls):
-            return msg_cls(**chunk.model_dump(exclude={"type", "tool_call_chunks"}))
+            return msg_cls(
+                **chunk.model_dump(
+                    exclude={"type", "tool_call_chunks", "chunk_position"}
+                )
+            )
 
     msg = (
         f"Unrecognized message chunk class {chunk.__class__}. Supported classes are "
@@ -1711,14 +1720,14 @@ def count_tokens_approximately(
     Returns:
         Approximate number of tokens in the messages.
 
-    .. note::
+    !!! note
         This is a simple approximation that may not match the exact token count used by
         specific models. For accurate counts, use model-specific tokenizers.
 
     Warning:
         This function does not currently support counting image tokens.
 
-    .. versionadded:: 0.3.46
+    !!! version-added "Added in version 0.3.46"
 
     """
     token_count = 0.0

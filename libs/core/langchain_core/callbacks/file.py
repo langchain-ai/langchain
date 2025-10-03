@@ -49,7 +49,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         mode: The file open mode. Defaults to ``'a'`` (append).
         color: Default color for text output. Defaults to ``None``.
 
-    .. note::
+    !!! note
         When not used as a context manager, a deprecation warning will be issued
         on first use. The file will be opened immediately in ``__init__`` and closed
         in ``__del__`` or when ``close()`` is called explicitly.
@@ -83,7 +83,7 @@ class FileCallbackHandler(BaseCallbackHandler):
         Returns:
             The FileCallbackHandler instance.
 
-        .. note::
+        !!! note
             The file is already opened in ``__init__``, so this just marks that
             the handler is being used as a context manager.
 

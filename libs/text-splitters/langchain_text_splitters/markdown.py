@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Optional, TypedDict, Union
+from typing import Any, TypedDict
 
 from langchain_core.documents import Document
 
@@ -28,7 +28,7 @@ class MarkdownHeaderTextSplitter:
         headers_to_split_on: list[tuple[str, str]],
         return_each_line: bool = False,  # noqa: FBT001,FBT002
         strip_headers: bool = True,  # noqa: FBT001,FBT002
-        custom_header_patterns: Optional[dict[str, int]] = None,
+        custom_header_patterns: dict[str, int] | None = None,
     ) -> None:
         """Create a new MarkdownHeaderTextSplitter.
 
@@ -328,7 +328,7 @@ class ExperimentalMarkdownSyntaxTextSplitter:
 
     def __init__(
         self,
-        headers_to_split_on: Union[list[tuple[str, str]], None] = None,
+        headers_to_split_on: list[tuple[str, str]] | None = None,
         return_each_line: bool = False,  # noqa: FBT001,FBT002
         strip_headers: bool = True,  # noqa: FBT001,FBT002
     ) -> None:
@@ -452,18 +452,18 @@ class ExperimentalMarkdownSyntaxTextSplitter:
         self.current_chunk = Document(page_content="")
 
     # Match methods
-    def _match_header(self, line: str) -> Union[re.Match[str], None]:
+    def _match_header(self, line: str) -> re.Match[str] | None:
         match = re.match(r"^(#{1,6}) (.*)", line)
         # Only matches on the configured headers
         if match and match.group(1) in self.splittable_headers:
             return match
         return None
 
-    def _match_code(self, line: str) -> Union[re.Match[str], None]:
+    def _match_code(self, line: str) -> re.Match[str] | None:
         matches = [re.match(rule, line) for rule in [r"^```(.*)", r"^~~~(.*)"]]
         return next((match for match in matches if match), None)
 
-    def _match_horz(self, line: str) -> Union[re.Match[str], None]:
+    def _match_horz(self, line: str) -> re.Match[str] | None:
         matches = [
             re.match(rule, line) for rule in [r"^\*\*\*+\n", r"^---+\n", r"^___+\n"]
         ]

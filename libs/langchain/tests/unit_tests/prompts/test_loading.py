@@ -9,7 +9,6 @@ EXPECTED_ALL = [
     "_load_template",
     "load_prompt",
     "load_prompt_from_config",
-    "try_load_from_hub",
 ]
 
 

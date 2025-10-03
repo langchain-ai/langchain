@@ -202,7 +202,7 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
             len(encoded) for encoded in self.tokenizer.encode_batch(texts)
         ]
 
-        for text, text_tokens in zip(texts, text_token_lengths):
+        for text, text_tokens in zip(texts, text_token_lengths, strict=False):
             if batch_tokens + text_tokens > MAX_TOKENS:
                 if len(batch) > 0:
                     # edge case where first batch exceeds max tokens
@@ -267,20 +267,29 @@ class MistralAIEmbeddings(BaseModel, Embeddings):
 
         Returns:
             List of embeddings, one for each text.
-
         """
         try:
+
+            @retry(
+                retry=retry_if_exception_type(
+                    (httpx.TimeoutException, httpx.HTTPStatusError)
+                ),
+                wait=wait_fixed(self.wait_time),
+                stop=stop_after_attempt(self.max_retries),
+            )
+            async def _aembed_batch(batch: list[str]) -> Response:
+                response = await self.async_client.post(
+                    url="/embeddings",
+                    json={
+                        "model": self.model,
+                        "input": batch,
+                    },
+                )
+                response.raise_for_status()
+                return response
+
             batch_responses = await asyncio.gather(
-                *[
-                    self.async_client.post(
-                        url="/embeddings",
-                        json={
-                            "model": self.model,
-                            "input": batch,
-                        },
-                    )
-                    for batch in self._get_batches(texts)
-                ]
+                *[_aembed_batch(batch) for batch in self._get_batches(texts)]
             )
             return [
                 list(map(float, embedding_obj["embedding"]))

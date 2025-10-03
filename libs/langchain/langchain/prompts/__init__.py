@@ -8,8 +8,7 @@ from multiple components. Prompt classes and functions make constructing
 
 .. code-block::
 
-    BasePromptTemplate --> PipelinePromptTemplate
-                           StringPromptTemplate --> PromptTemplate
+    BasePromptTemplate --> StringPromptTemplate --> PromptTemplate
                                                     FewShotPromptTemplate
                                                     FewShotPromptWithTemplates
                            BaseChatPromptTemplate --> AutoGPTPrompt
@@ -46,7 +45,6 @@ from langchain_core.prompts import (
     FewShotPromptWithTemplates,
     HumanMessagePromptTemplate,
     MessagesPlaceholder,
-    PipelinePromptTemplate,
     PromptTemplate,
     StringPromptTemplate,
     SystemMessagePromptTemplate,
@@ -92,7 +90,6 @@ __all__ = [
     "MaxMarginalRelevanceExampleSelector",
     "MessagesPlaceholder",
     "NGramOverlapExampleSelector",
-    "PipelinePromptTemplate",
     "Prompt",
     "PromptTemplate",
     "SemanticSimilarityExampleSelector",

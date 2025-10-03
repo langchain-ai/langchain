@@ -5,5 +5,4 @@ in the new docs repo:
 - people.yml: Need to fix and somehow display on the new docs site
   - Subsequently, `.github/actions/people/`
 - _test_doc_imports.yml
-- check_new_docs.yml
 - check-broken-links.yml
