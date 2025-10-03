@@ -257,7 +257,7 @@ class ConstitutionalChain(Chain):
         input_prompt = self.chain.prompt.format(**inputs)
 
         _run_manager.on_text(
-            text="Initial response: " + response + "\n\n",
+            text=f"Initial response: {response}\n\n",
             verbose=self.verbose,
             color="yellow",
         )
@@ -296,19 +296,19 @@ class ConstitutionalChain(Chain):
             critiques_and_revisions.append((critique, revision))
 
             _run_manager.on_text(
-                text=f"Applying {constitutional_principle.name}..." + "\n\n",
+                text=f"Applying {constitutional_principle.name}...\n\n",
                 verbose=self.verbose,
                 color="green",
             )
 
             _run_manager.on_text(
-                text="Critique: " + critique + "\n\n",
+                text=f"Critique: {critique}\n\n",
                 verbose=self.verbose,
                 color="blue",
             )
 
             _run_manager.on_text(
-                text="Updated response: " + revision + "\n\n",
+                text=f"Updated response: {revision}\n\n",
                 verbose=self.verbose,
                 color="yellow",
             )
